@@ -1,0 +1,60 @@
+import { fetchParams } from "./dae";
+
+export const registerSettings = function () {
+  game.settings.register("dae", "ConsumeCharge", {
+      name: game.i18n.localize("dae.ConsumeCharge.Name"),
+      hint: game.i18n.localize("dae.ConsumeCharge.Hint"),
+      scope: "world",
+      default: true,
+      config: true,
+      type: Boolean
+  });
+  game.settings.register("dae", "requireItemTarget", {
+    name: game.i18n.localize("dae.requireItemTarget.Name"),
+    hint: game.i18n.localize("dae.requireItemTarget.Hint"),
+    scope: "world",
+    default: true,
+    config: true,
+    type: Boolean,
+    onChange: fetchParams
+  });
+  game.settings.register("dae", "playersCanSeeEffects", {
+    scope: "world",
+    default: "None",
+    config: true,
+    type: String,
+    choices: {none: "Never", view: "View Only", edit: "Edit"},
+    onChange: fetchParams,
+    name: game.i18n.localize("dae.playersCanSeeEffects.Name"),
+    hint: game.i18n.localize("dae.playersCanSeeEffects.Hint"),
+  });
+  game.settings.register("dae", "playerControlsInvisibleTokens", {
+    name: game.i18n.localize("dae.playerControlsInvisibleTokens.Name"),
+    hint: game.i18n.localize("dae.playerControlsInvisibleTokens.Hint"),
+    scope: "world",
+    default: false,
+    config: true,
+    type: Boolean,
+    choices: [],
+    onChange: (value) => {window.location.reload()}
+  });
+  game.settings.register("dae", "tokenEffects", {
+    name: game.i18n.localize("dae.tokenEffects.Name"),
+    hint: game.i18n.localize("dae.tokenEffects.Hint"),
+    scope: "world",
+    default: false,
+    config: false,
+    type: Boolean,
+    onChange: fetchParams
+  });
+
+  game.settings.register("dae", "calculateArmor", {
+    name: game.i18n.localize("dae.calculateArmor.Name"),
+    hint: game.i18n.localize("dae.calculateArmor.Hint"),
+    scope: "world",
+    default: true,
+    config: true,
+    type: Boolean,
+    onChange: fetchParams
+  });
+};

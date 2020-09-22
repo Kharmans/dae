@@ -1,0 +1,69 @@
+{
+  "name": "dynamiceffects",
+  "title": "Dynamic effects",
+  "description": "replacement for dynamic items",
+  "version": "0.5.82",
+  "compatibleCoreVersion": "0.6.5",
+  "minimumCoreVersion": "0.5.3",
+  "scripts": ["libs/tokenizer.min.js"],
+  "esmodules": [
+    "dynamiceffects.js", "module/patching.js", "libs/flagspatch.js"
+  ],
+  "styles": ["dynamiceffects.css"],
+  "packs": [
+    {
+      "name": "premadeitems",
+      "label": "Premade Items",
+      "system": "dnd5e",
+      "path": "./packs/premadeitems.db",
+      "module": "world",
+      "entity": "Item",
+      "lang": ["en", "de"]
+    },
+    {
+      "name": "sample-macros",
+      "label": "Sample macros",
+      "path": "./packs/sample-macros.db",
+      "module": "world",
+      "entity": "Macro",
+      "lang": ["en", "de"]
+    }
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "ja",
+      "name": " 日本語",
+      "path": "lang/ja.json"
+    },
+    {
+      "lang": "ko",
+      "name": "Korean",
+      "path": "lang/ko.json"
+    },
+    {
+      "lang": "cn",
+      "name": "中文",
+      "path": "lang/cn.json"
+    },
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "lang/pt-BR.json"
+    },
+    {
+      "lang": "fr",
+      "name": "Français",
+      "path": "lang/fr.json"
+    }
+  ],
+  "socket": true,
+  "url": "https://gitlab.com/tposney/dynamiceffects",
+  "author": "tposney",
+  "manifest": "https://gitlab.com/tposney/dynamiceffects/raw/master/package/module.json",
+  "download": "https://gitlab.com/tposney/dynamiceffects/raw/master/package/dynamiceffects-v0.5.82.zip"
+}
