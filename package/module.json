@@ -1,15 +1,15 @@
 {
-  "name": "dynamiceffects",
-  "title": "Dynamic effects",
-  "description": "replacement for dynamic items",
-  "version": "0.5.94",
+  "name": "dae",
+  "title": "Dynamic effects using Active Effects",
+  "description": "replacement for dynamic effects",
+  "version": "0.1.0",
   "compatibleCoreVersion": "0.7.0",
-  "minimumCoreVersion": "0.5.3",
+  "minimumCoreVersion": "0.7.0",
   "scripts": ["libs/tokenizer.min.js"],
   "esmodules": [
-    "dynamiceffects.js", "module/patching.js", "libs/flagspatch.js"
+    "dae.js", "module/patching.js", "libs/flagspatch.js"
   ],
-  "styles": ["dynamiceffects.css"],
+  "styles": ["css/dae.css"],
   "packs": [
     {
       "name": "premadeitems",
@@ -62,8 +62,8 @@
     }
   ],
   "socket": true,
-  "url": "https://gitlab.com/tposney/dynamiceffects",
+  "url": "https://gitlab.com/tposney/dae",
   "author": "tposney",
-  "manifest": "https://gitlab.com/tposney/dynamiceffects/raw/master/package/module.json",
-  "download": "https://gitlab.com/tposney/dynamiceffects/raw/master/package/dynamiceffects-v0.5.94.zip"
+  "manifest": "https://gitlab.com/tposney/dae/raw/master/package/module.json",
+  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.1.0.zip"
 }
