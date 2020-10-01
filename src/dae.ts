@@ -13,14 +13,21 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, doEffects, daeInitActions, validateDuration, ValidSpec} from "./module/dae";
+import { daeSetupActions, doEffects, daeInitActions, ValidSpec} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { initSheetTab} from "./module/daeTab"
 // import { ItemEffectSelector } from './module/apps/daeSelector';
 import { GMAction, GMActionMessage } from './module/GMAction';
 import { ActiveEffectChangeEditor } from './module/apps/ActiveEffectChangeEditor';
+import { migrateItem, convertAllItems, migrateActorItems, migrateAllActors, removeActorEffects } from './module/migration';
+import { ActorEffects } from './module/apps/ActorEffects';
 
-export let debugEnabled = 3;
+export let setDebugLevel = (debugText: string) => {
+  debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
+  // 0 = none, warnings = 1, debug = 2, all = 3
+  CONFIG.debug.hooks = debugEnabled >= 3;
+}
+export var debugEnabled;
 // 0 = none, warnings = 1, debug = 2, all = 3
 export let debug = (...args) => {if (debugEnabled > 1) console.log("DEBUG: midi-qol | ", ...args)};
 export let log = (...args) => console.log("midi-qol | ", ...args);
@@ -66,7 +73,13 @@ Hooks.once('setup', function() {
     ValidSpec,
     GMActionMessage,
     GMAction,
-    doEffects
+    doEffects,
+    migrateItem: migrateItem,
+    convertAllItems: convertAllItems,
+    migrateActorItems: migrateActorItems,
+    migrateAllActors: migrateAllActors,
+    removeActorEffects: removeActorEffects,
+    ActorEffects: ActorEffects
 	}
 });
 

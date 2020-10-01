@@ -109,7 +109,7 @@
     "dae.PassiveEffectName": "Passive Effects",
     "dae.EffectMode": "Mode",
     "dae.EffectValue": "Value",
-
+    "dae.label": "Label",
     "dae.Title": "Effects",
     "dae.Add": "Add",
     "dae.UpdateEffect": "Update Effect",
@@ -203,5 +203,11 @@
     "dae.calculateArmor.Hint":  "If true dynamic effects will auto calculate AC from armor/shields in the inventory. Other items can still modify AC",
     "dae.applyingEffects": "Applying effects",
     "dae.removingEffects": "Removing effects",
-    "dae.tokenMagic": "TokenMagic"
+    "dae.tokenMagic": "TokenMagic",
+    "dae.transfer": "Transfer to actor on item equip",
+    "dae.effectName": "Effect Name",
+    "dae.readOnly": "READ ONLY EFFECT",
+    "dae.legact": "Legendary Actions",
+    "dae.legres": "Legendary Resistance",
+    "dae.encumbrance": "Encumbrance"
 }

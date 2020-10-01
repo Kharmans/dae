@@ -1,6 +1,6 @@
 import { removeActiveEffectsToken } from "./daeMacros";
 import { daeOnMacro } from "./dae";
-import { warn } from "../dae";
+import { warn, debug } from "../dae";
 
 export class GMActionMessage {
   action: string;
@@ -34,10 +34,10 @@ export let requestGMAction = async (action: string, data: {}, debugLog: boolean 
   }
   //@ts-ignore
   let message = new DAE.GMActionMessage(action, game.user.id, intendedGM.id, data);
-  if (debugLog) console.log("About to send message", message)
+  debug("About to send message", message)
   //@ts-ignore
   game.socket.emit(DAE.GMAction._moduleSocket, message, resp => {
-    if (debugLog) console.log("message sent")
+    debug("message sent")
    });
 }
 
@@ -103,12 +103,12 @@ export class GMAction {
   }
 
   private static async processActionQueue() {
-    console.log("Processing action queue")
+    debug("Processing action queue")
     this.processingActions = this.actionQueue.length > 0;
     while (this.processingActions) {
-      console.log("Processing Actions ", this.actionQueue.length)
+      debug("Processing Actions ", this.actionQueue.length)
       let {action, userId, data} = this.actionQueue[0];
-      console.log("Processing actions ", action, userId, data)
+      debug("Processing actions ", action, userId, data)
       await this.processSingleAction(action, userId, data);
       this.actionQueue = this.actionQueue.slice(1)
       this.processingActions = this.actionQueue.length > 0;
@@ -235,28 +235,33 @@ let applyTokenMagic = async (tokenId: string, effectId: string, duration: number
 
 async function applyActiveEffects(activate, tokenList, activeEffects) {
   warn("gmaction apply effect ", activate, tokenList, duplicate(activeEffects))
+  console.warn("gmaction apply effect ", activate, tokenList, duplicate(activeEffects))
+
   tokenList.forEach(async tid => {
     const token = canvas.tokens.get(tid);
+    console.warn("GMAction token is ", token)
     if (token) {
+      let actEffects = duplicate(activeEffects)
       let removeList = [];
       // TODO redo this as a reduce
-      activeEffects.forEach(newAE => {
+      actEffects.forEach(newAE => {
         removeList = removeList.concat(token.actor.effects.filter(ae => ae.data.origin === newAE.origin && getProperty(ae.data.flags, "dae.transfer") === false));
       });
       removeList = removeList.map(ae=>ae.data._id);
-      token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
+      await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
       // token.actor.deleteEmbeddedEntity("ActiveEffect", activeEffects)
       if (activate) {
-        activeEffects.forEach(ae=> {
+        actEffects.forEach(ae=> {
+          warn("Apply active effects ", ae)
           setProperty(ae.flags, "dae.transfer", false);
           ae.changes.forEach(change=> {
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
-              change.value = change.value.map(f=> f=== "@target" ? tid : f);
+              change.value = change.value.map(f=> f === "@target" ? tid : f);
             }
           })
          setProperty(ae, "flags.dae.token", tid)
         })
-        token.actor.createEmbeddedEntity("ActiveEffect", activeEffects);
+        await token.actor.createEmbeddedEntity("ActiveEffect", actEffects)
       }
     };
   });

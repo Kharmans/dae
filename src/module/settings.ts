@@ -57,4 +57,15 @@ export const registerSettings = function () {
     type: Boolean,
     onChange: fetchParams
   });
+
+  game.settings.register("dae", "Debug", {
+    name: "dae.Debug.Name",
+    hint: "dae.Debug.Hint",
+    scope: "world",
+    default: "None",
+    type: String,
+    config: true,
+    choices: {none: "None", warn: "warnings", debug: "debug", all: "all"},
+    onChange: fetchParams
+  })
 };

@@ -1,14 +1,13 @@
 <form autocomplete="off">
 
   <div class="form-group">
-    <label>{{localize "dae.name"}}</label>
+    <label>{{localize "dae.effectName"}}</label>
     <input type="text" value="{{effect.label}}" name="label" data-dtype="String" />
   </div>
 
   <div><img class="profile" src="{{effect.icon}}" height="100" title="{{effect.label}}" data-edit="img"/></div>
-
   <div class="form-group">
-    <label>{{localize "dae.Transfer"}}</label>
+    <label>{{localize "dae.transfer"}}</label>
     <input type="checkbox" name="transfer" value="{{effect.transfer}}" data-dtype="{{Boolean}}"
       {{checked effect.transfer}} />
   </div>

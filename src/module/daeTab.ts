@@ -21,7 +21,6 @@ export function initSheetTab() {
 }
 
 async function adddaeTab(app, html, data) {
-  console.warn("Add dae tab ")
   if (playersCanSeeEffects === "none" && !game.user.isGM) return;
   let daetab = html.find(`.dae-tab`);
   if (daetab.length > 0) return;
@@ -44,25 +43,13 @@ async function adddaeTab(app, html, data) {
   // let settingsContainer = html.find(`.sheet-body`);
   if (settingsContainer.length === 0) settingsContainer = html.find(`.primary-body`);
 
-  console.warn("inside tab ", item, item.data.flags);
+  warn("inside tab ", item, item.data.flags);
   //@ts-ignore
   const EFFECTMODES = ACTIVE_EFFECT_MODES;
   const modeKeys = Object.keys(EFFECTMODES);
-/*
-  if (item.actor) {
-    passives = duplicate(item.actor.effects.filter(ae=>ae.data.flags?.dae?.transfer !== false).map(ae=>ae.data));
-    console.warn("passive effects are ", passives, item.actor.effects)
-  } else {
-    passives = duplicate(item.data.effects.filter(ie=>ie.transfer));
-  }
-*/
-/*
-  let passives = duplicate(item.data.effects.filter(ie=>ie.transfer));
-  // passives?.forEach(ae=> ae.changes.forEach(change=>change.key=ValidSpec.allSpecsObj[change.key].label));
-  passives = passives.map(ae=>{ae.changes.map(change=>{change.label=ValidSpec.allSpecsObj[change.key]?.label || "None"; return change}); return ae});
-*/
   let actives = duplicate(item.data.effects);
-  if (item.isOwned && false) {
+  /*
+  if (item.isOwned) {
     console.warn("ae effects ", item.actor.effects)
     let extra_effects = item.actor.effects.filter(ae=>{
       console.warn("extra effects ", ae, ae.data.origin, item.uuid, ae.flags?.dae?.transfer);
@@ -71,8 +58,8 @@ async function adddaeTab(app, html, data) {
     actives = actives.concat(extra_effects)
     console.warn("setup active effects ", extra_effects, actives)
   }
+  */
   actives = actives.map(ae=>{ae.changes.map(change=>{change.label=ValidSpec.allSpecsObj[change.key]?.label || "None"; return change}); return ae});
-  console.warn("active/passive ", actives)
 
   let daeTabTemplate = await renderTemplate("./modules/dae/templates/dae-tab.html", {
     flags: item.data.flags,
@@ -98,6 +85,10 @@ async function adddaeTab(app, html, data) {
   html.find(".dae .effect-edit").click(ev => {
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     let effect = item.data.effects.find(e=>e._id === effect_id);
+    if (!effect) {
+      ui.notifications.warn("Can't edit transferred effects");
+      return;
+    }
     new ActiveEffectEffectEditor({item, effect}).render(true);
     makeActive = true;
   })
@@ -110,6 +101,10 @@ async function adddaeTab(app, html, data) {
     if (item.isOwned) {
       const effects = duplicate(item.data.effects);
       var effect = effects.find(ef=>ef._id === effect_id)
+      if (!effect) {
+        ui.notifications.warn("Can't edit transferred effects")
+        return;
+      }
       effect.changes.push({key: "data.abilities.str.value", mode: EFFECTMODES.CUSTOM, value: 0});
       item.actor.updateOwnedItem({"_id": item.id, "effects": effects})
     } else {
@@ -117,21 +112,22 @@ async function adddaeTab(app, html, data) {
       effect.changes.push({key: "data.abilities.str.value", mode: 0, value: 0})
       item.updateEmbeddedEntity("ActiveEffect", effect)
     }
-    console.warn("Add change to ", effect)
     makeActive = true;
   })
 
   // edit change
   html.find('.dae .effect-controls .change-edit').click(ev => {
-    console.error("inside change edit")
     let effect_id = $(ev.currentTarget).parents(".dae-change-list").attr("effect-id");
     let change_id = $(ev.currentTarget).parents(".dae-change-list").attr("change-id");
-    console.warn("change id is ", effect_id, "  ", change_id, item)
+    warn("change id is ", effect_id, "  ", change_id, item)
     let effect = item.data.effects.find(e=>e._id === effect_id);
+    if (!effect) {
+      ui.notifications.warn("Can't edit transferred effects")
+      return;
+    }
     let change_num = parseInt(change_id);
     let change = effect.changes[change_num];
 
-    console.warn("editing change ", change)
     new ActiveEffectChangeEditor({change, item, effect, change_id: change_num}).render(true);
     makeActive = true;
   });
@@ -140,12 +136,16 @@ async function adddaeTab(app, html, data) {
   html.find('.dae .effect-controls .change-delete').click(async ev => {
     let effect_id = $(ev.currentTarget).parents(".dae-change-list").attr("effect-id");
     let change_id = $(ev.currentTarget).parents(".dae-change-list").attr("change-id");
-    console.warn("change id is ", effect_id, "  ", change_id, item)
+    warn("change id is ", effect_id, "  ", change_id, item)
     var effect;
     // li.slideUp(200);
     if (item.isOwned) {
       const effects = duplicate(item.data.effects);
       effect = effects.find(ef=>ef._id === effect_id)
+      if (!effect) {
+        ui.notifications.warn("Can't deleted transferred effects");
+        return;
+      }
       effect.changes.splice(parseInt(change_id),1);
       item.actor.updateOwnedItem({"_id": item.id, "effects": effects})
     } else {
@@ -153,14 +153,13 @@ async function adddaeTab(app, html, data) {
       effect.changes.splice(parseInt(change_id),1);
       item.updateEmbeddedEntity("ActiveEffect", effect)
     }
-    console.warn("deleteing change ", change_id)
+    warn("deleteing change ", change_id)
     makeActive = true;
   });
 
   // intercept Input Click and set Tab
   html.find('.dae input[type="checkbox"]').click(ev => {
     const effect_name = $(ev.currentTarget).attr("name")
-    console.warn(" check box click ", ev, effect_name)
     makeActive = true;
   });
   
@@ -170,7 +169,6 @@ async function adddaeTab(app, html, data) {
     if (item.isOwned) {
       let effects = item.data.effects.filter(ef => ef._id !== effect_id);
       item.actor.updateOwnedItem({"_id": item.id, "effects": effects});
-
     } else {
       item.deleteEmbeddedEntity("ActiveEffect", effect_id)
     }
@@ -188,6 +186,8 @@ async function adddaeTab(app, html, data) {
       transfer: false
     }
     if (item.isOwned ) {
+      ui.notifications.warn("Can't create effects on owned items");
+      return;
       item.data.effects.push(ae)
       item.actor.updateOwnedItem(item.data)
     } else {

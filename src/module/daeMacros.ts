@@ -1,5 +1,6 @@
 import { requestGMAction, GMAction } from "./GMAction";
-import { aboutTimeInstalled, ValidSpec, doEffects, playersCanSeeEffects, validateDuration } from "./dae";
+import { aboutTimeInstalled, ValidSpec, doEffects, playersCanSeeEffects } from "./dae";
+import { warn, error, debug } from "../dae";
 
 export let applyActive = (itemName: string, activate: boolean = true, itemType: string = "") => {
  
@@ -131,59 +132,6 @@ export let toggleActorIdEffect = async (actorId: string, itemName: string, itemT
 }
 
 let toggleActorEffect = async (actor: Actor, itemName: string, itemType: String, overRide: boolean = undefined) => {
-  if (!actor) return false;
-  let consumeCharge = game.settings.get("dae", "ConsumeCharge");
-  const item = actor ? actor.items.find(i => i.name === itemName && (itemType === "" || itemType === i.data.type)) : null;
-  if (!item) {
-    ui.notifications.warn(`${game.i18n.localize("dae.noeffect")} ${itemName}`);
-    return false;
-  }
-
-  let useUpdate = {};
-  let consumeUpdate = {};
-  let newStatus;
-  if (["class", "spell", "feat"].includes(item.data.type)) {
-/*    if (!hasProperty(item.data, "flags.dae.alwaysActive")) {
-      console.log(`Dynamic Effects | item ${item.name} has no alwaysActive property can't toggle`)
-      return false;
-    }
-    */
-    newStatus = !item.data.flags.dae.alwaysActive;
-    if (overRide !== undefined) {
-      newStatus = overRide;
-    }
-    useUpdate = { "_id": item.id, "flags.dae.alwaysActive": newStatus };
-  } else { // equip/unequip
-    newStatus = !item.data.data.equipped;
-    if (overRide !== undefined) {
-      newStatus = overRide;
-    }
-    useUpdate = { "_id": item.id, "data.equipped": newStatus };
-  }
-  if (consumeCharge && newStatus && item.data.data.uses && item.data.data.uses.max > 0) {
-    let oldCharges = item.data.data.uses.value;
-    if (oldCharges < 1) {
-      if (newStatus) { // no charges and inactive cant make it active
-        ui.notifications.info(`${actor.name} ${item.name} ${game.i18n.localize("dae.noCharges")}`)
-        return false;
-      }
-    }
-    consumeUpdate = { "data.uses.value": oldCharges - 1, "_id": item.id }
-  }
-  ui.notifications.info(`${actor.name} ${item.name} ${game.i18n.localize(newStatus ? "dae.active" : "dae.inactive")}`)
-  let update = mergeObject(useUpdate, consumeUpdate);
-  await actor.updateEmbeddedEntity("OwnedItem", update);
-  if (aboutTimeInstalled && newStatus && item.data.data.duration) { //only if about-time installed
-    // let secPerRound = game.settings.get("about-time", "seconds-per-round");
-    let duration = validateDuration(item.data.data.duration);
-    if (duration.value > 0) {
-      let spec = {};
-      spec[duration.units] = duration.value
-      //@ts-ignore
-      game.Gametime.doIn(spec, window.dae._toggleActorIdEffect, actor.id, itemName, item.type, false)
-    }
-  }
-  return newStatus;
 }
 
 export let removeActiveEffectsToken = () => {
@@ -218,11 +166,11 @@ let tokenScene = (tokenName, sceneName) => {
 export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
   let target = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
-    console.log("Dynmaiceffects | moveToken: Token not found");
+    warn("Dynmaiceffects | moveToken: Token not found");
     return ("Token not found")
   }
   if (!target) {
-    console.log("dae | moveToken: Target Not found");
+    warn("dae | moveToken: Target Not found");
     return `Token ${targetTokenName} not found`;
   }
   return await requestGMAction(GMAction.actions.recreateToken,
@@ -241,11 +189,11 @@ export let renameToken = async(token: Token, newName: string) => {
 export let teleportToToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
   let target = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
-    console.log("dae| teleportToToken: Token not found");
+    error("dae| teleportToToken: Token not found");
     return ("Token not found")
   }
   if (!target) {
-    console.log("dae| teleportToToken: Target Not found");
+    error("dae| teleportToToken: Target Not found");
     return `Token ${targetTokenName} not found`;
   }
   //@ts-ignore target.scene.data.grid
@@ -257,7 +205,7 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
   let y = parseInt(ypos);
 
   if (isNaN(x) || isNaN(y)) {
-    console.log("dae| teleport: Invalid co-ords", xpos, ypos);
+    error("dae| teleport: Invalid co-ords", xpos, ypos);
     return `Invalid target co-ordinates (${xpos}, ${ypos})`;
   }
 
@@ -317,11 +265,11 @@ export let macroReadySetup = () => {
     .map((sheetClass) => sheetClass.cls)
     .map((sheet) => sheet.name);
 
-    console.log("Sheet names are ", pcSheetNames)
+    debug("Sheet names are ", pcSheetNames)
   pcSheetNames.forEach(sheetName => {
     Hooks.on("render" + sheetName, (app, html, data) => {
       // only for GMs or the owner of this character
-      console.log("In add button ", app, data)
+      debug("In add button ", app, data)
       if (!data.owner || !data.actor) return;
       _addEffects(app, html, data);
     });
@@ -330,12 +278,12 @@ export let macroReadySetup = () => {
 
 let _addEffects = (app, html, data) => {
   let openBtn = $(`<a class="open-de-effects" title="${"DEEffects"}"><i class="fas fa-clipboard"></i>${"Show DE"}</a>`);
-  console.log("Open button called ", openBtn);
+  debug("Open button called ", openBtn);
   openBtn.click(ev => {
     effectsActor(ev.shiftKey, {actor: app.object})
   });
   html.closest('.app').find('.open-de-effects').remove();
   let titleElement = html.closest('.app').find('.window-title');
-  console.log("Title element ", titleElement);
+  debug("Title element ", titleElement);
   openBtn.insertAfter(titleElement);
 }

@@ -100,7 +100,6 @@ export class ActiveEffectChangeEditor extends FormApplication {
     if (this.options.selected) {
       this.object.change.key =  Object.keys(this.options.effectList)[this.options.selected];
     }
-    console.warn("getdata ", this.options)
     if (this.options.category) {
         category = Object.keys(ActiveEffectChangeEditor.categories)[this.options.category - 1];
         this.options.effectList = this.filterEffects(category); //this.options.category)
@@ -155,7 +154,7 @@ export class ActiveEffectChangeEditor extends FormApplication {
           isToolProf: this.object.change.key === "data.traits.toolProf.value",
           isArmorProf: this.object.change.key === "data.traits.armorProf.value",
           isWeaponProf: this.object.change.key === "data.traits.weaponProf.value",
-          isDamage: ["data.traits.di.value", "data.traits.dr.value", "data.traits.dv.value"].includes(this.object.key),
+          isDamage: ["data.traits.di.value", "data.traits.dr.value", "data.traits.dv.value"].includes(this.object.change.key),
           proficiencies: { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" },
           isProficiency: this.object.change.key.includes("data.skills") && this.object.change.key.includes("value"),
           isAbility: this.object.change.key.includes("data.skills") && this.object.change.key.includes("ability"),
@@ -169,8 +168,10 @@ export class ActiveEffectChangeEditor extends FormApplication {
     // (change, {item, effect, change_id}
     let item = this.object.item;
     let newEffect = duplicate(this.object.effect);
+    let mode = ValidSpec.allSpecsObj[formData.key].forcedMode;
+    if (mode === -1) mode = formData.mode;
     //@ts-ignore
-    newEffect.changes[this.object.change_id] = {key: formData.key, mode: formData.key.includes("macro") ? CONST.ACTIVE_EFFECT_MODES.CUSTOM : formData.mode, value: formData.value, priority: formData.priority};
+    newEffect.changes[this.object.change_id] = {key: formData.key, mode: mode, value: formData.value, priority: formData.priority};
     if (this.object.item.isOwned) {
       let itemData = duplicate(this.object.item.data)
       itemData.effects.forEach(async ae=> {

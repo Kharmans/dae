@@ -36,31 +36,33 @@
     {{#each actives as |effect iid|}}
     <li class="flexrow effect-header" effect-id="{{effect._id}}">
       <div class="effect-label">{{effect.label}}</div>
-      <div><img src="{{effect.icon}}" height="20" style="border:0px"></div>
-      <div class="effect-transfer">{{effect.transfer}}</div>
-      {{#if ../canEdit}}
+      <div><img src="{{effect.icon}}" height="20px" style="border:0px"></div>
+      {{#if effect.transfer}}
+      <i class="fas fa-arrow-down" style="padding-top: 4px"></i>
+      {{else}}
+      <i class="fas fa-arrow-right" style="padding-top: 4px"></i>
+      {{/if}}
       <div class="effect-controls dae-effect-list">
         <a class="effect-edit" title={{localize dae.Delete}}><i class="fas fa-edit"></i></a>
-        {{#unless isOwned}}
+        {{#unless ../isOwned}}
         <a class="effect-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
         {{/unless}}
-        <a class="change-create" title={{localize dae.Create}} effect-id="{{effect._id}}" ><i class="fas fa-plus"></i></a>
+        <a class="change-create" title={{localize dae.Create}} effect-id="{{effect._id}}"><i
+            class="fas fa-plus"></i></a>
       </div>
-      {{/if}}
     </li>
-      {{#each effect.changes as |change cid|}}
-    <li class="flexrow dae-change-list" effect-id ="{{effect._id}}" change-id="{{cid}}">
+    {{#each effect.changes as |change cid|}}
+    <li class="flexrow dae-change-list" effect-id="{{effect._id}}" change-id="{{cid}}">
       <div class="effect-name">{{change.label}}</div>
       <div class="effect-mode">{{lookup ../../modes @change.mode}}</div>
       <div class="effect-value">{{change.value}}</div>
-
-      {{#if ../../canEdit}}
+      {{#unless ../effect.transfer}}
       <div class="effect-controls">
         <a class="change-edit" title={{localize dae.Edit}}><i class="fas fa-edit"></i></a>
         <a class="change-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
       </div>
-      {{/if}}
-    {{/each}}
+      {{/unless}}
+      {{/each}}
     </li>
     {{/each}}
   </ol>
