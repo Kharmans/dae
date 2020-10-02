@@ -31,7 +31,7 @@ DAE provides the following additional features:
   * Enabled when always active is set on the item.
 * Effects defined as non-transfer can be applied to a target token. **TODO** core does nto support timeout of active effects (as of 0.7.3), DAE will support timeout of active effects once core supports it.
 * DAE has a migration function to migrate Dynamiceffects to DAE. Not all dynamic effects can be migrated.
-* A few "special" effects which do not obey the standard rules, "macro.execute", "macro.itemMacro", and "macro.tokenMagic", see **specials** below.
+* A few "special" effects do not obey the standard rules, "macro.execute", "macro.itemMacro", and "macro.tokenMagic", see **specials** below.
 
 ### Editing
 A preliminary edit function is supplied, which may change in the future.
@@ -48,7 +48,7 @@ Core Active Effects define the following calculations:
 * UPGRADE: for numeric fields replace the field with the supplied value if it is larger than the field. 
 * DOWNGRADE: for numeric fields replace the field with the supplied value if it is smaller than the field.  
 
-There is a priority that can be given to each change within and effect. The priority determines the order in which changes will be applied during the applyEffects stage. All changes across all effects are collected and sorted by priority before application. The default priority for changes are 
+There is a priority that can be given to each change within an effect. The priority determines the order in which changes will be applied during the applyEffects stage. All changes across all effects are collected and sorted by priority before application (low to high). The default priority for changes are 
   * CUSTOM: 0
   * MULTIPLY: 10
   * ADD: 20
@@ -58,7 +58,7 @@ There is a priority that can be given to each change within and effect. The prio
   So if an actor has the following changes,
   * data.attributes.hp.max ADD 10, and
   * data.attributes.hp.max OVERRIDE 20
-then with default priorities hp.max will be 20. If priorities are assigned
+then with default priorities hp.max will be 20, since overrides comes after ADD. If priorities are assigned
   * data.attributes.hp.max ADD 10 Priority:100, and
   * data.attributes.hp.max OVERRIDE 20 Priority:10
   hp.max will become 30.
@@ -68,7 +68,10 @@ DAE allows you to use expressions as well as fixed values. So for example you co
   * data.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10
 
 * **Number** fields are fully evaluated during the applyEffects pass. **String** fields are not evaulated at all. So setting
-data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2" will be evaulated when the attack is rolled, NOT during the prepare data phase.
+```
+data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2" 
+```
+will be evaulated when the attack is rolled, NOT during the prepare data phase.
 * Recognising what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. Fields that have a mode defined means that ONLY that mode is supported for the effect (and the editor will set the mode when the change is saved)

@@ -232,9 +232,10 @@ function applyDaeEffects(specList) {
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, e) => {
     let id = e.data.origin?.match(/Actor.*Item\.(.*)/);
+    var item;
     if (id?.length === 2) {
-      var item = e.parent.items.get(id[1]);
-    }
+      item = e.parent.items.get(id[1]);
+    } else item = null;
     // override default disabled behaviour to use item settings to toggle
     e.data.disabled = (item && isDisabled(item.data) && e.data.flags?.dae?.transfer !== false) || false;
     if ( e.data.disabled ) return changes;
@@ -256,6 +257,8 @@ function applyDaeEffects(specList) {
       }));
   }, []);
   changes.sort((a, b) => a.priority - b.priority);
+
+  if (changes.length > 0) warn("Applying change ", this.name, changes)
 
   // Apply all changes
   for ( let change of changes ) {
@@ -353,7 +356,7 @@ function doCustomValue(actor, current, change, validValues) {
 */
 function prepareData() {
   this.data = duplicate(this._data);
-  debug("prepare data: before passes", this.data)
+  debug("prepare data: before passes", this.name, this.data)
   if (!this.data.img) this.data.img = CONST.DEFAULT_TOKEN;
   if ( !this.data.name ) this.data.name = "New " + this.entity;
   this.prepareBaseData();
@@ -368,48 +371,51 @@ export function daeCheckMacro(...args) {
   // conisder toggling according to item isactive
 }
 
-export function daeOnMacro(actor, effect) {
-  debug("daeOnMacro",actor, effect)
-  return daeMacro(true, actor, effect)
+export function daeOnMacro(actor, effects) {
+  debug("daeOnMacro",actor, effects)
+  return daeMacro(true, actor, effects)
 }
-export function daeOffMacro(actor, effect) {
-  debug("daeOffMacro",actor, effect)
-  return daeMacro(false, actor, effect)
+export function daeOffMacro(actor, effects) {
+  debug("daeOffMacro",actor, effects)
+  return daeMacro(false, actor, effects)
 }
-async function daeMacro(enable, actor, effect) {
-  if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
-  debug("dae macro ", enable, actor, effect)
-  effect.changes?.forEach(async change => {
-    if (!["macro.execute", "macro.itemMacro"].includes(change.key)) return;
-    if (typeof change.value === "string") { //args have not been evaled yet
-      let rollData = daeRollData(actor)
-      let id = effect.origin?.match(/Actor.*Item\.(.*)/);
-      if (id?.length === 2) {
-        const item = actor.items.get(id[1]);
-        change.value = evalArgs.bind(item)(rollData, actor, change, 0, 0)
+async function daeMacro(enable, actor, effects) {
+  if (actor.__proto__.constructor.name === CONFIG.Item.entityClass.name) return;
+  debug("dae macro ", enable, actor, effects)
+  if (!Array.isArray(effects)) effects = [effects];
+  effects.forEach(effect=> {
+    effect.changes?.forEach(async change => {
+      if (!["macro.execute", "macro.itemMacro"].includes(change.key)) return;
+      if (typeof change.value === "string") { //args have not been evaled yet
+        let rollData = daeRollData(actor)
+        let id = effect.origin?.match(/Actor.*Item\.(.*)/);
+        if (id?.length === 2) {
+          const item = actor.items.get(id[1]);
+          change.value = evalArgs.bind(item)(rollData, actor, change, 0, 0)
+        }
       }
-    }
-    if (change.key === "macro.execute") {
-      const macro = game.macros.getName(change.value[0]);
-      //@ts-ignore
-      await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1))
-    } else if (change.key === "macro.itemMacro") {
-      let macroCommand = change.value[0]; // this is populated in evalArgs
-      // macroCommand = `ChatMessage.create({content: "Item macro for ${itemData.name} called"})\n` + macroCommand;
-      if (!macroCommand) {
-        macroCommand = `ChatMessage.create({content: "No Item Macro for ${this.name}"})`;
-        return;
+      if (change.key === "macro.execute") {
+        const macro = game.macros.getName(change.value[0]);
+        //@ts-ignore
+        await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1))
+      } else if (change.key === "macro.itemMacro") {
+        let macroCommand = change.value[0]; // this is populated in evalArgs
+        // macroCommand = `ChatMessage.create({content: "Item macro for ${itemData.name} called"})\n` + macroCommand;
+        if (!macroCommand) {
+          macroCommand = `ChatMessage.create({content: "No Item Macro for ${this.name}"})`;
+          return;
+        }
+        let macro =  await CONFIG.Macro.entityClass.create({
+          name: "DAE-Item-Macro",
+          type: "script",
+          img: null,
+          command: macroCommand,
+          flags: { "dnd5e.itemMacro": true }
+        }, { displaySheet: false, temporary: true });
+        await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1));
       }
-      let macro =  await CONFIG.Macro.entityClass.create({
-        name: "DAE-Item-Macro",
-        type: "script",
-        img: null,
-        command: macroCommand,
-        flags: { "dnd5e.itemMacro": true }
-      }, { displaySheet: false, temporary: true });
-      await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1));
-    }
-  });
+    });
+  })
   return true;
 }
 
@@ -417,11 +423,11 @@ function daeCheckTokenMagic(...args) {
   //consider toggling according to isactive
 }
 
-function daeOnTokenMagic(actor, effect) {
+export function daeOnTokenMagic(actor, effect) {
   // TODO: Check item active to see whether enable or disable
   daeTokenMagic(true, actor, effect)
 };
-function daeOffTokenMagic(actor, effect) {daeTokenMagic(false, actor, effect)}
+export function daeOffTokenMagic(actor, effect) {daeTokenMagic(false, actor, effect)}
 function daeTokenMagic(enable, actor, effect) {
   // TODO lookup enabled from the item.isActive
   if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
@@ -469,7 +475,7 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
         else if (f === "@damage") return damageTotal;
         else if (f === "@target") return "@target"
         else if (f === "@unique") return randomID();
-        else if (f.startsWith("@")) {
+        else if (typeof f === "string" && f.startsWith("@")) {
           return getProperty(context, f.slice(1))
         }
         else return f;
@@ -635,7 +641,6 @@ export function fetchParams() {
 }
 
 export function mapDuration(item) {
-  console.warn("item duration is ", item)
   if (!item.data.data.duration) return null;
   const itemData = item.data;
   let aboutTime = false;
