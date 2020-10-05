@@ -3,6 +3,7 @@ import { warn, error, debug, setDebugLevel } from "../dae";
 import { removeActiveEffectsToken } from "./daeMacros";
 import { initSheetTab } from "./daeTab";
 import { Framebuffer, TARGETS } from "pixi.js";
+import { ActorEffects } from "./apps/ActorEffects";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -165,7 +166,6 @@ export class ValidSpec {
         this.derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.mod`, 0))
         this.derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.save`, 0))
         this.derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.min`, 0))
-
       })
       // adjust specs for bonuses - these are strings, @fields are looked up but dice are not rolled.
 
@@ -237,6 +237,7 @@ function applyDaeEffects(specList) {
       item = e.parent.items.get(id[1]);
     } else item = null;
     // override default disabled behaviour to use item settings to toggle
+    // warn("item disabled ", item, item && isDisabled(item.data), e.data.flags?.dae?.transfer);
     e.data.disabled = (item && isDisabled(item.data) && e.data.flags?.dae?.transfer !== false) || false;
     if ( e.data.disabled ) return changes;
     return changes.concat(e.data.changes
@@ -247,7 +248,6 @@ function applyDaeEffects(specList) {
           debug("appplyDaeEffects: Doing eval of ", c, c.value)
           try {
             warn("appplyDaeEffects: Doing eval of ", c, c.value)
-  
             c.value = new Roll(c.value, rollData).roll().total;
           } catch (err) {
             console.warn(err)
@@ -533,22 +533,24 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
 }
 
 function ownedItemUpdate(actor, ownedItem, updates) {
-  let deletions = [];
+  warn("update is ", updates)
   let additions = updates.effects?.filter(ef=>ef.transfer) || [];
+  warn("additions are ", additions);
+  additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true});
+  additions = additions.filter(ef=>ef.transfer) || [];
+  warn("additions are ", additions)
   let origin = `Actor.${actor.id}.OwnedItem.${ownedItem._id}`;
-  ownedItem.effects.forEach(ef => {
-    if (ef.transfer) { // need to update owned effects
-      let match = actor.effects.filter(aef => {
-        // warn("matching",  aef.data.flags.dae?.transfer, aef.data.origin, origin, ef, aef)
-        return aef.data.flags.dae?.transfer && (aef.data.origin === origin)
-      })
-      if (match.length > 0){
-        deletions = deletions.concat(match.map(ef => ef.id || ef._id));
-      }
-    }
-  })
+  let deletions = actor.effects.filter(aef => {
+    warn("owned item update ", aef, aef.data.flags?.dae?.transfer, aef.data.origin, origin);
+    let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+    return isTransfer && (aef.data.origin === origin);
+  });
+  warn("owned item update deletions are ", deletions)
+  deletions = deletions.map(ef => ef.id || ef._id);
+  warn("owned item update deletions are ", deletions)
+
   additions.forEach(efData => efData.origin = `Actor.${actor.id}.OwnedItem.${updates._id}`);
-  // warn("owneditemupdate ", additions, deletions)
+  warn("owneditemupdate ", additions, deletions)
   Hooks.once("updateOwnedItem", () => {
     actor.deleteEmbeddedEntity("ActiveEffect", deletions)
     actor.createEmbeddedEntity("ActiveEffect", additions)
@@ -557,9 +559,7 @@ function ownedItemUpdate(actor, ownedItem, updates) {
 }
 
 export function createArmorEffect(actor, itemData) {
-  console.warn("item data in create is ", itemData)
-  if (itemData.type !== "equipment") return;
-  if (!game.settings.get("dae", "calculateArmor")) return;
+  if (!calculateArmor || itemData.type !== "equipment") return true;
   switch(itemData.data.armor.type) {
     case "shield":
       const SHIELD_EFFECT = {
@@ -575,36 +575,40 @@ export function createArmorEffect(actor, itemData) {
           },
         ],
         transfer: true,
+        origin: `Actor.${actor.id}.OwnedItem.${itemData._id}`,
+        flags: {dae: {transfer: true}}
       };
       itemData.effects.push(SHIELD_EFFECT)
-      setProperty(itemData.flags, "dae", {activeEquipped: true, alwaysActive: false});
+
       break
     case "natural":
     case "light":
     case "medium":
     case "heavy":
-      let dexMax = itemData.data.armor.dex || 99;
+      let dexMax = itemData.data.armor.dex ?? 99;
+      console.warn("armor dex max ", itemData.data.armor.dex, dexMax)
       var ARMOR_EFFECT = {
         label: itemData.name,
         icon: itemData.img,
         changes: [
           {
             key: "data.attributes.ac.value",
-            value: `(${dexMax}, @abilities.dex.mod) + ` + itemData.data.armor.value, 
+            value: `(${dexMax} < @abilities.dex.mod ? ${dexMax} : @abilities.dex.mod) + ` + itemData.data.armor.value, 
             //@ts-ignore
             mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE, 
             priority: 5
           },
         ],
         transfer: true,
+        origin: `Actor.${actor.id}.OwnedItem.${itemData._id}`,
+        flags: {dae: {transfer: true}}
       };
       itemData.effects.push(ARMOR_EFFECT);
-      setProperty(itemData.flags, "dae", {activeEquipped: true, alwaysActive: itemData.data.armor.type === "natural"});
       break;
     default:
       break;
   }
-  console.warn("Uten data with arnmor ", itemData)
+  console.warn("Item data with arnmor ", itemData)
   return true;
 }
 
@@ -648,12 +652,26 @@ export function daeInitActions() {
   Hooks.on("preCreateActiveEffect", daeOnTokenMagic);
   Hooks.on("preDeleteActiveEffect", daeOffTokenMagic)
   // Hooks.on("preUpdateOwnedItem", daeCheckTokenMagic) // consider apply/unapply for enable/disable
+
+  Hooks.on('renderActorSheet', initActorSheetHook);
+
   //@ts-ignore
   tokenizer = new DETokenizeThis({
     shouldTokenize: ['(', ')', ',', '*', '/', '%', '+', '=', '!=', '!', '<', '> ', '<=', '>=', '^']
   });
 }
 
+function initActorSheetHook(app, html, data) {
+  let title = game.i18n.localize('dae.ActiveEffectName'); 
+  let openBtn = $(`<a class="open-actor-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
+  openBtn.click(ev => {
+    console.warn("actor sheet ", app.entity)
+      new ActorEffects({actor: app.entity}, {}).render(true);
+  });
+  html.closest('.app').find('.open-actor-effect').remove();
+  let titleElement = html.closest('.app').find('.window-title');
+  openBtn.insertAfter(titleElement); 
+}
 
 export function daeSetupActions() {
   //@ts-ignore

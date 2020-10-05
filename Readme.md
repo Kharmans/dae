@@ -1,23 +1,28 @@
 ## Quick start for dynaic effects users.
 Pick and actor and do 
 DAE.migracteActorItems(game.actors.getName("ActorName")).
-The actor should have the items migrated (and the transferred effects applied). You should be able to see the values on the actor correctly calculated.
+The actor should have the items migrated (and the transferred effects applied). You should be able to see the values on the actor correctly calculated. (Also see the section **Migrating from DynamicEffects**)
+
 To see the effects active on the actor use (as a macro or from the console)
 ```
 new DAE.ActorEffects({actor: game.actors.getName("Actor's name")}, {}).render(true)
 ```
-or you can do (from the console)
+or choose "Active Effects" from the character sheet. Or you can do (from the console)
 ```
 game.actors.getName("Actor Name").effects
 ```
+
+## Major Features not implemented
+* Timeout of effects. This is waiting on 0.7.4(?) to see how active effects expire.
+* Sample compendia. This will come in the next release.
 
 ## Dynamic Active Effects
 Dynamic Active Effects (DAE) is a replacement for DAE (which will NOT work in 0.71+, and won't be ported).
 
 ### Background
-With the release of 0.7.1+ much of the functionality of DAE has been included in core Active Effects. DAE implements most of the funcitonality of Dynamic Effects built using the new core Active Effects.
+With the release of 0.7.1+ much of the functionality of Dynamiceffects has been included in core Active Effects. DAE implements most of the funcitonality of Dynamic Effects built using the new core Active Effects and fills in the missing features from dynamiceffects. DAE is built on, and is compatible with, the core Active Effects functionaltiy.
 
-The foundry Core Active Effects allow you to modify a base value (defined in template.json - most fields you can edit in the character sheet) and apply a fixed value or string to it. There are additional options in core that were not present in dynamic effects, seel **application** below.
+The foundry Core Active Effects allow you to modify a base value (defined in template.json - most fields you can edit in the character sheet) and apply a fixed value or string to it. There are additional options in core that were not present in dynamic effects, see **application** below.
 
 Foundry core Active Effects are attached to an item and are designated as transfer or non-transfer. Transfer effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. Non-transfer effects are not moved from the item to any actor without additional functions, which DAE provides.
 
@@ -29,13 +34,15 @@ DAE provides the following additional features:
   * Enabled when equipped & attuned
   * Enabled when equipped and "Active on equip" flag is set on the item.
   * Enabled when always active is set on the item.
-* Effects defined as non-transfer can be applied to a target token. **TODO** core does nto support timeout of active effects (as of 0.7.3), DAE will support timeout of active effects once core supports it.
+* Effects defined as non-transfer can be applied to a target token. **TODO** core does not support timeout of active effects (as of 0.7.3), DAE will support timeout of active effects once core supports it.
 * DAE has a migration function to migrate Dynamiceffects to DAE. Not all dynamic effects can be migrated.
 * A few "special" effects do not obey the standard rules, "macro.execute", "macro.itemMacro", and "macro.tokenMagic", see **specials** below.
 
 ### Editing
 A preliminary edit function is supplied, which may change in the future.
-<screenshot> **TODO**
+
+### Actor Effects
+On the title bar of the character sheet is an option "Active Effects" that will display a form showing all of the active effects on the actor. Effects may be removed using this form, but that's all. You need to edit the owned item casusing the effect or re-apply the transfer to make any changes to active effects on the character. (This may change in future versions).
 
 ### Calculations
 Core system active effects are calculated before the game system specific calculation of derived fields (prepareDerivedData). For dnd5e prepareDerivedData calculates all the ability modifiers, skill totals, and spell slots available. DAE adds an additional effect application pass that occurs after the system specific prepareDerivedData() completes.
@@ -67,7 +74,8 @@ DAE allows you to use expressions as well as fixed values. So for example you co
   * data.attributes.hp.max ADD "@classes.paladin.levels * @abilitiies.con.mod" Priority:100, and
   * data.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10
 
-* **Number** fields are fully evaluated during the applyEffects pass. **String** fields are not evaulated at all. So setting
+* **Number** fields are fully evaluated during the applyEffects pass. 
+**String** fields are not evaulated at all. So setting
 ```
 data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2" 
 ```
@@ -76,7 +84,7 @@ will be evaulated when the attack is rolled, NOT during the prepare data phase.
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. Fields that have a mode defined means that ONLY that mode is supported for the effect (and the editor will set the mode when the change is saved)
 
-* The current list of derived fields are:
+* The current list of derived fields for dnd5e are:
 This group are all special traits that can be set.
 * "flags.dnd5e.initiativeAlert"       OVERRIDE
 * "flags.dnd5e.initiativeHalfProf"    OVERRIDE
@@ -155,7 +163,6 @@ These affect the specified SKILL adjusting modifier or passive value for the ski
 Allows modification of the ability modifier.
 * "data.abilities.ABILITY.save"
 Provides a bonus to ability saves. This is only active if the "Override saving throw calculation" module setting is enabled. **TODO NOT YET IMPLEMENTED**
-* 
 * "data.spells.pact.level"
 
 * "macro.execute"                     CUSTOM
@@ -164,7 +171,7 @@ Provides a bonus to ability saves. This is only active if the "Override saving t
 
 These are custom flags. The macros are called when the effect is transferred to the character (with args[0] === "on") and called again when the active effect is removed (with args="off). macro.tokenMagic applies/removes the token magic affects.
 
-Macros have changed substantially in their implementation. When you have a non-transfer effect that includes a macro, the macro is transferred to the target actor and runs when created on the actor. Deletion of the effect from the target actor calls the macro again with args[0] = "off".
+Macros have changed substantially in their implementation. When you have a non-transfer effect that includes a macro, the macro is transferred to the target actor and runs when created on the actor. Deletion of the active effect from the target actor calls the macro again with args[0] = "off".
 Since the macro attaches to the target actor the macro can schedule to be activated on other events, such as combat updates to support damage over time effects.
 
 **macro.execute "macro_name" args**  
@@ -199,9 +206,8 @@ The same as macro.execute, but the item is inspected to find the itemacro stored
 
 **macro.tokenMagic "filterName"**
 Will apply the specified token magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.
-The effect will be enabled when the effect is first applied to the target token and automatically removed on effect deletion.
 
-**TODO** Example
+**Example**
 ```
 const EXAMPLE_TRANSFERRED_EFFECT = {
     label: "Ring of Protection",
@@ -223,10 +229,12 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
   await actor.createEmbeddedEntity("OwnedItem", item.data)
 
   ```
-Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
+Or just drag the supplied (TODO) Ring of Protection from the sample items compendium to the actor of you choice.
 
 ## DAE ###
-* **Armor** **NOT IMPLEMENTED YET** The system applies standard DND rules for calculating armor class based on what armor you have eqipped (for natual armor the armor does not need to be equipped). Shield type items add to the armor class. "Effects" can alter armor class as well.
+* **Armor** The system applies standard DND rules for calculating armor class based on what armor you have eqipped (for natual armor the armor does not need to be equipped). Shield type items add to the armor class. "Effects" can alter armor class as well.
+
+For armor and shields the value applied to the actor is calculated when it is added to the character and (other than dex mod changes) remains fixed thereafter. So equipping leather aromor will give an AC of 11 + dex.mod. If you change the armor value of the armor after equipping the item the calculated AC will **NOT** change.
 
 ### Macro Functions ##
 The macro functions in dynamicitems have been replaced in DAE with the following (and you will need to modify any macros you have created):
@@ -234,17 +242,19 @@ The macro functions in dynamicitems have been replaced in DAE with the following
   DAE.new DAE.ActorEffects({actor: actor}, {}).render(true)
   ```
   * Display a form  enabled/disabled passive and active effects for the selected token. Effects cannot be edited but deleted **TODO** allow edits
-```
 
+```
 DAE.doEffects(item, activate, targets, {whisper = false, spellLevel = 0, damageTotal = null})
 ```
 Transfer the non-transfer effects from the item to the targets.
 activate (boolean) enables/disables the actor effects.
-targets is an array of target tokens.
+targets is an array of target tokens or token ids.
 
 ### Integration with midi-qol ###
 When rolling an item (weapon, spell, feature, tool, consumable) non-transfer active effects are applied to the targeted tokens. If the definition of the item indicates that it is self then effects are applied to self. So, a bless spell when cast will apply the active effects to the targeted tokens. 
+
 midi-qol uses the foundry targeting system to decide who to apply effects to. If a spell is marked as target self then the effects are applied to the casting/using actor. 
+
 If you have a feat "sneak attack" then rolling the feat will apply the non-transfer active effects to the token (i.e. weapon attacks do extra damage). For items with a saving throw active effects are applied if the save fails. Other items apply their effects when applying damage/casting a spell (if no saving throw) or consuming an item (e.g. potion).
 
 https://gitlab.com/tposney/midi-qol 
@@ -260,11 +270,8 @@ If the module is installed and active effects can update the actors gm-notes fie
 
 https://github.com/syl3r86/gm-notes
 
-### Sample Items/Macros ### **NOT IMPLEMENTED**
+### Sample Items/Macros ### **NOT IMPLEMENTED - Will come in a subsequent release**
   There is a compendium of items that have been setup to work with DAE. All active effects work best if both minor-qol and about-time are installed and active, but will still funciton without them. There is a compendium of sample macros included as well.
-
-### Skills-customization ###
-the skills-customization-5e module blocks DAE from updating passive skills.
 
 ## Migrating from DynamicEffects ##
 ### DAE.migrateItem(item)

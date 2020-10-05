@@ -62,7 +62,7 @@ export const registerSettings = function () {
     name: "dae.Debug.Name",
     hint: "dae.Debug.Hint",
     scope: "world",
-    default: "None",
+    default: "none",
     type: String,
     config: true,
     choices: {none: "None", warn: "warnings", debug: "debug", all: "all"},

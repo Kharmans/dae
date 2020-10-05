@@ -23,9 +23,11 @@ import { migrateItem, convertAllItems, migrateActorItems, migrateAllActors, remo
 import { ActorEffects } from './module/apps/ActorEffects';
 
 export let setDebugLevel = (debugText: string) => {
+  console.error("set debug level ", debugText)
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
   // 0 = none, warnings = 1, debug = 2, all = 3
   CONFIG.debug.hooks = debugEnabled >= 3;
+  console.error("Setting debugLevel to ", debugEnabled)
 }
 export var debugEnabled;
 // 0 = none, warnings = 1, debug = 2, all = 3

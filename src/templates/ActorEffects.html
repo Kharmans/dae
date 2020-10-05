@@ -8,9 +8,6 @@
         <div class="effect-value">{{localize "dae.EffectValue"}}</div>
         {{#if canEdit}}
         <div class="effect-controls">
-          {{#unless isOwned}}
-          <a class="effect-create" title={{localize dae.Create}}><i class="fas fa-plus"></i></a>
-          {{/unless}}
         </div>
         {{/if}}
       </li>
@@ -35,12 +32,7 @@
         {{/if}}
 
         <div class="effect-controls dae-effect-list">
-          <a class="effect-edit" title={{localize dae.Delete}}><i class="fas fa-edit"></i></a>
-          {{#unless ../isOwned}}
           <a class="effect-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
-          {{/unless}}
-          <a class="change-create" title={{localize dae.Create}} effect-id="{{effect._id}}"><i
-              class="fas fa-plus"></i></a>
         </div>
       </li>
       {{#each effect.changes as |change cid|}}
@@ -48,12 +40,9 @@
         <div class="effect-name">{{change.label}}</div>
         <div class="effect-mode">{{lookup ../../modes @change.mode}}</div>
         <div class="effect-value">{{change.value}}</div>
-        {{#unless ../effect.transfer}}
         <div class="effect-controls">
-          <a class="change-edit" title={{localize dae.Edit}}><i class="fas fa-edit"></i></a>
           <a class="change-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
         </div>
-        {{/unless}}
         {{/each}}
       </li>
       {{/each}}
