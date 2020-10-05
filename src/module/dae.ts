@@ -2,7 +2,7 @@ import { requestGMAction, GMAction } from "./GMAction";
 import { warn, error, debug, setDebugLevel } from "../dae";
 import { removeActiveEffectsToken } from "./daeMacros";
 import { initSheetTab } from "./daeTab";
-import { Framebuffer } from "pixi.js";
+import { Framebuffer, TARGETS } from "pixi.js";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -246,6 +246,8 @@ function applyDaeEffects(specList) {
         if (typeof specList[c.key].sampleValue === "number" && typeof c.value === "string") {
           debug("appplyDaeEffects: Doing eval of ", c, c.value)
           try {
+            warn("appplyDaeEffects: Doing eval of ", c, c.value)
+  
             c.value = new Roll(c.value, rollData).roll().total;
           } catch (err) {
             console.warn(err)
@@ -367,6 +369,10 @@ function prepareData() {
   debug("prepare data: after passes", this.data)
 }
 
+export function scheduleEffectRemoval(actor, effects) {
+  //Look at effect curations and schedule effect removal after duration espires.
+  
+}
 export function daeCheckMacro(...args) {
   // conisder toggling according to item isactive
 }
@@ -475,6 +481,7 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
         else if (f === "@damage") return damageTotal;
         else if (f === "@target") return "@target"
         else if (f === "@unique") return randomID();
+        else if (f=== "@actor") return actor.data;
         else if (typeof f === "string" && f.startsWith("@")) {
           return getProperty(context, f.slice(1))
         }
@@ -548,25 +555,58 @@ function ownedItemUpdate(actor, ownedItem, updates) {
   })
   return true;
 }
-// How to do armor effects
-/* Create a single actor effect with each of the item fields in it - updated when armor is equipeed/unequipped?
-*/
-/*
-let addArmorEffect = (itemData, effectList, actor) => {
-  // Special case for armor
-  if (itemData.data.hasOwnProperty("armor") && hasProperty(actor.data, "data.abilities.dex")
-    && acAffectingArmorTypes.includes(itemData.data.armor.type)
-    && (itemData.data.equipped || itemData.data.armor.type === "natural")
-  ) {
-    let acValue = itemData.data.armor.value || 0;
-    if (!["shield", "bonus"].includes(itemData.data.armor.type)) {
-      let dexMod = itemData.data.armor.dex === 0 ? 0 : actor.data.data.abilities.dex.mod || 0;
-      acValue = acValue + ([null, "", undefined].includes(itemData.data.armor.dex) ? dexMod : Math.min(itemData.data.armor.dex, dexMod));
-    }
-    if (itemData.data.armor.value !== 0) effectList.push(new EffectModifier("data.attributes.ac.value", ["shield", "bonus"].includes(itemData.data.armor.type) ? "+" : "=", acValue))
+
+export function createArmorEffect(actor, itemData) {
+  console.warn("item data in create is ", itemData)
+  if (itemData.type !== "equipment") return;
+  if (!game.settings.get("dae", "calculateArmor")) return;
+  switch(itemData.data.armor.type) {
+    case "shield":
+      const SHIELD_EFFECT = {
+        label: itemData.name,
+        icon: itemData.img,
+        changes: [
+          {
+            key: "data.attributes.ac.value", 
+            value: itemData.data.armor.value, 
+            //@ts-ignore
+            mode: CONST.ACTIVE_EFFECT_MODES.ADD, 
+            priority: 15
+          },
+        ],
+        transfer: true,
+      };
+      itemData.effects.push(SHIELD_EFFECT)
+      setProperty(itemData.flags, "dae", {activeEquipped: true, alwaysActive: false});
+      break
+    case "natural":
+    case "light":
+    case "medium":
+    case "heavy":
+      let dexMax = itemData.data.armor.dex || 99;
+      var ARMOR_EFFECT = {
+        label: itemData.name,
+        icon: itemData.img,
+        changes: [
+          {
+            key: "data.attributes.ac.value",
+            value: `(${dexMax}, @abilities.dex.mod) + ` + itemData.data.armor.value, 
+            //@ts-ignore
+            mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE, 
+            priority: 5
+          },
+        ],
+        transfer: true,
+      };
+      itemData.effects.push(ARMOR_EFFECT);
+      setProperty(itemData.flags, "dae", {activeEquipped: true, alwaysActive: itemData.data.armor.type === "natural"});
+      break;
+    default:
+      break;
   }
+  console.warn("Uten data with arnmor ", itemData)
+  return true;
 }
-*/
 
 export function daeReadyActions() {
   ValidSpec.localizeSpecs();
@@ -596,16 +636,18 @@ export function daeInitActions() {
   CONFIG.Actor.entityClass.prototype.prepareData = prepareData;
   Hooks.on("applyActiveEffect", daeCustomEffect); // apply DAE custom effects
   Hooks.on("preUpdateOwnedItem", ownedItemUpdate)
+  Hooks.on("preCreateOwnedItem", createArmorEffect)
 
   // macros are called on active effect creationg and deletion
   Hooks.on("preCreateActiveEffect", daeOnMacro);
   Hooks.on("preDeleteActiveEffect", daeOffMacro)
-  // Hooks.on("preUpdateOwnedItem", daeCheckMacro)
+  Hooks.on("PreCreATEActiveEffect", scheduleEffectRemoval);
+  // Hooks.on("preUpdateOwnedItem", daeCheckMacro) //consider on/off for enable/disable
 
   // token magic effects are apllied/removed on active effect creation/deletion
   Hooks.on("preCreateActiveEffect", daeOnTokenMagic);
   Hooks.on("preDeleteActiveEffect", daeOffTokenMagic)
-  // Hooks.on("preUpdateOwnedItem", daeCheckTokenMagic)
+  // Hooks.on("preUpdateOwnedItem", daeCheckTokenMagic) // consider apply/unapply for enable/disable
   //@ts-ignore
   tokenizer = new DETokenizeThis({
     shouldTokenize: ['(', ')', ',', '*', '/', '%', '+', '=', '!=', '!', '<', '> ', '<=', '>=', '^']

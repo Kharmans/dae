@@ -257,6 +257,7 @@ async function applyActiveEffects(activate, tokenList, activeEffects) {
           ae.changes.forEach(change=> {
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
               change.value = change.value.map(f=> f === "@target" ? tid : f);
+              change.value.push(canvas.tokens.get(tid)?.actor?.data)
             }
           })
          setProperty(ae, "flags.dae.token", tid)

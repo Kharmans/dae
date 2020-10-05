@@ -162,24 +162,44 @@ Provides a bonus to ability saves. This is only active if the "Override saving t
 * "macro.itemMacro"                   CUSTOM
 * "macro.tokenMagic"                  CUSTOM
 
-These are custom flags. The macros are called when the effect is transferred to the character (with args[0] === "on") and called again when the active effect is removed (with args="off). macro.tokenMagic applies/removes the token magic affects 
+These are custom flags. The macros are called when the effect is transferred to the character (with args[0] === "on") and called again when the active effect is removed (with args="off). macro.tokenMagic applies/removes the token magic affects.
+
+Macros have changed substantially in their implementation. When you have a non-transfer effect that includes a macro, the macro is transferred to the target actor and runs when created on the actor. Deletion of the effect from the target actor calls the macro again with args[0] = "off".
+Since the macro attaches to the target actor the macro can schedule to be activated on other events, such as combat updates to support damage over time effects.
 
 **macro.execute "macro_name" args**  
 This will call the macro "macro_name" with args[0] = "on" and args[1] is the actor, the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with args[0] = "off" when the active effect is deleted from the target actor.
 In addition to the standard ```@values``` the following are supported (only as macro argruments)  
 ```@target``` will pass the token id of the targeted token  
 ```@scene``` will pass the scene id of the scene on which the user who activated the effect is located.  
-```@target.Actor``` will pas the id of the actor associated with the token  
 ```@item``` will pass the item data of the item that was used in the activation  
 ```@spellLevel``` if using midi qol this will be the spell level the spell was cast at.  
 ```@item.level``` if using midi qol this will be the spell level the spell was cast at.  
+```@damage``` The total damage rolled for the attack
+```@token``` The id of the token that used the item
+```@actor``` The actor.data for the actor that used the item.
+```@FIELD`` The value of the FIELD within the actor that used the item, e.g. @abilities.str.mod.
+```@unique``` A randomly generated unique id.
+
+An additional argument (in addition to those specified in the macro.execute definition) is the actor data for the target token.
+For example, if the macro.execute definition is
+```
+macro.execute CUSTOM "My macro" 5 @ailities.str.mod
+```
+then, when the effect is trasnferred to the target token the macro will be called with
+args = ["on", <strength mod of the actor that used the item>, <actor.data of the target token>]
+When the effect is deleted from the target actor (either by expiry or explicit deletion) the amcro will be called again with 
+args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>]
+
+**Macros and transfer effect**
+The above discussion applies to non-transfer effects. Transfer effects, which are applied when the item is equipped by a character, behave the same way with the exception that the macro is NOT called for non-linked tokens on deletion (this is a problem with the core software).
 
 **macro.itemMacro "macro_name" args**  
 The same as macro.execute, but the item is inspected to find the itemacro stored there. You can create itemMacro macros with the **itemmacro** module.
 
 **macro.tokenMagic "filterName"**
 Will apply the specified token magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.
-
+The effect will be enabled when the effect is first applied to the target token and automatically removed on effect deletion.
 
 **TODO** Example
 ```
