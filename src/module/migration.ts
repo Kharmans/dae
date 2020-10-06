@@ -1,6 +1,6 @@
 import { MIPMAP_MODES } from "pixi.js";
 import { daeSetPassiveEffect } from "./daeMacros";
-import { debug, warn } from "../dae";
+import { debug, warn, log } from "../dae";
 import { ValidSpec } from "./dae";
 
 const ActiveEffect = CONFIG.ActiveEffect.entityClass;
@@ -65,16 +65,15 @@ export async function migrateItem(item: CONFIG.Item.EntityClass): CONFIG.Item.En
     }
     setProperty(APPLIED_DATA, "flags.dae.transfer", false)
     if (activeEffects.passives.length + activeEffects.actives.length === 0) return null;
-    let theItem = item;
-    const isOwned = theItem.isOwned;
-    console.warn("Migrating ", theItem.name, activeEffects)
+    log("Migrating ", item.name, activeEffects)
 
     let ae = [];
-    await item.deleteEmbeddedEntity("ActiveEffect", theItem.effects.map(i => i.data._id));
+    debug("Migrating item effects", item.data.effects)
+    await item.deleteEmbeddedEntity("ActiveEffect", item.data.effects?.map(i => i._id));
     if (activeEffects.passives.length > 0) ae.push(TRANSFER_DATA);
     if (activeEffects.actives.length > 0) ae.push(APPLIED_DATA);
     if (getProperty(item.data.flags, "dynamiceffects")) {
-      warn("Migration: dynamiceffects flags ",
+      debug("Migration: dynamiceffects flags ",
         "alwaysActive", getProperty(item.data.flags, "dynamiceffects.alwaysActive"), 
         "activeEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive")
       )
@@ -109,7 +108,7 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
     if (activeEffects.passives.length + activeEffects.actives.length === 0) return null;
     let theItem = item;
     const isOwned = theItem.isOwned;
-    console.warn("Migrating ", theItem.name, activeEffects)
+    warn("Migrating ", theItem.name, activeEffects)
     if (!actor) actor = item.actor;
 
     if (isOwned) {
@@ -126,11 +125,6 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
       if (activeEffects.passives.length > 0) ae.push(TRANSFER_DATA);
       if (activeEffects.actives.length > 0) ae.push(APPLIED_DATA);
       itemData.effects = ae;
-      warn("Created item is ", item)
-      warn("Migration: dynamiceffects flags ",
-        "alwaysActive", getProperty(itemData.flags, "dynamiceffects.alwaysActive"), 
-        "activeEquipped", getProperty(itemData.flags, "dynamiceffects.equipActive")
-      )
       if (getProperty(theItem.data.flags, "dynamiceffects")) {
         setProperty(itemData.flags, "dae.alwaysActive", getProperty(item.data.flags, "dynamiceffects.alwaysActive"))
         setProperty(itemData.flags, "dae.aactiveEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive"))
@@ -148,25 +142,25 @@ export function convertAllItems() {
 export async function migrateActorItems(actor) {
   const ids = actor.effects.map(ef => ef.data._id);
   let delResults = await actor.deleteEmbeddedEntity("ActiveEffect", ids);
-  console.warn("Deletion results are ", delResults)
+  warn("Deletion results are ", delResults)
 
   const itemIds = actor.items.map(i=>i.id);
   let itemsData = [];
   itemIds.forEach(async id=> {
     const item = actor.items.get(id);
     let results = migrateOwnedItem(item, actor);
-    console.warn("Results are ", item.name, results)
-    if (results) itemsData.push(results);
+    if (results) {
+      warn("Migrated ", item.name, results)
+      itemsData.push(results);
+    }
   })
-  console.warn("items data is ", itemsData)
 
-  let activeEffects = actor.effects.map(ef=>ef.id);
-  await actor.deleteEmbeddedEntity("ActiveEffect", activeEffects)
   const deleteItemIds = itemsData.map(id=>id._id);
-  console.warn("deleted ids are ", deleteItemIds)
+  debug("deleted ids are ", deleteItemIds)
   await actor.deleteEmbeddedEntity("OwnedItem", deleteItemIds)
   await actor.createEmbeddedEntity("OwnedItem", itemsData)
 }
+
 export async function removeActorEffects(actor) {
   let activeEffects = actor.effects.map(ef=>ef.id);
   await actor.deleteEmbeddedEntity("ActiveEffect", activeEffects)

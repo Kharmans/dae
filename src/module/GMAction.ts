@@ -234,12 +234,9 @@ let applyTokenMagic = async (tokenId: string, effectId: string, duration: number
 }
 
 async function applyActiveEffects(activate, tokenList, activeEffects) {
-  warn("gmaction apply effect ", activate, tokenList, duplicate(activeEffects))
-  console.warn("gmaction apply effect ", activate, tokenList, duplicate(activeEffects))
-
+  debug("gmaction apply effect ", activate, tokenList, duplicate(activeEffects))
   tokenList.forEach(async tid => {
     const token = canvas.tokens.get(tid);
-    console.warn("GMAction token is ", token)
     if (token) {
       let actEffects = duplicate(activeEffects)
       let removeList = [];
@@ -262,10 +259,10 @@ async function applyActiveEffects(activate, tokenList, activeEffects) {
           })
          setProperty(ae, "flags.dae.token", tid)
         })
-        console.warn("gm action apply effect", token, actEffects)
+        warn("gm action apply effect", token, actEffects)
         await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
-        if (!token.data.isLink) { //TODO remove when create on tokens calls precreate
-          warn("Non link token manual apply of macro/token")
+        if (!token.data.actorLink) { //TODO remove when create on tokens calls precreate
+          debug("Non link token manual apply of macro/token", token)
           daeOnMacro(token.actor, actEffects)
           daeOnTokenMagic(token.actor, actEffects)
         }

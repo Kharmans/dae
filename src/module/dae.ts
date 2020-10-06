@@ -116,9 +116,8 @@ export class ValidSpec {
         "data.resources.legact.max": [0, -1],
         "data.resources.legres.max": [0, -1],
         "data.spells.pact.level": [0,-1],
-        "data.bonuses.spell.dc": [0, -1],
         "flags.dnd5e.conditions": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "flags.dnd5e.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+        "flags.dnd5e.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM]
       }
       // move all the characteer flags to specials so that the can be custom effects only
       Object.keys(CONFIG.DND5E.characterFlags).forEach(key=> {
@@ -131,6 +130,7 @@ export class ValidSpec {
       // patch for missing fields
       baseValues["data.bonuses.heal.damage"] = "";
       baseValues["data.bonuses.heal.attack"] = "";
+      baseValues["data.bonuses.spell.dc"] = 0;
       Object.keys(baseValues).forEach(key=> {
         // can't modify all spell details.
         if (key.includes("data.spells")) {
@@ -237,8 +237,8 @@ function applyDaeEffects(specList) {
       item = e.parent.items.get(id[1]);
     } else item = null;
     // override default disabled behaviour to use item settings to toggle
-    // warn("item disabled ", item, item && isDisabled(item.data), e.data.flags?.dae?.transfer);
     e.data.disabled = (item && isDisabled(item.data) && e.data.flags?.dae?.transfer !== false) || false;
+    debug("item disabled ", e.data.disabled, item, item && isDisabled(item.data), e.data.flags?.dae?.transfer);
     if ( e.data.disabled ) return changes;
     return changes.concat(e.data.changes
       .filter(c => {return specList[c.key] !== undefined})
@@ -247,7 +247,6 @@ function applyDaeEffects(specList) {
         if (typeof specList[c.key].sampleValue === "number" && typeof c.value === "string") {
           debug("appplyDaeEffects: Doing eval of ", c, c.value)
           try {
-            warn("appplyDaeEffects: Doing eval of ", c, c.value)
             c.value = new Roll(c.value, rollData).roll().total;
           } catch (err) {
             console.warn(err)
@@ -260,7 +259,7 @@ function applyDaeEffects(specList) {
   }, []);
   changes.sort((a, b) => a.priority - b.priority);
 
-  if (changes.length > 0) warn("Applying change ", this.name, changes)
+  if (changes.length > 0) debug("Applying change ", this.name, changes)
 
   // Apply all changes
   for ( let change of changes ) {
@@ -366,7 +365,8 @@ function prepareData() {
   applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj);
   this.prepareDerivedData();
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj);
-  debug("prepare data: after passes", this.data)
+  debug("prepare data: after passes", this.data);
+  warn("prepare data: after passes", this.data)
 }
 
 export function scheduleEffectRemoval(actor, effects) {
@@ -522,7 +522,6 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
     activeEffectData.origin = `Actor.${this.actor.id}.OwnedItem.${this.id}`;
     activeEffectData.duration.startTime = game.time.worldTime;
     mergeObject(activeEffectData.duration, mapDuration(this), {overwrite: true, inplace: true});
-    console.warn("duration calc is ", activeEffectData.duration,  mapDuration(this))
     activeEffectData.transfer = false;
     activeEffectData.disabled = false;
     //@ts-ignore
@@ -533,24 +532,19 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
 }
 
 function ownedItemUpdate(actor, ownedItem, updates) {
-  warn("update is ", updates)
   let additions = updates.effects?.filter(ef=>ef.transfer) || [];
-  warn("additions are ", additions);
+  debug("updates/additions are ", updates, additions);
   additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true});
   additions = additions.filter(ef=>ef.transfer) || [];
-  warn("additions are ", additions)
+  debug("additions post filter are ", additions)
   let origin = `Actor.${actor.id}.OwnedItem.${ownedItem._id}`;
   let deletions = actor.effects.filter(aef => {
-    warn("owned item update ", aef, aef.data.flags?.dae?.transfer, aef.data.origin, origin);
     let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
     return isTransfer && (aef.data.origin === origin);
   });
-  warn("owned item update deletions are ", deletions)
   deletions = deletions.map(ef => ef.id || ef._id);
-  warn("owned item update deletions are ", deletions)
-
   additions.forEach(efData => efData.origin = `Actor.${actor.id}.OwnedItem.${updates._id}`);
-  warn("owneditemupdate ", additions, deletions)
+  debug("owneditemupdate ", additions, deletions)
   Hooks.once("updateOwnedItem", () => {
     actor.deleteEmbeddedEntity("ActiveEffect", deletions)
     actor.createEmbeddedEntity("ActiveEffect", additions)
@@ -586,7 +580,6 @@ export function createArmorEffect(actor, itemData) {
     case "medium":
     case "heavy":
       let dexMax = itemData.data.armor.dex ?? 99;
-      console.warn("armor dex max ", itemData.data.armor.dex, dexMax)
       var ARMOR_EFFECT = {
         label: itemData.name,
         icon: itemData.img,
@@ -608,7 +601,6 @@ export function createArmorEffect(actor, itemData) {
     default:
       break;
   }
-  console.warn("Item data with arnmor ", itemData)
   return true;
 }
 
@@ -665,7 +657,6 @@ function initActorSheetHook(app, html, data) {
   let title = game.i18n.localize('dae.ActiveEffectName'); 
   let openBtn = $(`<a class="open-actor-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
   openBtn.click(ev => {
-    console.warn("actor sheet ", app.entity)
       new ActorEffects({actor: app.entity}, {}).render(true);
   });
   html.closest('.app').find('.open-actor-effect').remove();
@@ -709,6 +700,7 @@ export function mapDuration(item) {
       case "turn": return {turns: itemData.data.duration.value};
       case "round":  return {rounds: itemData.data.duration.value};
       case "minute": return {rounds: itemData.data.duration.value * 60 / CONFIG.time.roundTime}
+      case "hour": return {rounds: itemData.data.duration.value * 3600 / CONFIG.time.roundTime};
       case "hour": return {seconds: itemData.data.duration.value * 3600};
       case "day": return {sconds: itemData.data.duration.value * 3600 * 24}
       case "week": return {sconds: itemData.data.duration.value * 3600 * 7}

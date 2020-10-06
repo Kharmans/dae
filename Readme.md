@@ -11,20 +11,23 @@ or choose "Active Effects" from the character sheet. Or you can do (from the con
 ```
 game.actors.getName("Actor Name").effects
 ```
+Additionaly on the character sheet title there is an "Active Effects" item that shows all of the active effects applied to the actor. Effects can be deleted from this screen, but not edited. Instead edit the OwnedItem that transferred the effect.  
+
+Functions that previously started with DynamicEffects. are noe DAE.  
 
 ## Major Features not implemented
 * Timeout of effects. This is waiting on 0.7.4(?) to see how active effects expire.
-* Sample compendia. This will come in the next release.
+* Sample compendia. The supplied compendia is quite limited, but will be expanded over time.
 
 ## Dynamic Active Effects
-Dynamic Active Effects (DAE) is a replacement for DAE (which will NOT work in 0.71+, and won't be ported).
+Dynamic Active Effects (DAE) is a replacement for Dynamiceffects (which will NOT work in 0.71+, and won't be ported).
 
 ### Background
-With the release of 0.7.1+ much of the functionality of Dynamiceffects has been included in core Active Effects. DAE implements most of the funcitonality of Dynamic Effects built using the new core Active Effects and fills in the missing features from dynamiceffects. DAE is built on, and is compatible with, the core Active Effects functionaltiy.
+With the release of 0.7.1+ much of the functionality of Dynamiceffects has been included in the foundry core Active Effects system. DAE implements most of the funcitonality of Dynamic Effects built using the new core Active Effects and fills in the missing features in core from dynamiceffects. DAE is built on, and is compatible with, the core Active Effects functionaltiy.
 
 The foundry Core Active Effects allow you to modify a base value (defined in template.json - most fields you can edit in the character sheet) and apply a fixed value or string to it. There are additional options in core that were not present in dynamic effects, see **application** below.
 
-Foundry core Active Effects are attached to an item and are designated as transfer or non-transfer. Transfer effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. Non-transfer effects are not moved from the item to any actor without additional functions, which DAE provides.
+Foundry core Active Effects are attached to an item and are designated as transfer or non-transfer. Transfer effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. Non-transfer effects are not moved from the item to any actor without additional functions, which DAE/midi-qol provide.
 
 ### Features.
 DAE provides the following additional features:
@@ -45,17 +48,17 @@ A preliminary edit function is supplied, which may change in the future.
 On the title bar of the character sheet is an option "Active Effects" that will display a form showing all of the active effects on the actor. Effects may be removed using this form, but that's all. You need to edit the owned item casusing the effect or re-apply the transfer to make any changes to active effects on the character. (This may change in future versions).
 
 ### Calculations
-Core system active effects are calculated before the game system specific calculation of derived fields (prepareDerivedData). For dnd5e prepareDerivedData calculates all the ability modifiers, skill totals, and spell slots available. DAE adds an additional effect application pass that occurs after the system specific prepareDerivedData() completes.
+Core system active effects are calculated before the game system specific calculation of "derived" fields (prepareDerivedData). For dnd5e prepareDerivedData calculates all the ability modifiers, skill totals, and spell slots available. DAE adds an additional effect application pass that occurs after the system specific prepareDerivedData() completes.
 
 Core Active Effects define the following calculations:
 * CUSTOM: system/module specific calculation.
-* ADD: Add a value to the field (if it is numberic) or concatenate if the field is a string.
-* MULTIPLY: for numeric fields multiply the field by a value.
+* ADD: Add a value to the field (if it is numeric) or concatenate if the field is a string.
+* MULTIPLY: for numeric fields only, multiply the field by a value.
 * OVERRIDE: replace the field with the supplied value.
 * UPGRADE: for numeric fields replace the field with the supplied value if it is larger than the field. 
 * DOWNGRADE: for numeric fields replace the field with the supplied value if it is smaller than the field.  
 
-There is a priority that can be given to each change within an effect. The priority determines the order in which changes will be applied during the applyEffects stage. All changes across all effects are collected and sorted by priority before application (low to high). The default priority for changes are 
+Additionally, there is a priority that can be given to each change within an effect. The priority determines the order in which changes will be applied during the applyEffects stage. All changes across all effects are collected and sorted by priority before application (low to high). The default priority for changes are 
   * CUSTOM: 0
   * MULTIPLY: 10
   * ADD: 20
@@ -64,17 +67,18 @@ There is a priority that can be given to each change within an effect. The prior
   * OVERRIDE: 50
   So if an actor has the following changes,
   * data.attributes.hp.max ADD 10, and
-  * data.attributes.hp.max OVERRIDE 20
-then with default priorities hp.max will be 20, since overrides comes after ADD. If priorities are assigned
+  * data.attributes.hp.max OVERRIDE 20  
+then with default priorities hp.max will be 20, since overrides comes after ADD. If priorities are assigned  
   * data.attributes.hp.max ADD 10 Priority:100, and
   * data.attributes.hp.max OVERRIDE 20 Priority:10
-  hp.max will become 30.
+  hp.max will become 30.  
 
 DAE allows you to use expressions as well as fixed values. So for example you could have the following
   * data.attributes.hp.max ADD "@classes.paladin.levels * @abilitiies.con.mod" Priority:100, and
   * data.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10
+hp.max will be set to 31 + con.mod * paladin levels
 
-* **Number** fields are fully evaluated during the applyEffects pass. 
+**Number** fields are fully evaluated during the applyEffects pass.   
 **String** fields are not evaulated at all. So setting
 ```
 data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2" 
@@ -96,6 +100,10 @@ This group are all special traits that can be set.
 * "flags.dnd5e.observantFeat"         OVERRIDE
 * "flags.dnd5e.reliableTalent"        OVERRIDE
 * "flags.dnd5e.remarkableAthlete"     OVERRIDE
+These fields accept 0 off, or 1 on.
+
+* "data.bonuses.spell.dc"             ANY  
+This field is always a number, so any dice expression will be evaluated once when prepareData is called and **NOT** on each spell cast. You cannot do lookups of derived fields for spell.dc calculations.  
 
 These fields exist in template.json but are moved to the derived phase so that all the derived fields are available when computing the value.
 * "flags.dnd5e.weaponCriticalThreshold
@@ -107,7 +115,6 @@ These fields exist in template.json but are moved to the derived phase so that a
 * "data.attributes.init.total"
 * "data.attributes.hd"
 * "data.attributes.prof"
-* "data.attributes.spelldc"
 
 These are custom fields
 * "data.bonuses.All-Attacks"          CUSTOM  
@@ -116,13 +123,13 @@ The specified string field will be appened to bonuses.mwak.attack, bonuses.rwak.
 * "data.traits.languages.all"         CUSTOM
 The actor will be given all langauages specified in CONFIG.DND5E.languages
 * "data.traits.languages.value"       CUSTOM
-The actor will be added the known language
+The value will be added the known language
 * "data.traits.languages.custom"      CUSTOM
 The specified string will be appended to the custom language field
 * "data.traits.di.all"                CUSTOM
 * "data.traits.dr.all"                CUSTOM
 * "data.traits.dv.all"                CUSTOM
-The actor will be give immunity/resistance/vulnerability to all damage types specified in CONFIG.DNE5E.damageResistanceTypes
+The actor will be given immunity/resistance/vulnerability to all damage types specified in CONFIG.DNE5E.damageResistanceTypes
 * "data.traits.di.value"              CUSTOM
 * "data.traits.dr.value"              CUSTOM
 * "data.traits.dv.value"              CUSTOM
@@ -172,10 +179,10 @@ Provides a bonus to ability saves. This is only active if the "Override saving t
 These are custom flags. The macros are called when the effect is transferred to the character (with args[0] === "on") and called again when the active effect is removed (with args="off). macro.tokenMagic applies/removes the token magic affects.
 
 Macros have changed substantially in their implementation. When you have a non-transfer effect that includes a macro, the macro is transferred to the target actor and runs when created on the actor. Deletion of the active effect from the target actor calls the macro again with args[0] = "off".
-Since the macro attaches to the target actor the macro can schedule to be activated on other events, such as combat updates to support damage over time effects.
+Since the macro attaches to the target actor the macro can schedule itself to be activated on other events, such as combat updates to support damage over time effects.
 
 **macro.execute "macro_name" args**  
-This will call the macro "macro_name" with args[0] = "on" and args[1] is the actor, the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with args[0] = "off" when the active effect is deleted from the target actor.
+This will call the macro "macro_name" with args[0] = "on" and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with args[0] = "off" when the active effect is deleted from the target actor.
 In addition to the standard ```@values``` the following are supported (only as macro argruments)  
 ```@target``` will pass the token id of the targeted token  
 ```@scene``` will pass the scene id of the scene on which the user who activated the effect is located.  
@@ -188,14 +195,14 @@ In addition to the standard ```@values``` the following are supported (only as m
 ```@FIELD`` The value of the FIELD within the actor that used the item, e.g. @abilities.str.mod.
 ```@unique``` A randomly generated unique id.
 
-An additional argument (in addition to those specified in the macro.execute definition) is the actor data for the target token.
+An additional argument (in addition to those specified in the macro.execute definition) is the actor data for the target token appended to the argument list.  
 For example, if the macro.execute definition is
 ```
 macro.execute CUSTOM "My macro" 5 @ailities.str.mod
 ```
-then, when the effect is trasnferred to the target token the macro will be called with
+then, when the effect is trasnferred to the target token the macro will be called with  
 args = ["on", <strength mod of the actor that used the item>, <actor.data of the target token>]
-When the effect is deleted from the target actor (either by expiry or explicit deletion) the amcro will be called again with 
+When the effect is deleted from the target actor (either by expiry or explicit deletion) the amcro will be called again with   
 args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>]
 
 **Macros and transfer effect**
@@ -208,6 +215,7 @@ The same as macro.execute, but the item is inspected to find the itemacro stored
 Will apply the specified token magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.
 
 **Example**
+This is a programatic way to create items with effects. 
 ```
 const EXAMPLE_TRANSFERRED_EFFECT = {
     label: "Ring of Protection",

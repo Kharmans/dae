@@ -174,6 +174,7 @@
     "dae.All-Attacks": "All Attack Bonuses",
     "dae.skill": "Skill",
     "dae.spell": "Spell",
+    "dae.weapon": "Weapon",
     "dae.dc": "Dif. Class",
     "dae.passive": "Passive",
     "dae.custom": "Custom",
@@ -209,5 +210,5 @@
     "dae.readOnly": "READ ONLY EFFECT",
     "dae.legact": "Legendary Actions",
     "dae.legres": "Legendary Resistance",
-    "dae.encumbrance": "Encumbrance"
+    "dae.encumbrance": "Encumbrance",
 }

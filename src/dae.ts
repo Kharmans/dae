@@ -31,10 +31,10 @@ export let setDebugLevel = (debugText: string) => {
 }
 export var debugEnabled;
 // 0 = none, warnings = 1, debug = 2, all = 3
-export let debug = (...args) => {if (debugEnabled > 1) console.log("DEBUG: midi-qol | ", ...args)};
-export let log = (...args) => console.log("midi-qol | ", ...args);
-export let warn = (...args) => {if (debugEnabled > 0) console.warn("midi-qol | ", ...args)};
-export let error = (...args) => console.error("midi-qol | ", ...args)
+export let debug = (...args) => {if (debugEnabled > 1) console.log("DEBUG: dae | ", ...args)};
+export let log = (...args) => console.log("dae | ", ...args);
+export let warn = (...args) => {if (debugEnabled > 0) console.warn("dae | ", ...args)};
+export let error = (...args) => console.error("dae | ", ...args)
 export let i18n = key => {
   return game.i18n.localize(key);
 };

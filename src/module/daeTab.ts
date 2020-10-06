@@ -12,7 +12,7 @@ var makeActive = false;
 export function initSheetTab() {
   let itemSheets = {}
   Object.values(CONFIG.Item.sheetClasses).forEach(itemType => Object.keys(itemType).forEach(sheetName => itemSheets[sheetName] = 1));
-  warn("Item sheets are ", CONFIG.Item.sheetClasses, itemSheets)
+  debug("Item sheets are ", CONFIG.Item.sheetClasses, itemSheets)
   Object.keys(itemSheets).forEach(
     sheetName => Hooks.on(`render${sheetName.split(".")[1]}`, (app, html, data) => {
         adddaeTab(app, html, data);
@@ -23,7 +23,12 @@ export function initSheetTab() {
 async function adddaeTab(app, html, data) {
   if (playersCanSeeEffects === "none" && !game.user.isGM) return;
   let daetab = html.find(`.dae-tab`);
-  if (daetab.length > 0) return;
+  
+  if (daetab.length > 0) {
+    if (makeActive && app._tabs[0]) app._tabs[0].activate("dae");
+    return;
+  }
+  console.warn("dae tab ", html.find(".sheet-navigation"))
   let item = app.object;
   // if (["spell", "backpack"].includes(item.type)) return;
   if (["loot"].includes(item.type)) return;
@@ -43,11 +48,11 @@ async function adddaeTab(app, html, data) {
   // let settingsContainer = html.find(`.sheet-body`);
   if (settingsContainer.length === 0) settingsContainer = html.find(`.primary-body`);
 
-  warn("inside tab ", item, item.data.flags);
   //@ts-ignore
   const EFFECTMODES = ACTIVE_EFFECT_MODES;
   const modeKeys = Object.keys(EFFECTMODES);
   let actives = duplicate(item.data.effects);
+
   /*
   if (item.isOwned) {
     console.warn("ae effects ", item.actor.effects)
@@ -76,6 +81,7 @@ async function adddaeTab(app, html, data) {
   });
   let extraTab = settingsContainer.append(daeTabTemplate);
 
+  warn("Appp tabs ", app._tabs)
   if (makeActive && app._tabs[0]) app._tabs[0].activate("dae");
   makeActive = false;
   // Add effect
@@ -119,7 +125,7 @@ async function adddaeTab(app, html, data) {
   html.find('.dae .effect-controls .change-edit').click(ev => {
     let effect_id = $(ev.currentTarget).parents(".dae-change-list").attr("effect-id");
     let change_id = $(ev.currentTarget).parents(".dae-change-list").attr("change-id");
-    warn("change id is ", effect_id, "  ", change_id, item)
+    debug("edit-change: change id is ", effect_id, "  ", change_id, item)
     let effect = item.data.effects.find(e=>e._id === effect_id);
     if (!effect) {
       ui.notifications.warn("Can't edit transferred effects")
@@ -136,14 +142,14 @@ async function adddaeTab(app, html, data) {
   html.find('.dae .effect-controls .change-delete').click(async ev => {
     let effect_id = $(ev.currentTarget).parents(".dae-change-list").attr("effect-id");
     let change_id = $(ev.currentTarget).parents(".dae-change-list").attr("change-id");
-    warn("change id is ", effect_id, "  ", change_id, item)
+    debug("delete-change: change id is ", effect_id, "  ", change_id, item)
     var effect;
     // li.slideUp(200);
     if (item.isOwned) {
       const effects = duplicate(item.data.effects);
       effect = effects.find(ef=>ef._id === effect_id)
       if (!effect) {
-        ui.notifications.warn("Can't deleted transferred effects");
+        ui.notifications.warn("Can't delete transferred effects");
         return;
       }
       effect.changes.splice(parseInt(change_id),1);
@@ -153,7 +159,6 @@ async function adddaeTab(app, html, data) {
       effect.changes.splice(parseInt(change_id),1);
       item.updateEmbeddedEntity("ActiveEffect", effect)
     }
-    warn("deleteing change ", change_id)
     makeActive = true;
   });
 
