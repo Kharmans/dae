@@ -100,7 +100,7 @@ This group are all special traits that can be set.
 * "flags.dnd5e.jackOfAllTrades"       OVERRIDE
 * "flags.dnd5e.observantFeat"         OVERRIDE
 * "flags.dnd5e.reliableTalent"        OVERRIDE
-* "flags.dnd5e.remarkableAthlete"     OVERRIDE
+* "flags.dnd5e.remarkableAthlete"     OVERRIDE  
 These fields accept 0 off, or 1 on.
 
 * "data.bonuses.spell.dc"             ANY  
@@ -192,9 +192,9 @@ In addition to the standard ```@values``` the following are supported (only as m
 ```@item.level``` if using midi qol this will be the spell level the spell was cast at.  
 ```@damage``` The total damage rolled for the attack
 ```@token``` The id of the token that used the item
-```@actor``` The actor.data for the actor that used the item.
-```@FIELD`` The value of the FIELD within the actor that used the item, e.g. @abilities.str.mod.
-```@unique``` A randomly generated unique id.
+```@actor``` The actor.data for the actor that used the item.  
+```@FIELD`` The value of the FIELD within the actor that used the item, e.g. @abilities.str.mod.  
+```@unique``` A randomly generated unique id.  
 
 An additional argument (in addition to those specified in the macro.execute definition) is the actor data for the target token appended to the argument list.  
 For example, if the macro.execute definition is
@@ -202,9 +202,9 @@ For example, if the macro.execute definition is
 macro.execute CUSTOM "My macro" 5 @ailities.str.mod
 ```
 then, when the effect is trasnferred to the target token the macro will be called with  
-args = ["on", <strength mod of the actor that used the item>, <actor.data of the target token>]
+args = ["on", <strength mod of the actor that used the item>, <actor.data of the target token>]  
 When the effect is deleted from the target actor (either by expiry or explicit deletion) the amcro will be called again with   
-args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>]
+args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>]  
 
 **Macros and transfer effect**
 The above discussion applies to non-transfer effects. Transfer effects, which are applied when the item is equipped by a character, behave the same way with the exception that the macro is NOT called for non-linked tokens on deletion (this is a problem with the core software).
