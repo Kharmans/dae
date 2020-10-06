@@ -1,6 +1,8 @@
 ## Quick start for dynaic effects users.
-Pick and actor and do 
+Pick an actor and do 
+```
 DAE.migracteActorItems(game.actors.getName("ActorName")).
+```
 The actor should have the items migrated (and the transferred effects applied). You should be able to see the values on the actor correctly calculated. (Also see the section **Migrating from DynamicEffects**)
 
 To see the effects active on the actor use (as a macro or from the console)
@@ -11,7 +13,7 @@ or choose "Active Effects" from the character sheet. Or you can do (from the con
 ```
 game.actors.getName("Actor Name").effects
 ```
-Additionaly on the character sheet title there is an "Active Effects" item that shows all of the active effects applied to the actor. Effects can be deleted from this screen, but not edited. Instead edit the OwnedItem that transferred the effect.  
+Additionaly on the character sheet title bar there is an "Active Effects" item that shows all of the active effects applied to the actor. Effects can be deleted from this screen, but not edited. Instead edit the OwnedItem that transferred the effect.  
 
 Functions that previously started with DynamicEffects. are noe DAE.  
 
@@ -26,7 +28,7 @@ Dynamic Active Effects (DAE) is a replacement for Dynamiceffects (which will NOT
 ### Background
 With the release of 0.7.1+ much of the functionality of Dynamiceffects has been included in the foundry core Active Effects system. DAE implements most of the funcitonality of Dynamic Effects built using the new core Active Effects and fills in the missing features in core from dynamiceffects. DAE is built on, and is compatible with, the core Active Effects functionaltiy.
 
-The foundry Core Active Effects allow you to modify a base value (defined in template.json - most fields you can edit in the character sheet) and apply a fixed value or string to it. There are additional options in core that were not present in dynamic effects, see **application** below.
+The foundry Core Active Effects allow you to modify a base value (defined in template.json - most fields you can edit in the character sheet) and apply a fixed value or string to it. There are additional options in core that were not present in dynamic effects, see **Calculation** below.
 
 Foundry core Active Effects are attached to an item and are designated as transfer or non-transfer. Transfer effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. Non-transfer effects are not moved from the item to any actor without additional functions, which DAE/midi-qol provide.
 
@@ -51,7 +53,7 @@ On the title bar of the character sheet is an option "Active Effects" that will 
 ### Calculations
 Core system active effects are calculated before the game system specific calculation of "derived" fields (prepareDerivedData). For dnd5e prepareDerivedData calculates all the ability modifiers, skill totals, and spell slots available. DAE adds an additional effect application pass that occurs after the system specific prepareDerivedData() completes.
 
-Core Active Effects define the following calculations:
+Active Effects define the following calculations:
 * CUSTOM: system/module specific calculation.
 * ADD: Add a value to the field (if it is numeric) or concatenate if the field is a string.
 * MULTIPLY: for numeric fields only, multiply the field by a value.
@@ -84,7 +86,7 @@ hp.max will be set to 31 + con.mod * paladin levels
 ```
 data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2" 
 ```
-will be evaulated when the attack is rolled, NOT during the prepare data phase.
+will be evaulated when the attack is rolled, NOT during the prepare data phase, since data.bonuses.mwak is a string field.
 * Recognising what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. Fields that have a mode defined means that ONLY that mode is supported for the effect (and the editor will set the mode when the change is saved)
@@ -243,7 +245,7 @@ Or just drag the supplied (TODO) Ring of Protection from the sample items compen
 ## DAE ###
 * **Armor** The system applies standard DND rules for calculating armor class based on what armor you have eqipped (for natual armor the armor does not need to be equipped). Shield type items add to the armor class. "Effects" can alter armor class as well.
 
-For armor and shields the value applied to the actor is calculated when it is added to the character and (other than dex mod changes) remains fixed thereafter. So equipping leather aromor will give an AC of 11 + dex.mod. If you change the armor value of the armor after equipping the item the calculated AC will **NOT** change.
+For armor and shields the value applied to the actor is calculated when the item is added to the character and (other than dex mod changes) remains fixed thereafter. So equipping leather aromor will give an AC of 11 + dex.mod. If you change the armor value of the armor after equipping the item the calculated AC will **NOT** change.
 
 ### Macro Functions ##
 The macro functions in dynamicitems have been replaced in DAE with the following (and you will need to modify any macros you have created):

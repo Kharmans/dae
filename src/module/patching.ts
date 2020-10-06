@@ -1,5 +1,11 @@
+import { useAbilitySave } from "./dae";
+//@ts-ignore
+import Actor5e from "../../../systems/dnd5e/module/actor/entity.js";
+
+const oldRollAbilitySave = Actor5e.prototype.rollAbilitySave;
 
 function rollAbilitySave(abilityId, options={}) {
+  if (!useAbilitySave) return oldRollAbilitySave.bind(this)(abilityId, options);
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
   const parts = ["@save"];
@@ -15,16 +21,24 @@ function rollAbilitySave(abilityId, options={}) {
     data.saveBonus = actorBonus;
   }
 
-  // Roll and return
+  // Add provided extra roll parts now because they will get clobbered by mergeObject below
   //@ts-ignore
-  return game.dnd5e.dice.d20Roll(mergeObject(options, {
+  if (options.parts?.length > 0) {
+    //@ts-ignore
+    parts.push(...options.parts);
+  }
+  // Roll and return
+  const rollData = mergeObject(options, {
     parts: parts,
     data: data,
-    //@ts-ignore
     title: game.i18n.format("DND5E.SavePromptTitle", {ability: label}),
-    speaker: ChatMessage.getSpeaker({actor: this}),
-    halflingLucky: this.getFlag("dnd5e", "halflingLucky")
-  }));
+    halflingLucky: this.getFlag("dnd5e", "halflingLucky"),
+    messageData: {"flags.dnd5e.roll": {type: "save", abilityId }}
+  });
+  //@ts-ignore
+  rollData.speaker = options.speaker || ChatMessage.getSpeaker({actor: this});
+  //@ts-ignore
+  return d20Roll(rollData);
 }
 
 function getSpellDC(ability) {
@@ -58,7 +72,7 @@ function Roll_replaceData(replaced, formula) {
 }
 
 Hooks.once("init", () => {
- 
+  Actor5e.prototype.rollAbilitySave = rollAbilitySave;  
 });
 Hooks.once("ready", () => {
 /*

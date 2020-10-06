@@ -16,6 +16,7 @@ export var cubActive;
 export var itemacroActive;
 export var calculateArmor;
 export var debugEnabled;
+export var useAbilitySave;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -689,6 +690,7 @@ export function fetchParams() {
   tokenEffects = game.settings.get("dae", "tokenEffects");
   calculateArmor = game.settings.get("dae", "calculateArmor");
   debugEnabled = setDebugLevel(game.settings.get("dae", "Debug"));
+  useAbilitySave = game.settings.get("dae", "useAbilitySave")
 }
 
 export function mapDuration(item) {

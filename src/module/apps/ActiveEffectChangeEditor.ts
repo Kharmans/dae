@@ -133,7 +133,7 @@ export class ActiveEffectChangeEditor extends FormApplication {
         tokenMagicEffects[preset.name] = preset.name;
       })
     } else tokenMagicEffects["invalid"] = "module not installed";
-
+    CONFIG.DND5E.damageResistanceTypes
     if (game.system.id === "dnd5e") {
       let isTransfer = this.object.effect.flags?.dae?.transfer;
       mergeObject(data, {
@@ -141,7 +141,7 @@ export class ActiveEffectChangeEditor extends FormApplication {
           languages: CONFIG.DND5E.languages,
           cubConditions: cubActive && cubConditions ? cubConditions : CONFIG.DND5E.conditionTypes,
           conditions: CONFIG.DND5E.conditionTypes,
-          damages: CONFIG.DND5E.damageTypes,
+          damages: CONFIG.DND5E.damageResistanceTypes,
           toolProfs: CONFIG.DND5E.toolProficiencies,
           abilities: CONFIG.DND5E.abilities,
           armorProfs: CONFIG.DND5E.armorProficiencies,

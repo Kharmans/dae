@@ -48,6 +48,16 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
+  game.settings.register("dae", "useAbilitySave", {
+    name: game.i18n.localize("dae.useAbilitySave.Name"),
+    hint: game.i18n.localize("dae.useAbilitySave.Hint"),
+    scope: "world",
+    default: true,
+    config: true,
+    type: Boolean,
+    onChange: fetchParams
+  });
+
   game.settings.register("dae", "calculateArmor", {
     name: game.i18n.localize("dae.calculateArmor.Name"),
     hint: game.i18n.localize("dae.calculateArmor.Hint"),
