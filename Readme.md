@@ -18,6 +18,7 @@ Functions that previously started with DynamicEffects. are noe DAE.
 ## Major Features not implemented
 * Timeout of effects. This is waiting on 0.7.4(?) to see how active effects expire.
 * Sample compendia. The supplied compendia is quite limited, but will be expanded over time.
+* Deleting an item from a non-linked actor will not remove the active effects on the actor.
 
 ## Dynamic Active Effects
 Dynamic Active Effects (DAE) is a replacement for Dynamiceffects (which will NOT work in 0.71+, and won't be ported).
@@ -279,17 +280,26 @@ If the module is installed and active effects can update the actors gm-notes fie
 https://github.com/syl3r86/gm-notes
 
 ### Sample Items/Macros ### **NOT IMPLEMENTED - Will come in a subsequent release**
-  There is a compendium of items that have been setup to work with DAE. All active effects work best if both minor-qol and about-time are installed and active, but will still funciton without them. There is a compendium of sample macros included as well.
+  There is a compendium of items that have been setup to work with DAE. All active effects work best if both midi-qol and about-time are installed and active, but will still funciton without them.
 
 ## Migrating from DynamicEffects ##
 ### DAE.migrateItem(item)
-Migrates dynamiceffects to DAE for all effects on the item, both active and passive
+Migrates dynamiceffects to DAE for all effects on the item, both active and passive, for example:
+```
+DAE.migrateItem(game.items.getName("My item"))
+```
 ### DAE.convertAllItems()
 Migrate all dyamiceffects on all items in the world. Does not include owned items.
 ### DAE.migrateActorItems(actor)
-Migrate all effects for owned items on the actor.
+Migrate all effects for owned items on the actor, for example
+```
+DAE.migrateActorItems(game.actors.getName("actor name"))
+```
 ### DAE.migrateAllActors()
-Migrate all actors items, does not include tokens. Linked tokens will be upgraded
+Migrate all actor items, does not include tokens. Linked tokens will be upgraded
 ### DAE.removeActorEffects(actor)
-Remove activeEffects from the actor. This will also remove 
+Remove all ActiveEffects from the actor, both transfer and non-transfer, for example:
+```
+DAE.removeActorEffects(game.actors.getName("ActorName"))
+```
 
