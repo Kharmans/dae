@@ -1,6 +1,6 @@
 import { removeActiveEffectsToken } from "./daeMacros";
 import { daeOnMacro, daeOnTokenMagic } from "./dae";
-import { warn, debug } from "../dae";
+import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
   action: string;
@@ -261,8 +261,10 @@ async function applyActiveEffects(activate, tokenList, activeEffects) {
         })
         warn("gm action apply effect", token, actEffects)
         await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
+        console.error("Token is ", token)
         if (!token.data.actorLink) { //TODO remove when create on tokens calls precreate
-          debug("Non link token manual apply of macro/token", token)
+          debug("Non link token manual apply of macro/token", token);
+          error("Non link token manual apply of macro/token", token)
           daeOnMacro(token.actor, actEffects)
           daeOnTokenMagic(token.actor, actEffects)
         }

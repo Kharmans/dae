@@ -119,7 +119,9 @@ These fields exist in template.json but are moved to the derived phase so that a
 * "data.attributes.hp.min"
 * "data.attributes.init.total"
 * "data.attributes.hd"
-* "data.attributes.prof"
+
+* "data.attributes.prof"              CUSTOM
+Atrributes prof allows addition of a numeric value to data.abilities.prof. When updated, skills, spelldc and saves are updated accordingly.
 
 These are custom fields
 * "data.bonuses.All-Attacks"          CUSTOM  

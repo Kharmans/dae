@@ -66,7 +66,7 @@ Hooks.once('ready', async function () {
 /* ------------------------------------ */
 /* Setup module							*/
 /* ------------------------------------ */
-Hooks.once('setup actions', function() {
+Hooks.once('setup', function() {
 	// Do anything after initialization but before
   // ready
   debug("setup actions")
@@ -87,7 +87,7 @@ Hooks.once('setup actions', function() {
     migrateAllActors: migrateAllActors,
     removeActorEffects: removeActorEffects,
     ActorEffects: ActorEffects
-	}
+  }
 });
 
 /* ------------------------------------ */

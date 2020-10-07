@@ -7,7 +7,6 @@ import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 var oldRollAbilitySave;
 
 function rollAbilitySave(abilityId, options={}) {
-  console.error("rolling save", abilityId, options, useAbilitySave)
   if (!useAbilitySave) return oldRollAbilitySave.bind(this)(abilityId, options);
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
@@ -75,11 +74,8 @@ function Roll_replaceData(replaced, formula) {
 }
 
 export function patchingReadySetup() {
-  console.error("patching roll ability save")
   oldRollAbilitySave = Actor5e.prototype.rollAbilitySave;
-  console.error("Old ability save", oldRollAbilitySave)
   Actor5e.prototype.rollAbilitySave = rollAbilitySave;  
-  console.error("roll save ", Actor5e.prototype.rollAbilitySave)
 };
 Hooks.once("ready", () => {
 /*
