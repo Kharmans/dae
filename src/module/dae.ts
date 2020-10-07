@@ -388,7 +388,6 @@ function daeCustomEffect(actor, change) {
         }
         if ( joat && (sklValue === 0 ) ) multi = 0.5;
         // Compute updated skill value
-        console.error("multi ", multi, value, round(multi*value))
         //@ts-ignore
         skl.total = round(skl.total + multi * value + add);
         //@ts-ignore
