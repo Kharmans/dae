@@ -73,8 +73,8 @@ export class ValidSpec {
         "data.attributes.hp.min": [0, -1],
         "data.attributes.init.total": [0, -1],
         "data.attributes.hd": [0, -1],
-        "data.attributes.prof": [0, -1],
-        "data.attributes.spelldc": [0, -1],
+        "data.attributes.prof": [0, ACTIVE_EFFECT_MODES.CUSTOM], 
+        // "data.attributes.spelldc": [0, -1], Use bonuses.spell.dc instead
         "data.attributes.encumbrance.max": [0,-1],
         // "data.attributes.spelllevel":  0,
         // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
@@ -340,7 +340,64 @@ function daeCustomEffect(actor, change) {
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? change.value : "+" + change.value;
       ["msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
-  
+    case "data.attributes.prof":
+      // update data.attributes.prof
+      //@ts-ignore
+      if (!Number.isNumeric(change.value)) {
+        ui.notifications.warn("Changes to proficiency must be numeric");
+        return true;
+      }
+      const actorData = actor.data;
+      const data = actorData.data;
+      value = parseInt(change.value);
+      data.attributes.prof += value;
+
+      // update ability mods/saves if proficient
+      //@ts-ignore
+      const dcBonus = Number.isNumeric(data.bonuses.spell.dc) ? parseInt(data.bonuses.spell.dc) : 0;
+      for (let [id, abl] of Object.entries(data.abilities)) {
+        //@ts-ignore
+        abl.prof += (abl.proficient || 0) * value;
+        //@ts-ignore
+        abl.save += (abl.proficient || 0) * value;
+        //@ts-ignore
+        abl.dc += value;
+      }
+      // update spell dcs
+      actor._computeSpellcastingDC(actor.data);
+      const bonuses = getProperty(data, "bonuses.abilities") || {};
+      if (actor.data.type === "vehicle") return true;
+
+      // update skills if proficient
+      const flags = actorData.flags.dnd5e || {};
+      const feats = CONFIG.DND5E.characterFlags;
+      const athlete = flags.remarkableAthlete;
+      const joat = flags.jackOfAllTrades;
+      let round = Math.floor;
+      let add = 0.5;
+      for (let [id, skl] of Object.entries(data.skills)) {
+        //@ts-ignore
+        let sklValue = parseFloat(skl.value || 0);
+          // Apply Remarkable Athlete or Jack of all Trades
+        let multi = sklValue;
+        //@ts-ignore
+        if ( athlete && (sklValue === 0) && feats.remarkableAthlete.abilities.includes(skl.ability) ) {
+          multi = 0.5;
+          round = Math.ceil;
+          add = 0.5;
+        }
+        if ( joat && (sklValue === 0 ) ) multi = 0.5;
+        // Compute updated skill value
+        console.error("multi ", multi, value, round(multi*value))
+        //@ts-ignore
+        skl.total = round(skl.total + multi * value + add);
+        //@ts-ignore
+        skl.prof =  round(skl.prof + multi * value + add);
+        // Compute passive bonus
+        //@ts-ignore
+        skl.passive = round(skl.passive + multi * value + add);
+      }
+      return true;
   }
 }
 
@@ -689,7 +746,7 @@ export function fetchParams() {
   playersCanSeeEffects = game.settings.get("dae", "playersCanSeeEffects");
   tokenEffects = game.settings.get("dae", "tokenEffects");
   calculateArmor = game.settings.get("dae", "calculateArmor");
-  debugEnabled = setDebugLevel(game.settings.get("dae", "Debug"));
+  debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
 }
 

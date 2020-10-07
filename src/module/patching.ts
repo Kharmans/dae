@@ -1,10 +1,13 @@
 import { useAbilitySave } from "./dae";
 //@ts-ignore
 import Actor5e from "../../../systems/dnd5e/module/actor/entity.js";
+//@ts-ignore
+import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 
-const oldRollAbilitySave = Actor5e.prototype.rollAbilitySave;
+var oldRollAbilitySave;
 
 function rollAbilitySave(abilityId, options={}) {
+  console.error("rolling save", abilityId, options, useAbilitySave)
   if (!useAbilitySave) return oldRollAbilitySave.bind(this)(abilityId, options);
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
@@ -71,9 +74,13 @@ function Roll_replaceData(replaced, formula) {
   });
 }
 
-Hooks.once("init", () => {
+export function patchingReadySetup() {
+  console.error("patching roll ability save")
+  oldRollAbilitySave = Actor5e.prototype.rollAbilitySave;
+  console.error("Old ability save", oldRollAbilitySave)
   Actor5e.prototype.rollAbilitySave = rollAbilitySave;  
-});
+  console.error("roll save ", Actor5e.prototype.rollAbilitySave)
+};
 Hooks.once("ready", () => {
 /*
     if (["0.7.0"].includes(game.data.version)) {

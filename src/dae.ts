@@ -21,6 +21,7 @@ import { GMAction, GMActionMessage } from './module/GMAction';
 import { ActiveEffectChangeEditor } from './module/apps/ActiveEffectChangeEditor';
 import { migrateItem, convertAllItems, migrateActorItems, migrateAllActors, removeActorEffects } from './module/migration';
 import { ActorEffects } from './module/apps/ActorEffects';
+import { patchingReadySetup } from './module/patching';
 
 export let setDebugLevel = (debugText: string) => {
   console.error("set debug level ", debugText)
@@ -44,8 +45,8 @@ export let i18n = key => {
 Hooks.once('init', async function() {
 	// Register custom module settings
 	registerSettings();
-	console.log('dae | Initializing dae');
-	daeInitActions();
+	debug('Init setup actions');
+  daeInitActions();
 
 	// Assign custom classes and constants here
 	
@@ -56,15 +57,19 @@ Hooks.once('init', async function() {
 });
 
 Hooks.once('ready', async function () {
+  debug("ready setup actions")
   daeReadyActions();
+  patchingReadySetup();
+
   GMAction.readyActions();
 })
 /* ------------------------------------ */
 /* Setup module							*/
 /* ------------------------------------ */
-Hooks.once('setup', function() {
+Hooks.once('setup actions', function() {
 	// Do anything after initialization but before
-	// ready
+  // ready
+  debug("setup actions")
 	GMAction.initActions();
 	daeSetupActions();
 	ActiveEffectChangeEditor.setupActions();

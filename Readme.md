@@ -50,6 +50,8 @@ A preliminary edit function is supplied, which may change in the future.
 ### Actor Effects
 On the title bar of the character sheet is an option "Active Effects" that will display a form showing all of the active effects on the actor. Effects may be removed using this form, but that's all. You need to edit the owned item casusing the effect or re-apply the transfer to make any changes to active effects on the character. (This may change in future versions).
 
+Active effects that are transfer effects are displayed with a down arrow. Non-transfer effects are displayed with a right arrow.
+
 ### Calculations
 Core system active effects are calculated before the game system specific calculation of "derived" fields (prepareDerivedData). For dnd5e prepareDerivedData calculates all the ability modifiers, skill totals, and spell slots available. DAE adds an additional effect application pass that occurs after the system specific prepareDerivedData() completes.
 
@@ -172,7 +174,7 @@ These affect the specified SKILL adjusting modifier or passive value for the ski
 * "data.abiitiies.ABILITY.mod"
 Allows modification of the ability modifier.
 * "data.abilities.ABILITY.save"
-Provides a bonus to ability saves. This is only active if the "Override saving throw calculation" module setting is enabled. **TODO NOT YET IMPLEMENTED**
+Provides a bonus to ability saves. This is only active if the "Use ability save field when rolling saving throws" module setting is enabled. This will use the save plus rather than the ability modifier when rolling saving throws.
 * "data.spells.pact.level"
 
 * "macro.execute"                     CUSTOM

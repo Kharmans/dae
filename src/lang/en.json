@@ -175,7 +175,7 @@
     "dae.skill": "Skill",
     "dae.spell": "Spell",
     "dae.weapon": "Weapon",
-    "dae.dc": "Dif. Class",
+    "dae.dc": "DC",
     "dae.passive": "Passive",
     "dae.custom": "Custom",
     "dae.all": "All",
@@ -210,5 +210,9 @@
     "dae.readOnly": "READ ONLY EFFECT",
     "dae.legact": "Legendary Actions",
     "dae.legres": "Legendary Resistance",
-    "dae.encumbrance": "Encumbrance"
+    "dae.encumbrance": "Encumbrance",
+    "dae.useAbilitySave.Name": "Use ability save field when rolling ability saves",
+    "dae.useAbilitySave.Hint": "DND5e default uses only the ability modifier, enabling this option means rolling saves will use the save field and can be modified via DAE",
+    "dae.Debug.Name": "Amount of debug to show",
+    "dae.Debug.Hint": "Display more debug to console according to setting none < warning < debug < all"
 }
