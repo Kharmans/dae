@@ -33,7 +33,7 @@ getData() {
     ae.changes.map(change=> {
       change.label=ValidSpec.allSpecsObj[change.key]?.label || "None"; 
       if (typeof change.value === "string" && change.value.length > 40) {
-        change.value = change.value.substring(1, 30) + " ... ";
+        change.value = change.value.substring(0, 30) + " ... ";
       } else if (Array.isArray(change.value)) {
         if(change.value[0].length > 20) change.value[0] = "<Macro>";
         change.value = change.value.join("|")
@@ -72,7 +72,6 @@ getData() {
     showEffects: true,
     isOwned: false
   }
-  console.error("actor effects ", data)
   return data;
 }
 

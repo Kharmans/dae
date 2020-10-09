@@ -1,8 +1,9 @@
-import { useAbilitySave } from "./dae";
+import { useAbilitySave, daeOffMacro, daeOffTokenMagic, daeOnMacro, daeOnTokenMagic } from "./dae";
 //@ts-ignore
 import Actor5e from "../../../systems/dnd5e/module/actor/entity.js";
 //@ts-ignore
 import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
+import { debug, log } from "../dae";
 
 var oldRollAbilitySave;
 
@@ -11,8 +12,7 @@ function rollAbilitySave(abilityId, options={}) {
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
   const parts = ["@save"];
-  const data = {save: abl.save};
-
+  const data = {save: abl.save}; // TP use abl.save rather than abl.mod
 
   // Include a global actor ability save bonus - if it is numberic it has already been included
   const actorBonus = getProperty(this.data.data.bonuses, "abilities.save");
@@ -43,17 +43,6 @@ function rollAbilitySave(abilityId, options={}) {
   return d20Roll(rollData);
 }
 
-function getSpellDC(ability) {
-  const actorData = this.data.data;
-  const bonus = parseInt(
-		new Roll(`${getProperty(actorData, "bonuses.spell.dc")}` || "0", this.getRollData()).roll().total.toString()
-  );
-  ability = actorData.abilities[ability];
-  const prof = actorData.attributes.prof;
-  return 8 + (ability ? ability.mod : 0) + prof + bonus;
-}
-
-
 function Roll_replaceData(replaced, formula) {
   let dataRgx = new RegExp(/@([a-z.\-_0-9]+)/gi);
   return formula.replace(dataRgx, (match, term) => {
@@ -73,26 +62,68 @@ function Roll_replaceData(replaced, formula) {
   });
 }
 
+var oldActorTokenHelpersDeleteEmbeddedEntity;
+var oldActorTokenHelpersCreateEmbeddedEntity;
+var oldActorTokenHelpersUpdateEmbeddedEntity; // TODO decide if updates toggle macros/token
+
+//TODO: when this Hooks.on("createActiveEffect") workds for tokens
+function createEmbeddedEntity(embeddedName, data, options={}) {
+  if (embeddedName === "ActiveEffect") {
+    debug("Token: create Active Effect", embeddedName, data, options);
+    data = data instanceof Array ? data : [data];
+    if (data.length > 0) {
+      daeOnMacro(this.token.actor, data)
+      daeOnTokenMagic(this.token.actor, data)
+    }
+  }
+  return oldActorTokenHelpersCreateEmbeddedEntity.bind(this)(embeddedName, data, options);
+}
+
+//TODO: when this Hooks.on("deleteActiveEffect") workds for tokens
+function deleteEmbeddedEntity(embeddedName, data, options={}) {
+  if (embeddedName === "ActiveEffect") {
+    debug("Token: delete Active Effect", embeddedName, data, options);
+    data = data instanceof Array ? data : [data];
+    let effects = [];
+    data.forEach(effectId => {
+      let effect = this.token.actor.effects.get(effectId);
+      if (effect) effects.push(effect.data);
+    })
+    if (effects.length > 0) {
+      daeOffMacro(this.token.actor, effects)
+      daeOffTokenMagic(this.token.actor, effects)
+    }
+  }
+  return oldActorTokenHelpersDeleteEmbeddedEntity.bind(this)(embeddedName, data, options);
+}
+
+export function patchingInitSetup() {
+  //TODO remove this when token create active effects calls a hook
+  log("Paatching ActorTokenHelpers deleteEmbeddedEntity")
+  //@ts-ignore
+  oldActorTokenHelpersDeleteEmbeddedEntity = ActorTokenHelpers.prototype.deleteEmbeddedEntity;
+  //@ts-ignore
+  ActorTokenHelpers.prototype.deleteEmbeddedEntity = deleteEmbeddedEntity;
+  log("Paatching ActorTokenHelpers createEmbeddedEntity")
+  //@ts-ignore
+  oldActorTokenHelpersCreateEmbeddedEntity = ActorTokenHelpers.prototype.createEmbeddedEntity;
+  //@ts-ignore
+  ActorTokenHelpers.prototype.createEmbeddedEntity = createEmbeddedEntity;
+}
+
 export function patchingReadySetup() {
+  log("Patching actor.rollAbilitySave: override default save is ", useAbilitySave)
   oldRollAbilitySave = Actor5e.prototype.rollAbilitySave;
   Actor5e.prototype.rollAbilitySave = rollAbilitySave;  
+
 };
 Hooks.once("ready", () => {
-/*
-    if (["0.7.0"].includes(game.data.version)) {
-      console.log("dae | Patching Roll._replaceFormulaData v0.7.0");
-      //@ts-ignore
-      Roll.prototype._replaceFormulaData = new Proxy(Roll.prototype._replaceFormulaData, {
-      //@ts-ignore
-        apply: (target, thisvalue, args) => Roll_replaceData.bind(thisvalue)(new Set(), ...args)
-      });
-    } else {
-      console.log("dae | Patching Roll._replaceData v0.6.5 and earlier");
-      //@ts-ignore protected _replaceData
-      Roll.prototype._replaceData = new Proxy(Roll.prototype._replaceData, {
-      //@ts-ignore
-        apply: (target, thisvalue, args) => Roll_replaceData.bind(thisvalue)(new Set(), ...args)
-      });
-    }
-    */
+  /*
+  console.log("dae | Patching Roll._replaceFormulaData v0.7.0");
+  //@ts-ignore
+  Roll.prototype._replaceFormulaData = new Proxy(Roll.prototype._replaceFormulaData, {
+    //@ts-ignore
+    apply: (target, thisvalue, args) => Roll_replaceData.bind(thisvalue)(new Set(), ...args)
+  });
+  */
 });

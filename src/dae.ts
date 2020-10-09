@@ -19,16 +19,14 @@ import { initSheetTab} from "./module/daeTab"
 // import { ItemEffectSelector } from './module/apps/daeSelector';
 import { GMAction, GMActionMessage } from './module/GMAction';
 import { ActiveEffectChangeEditor } from './module/apps/ActiveEffectChangeEditor';
-import { migrateItem, convertAllItems, migrateActorItems, migrateAllActors, removeActorEffects } from './module/migration';
+import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems } from './module/migration';
 import { ActorEffects } from './module/apps/ActorEffects';
-import { patchingReadySetup } from './module/patching';
+import { patchingReadySetup, patchingInitSetup } from './module/patching';
 
 export let setDebugLevel = (debugText: string) => {
-  console.error("set debug level ", debugText)
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
   // 0 = none, warnings = 1, debug = 2, all = 3
   CONFIG.debug.hooks = debugEnabled >= 3;
-  console.error("Setting debugLevel to ", debugEnabled)
 }
 export var debugEnabled;
 // 0 = none, warnings = 1, debug = 2, all = 3
@@ -47,6 +45,7 @@ Hooks.once('init', async function() {
 	registerSettings();
 	debug('Init setup actions');
   daeInitActions();
+  patchingInitSetup();
 
 	// Assign custom classes and constants here
 	
@@ -82,10 +81,14 @@ Hooks.once('setup', function() {
     GMAction,
     doEffects,
     migrateItem: migrateItem,
-    convertAllItems: convertAllItems,
+    convertAllItems: migrateAllItems,
     migrateActorItems: migrateActorItems,
+    migrateAllItems: migrateAllItems,
     migrateAllActors: migrateAllActors,
+    fixupMonstersCompendium: fixupMonstersCompendium,
+    fixupActors: fixupActors,
     removeActorEffects: removeActorEffects,
+    fixupBonuses: fixupBonuses,
     ActorEffects: ActorEffects
   }
 });

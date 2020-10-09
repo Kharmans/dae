@@ -246,7 +246,6 @@ async function applyActiveEffects(activate, tokenList, activeEffects) {
       });
       removeList = removeList.map(ae=>ae.data._id);
       await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
-      // token.actor.deleteEmbeddedEntity("ActiveEffect", activeEffects)
       if (activate) {
         actEffects.forEach(ae=> {
           warn("Apply active effects ", ae)
@@ -261,13 +260,32 @@ async function applyActiveEffects(activate, tokenList, activeEffects) {
         })
         warn("gm action apply effect", token, actEffects)
         await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
-        console.error("Token is ", token)
-        if (!token.data.actorLink) { //TODO remove when create on tokens calls precreate
-          debug("Non link token manual apply of macro/token", token);
-          error("Non link token manual apply of macro/token", token)
-          daeOnMacro(token.actor, actEffects)
-          daeOnTokenMagic(token.actor, actEffects)
+        console.error("Gmaction apply effects are ", actEffects);
+        let removeEffect = async (tokenId, effect) => {
+          const token = canvas.tokens.get(tokenId);
+          const actor = token?.actor;
+          if (actor) {
+            let removeList = actor.effects.filter(ae => ae.data.origin === effect.origin && getProperty(ae.data.flags, "dae.transfer") === false);
+            removeList = removeList.map(ae=>ae.data._id);
+            if (removeList.length)
+              await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
+          }
         }
+        actEffects.forEach(ae => {
+          console.warn("checking ae duration ", ae.duration)
+          if (ae.duration.seconds || ae.duration.rounds || ae.duration.turns || ae.duration.minutes) {
+            let duration = ae.duration.seconds || 0;
+            duration += (ae.duration.rounds || 0 ) * 6;
+            duration += (ae.duration.turns || 0 ) * 6;
+            duration += (ae.duration.minutes || 0) * 60;
+            duration += (ae.duration.hours || 0) * 3600;
+            //TODO fix this to use proper DTMODS once deletions are auto scheduled.
+            console.warn("removing effect ", ae, " in ", duration, " seconds ")
+            if (duration) {
+              game.Gametime.doIn({seconds: duration}, removeEffect, token.id, ae)
+            }
+          }
+        })
       }
     };
   });

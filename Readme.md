@@ -1,4 +1,4 @@
-## Quick start for dynaic effects users.
+## Quick start for dynamic effects users.
 Pick an actor and do 
 ```
 DAE.migracteActorItems(game.actors.getName("ActorName")).
@@ -15,12 +15,16 @@ game.actors.getName("Actor Name").effects
 ```
 Additionaly on the character sheet title bar there is an "Active Effects" item that shows all of the active effects applied to the actor. Effects can be deleted from this screen, but not edited. Instead edit the OwnedItem that transferred the effect.  
 
-Functions that previously started with DynamicEffects. are noe DAE.  
+Functions that previously started with "DynamicEffects." are now "DAE.".  
 
 ## Major Features not implemented
-* Timeout of effects. This is waiting on 0.7.4(?) to see how active effects expire.
+* Timeout of effects. This is waiting on 0.7.4(?) to see how active effects expire. A simple implementation (very similar to dynamiceffects) unitl auto active effect deletion is in core.
 * Sample compendia. The supplied compendia is quite limited, but will be expanded over time.
-* Deleting an item from a non-linked actor will not remove the active effects on the actor.
+* From at least dnd 0.95 up to dnd5e 0.98 there is a problem will all monsters in the monster compendium and the data.data.bonuses.mwak/rwak/msak/rsak bonuses. The problem manifests as an error when creating an Active Effect to update these bonuses. A supplied function, 
+```
+DAE.fixupBonuses()
+```
+ will correct the problem in the Monsters SRD compendium and for all actors in the world.  
 
 ## Dynamic Active Effects
 Dynamic Active Effects (DAE) is a replacement for Dynamiceffects (which will NOT work in 0.71+, and won't be ported).
@@ -178,6 +182,9 @@ Allows modification of the ability modifier.
 * "data.abilities.ABILITY.save"
 Provides a bonus to ability saves. This is only active if the "Use ability save field when rolling saving throws" module setting is enabled. This will use the save plus rather than the ability modifier when rolling saving throws.
 * "data.spells.pact.level"
+* "data.spells[1-9].override"
+* "data.spellspact.override" 
+Spell slots.value and spellslots.max are not able to be modified with DAE.
 
 * "macro.execute"                     CUSTOM
 * "macro.itemMacro"                   CUSTOM
@@ -252,7 +259,10 @@ Or just drag the supplied (TODO) Ring of Protection from the sample items compen
 For armor and shields the value applied to the actor is calculated when the item is added to the character and (other than dex mod changes) remains fixed thereafter. So equipping leather aromor will give an AC of 11 + dex.mod. If you change the armor value of the armor after equipping the item the calculated AC will **NOT** change.
 
 ### Macro Functions ##
+Because dropping an item onto a character transfers the active effects to the actor many of the activation functions have been scrapped.
+
 The macro functions in dynamicitems have been replaced in DAE with the following (and you will need to modify any macros you have created):
+* Show all the Active Effects on an actor, marked as active/inactive.
   ```
   DAE.new DAE.ActorEffects({actor: actor}, {}).render(true)
   ```

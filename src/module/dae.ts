@@ -132,15 +132,15 @@ export class ValidSpec {
       baseValues["data.bonuses.heal.damage"] = "";
       baseValues["data.bonuses.heal.attack"] = "";
       baseValues["data.bonuses.spell.dc"] = 0;
+      baseValues["data.spells.pact.override"] = 0;
       Object.keys(baseValues).forEach(key=> {
         // can't modify all spell details.
         if (key.includes("data.spells")) {
           delete baseValues[key];
         }
-        if (key.includes("data.spells") && key.includes("orerride"))
-          specials[key] = [0,-1];
-        if (key.includes("data.spells") && key.includes("max"))
-          specials[key] = [0,-1];
+        if (key.includes("data.spells") && key.includes("override")) {
+          baseValues[key] = 0;
+        }
       });
 
       Object.keys(specials).forEach(key => {
@@ -490,25 +490,28 @@ export function daeOnTokenMagic(actor, effect) {
   // TODO: Check item active to see whether enable or disable
   daeTokenMagic(true, actor, effect)
 };
-export function daeOffTokenMagic(actor, effect) {daeTokenMagic(false, actor, effect)}
-function daeTokenMagic(enable, actor, effect) {
+export function daeOffTokenMagic(actor, effects) {daeTokenMagic(false, actor, effects)}
+function daeTokenMagic(enable, actor, effects) {
   // TODO lookup enabled from the item.isActive
   if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
-  debug("dae token magic ", actor, effect, enable)
-  effect.changes?.forEach(change=> {
-    if (change.key === "macro.tokenMagic") {
-      // get the token id from the effect
-      let tokenId = getProperty(effect, "flags.dae.token");
-      if (!tokenId) tokenId = ChatMessage.getSpeaker().token;
-      let token = canvas.tokens.get(tokenId);
-      //@ts-ignore
-      let tokenMagic = window.TokenMagic;
-      if (tokenMagic && token && enable) {
-        tokenMagic.addFilters(token, change.value);
-      } else if (tokenMagic && token && !enable) {
-        tokenMagic.deleteFilters(token, change.value)
+  debug("dae token magic ", actor, effects, enable)
+  if (!Array.isArray(effects)) effects = [effects];
+  effects.forEach(effect=> {
+    effect.changes?.forEach(change=> {
+      if (change.key === "macro.tokenMagic") {
+        let tokens = [actor.token];
+        if (!actor.token) tokens = actor.getActiveTokens();
+        //@ts-ignore
+        let tokenMagic = window.TokenMagic;
+        tokens.forEach(token => {
+          if (tokenMagic && token && enable) {
+            tokenMagic.addFilters(token, change.value);
+          } else if (tokenMagic && token && !enable) {
+            tokenMagic.deleteFilters(token, change.value)
+          }
+        });
       }
-    }
+    })
   })
 }
 
@@ -560,12 +563,16 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
 }
 
 /*
- * appply non-transfer effects to target tokens
+ * appply non-transfer effects to target tokens - provided for backwards compat
  */
 export function doEffects(item, activate, targets = undefined, { whisper = false, spellLevel = 0, damageTotal = null }) {
   applyNonTransferEffects.bind(item)(activate, targets, {whisper, spellLevel, damageTotal })
 }
 
+// Apply non-transfer effects to targets.
+// macro arguments are evaluated in the context of the actor applying to the targets
+// @target is left unevaluated.
+// request is passed to a GM client
 export function applyNonTransferEffects(activate, targets, {whisper = false, spellLevel = 0, damageTotal = null }) {
   if (!targets) return;
   let appliedEffects = duplicate(this.data.effects.filter(aeData => aeData.transfer === false))
@@ -581,17 +588,16 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
     mergeObject(activeEffectData.duration, mapDuration(this), {overwrite: true, inplace: true});
     activeEffectData.transfer = false;
     activeEffectData.disabled = false;
-    //@ts-ignore
+    //@ts-ignore - targets is set of targets (i.e. game.user.targets)
     targets = Array.from(targets).map(t=>typeof t === "string" ? t : t.id);
   });
   debug("About to call gmaction ", activate, appliedEffects, targets)
   requestGMAction(GMAction.actions.applyActiveEffects, {activate, activeEffects: appliedEffects, targets})
 }
 
+// Update the actor active effects when editing an owned item
 function ownedItemUpdate(actor, ownedItem, updates) {
-  let additions = updates.effects?.filter(ef=>ef.transfer) || [];
-  debug("updates/additions are ", updates, additions);
-  additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true});
+  let additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true});
   additions = additions.filter(ef=>ef.transfer) || [];
   debug("additions post filter are ", additions)
   let origin = `Actor.${actor.id}.OwnedItem.${ownedItem._id}`;
@@ -600,7 +606,8 @@ function ownedItemUpdate(actor, ownedItem, updates) {
     return isTransfer && (aef.data.origin === origin);
   });
   deletions = deletions.map(ef => ef.id || ef._id);
-  additions.forEach(efData => efData.origin = `Actor.${actor.id}.OwnedItem.${updates._id}`);
+  origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
+  additions.forEach(efData => efData.origin = origin);
   debug("owneditemupdate ", additions, deletions)
   Hooks.once("updateOwnedItem", () => {
     actor.deleteEmbeddedEntity("ActiveEffect", deletions)
@@ -630,12 +637,13 @@ export function createArmorEffect(actor, itemData) {
         flags: {dae: {transfer: true}}
       };
       itemData.effects.push(SHIELD_EFFECT)
-
       break
     case "natural":
+      setProperty(itemData, "flags.dae.alwaysActive", true);
     case "light":
     case "medium":
     case "heavy":
+      setProperty(itemData, "flags.dae.activeEquipped", true);
       let dexMax = itemData.data.armor.dex ?? 99;
       var ARMOR_EFFECT = {
         label: itemData.name,
@@ -694,14 +702,13 @@ export function daeInitActions() {
   // macros are called on active effect creationg and deletion
   Hooks.on("preCreateActiveEffect", daeOnMacro);
   Hooks.on("preDeleteActiveEffect", daeOffMacro)
-  Hooks.on("PreCreATEActiveEffect", scheduleEffectRemoval);
+  Hooks.on("preCreateActiveEffect", scheduleEffectRemoval);
   // Hooks.on("preUpdateOwnedItem", daeCheckMacro) //consider on/off for enable/disable
 
   // token magic effects are apllied/removed on active effect creation/deletion
   Hooks.on("preCreateActiveEffect", daeOnTokenMagic);
   Hooks.on("preDeleteActiveEffect", daeOffTokenMagic)
   // Hooks.on("preUpdateOwnedItem", daeCheckTokenMagic) // consider apply/unapply for enable/disable
-
   Hooks.on('renderActorSheet', initActorSheetHook);
 
   //@ts-ignore
@@ -724,7 +731,6 @@ function initActorSheetHook(app, html, data) {
 export function daeSetupActions() {
   //@ts-ignore
   cubActive = game.modules.get("combat-utility-belt")?.active;
-
   //@ts-ignore
   debug("Combat utility belt active ", cubActive, " and cub version is ", game.modules.get("combat-utility-belt")?.data.version)
 
@@ -756,14 +762,14 @@ export function mapDuration(item) {
   if (!aboutTime) {
     switch (itemData.data.duration.units) {
       case "turn": return {turns: itemData.data.duration.value};
-      case "round":  return {rounds: itemData.data.duration.value};
-      case "minute": return {rounds: itemData.data.duration.value * 60 / CONFIG.time.roundTime}
-      case "hour": return {rounds: itemData.data.duration.value * 3600 / CONFIG.time.roundTime};
-      case "hour": return {seconds: itemData.data.duration.value * 3600};
-      case "day": return {sconds: itemData.data.duration.value * 3600 * 24}
-      case "week": return {sconds: itemData.data.duration.value * 3600 * 7}
-      case "month": return {seconds: itemData.data.duration.value * 3600 * 7 * 30};
-      case "year": return {seconds:  itemData.data.duration.value * 3600 * 7 * 365}
+      case "round": return {rounds: itemData.data.duration.value};
+      case "minute": return {minutes: itemData.data.duration.value}
+      case "hour": return {rounds: itemData.data.duration.value};
+      case "hour": return {hours: itemData.data.duration.value};
+      case "day": return {days: itemData.data.duration.value}
+      case "week": return {weeks: itemData.data.duration.value}
+      case "month": return {months: itemData.data.duration.value};
+      case "year": return {years: itemData.data.duration.value};
     }
   } else {
     // do about time stuff

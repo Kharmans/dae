@@ -25,6 +25,13 @@ function migrateDynamicEffect(effects: [{
     }
     if (ef.modSpecKey === "macro.macroExecute") 
       ef.modSpecKey = "macro.execute";
+    if (ef.modSpecKey === "data.attributes.spelldc") {
+      console.error("migrating spell.dc")
+      ef.modSpecKey = "data.bonuses.spell.dc";
+    }
+    if (ef.modSpecKey.includes("override")) {
+      console.error("migrating", ef.modSpecKey)
+    }
     if (!ValidSpec.allSpecsObj[ef.modSpecKey]) {
       console.error("Could not find ", ef.modSpecKey, " effect not migrated")
     } else {
@@ -133,7 +140,7 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
     }
   }
 }
-export function convertAllItems() {
+export function migrateAllItems() {
   game.items.entities.forEach(item => {
     migrateItem(item);
   })
@@ -144,6 +151,7 @@ export async function migrateActorItems(actor) {
   let delResults = await actor.deleteEmbeddedEntity("ActiveEffect", ids);
   warn("Deletion results are ", delResults)
 
+  console.warn("Migrating Actor ", actor.name)
   const itemIds = actor.items.map(i=>i.id);
   let itemsData = [];
   itemIds.forEach(async id=> {
@@ -169,3 +177,35 @@ export async function removeActorEffects(actor) {
 export async function migrateAllActors() {
   game.actors.forEach(actor => migrateActorItems(actor))
 }
+
+export async function fixupMonstersCompendium() {
+  const pack = game.packs.get("dnd5e.monsters");
+  let locked = pack.locked;
+  pack.configure({locked: false})
+  let content = await pack.getContent()
+  content.forEach(entity=>["mwak","rwak","rsak","msak"]
+    .forEach(id=>entity.data.data.bonuses[id]={attack: "", damage: ""}))
+  content.forEach(async actor=>await pack.updateEntity(actor.data))
+  pack.configure({locked: locked})
+}
+export async function fixupActors() {
+  game.actors.forEach(async actor => {
+    const bonuses = duplicate(actor.data.data.bonuses);
+    let found = false;
+    ["mwak","rwak","rsak","msak"].forEach(bonusId => {
+      if (typeof actor.data.data.bonuses[bonusId] === "string") {
+        bonuses[bonusId] = {"attack": "", "damage": ""};
+        found = true;
+      }
+    })
+    if (found) {
+      console.warn("Fixing actor ", actor.name, actor.id, bonuses)
+      await actor.update({"data.bonuses": bonuses});
+    }
+  })
+}
+
+  export async function fixupBonuses() {
+    fixupMonstersCompendium();
+    fixupActors();
+  }
