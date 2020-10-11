@@ -26,11 +26,7 @@ function migrateDynamicEffect(effects: [{
     if (ef.modSpecKey === "macro.macroExecute") 
       ef.modSpecKey = "macro.execute";
     if (ef.modSpecKey === "data.attributes.spelldc") {
-      console.error("migrating spell.dc")
       ef.modSpecKey = "data.bonuses.spell.dc";
-    }
-    if (ef.modSpecKey.includes("override")) {
-      console.error("migrating", ef.modSpecKey)
     }
     if (!ValidSpec.allSpecsObj[ef.modSpecKey]) {
       console.error("Could not find ", ef.modSpecKey, " effect not migrated")
@@ -56,6 +52,7 @@ export async function migrateItem(item: CONFIG.Item.EntityClass): CONFIG.Item.En
   if (getProperty(item.data.flags, "dynamiceffects.effects")?.length > 0) {
     let activeEffects = migrateDynamicEffect(item.data.flags.dynamiceffects.effects);
     debug("migrate Item ", activeEffects)
+    setProperty(item.data.flags, "dae", {});
     const TRANSFER_DATA = {
       label: `${item.name} Passive Effects`,
       icon: item.img,
@@ -80,14 +77,10 @@ export async function migrateItem(item: CONFIG.Item.EntityClass): CONFIG.Item.En
     if (activeEffects.passives.length > 0) ae.push(TRANSFER_DATA);
     if (activeEffects.actives.length > 0) ae.push(APPLIED_DATA);
     if (getProperty(item.data.flags, "dynamiceffects")) {
-      debug("Migration: dynamiceffects flags ",
-        "alwaysActive", getProperty(item.data.flags, "dynamiceffects.alwaysActive"), 
-        "activeEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive")
-      )
-      await item.update({
-        "flags.dynamiceffects.alwaysActive": getProperty(item.data.flags, "dynamiceffects.alwaysActive"),
-        "flags.dynamiceffects.activeEquipped": getProperty(item.data.flags, "dynamiceffects.equipActive")
-      })
+      if (getProperty(item.data.flags, "dynamiceffects")) {
+        setProperty(item.data.flags, "dae.alwaysActive", getProperty(item.data.flags, "dynamiceffects.alwaysActive"))
+        setProperty(item.data.flags, "dae.activeEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive"))
+      }
     }
     item.createEmbeddedEntity("ActiveEffect", ae);
   }
@@ -96,6 +89,7 @@ export async function migrateItem(item: CONFIG.Item.EntityClass): CONFIG.Item.En
 export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): CONFIG.Item.EntityClass {
   if (getProperty(item.data.flags, "dynamiceffects.effects")?.length > 0) {
     let activeEffects = migrateDynamicEffect(item.data.flags.dynamiceffects.effects);
+    setProperty(item.data.flags, "dae", {});
     debug("migrate Item ", activeEffects)
     const TRANSFER_DATA = {
       label: `${item.name} Passive Effects`,
@@ -115,7 +109,7 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
     if (activeEffects.passives.length + activeEffects.actives.length === 0) return null;
     let theItem = item;
     const isOwned = theItem.isOwned;
-    warn("Migrating ", theItem.name, activeEffects)
+    warn("Migrating owned item ", theItem.name, activeEffects)
     if (!actor) actor = item.actor;
 
     if (isOwned) {
@@ -134,7 +128,7 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
       itemData.effects = ae;
       if (getProperty(theItem.data.flags, "dynamiceffects")) {
         setProperty(itemData.flags, "dae.alwaysActive", getProperty(item.data.flags, "dynamiceffects.alwaysActive"))
-        setProperty(itemData.flags, "dae.aactiveEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive"))
+        setProperty(itemData.flags, "dae.activeEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive"))
       }
       return itemData;
     }
@@ -151,7 +145,7 @@ export async function migrateActorItems(actor) {
   let delResults = await actor.deleteEmbeddedEntity("ActiveEffect", ids);
   warn("Deletion results are ", delResults)
 
-  console.warn("Migrating Actor ", actor.name)
+  log("Migrating Actor ", actor.name)
   const itemIds = actor.items.map(i=>i.id);
   let itemsData = [];
   itemIds.forEach(async id=> {

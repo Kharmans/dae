@@ -28,7 +28,7 @@ async function adddaeTab(app, html, data) {
     if (makeActive && app._tabs[0]) app._tabs[0].activate("dae");
     return;
   }
-  console.warn("dae tab ", html.find(".sheet-navigation"))
+  // console.warn("dae tab ", html.find(".sheet-navigation"))
   let item = app.object;
   // if (["spell", "backpack"].includes(item.type)) return;
   if (["loot"].includes(item.type)) return;

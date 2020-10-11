@@ -1,5 +1,5 @@
 import { removeActiveEffectsToken } from "./daeMacros";
-import { daeOnMacro, daeOnTokenMagic } from "./dae";
+import { daeOnMacro, daeOnTokenMagic, aboutTimeInstalled } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -142,7 +142,7 @@ export class GMAction {
         break;
       case this.actions.applyActiveEffects:
         //@ts-ignore
-        await applyActiveEffects(data.activate, data.targets, data.activeEffects)
+        await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration)
         //@ts-ignore
         // this.chatEffects(requester, actorId, itemData, [tokenId], game.i18n.localize("dae.applyingEffects"), data.whisper)
         break;
@@ -233,9 +233,12 @@ let applyTokenMagic = async (tokenId: string, effectId: string, duration: number
   }
 }
 
-async function applyActiveEffects(activate, tokenList, activeEffects) {
-  debug("gmaction apply effect ", activate, tokenList, duplicate(activeEffects))
+async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration) {
+  debug("gmaction apply effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
+  console.warn("gmaction apply effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
+
   tokenList.forEach(async tid => {
+    
     const token = canvas.tokens.get(tid);
     if (token) {
       let actEffects = duplicate(activeEffects)
@@ -257,10 +260,15 @@ async function applyActiveEffects(activate, tokenList, activeEffects) {
             }
           })
          setProperty(ae, "flags.dae.token", tid)
+         // convert mapped duration to seconds
+         const seconds = convertToSeconds(itemDuration);
+         ae.duration.seconds = seconds;
+         //TODO remove when core has seconds
+         const rounds = seconds / 6;
+         ae.duration.rounds = rounds;
         })
         warn("gm action apply effect", token, actEffects)
         await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
-        console.error("Gmaction apply effects are ", actEffects);
         let removeEffect = async (tokenId, effect) => {
           const token = canvas.tokens.get(tokenId);
           const actor = token?.actor;
@@ -272,21 +280,51 @@ async function applyActiveEffects(activate, tokenList, activeEffects) {
           }
         }
         actEffects.forEach(ae => {
-          console.warn("checking ae duration ", ae.duration)
-          if (ae.duration.seconds || ae.duration.rounds || ae.duration.turns || ae.duration.minutes) {
-            let duration = ae.duration.seconds || 0;
-            duration += (ae.duration.rounds || 0 ) * 6;
-            duration += (ae.duration.turns || 0 ) * 6;
-            duration += (ae.duration.minutes || 0) * 60;
-            duration += (ae.duration.hours || 0) * 3600;
-            //TODO fix this to use proper DTMODS once deletions are auto scheduled.
-            console.warn("removing effect ", ae, " in ", duration, " seconds ")
-            if (duration) {
-              game.Gametime.doIn({seconds: duration}, removeEffect, token.id, ae)
-            }
+          // TODO remove this when core supports expriy
+          let duration = ae.duration.seconds || 0;
+          duration += (ae.duration.rounds || 0 ) * CONFIG.time.roundTime;
+          duration += (ae.duration.turns || 0 ) * CONFIG.time.roundTime;
+          warn("removing effect ", ae, " in ", duration, " seconds ")
+          if (duration && aboutTimeInstalled) {
+            game.Gametime.doIn({seconds: duration}, removeEffect, token.id, ae)
+          } else {
+            setTimeout(removeEffect, duration || 6000, token.id, ae);
           }
         })
       }
     };
   });
+}
+
+export function convertToSeconds(itemDuration: {units: string, value: number}) {
+  if (!itemDuration) return 0;
+  if (!aboutTimeInstalled ) {
+    switch (itemDuration.units) {
+      case "turn": return itemDuration.value * CONFIG.time.roundTime;
+      case "round": return itemDuration.value * CONFIG.time.roundTime
+      case "second": itemDuration.value;
+      case "minute": return itemDuration.value * 60;
+      case "hour": return itemDuration.value * 60 * 60;
+      case "day": return itemDuration.value * 60 * 60 * 24;
+      case "week": return itemDuration.value * 60 * 60 * 24 * 7;
+      case "month": return itemDuration.value * 60 * 60 * 24 * 30;
+      case "year": return itemDuration.value * 60 * 60 * 24 * 30;
+      default: return 0;
+    }
+  } else {
+    // do about time stuff
+    var dtMod;
+    switch (itemDuration.units) {
+      case "turn": return itemDuration.value * CONFIG.time.roundTime;
+      case "round": return itemDuration.value * CONFIG.time.roundTime
+      case "second": return itemDuration.value;
+      case "minute": return game.Gametime.DTf({"minutes": itemDuration.value}).toSeconds();
+      case "hour": return game.Gametime.DTf({"hours": itemDuration.value}).toSeconds();
+      case "day": return game.Gametime.DTf({"day": itemDuration.value}).toSeconds();
+      case "week": return game.Gametime.DTf({"weel": itemDuration.value}).toSeconds();
+      case "month": return game.Gametime.DTf({"month": itemDuration.value}).toSeconds();
+      case "year": return game.Gametime.DTf({"year": itemDuration.value}).toSeconds();
+      default: return 0;
+    }
+  }
 }
