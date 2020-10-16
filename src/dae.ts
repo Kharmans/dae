@@ -13,15 +13,14 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, doEffects, daeInitActions, ValidSpec} from "./module/dae";
+import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
-import { initSheetTab} from "./module/daeTab"
-// import { ItemEffectSelector } from './module/apps/daeSelector';
 import { GMAction, GMActionMessage } from './module/GMAction';
-import { ActiveEffectChangeEditor } from './module/apps/ActiveEffectChangeEditor';
 import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems } from './module/migration';
 import { ActorEffects } from './module/apps/ActorEffects';
 import { patchingReadySetup, patchingInitSetup } from './module/patching';
+import { DAEStatusEffects } from './module/statusEffects';
+import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
@@ -41,8 +40,11 @@ export let i18n = key => {
 /* Initialize module					*/
 /* ------------------------------------ */
 Hooks.once('init', async function() {
+  //@ts-ignore
+  CONFIG.statusEffects = mergeObject(CONFIG.statusEffects, DAEStatusEffects, {overwrite: true, inplace: true});
 	// Register custom module settings
-	registerSettings();
+  registerSettings();
+  fetchParams();
 	debug('Init setup actions');
   daeInitActions();
   patchingInitSetup();
@@ -71,8 +73,7 @@ Hooks.once('setup', function() {
   debug("setup actions")
 	GMAction.initActions();
 	daeSetupActions();
-	ActiveEffectChangeEditor.setupActions();
-
+	
 	//@ts-ignore
 	window.DAE = {
     dataSetup,
@@ -89,7 +90,8 @@ Hooks.once('setup', function() {
     fixupActors: fixupActors,
     removeActorEffects: removeActorEffects,
     fixupBonuses: fixupBonuses,
-    ActorEffects: ActorEffects
+    ActorEffects: ActorEffects,
+    DAEActiveEffectConfig: DAEActiveEffectConfig
   }
 });
 

@@ -1,9 +1,7 @@
 import { requestGMAction, GMAction } from "./GMAction";
 import { warn, error, debug, setDebugLevel } from "../dae";
-import { removeActiveEffectsToken } from "./daeMacros";
-import { initSheetTab } from "./daeTab";
-import { Framebuffer, TARGETS } from "pixi.js";
 import { ActorEffects } from "./apps/ActorEffects";
+import { ItemEffects } from "./apps/ItemEffects";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -17,6 +15,7 @@ export var itemacroActive;
 export var calculateArmor;
 export var debugEnabled;
 export var useAbilitySave;
+export var activeConditions;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -61,7 +60,7 @@ export class ValidSpec {
     }
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-    if (game.system.id === "dnd5e") { 
+    if (["dnd5e", "sw5e"].includes(game.system.id)) { 
       var specials = {
         //@ts-ignore - come back to this
         "flags.dnd5e.initiativeHalfProf": [false, ACTIVE_EFFECT_MODES.OVERRIDE],
@@ -81,6 +80,8 @@ export class ValidSpec {
         "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro..tokenMagic": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "flags.dnd5e.conditions": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "flags.dnd5e.conditions.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.All-Attacks": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.weapon.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.spell.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
@@ -120,7 +121,6 @@ export class ValidSpec {
         "data.resources.legact.max": [0, -1],
         "data.resources.legres.max": [0, -1],
         "data.spells.pact.level": [0,-1],
-        "flags.dnd5e.conditions": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         // "flags.dnd5e.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.heal.damage": ["", -1],
         "data.bonuses.heal.attack": ["", -1]
@@ -140,6 +140,9 @@ export class ValidSpec {
 
       // patch for missing fields
 
+      // needs to be int and in base values since it is used in prepare derived data 
+      // to calc ability spell dcs
+      //TODO work out how to evaluate this to a number in prepare data
       baseValues["data.bonuses.spell.dc"] = 0;
       baseValues["data.spells.pact.override"] = 0;
       Object.keys(baseValues).forEach(key=> {
@@ -169,7 +172,7 @@ export class ValidSpec {
     }
 
     // Do the system specific part
-    if (game.system.id === "dnd5e") {
+    if (["dnd5e", "sw5e"].includes(game.system.id)) {
       // 1. abilities add mod and save to each;
       Object.keys(_characterSpec.data.abilities).forEach(ablKey => {
         let abl = _characterSpec.data.abilities[ablKey];
@@ -192,7 +195,7 @@ export class ValidSpec {
       })
 
       this.allSpecs = this.baseSpecs.concat(this.derivedSpecs);
-      if (game.system.id === "dnd5e") {
+      if (["dnd5e", "sw5e"].includes(game.system.id)) {
         // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
         // and initiative bonus depends on advantage on initiative
         this.allSpecs.forEach(m => {
@@ -226,10 +229,8 @@ export function isDisabled(itemData) {
     let active = daeFlags.alwaysActive 
     || (daeFlags.activeEquipped && itemData.data.equipped)
     || (itemData.data.attuned && itemData.data.equipped)
-  debug("is disabled returning ", !active, daeFlags);
   return !active;
 }
-
 
 var oldPrepareData;
 /*
@@ -241,14 +242,18 @@ function applyDaeEffects(specList) {
   const rollData = daeRollData(this);
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, e) => {
-    let id = e.data.origin?.match(/Actor.*Item\.(.*)/);
-    var item;
-    if (id?.length === 2) {
-      item = e.parent.items.get(id[1]);
-    } else item = null;
-    // override default disabled behaviour to use item settings to toggle
-    e.data.disabled = (item && isDisabled(item.data) && e.data.flags?.dae?.transfer !== false) || false;
-    debug("item disabled ", e.data.disabled, item, item && isDisabled(item.data), e.data.flags?.dae?.transfer);
+    // let item = await fromUuid(e.data.origin);
+    let item;
+    if (e.data.origin) {
+      let [actorType, actorId, itemType, itemId] = e.data.origin.split(".");
+      item = itemId && this.items.get(itemId);
+      e.data.disabled = (item && isDisabled(item.data) && e.data.flags?.dae?.transfer !== false) || false;
+    }
+    // if not calcullating armor disable armor effects
+    if (e.data.flags.dae?.armorEffect)
+      e.data.disabled = e.data.disabled || !calculateArmor;
+    // console.error("item disabled ", e.data.disabled, item?.name, e.data.flags.dae?.baseAC, item, item && isDisabled(item.data), e.data.flags?.dae?.transfer);
+
     if ( e.data.disabled ) return changes;
     return changes.concat(e.data.changes
       .filter(c => {return specList[c.key] !== undefined})
@@ -267,6 +272,7 @@ function applyDaeEffects(specList) {
         return c;
       }));
   }, []);
+
   changes.sort((a, b) => a.priority - b.priority);
 
   if (changes.length > 0) debug("Applying change ", this.name, changes)
@@ -438,7 +444,15 @@ function daeCustomEffect(actor, change) {
         skl.passive = round(skl.passive + multi * value + add);
       }
       return true;
-  }
+    case "flags.dnd5e.conditions":
+    case "flags.dnd5e.conditions.custom":
+      if (!actor.data.flags.dnd5e?.conditions?.some(c=>c === change.value)) {
+        const existingConditions = getProperty(actor.data.flags, "dnd5e.conditions") || [];
+        existingConditions.push(change.value.toLowerCase());
+        setProperty(actor.data.flags, "dnd5e.conditions", existingConditions);
+      }
+      return true;
+    }
 }
 
 function attackDamageBonusEval(bonusString, actor) {
@@ -469,13 +483,18 @@ function doCustomValue(actor, current, change, validValues) {
 */
 function prepareData() {
   this.data = duplicate(this._data);
-  debug("prepare data: before passes", this.name, this.data)
+  debug("prepare data: before passes", this.name, this.data);
+  // Add a default AC for characters
   if (!this.data.img) this.data.img = CONST.DEFAULT_TOKEN;
   if ( !this.data.name ) this.data.name = "New " + this.entity;
   this.prepareBaseData();
   this.prepareEmbeddedEntities();
   applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj);
   this.prepareDerivedData();
+  if (calculateArmor && this.data.type === "character") {
+    this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
+  }
+
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj);
   debug("prepare data: after passes", this.data);
 }
@@ -484,14 +503,61 @@ export function daeCheckMacro(...args) {
   // conisder toggling according to item isactive
 }
 
-export function daeOnMacro(actor, effects) {
-  debug("daeOnMacro",actor, effects)
-  return daeMacro(true, actor, effects)
+export function daeCreateActiveEffectActions(actor, effects) {
+  daeMacro(true, actor, effects);
+  daeTokenMagic(true, actor, effects);
+  daeConditions(true, actor, effects);
 }
 
-export function daeOffMacro(actor, effects) {
-  debug("daeOffMacro",actor, effects)
-  return daeMacro(false, actor, effects)
+export function daeDeleteActiveEffectActions(actor, effects) {
+  if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
+  if (!Array.isArray(effects)) effects = [effects];
+  effects.forEach(effect => {
+    if (!effect.transfer) return;
+  })
+  daeMacro(false, actor, effects);
+  daeTokenMagic(false, actor, effects)
+  daeConditions(false, actor, effects);
+}
+
+function daeConditions(enable, actor, effects) {
+  warn("Dae conditions ", actor, effects, actor.__proto__.constructor.name)
+  if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return true;
+  if (!Array.isArray(effects)) effects = [effects];
+  //@ts-ignore
+  effects.forEach(effect=> {
+    effect.changes?.forEach(async change=> {
+      if (change.key === "flags.dnd5e.conditions") {
+        // Check immunities.
+        if (actor.data.data.traits.ci.value.includes(change.value)) return true;
+        let tokens = [actor.token];
+        if (!actor.token) console.log("finding tokens ");
+        if (!actor.token) tokens = actor.getActiveTokens();
+        // apply/remove condition from each token
+        if (cubActive && activeConditions === "cub") {
+          if (enable) {
+            game.cub.applyCondition(change.value, tokens, { warn: false });
+          } else {
+            game.cub.removeCondition(change.value, tokens, { warn: false });
+          }
+        } else if (activeConditions === "default") {
+          let extraEffect = CONFIG.statusEffects.find(e => e.id === change.value)
+          if (extraEffect) {
+            let existing = actor.effects.find(e => e.getFlag("core", "statusId") === extraEffect.id);
+            let toggle = (existing !== null) !== enable;
+            if (toggle) {
+              let handler = async (token, extraEffect) => {
+                await token.toggleEffect(extraEffect)
+              };
+              // Hooks.once("createActiveEffect", handler.bind(null, tokens[0], extraEffect));
+              setTimeout(handler.bind(null, tokens[0], extraEffect), 0);
+            }
+          }
+        }
+      }
+    })
+  })
+  return true;
 }
 
 async function daeMacro(enable, actor, effects) {
@@ -503,9 +569,8 @@ async function daeMacro(enable, actor, effects) {
       if (!["macro.execute", "macro.itemMacro"].includes(change.key)) return;
       if (typeof change.value === "string") { //args have not been evaled yet
         let rollData = daeRollData(actor)
-        let id = effect.origin?.match(/Actor.*Item\.(.*)/);
-        if (id?.length === 2) {
-          const item = actor.items.get(id[1]);
+        let item = await fromUuid(effect.data.origin);
+        if (item) {
           change.value = evalArgs.bind(item)(rollData, actor, change, 0, 0)
         }
       }
@@ -536,15 +601,7 @@ async function daeMacro(enable, actor, effects) {
 
 function daeCheckTokenMagic(...args) {
   //consider toggling according to isactive
-}
 
-export function daeOnTokenMagic(actor, effect) {
-  // TODO: Check item active to see whether enable or disable
-  daeTokenMagic(true, actor, effect)
-};
-
-export function daeOffTokenMagic(actor, effects) {
-  daeTokenMagic(false, actor, effects)
 }
 
 function daeTokenMagic(enable, actor, effects) {
@@ -639,7 +696,7 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
       // eval args before calling GMAction so values are taken from the casting etc actor.
       change.value = evalArgs.bind(this)(rollData, this.actor, change, spellLevel, damageTotal)
     })
-    activeEffectData.origin = `Actor.${this.actor.id}.OwnedItem.${this.id}`;
+    activeEffectData.origin = this.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
     activeEffectData.transfer = false;
     activeEffectData.disabled = false;
@@ -652,71 +709,77 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
 
 // Update the actor active effects when editing an owned item
 function ownedItemUpdate(actor, ownedItem, updates) {
-  let additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true});
-  additions = additions.filter(ef=>ef.transfer) || [];
-  debug("additions post filter are ", additions)
-  let origin = `Actor.${actor.id}.OwnedItem.${ownedItem._id}`;
-  let deletions = actor.effects.filter(aef => {
-    let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
-    return isTransfer && (aef.data.origin === origin);
-  });
-  deletions = deletions.map(ef => ef.id || ef._id);
-  origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
-  additions.forEach(efData => efData.origin = origin);
-  debug("owneditemupdate ", additions, deletions)
-  Hooks.once("updateOwnedItem", () => {
-    actor.deleteEmbeddedEntity("ActiveEffect", deletions)
-    actor.createEmbeddedEntity("ActiveEffect", additions)
-  })
+  const newData = mergeObject(ownedItem, updates, {overwrite: true});
+  if (updates.effects) {
+    let additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true, inplace: false});
+    additions = additions.filter(ef=>ef.transfer) || [];
+    debug("additions post filter are ", updates.effects, additions)
+    let origin = actor.items.get(ownedItem._id).uuid;
+    let deletions = actor.effects.filter(aef => {
+      let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+      return isTransfer && (aef.data.origin === origin);
+    });
+    deletions = deletions.map(ef => ef.id || ef._id);
+    origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
+    additions.forEach(efData => {
+      efData.disabled = isDisabled(newData);
+      efData.origin = origin;
+    });
+    
+    debug("owneditemupdate ", additions, deletions);
+    //TODO: change this so we can do an updateEmbeddedEntitty.
+    // It does require matching the active effect ids to the source item
+    actor.deleteEmbeddedEntity("ActiveEffect", deletions).then(() => 
+      actor.createEmbeddedEntity("ActiveEffect", additions));
+  } else {
+    const disabled = isDisabled(newData);
+    origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
+    let effects = actor.effects.filter(aef => {
+      let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+      return (aef.data.origin === origin) && isTransfer;
+    }).map(aef => {
+      const data = duplicate(aef.data);
+      data.disabled = disabled;
+      return data;
+    })
+    actor.updateEmbeddedEntity("ActiveEffect", effects);
+  }
   return true;
 }
-
+export function updateArmorEffect(actor, itemData, updateData, ...args) {
+  if (updateData.data?.armor) {
+    // Armor value has been changed so recrreate owned item and actor effects
+    let theEffects = duplicate(itemData.effects.filter(efData => !efData.flags.dae?.armorEffect));
+    let existingEffect = duplicate(itemData.effects.find(efData => efData.flags.dae?.armorEffect));
+    const origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
+    // const origin = actor.items.get(itemData._id)
+    let armorEffect = generateArmorEffect(itemData, origin, mergeObject(itemData.data.armor, updateData.data.armor, {overwrite: true}));
+    let newEffect = mergeObject(existingEffect, armorEffect, {overwrite: true, inplace:true});
+    theEffects.push(newEffect);
+    updateData.effects = theEffects;
+    // Since this runs in the preUpdateOwneditem chain just modifyiing the update data is enough
+  }
+  return true;
+}
 export function createArmorEffect(actor, itemData) {
+  if (!itemData.effects && itemData.data.effects) itemData = itemData.data;
   if (!calculateArmor || itemData.type !== "equipment") return true;
+  // armor created on actor, screae armor effect.
+  const origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
+  // const origin = actor.items.get(itemData._id).uuid;
+  itemData.effects = itemData.effects.filter(efData => !efData.flags.dae?.armorEffect);
   switch(itemData.data.armor.type) {
-    case "shield":
-      const SHIELD_EFFECT = {
-        label: itemData.name,
-        icon: itemData.img,
-        changes: [
-          {
-            key: "data.attributes.ac.value", 
-            value: itemData.data.armor.value, 
-            //@ts-ignore
-            mode: CONST.ACTIVE_EFFECT_MODES.ADD, 
-            priority: 15
-          },
-        ],
-        transfer: true,
-        origin: `Actor.${actor.id}.OwnedItem.${itemData._id}`,
-        flags: {dae: {transfer: true}}
-      };
-      itemData.effects.push(SHIELD_EFFECT)
-      break
     case "natural":
       setProperty(itemData, "flags.dae.alwaysActive", true);
+      //@ts-ignore
+      itemData.effects.push(generateArmorEffect(itemData, origin, itemData.data.armor));
+      break;
+    case "shield":
     case "light":
     case "medium":
     case "heavy":
       setProperty(itemData, "flags.dae.activeEquipped", true);
-      let dexMax = itemData.data.armor.dex ?? 99;
-      var ARMOR_EFFECT = {
-        label: itemData.name,
-        icon: itemData.img,
-        changes: [
-          {
-            key: "data.attributes.ac.value",
-            value: `(${dexMax} < @abilities.dex.mod ? ${dexMax} : @abilities.dex.mod) + ` + itemData.data.armor.value, 
-            //@ts-ignore
-            mode: CONST.ACTIVE_EFFECT_MODES.OVERRIDE, 
-            priority: 5
-          },
-        ],
-        transfer: true,
-        origin: `Actor.${actor.id}.OwnedItem.${itemData._id}`,
-        flags: {dae: {transfer: true}}
-      };
-      itemData.effects.push(ARMOR_EFFECT);
+      itemData.effects.push(generateArmorEffect(itemData, origin, itemData.data.armor));
       break;
     default:
       break;
@@ -724,9 +787,50 @@ export function createArmorEffect(actor, itemData) {
   return true;
 }
 
+export function generateArmorEffect(itemData, origin, armorData) {
+  switch(armorData.type) {
+    case "shield":
+      //@ts-ignore
+      return armorEffectFromFormula(`${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.ADD, itemData, origin);
+    case "natural":
+      //@ts-ignore
+      return armorEffectFromFormula(`@abilities.dex.mod + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
+    case "light":
+      //@ts-ignore
+      return armorEffectFromFormula(`(@abilities.dex.mod > ${armorData.dex || 99} ? ${armorData.dex || 99} : @abilities.dex.mod)+ ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
+    case "medium":
+      //@ts-ignore
+      return armorEffectFromFormula(`(@abilities.dex.mod > ${armorData.dex || 2} ? ${armorData.dex || 2} : @abilities.dex.mod)+ ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
+      case "heavy":
+      //@ts-ignore
+      return armorEffectFromFormula(`${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
+    default:
+      return null;
+      break;
+  }
+}
+
+function armorEffectFromFormula(formula, mode, itemData, origin) {
+  return {
+    label: itemData.name,
+    icon: itemData.img,
+    changes: [
+      {
+        key: "data.attributes.ac.value",
+        value: formula, 
+        mode, 
+        priority: 5
+      },
+    ],
+    transfer: true,
+    origin,
+    flags: {dae: {transfer: true, armorEffect: true}}
+  };
+}
+
 export function daeReadyActions() {
   ValidSpec.localizeSpecs();
-  initSheetTab();
+  // initSheetTab();
   //@ts-ignore
   aboutTimeInstalled = game.modules.get("about-time")?.active;
 }
@@ -741,28 +845,28 @@ export function localDeleteFilters(tokenId: string, filterName: string) {
 export var tokenizer;
 
 export function daeInitActions() {
-  if (game.system.id === "dnd5e") {
+  if (["dnd5e", "sw5e"].includes(game.system.id)) {
     acAffectingArmorTypes = ["light", "medium", "heavy", "bonus", "natural", "shield"];
   }
-  fetchParams();
   ValidSpec.createValidMods();
 
   oldPrepareData = CONFIG.Actor.entityClass.prototype.prepareData;
   CONFIG.Actor.entityClass.prototype.prepareData = prepareData;
   Hooks.on("applyActiveEffect", daeCustomEffect); // apply DAE custom effects
-  Hooks.on("preUpdateOwnedItem", ownedItemUpdate)
+  // Updating an owned item - first update any actor effects
+  Hooks.on("preUpdateOwnedItem", updateArmorEffect)
+  // If updating effects recreate actor effects for updated item.
+  Hooks.on("preUpdateOwnedItem", ownedItemUpdate);
   Hooks.on("preCreateOwnedItem", createArmorEffect)
 
   // macros are called on active effect creationg and deletion
-  Hooks.on("preCreateActiveEffect", daeOnMacro);
-  Hooks.on("preDeleteActiveEffect", daeOffMacro)
+  Hooks.on("preCreateActiveEffect", daeCreateActiveEffectActions);
+  Hooks.on("preDeleteActiveEffect", daeDeleteActiveEffectActions)
   // Hooks.on("preUpdateOwnedItem", daeCheckMacro) //consider on/off for enable/disable
 
-  // token magic effects are apllied/removed on active effect creation/deletion
-  Hooks.on("preCreateActiveEffect", daeOnTokenMagic);
-  Hooks.on("preDeleteActiveEffect", daeOffTokenMagic)
   // Hooks.on("preUpdateOwnedItem", daeCheckTokenMagic) // consider apply/unapply for enable/disable
   Hooks.on('renderActorSheet', initActorSheetHook);
+  Hooks.on('renderItemSheet', initItemSheetHook);
 
   //@ts-ignore
   tokenizer = new DETokenizeThis({
@@ -781,6 +885,18 @@ function initActorSheetHook(app, html, data) {
   openBtn.insertAfter(titleElement); 
 }
 
+function initItemSheetHook(app, html, data) {
+  if (app.entity.isOwned) return;
+  let title = game.i18n.localize('dae.ActiveEffectName'); 
+  let openBtn = $(`<a class="open-item-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
+  openBtn.click(ev => {
+    new ItemEffects({item: app.entity}, {}).render(true);
+  });
+  html.closest('.app').find('.open-item-effect').remove();
+  let titleElement = html.closest('.app').find('.window-title');
+  openBtn.insertAfter(titleElement); 
+}
+
 export function daeSetupActions() {
   //@ts-ignore
   cubActive = game.modules.get("combat-utility-belt")?.active;
@@ -788,9 +904,9 @@ export function daeSetupActions() {
   debug("Combat utility belt active ", cubActive, " and cub version is ", game.modules.get("combat-utility-belt")?.data.version)
 
   //@ts-ignore
-  if (cubActive && !isNewerVersion(game.modules.get("combat-utility-belt")?.data.version, "1.1.1")) {
-    ui.notifications.warn("Combat Utility Belt needs to be version 1.1.2 or later - conditions disabled");
-    console.warn("Combat Utility Belt needs to be version 1.1.2 or later - conditions disabled");
+  if (cubActive && !isNewerVersion(game.modules.get("combat-utility-belt")?.data.version, "1.1.2")) {
+    ui.notifications.warn("Combat Utility Belt needs to be version 1.1.3 or later - conditions disabled");
+    console.warn("Combat Utility Belt needs to be version 1.1.3 or later - conditions disabled");
     cubActive = false;
   } else if (cubActive) {
     debug("dae | Combat Utility Belt active and conditions enabled");
@@ -806,4 +922,5 @@ export function fetchParams() {
   calculateArmor = game.settings.get("dae", "calculateArmor");
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
+  activeConditions = game.settings.get("dae", "activeConditions")
 }

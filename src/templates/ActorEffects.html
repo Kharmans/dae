@@ -1,6 +1,27 @@
 <form autocomplete="off">
+  <section>
+  <div class="form-group effect-header">
+    <div>
+    <label>{{ localize "dae.summary" }}</label>
+    <input type="checkbox" class="summary-list" name="summary" {{ checked summary }} />
+    </div>
+    <div>
+      <label>{{ localize "dae.activesOnly" }}</label>
+      <input type="checkbox" class="active-list" name="active" {{ checked active }} />
+    </div>
+    <div>
+      <label>{{ localize "dae.temporary" }}</label>
+      <input type="checkbox" class="temporary-list" name="temporary" {{ checked temporary }} />
+    </div>
+    <div>
+      <label>{{ localize "dae.filterEffects" }}</label>
+      <a class="refresh" title={{localize dae.filterEffects}}><i class="fas fa-filter"></i></a>
+    </div>
+  </div>
+</section>
+<section>
   <div class="dnd5e sheet item ">
-  {{#if showEffects}}
+    {{#if showEffects}}
     <ol class="dae-effect-list">
       <li class="flexrow effect-header">
         <div class="effect-name">{{localize "dae.ActiveEffectName"}}</div>
@@ -8,6 +29,7 @@
         <div class="effect-value">{{localize "dae.EffectValue"}}</div>
         {{#if canEdit}}
         <div class="effect-controls">
+          <a class="effect-add" title={{localize dae.add}}><i class="fas fa-plus"></i></a>
         </div>
         {{/if}}
       </li>
@@ -26,27 +48,30 @@
         <i class="fas fa-arrow-right" style="padding-top: 4px"></i>
         {{/if}}
         {{#if effect.flags.dae.active}}
-        <div>&nbsp{{localize "dae.enabled"}}</div>
+          {{#if effect.isTemporary}}
+          <div>{{effect.duration.label}}</div>
+          {{else}}
+          <div>&nbsp{{localize "dae.enabled"}}</div>
+          {{/if}}
         {{else}}
-        <div>&nbsp{{localize "dae.disabled"}}</div>
+          <div>&nbsp{{localize "dae.disabled"}}</div>
         {{/if}}
 
-        <div class="effect-controls dae-effect-list">
-          <a class="effect-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
-        </div>
+          <div class="effect-controls dae-effect-list">
+            <a class="effect-edit" title={{localize dae.edit}}><i class="fas fa-edit"></i></a>
+            <a class="effect-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
+          </div>
       </li>
       {{#each effect.changes as |change cid|}}
       <li class="flexrow dae-change-list" effect-id="{{effect._id}}" change-id="{{cid}}">
         <div class="effect-name">{{change.label}}</div>
         <div class="effect-mode">{{lookup ../../modes @change.mode}}</div>
         <div class="effect-value">{{change.value}}</div>
-        <div class="effect-controls">
-          <a class="change-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
-        </div>
         {{/each}}
       </li>
       {{/each}}
     </ol>
     {{/if}}
   </div>
+</section>
 </form>

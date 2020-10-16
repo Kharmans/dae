@@ -213,5 +213,10 @@
     "dae.useAbilitySave.Name": "Use ability save field when rolling ability saves",
     "dae.useAbilitySave.Hint": "DND5e default uses only the ability modifier, enabling this option means rolling saves will use the save field and can be modified via DAE",
     "dae.Debug.Name": "Amount of debug to show",
-    "dae.Debug.Hint": "Display more debug to console according to setting none < warning < debug < all"
+    "dae.Debug.Hint": "Display more debug to console according to setting none < warning < debug < all",
+    "dae.Transfer": "Transfer Effect to Actor on Item Equip",
+    "dae.summary": "Hide Details",
+    "dae.actives": "Enabled Effects only",
+    "dae.temporary": "Timed effects only",
+    "dae.filterEffects": "Aplly Filter"
 }

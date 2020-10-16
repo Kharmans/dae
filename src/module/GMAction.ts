@@ -1,5 +1,5 @@
 import { removeActiveEffectsToken } from "./daeMacros";
-import { daeOnMacro, daeOnTokenMagic, aboutTimeInstalled } from "./dae";
+import { aboutTimeInstalled } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -64,7 +64,6 @@ export class GMAction {
   private static _setupSocket() {
     //@ts-ignore
     game.socket.on(this._moduleSocket, async (message: GMActionMessage) => {
-      console.error("socket received ", message)
       if (game.user.id !== message.targetGM) return;
       if (!game.user.isGM) return;
       return this.processAction(message.action, message.sender, message.data)
@@ -238,7 +237,6 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
   console.warn("gmaction apply effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
 
   tokenList.forEach(async tid => {
-    
     const token = canvas.tokens.get(tid);
     if (token) {
       let actEffects = duplicate(activeEffects)
@@ -248,7 +246,8 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
         removeList = removeList.concat(token.actor.effects.filter(ae => ae.data.origin === newAE.origin && getProperty(ae.data.flags, "dae.transfer") === false));
       });
       removeList = removeList.map(ae=>ae.data._id);
-      await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
+      if (removeList.length > 0)
+        await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
       if (activate) {
         actEffects.forEach(ae=> {
           warn("Apply active effects ", ae)
@@ -263,9 +262,6 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
          // convert mapped duration to seconds
          const seconds = convertToSeconds(itemDuration);
          ae.duration.seconds = seconds;
-         //TODO remove when core has seconds
-         const rounds = seconds / 6;
-         ae.duration.rounds = rounds;
         })
         warn("gm action apply effect", token, actEffects)
         await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
@@ -282,8 +278,10 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
         actEffects.forEach(ae => {
           // TODO remove this when core supports expriy
           let duration = ae.duration.seconds || 0;
-          duration += (ae.duration.rounds || 0 ) * CONFIG.time.roundTime;
-          duration += (ae.duration.turns || 0 ) * CONFIG.time.roundTime;
+          if (!duration) {
+            duration += (ae.duration.rounds || 0 ) * CONFIG.time.roundTime;
+            duration += (ae.duration.turns || 0 ) * CONFIG.time.roundTime;
+          }
           warn("removing effect ", ae, " in ", duration, " seconds ")
           if (duration && aboutTimeInstalled) {
             game.Gametime.doIn({seconds: duration}, removeEffect, token.id, ae)
@@ -300,15 +298,24 @@ export function convertToSeconds(itemDuration: {units: string, value: number}) {
   if (!itemDuration) return 0;
   if (!aboutTimeInstalled ) {
     switch (itemDuration.units) {
-      case "turn": return itemDuration.value * CONFIG.time.roundTime;
-      case "round": return itemDuration.value * CONFIG.time.roundTime
-      case "second": itemDuration.value;
+      case "turn": 
+      case "turns": return itemDuration.value * CONFIG.time.roundTime;
+      case "round": 
+      case "rounds": return itemDuration.value * CONFIG.time.roundTime
+      case "second":
+      case "seconds": itemDuration.value;
+      case "minute": 
       case "minute": return itemDuration.value * 60;
-      case "hour": return itemDuration.value * 60 * 60;
-      case "day": return itemDuration.value * 60 * 60 * 24;
-      case "week": return itemDuration.value * 60 * 60 * 24 * 7;
-      case "month": return itemDuration.value * 60 * 60 * 24 * 30;
-      case "year": return itemDuration.value * 60 * 60 * 24 * 30;
+      case "hour": 
+      case "hours" :return itemDuration.value * 60 * 60;
+      case "day": 
+      case "days": return itemDuration.value * 60 * 60 * 24;
+      case "week":
+      case "weeks": return itemDuration.value * 60 * 60 * 24 * 7;
+      case "month": 
+      case "months": return itemDuration.value * 60 * 60 * 24 * 30;
+      case "year": 
+      case "years":return itemDuration.value * 60 * 60 * 24 * 30;
       default: return 0;
     }
   } else {
@@ -318,13 +325,13 @@ export function convertToSeconds(itemDuration: {units: string, value: number}) {
       case "turn": return itemDuration.value * CONFIG.time.roundTime;
       case "round": return itemDuration.value * CONFIG.time.roundTime
       case "second": return itemDuration.value;
-      case "minute": return game.Gametime.DTf({"minutes": itemDuration.value}).toSeconds();
-      case "hour": return game.Gametime.DTf({"hours": itemDuration.value}).toSeconds();
-      case "day": return game.Gametime.DTf({"day": itemDuration.value}).toSeconds();
-      case "week": return game.Gametime.DTf({"weel": itemDuration.value}).toSeconds();
-      case "month": return game.Gametime.DTf({"month": itemDuration.value}).toSeconds();
-      case "year": return game.Gametime.DTf({"year": itemDuration.value}).toSeconds();
-      default: return 0;
+      case "minute": return game.Gametime.DTNow().add({"minutes": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
+      case "hour": return game.Gametime.DTNow().add({"hours": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
+      case "day": return game.Gametime.DTNow().add({"days": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
+      case "week": return game.Gametime.DTNow().add({"weeks": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
+      case "month": return game.Gametime.DTNow().add({"months": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
+      case "year": return game.Gametime.DTNow().add({"years": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
+      default: return CONFIG.time.roundTime;
     }
   }
 }

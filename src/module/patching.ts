@@ -1,9 +1,9 @@
-import { useAbilitySave, daeOffMacro, daeOffTokenMagic, daeOnMacro, daeOnTokenMagic } from "./dae";
+import { useAbilitySave, daeCreateActiveEffectActions, daeDeleteActiveEffectActions } from "./dae";
 //@ts-ignore
 import Actor5e from "../../../systems/dnd5e/module/actor/entity.js";
 //@ts-ignore
 import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
-import { debug, log } from "../dae";
+import { debug, log,  } from "../dae";
 
 var oldRollAbilitySave;
 
@@ -43,28 +43,9 @@ function rollAbilitySave(abilityId, options={}) {
   return d20Roll(rollData);
 }
 
-function Roll_replaceData(replaced, formula) {
-  let dataRgx = new RegExp(/@([a-z.\-_0-9]+)/gi);
-  return formula.replace(dataRgx, (match, term) => {
-    const currentBranch = new Set(replaced);
-    if (currentBranch.has(term)) {
-      console.error(`infinite loop on term ${term}`);
-      throw Error(`infinite loop on term ${term}`);
-    }
-    currentBranch.add(term);
-    let value = getProperty(this.data, term);
-    if (typeof(value) === "string" && value.indexOf("@") !== -1) {
-      // has more replacements
-      // new set to allow replace same term on different branches
-      value = Roll_replaceData.bind(this)(new Set(currentBranch), value);
-    }
-    return value ? String(value).trim() : "0";
-  });
-}
 
 var oldActorTokenHelpersDeleteEmbeddedEntity;
 var oldActorTokenHelpersCreateEmbeddedEntity;
-var oldActorTokenHelpersUpdateEmbeddedEntity; // TODO decide if updates toggle macros/token
 
 //TODO: when this Hooks.on("createActiveEffect") workds for tokens
 function createEmbeddedEntity(embeddedName, data, options={}) {
@@ -72,8 +53,8 @@ function createEmbeddedEntity(embeddedName, data, options={}) {
     debug("Token: create Active Effect", embeddedName, data, options);
     data = data instanceof Array ? data : [data];
     if (data.length > 0) {
-      daeOnMacro(this.token.actor, data)
-      daeOnTokenMagic(this.token.actor, data)
+      console.error("token create embedded entity", this.token, this.token.actor, data)
+      daeCreateActiveEffectActions(this.token.actor, data)
     }
   }
   return oldActorTokenHelpersCreateEmbeddedEntity.bind(this)(embeddedName, data, options);
@@ -90,8 +71,7 @@ function deleteEmbeddedEntity(embeddedName, data, options={}) {
       if (effect) effects.push(effect.data);
     })
     if (effects.length > 0) {
-      daeOffMacro(this.token.actor, effects)
-      daeOffTokenMagic(this.token.actor, effects)
+      daeDeleteActiveEffectActions(this.token.actor, effects)
     }
   }
   return oldActorTokenHelpersDeleteEmbeddedEntity.bind(this)(embeddedName, data, options);

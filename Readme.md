@@ -1,7 +1,7 @@
 ## Quick start for dynamic effects users.
 Pick an actor and do 
 ```
-DAE.migracteActorItems(game.actors.getName("ActorName")).
+DAE.migrateActorItems(game.actors.getName("ActorName")).
 ```
 The actor should have the items migrated (and the transferred effects applied). You should be able to see the values on the actor correctly calculated. (Also see the section **Migrating from DynamicEffects**)
 
@@ -241,7 +241,7 @@ When the effect is deleted from the target actor (either by expiry or explicit d
 args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>]  
 
 **Macros and transfer effect**
-The above discussion applies to non-transfer effects. Transfer effects, which are applied when the item is equipped by a character, behave the same way with the exception that the macro is NOT called for non-linked tokens on deletion (this is a problem with the core software).
+The above discussion applies to non-transfer effects. Transfer effects, which are applied when the item is equipped by a character.
 
 **macro.itemMacro "macro_name" args**  
 The same as macro.execute, but the item is inspected to find the itemacro stored there. You can create itemMacro macros with the **itemmacro** module.
@@ -306,7 +306,7 @@ If you have a feat "sneak attack" then rolling the feat will apply the non-trans
 
 https://gitlab.com/tposney/midi-qol 
 
-### Integration with about-time ### **NOT IMPLEMENTED YET**
+### Integration with about-time ### 
 If the underlying spell, wepaon, feat, consumable etc has a duration then the active effects for that item will be applied to the targeted tokens (or self if the item is specified as self) and after the duration specified in the item the effects will be removed. So a bless spell with a duration of 1 minute will apply the active effect bonuses for 1 minute of gametime. A potion of giant strength will apply the new strength for the duration specified in the potion consumable. There are a few sample items in the premade compendium to get you started.
 
 https://gitlab.com/tposney/about-time  
@@ -316,6 +316,27 @@ https://gitlab.com/tposney/about-time
 If the module is installed and active effects can update the actors gm-notes field. A useful place to track info that can't be applied to the character sheet.
 
 https://github.com/syl3r86/gm-notes
+
+### Really cool Core functionality that you can use....
+You can add your own custom effects without needing any DAE module changes. Say you want to add the average of str.mod and dex.mod to AC (and DAE does not support it) and the expressions don't work...  
+
+Core active effects has the idea of CUSTOM effects. If one is encountered when processing the active effects on an actor the system calls Hooks.call("appyActiveEffect")
+  * Write a function that does
+```
+  Hooks.on("applyActiveEffect", myCustomEffect)
+  
+  function myCustomeEffect(actor, change) {
+    // actor is the actor being processed and change a key/value pair
+    if (change.key !=== "data.attributes.ac.value") return;
+    // If your active effect spec was 
+    // data.actor.attributes.ac.value (change.key) CUSTOM value (the value is not relevant here, but it gets passed as change.value)
+    const actorData = actor.data.data;
+    actorData.attributes.ac.value += Math.ceil((actorData.abilities.str.mod + actorData.abilities.dex.mod) / 2);
+    // Although you can change fields other than the change.key field you should not as the core Active Effects tracks all changes made.
+  }
+```
+
+Your custom effects can create new fields on the actor as well (DAE does this for flags.dnd5e.conditions for example). Just reference the field in the active effect spec and it will be created on the actor when the custom effect updates the value. There is no support for "arbitrary" field specification in the DAE UI (yet) so you would have to create the effect on the actor yourself.
 
 ### Sample Items/Macros ### **NOT IMPLEMENTED - Will come in a subsequent release**
   There is a compendium of items that have been setup to work with DAE. All active effects work best if both midi-qol and about-time are installed and active, but will still funciton without them.
