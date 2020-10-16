@@ -5,13 +5,13 @@ In dynamic effects there were passive and active effects. As of 0.7.4 the rule i
 * non-transfer effect === active effect (in dynamic effects)l not to be confused with 0.7.4 "Active Effects" which covers both transfer and non-transfer effects.
 
 So changes to AC from having armor is a transfer effect (applied to the actor hen the item is equpped) is a passive effect.
-A bless spell that adds to the target damage/AC when cast is a non-transfer effect, and require application to be applied to the target. Having the spell in you rinventory does not increase your AC, but casting the spell on something increases the something's AC/Save.
+A bless spell that adds to the target damage/AC when cast is a non-transfer effect, and requires application to be applied to the target. Having the spell in you rinventory does not increase your AC, but casting the spell on something increases the something's AC/Save. This is a non-transfer effect.
 
-If you are using DAE, transfer effects obey the same rules as in dynamic effects, for a passive effect to be "applied to the actor that owns it", i.e. equipped and attuned/equipped/always active. DAE supports editing items to setup these conditions. If you are using DAE the effect.enabled/effect.disabled flag is ignored if the effect came from an owned item.
+If you are using DAE, transfer effects obey the same rules as in dynamic effects for passive effects to be "applied to the actor that owns it", i.e. equipped and attuned/equipped/always active. DAE supports editing items to setup these conditions. If you are using DAE the effect.enabled/effect.disabled flag is ignored if the effect came from an owned item.
 
 Non-transfer effects (old dynamic active effects) require an action to apply them to a target actor. There is no support in core to make this happen.
 
-If you are using midi-qol non-transfer effects (defined on an item) are applied to target tokens if the attack hits/the spell casts/the target does not save. This is exactly the same behaviour as in dynamic effects with midi-qol.
+If you are using midi-qol non-transfer effects (defined on an item) are applied to target tokens if the attack hits/the spell casts/the target does not save. This is exactly the same behaviour as in dynamic effects with midi-qol and "dynamiceffects active effects".
 
 Unlike dynamic effects, you can create (0.7.4) "Active Effects" directly on an actor, e.g. +1 damage bonus, even if there is no item that created the effect.
 
