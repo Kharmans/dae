@@ -216,7 +216,7 @@
     "dae.Debug.Hint": "Display more debug to console according to setting none < warning < debug < all",
     "dae.Transfer": "Transfer Effect to Actor on Item Equip",
     "dae.summary": "Hide Details",
-    "dae.actives": "Enabled Effects only",
-    "dae.temporary": "Timed effects only",
+    "dae.actives": "Enabled Effects",
+    "dae.temporary": "Timed effects",
     "dae.filterEffects": "Aplly Filter"
 }
