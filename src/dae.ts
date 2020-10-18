@@ -21,6 +21,7 @@ import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingReadySetup, patchingInitSetup } from './module/patching';
 import { DAEStatusEffects } from './module/statusEffects';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
+import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken } from './module/daeMacros';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
@@ -78,7 +79,7 @@ Hooks.once('setup', function() {
   debug("setup actions")
 	GMAction.initActions();
 	daeSetupActions();
-	
+  
 	//@ts-ignore
 	window.DAE = {
     dataSetup,
@@ -96,7 +97,14 @@ Hooks.once('setup', function() {
     removeActorEffects: removeActorEffects,
     fixupBonuses: fixupBonuses,
     ActiveEffects: ActiveEffects,
-    DAEActiveEffectConfig: DAEActiveEffectConfig
+    DAEActiveEffectConfig: DAEActiveEffectConfig,
+    teleportToToken: teleportToToken,
+    blindToken: blindToken,
+    restoreVision: restoreVision,
+    setTokenVisibility: setTokenVisibility,
+    setTileVisibility: setTileVisibility,
+    moveToken: moveToken,
+    renameToken: renameToken
   }
 });
 
