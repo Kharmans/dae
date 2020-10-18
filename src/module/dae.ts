@@ -245,7 +245,9 @@ function effectDisabled(actor, efData, itemData = null) {
       itemData = itemId && actor.items.get(itemId);
     }
     // for transfer effects this take priority over disabled setting
-    if (itemData) return !isActive(itemData);
+    if (itemData) {
+        return !isActive(itemData);
+    }
    }
   // if not calcullating armor disable armor effects
   if (efData.flags.dae?.armorEffect)

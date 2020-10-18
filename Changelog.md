@@ -1,3 +1,5 @@
+0.2.4 fixes a bad bug in item creation with transfer effects
+v0.2.3 packaging issue
 v0.2.2
 Display error message if macro not found and don't throw error.
 Some support work for DamageOnlyWorkflows in midi-qol
