@@ -272,8 +272,9 @@ function applyDaeEffects(specList) {
         if (typeof specList[c.key].sampleValue === "number" && typeof c.value === "string") {
           debug("appplyDaeEffects: Doing eval of ", c, c.value)
           try {
-            c.value = new Roll(c.value, rollData).roll().total;
+            c.value = new Roll(`${c.value}`, rollData).roll().total;
           } catch (err) {
+            console.warn("change value calculation failed for", this, c);
             console.warn(err)
           };
         }
@@ -539,6 +540,11 @@ async function daeMacro(enable, actor, effects) {
       }
       if (change.key === "macro.execute") {
         const macro = game.macros.getName(change.value[0]);
+        if (!macro) {
+          console.error(`No macro ${change.value[0]} found`);
+          //TODO localize this
+          ui.notifications.warn(`No macro ${change.value[0]} found`)
+        }
         //@ts-ignore
         await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1))
       } else if (change.key === "macro.itemMacro") {
@@ -615,7 +621,8 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
         else if (f === "@spellLevel") return spellLevel;
         else if (f === "@item.level") return spellLevel;
         else if (f === "@damage") return damageTotal;
-        else if (f === "@target") return "@target"
+        else if (f === "@target") return "@target";
+        else if (f === "@itemCardId") return "@itemCardId";
         else if (f === "@unique") return randomID();
         else if (f=== "@actor") return actor.data;
         else if (typeof f === "string" && f.startsWith("@")) {
@@ -659,15 +666,15 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
 /*
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
-export function doEffects(item, activate, targets = undefined, { whisper = false, spellLevel = 0, damageTotal = null }) {
-  applyNonTransferEffects.bind(item)(activate, targets, {whisper, spellLevel, damageTotal })
+export function doEffects(item, activate, targets = undefined, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null }) {
+  applyNonTransferEffects.bind(item)(activate, targets, {whisper, spellLevel, damageTotal, itemCardId })
 }
 
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client
-export function applyNonTransferEffects(activate, targets, {whisper = false, spellLevel = 0, damageTotal = null }) {
+export function applyNonTransferEffects(activate, targets, {whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null }) {
   if (!targets) return;
   let appliedEffects = duplicate(this.data.effects.filter(aeData => aeData.transfer === false))
   if (appliedEffects.length === 0) return;
@@ -685,7 +692,7 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
     targets = Array.from(targets).map(t=>typeof t === "string" ? t : t.id);
   });
   debug("About to call gmaction ", activate, appliedEffects, targets)
-  requestGMAction(GMAction.actions.applyActiveEffects, {activate, activeEffects: appliedEffects, targets, itemDuration: this.data.data.duration})
+  requestGMAction(GMAction.actions.applyActiveEffects, {activate, activeEffects: appliedEffects, targets, itemDuration: this.data.data.duration, itemCardId})
 }
 
 // Update the actor active effects when editing an owned item

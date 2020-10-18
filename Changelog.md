@@ -1,11 +1,17 @@
+v0.2.2
+Display error message if macro not found and don't throw error.
+Some support work for DamageOnlyWorkflows in midi-qol
 v0.2.1
-* Due to a brain spasm I completely messed up the implementation of conditions. DAE uses CONFIG.statusEffects to apply conditions. You can add a condition effect to an item/actor by selecting from the drop down list next to the add effect button.
-Conditions can be transfer/non-transfer and should just work, over time I will add effects for conditions. There is some oddities with conditions and immunities, but sort of work.
-* Cub condition support will require the next release of CUB (my implementation was just too broken)
+* Due to a brain spasm I completely messed up the implementation of conditions. Now, DAE uses CONFIG.statusEffects to apply conditions. You can add a condition effect to an item/actor by selecting from the drop down list next to the add effect button which will create a prepopulated effect for you. 
+
+For actors it is easier just to use the status effects toggle from the HUD (core functionality). 
+
+Conditions can be transfer/non-transfer and should just work, over time I will add actual effects for conditions. There are some oddities with conditions and immunities, but sort of work.
+* Cub condition support will require the next release of CUB (my implementation was just too broken).
 * The filter feature on Actor/Item Active sheets was stupid and I've cleaned that up to be more obvious.
 * Fix for simple bonuses like the number 1 not working.
 * Fixed a bug in the non-transfer active effect code that ignored @spellLevel and @item.level
-
+* Fixed a few bugs with disabled/enabled effect settinngs.
 
 In dynamic effects there were passive and active effects. As of 0.7.4 the rule is
 * transfer effect === passive effect (in dynamic effects)
