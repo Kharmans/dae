@@ -1,19 +1,19 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { playersCanSeeEffects, ValidSpec, isDisabled } from "../dae"
-import { warn, debug } from "../../dae";
+import { playersCanSeeEffects, ValidSpec, cubActive } from "../dae"
+import { warn, debug, i18n } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
+import { filters } from "pixi.js";
 
-export class ActorEffects extends FormApplication {
-
+export class ActiveEffects extends FormApplication {
+  static filters = new Set().add("summary");
   hookId = null;
   itemHookId = null;
   effectHookIdu = null;
   effectHookIdc = null;
   effectHookIdd = null;
   timeHookId: any;
-  summary = true;
-  active = true;
-  temporary = true;
+  effect;
+  effectList;
 
 
   static get defaultOptions() {
@@ -21,28 +21,29 @@ export class ActorEffects extends FormApplication {
     options.id = "effect-selector-actor";
     options.classes = ["dnd5e", "sw5e"];
     options.title = game.i18n.localize("dae.ActiveEffectName");
-    options.template = "./modules/dae/templates/ActorEffects.html";
+    options.template = "./modules/dae/templates/ActiveEffects.html";
+    options.submitOnClose = true;
     options.height = 400;
     options.width = 600;
     return options;
 }
 
 get title() {
-  return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.actor.name}`;
+  return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.name}`;
 }
-
+get filters() {return ActiveEffects.filters}
 getData() {
   //@ts-ignore
   const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
   const modeKeys = Object.keys(EFFECTMODES);
-  let actives = this.object.actor.effects.map(ae=> {
+  let actives = this.object.effects.map(ae=> {
     let newAe = duplicate(ae.data);
     newAe.duration = ae.duration;
     if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }
     newAe.isTemporary = ae.isTemporary;
-    if (this.summary) {
+    if (this.filters.has("summary")) {
       newAe.changes = [];
       return newAe;
     }
@@ -59,31 +60,35 @@ getData() {
     return newAe;
   });
 
-  if (this.active) actives = actives.filter(e=>!e.disabled);
-  if (this.temporary) actives = actives.filter(e=>e.isTemporary);
+  if (this.filters.has("temporary")) actives = actives.filter(e=>e.isTemporary);
+  if (this.filters.has("enabled")) actives = actives.filter(e=>!e.disabled)
   actives.sort((a,b) => a.label < b.label ? -1 : 1);
   actives.forEach(e=> {
-    let id = e.origin?.match(/Actor.*Item\.(.*)/);
     setProperty(e, "flags.dae.active", !e.disabled);
-
+    let id = e.origin?.match(/Actor.*Item\.(.*)/);
     if (id?.length === 2) {
-      const item = this.object.actor.items.get(id[1]);
-      setProperty(e, "flags.dae.itemName", item?.name);
+      const item = this.object.items?.get(id[1]);
+      setProperty(e, "flags.dae.itemName", item?.name || "???");
     }
     else {
       setProperty(e, "flags.dae.itemName", "????");
     }
     e.transfer = e.transfer ?? e.flags?.dae?.transfer ?? true;
   });
-  // Each effect report source item
-  // Item enabled or not.
-  // for each effect mark as disabled or not? How to toggle?
+  if (cubActive) {
+    this.effectList = {"new": "new"}
+
+  } else {
+    let efl = CONFIG.statusEffects.map(se => {return {"id": se.id, "label": i18n(se.label)}}).sort((a,b) => a.label < b.label ? -1 : 1);
+    this.effectList = {"new": "new"}
+    efl.forEach(se => this.effectList[se.id] = se.label);
+  }
+
   let data = {
-    summary: this.summary,
-    active: this.active,
-    temporary: this.temporary,
     actives: actives, 
     isGM: game.user.isGM,
+    isItem: this.object.__proto__.constructor.name === CONFIG.Item.entityClass.name,
+    flags: this.object.data.flags,
     modes: modeKeys,
     validSpecs: ValidSpec.allSpecsObj,
     //@ts-ignore
@@ -91,23 +96,55 @@ getData() {
     canEdit: true,
     // showEffects: playersCanSeeEffects !== "none" || game.user.isGM,
     showEffects: true,
-    isOwned: false
+    isOwned: false,
+    effectList: this.effectList,
+    newEffect: "new"
   }
 
   return data;
 }
+async _updateObject(event, formData) {
+  formData = expandObject(formData);
+  if (!formData.changes) formData.changes = [];
+  formData.changes = Object.values(formData.changes);
+  for ( let c of formData.changes ) {
+    //@ts-ignore
+    if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
+  }
+  return this.object.update(formData);
+}
 
+_initializeFilterItemList(i, ul) {
+  const set = this.filters;
+  const filters = ul.querySelectorAll(".filter-item");
+  for ( let li of filters ) {
+    if ( set.has(li.dataset.filter) ) li.classList.add("active");
+  }
+}
+_onToggleFilter(event) {
+  event.preventDefault();
+  const li = event.currentTarget;
+  const set = this.filters;
+  const filter = li.dataset.filter;
+  if ( set.has(filter) ) set.delete(filter);
+  else set.add(filter);
+  this.render();
+}
    // delete change
 activateListeners(html) {
   super.activateListeners(html);
+  const filterLists = html.find(".filter-list");
+  filterLists.each(this._initializeFilterItemList.bind(this));
+  filterLists.on("click", ".filter-item", this._onToggleFilter.bind(this));
+
   html.find('.change-delete').click(async ev => {
     let effect_id = $(ev.currentTarget).parents(".dae-change-list").attr("effect-id");
     let change_id = $(ev.currentTarget).parents(".dae-change-list").attr("change-id");
     var effect;
     // li.slideUp(200);
-    effect = duplicate(this.object.actor.data.effects.find(ef=>ef._id === effect_id));
+    effect = duplicate(this.object.data.effects.find(ef=>ef._id === effect_id));
     effect.changes.splice(parseInt(change_id),1);
-    this.object.actor.updateEmbeddedEntity("ActiveEffect", effect).then(() => this.render());
+    this.object.updateEmbeddedEntity("ActiveEffect", effect).then(() => this.render());
   });
 
   
@@ -118,37 +155,47 @@ activateListeners(html) {
   // Delete Effect
   html.find('.effect-delete').click(async ev => {
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    this.object.actor.deleteEmbeddedEntity("ActiveEffect", effect_id).then(() => this.render());
+    this.object.deleteEmbeddedEntity("ActiveEffect", effect_id).then(() => this.render());
   });
   html.find('.effect-edit').click(async ev => {
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    let effect = this.object.actor.effects.get(effect_id);
+    let effect = this.object.effects.get(effect_id);
     new DAEActiveEffectConfig(effect).render(true);
   })
   html.find('.effect-add').click(async ev => {
+    const effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
+    let AEDATA;
+    if (effect_name === "new")
     //@ts-ignore
-    const AEDATA = {
+    AEDATA = {
       label: "New Active Effect",
       icon: "icons/svg/mystery-man.svg",
       changes: [],
       transfer: false,
     };
+    else {
+      let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
+      AEDATA = CONFIG.statusEffects.find(se => se.id === id);
+      AEDATA.label = i18n(AEDATA.label);
+      //TODO remove this when core has this already?
+      AEDATA["flags.core.statusId"] = id;
+    }
     //@ts-ignore
-    const effectId = (await this.object.actor.createEmbeddedEntity("ActiveEffect", AEDATA))._id;
-    let effect = this.object.actor.effects.get(effectId)
+    const effectId = (await this.object.createEmbeddedEntity("ActiveEffect", AEDATA))._id;
+    let effect = this.object.effects.get(effectId)
     this.render();
     new DAEActiveEffectConfig(effect).render(true);
   })
 
   // this.hookId = Hooks.on("updateActor", () => this.render(true))
-  function efhandler(type, actor) {
-    if (this.object.actor.id === actor.id) {
+  function efhandler(type, object) {
+    if (this.object.id === object.id) {
       setTimeout(() => this.render(), 0)
     }
   };
   function tmHandler(worldTime: number, dt: number) {
     //@ts-ignore
-    if (Array.from(this.object.actor.effects).some(ef=>ef.isTemporary))
+    if (Array.from(this.object.effects).some(ef=>ef.isTemporary))
       setTimeout(() => this.render(), 0)
   }
   if (!this.effectHookIdu)
@@ -163,14 +210,7 @@ activateListeners(html) {
     this.timeHookId = Hooks.on("updateWorldTime", tmHandler.bind(this))
 
 }
-async _updateObject(event, formData) {
-  this.active = formData.active;
-  this.summary = formData.summary;
-  this.temporary = formData.temporary;
-}
-
 async close() {
-  // Hooks.off("updateActor", this.hookId)
   Hooks.off("updateActiveEffect", this.effectHookIdu);
   Hooks.off("createActiveEffect", this.effectHookIdc);
   Hooks.off("deleteActiveEffect", this.effectHookIdd);

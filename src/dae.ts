@@ -17,7 +17,7 @@ import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams} fro
 import { daeReadyActions} from "./module/dae";
 import { GMAction, GMActionMessage } from './module/GMAction';
 import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems } from './module/migration';
-import { ActorEffects } from './module/apps/ActorEffects';
+import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingReadySetup, patchingInitSetup } from './module/patching';
 import { DAEStatusEffects } from './module/statusEffects';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -36,12 +36,17 @@ export let error = (...args) => console.error("dae | ", ...args)
 export let i18n = key => {
   return game.i18n.localize(key);
 };
+export let daeAlternateStatus;
 /* ------------------------------------ */
 /* Initialize module					*/
 /* ------------------------------------ */
 Hooks.once('init', async function() {
   //@ts-ignore
   CONFIG.statusEffects = mergeObject(CONFIG.statusEffects, DAEStatusEffects, {overwrite: true, inplace: true});
+  daeAlternateStatus = {};
+  CONFIG.statusEffects.forEach(se => {
+    if (se.flags?.dae) daeAlternateStatus[se.id] = se.flags.dae;
+  });
 	// Register custom module settings
   registerSettings();
   fetchParams();
@@ -90,7 +95,7 @@ Hooks.once('setup', function() {
     fixupActors: fixupActors,
     removeActorEffects: removeActorEffects,
     fixupBonuses: fixupBonuses,
-    ActorEffects: ActorEffects,
+    ActiveEffects: ActiveEffects,
     DAEActiveEffectConfig: DAEActiveEffectConfig
   }
 });

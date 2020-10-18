@@ -51,17 +51,6 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
-game.settings.register("dae", "activeConditions", {
-  name: "Active conditions",
-  hint: "Experimental: implement actucal conditions, i.e blinded removes vision",
-  scope: "world",
-  default: "none",
-  type: String,
-  config: true,
-  choices: {none: "None", default: "DND default", cub: "Combat Utility Belt"},
-  onChange: fetchParams
-})
-
   game.settings.register("dae", "ZZDebug", {
     name: "dae.Debug.Name",
     hint: "dae.Debug.Hint",

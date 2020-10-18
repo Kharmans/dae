@@ -243,7 +243,7 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
       let removeList = [];
       // TODO redo this as a reduce
       actEffects.forEach(newAE => {
-        removeList = removeList.concat(token.actor.effects.filter(ae => ae.data.origin === newAE.origin && getProperty(ae.data.flags, "dae.transfer") === false));
+        removeList = removeList.concat(token.actor.effects.filter(ae => ae.data.origin === newAE.origin && getProperty(ae.data, "flags.dae.transfer") === false));
       });
       removeList = removeList.map(ae=>ae.data._id);
       if (removeList.length > 0)

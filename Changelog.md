@@ -1,17 +1,18 @@
-A shortish note on terminology for the confused.
-With 0.7x there has been a change in terminology for effects that apply to actors/items.
+v0.2.1
+* Due to a brain spasm I completely messed up the implementation of conditions. DAE uses CONFIG.statusEffects to apply conditions. You can add a condition effect to an item/actor by selecting from the drop down list next to the add effect button.
+Conditions can be transfer/non-transfer and should just work, over time I will add effects for conditions. There is some oddities with conditions and immunities, but sort of work.
+* Cub condition support will require the next release of CUB (my implementation was just too broken)
+* The filter feature on Actor/Item Active sheets was stupid and I've cleaned that up to be more obvious.
+* Fix for simple bonuses like the number 1 not working.
+* Fixed a bug in the non-transfer active effect code that ignored @spellLevel and @item.level
+
+
 In dynamic effects there were passive and active effects. As of 0.7.4 the rule is
 * transfer effect === passive effect (in dynamic effects)
 * non-transfer effect === active effect (in dynamic effects)l not to be confused with 0.7.4 "Active Effects" which covers both transfer and non-transfer effects.
 
 So changes to AC from having armor is a transfer effect (applied to the actor hen the item is equpped) is a passive effect.
-A bless spell that adds to the target damage/AC when cast is a non-transfer effect, and requires application to be applied to the target. Having the spell in you rinventory does not increase your AC, but casting the spell on something increases the something's AC/Save. This is a non-transfer effect.
-
-If you are using DAE, transfer effects obey the same rules as in dynamic effects for passive effects to be "applied to the actor that owns it", i.e. equipped and attuned/equipped/always active. DAE supports editing items to setup these conditions. If you are using DAE the effect.enabled/effect.disabled flag is ignored if the effect came from an owned item.
-
-Non-transfer effects (old dynamic active effects) require an action to apply them to a target actor. There is no support in core to make this happen.
-
-If you are using midi-qol non-transfer effects (defined on an item) are applied to target tokens if the attack hits/the spell casts/the target does not save. This is exactly the same behaviour as in dynamic effects with midi-qol and "dynamiceffects active effects".
+A bless spell that adds to the target saves/AC when cast is a non-transfer effect, and requires application to be applied to the target. Having the spell in your inventory does not increase your AC, but casting the spell on something increases the something's AC/Save. This is a non-transfer effect.
 
 Unlike dynamic effects, you can create (0.7.4) "Active Effects" directly on an actor, e.g. +1 damage bonus, even if there is no item that created the effect.
 

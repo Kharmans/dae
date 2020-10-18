@@ -54,7 +54,7 @@ export async function migrateItem(item: CONFIG.Item.EntityClass): CONFIG.Item.En
     debug("migrate Item ", activeEffects)
     setProperty(item.data.flags, "dae", {});
     const TRANSFER_DATA = {
-      label: `${item.name} Passive Effects`,
+      label: `${item.name}`,
       icon: item.img,
       changes: activeEffects.passives,
       transfer: true,
@@ -62,7 +62,7 @@ export async function migrateItem(item: CONFIG.Item.EntityClass): CONFIG.Item.En
     }
     setProperty(TRANSFER_DATA, "flags.dae.transfer", true)
     const APPLIED_DATA = {
-      label: `${item.name} Active Effects`,
+      label: `${item.name}`,
       icon: item.img,
       changes: activeEffects.actives,
       transfer: false
@@ -92,7 +92,7 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
     setProperty(item.data.flags, "dae", {});
     debug("migrate Item ", activeEffects)
     const TRANSFER_DATA = {
-      label: `${item.name} Passive Effects`,
+      label: `${item.name}`,
       icon: item.img,
       changes: activeEffects.passives,
       transfer: true,
@@ -100,7 +100,7 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
     }
     setProperty(TRANSFER_DATA, "flags.dae.transfer", true)
     const APPLIED_DATA = {
-      label: `${item.name} Active Effects`,
+      label: `${item.name}`,
       icon: item.img,
       changes: activeEffects.actives,
       transfer: false

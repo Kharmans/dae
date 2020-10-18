@@ -1,4 +1,4 @@
-import { ValidSpec, activeConditions } from "../dae";
+import { ValidSpec } from "../dae";
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
@@ -19,7 +19,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       classes: ["sheet", "active-effect-sheet"],
       title: "EFFECT.ConfigTitle",
       template: `./modules/dae/templates/DAEActiveSheetConfig.html`,
-      width: 700,
+      width: 750,
       height: "auto",
       tabs: [{navSelector: ".tabs", contentSelector: "form", initial: "details"}]
     });
@@ -35,10 +35,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /* ----------------------------------------- */
 
   getOptionsForSpec(spec) {
-    console.error("Getting options for ", "spec")
     if (spec === "data.traits.languages.value") 
       return CONFIG.DND5E.languages;
-//    isCUBCondition = (spec === "flags.dnd5e.conditions"),
     if (spec === "data.traits.ci.value") 
       return CONFIG.DND5E.conditionTypes;
     if (spec === "data.traits.toolProf.value")
@@ -49,18 +47,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       return CONFIG.DND5E.weaponProficiencies;
     if (["data.traits.di.value", "data.traits.dr.value", "data.traits.dv.value"].includes(spec))
       return CONFIG.DND5E.damageResistanceTypes;
-    if (spec === "flags.dnd5e.conditions") {
-       if (activeConditions === "cub") {
-        const conditionList = game.cub.conditions.reduce((acc, item) => {
-          if (item.name)
-            acc[item.name] = item.name;
-          return acc;
-        }, {})
-        return conditionList;
-      } else {
-        return CONFIG.DND5E.conditionTypes;
-      }
-    }
     if (spec.includes("data.skills") && spec.includes("value"))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.includes("data.skills") && spec.includes("ability"))
@@ -99,12 +85,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       else 
         change.modes = [allModes[ValidSpec.allSpecsObj[change.key]?.forcedMode]]
       change.options = this.getOptionsForSpec(change.key);
+      if (!change.priority) change.priority = change.mode * 10;
     });
     return data;
   }
 
   _keySelected(event) {
-    console.error("key slected ", event, event.target)
     const target = event.target;
     return this.submit({preventClose: true}).then(() => this.render());
    }
@@ -143,6 +129,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         <input type="text" name="changes.${idx}.key" value="data.attributes.str.mod"/>
         <input type="number" name="changes.${idx}.mode" value="2"/>
         <input type="text" name="changes.${idx}.value" value=""/>
+        <input type="number" name="changes.${idx}.value" value="0">
     </li>`);
     changes.appendChild(change[0]);
   }
@@ -152,7 +139,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   async _updateObject(event, formData) {
     formData = expandObject(formData);
-    console.error("Config ", formData)
     if (!formData.changes) formData.changes = [];
     formData.changes = Object.values(formData.changes);
     for ( let c of formData.changes ) {

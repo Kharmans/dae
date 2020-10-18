@@ -19,62 +19,81 @@ export let DAEStatusEffects = [
         priority: 50,
         value: "0 FT"
       }
-    ]
+    ],
+    flags: {dae: {statusId:"death"}}
   },
   {
     id: "unconscious",
     label: "EFFECT.StatusUnconscious",
-    icon: "icons/svg/unconscious.svg"
+    icon: "icons/svg/unconscious.svg",
+    flags: {dae: {statusId: "unconscious"}}
   },
   {
     id: "sleep",
     label: "EFFECT.StatusAsleep",
-    icon: "icons/svg/sleep.svg"
+    icon: "icons/svg/sleep.svg",
+    flags: {dae: {statusId:"sleep"}}
   },
   {
     id: "stun",
     label: "EFFECT.StatusStunned",
-    icon: "icons/svg/daze.svg"
+    icon: "icons/svg/daze.svg",
+    flags: {dae: {statusId:"stunned"}}
   },
   {
     id: "prone",
     label: "EFFECT.StatusProne",
-    icon: "icons/svg/falling.svg"
+    icon: "icons/svg/falling.svg",
+    flags: {dae: {statusId:"prone"}}
+
   },
   {
     id: "restrain",
     label: "EFFECT.StatusRestrained",
     icon: "icons/svg/net.svg",
+    flags: {dae: {statusId:"restrained"}}
   },
   {
     id: "paralysis",
     label: "EFFECT.StatusParalysis",
     icon: "icons/svg/paralysis.svg",
+    flags: {dae: {statusId:"paralyzed"}}
+  },
+  {
+    id: "petrified",
+    label: "EFFECT.StatusParalysis",
+    icon: "icons/svg/paralysis.svg",
+    flags: {dae: {statusId:"petrified"}}
   },
   {
     id: "fly",
     label: "EFFECT.StatusFlying",
     icon: "icons/svg/wing.svg",
+    flags: {dae: {statusId:"flying"}}
   },
   {
     id: "blind",
     label: "EFFECT.StatusBlind",
-    icon: "icons/svg/blind.svg"
+    icon: "icons/svg/blind.svg",
+    flags: {dae: {statusId:"blinded"}}
   },
   {
     id: "deaf",
     label: "EFFECT.StatusDeaf",
-    icon: "icons/svg/deaf.svg"
+    icon: "icons/svg/deaf.svg",
+    flags: {dae: {statusId:"deafened"}}
   },
   {
     id: "silence",
     label: "EFFECT.StatusSilenced",
-    icon: "icons/svg/silenced.svg"
+    icon: "icons/svg/silenced.svg",
+    flags: {dae: {statusId:"silenced"}}
   },
   {
     id: "fear",
     label: "EFFECT.StatusFear",
-    icon: "icons/svg/terror.svg"
+    icon: "icons/svg/terror.svg",
+    flags: {dae: {statusId:"frightened"}}
   },
   {
     id: "burning",
@@ -104,12 +123,14 @@ export let DAEStatusEffects = [
   {
     id: "disease",
     label: "EFFECT.StatusDisease",
-    icon: "icons/svg/biohazard.svg"
+    icon: "icons/svg/biohazard.svg",
+    flags: {dae: {statusId:"diseased"}}
   },
   {
     id: "poison",
     label: "EFFECT.StatusPoison",
-    icon: "icons/svg/poison.svg"
+    icon: "icons/svg/poison.svg",
+    flags: {dae: {statusId:"poisoned"}}
   },
   {
     id: "radiation",
@@ -177,3 +198,8 @@ export let DAEStatusEffects = [
     icon: "icons/svg/holy-shield.svg"
   },
 ];
+
+// sleep? - no condition
+// grappled
+//exhaustion
+// invisible

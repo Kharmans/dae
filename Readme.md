@@ -1,3 +1,20 @@
+## What does DAE do?
+DAE adds some features to core Active Effects and is built with core active effects.
+0. Pending the release of 0.7.5 an "Active Effects" editor button is added to the title bar for Actors and Items (NOT owned items).
+1. Transfer effects (from an item) are enabled/disbled according to the following rule which overrides the default behaviour
+  * If the "Always Enabled" flag is set on the item the effect is enabled.
+  * If the "Enabled on Equip" flags is set on the item and the item is equiped the effect is enabled.
+  * Otherwise if the item is attuned and equipped the effect is active.  
+  If you modify the enable/disable flag (suspended) on the actor effect, that will override the above rules until the item is updated.
+2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value.
+3. An extended set of fields you can modify, some of which are custom fields to support drop down lists of possible value, like all of the traits.
+4. The ability to update derived fields, such as abilities.dex.mod. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
+5 The ability to perform arithmetic in field data definitions, like 
+```
+ceil(@classes.rogue.levels/2)
+```
+6. A slightly extended active effect editor that provides a list of valid fields, a drop down list of options and drop down lists for restricted field values.
+
 ## Quick start for dynamic effects users.
 Pick an actor and do 
 ```
@@ -9,22 +26,17 @@ To see the effects active on the actor use (as a macro or from the console)
 ```
 new DAE.ActorEffects({actor: game.actors.getName("Actor's name")}, {}).render(true)
 ```
-or choose "Active Effects" from the character sheet. Or you can do (from the console)
+or choose "Active Effects" from the character sheet title bar. Or you can do (from the console)
 ```
 game.actors.getName("Actor Name").effects
 ```
-Additionaly on the character sheet title bar there is an "Active Effects" item that shows all of the active effects applied to the actor. Effects can be deleted from this screen, but not edited. Instead edit the OwnedItem that transferred the effect.  
+Additionaly on the character sheet title bar there is an "Active Effects" item that shows all of the active effects applied to the actor.   
 
 Functions that previously started with "DynamicEffects." are now "DAE.".  
 
-Unfortunately the terminology of core foundry Active Effects overlaps with the terminology in Dynamic Effects and the meanings are not the same. In 0.7.1+ every effect that can be applied from an item to a character is an "Active Effect". Passive Effects in Dynamic Effects are now "Transfer Active Effects" and Active Effects in Dynamic Effects are now "Non-transfer Active Effects". "Transfer" indicates that the effect is created on the Actor when the item is added to the inventory.
-
-The other major change is that in Dynamic Effects, transferred effects always stayed on the item and were applied to the actor during a prepare data phase. In core foundry Active Effects, changing the owned item (inventory items) does NOT change the effects applied to the actor. In DAE changing the owned item removes and re-applies the transfer active effects to the actor, potentially losing any changes made to the Active Effect on the actor. This is why you cannot edit actor Active Effects, you must change the owned item to reflect the change.
-
 ## Major Features not implemented
-* Timeout of effects. This is waiting on 0.7.4(?) to see how active effects expire. A simple implementation (very similar to dynamiceffects) has been added unitl auto active effect timeout is in core.
+* Timeout of effects. This is waiting on 0.7.5(?) to see how active effects expire. A simple implementation (very similar to dynamiceffects) has been added unitl auto active effect timeout is in core.
 * Sample compendia. The supplied compendia is quite limited, but will be expanded over time.
-* Conditions are not yet implemented.
 * From at least dnd 0.95 up to dnd5e 0.98 there is a problem will all monsters in the monster compendium and the data.data.bonuses.mwak/rwak/msak/rsak bonuses. The problem manifests as an error when creating an Active Effect to update these bonuses. A supplied function, 
 ```
 DAE.fixupBonuses()
@@ -41,7 +53,8 @@ DAE.fixupBonuses()
 * Ability Saving Throw bonuses. DND5e does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
 * Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified field to the existing data.
 * Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any dereived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
-## Dynamic Active Effects
+
+## Dynamic Active Effects Blurb
 Dynamic Active Effects (DAE) is a replacement for Dynamiceffects (which will NOT work in 0.71+, and won't be ported).
 
 ### Background
@@ -52,25 +65,10 @@ The foundry Core Active Effects allow you to modify a base value (defined in tem
 Foundry core Active Effects are attached to an item and are designated as transfer or non-transfer. Transfer effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. 
 Non-transfer effects are not moved from the item to any actor without additional functions, which DAE/midi-qol provide.
 
-### Features.
-DAE provides the following additional features:
-* A subset of derived values can be modified in addition to the core fieldsw (see **field list** below)
-* As well as fixed values you can specify expressions and lookups to be evaluated. See explanation in **calculations** below.
-* Support for conditional enabling of transfer effects:
-  * Enabled when equipped & attuned
-  * Enabled when equipped and "Active on equip" flag is set on the item.
-  * Enabled when always active is set on the item.
-Transfer Active Effects are always present on the actor but are enabled/disabled and are designated as such in the Active Effects screen.
-* Effects defined as non-transfer can be applied to a target token. **TODO** core does not support timeout of active effects (as of 0.7.3), DAE will support the core timeout of active effects. There is an interim time based expiry of effects.
-* DAE has a migration function to migrate Dynamiceffects to DAE. Not all dynamic effects can be migrated, but most. Migration can be run multiple times without causing problems, however any edits you do to items will be lost if the item is migrated again.
-* A few "special" effects do not obey the standard rules, "macro.execute", "macro.itemMacro", and "macro.tokenMagic", see **specials** below.
 
 ### Editing
 A preliminary edit function is supplied, which may change in the future.
-* Active effects on an actor (either transfer or non-transfer) can ONLY be deleted from the Active Effects screen.
-* Active effects on an owned item can be editied, individual changes can be added but new transfer/non-transfer categories of effects cannot be added.
-* Sidebar items allow the full editing of effects.
-These restrictions will change be relaxed in a subsequent release.
+Active effects for Actors and Items can be edited. Owned Item active effects cannot be edited.
 
 ### Actor Active Effects
 On the title bar of the character sheet is an option "Active Effects" that will display a form showing all of the active effects on the actor (transfer and non-transfer). Effects may be removed using this form, but that's all. You need to edit the owned item casusing the effect or re-apply the non-transfer to make any changes to active effects on the character. (This may change in future versions).
@@ -274,11 +272,9 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
   ```
 Or just drag the supplied (TODO) Ring of Protection from the sample items compendium to the actor of you choice.
 
-## DAE ###
-* **Armor** The system applies standard DND rules for calculating armor class based on what armor you have eqipped (for natual armor the armor does not need to be equipped). Shield type items add to the armor class. "Effects" can alter armor class as well.
+**Armor** The system applies standard DND rules for calculating armor class based on what armor you have eqipped (for natual armor the armor does not need to be equipped). Shield type items add to the armor class. "Effects" can alter armor class as well.
 
 Armor behaves slightly differently to other items. The active effect for the armor is created when the armor is added to the character and then the effect is transferred to the Actor. (This means you do not need to edit every piece of armor to create the active effects)
-For armor and shields the value applied to the actor is calculated when the item is added to the character and (other than dex mod changes) remains fixed thereafter. So equipping leather aromor will give an AC of 11 + dex.mod. If you change the armor value of the armor after equipping the item the calculated AC will **NOT** change.
 
 ### Macro Functions ##
 Because dropping an item onto a character transfers the active effects to the actor many of the activation functions have been scrapped.
