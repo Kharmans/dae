@@ -128,8 +128,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     <li class="effect-change" data-index="${idx}">
         <input type="text" name="changes.${idx}.key" value="data.attributes.str.mod"/>
         <input type="number" name="changes.${idx}.mode" value="2"/>
-        <input type="text" name="changes.${idx}.value" value=""/>
-        <input type="number" name="changes.${idx}.value" value="0">
+        <input type="text" name="changes.${idx}.value" value="0"/>
+        <input type="number" name="changes.${idx}.priority" value="0">
     </li>`);
     changes.appendChild(change[0]);
   }
@@ -145,6 +145,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       //@ts-ignore
       if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
     }
+    setProperty(formData, "flags.dae", {transfer: formData.transfer});
     return this.object.update(formData);
   }
 }

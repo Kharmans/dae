@@ -10,6 +10,7 @@ export var requireItemTarget = true;
 export var playersCanSeeEffects = "view";
 export var tokenEffects = false;
 export var cubActive;
+export var furnaceActive;
 export var itemacroActive;
 export var calculateArmor;
 export var debugEnabled;
@@ -245,7 +246,9 @@ function effectDisabled(actor, efData, itemData = null) {
       itemData = itemId && actor.items.get(itemId);
     }
     // for transfer effects this take priority over disabled setting
-    if (itemData) return !isActive(itemData);
+    if (itemData) {
+        return !isActive(itemData);
+    }
    }
   // if not calcullating armor disable armor effects
   if (efData.flags.dae?.armorEffect)
@@ -265,6 +268,7 @@ function applyDaeEffects(specList) {
   const changes = this.effects.reduce((changes, e) => {
     // e.data.disabled = effectDisabled(this, e.data)
     if ( e.data.disabled ) return changes;
+    // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(e.data.changes
       .filter(c => {return specList[c.key] !== undefined})
       .map(c => {
@@ -272,8 +276,9 @@ function applyDaeEffects(specList) {
         if (typeof specList[c.key].sampleValue === "number" && typeof c.value === "string") {
           debug("appplyDaeEffects: Doing eval of ", c, c.value)
           try {
-            c.value = new Roll(c.value, rollData).roll().total;
+            c.value = new Roll(`${c.value}`, rollData).roll().total;
           } catch (err) {
+            console.warn("change value calculation failed for", this, c);
             console.warn(err)
           };
         }
@@ -539,8 +544,18 @@ async function daeMacro(enable, actor, effects) {
       }
       if (change.key === "macro.execute") {
         const macro = game.macros.getName(change.value[0]);
-        //@ts-ignore
-        await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1))
+        if (!macro) {
+          console.error(`No macro ${change.value[0]} found`);
+          //TODO localize this
+          ui.notifications.warn(`No macro ${change.value[0]} found`)
+        }
+        if (furnaceActive) {
+          //@ts-ignore
+          await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1))
+        } else {
+          console.warn("Furnace not active - so no macro arguments supported");
+          await macro.execute();
+        }
       } else if (change.key === "macro.itemMacro") {
         let macroCommand = change.value[0]; // this is populated in evalArgs
         // macroCommand = `ChatMessage.create({content: "Item macro for ${itemData.name} called"})\n` + macroCommand;
@@ -555,7 +570,12 @@ async function daeMacro(enable, actor, effects) {
           command: macroCommand,
           flags: { "dnd5e.itemMacro": true }
         }, { displaySheet: false, temporary: true });
-        await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1));
+        if (furnaceActive) {
+          await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1));
+        } else {
+          console.warn("Furnace not active - so no macro arguments supported")
+          await macro.execute();
+        }
       }
     });
   })
@@ -598,7 +618,7 @@ function daeRollData(actor) {
   return rollData;
 }
 
-function evalArgs(context, actor, change, spellLevel: number, damageTotal: number) {
+function evalArgs(context, actor, change, spellLevel: number, damageTotal: number, options) {
   //@ts-ignore
   let filteredChanges = [];
   //@ts-ignore effects not defined
@@ -615,9 +635,13 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
         else if (f === "@spellLevel") return spellLevel;
         else if (f === "@item.level") return spellLevel;
         else if (f === "@damage") return damageTotal;
-        else if (f === "@target") return "@target"
+        else if (f === "@target") return "@target";
+        else if (f === "@itemCardId") return options.itemCardId;
         else if (f === "@unique") return randomID();
-        else if (f=== "@actor") return actor.data;
+        else if (f === "@actor") return actor.data;
+        else if (f === "@critical") return options.critical;
+        else if (f === "@fumble") return options.fumble;
+        else if (f === "@whisper") return options.whisper;
         else if (typeof f === "string" && f.startsWith("@")) {
           return getProperty(context, f.slice(1))
         }
@@ -659,15 +683,15 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
 /*
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
-export function doEffects(item, activate, targets = undefined, { whisper = false, spellLevel = 0, damageTotal = null }) {
-  applyNonTransferEffects.bind(item)(activate, targets, {whisper, spellLevel, damageTotal })
+export function doEffects(item, activate, targets = undefined, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false }) {
+  applyNonTransferEffects.bind(item)(activate, targets, {whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
 }
 
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client
-export function applyNonTransferEffects(activate, targets, {whisper = false, spellLevel = 0, damageTotal = null }) {
+export function applyNonTransferEffects(activate, targets, {whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false }) {
   if (!targets) return;
   let appliedEffects = duplicate(this.data.effects.filter(aeData => aeData.transfer === false))
   if (appliedEffects.length === 0) return;
@@ -675,7 +699,7 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
   appliedEffects.forEach(activeEffectData => {
     activeEffectData.changes.forEach(change => {
       // eval args before calling GMAction so values are taken from the casting etc actor.
-      change.value = evalArgs.bind(this)(rollData, this.actor, change, spellLevel, damageTotal)
+      change.value = evalArgs.bind(this)(rollData, this.actor, change, spellLevel, damageTotal, {critical, fumble, itemCardId, whisper})
     })
     activeEffectData.origin = this.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
@@ -893,6 +917,8 @@ export function daeSetupActions() {
   }
   //@ts-ignore
   itemacroActive = game.modules.get("itemacro")?.active;
+
+  furnaceActive = game.modules.get("furnace")?.active
 }
 
 export function fetchParams() {

@@ -234,8 +234,6 @@ let applyTokenMagic = async (tokenId: string, effectId: string, duration: number
 
 async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration) {
   debug("gmaction apply effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
-  console.warn("gmaction apply effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
-
   tokenList.forEach(async tid => {
     const token = canvas.tokens.get(tid);
     if (token) {
@@ -255,7 +253,6 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
           ae.changes.forEach(change=> {
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
               change.value = change.value.map(f=> f === "@target" ? tid : f);
-              change.value.push(canvas.tokens.get(tid)?.actor?.data)
             }
           })
          setProperty(ae, "flags.dae.token", tid)
@@ -285,7 +282,7 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
           warn("removing effect ", ae, " in ", duration, " seconds ")
           if (duration && aboutTimeInstalled) {
             game.Gametime.doIn({seconds: duration}, removeEffect, token.id, ae)
-          } else {
+          } else { //TODO decide what to do for token magic vs macros
             setTimeout(removeEffect, duration || 6000, token.id, ae);
           }
         })

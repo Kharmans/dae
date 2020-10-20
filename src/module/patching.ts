@@ -53,7 +53,6 @@ function createEmbeddedEntity(embeddedName, data, options={}) {
     debug("Token: create Active Effect", embeddedName, data, options);
     data = data instanceof Array ? data : [data];
     if (data.length > 0) {
-      console.error("token create embedded entity", this.token, this.token.actor, data)
       daeCreateActiveEffectActions(this.token.actor, data)
     }
   }
