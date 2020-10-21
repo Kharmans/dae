@@ -79,8 +79,8 @@ export class ValidSpec {
         // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "flags.dnd5e.conditions": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "flags.dnd5e.conditions.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        //"flags.dnd5e.conditions": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        //"flags.dnd5e.conditions.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.All-Attacks": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.weapon.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.spell.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
@@ -120,7 +120,7 @@ export class ValidSpec {
         "data.resources.legact.max": [0, -1],
         "data.resources.legres.max": [0, -1],
         "data.spells.pact.level": [0,-1],
-        // "flags.dnd5e.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+        // "flags.midi-qol.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.heal.damage": ["", -1],
         "data.bonuses.heal.attack": ["", -1]
       };

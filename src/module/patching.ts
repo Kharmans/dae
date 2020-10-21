@@ -1,8 +1,6 @@
 import { useAbilitySave, daeCreateActiveEffectActions, daeDeleteActiveEffectActions } from "./dae";
 //@ts-ignore
-import Actor5e from "../../../systems/dnd5e/module/actor/entity.js";
-//@ts-ignore
-import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
+// import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log,  } from "../dae";
 
 var oldRollAbilitySave;
@@ -76,7 +74,8 @@ function deleteEmbeddedEntity(embeddedName, data, options={}) {
   return oldActorTokenHelpersDeleteEmbeddedEntity.bind(this)(embeddedName, data, options);
 }
 
-export function patchingInitSetup() {
+var d20Roll
+export async function patchingInitSetup() {
   //TODO remove this when token create active effects calls a hook
   log("Paatching ActorTokenHelpers deleteEmbeddedEntity")
   //@ts-ignore
@@ -88,13 +87,25 @@ export function patchingInitSetup() {
   oldActorTokenHelpersCreateEmbeddedEntity = ActorTokenHelpers.prototype.createEmbeddedEntity;
   //@ts-ignore
   ActorTokenHelpers.prototype.createEmbeddedEntity = createEmbeddedEntity;
+  console.error("system is ", game.system)
+  //@ts-ignore
+  let dice;
+  //@ts-ignore
+  if (game.system.id === "dnd5e") dice = await import("../../../systems/dnd5e/module/dice.js");
+  //@ts-ignore
+  else if (game.system.id === "sw5e") dice = await import("../../../systems/sw5e/module/dice.js")
+  if (!dice) console.error ("Dice not defined! ")
+  else  d20Roll = dice?.d20Roll;
 }
 
 export function patchingReadySetup() {
   log("Patching actor.rollAbilitySave: override default save is ", useAbilitySave)
-  oldRollAbilitySave = Actor5e.prototype.rollAbilitySave;
-  Actor5e.prototype.rollAbilitySave = rollAbilitySave;  
-
+  //@ts-ignore
+  oldRollAbilitySave = CONFIG.Actor.entityClass.prototype.rollAbilitySave;
+  if (oldRollAbilitySave && d20Roll) {
+    //@ts-ignore
+    CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;  
+  }
 };
 Hooks.once("ready", () => {
   /*

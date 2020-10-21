@@ -1,5 +1,4 @@
 import { requestGMAction, GMAction } from "./GMAction";
-import { aboutTimeInstalled, ValidSpec, doEffects, playersCanSeeEffects } from "./dae";
 import { warn, error, debug } from "../dae";
 
 export let applyActive = (itemName: string, activate: boolean = true, itemType: string = "") => {

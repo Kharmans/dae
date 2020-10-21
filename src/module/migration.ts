@@ -1,9 +1,7 @@
-import { MIPMAP_MODES } from "pixi.js";
-import { daeSetPassiveEffect } from "./daeMacros";
+
 import { debug, warn, log } from "../dae";
 import { ValidSpec } from "./dae";
 
-const ActiveEffect = CONFIG.ActiveEffect.entityClass;
 //@ts-ignore
 const EFFECTMODES = ACTIVE_EFFECT_MODES;
 

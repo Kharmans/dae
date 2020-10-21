@@ -1,4 +1,10 @@
-0.2.4 fixes a bad bug in item creation with transfer effects
+v0.2.7
+Remove dnd5e class/module references so that it should work out of the box for sw5e
+v0.2.6
+Added support for itemCardId being passed through the eval stage, added ciritcal and fimble as @parameters.
+
+v0.2.5 packaging
+v0.2.4 fixes a bad bug in item creation with transfer effects
 v0.2.3 packaging issue
 v0.2.2
 Display error message if macro not found and don't throw error.
