@@ -713,7 +713,6 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
 
 // Update the actor active effects when editing an owned item
 function ownedItemUpdate(actor, ownedItem, updates) {
-  console.error("item id ", ownedItem._id, updates._id, updates)
   const newData = mergeObject(ownedItem, updates, {overwrite: true});
   if (updates.effects) {
     let additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true, inplace: false});
@@ -737,17 +736,15 @@ function ownedItemUpdate(actor, ownedItem, updates) {
     actor.deleteEmbeddedEntity("ActiveEffect", deletions).then(() => 
       actor.createEmbeddedEntity("ActiveEffect", additions));
   } else {
-    origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
+    origin = `Actor.${actor.id}.OwnedItem.${updates._id}`;
     let effects = actor.effects.filter(aef => {
       let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
-      console.error("owned item update ", aef.data.label, isTransfer, aef.data.flags?.dae?.transfer, aef.data.transfer === undefined, aef.data.origin, origin )
       return (aef.data.origin === origin) && isTransfer;
     }).map(aef => {
       const data = duplicate(aef.data);
       data.disabled = effectDisabled(actor, aef.data, ownedItem);
       return data;
     })
-    console.error("Doing update active effect ", effects)
     actor.updateEmbeddedEntity("ActiveEffect", effects);
   }
   return true;
@@ -797,7 +794,9 @@ export function generateArmorEffect(itemData, origin, armorData) {
   switch(armorData.type) {
     case "shield":
       //@ts-ignore
-      return armorEffectFromFormula(`${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.ADD, itemData, origin);
+      let ae = armorEffectFromFormula(`${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.ADD, itemData, origin);
+      ae.changes.forEach(c => c.priority = 7)
+      return ae;
     case "natural":
       //@ts-ignore
       return armorEffectFromFormula(`@abilities.dex.mod + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
@@ -825,7 +824,7 @@ function armorEffectFromFormula(formula, mode, itemData, origin) {
         key: "data.attributes.ac.value",
         value: formula, 
         mode, 
-        priority: 5
+        priority: 4
       },
     ],
     transfer: true,

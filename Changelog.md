@@ -1,3 +1,11 @@
+0.2.10 
+* Fix for very fast timeouts if active effects not installed. A subsequent release will clean up the whole timeout piece.
+* Support for new CUB version. When creating an active effect from the acitve effects sheet (item or actor), you can choose one of the CUB effects from the drop down list (left of the + button). This will prepopulate with the CUB data, so equipping (if transfer) or applying if non-transfer will trigger the cub condition. Removal will work as well.
+* "Fix" so that subsequent applications of the same active effect on the same target don't stack but extend duration. 
+* Support multiple non-transfer effects on an item. E.g. A spell that does +1AC for 120 seconds and a CUB condition (Invisible say) 180 seconds. Each effect expires individually.
+* Fix for armor migration. Shields now have priority 7 and base armor priority 4, so there should be no conflict. If you have not editied effects you can rerun migration with no problems.
+0.2.9 cant remember
+v0.2.8 bugfix for transferred effects
 v0.2.7
 Remove dnd5e class/module references so that it should work out of the box for sw5e
 v0.2.6

@@ -75,14 +75,10 @@ getData() {
     }
     e.transfer = e.transfer ?? e.flags?.dae?.transfer ?? true;
   });
-  if (cubActive) {
-    this.effectList = {"new": "new"}
 
-  } else {
-    let efl = CONFIG.statusEffects.map(se => {return {"id": se.id, "label": i18n(se.label)}}).sort((a,b) => a.label < b.label ? -1 : 1);
-    this.effectList = {"new": "new"}
-    efl.forEach(se => this.effectList[se.id] = se.label);
-  }
+  let efl = CONFIG.statusEffects.map(se => {return {"id": se.id, "label": i18n(se.label)}}).sort((a,b) => a.label < b.label ? -1 : 1);
+  this.effectList = {"new": "new"}
+  efl.forEach(se => this.effectList[se.id] = se.label);
 
   let data = {
     actives: actives, 

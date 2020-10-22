@@ -17,7 +17,8 @@ function migrateDynamicEffect(effects: [{
   effects.forEach(ef => {
     let newEffect = {
       key: ef.modSpecKey,
-      value: ef.value,
+      //@ts-ignore
+      value: Number.isNumeric(ef.value) ? parseInt(ef.value) : ef.value,
       mode: 0,
       priority: 0
     }

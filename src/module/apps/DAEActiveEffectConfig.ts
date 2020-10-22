@@ -146,6 +146,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       //@ts-ignore
       if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
     }
+    console.error("update ", formData)
+    if (parseInt(formData.duration.startTime) === 0) 
+      formData.duration.startTime = game.time.worldTime;
     setProperty(formData, "flags.dae", {transfer: formData.transfer});
     return this.object.update(formData);
   }

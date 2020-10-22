@@ -262,7 +262,29 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
          if (seconds) ae.duration.seconds = seconds;
         })
         warn("gm action apply effect", token, actEffects)
-        await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
+        let removeList = await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
+
+        let removeEffect = async (tokenId, removeEffect) => {
+          const token = canvas.tokens.get(tokenId);
+          const actor = token?.actor;
+          if (actor) {
+            let removeId = removeEffect._id;
+            if (removeId)
+              await token.actor.deleteEmbeddedEntity("ActiveEffect", removeId)
+          }
+        }
+
+        if (!Array.isArray(removeList)) removeList = [removeList];
+        removeList.forEach(aeData => {
+          warn("removing effect ", aeData, " in ", aeData.duration, " seconds ")
+          let duration = aeData.duration.seconds || 0;
+          if (aeData.duration && aboutTimeInstalled) {
+            game.Gametime.doIn({seconds: duration}, removeEffect, token.id, aeData)
+          } else if (duration) { //TODO decide what to do for token magic vs macros
+            setTimeout(removeEffect, duration * 1000 || 6000, token.id, aeData);
+          }
+        })
+/* pending removal
         let removeEffect = async (tokenId, effect) => {
           const token = canvas.tokens.get(tokenId);
           const actor = token?.actor;
@@ -281,9 +303,10 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
           if (duration && aboutTimeInstalled) {
             game.Gametime.doIn({seconds: duration}, removeEffect, token.id, ae)
           } else if (duration) { //TODO decide what to do for token magic vs macros
-            setTimeout(removeEffect, duration || 6000, token.id, ae);
+            setTimeout(removeEffect, duration * 1000 || 6000, token.id, ae);
           }
         })
+        */
       }
     };
   });
@@ -296,7 +319,7 @@ export function convertToSeconds(itemDuration: {units: string, value: number}) {
       case "turn": 
       case "turns": return 0;
       case "round": 
-      case "rounds": return 0; //return itemDuration.value * CONFIG.time.roundTime + 1;
+      case "rounds": return itemDuration.value * CONFIG.time.roundTime + 1;
       case "second":
       case "seconds": itemDuration.value;
       case "minute": 
