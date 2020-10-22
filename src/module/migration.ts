@@ -1,6 +1,6 @@
 
 import { debug, warn, log } from "../dae";
-import { ValidSpec } from "./dae";
+import { ValidSpec, createArmorEffect } from "./dae";
 
 //@ts-ignore
 const EFFECTMODES = ACTIVE_EFFECT_MODES;
@@ -85,8 +85,8 @@ export async function migrateItem(item: CONFIG.Item.EntityClass): CONFIG.Item.En
 }
 //@ts-ignore
 export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): CONFIG.Item.EntityClass {
-  if (getProperty(item.data.flags, "dynamiceffects.effects")?.length > 0) {
-    let activeEffects = migrateDynamicEffect(item.data.flags.dynamiceffects.effects);
+  if (getProperty(item.data.flags, "dynamiceffects.effects")?.length > 0 || item.data.type === "equipment") {
+    let activeEffects = migrateDynamicEffect(item.data.flags.dynamiceffects?.effects || []);
     setProperty(item.data.flags, "dae", {});
     debug("migrate Item ", activeEffects)
     const TRANSFER_DATA = {
@@ -104,7 +104,7 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
       transfer: false
     }
     setProperty(APPLIED_DATA, "flags.dae.transfer", false)
-    if (activeEffects.passives.length + activeEffects.actives.length === 0) return null;
+    // if (activeEffects.passives.length + activeEffects.actives.length === 0) return null;
     let theItem = item;
     const isOwned = theItem.isOwned;
     warn("Migrating owned item ", theItem.name, activeEffects)
@@ -128,9 +128,11 @@ export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): C
         setProperty(itemData.flags, "dae.alwaysActive", getProperty(item.data.flags, "dynamiceffects.alwaysActive"))
         setProperty(itemData.flags, "dae.activeEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive"))
       }
+      createArmorEffect(actor, itemData)
       return itemData;
     }
   }
+  return 
 }
 export function migrateAllItems() {
   game.items.entities.forEach(item => {
@@ -159,6 +161,9 @@ export async function migrateActorItems(actor) {
   debug("deleted ids are ", deleteItemIds)
   await actor.deleteEmbeddedEntity("OwnedItem", deleteItemIds)
   await actor.createEmbeddedEntity("OwnedItem", itemsData)
+  actor.items.forEach(item => {
+
+  })
 }
 
 export async function removeActorEffects(actor) {

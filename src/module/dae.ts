@@ -276,7 +276,7 @@ function applyDaeEffects(specList) {
         if (typeof specList[c.key].sampleValue === "number" && typeof c.value === "string") {
           debug("appplyDaeEffects: Doing eval of ", c, c.value)
           try {
-            c.value = new Roll(`${c.value}`, rollData).roll().total;
+            c.value = new Roll(c.value, rollData).roll().total;
           } catch (err) {
             console.warn("change value calculation failed for", this, c);
             console.warn(err)
@@ -673,7 +673,6 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
         value = new Roll(change.value, context).roll().total
       }
       else value = change.value;          
-      
       break;
   };
   debug("evalargs: change is ", change);
@@ -714,6 +713,7 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
 
 // Update the actor active effects when editing an owned item
 function ownedItemUpdate(actor, ownedItem, updates) {
+  console.error("item id ", ownedItem._id, updates._id, updates)
   const newData = mergeObject(ownedItem, updates, {overwrite: true});
   if (updates.effects) {
     let additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true, inplace: false});
@@ -740,12 +740,14 @@ function ownedItemUpdate(actor, ownedItem, updates) {
     origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
     let effects = actor.effects.filter(aef => {
       let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+      console.error("owned item update ", aef.data.label, isTransfer, aef.data.flags?.dae?.transfer, aef.data.transfer === undefined, aef.data.origin, origin )
       return (aef.data.origin === origin) && isTransfer;
     }).map(aef => {
       const data = duplicate(aef.data);
       data.disabled = effectDisabled(actor, aef.data, ownedItem);
       return data;
     })
+    console.error("Doing update active effect ", effects)
     actor.updateEmbeddedEntity("ActiveEffect", effects);
   }
   return true;
