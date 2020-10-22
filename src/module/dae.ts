@@ -532,15 +532,13 @@ async function daeMacro(enable, actor, effects) {
   if (actor.__proto__.constructor.name === CONFIG.Item.entityClass.name) return;
   debug("dae macro ", enable, actor, effects)
   if (!Array.isArray(effects)) effects = [effects];
-  effects.forEach(effect=> {
+  effects.forEach(async effect=>  {
+    let item = (effect.origin && await fromUuid(effect.origin)) || null;
     effect.changes?.forEach(async change => {
       if (!["macro.execute", "macro.itemMacro"].includes(change.key)) return;
       if (typeof change.value === "string") { //args have not been evaled yet
         let rollData = daeRollData(actor)
-        let item = await fromUuid(effect.data.origin);
-        if (item) {
-          change.value = evalArgs.bind(item)(rollData, actor, change, 0, 0)
-        }
+        change.value = evalArgs.bind(item)(rollData, actor, change, 0, 0)
       }
       if (change.key === "macro.execute") {
         const macro = game.macros.getName(change.value[0]);
@@ -560,7 +558,7 @@ async function daeMacro(enable, actor, effects) {
         let macroCommand = change.value[0]; // this is populated in evalArgs
         // macroCommand = `ChatMessage.create({content: "Item macro for ${itemData.name} called"})\n` + macroCommand;
         if (!macroCommand) {
-          macroCommand = `ChatMessage.create({content: "No Item Macro for ${this.name}"})`;
+          macroCommand = `ChatMessage.create({content: "No Item Macro for ${item?.name}"})`;
           return;
         }
         let macro =  await CONFIG.Macro.entityClass.create({
@@ -653,7 +651,7 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
       } else value = fields;
       break;
     default:
-      tokenizer.tokenize(change.value, (token) => fields.push(token))
+      tokenizer.tokenize(`${change.value}`, (token) => fields.push(token))
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
@@ -671,9 +669,11 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
       });
       change.value = fields.join(" ");
       // context.actor = actor.data;
-      if (typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number")
+      if (typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
         value = new Roll(change.value, context).roll().total
+      }
       else value = change.value;          
+      
       break;
   };
   debug("evalargs: change is ", change);

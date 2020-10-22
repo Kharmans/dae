@@ -70,6 +70,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.effect = this.object.data;
     if (this.object.parent) {
       data.isItem = this.object.parent.__proto__.constructor.name === CONFIG.Item.entityClass.name
+      data.isActor = this.object.parent.__proto__.constructor.name === CONFIG.Actor.entityClass.name
     }
     data.validFields = ValidSpec.allSpecs
           .filter(e => e._fieldSpec.includes(""))
@@ -147,5 +148,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
     setProperty(formData, "flags.dae", {transfer: formData.transfer});
     return this.object.update(formData);
+  }
+
+  static DAEActiveEffectSheetConfigReadyActions() {
+    CONFIG.ActiveEffect.sheetClass = DAEActiveEffectConfig;
   }
 }

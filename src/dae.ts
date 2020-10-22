@@ -112,6 +112,9 @@ Hooks.once('setup', function() {
 /* When ready							*/
 /* ------------------------------------ */
 
+Hooks.once("ready", () => {
+  DAEActiveEffectConfig.DAEActiveEffectSheetConfigReadyActions();
+})
 // Add any additional hooks if necessary
 
 async function dataSetup() {

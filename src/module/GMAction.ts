@@ -259,7 +259,7 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
          setProperty(ae, "flags.dae.token", tid)
          // convert mapped duration to seconds
          const seconds = convertToSeconds(itemDuration);
-         ae.duration.seconds = seconds;
+         if (seconds) ae.duration.seconds = seconds;
         })
         warn("gm action apply effect", token, actEffects)
         await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
@@ -276,14 +276,11 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
         actEffects.forEach(ae => {
           // TODO remove this when core supports expriy
           let duration = ae.duration.seconds || 0;
-          if (!duration) {
-            duration += (ae.duration.rounds || 0 ) * CONFIG.time.roundTime;
-            duration += (ae.duration.turns || 0 ) * CONFIG.time.roundTime;
-          }
+
           warn("removing effect ", ae, " in ", duration, " seconds ")
           if (duration && aboutTimeInstalled) {
             game.Gametime.doIn({seconds: duration}, removeEffect, token.id, ae)
-          } else { //TODO decide what to do for token magic vs macros
+          } else if (duration) { //TODO decide what to do for token magic vs macros
             setTimeout(removeEffect, duration || 6000, token.id, ae);
           }
         })
@@ -297,9 +294,9 @@ export function convertToSeconds(itemDuration: {units: string, value: number}) {
   if (!aboutTimeInstalled ) {
     switch (itemDuration.units) {
       case "turn": 
-      case "turns": return itemDuration.value * CONFIG.time.roundTime;
+      case "turns": return 0;
       case "round": 
-      case "rounds": return itemDuration.value * CONFIG.time.roundTime
+      case "rounds": return 0; //return itemDuration.value * CONFIG.time.roundTime + 1;
       case "second":
       case "seconds": itemDuration.value;
       case "minute": 
@@ -320,8 +317,8 @@ export function convertToSeconds(itemDuration: {units: string, value: number}) {
     // do about time stuff
     var dtMod;
     switch (itemDuration.units) {
-      case "turn": return itemDuration.value * CONFIG.time.roundTime;
-      case "round": return itemDuration.value * CONFIG.time.roundTime
+      case "turn": return 0; //return itemDuration.value * CONFIG.time.roundTime;
+      case "round": return 0; //return itemDuration.value * CONFIG.time.roundTime
       case "second": return itemDuration.value;
       case "minute": return game.Gametime.DTNow().add({"minutes": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
       case "hour": return game.Gametime.DTNow().add({"hours": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();

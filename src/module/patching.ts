@@ -76,6 +76,7 @@ function deleteEmbeddedEntity(embeddedName, data, options={}) {
 
 var d20Roll
 export async function patchingInitSetup() {
+  
   //TODO remove this when token create active effects calls a hook
   log("Paatching ActorTokenHelpers deleteEmbeddedEntity")
   //@ts-ignore
@@ -87,8 +88,9 @@ export async function patchingInitSetup() {
   oldActorTokenHelpersCreateEmbeddedEntity = ActorTokenHelpers.prototype.createEmbeddedEntity;
   //@ts-ignore
   ActorTokenHelpers.prototype.createEmbeddedEntity = createEmbeddedEntity;
+  
   console.error("system is ", game.system)
-  //@ts-ignore
+    //@ts-ignore
   let dice;
   //@ts-ignore
   if (game.system.id === "dnd5e") dice = await import("../../../systems/dnd5e/module/dice.js");
