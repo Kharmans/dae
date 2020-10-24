@@ -1,4 +1,4 @@
-import { requestGMAction, GMAction } from "./GMAction";
+import { requestGMAction, GMAction, applyActiveEffects } from "./GMAction";
 import { warn, error, debug, setDebugLevel, daeAlternateStatus } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 
@@ -6,6 +6,7 @@ export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
 
 export var aboutTimeInstalled = false;
+export var timesUpInstalled = false;
 export var requireItemTarget = true;
 export var playersCanSeeEffects = "view";
 export var tokenEffects = false;
@@ -79,8 +80,6 @@ export class ValidSpec {
         // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        //"flags.dnd5e.conditions": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        //"flags.dnd5e.conditions.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.All-Attacks": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.weapon.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.spell.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
@@ -122,7 +121,8 @@ export class ValidSpec {
         "data.spells.pact.level": [0,-1],
         // "flags.midi-qol.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.heal.damage": ["", -1],
-        "data.bonuses.heal.attack": ["", -1]
+        "data.bonuses.heal.attack": ["", -1],
+        "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
       ["mwak", "rwak", "msak", "rsak"].forEach(id => {
@@ -303,7 +303,7 @@ function applyDaeEffects(specList) {
 }
 
 /*
- * do custom effect applications
+ * do custom effefct applications
  * damage resistance/immunity/vulnerabilities
  * languages
  */
@@ -360,32 +360,32 @@ function daeCustomEffect(actor, change) {
       return true;
     case "data.bonuses.All-Attacks":
       value = attackDamageBonusEval(change.value, actor)
-      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : " + " + value;
+      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       ["mwak", "rwak", "msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].attack += value);
       return true;
     case "data.bonuses.spell.attack":
       value = attackDamageBonusEval(change.value, actor)
-      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : " + " + value;
+      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       ["msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].attack += value);
       return true;
     case "data.bonuses.weapon.attacks":
       value = attackDamageBonusEval(change.value, actor)
-      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : " + " + value;
+      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       ["mwak", "rwak"].forEach(atType => actor.data.data.bonuses[atType].attack += value);
       return true;
     case "data.bonuses.All-Damage":
       value = attackDamageBonusEval(change.value, actor)
-      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : " + " + value;
+      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       ["mwak", "rwak", "msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.weapon.damage":
       value = attackDamageBonusEval(change.value, actor)
-      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : " + " + value;
+      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       ["mwak", "rwak"].forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.spell.damage":
       value = attackDamageBonusEval(change.value, actor)
-      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : " + " + value;
+      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       ["msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.mwak.attack":
@@ -459,6 +459,10 @@ function daeCustomEffect(actor, change) {
         skl.passive = round(skl.passive + multi * value + add);
       }
       return true;
+    case "flags.dae": 
+      let list = change.value.split(" ");
+      setProperty(actor.data, `flags.dae.${list[0]}`, list.splice(1).join(" "));
+      return true;
     }
 }
 
@@ -499,13 +503,13 @@ function prepareData() {
   if ( !this.data.name ) this.data.name = "New " + this.entity;
   this.prepareBaseData();
   this.prepareEmbeddedEntities();
-  applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj);
+  applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj, false);
   this.prepareDerivedData();
   if (calculateArmor && this.data.type === "character") {
     this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
   }
 
-  applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj);
+  applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj,);
   debug("prepare data: after passes", this.data);
 }
 
@@ -651,7 +655,7 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
       } else value = fields;
       break;
     default:
-      tokenizer.tokenize(`${change.value}`, (token) => fields.push(token))
+      tokenizer.tokenize(`${change.value}`, (token) => fields.push(token));
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
@@ -667,7 +671,7 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
         }
         else return f;
       });
-      change.value = fields.join(" ");
+      change.value = fields.join("");
       // context.actor = actor.data;
       if (typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
         value = new Roll(change.value, context).roll().total
@@ -682,7 +686,8 @@ function evalArgs(context, actor, change, spellLevel: number, damageTotal: numbe
 /*
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
-export function doEffects(item, activate, targets = undefined, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false }) {
+export function doEffects(item, activate, targets = undefined, 
+    { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false }) {
   applyNonTransferEffects.bind(item)(activate, targets, {whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
 }
 
@@ -705,10 +710,17 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
     activeEffectData.transfer = false;
     activeEffectData.disabled = false;
     //@ts-ignore - targets is set of targets (i.e. game.user.targets)
-    targets = Array.from(targets).map(t=>typeof t === "string" ? t : t.id);
   });
-  debug("About to call gmaction ", activate, appliedEffects, targets)
-  requestGMAction(GMAction.actions.applyActiveEffects, {activate, activeEffects: appliedEffects, targets, itemDuration: this.data.data.duration, itemCardId})
+  
+  // Split up targets according to whether they are owned on not. Owned targets have effects applied locally, only unowned are passed ot the GM
+  const targetList = Array.from(targets);
+  //@ts-ignore
+  let ownedTargets = targetList.filter(t=>t.actor?.permission === 3).map(t=> typeof t === "string" ? t : t.id);
+  //@ts-ignore
+  let unOwnedTargets = targetList.filter(t=>t.actor?.permission !== 3).map(t=> typeof t === "string" ? t : t.id);;
+  debug("About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
+  requestGMAction(GMAction.actions.applyActiveEffects, {activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId})
+  applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
 }
 
 // Update the actor active effects when editing an owned item
@@ -838,6 +850,7 @@ export function daeReadyActions() {
   // initSheetTab();
   //@ts-ignore
   aboutTimeInstalled = game.modules.get("about-time")?.active;
+  timesUpInstalled = game.modules.get("times-up")?.active;
 }
 
 export function localDeleteFilters(tokenId: string, filterName: string) {
@@ -891,7 +904,7 @@ function initActorSheetHook(app, html, data) {
 }
 
 function initItemSheetHook(app, html, data) {
-  if (app.entity.isOwned) return;
+  // if (app.entity.isOwned) return;
   let title = game.i18n.localize('dae.ActiveEffectName'); 
   let openBtn = $(`<a class="open-item-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
   openBtn.click(ev => {

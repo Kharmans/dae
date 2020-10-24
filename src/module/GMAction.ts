@@ -1,4 +1,4 @@
-import { aboutTimeInstalled } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -231,9 +231,10 @@ let applyTokenMagic = async (tokenId: string, effectId: string, duration: number
   }
 }
 
-async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId=null) {
+export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId=null) {
   debug("gmaction apply effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   tokenList.forEach(async tid => {
+
     const token = canvas.tokens.get(tid);
     if (token) {
       let actEffects = duplicate(activeEffects)
@@ -248,7 +249,6 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
       if (activate) {
         actEffects.forEach(ae=> {
           warn("Apply active effects ", ae, itemCardId)
-
           setProperty(ae.flags, "dae.transfer", false);
           ae.changes.forEach(change=> {
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
@@ -257,99 +257,105 @@ async function applyActiveEffects(activate, tokenList, activeEffects, itemDurati
             }
           })
          setProperty(ae, "flags.dae.token", tid)
-         // convert mapped duration to seconds
-         const seconds = convertToSeconds(itemDuration);
-         if (seconds) ae.duration.seconds = seconds;
+         // convert item duration to seconds/rounds/turns according to combat
+         if (ae.duration.seconds) {
+            ae.duration.startTime = game.time.worldTime;
+          } else if (ae.duration.rounds || ae.duration.turns) {
+            ae.duration.startRound = game.combat?.round;
+            ae.duration.startTurn = game.combat?.turn;
+          } else { // no specific duration on effect use spell duration
+            //@ts-ignore
+            const inCombat = (game.combat.turns.some(tokenData => tokenData._id === token.data._id));
+            const convertedDuration = convertDuration(itemDuration, inCombat);
+            console.error("apply effects duration ", itemDuration, " converted to ", convertDuration, inCombat);
+            if (convertedDuration.type === "seconds") {
+              ae.duration.seconds = convertedDuration.seconds;
+              ae.duration.startTime = game.time.worldTime;
+            } else if (convertedDuration.type === "turns") {
+              ae.duration.rounds = convertedDuration.rounds;
+              ae.duration.turns = convertedDuration.turns;
+              ae.duration.startRound = game.combat?.round;
+              ae.duration.startTurn = game.combat?.turn;
+            } 
+          }
         })
         warn("gm action apply effect", token, actEffects)
         let removeList = await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
 
-        let removeEffect = async (tokenId, removeEffect) => {
-          const token = canvas.tokens.get(tokenId);
-          const actor = token?.actor;
-          if (actor) {
-            let removeId = removeEffect._id;
-            if (removeId)
-              await token.actor.deleteEmbeddedEntity("ActiveEffect", removeId)
+        //TODO remove this when timesup is in the wild.
+        if (!timesUpInstalled) { // do the kludgey old form removal
+            let removeEffect = async (tokenId, removeEffect) => {
+            const token = canvas.tokens.get(tokenId);
+            const actor = token?.actor;
+            if (actor) {
+              let removeId = removeEffect._id;
+              if (removeId)
+                await token.actor.deleteEmbeddedEntity("ActiveEffect", removeId)
+            }
           }
+  
+          if (!Array.isArray(removeList)) removeList = [removeList];
+          removeList.forEach(aeData => {
+            warn("removing effect ", aeData, " in ", aeData.duration, " seconds ")
+            let duration = aeData.duration.seconds || 0;
+            if (aeData.duration && aboutTimeInstalled) {
+              game.Gametime.doIn({seconds: duration}, removeEffect, token.id, aeData)
+            } else if (duration) { //TODO decide what to do for token magic vs macros
+              setTimeout(removeEffect, duration * 1000 || 6000, token.id, aeData);
+            }
+          })
         }
-
-        if (!Array.isArray(removeList)) removeList = [removeList];
-        removeList.forEach(aeData => {
-          warn("removing effect ", aeData, " in ", aeData.duration, " seconds ")
-          let duration = aeData.duration.seconds || 0;
-          if (aeData.duration && aboutTimeInstalled) {
-            game.Gametime.doIn({seconds: duration}, removeEffect, token.id, aeData)
-          } else if (duration) { //TODO decide what to do for token magic vs macros
-            setTimeout(removeEffect, duration * 1000 || 6000, token.id, aeData);
-          }
-        })
-/* pending removal
-        let removeEffect = async (tokenId, effect) => {
-          const token = canvas.tokens.get(tokenId);
-          const actor = token?.actor;
-          if (actor) {
-            let removeList = actor.effects.filter(ae => ae.data.origin === effect.origin && getProperty(ae.data.flags, "dae.transfer") === false);
-            removeList = removeList.map(ae=>ae.data._id);
-            if (removeList.length)
-              await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
-          }
-        }
-        actEffects.forEach(ae => {
-          // TODO remove this when core supports expriy
-          let duration = ae.duration.seconds || 0;
-
-          warn("removing effect ", ae, " in ", duration, " seconds ")
-          if (duration && aboutTimeInstalled) {
-            game.Gametime.doIn({seconds: duration}, removeEffect, token.id, ae)
-          } else if (duration) { //TODO decide what to do for token magic vs macros
-            setTimeout(removeEffect, duration * 1000 || 6000, token.id, ae);
-          }
-        })
-        */
-      }
+       }
     };
   });
 }
 
-export function convertToSeconds(itemDuration: {units: string, value: number}) {
-  if (!itemDuration) return 0;
+export function convertDuration(itemDuration: {units: string, value: number}, combat) {
+  if (!itemDuration) return {type: "seconds", seconds: 0, rounds: 0, turns: 0};
   if (!aboutTimeInstalled ) {
     switch (itemDuration.units) {
-      case "turn": 
-      case "turns": return 0;
+      case "turn":  
+      case "turns": return {type: "turns", seconds: 0, rounds: 0, turns:itemDuration.value};
       case "round": 
-      case "rounds": return itemDuration.value * CONFIG.time.roundTime + 1;
+      case "rounds": return {type: combat ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0}
       case "second":
-      case "seconds": itemDuration.value;
+      case "seconds": 
+          return {type: combat ? "turns" : "seconds", seconds: itemDuration.value, rounds:  itemDuration.value / CONFIG.time.roundTime, turns: 0}
       case "minute": 
-      case "minute": return itemDuration.value * 60;
+      case "minutes": 
+          return {type: combat ? "turns" : "seconds", seconds: itemDuration.value * 60, rounds: itemDuration.value * 60 / CONFIG.time.roundTime, turns: 0};
       case "hour": 
-      case "hours" :return itemDuration.value * 60 * 60;
+      case "hours" :return {type: "seconds", seconds: itemDuration.value * 60 * 60, rounds: 0, turns: 0};
       case "day": 
-      case "days": return itemDuration.value * 60 * 60 * 24;
+      case "days": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24, rounds: 0, turns: 0};
       case "week":
-      case "weeks": return itemDuration.value * 60 * 60 * 24 * 7;
+      case "weeks": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 7, rounds: 0, turns: 0};
       case "month": 
-      case "months": return itemDuration.value * 60 * 60 * 24 * 30;
+      case "months": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
       case "year": 
-      case "years":return itemDuration.value * 60 * 60 * 24 * 30;
-      default: return 0;
+      case "years":return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
+      case "inst": return {type: combat ? "turns" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
+      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
     }
   } else {
     // do about time stuff
     var dtMod;
     switch (itemDuration.units) {
-      case "turn": return 0; //return itemDuration.value * CONFIG.time.roundTime;
-      case "round": return 0; //return itemDuration.value * CONFIG.time.roundTime
-      case "second": return itemDuration.value;
-      case "minute": return game.Gametime.DTNow().add({"minutes": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
-      case "hour": return game.Gametime.DTNow().add({"hours": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
-      case "day": return game.Gametime.DTNow().add({"days": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
-      case "week": return game.Gametime.DTNow().add({"weeks": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
-      case "month": return game.Gametime.DTNow().add({"months": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
-      case "year": return game.Gametime.DTNow().add({"years": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
-      default: return CONFIG.time.roundTime;
+      case "turn":  
+      case "turns": return {type: "turns", seconds: 0, rounds: 0, turns:itemDuration.value};
+      case "round": 
+      case "rounds": return {type: combat ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0}
+      case "second": return {type: combat ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0};
+      case "minute": 
+        let durSeconds = game.Gametime.DTNow().add({"minutes": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
+        return {type: combat ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
+      case "hour": return {type: "seconds", seconds: game.Gametime.DTNow().add({"hours": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
+      case "day": return {type: "seconds", seconds: game.Gametime.DTNow().add({"days": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
+      case "week": return {type: "seconds", seconds: game.Gametime.DTNow().add({"weeks": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
+      case "month": return {type: "seconds", seconds: game.Gametime.DTNow().add({"months": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
+      case "year": return {type: "seconds", seconds: game.Gametime.DTNow().add({"years": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
+      case "inst": return {type: combat ? "turns" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
+      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
     }
   }
 }

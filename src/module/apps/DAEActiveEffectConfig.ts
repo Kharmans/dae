@@ -1,4 +1,4 @@
-import { ValidSpec } from "../dae";
+import { ValidSpec, aboutTimeInstalled } from "../dae";
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
@@ -57,7 +57,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
    }
 
    /** @override */
-  getData(options) {
+  async getData(options) {
     const data = super.getData(options);
     //@ts-ignore
     const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)
@@ -88,6 +88,13 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       change.options = this.getOptionsForSpec(change.key);
       if (!change.priority) change.priority = change.mode * 10;
     });
+    if (aboutTimeInstalled && data.effect.duration.startTime) {
+      const Gametime = game.Gametime;
+      const abdt = Gametime.DT.createFromSeconds(data.effect.duration.startTime);
+      data.durationString = abdt.longDate().time;
+    }
+    data.sourceName = await this.object.sourceName;
+    console.error("Source name ", data.sourceName)
     return data;
   }
 
@@ -143,8 +150,13 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!formData.changes) formData.changes = [];
     formData.changes = Object.values(formData.changes);
     for ( let c of formData.changes ) {
-      //@ts-ignore
-      if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
+      if (typeof ValidSpec.allSpecsObj[c.key].sampleValue === "number") {
+        //@ts-ignore
+        if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
+      }
+      if (typeof ValidSpec.allSpecsObj[c.key].samplevalue === "string") {
+        if (typeof c.value === "number") c.value = `${c.value}`
+      }
     }
     console.error("update ", formData)
     if (parseInt(formData.duration.startTime) === 0) 

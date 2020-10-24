@@ -100,6 +100,19 @@ export async function patchingInitSetup() {
   else  d20Roll = dice?.d20Roll;
 }
 
+// Allow limited recursion of the formula replace function for things like
+// bonuses.heal.damage in spell formulas.
+var oldReplaceFormulaData;
+function replaceFormulaData(formula, data, {missing = "", warn = false}) {
+  let result = formula;
+  const maxIterations = 3;
+  for (let i = 0; i < maxIterations; i++) {
+    if (!result.includes("@")) break;
+    result = oldReplaceFormulaData.bind(this)(result, data, {missing, warn});
+  }
+  return result;
+}
+
 export function patchingReadySetup() {
   log("Patching actor.rollAbilitySave: override default save is ", useAbilitySave)
   //@ts-ignore
@@ -108,14 +121,9 @@ export function patchingReadySetup() {
     //@ts-ignore
     CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;  
   }
-};
-Hooks.once("ready", () => {
-  /*
-  console.log("dae | Patching Roll._replaceFormulaData v0.7.0");
+  log("dae | Patching Roll.replaceFormulaData");
   //@ts-ignore
-  Roll.prototype._replaceFormulaData = new Proxy(Roll.prototype._replaceFormulaData, {
-    //@ts-ignore
-    apply: (target, thisvalue, args) => Roll_replaceData.bind(thisvalue)(new Set(), ...args)
-  });
-  */
-});
+  oldReplaceFormulaData = Roll.replaceFormulaData;
+  //@ts-ignore
+  Roll.replaceFormulaData = replaceFormulaData;
+};

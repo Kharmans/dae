@@ -1,3 +1,11 @@
+0.2.11
+* Fix for eval of non-transfer effect arguments incorrectly adding spaces between terms.
+* Added back the ability to reference @values in bonuses.heal.damage.
+**Chaged duration setting** for applied non-transfer effects.
+* If the active effect specifies a duration then the effect duration is used, if there is no duration specified in the effect the item duration is used, otherwise no duration is set. A duration of instantaneous is either 1 turn if in combat or 1 rounds worth of seconds otherwise.
+* When applying an item effect during combat an item duration in minutes is converted to rounds/turns.
+* If times-up is installed DAE will not schedule the automatic removal of effects, but leave it to times-up.
+* When applying active effects only effects you don't have owner permission on will be applied by the GM. This means that macros will run either in the players client (if they own the target) or on the GM client (if they don't)
 0.2.10 
 * Fix for very fast timeouts if active effects not installed. A subsequent release will clean up the whole timeout piece.
 * Support for new CUB version. When creating an active effect from the acitve effects sheet (item or actor), you can choose one of the CUB effects from the drop down list (left of the + button). This will prepopulate with the CUB data, so equipping (if transfer) or applying if non-transfer will trigger the cub condition. Removal will work as well.
