@@ -150,12 +150,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!formData.changes) formData.changes = [];
     formData.changes = Object.values(formData.changes);
     for ( let c of formData.changes ) {
-      if (typeof ValidSpec.allSpecsObj[c.key].sampleValue === "number") {
+      if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number") {
         //@ts-ignore
         if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
       }
-      if (typeof ValidSpec.allSpecsObj[c.key].samplevalue === "string") {
-        if (typeof c.value === "number") c.value = `${c.value}`
+      if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "string") {
+        if (typeof c.value === "number") c.value = `${c.value}`;
       }
     }
     console.error("update ", formData)
