@@ -18,7 +18,7 @@ export class ActiveEffects extends FormApplication {
 
   static get defaultOptions() {
     const options = super.defaultOptions;
-    options.id = "effect-selector-actor";
+    // options.id = "effect-selector-actor";
     options.classes = ["dnd5e", "sw5e"];
     options.title = game.i18n.localize("dae.ActiveEffectName");
     options.template = "./modules/dae/templates/ActiveEffects.html";
@@ -29,7 +29,7 @@ export class ActiveEffects extends FormApplication {
 }
 
 get title() {
-  return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.name}`;
+  return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.name}` + (this.object.isOwned ? " (Owned Item) EXPERIMENTAL" : "");
 }
 get filters() {return ActiveEffects.filters}
 getData() {
@@ -80,10 +80,12 @@ getData() {
   this.effectList = {"new": "new"}
   efl.forEach(se => this.effectList[se.id] = se.label);
 
+  const isItem = this.object.__proto__.constructor.name === CONFIG.Item.entityClass.name;
   let data = {
     actives: actives, 
     isGM: game.user.isGM,
-    isItem: this.object.__proto__.constructor.name === CONFIG.Item.entityClass.name,
+    isItem,
+    isOwned: this.object.isOwned,
     flags: this.object.data.flags,
     modes: modeKeys,
     validSpecs: ValidSpec.allSpecsObj,
@@ -92,7 +94,6 @@ getData() {
     canEdit: true,
     // showEffects: playersCanSeeEffects !== "none" || game.user.isGM,
     showEffects: true,
-    isOwned: false,
     effectList: this.effectList,
     newEffect: "new"
   }

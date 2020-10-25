@@ -51,11 +51,7 @@
           <div class="effect-label">{{effect.label}}</div>
           <div><img src="{{effect.icon}}" style="height:20px"></div>
           {{#if effect.transfer}}
-            {{#if ../isOwned}}
-              {{localize "dae.readOnly"}}
-            {{else}}
               <i class="fas fa-arrow-down" style="padding-top:4px"></i>
-            {{/if}}
           {{else}}
             <i class="fas fa-arrow-right" style="padding-top:4px"></i>
           {{/if}}

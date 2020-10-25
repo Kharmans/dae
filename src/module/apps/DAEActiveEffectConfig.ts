@@ -1,4 +1,5 @@
 import { ValidSpec, aboutTimeInstalled } from "../dae";
+import { i18n } from "../../dae";
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
@@ -29,7 +30,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /** @override */
   get title() {
-    return `${game.i18n.localize("EFFECT.ConfigTitle")}: ${this.object.data.label}`;
+    let suffix = this.object.parent.isOwned ? "(Owned Item) Experimental" :"";
+    return `${i18n("EFFECT.ConfigTitle")}: ${this.object.data.label}` + suffix;
   }
 
   /* ----------------------------------------- */
@@ -94,7 +96,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       data.durationString = abdt.longDate().time;
     }
     data.sourceName = await this.object.sourceName;
-    console.error("Source name ", data.sourceName)
     return data;
   }
 
@@ -158,11 +159,22 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         if (typeof c.value === "number") c.value = `${c.value}`;
       }
     }
-    console.error("update ", formData)
     if (parseInt(formData.duration.startTime) === 0) 
       formData.duration.startTime = game.time.worldTime;
     setProperty(formData, "flags.dae", {transfer: formData.transfer});
-    return this.object.update(formData);
+    if (this.object.parent.isOwned) { // we ar editing an owned item
+      let itemData = this.object.parent.data;
+      itemData.effects.forEach(efData => {
+        if (efData._id == this.object.id)
+          mergeObject(efData, expandObject(formData), {overwrite:true, inplace: true})
+      })
+      this.object.parent.actor.updateOwnedItem(itemData)
+  
+     // return this.object.parent.Actor.updateOwnedItem({"_id"})
+    }
+    else {
+      return this.object.update(formData);
+    }
   }
 
   static DAEActiveEffectSheetConfigReadyActions() {

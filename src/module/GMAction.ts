@@ -265,9 +265,8 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             ae.duration.startTurn = game.combat?.turn;
           } else { // no specific duration on effect use spell duration
             //@ts-ignore
-            const inCombat = (game.combat.turns.some(tokenData => tokenData._id === token.data._id));
+            const inCombat = (game.combat?.turns.some(tokenData => tokenData._id === token.data._id));
             const convertedDuration = convertDuration(itemDuration, inCombat);
-            console.error("apply effects duration ", itemDuration, " converted to ", convertDuration, inCombat);
             if (convertedDuration.type === "seconds") {
               ae.duration.seconds = convertedDuration.seconds;
               ae.duration.startTime = game.time.worldTime;
@@ -334,8 +333,8 @@ export function convertDuration(itemDuration: {units: string, value: number}, co
       case "months": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
       case "year": 
       case "years":return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
-      case "inst": return {type: combat ? "turns" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
-      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
+      case "inst": return {type: combat ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
+      default: return {type: combat ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
     }
   } else {
     // do about time stuff
@@ -354,8 +353,10 @@ export function convertDuration(itemDuration: {units: string, value: number}, co
       case "week": return {type: "seconds", seconds: game.Gametime.DTNow().add({"weeks": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
       case "month": return {type: "seconds", seconds: game.Gametime.DTNow().add({"months": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
       case "year": return {type: "seconds", seconds: game.Gametime.DTNow().add({"years": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
-      case "inst": return {type: combat ? "turns" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
-      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
+      case "inst": return {type: combat ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
+      default: return {type: combat ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
+
+//      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
     }
   }
 }

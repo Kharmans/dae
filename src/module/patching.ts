@@ -1,7 +1,7 @@
 import { useAbilitySave, daeCreateActiveEffectActions, daeDeleteActiveEffectActions } from "./dae";
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
-import { debug, log,  } from "../dae";
+import { debug, log, error,  } from "../dae";
 
 var oldRollAbilitySave;
 
@@ -50,6 +50,7 @@ function createEmbeddedEntity(embeddedName, data, options={}) {
   if (embeddedName === "ActiveEffect") {
     debug("Token: create Active Effect", embeddedName, data, options);
     data = data instanceof Array ? data : [data];
+
     if (data.length > 0) {
       daeCreateActiveEffectActions(this.token.actor, data)
     }
@@ -89,14 +90,14 @@ export async function patchingInitSetup() {
   //@ts-ignore
   ActorTokenHelpers.prototype.createEmbeddedEntity = createEmbeddedEntity;
   
-  console.error("system is ", game.system)
+  console.warn("system is ", game.system)
     //@ts-ignore
   let dice;
   //@ts-ignore
   if (game.system.id === "dnd5e") dice = await import("../../../systems/dnd5e/module/dice.js");
   //@ts-ignore
   else if (game.system.id === "sw5e") dice = await import("../../../systems/sw5e/module/dice.js")
-  if (!dice) console.error ("Dice not defined! ")
+  if (!dice) console.error ("Dice not defined! Many things won't work")
   else  d20Roll = dice?.d20Roll;
 }
 
