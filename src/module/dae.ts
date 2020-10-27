@@ -111,6 +111,7 @@ export class ValidSpec {
         "data.traits.weaponProf.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.weaponProf.value": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.weaponProf.custom": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.size": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
         "data.resources.primary.max": [0, -1],
         "data.resources.primary.label": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
         "data.resources.secondary.max": [0, -1],

@@ -15,7 +15,6 @@ export const registerSettings = function () {
     default: true,
     config: true,
     type: Boolean,
-    choices: {none: "Never", view: "View Only", edit: "Edit"},
     onChange: fetchParams,
     name: game.i18n.localize("dae.useDAESheet.Name"),
     hint: game.i18n.localize("dae.useDAESheet.Hint"),

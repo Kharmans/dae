@@ -61,6 +61,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       return CONFIG.DND5E.abilities;
     if (spec.includes("tokenMagic"))
       return this.tokenMagicEffects;
+      if (spec === "data.traits.size") return CONFIG.DND5E.actorSizes;
     return false;
    }
 
@@ -112,7 +113,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   _keySelected(event) {
     const target = event.target;
-    console.error("event is ", event, this)
     return this.submit({preventClose: true}).then(() => this.render());
    }
   /* ----------------------------------------- */
@@ -127,7 +127,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /* ----------------------------------------- */
 
   _onEffectControl(event) {
-    console.error("oneffect control fired")
     event.preventDefault();
     const button = event.currentTarget;
     switch ( button.dataset.action ) {
