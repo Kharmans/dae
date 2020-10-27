@@ -1,3 +1,31 @@
+0.2.14
+* fix a bug in deciding to apply effects if dynamic effects is installed.
+* add custom option for abilities.save,check,skill fields to handle the string vs number issue.
+* Bring back support flags.dnd5e for special traits/weapon critical threshold
+* Add a start/end time display for timed effects
+* Add a stackable flag for NON-TRANSFER active effects to allow additive application of effects. A stackable effect will add a second copy of the active effect when applied to a target token, rather than replacing it with a reset start time. Settable form the active effect config screen. TRANSFER effects are already stackable.
+* Reduced the proliferation of active effects/configure active effects windows.
+* Started fixing up some field definitions to enforce modes where approriate.
+* added DAE.setTokenFlag(token,flagName, flagValue) and DAE.getTokenFlag functions to allow non-GM users to set/get flags.dae.flagName on a token. Useful to record state on things like traps.
+* Maybe an inmprovment on the effect config tab.
+* Config option to switch between the Core active effect config shett and the DAE config sheet. It is easier to create effects that don't work with DAE using the default sheet.
+* 1/2 of a fix for fastforward of ability saving throws incompatibility with midi-qol.
+* Updated cn.json. Thanks Mitch Hwang
+* Updated pt-BR.json. Thanks @innocenti
+* A little patch for the SW5E guys, it appears they don't like halflings.
+
+0.2.13
+* Duration setting on applied effects should be correct now.
+Rules are:
+If the active effect specifies a duration use that;
+ELSE if the item specicfies a duration use that;
+Otherwise do not set a duration (which means the status will bot attack to the token).
+Instantaneous spells attract a duration of 1 second/turn.
+You don't have to be in combat to apply effects anymore.
+* Experimental support for editing effects on owned items. YOu cannot add effects to an item only change/delete those already there.
+* You can have more than one active effects window open at a time.
+0.2.12 
+fix for non-string being entered into string
 0.2.11
 * Fix for eval of non-transfer effect arguments incorrectly adding spaces between terms.
 * Added back the ability to reference @values in bonuses.heal.damage.

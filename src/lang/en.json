@@ -218,5 +218,8 @@
     "dae.summaryFilter": "Effect Summary",
     "dae.enabledFilter": "Enabled Effects",
     "dae.temporaryFilter": "Timed effects",
-    "dae.Priority": "Priority"
+    "dae.Priority": "Priority",
+    "dae.Stackable": "Stackable",
+    "dae.useDAESheet.Name": "Use the DAE Active Effect Config Sheet?",
+    "dae.useDAESheet.Hint": "If false uses the Core ActiveEffectConfig Sheet"
 }

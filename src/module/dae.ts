@@ -1,6 +1,7 @@
 import { requestGMAction, GMAction, applyActiveEffects } from "./GMAction";
 import { warn, error, debug, setDebugLevel, daeAlternateStatus } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
+import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -64,7 +65,7 @@ export class ValidSpec {
     if (["dnd5e", "sw5e"].includes(game.system.id)) { 
       var specials = {
         //@ts-ignore - come back to this
-        "flags.dnd5e.initiativeHalfProf": [false, ACTIVE_EFFECT_MODES.OVERRIDE],
+        "flags.dnd5e.initiativeHalfProf": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "flags.dnd5e.weaponCriticalThreshold": [20, -1],
         "data.attributes.ac.value": [0, -1],
         "data.attributes.ac.min": [0, -1],
@@ -132,7 +133,7 @@ export class ValidSpec {
       // move all the characteer flags to specials so that the can be custom effects only
       Object.keys(CONFIG.DND5E.characterFlags).forEach(key=> {
         let theKey = `flags.dnd5e.${key}`;
-        if (key === "flags.dnd5E.weaponCriticalThreshold") specials[theKey] = [0, -1];
+        if (theKey === "flags.dnd5e.weaponCriticalThreshold") specials[theKey] = [0, -1];
         else specials[theKey] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
         delete baseValues[theKey];
       }); 
@@ -152,18 +153,24 @@ export class ValidSpec {
         if (key.includes("data.spells") && key.includes("override")) {
           baseValues[key] = 0;
         }
+
       });
 
       Object.keys(specials).forEach(key => {
         delete baseValues[key]
       })
+      delete baseValues["data.attributes.init.bonus"];
+      delete baseValues["data.attributes.init.mod"];
     }
 
     // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
     this.baseSpecs = Object.keys(baseValues).map(spec => {
       let validSpec = new ValidSpec(spec, baseValues[spec], -1);
-        this.baseSpecsObj[spec] = validSpec;
-        return validSpec;
+      if (spec.includes("data.skills") && spec.includes("ability")) {
+        validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
+      }
+      this.baseSpecsObj[spec] = validSpec;
+      return validSpec;
     });
     //@ts-ignore
     if (game.modules.get("tokenmagic")?.active) {
@@ -311,6 +318,11 @@ function daeCustomEffect(actor, change) {
   const current = getProperty(actor.data, change.key);
   var validValues;
   var value;
+  if (change.key.includes("flags.dnd5e")) {
+    const value = ["1", "true"].includes(change.value);
+    setProperty(actor.data, change.key, value);
+    return true;
+  }
   switch(change.key) {
     case "data.traits.di.all":
     case "data.traits.dr.all":
@@ -396,6 +408,10 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.msak.damage":
     case "data.bonuses.rsak.attack":
     case "data.bonuses.rsak.damage":
+    case "data.bonuses.abilities.save":
+    case "data.bonuses.abilities.check":
+    case "data.bonuses.abilities.skill":
+
       // TODO: remove if fixed in core
       const result = attackDamageBonusEval(change.value, actor)
       value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
@@ -505,8 +521,10 @@ function prepareData() {
   this.prepareEmbeddedEntities();
   applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj, false);
   this.prepareDerivedData();
-  if (calculateArmor && this.data.type === "character") {
-    this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
+  if (["dnd5e", "sw5e"].includes(game.system.id)) {
+    if (calculateArmor && this.data.type === "character" && game) {
+      this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
+    }
   }
 
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj,);
@@ -942,4 +960,10 @@ export function fetchParams() {
   calculateArmor = game.settings.get("dae", "calculateArmor");
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
+  let useDAESheet = game.settings.get("dae", "useDAESheet");
+  if (useDAESheet) {
+    CONFIG.ActiveEffect.sheetClass = DAEActiveEffectConfig;
+  } else {
+    CONFIG.ActiveEffect.sheetClass = ActiveEffectConfig;
+  }
 }

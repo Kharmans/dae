@@ -34,6 +34,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     return `${i18n("EFFECT.ConfigTitle")}: ${this.object.data.label}` + suffix;
   }
 
+  get id() {
+    const object = this.object;
+    let id = `ActiveEffectsConfig-${object.id}`;
+    if (object.isToken) id += `-${object.token.id}`;
+    return id;
+  }
   /* ----------------------------------------- */
 
   getOptionsForSpec(spec) {
@@ -90,17 +96,23 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       change.options = this.getOptionsForSpec(change.key);
       if (!change.priority) change.priority = change.mode * 10;
     });
-    if (aboutTimeInstalled && data.effect.duration.startTime) {
+    if (aboutTimeInstalled && data.effect.duration?.startTime) {
       const Gametime = game.Gametime;
-      const abdt = Gametime.DT.createFromSeconds(data.effect.duration.startTime);
-      data.durationString = abdt.longDate().time;
+      const startTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime).shortDate();
+      data.startTimeString = startTime.date + " " + startTime.time;
+      if (data.effect.duration.seconds) {
+        const endTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime + data.effect.duration.seconds).shortDate();
+        data.durationString = endTime.date + " " + endTime.time;
+      }
     }
     data.sourceName = await this.object.sourceName;
+    // data.effect.flags.dae.stackable = this.object.data.flags?.dae?.stackable ||false;
     return data;
   }
 
   _keySelected(event) {
     const target = event.target;
+    console.error("event is ", event, this)
     return this.submit({preventClose: true}).then(() => this.render());
    }
   /* ----------------------------------------- */
@@ -109,12 +121,13 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   activateListeners(html) {
     super.activateListeners(html);
     html.find(".effect-control").click(this._onEffectControl.bind(this));
-    html.find(".key").click(this._keySelected.bind(this))
+    html.find(".key").change(this._keySelected.bind(this))
   }
 
   /* ----------------------------------------- */
 
   _onEffectControl(event) {
+    console.error("oneffect control fired")
     event.preventDefault();
     const button = event.currentTarget;
     switch ( button.dataset.action ) {
@@ -154,6 +167,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number") {
         //@ts-ignore
         if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
+        else c.value = 0;
       }
       if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "string") {
         if (typeof c.value === "number") c.value = `${c.value}`;
@@ -161,8 +175,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
     if (parseInt(formData.duration.startTime) === 0) 
       formData.duration.startTime = game.time.worldTime;
-    setProperty(formData, "flags.dae", {transfer: formData.transfer});
-    if (this.object.parent.isOwned) { // we ar editing an owned item
+    setProperty(formData, "flags.dae.transfer", formData.transfer);
+    //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
+    if (this.object.parent.isOwned) { // we are editing an owned item
       let itemData = this.object.parent.data;
       itemData.effects.forEach(efData => {
         if (efData._id == this.object.id)
@@ -178,6 +193,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
 
   static DAEActiveEffectSheetConfigReadyActions() {
-    CONFIG.ActiveEffect.sheetClass = DAEActiveEffectConfig;
+
+    // CONFIG.ActiveEffect.sheetClass = DAEActiveEffectConfig;
   }
 }

@@ -27,6 +27,12 @@ export class ActiveEffects extends FormApplication {
     options.width = 600;
     return options;
 }
+get id() {
+  const actor = this.object;
+  let id = `ActiveEffects-${actor.id}`;
+  if (actor.isToken) id += `-${actor.token.id}`;
+  return id;
+}
 
 get title() {
   return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.name}` + (this.object.isOwned ? " (Owned Item) EXPERIMENTAL" : "");

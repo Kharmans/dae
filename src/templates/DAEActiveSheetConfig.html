@@ -51,6 +51,12 @@
     </div>
     {{/if}}
 
+    {{#if isItem}}
+    <div class="form-group">
+      <label>{{ localize "dae.Stackable" }}</label>
+      <input type="checkbox" name="flags.dae.stackable" {{ checked effect.flags.dae.stackable }} />
+    </div>
+    {{/if}}
     <div class="form-group">
       <label>{{ localize "EFFECT.Origin" }} ({{ sourceName }})</label>
       <div class="form-fields">
@@ -67,16 +73,24 @@
         <input type="number" name="duration.seconds" value="{{ effect.duration.seconds }}" />
       </div>
     </div>
+    {{#if startTimeString}}
+    <div>
+      {{ startTimeString }}
+      {{#if durationString}}
+        -> 
+        {{durationString}}
+      {{/if}}
+    </div>
+    {{/if}}
+
     <div class="form-group">
-      <label>{{ localize "EFFECT.StartTime" }}
-          {{#if durationString}}
-            ({{ durationString }})
-          {{/if}}
-      </label>
+      <label>{{ localize "EFFECT.StartTime" }}</label>
       <div class="form-fields">
         <input type="number" name="duration.startTime" value="{{ effect.duration.startTime }}" />
       </div>
     </div>
+
+
 
     <hr />
     <div class="form-group">
@@ -135,7 +149,7 @@
           {{#if change.options}}
           <div class="value">
             <select name="changes.{{i}}.value" data-dtype="String">
-              {{selectOptions change.options selected=change.value}}
+              {{selectOptions change.options selected=change.value localize=false}}
             </select>
           </div>
           {{else}}

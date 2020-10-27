@@ -275,6 +275,15 @@ export let macroReadySetup = () => {
   })
 }
 
+export function getTokenFlag(token: Token, flagName: string) {
+    return getProperty(token, `data.flags.dae.${flagName}`);
+}
+
+export function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {
+  const tokenId = (typeof token === "string") ? token : token.id;
+  return requestGMAction(GMAction.actions.setTokenFlag, { tokenId: tokenId, sceneId: canvas.scene.id, flagName, flagValue })
+}
+
 let _addEffects = (app, html, data) => {
   let openBtn = $(`<a class="open-de-effects" title="${"DEEffects"}"><i class="fas fa-clipboard"></i>${"Show DE"}</a>`);
   debug("Open button called ", openBtn);

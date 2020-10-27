@@ -10,6 +10,16 @@ export const registerSettings = function () {
     type: Boolean,
     onChange: fetchParams
   });
+  game.settings.register("dae", "useDAESheet", {
+    scope: "world",
+    default: true,
+    config: true,
+    type: Boolean,
+    choices: {none: "Never", view: "View Only", edit: "Edit"},
+    onChange: fetchParams,
+    name: game.i18n.localize("dae.useDAESheet.Name"),
+    hint: game.i18n.localize("dae.useDAESheet.Hint"),
+  });
   game.settings.register("dae", "playersCanSeeEffects", {
     scope: "world",
     default: "None",

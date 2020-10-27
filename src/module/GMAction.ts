@@ -53,7 +53,8 @@ export class GMAction {
     renameToken: "renameToken",
     moveToken: "moveToken",
     applyTokenMagic: "applyTokenMagic",
-    applyActiveEffects: "applyActiveEffects"
+    applyActiveEffects: "applyActiveEffects",
+    setTokenFlag: "setTokenFlag"
   }
 
   private static actionQueue = [];
@@ -156,6 +157,14 @@ export class GMAction {
         //@ts-ignore
         await deleteToken(requester, data);
         break;
+      case this.actions.setTokenFlag:
+        //@ts-ignore
+        scene = game.scenes.get(data.sceneId);
+        const update = {"_id": tokenId};
+        //@ts-ignore
+        update[`flags.dae.${data.flagName}`] = data.flagValue;
+        await scene.updateEmbeddedEntity("Token", update);
+        break;
       case this.actions.blindToken:
         //@ts-ignore
         scene = game.scenes.get(data.sceneId);
@@ -241,7 +250,10 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       let removeList = [];
       // TODO redo this as a reduce
       actEffects.forEach(newAE => {
-        removeList = removeList.concat(token.actor.effects.filter(ae => ae.data.origin === newAE.origin && getProperty(ae.data, "flags.dae.transfer") === false));
+        removeList = removeList.concat(
+          token.actor.effects.filter(ae => ae.data.origin === newAE.origin 
+            && getProperty(ae.data, "flags.dae.transfer") === false 
+            && !getProperty(ae.data, "flags.dae.stackable")));
       });
       removeList = removeList.map(ae=>ae.data._id);
       if (removeList.length > 0)

@@ -18,10 +18,10 @@ import { daeReadyActions} from "./module/dae";
 import { GMAction, GMActionMessage } from './module/GMAction';
 import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
-import { patchingReadySetup, patchingInitSetup } from './module/patching';
+import { patchingSetup, patchingInitSetup } from './module/patching';
 import { DAEStatusEffects } from './module/statusEffects';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
-import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken } from './module/daeMacros';
+import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag } from './module/daeMacros';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
@@ -66,7 +66,6 @@ Hooks.once('init', async function() {
 Hooks.once('ready', async function () {
   debug("ready setup actions")
   daeReadyActions();
-  patchingReadySetup();
 
   GMAction.readyActions();
 })
@@ -79,7 +78,8 @@ Hooks.once('setup', function() {
   debug("setup actions")
 	GMAction.initActions();
 	daeSetupActions();
-  
+  patchingSetup();
+
 	//@ts-ignore
 	window.DAE = {
     dataSetup,
@@ -104,7 +104,9 @@ Hooks.once('setup', function() {
     setTokenVisibility: setTokenVisibility,
     setTileVisibility: setTileVisibility,
     moveToken: moveToken,
-    renameToken: renameToken
+    renameToken: renameToken,
+    getTokenFlag: getTokenFlag,
+    setTokenFlag: setTokenFlag
   }
 });
 
