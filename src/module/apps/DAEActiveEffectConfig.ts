@@ -166,7 +166,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number") {
         //@ts-ignore
         if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
-        else c.value = 0;
       }
       if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "string") {
         if (typeof c.value === "number") c.value = `${c.value}`;
