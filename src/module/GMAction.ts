@@ -277,9 +277,9 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             ae.duration.startTurn = game.combat?.turn;
           } else { // no specific duration on effect use spell duration
             //@ts-ignore
-            //@ts-ignore
             const inCombat = (game.combat?.turns.some(turnData => turnData.tokenId === token.data._id));
             const convertedDuration = convertDuration(itemDuration, inCombat);
+            debug("converted duration ", convertedDuration, inCombat, itemDuration)
             if (convertedDuration.type === "seconds") {
               ae.duration.seconds = convertedDuration.seconds;
               ae.duration.startTime = game.time.worldTime;
@@ -335,8 +335,13 @@ export function convertDuration(itemDuration: {units: string, value: number}, co
           return {type: combat ? "turns" : "seconds", seconds: itemDuration.value, rounds:  itemDuration.value / CONFIG.time.roundTime, turns: 0}
       case "minute": 
       case "minutes": 
-          return {type: combat ? "turns" : "seconds", seconds: itemDuration.value * 60, rounds: itemDuration.value * 60 / CONFIG.time.roundTime, turns: 0};
-      case "hour": 
+      let durSeconds = itemDuration.value * 60
+      if (durSeconds / CONFIG.time.roundTime <= 10) {
+        return {type: combat ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
+      } else {
+        return {type: "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
+      }
+    case "hour": 
       case "hours" :return {type: "seconds", seconds: itemDuration.value * 60 * 60, rounds: 0, turns: 0};
       case "day": 
       case "days": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24, rounds: 0, turns: 0};
@@ -360,7 +365,11 @@ export function convertDuration(itemDuration: {units: string, value: number}, co
       case "second": return {type: combat ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0};
       case "minute": 
         let durSeconds = game.Gametime.DTNow().add({"minutes": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
-        return {type: combat ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
+        if (durSeconds / CONFIG.time.roundTime <= 10) {
+          return {type: combat ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
+        } else {
+          return {type: "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
+        }
       case "hour": return {type: "seconds", seconds: game.Gametime.DTNow().add({"hours": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
       case "day": return {type: "seconds", seconds: game.Gametime.DTNow().add({"days": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
       case "week": return {type: "seconds", seconds: game.Gametime.DTNow().add({"weeks": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
