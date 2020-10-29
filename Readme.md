@@ -24,7 +24,7 @@ The actor should have the items migrated (and the transferred effects applied). 
 
 To see the effects active on the actor use (as a macro or from the console)
 ```
-new DAE.ActorEffects({actor: game.actors.getName("Actor's name")}, {}).render(true)
+new DAE.ActiveEffects({actor: game.actors.getName("Actor's name")}, {}).render(true)
 ```
 or choose "Active Effects" from the character sheet title bar. Or you can do (from the console)
 ```
@@ -282,7 +282,7 @@ Because dropping an item onto a character transfers the active effects to the ac
 The macro functions in dynamicitems have been replaced in DAE with the following (and you will need to modify any macros you have created):
 * Show all the Active Effects on an actor, marked as active/inactive.
   ```
-  DAE.new DAE.ActorEffects({actor: actor}, {}).render(true)
+  new DAE.ActiveEffects({actor: actor}, {}).render(true)
   ```
   * Display a form  enabled/disabled passive and active effects for the selected token. Effects cannot be edited but deleted **TODO** allow edits
 

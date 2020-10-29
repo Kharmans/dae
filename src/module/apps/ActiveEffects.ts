@@ -11,7 +11,8 @@ export class ActiveEffects extends FormApplication {
   effectHookIdu = null;
   effectHookIdc = null;
   effectHookIdd = null;
-  timeHookId: any;
+  timeHookId = null;
+  combatHookId = null;
   effect;
   effectList;
 
@@ -44,7 +45,7 @@ getData() {
   const modeKeys = Object.keys(EFFECTMODES);
   let actives = this.object.effects.map(ae=> {
     let newAe = duplicate(ae.data);
-    newAe.duration = ae.duration;
+    newAe.duration = duplicate(ae.duration);
     if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }
@@ -211,6 +212,8 @@ activateListeners(html) {
     this.itemHookId = Hooks.on("updateOwnedItem", efhandler.bind(this, "owneditem"))
   if (!this.timeHookId) 
     this.timeHookId = Hooks.on("updateWorldTime", tmHandler.bind(this))
+  if(!this.combatHookId) 
+    this.combatHookId = Hooks.on("updateCombat", tmHandler.bind(this));
 
 }
 async close() {
@@ -219,6 +222,7 @@ async close() {
   Hooks.off("deleteActiveEffect", this.effectHookIdd);
   Hooks.off("updateWorldTime", this.timeHookId);
   Hooks.off("updateOwnedItem", this.itemHookId);
+  Hooks.off("updateCombat", this.combatHookId);
   return super.close()
   }
 }

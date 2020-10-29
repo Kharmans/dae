@@ -277,7 +277,8 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             ae.duration.startTurn = game.combat?.turn;
           } else { // no specific duration on effect use spell duration
             //@ts-ignore
-            const inCombat = (game.combat?.turns.some(tokenData => tokenData._id === token.data._id));
+            //@ts-ignore
+            const inCombat = (game.combat?.turns.some(turnData => turnData.tokenId === token.data._id));
             const convertedDuration = convertDuration(itemDuration, inCombat);
             if (convertedDuration.type === "seconds") {
               ae.duration.seconds = convertedDuration.seconds;

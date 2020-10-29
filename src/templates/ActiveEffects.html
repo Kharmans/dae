@@ -67,7 +67,9 @@
 
           <div class="effect-controls dae-effect-list">
             <a class="effect-edit" title={{localize dae.edit}}><i class="fas fa-edit"></i></a>
+          {{#unless ../isOwned }}
             <a class="effect-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
+            {{/unless}}
           </div>
         </li>
         {{#each effect.changes as |change cid|}}

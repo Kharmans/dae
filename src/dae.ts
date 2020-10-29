@@ -42,8 +42,11 @@ export let daeAlternateStatus;
 /* Initialize module					*/
 /* ------------------------------------ */
 Hooks.once('init', async function() {
-  //@ts-ignore
-  CONFIG.statusEffects = mergeObject(CONFIG.statusEffects, DAEStatusEffects, {overwrite: true, inplace: true});
+  DAEStatusEffects.forEach(se => {
+    let cse = CONFIG.statusEffects.find(cse => cse?.id === se.id);
+    if (cse) mergeObject(cse, se, {inplace:true, overwrite: true, insertKeys: true});
+    else CONFIG.statusEffects.push(se);
+  })
   daeAlternateStatus = {};
   CONFIG.statusEffects.forEach(se => {
     if (se.flags?.dae) daeAlternateStatus[se.id] = se.flags.dae;

@@ -1,3 +1,11 @@
+0.2.16
+* Corrected handling of traits.size
+* Fixed not setting up CONFIG.statusEffects correctly.
+* first steps to non-dnd5e compatibility.
+* some changes to effect duration setting to support times-up
+* Fixed an edge case for effects on tokens being removed and calling macros/token magic effects.
+* made data.abilities.save/check/skill into custom effects to reduce errors on data entry.
+Known Bug: Active Effects on tokens are not removed from the active effects display, but are actually removed from the token.
 0.2.14
 * fix a bug in deciding to apply effects if dynamic effects is installed.
 * add custom option for abilities.save,check,skill fields to handle the string vs number issue.

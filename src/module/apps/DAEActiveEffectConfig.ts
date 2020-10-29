@@ -36,8 +36,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   get id() {
     const object = this.object;
-    let id = `ActiveEffectsConfig-${object.id}`;
-    if (object.isToken) id += `-${object.token.id}`;
+    let id = `ActiveEffectsConfig-${object?.id}`;
+    if (object?.isToken) id += `-${object.token.id}`;
     return id;
   }
   /* ----------------------------------------- */

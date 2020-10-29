@@ -56,21 +56,21 @@ var oldActorTokenHelpersDeleteEmbeddedEntity;
 var oldActorTokenHelpersCreateEmbeddedEntity;
 
 //TODO: when this Hooks.on("createActiveEffect") workds for tokens
-function createEmbeddedEntity(embeddedName, data, options={}) {
+async function createEmbeddedEntityToken(embeddedName, data, options={}) {
+  let created = await oldActorTokenHelpersCreateEmbeddedEntity.bind(this)(embeddedName, data, options);
   if (embeddedName === "ActiveEffect") {
     debug("Token: create Active Effect", embeddedName, data, options);
     data = data instanceof Array ? data : [data];
 
     if (data.length > 0) {
-      daeCreateActiveEffectActions(this, data)
+      daeCreateActiveEffectActions(this, created)
     }
   }
-  return oldActorTokenHelpersCreateEmbeddedEntity.bind(this)(embeddedName, data, options);
+  return created;
 }
 
 //TODO: when this Hooks.on("deleteActiveEffect") workds for tokens
-async function deleteEmbeddedEntity(embeddedName, data, options={}) {
-  error("Token: delete Active Effect", embeddedName, data, options, this);
+async function deleteEmbeddedEntityToken(embeddedName, data, options={}) {
     if (embeddedName === "ActiveEffect") {
     debug("Token: delete Active Effect", embeddedName, data, options);
     data = data instanceof Array ? data : [data];
@@ -94,12 +94,12 @@ export async function patchingInitSetup() {
   //@ts-ignore
   oldActorTokenHelpersDeleteEmbeddedEntity = ActorTokenHelpers.prototype.deleteEmbeddedEntity;
   //@ts-ignore
-  ActorTokenHelpers.prototype.deleteEmbeddedEntity = deleteEmbeddedEntity;
+  ActorTokenHelpers.prototype.deleteEmbeddedEntity = deleteEmbeddedEntityToken;
   log("Paatching ActorTokenHelpers createEmbeddedEntity")
   //@ts-ignore
   oldActorTokenHelpersCreateEmbeddedEntity = ActorTokenHelpers.prototype.createEmbeddedEntity;
   //@ts-ignore
-  ActorTokenHelpers.prototype.createEmbeddedEntity = createEmbeddedEntity;
+  ActorTokenHelpers.prototype.createEmbeddedEntity = createEmbeddedEntityToken;
   
   console.warn("system is ", game.system)
     //@ts-ignore

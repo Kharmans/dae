@@ -127,6 +127,10 @@ export class ValidSpec {
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
+      ["check", "save", "skill"].forEach(id => {
+        specials[`data.bonuses.abilities.${id}`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      });
+
       ["mwak", "rwak", "msak", "rsak"].forEach(id => {
         specials[`data.bonuses.${id}.attack`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
         specials[`data.bonuses.${id}.damage`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -143,7 +147,7 @@ export class ValidSpec {
 
       // needs to be int and in base values since it is used in prepare derived data 
       // to calc ability spell dcs
-      //TODO work out how to evaluate this to a number in prepare data
+      //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
       baseValues["data.bonuses.spell.dc"] = 0;
       baseValues["data.spells.pact.override"] = 0;
       Object.keys(baseValues).forEach(key=> {
@@ -200,7 +204,7 @@ export class ValidSpec {
         let validSpec = new ValidSpec(special[0], special[1][0], special[1][1]);
         this.derivedSpecs.push(validSpec);
       })
-
+    }
       this.allSpecs = this.baseSpecs.concat(this.derivedSpecs);
       if (["dnd5e", "sw5e"].includes(game.system.id)) {
         // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
@@ -217,7 +221,6 @@ export class ValidSpec {
       this.allSpecs.forEach(ms => this.allSpecsObj[ms._fieldSpec] = ms);
       this.baseSpecs.forEach(ms => this.baseSpecsObj[ms._fieldSpec] = ms);
       this.derivedSpecs.forEach(ms => this.derivedSpecsObj[ms._fieldSpec] = ms);
-    }
   }
 
   static localizeSpecs() {
@@ -265,12 +268,17 @@ function effectDisabled(actor, efData, itemData = null) {
 }
 
 var oldPrepareData;
+
+// this function replaces applyActiveEffects in Actor
+function applyBaseActiveEffects() {
+  applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj)
+}
 /*
  * Replace default appplyAffects to do value lookups
  */
 function applyDaeEffects(specList) {
   const overrides = {};
-  if (this.effects.size === 0)  return this.overrides;
+  if (!this.effects || this.effects.size === 0)  return this.overrides || {};
   const rollData = daeRollData(this);
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, e) => {
@@ -412,7 +420,6 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.abilities.save":
     case "data.bonuses.abilities.check":
     case "data.bonuses.abilities.skill":
-
       // TODO: remove if fixed in core
       const result = attackDamageBonusEval(change.value, actor)
       value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
@@ -483,6 +490,7 @@ function daeCustomEffect(actor, change) {
     }
 }
 
+// Special case handling of (expr)dX
 function attackDamageBonusEval(bonusString, actor) {
   if (typeof bonusString === "string") {
     const special = bonusString.match(/\((.*)\)d([0-9]*)/);
@@ -512,6 +520,10 @@ function doCustomValue(actor, current, change, validValues) {
 * add an additional pass after derivfed data
 */
 function prepareData() {
+  debug("prepare data: before passes", this.name, this._data);
+
+  oldPrepareData.bind(this)();
+  /*
   this.data = duplicate(this._data);
   debug("prepare data: before passes", this.name, this.data);
 
@@ -520,20 +532,17 @@ function prepareData() {
   if ( !this.data.name ) this.data.name = "New " + this.entity;
   this.prepareBaseData();
   this.prepareEmbeddedEntities();
+  this.applyBaseActiveEffects(); replaces....
   applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj, false);
   this.prepareDerivedData();
+  */
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
-    if (calculateArmor && this.data.type === "character" && game) {
+    if (calculateArmor && this.data.type === "character") {
       this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
     }
   }
-
-  applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj,);
+  applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj);
   debug("prepare data: after passes", this.data);
-}
-
-export function daeCheckMacro(...args) {
-  // conisder toggling according to item isactive
 }
 
 export function daeCreateActiveEffectActions(actor, effects) {
@@ -545,10 +554,15 @@ export function daeDeleteActiveEffectActions(actor, effects) {
   if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
   if (!Array.isArray(effects)) effects = [effects];
   effects.forEach(effect => {
-    if (!effect.transfer) return;
+    if (!effect.transfer) return; //TODO find out why this is here
   })
   daeMacro(false, actor, effects);
   daeTokenMagic(false, actor, effects)
+}
+
+function daeUpdateActiveEffectActions(...args) {
+  //consider toggling according to isactive
+
 }
 
 async function daeMacro(enable, actor, effects) {
@@ -603,10 +617,6 @@ async function daeMacro(enable, actor, effects) {
   return true;
 }
 
-function daeCheckTokenMagic(...args) {
-  //consider toggling according to isactive
-
-}
 
 function daeTokenMagic(enable, actor, effects) {
   // TODO lookup enabled from the item.isActive
@@ -713,14 +723,15 @@ export function doEffects(item, activate, targets = undefined,
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
-// request is passed to a GM client
+// request is passed to a GM client if the token is not owned
 export function applyNonTransferEffects(activate, targets, {whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false }) {
   if (!targets) return;
   let appliedEffects = duplicate(this.data.effects.filter(aeData => aeData.transfer === false))
   if (appliedEffects.length === 0) return;
-  const rollData = daeRollData(this.actor)
+  const rollData = daeRollData(this.actor); //TODO if not caster eval move to evalArgs call
   appliedEffects.forEach(activeEffectData => {
     activeEffectData.changes.forEach(change => {
+      if (["macro.execute", "macro.itemMacro"].includes(change.key))
       // eval args before calling GMAction so values are taken from the casting etc actor.
       change.value = evalArgs.bind(this)(rollData, this.actor, change, spellLevel, damageTotal, {critical, fumble, itemCardId, whisper})
     })
@@ -728,7 +739,6 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
     activeEffectData.duration.startTime = game.time.worldTime;
     activeEffectData.transfer = false;
     activeEffectData.disabled = false;
-    //@ts-ignore - targets is set of targets (i.e. game.user.targets)
   });
   
   // Split up targets according to whether they are owned on not. Owned targets have effects applied locally, only unowned are passed ot the GM
@@ -783,12 +793,13 @@ function ownedItemUpdate(actor, ownedItem, updates) {
 export function updateArmorEffect(actor, itemData, updateData, ...args) {
   if (updateData.data?.armor) {
     // Armor value has been changed so recrreate owned item and actor effects
-    let theEffects = duplicate(itemData.effects.filter(efData => !efData.flags.dae?.armorEffect));
-    let existingEffect = duplicate(itemData.effects.find(efData => efData.flags.dae?.armorEffect));
+    let theEffects = duplicate(itemData.effects?.filter(efData => !efData.flags.dae?.armorEffect)) || [];
+    let existingEffect = duplicate(itemData.effects?.find(efData => efData.flags.dae?.armorEffect) || {});
     const origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
     // const origin = actor.items.get(itemData._id)
     let armorEffect = generateArmorEffect(itemData, origin, mergeObject(itemData.data.armor, updateData.data.armor, {overwrite: true}));
-    let newEffect = mergeObject(existingEffect, armorEffect, {overwrite: true, inplace:true});
+    let newEffect = mergeObject(existingEffect, armorEffect, {overwrite: true, inplace:true, insertKeys: true, insertValues: true});
+    if (!newEffect.duration) newEffect.duration = {startTime: game.time.worldTime}
     theEffects.push(newEffect);
     updateData.effects = theEffects;
     // Since this runs in the preUpdateOwneditem chain just modifyiing the update data is enough
@@ -887,21 +898,32 @@ export function daeInitActions() {
   }
   ValidSpec.createValidMods();
 
+  // We will call this in prepareData
   oldPrepareData = CONFIG.Actor.entityClass.prototype.prepareData;
   CONFIG.Actor.entityClass.prototype.prepareData = prepareData;
-  Hooks.on("applyActiveEffect", daeCustomEffect); // apply DAE custom effects
+  // replace the default applyActiveEffects with the dae one so that prepareData will call us
+  // Adds some extra field maniuplations and supports lookups
+  //@ts-ignore
+  CONFIG.Actor.entityClass.prototype.applyActiveEffects = applyBaseActiveEffects;
+
+  // This supplies DAE custom effects
+  Hooks.on("applyActiveEffect", daeCustomEffect); 
+
   // Updating an owned item - first update any actor effects
   Hooks.on("preUpdateOwnedItem", updateArmorEffect)
   // If updating effects recreate actor effects for updated item.
+  // Toggle equip active as well
   Hooks.on("preUpdateOwnedItem", ownedItemUpdate);
+
+  // When adding armor to the inventory create armor effects
   Hooks.on("preCreateOwnedItem", createArmorEffect)
 
   // macros are called on active effect creationg and deletion
   Hooks.on("preCreateActiveEffect", daeCreateActiveEffectActions);
   Hooks.on("preDeleteActiveEffect", daeDeleteActiveEffectActions)
-  // Hooks.on("preUpdateOwnedItem", daeCheckMacro) //consider on/off for enable/disable
+  // Hooks.on("preUpdateOwnedItem", daeUpdateActiveEffectActions) //consider on/off for enable/disable
 
-  // Hooks.on("preUpdateOwnedItem", daeCheckTokenMagic) // consider apply/unapply for enable/disable
+  // Add the active effects title bar actions
   Hooks.on('renderActorSheet', initActorSheetHook);
   Hooks.on('renderItemSheet', initItemSheetHook);
 
@@ -950,7 +972,6 @@ export function daeSetupActions() {
   }
   //@ts-ignore
   itemacroActive = game.modules.get("itemacro")?.active;
-
   furnaceActive = game.modules.get("furnace")?.active
 }
 
