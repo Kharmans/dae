@@ -105,7 +105,7 @@
     "dae.Edit": "아이템 편집",
     "dae.Delete": "아이템 삭제",
     "dae.EffectTarget": "효과 대상",
-    "dae.ActiveEffectName": "수동 효과",
+    "dae.ActiveEffectName": "활성화 효과",
     "dae.PassiveEffectName": "상시 효과",
     "dae.NonTransferEffects": "비전송 효과",
     "dae.EffectMode": "모드",
@@ -204,7 +204,7 @@
     "dae.applyingEffects": "효과 적용",
     "dae.removingEffects": "효과 삭제",
     "dae.tokenMagic": "TokenMagic",
-    "dae.transfer": "Transfer to actor on item equip",
+    "dae.transfer": "아이템 장비시 액터에게 효과 전달",
     "dae.effectName": "효과 이름",
     "dae.readOnly": "효과만 읽기",
     "dae.legact": "전설적 행동",
@@ -218,6 +218,8 @@
     "dae.summaryFilter": "효과 상세",
     "dae.enabledFilter": "활성된 효과",
     "dae.temporaryFilter": "시한 효과",
-    "dae.Priority": "우선도"
-
+    "dae.Priority": "우선도",
+    "dae.Stackable": "스택 가능",
+    "dae.useDAESheet.Name": "DAE 활성화 효과 설정 시트를 사용하시겠습니까?",
+    "dae.useDAESheet.Hint": "False일 경우 코어 ActiveEffectConfig 시트를 사용한다."
 }
