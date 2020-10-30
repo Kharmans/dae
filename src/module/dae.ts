@@ -251,14 +251,15 @@ function effectDisabled(actor, efData, itemData = null) {
   disabled  = disabled || (ci && ci.includes(alternate));
 
   // transfer effects with an origin will override default enable/disable
-  if (efData.origin && efData.flags?.dae?.transfer) {
-    if (!itemData) {
+//  if (efData.origin && efData.flags?.dae?.transfer) {
+  if (efData.flags?.dae?.transfer) {
+    if (!itemData && efData.origin) {
       let [actorType, actorId, itemType, itemId] = efData.origin.split(".");
       itemData = itemId && actor.items.get(itemId);
     }
     // for transfer effects this take priority over disabled setting
     if (itemData) {
-        return !isActive(itemData);
+        disabled = !isActive(itemData);
     }
    }
   // if not calcullating armor disable armor effects
@@ -622,6 +623,7 @@ function daeTokenMagic(enable, actor, effects) {
   // TODO lookup enabled from the item.isActive
   if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
   debug("dae token magic ", actor, effects, enable)
+
   if (!Array.isArray(effects)) effects = [effects];
   effects.forEach(effect=> {
     effect.changes?.forEach(change=> {
@@ -754,39 +756,44 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
 
 // Update the actor active effects when editing an owned item
 function ownedItemUpdate(actor, ownedItem, updates) {
-  const newData = mergeObject(ownedItem, updates, {overwrite: true});
+  const updatedItem = mergeObject(ownedItem, updates, {overwrite: true, inplace:false});
   if (updates.effects) {
-    let additions = mergeObject(ownedItem.effects, updates.effects, {overwrite: true, inplace: false});
+    let additions = updatedItem.effects; 
     additions = additions.filter(ef=>ef.transfer) || [];
     debug("additions post filter are ", updates.effects, additions)
-    let origin = actor.items.get(ownedItem._id).uuid;
+    const itemUuid = actor.items.get(ownedItem._id).uuid;
     let deletions = actor.effects.filter(aef => {
-      let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
-      return isTransfer && (aef.data.origin === origin);
-    });
+      const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+      return isTransfer && (aef.data.origin === itemUuid);
+    })
     deletions = deletions.map(ef => ef.id || ef._id);
-    origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
+    const origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
     additions.forEach(efData => {
-      efData.disabled = effectDisabled(actor, efData, ownedItem)
+      efData.disabled = effectDisabled(actor, efData, updatedItem)
       efData.origin = origin;
     });
     
     debug("owneditemupdate ", additions, deletions);
     //TODO: change this so we can do an updateEmbeddedEntitty.
     // It does require matching the active effect ids to the source item
-    actor.deleteEmbeddedEntity("ActiveEffect", deletions).then(() => 
-      actor.createEmbeddedEntity("ActiveEffect", additions));
+    if (deletions.length > 0) {
+      actor.deleteEmbeddedEntity("ActiveEffect", deletions).then(() => {
+        if (additions.length > 0) actor.createEmbeddedEntity("ActiveEffect", additions);
+      });
+    } else if (additions.length > 0) {
+      actor.createEmbeddedEntity("ActiveEffect", additions);
+    }
   } else {
-    origin = `Actor.${actor.id}.OwnedItem.${updates._id}`;
+    const origin = `Actor.${actor.id}.OwnedItem.${updates._id}`;
     let effects = actor.effects.filter(aef => {
       let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
       return (aef.data.origin === origin) && isTransfer;
     }).map(aef => {
       const data = duplicate(aef.data);
-      data.disabled = effectDisabled(actor, aef.data, ownedItem);
+      data.disabled = effectDisabled(actor, aef.data, updatedItem);
       return data;
     })
-    actor.updateEmbeddedEntity("ActiveEffect", effects);
+    if (effects.length > 0) actor.updateEmbeddedEntity("ActiveEffect", effects);
   }
   return true;
 }
@@ -806,6 +813,18 @@ export function updateArmorEffect(actor, itemData, updateData, ...args) {
   }
   return true;
 }
+
+export function ownedItemCreate(actor, itemData) {
+  // create armor effects if required
+  createArmorEffect(actor, itemData);
+
+  // set the disabled/enabled flag
+  for (let i = 0; i < itemData.effects?.length || 0; i++) {
+    itemData.effects[i].disabled = effectDisabled(actor, itemData.effects[i], itemData);
+  };
+  return true;
+}
+
 export function createArmorEffect(actor, itemData) {
   if (!itemData.effects && itemData.data.effects) itemData = itemData.data;
   if (!calculateArmor || itemData.type !== "equipment") return true;
@@ -915,8 +934,8 @@ export function daeInitActions() {
   // Toggle equip active as well
   Hooks.on("preUpdateOwnedItem", ownedItemUpdate);
 
-  // When adding armor to the inventory create armor effects
-  Hooks.on("preCreateOwnedItem", createArmorEffect)
+  // Do any create effects, .e.g. enabled/disaabled, armor
+  Hooks.on("preCreateOwnedItem", ownedItemCreate)
 
   // macros are called on active effect creationg and deletion
   Hooks.on("preCreateActiveEffect", daeCreateActiveEffectActions);

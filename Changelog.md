@@ -1,3 +1,8 @@
+0.2.18
+Fix for needing to toggle equipment on first equip to set active status correctly.
+If times-up is not active, don't convert durations to rounds/turns, leave in seconds for about-time to process.
+0.2.17
+Limit conversion of minutes -> rounds for up to 10 rounds, longer will stay in seconds.
 0.2.16
 * Corrected handling of traits.size
 * Fixed not setting up CONFIG.statusEffects correctly.
