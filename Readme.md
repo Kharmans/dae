@@ -282,7 +282,7 @@ Because dropping an item onto a character transfers the active effects to the ac
 The macro functions in dynamicitems have been replaced in DAE with the following (and you will need to modify any macros you have created):
 * Show all the Active Effects on an actor, marked as active/inactive.
   ```
-  new DAE.ActiveEffects({actor: actor}, {}).render(true)
+  new DAE.ActiveEffects(actor, {}).render(true)
   ```
   * Display a form  enabled/disabled passive and active effects for the selected token. Effects cannot be edited but deleted **TODO** allow edits
 

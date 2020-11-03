@@ -1,3 +1,7 @@
+0.2.19
+* Move saving throw bonus to base values pass so it can be picked up by dnd5e derived data pass. Should fix the bonus ignored problem.
+* Added overload of rollSkill and rollAbilityTest so that @values can be looked up.
+* Fix for base AC calculation on polymorphed characters.
 0.2.18
 Fix for needing to toggle equipment on first equip to set active status correctly.
 If times-up is not active, don't convert durations to rounds/turns, leave in seconds for about-time to process.
@@ -6,7 +10,7 @@ Limit conversion of minutes -> rounds for up to 10 rounds, longer will stay in s
 0.2.16
 * Corrected handling of traits.size
 * Fixed not setting up CONFIG.statusEffects correctly.
-* first steps to non-dnd5e compatibility.
+* first steps to no n-dnd5e compatibility.
 * some changes to effect duration setting to support times-up
 * Fixed an edge case for effects on tokens being removed and calling macros/token magic effects.
 * made data.abilities.save/check/skill into custom effects to reduce errors on data entry.

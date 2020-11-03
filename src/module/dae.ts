@@ -127,10 +127,11 @@ export class ValidSpec {
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
+      /* try moving this to basevalues pass 
       ["check", "save", "skill"].forEach(id => {
         specials[`data.bonuses.abilities.${id}`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       });
-
+      */
       ["mwak", "rwak", "msak", "rsak"].forEach(id => {
         specials[`data.bonuses.${id}.attack`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
         specials[`data.bonuses.${id}.damage`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -166,6 +167,7 @@ export class ValidSpec {
       })
       delete baseValues["data.attributes.init.bonus"];
       delete baseValues["data.attributes.init.mod"];
+      delete baseValues["flags"];
     }
 
     // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
@@ -173,6 +175,9 @@ export class ValidSpec {
       let validSpec = new ValidSpec(spec, baseValues[spec], -1);
       if (spec.includes("data.skills") && spec.includes("ability")) {
         validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
+      }
+      if (spec.includes("data.bonuses.abilities")) {
+        validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
       }
       this.baseSpecsObj[spec] = validSpec;
       return validSpec;
@@ -538,7 +543,7 @@ function prepareData() {
   this.prepareDerivedData();
   */
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
-    if (calculateArmor && this.data.type === "character") {
+    if (calculateArmor && this.data.type === "character" && !this.data.flags.dnd5e?.isPolymorphed) {
       this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
     }
   }
@@ -800,8 +805,8 @@ function ownedItemUpdate(actor, ownedItem, updates) {
 export function updateArmorEffect(actor, itemData, updateData, ...args) {
   if (updateData.data?.armor) {
     // Armor value has been changed so recrreate owned item and actor effects
-    let theEffects = duplicate(itemData.effects?.filter(efData => !efData.flags.dae?.armorEffect)) || [];
-    let existingEffect = duplicate(itemData.effects?.find(efData => efData.flags.dae?.armorEffect) || {});
+    let theEffects = duplicate(itemData.effects?.filter(efData => !efData.flags?.dae?.armorEffect)) || [];
+    let existingEffect = duplicate(itemData.effects?.find(efData => efData.flags?.dae?.armorEffect) || {});
     const origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
     // const origin = actor.items.get(itemData._id)
     let armorEffect = generateArmorEffect(itemData, origin, mergeObject(itemData.data.armor, updateData.data.armor, {overwrite: true}));
@@ -927,7 +932,6 @@ export function daeInitActions() {
 
   // This supplies DAE custom effects
   Hooks.on("applyActiveEffect", daeCustomEffect); 
-
   // Updating an owned item - first update any actor effects
   Hooks.on("preUpdateOwnedItem", updateArmorEffect)
   // If updating effects recreate actor effects for updated item.

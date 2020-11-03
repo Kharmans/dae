@@ -221,5 +221,6 @@
     "dae.Priority": "Priority",
     "dae.Stackable": "Stackable",
     "dae.useDAESheet.Name": "Use the DAE Active Effect Config Sheet?",
-    "dae.useDAESheet.Hint": "If false uses the Core ActiveEffectConfig Sheet"
+    "dae.useDAESheet.Hint": "If false uses the Core ActiveEffectConfig Sheet",
+    "dae.dae": "DAE"
 }
