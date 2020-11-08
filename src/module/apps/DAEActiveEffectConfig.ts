@@ -1,5 +1,5 @@
-import { ValidSpec, aboutTimeInstalled } from "../dae";
-import { i18n } from "../../dae";
+import { ValidSpec, aboutTimeInstalled, confirmDelete } from "../dae";
+import { i18n, confirmAction } from "../../dae";
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
@@ -120,7 +120,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-    html.find(".effect-control").click(this._onEffectControl.bind(this));
     html.find(".key").change(this._keySelected.bind(this))
   }
 
@@ -134,8 +133,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         this._addEffectChange(button);
         return this.submit({preventClose: true}).then(() => this.render());
       case "delete":
-        button.closest(".effect-change").remove();
-        return this.submit({preventClose: true}).then(() => this.render());
+        return confirmAction(confirmDelete, () => {
+          button.closest(".effect-change").remove();
+          this.submit({preventClose: true}).then(() => this.render());
+        });
     }
   }
 
@@ -188,10 +189,5 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     else {
       return this.object.update(formData);
     }
-  }
-
-  static DAEActiveEffectSheetConfigReadyActions() {
-
-    // CONFIG.ActiveEffect.sheetClass = DAEActiveEffectConfig;
   }
 }

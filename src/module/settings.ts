@@ -19,6 +19,7 @@ export const registerSettings = function () {
     name: game.i18n.localize("dae.useDAESheet.Name"),
     hint: game.i18n.localize("dae.useDAESheet.Hint"),
   });
+
   game.settings.register("dae", "playersCanSeeEffects", {
     scope: "world",
     default: "None",
@@ -28,16 +29,6 @@ export const registerSettings = function () {
     onChange: fetchParams,
     name: game.i18n.localize("dae.playersCanSeeEffects.Name"),
     hint: game.i18n.localize("dae.playersCanSeeEffects.Hint"),
-  });
-
-  game.settings.register("dae", "tokenEffects", {
-    name: game.i18n.localize("dae.tokenEffects.Name"),
-    hint: game.i18n.localize("dae.tokenEffects.Hint"),
-    scope: "world",
-    default: false,
-    config: false,
-    type: Boolean,
-    onChange: fetchParams
   });
 
   game.settings.register("dae", "useAbilitySave", {
@@ -59,6 +50,17 @@ export const registerSettings = function () {
     type: Boolean,
     onChange: fetchParams
   });
+
+  game.settings.register("dae", "confirmDelete", {
+    name: game.i18n.localize("dae.confrimDelete.Name"),
+    hint: game.i18n.localize("dae.confirmDelete.Hint"),
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  })
+
 
   game.settings.register("dae", "ZZDebug", {
     name: "dae.Debug.Name",

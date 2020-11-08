@@ -1,12 +1,14 @@
 ## What does DAE do?
-DAE adds some features to core Active Effects and is built with core active effects.
-0. Pending the release of 0.7.5 an "Active Effects" editor button is added to the title bar for Actors and Items (NOT owned items).
+First off you probably don't need DAE. The core foundry system has active effects that do at leat 80% of what you might want. For convenience you might install DAE but you so the default Active Effect Config Screen (option setting) until DND5E has effects editing on actor/item sheets.
+
+DAE does add some features to core Active Effects, so if the following features might be useful go ahead and use DAE. DAE builds on core active effects so any core active effect is also a DAE active effect.
+0. Pending the release of 0.7.5 an "Active Effects" editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but not addition.
 1. Transfer effects (from an item) are enabled/disbled according to the following rule which overrides the default behaviour
   * If the "Always Enabled" flag is set on the item the effect is enabled.
   * If the "Enabled on Equip" flags is set on the item and the item is equiped the effect is enabled.
   * Otherwise if the item is attuned and equipped the effect is active.  
   If you modify the enable/disable flag (suspended) on the actor effect, that will override the above rules until the item is updated.
-2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value.
+2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value core restricts you to numbers and strigs.
 3. An extended set of fields you can modify, some of which are custom fields to support drop down lists of possible value, like all of the traits.
 4. The ability to update derived fields, such as abilities.dex.mod. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
 5 The ability to perform arithmetic in field data definitions, like 
@@ -15,8 +17,8 @@ ceil(@classes.rogue.levels/2)
 ```
 6. A slightly extended active effect editor that provides a list of valid fields, a drop down list of options and drop down lists for restricted field values.
 
-## Quick start for dynamic effects users.
-Pick an actor and do 
+## Quick start for dynamic effects users - who are migrating from dynamic effects.
+Pick an actor and do
 ```
 DAE.migrateActorItems(game.actors.getName("ActorName")).
 ```
@@ -30,13 +32,12 @@ or choose "Active Effects" from the character sheet title bar. Or you can do (fr
 ```
 game.actors.getName("Actor Name").effects
 ```
-Additionaly on the character sheet title bar there is an "Active Effects" item that shows all of the active effects applied to the actor.   
 
 Functions that previously started with "DynamicEffects." are now "DAE.".  
 
 ## Major Features not implemented
-* Timeout of effects. This is waiting on 0.7.5(?) to see how active effects expire. A simple implementation (very similar to dynamiceffects) has been added unitl auto active effect timeout is in core.
-* Sample compendia. The supplied compendia is quite limited, but will be expanded over time.
+* Expiry. Now Supported. The about time solution is supported to provide time based expiry (i.e. duration in seconds/minutes and rounds converted to seconds). There is another module times-up which supports time based expry plus knows about rounds/turns and links to the combat tracker. Both/either can be installed and play nicely together. If times-up is installed it takes over the expiry of effects.
+* Sample compendia. Only has a few items. I reccommend the exceled DAE SRD module that has many items/spells created
 * From at least dnd 0.95 up to dnd5e 0.98 there is a problem will all monsters in the monster compendium and the data.data.bonuses.mwak/rwak/msak/rsak bonuses. The problem manifests as an error when creating an Active Effect to update these bonuses. A supplied function, 
 ```
 DAE.fixupBonuses()
@@ -147,6 +148,13 @@ These fields exist in template.json but are moved to the derived phase so that a
 Attributes prof allows addition of a numeric value to data.abilities.prof. When updated, skills, spelldc and saves are updated accordingly (this calculation should be considered beta and if you find something missing let me know). You can use a negative value to reduce proficiency.
 
 These are custom fields
+"data.abilities.str.dc"
+"data.abilities.dex.dc"
+"data.abilities.con.dc"
+"data.abilities.wis.dc"
+"data.abilities.int.dc"
+"data.abilities.cha.dc"               CUSTOM
+adds the value (must be numberic) to the field and recomputes items saving throw dcs.
 * "data.bonuses.All-Attacks"          CUSTOM  
 The specified string field will be appened to bonuses.mwak.attack, bonuses.rwak.attack, bonuses.msak.attack, bonuses.rsak.attack
 
@@ -270,7 +278,7 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
   await actor.createEmbeddedEntity("OwnedItem", item.data)
 
   ```
-Or just drag the supplied (TODO) Ring of Protection from the sample items compendium to the actor of you choice.
+Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
 
 **Armor** The system applies standard DND rules for calculating armor class based on what armor you have eqipped (for natual armor the armor does not need to be equipped). Shield type items add to the armor class. "Effects" can alter armor class as well.
 
@@ -334,8 +342,10 @@ Core active effects has the idea of CUSTOM effects. If one is encountered when p
 
 Your custom effects can create new fields on the actor as well (DAE does this for flags.dnd5e.conditions for example). Just reference the field in the active effect spec and it will be created on the actor when the custom effect updates the value. There is no support for "arbitrary" field specification in the DAE UI (yet) so you would have to create the effect on the actor yourself.
 
-### Sample Items/Macros ### **NOT IMPLEMENTED - Will come in a subsequent release**
-  There is a compendium of items that have been setup to work with DAE. All active effects work best if both midi-qol and about-time are installed and active, but will still funciton without them.
+### Sample Items/Macros 
+  There is a compendium of items that have been setup to work with DAE. All active effects work best if both midi-qol and about-time/times up are installed and active, but will still funciton without them.
+
+  The sample macros compendium has been updated. It is very limited but should provide some help in getting started. You should definitely look at the excelled DAE SRD compendia from @Kandashi for a wealth of pre-configured items/spells/macros.
 
 ## Migrating from DynamicEffects ##
 ### DAE.migrateItem(item)

@@ -222,5 +222,10 @@
     "dae.Stackable": "Stackable",
     "dae.useDAESheet.Name": "Use the DAE Active Effect Config Sheet?",
     "dae.useDAESheet.Hint": "If false uses the Core ActiveEffectConfig Sheet",
-    "dae.dae": "DAE"
+    "dae.confirm": "Confirmation Dialog",
+    "dae.sure": "Are you sure?",
+    "dae.dae": "DAE",
+    "dae.confirmDelete.Name": "Confirm effect deletions",
+    "dae.confirmDelete.Hint": "Confirm active effect deletion before deleting"
 }
+

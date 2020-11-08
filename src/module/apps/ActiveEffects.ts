@@ -1,6 +1,6 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { playersCanSeeEffects, ValidSpec, cubActive } from "../dae"
-import { warn, debug, i18n } from "../../dae";
+import { playersCanSeeEffects, ValidSpec, cubActive, confirmDelete } from "../dae"
+import { warn, debug, i18n, confirmAction } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 import { filters } from "pixi.js";
 
@@ -140,7 +140,7 @@ activateListeners(html) {
   const filterLists = html.find(".filter-list");
   filterLists.each(this._initializeFilterItemList.bind(this));
   filterLists.on("click", ".filter-item", this._onToggleFilter.bind(this));
-
+/*
   html.find('.change-delete').click(async ev => {
     let effect_id = $(ev.currentTarget).parents(".dae-change-list").attr("effect-id");
     let change_id = $(ev.currentTarget).parents(".dae-change-list").attr("change-id");
@@ -148,9 +148,11 @@ activateListeners(html) {
     // li.slideUp(200);
     effect = duplicate(this.object.data.effects.find(ef=>ef._id === effect_id));
     effect.changes.splice(parseInt(change_id),1);
-    this.object.updateEmbeddedEntity("ActiveEffect", effect).then(() => this.render());
+    confirmAction(confirmDelete, () => {
+        this.object.updateEmbeddedEntity("ActiveEffect", effect).then(() => this.render());
+      });
   });
-
+*/
   
   html.find('.refresh').click(async ev => {
     return this.submit({preventClose: true}).then(() => this.render());
@@ -159,7 +161,9 @@ activateListeners(html) {
   // Delete Effect
   html.find('.effect-delete').click(async ev => {
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    this.object.deleteEmbeddedEntity("ActiveEffect", effect_id).then(() => this.render());
+    confirmAction(confirmDelete, () => {
+      this.object.deleteEmbeddedEntity("ActiveEffect", effect_id).then(() => this.render());
+    })
   });
   html.find('.effect-edit').click(async ev => {
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");

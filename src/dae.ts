@@ -85,7 +85,6 @@ Hooks.once('setup', function() {
 
 	//@ts-ignore
 	window.DAE = {
-    dataSetup,
     ValidSpec,
     GMActionMessage,
     GMAction,
@@ -118,51 +117,28 @@ Hooks.once('setup', function() {
 /* ------------------------------------ */
 
 Hooks.once("ready", () => {
-  DAEActiveEffectConfig.DAEActiveEffectSheetConfigReadyActions();
 })
-// Add any additional hooks if necessary
 
-async function dataSetup() {
-  //@ts-ignore
-  const EFFECTMODES = ACTIVE_EFFECT_MODES;
-  const EXAMPLE_TRANSFERRED_EFFECT = {
-    label: "Werewolf Transformation",
-    icon: "icons/All-Devin-Night-Tokens/M_Werewolf_02_hi.png",
-    changes: [
-      {key: "data.abilities.con.value", value: 18, mode: EFFECTMODES.UPGRADE},
-      {key: "data.abilities.int.value", value: 6, mode: EFFECTMODES.DOWNGRADE},
-      {key: "data.attributes.speed.value", value: "40 ft", mode: EFFECTMODES.OVERRIDE},
-      {key: "data.traits.di.custom", value: "floogle", mode: EFFECTMODES.CUSTOM},
-      {key: "data.traits.languages.value", value: "all", mode: EFFECTMODES.CUSTOM},
-      {key: "data.attributes.ac.value", value: "2", mode: EFFECTMODES.ADD},
-      {key: "data.abilities.con.mod", value: "@data.abilities.str.value", mode: EFFECTMODES.UPGRADE}
-    ],
-    transfer: true,
-  };
-  
-  // This effect will remain in the Owned Item effects array
-  const EXAMPLE_NONTRANSFERRED_EFFECT = {
-    label: "Bleeding Damage",
-    icon: "icons/svg/fear.svg",
-    changes: [
-      {key: "data.bonuses.mwak.damage", value: "+1d6", mode: EFFECTMODES.ADD},
-    ],
-    transfer: false
-  };
-  
-  // Create a test item
-  const item = await Item.create({
-    name: "Lycanthropy",
-    type: "weapon",
-    flags: {dae: {activeEquipped: true, alwaysActive: false}}
-  });
-  
-  // Assign the effects to the item
-  await item.createEmbeddedEntity("ActiveEffect", [EXAMPLE_TRANSFERRED_EFFECT, EXAMPLE_NONTRANSFERRED_EFFECT]);
- 
-  let actor = game.actors.getName("Luthar");
-  // Assign that item to an Actor
-  // await actor.createEmbeddedEntity("OwnedItem", item.data);
-  
-
-}
+export function confirmAction(toCheck: boolean, confirmFunction) {
+  if (toCheck) {
+    let d = new Dialog({
+        // localize this text
+        title: i18n("dae.confirm"),
+        content: `<p>${i18n("dae.sure")}</p>`,
+        buttons: {
+            one: {
+                icon: '<i class="fas fa-check"></i>',
+                label: "Confirm",
+                callback: confirmFunction
+            },
+            two: {
+                icon: '<i class="fas fa-times"></i>',
+                label: "Cancel",
+                callback: () => { }
+            }
+        },
+        default: "two"
+    });
+    d.render(true);
+  } else return confirmFunction();
+};
