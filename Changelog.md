@@ -1,5 +1,7 @@
 0.2.20
-Added confirmation dialog and config setting when deleting active effects and changes.
+* Added confirmation dialog and config setting when deleting active effects and changes.
+* Added new data.abilities.ABL.dc to modifgy individual saving throw dcs.
+* Put back support for @damage, @fumble, @critical, @whipser in non-transfer effects that are not macros. If this affected you you'll know.
 0.2.19
 * Move saving throw bonus to base values pass so it can be picked up by dnd5e derived data pass. Should fix the bonus ignored problem.
 * Added overload of rollSkill and rollAbilityTest so that @values can be looked up.

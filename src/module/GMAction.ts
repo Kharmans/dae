@@ -328,7 +328,7 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
   if (!aboutTimeInstalled ) {
     switch (itemDuration.units) {
       case "turn":  
-      case "turns": return {type: useTurns? "turns" : "seconds", seconds: 1, rounds: 0, turns:itemDuration.value};
+      case "turns": return {type: useTurns? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value};
       case "round": 
       case "rounds": return {type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0}
       case "second":
