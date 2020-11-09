@@ -66,7 +66,6 @@ export class ValidSpec {
       var specials = {
         //@ts-ignore - come back to this
         "flags.dnd5e.initiativeHalfProf": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "flags.dnd5e.weaponCriticalThreshold": [20, -1],
         "data.attributes.ac.value": [0, -1],
         "data.attributes.ac.min": [0, -1],
         "data.attributes.hp.max": [0, -1],
@@ -145,9 +144,14 @@ export class ValidSpec {
       // move all the characteer flags to specials so that the can be custom effects only
       Object.keys(CONFIG.DND5E.characterFlags).forEach(key=> {
         let theKey = `flags.dnd5e.${key}`;
-        if (theKey === "flags.dnd5e.weaponCriticalThreshold") specials[theKey] = [0, -1];
-        else specials[theKey] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-        delete baseValues[theKey];
+        if (["flags.dnd5e.weaponCriticalThreshold", 
+          "flags.d5e.spellCriticalThreshold",
+          "flags.dnd5e.meleeCriticalDamageDice"].includes(theKey)) {
+          specials[theKey] = [0, -1];
+          delete baseValues[theKey];
+        }
+        else baseValues[theKey] = false;
+
       }); 
 
       // patch for missing fields
@@ -165,7 +169,6 @@ export class ValidSpec {
         if (key.includes("data.spells") && key.includes("override")) {
           baseValues[key] = 0;
         }
-
       });
 
       Object.keys(specials).forEach(key => {

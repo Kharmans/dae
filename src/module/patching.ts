@@ -9,10 +9,12 @@ function rollAbilitySave(abilityId, options={event, fastForward:null, advantage:
   if (!useAbilitySave) return oldRollAbilitySave.bind(this)(abilityId, options);
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
+
   const parts = ["@save"];
   const data = this.getRollData()
   // data = {save: abl.save}; // TP use abl.save rather than abl.mod
   data.save = abl.save;
+  
   // Include a global actor ability save bonus - if it is numberic it has already been included
   const actorBonus = getProperty(this.data.data.bonuses, "abilities.save");
   //@ts-ignore
@@ -182,7 +184,10 @@ async function deleteEmbeddedEntityToken(embeddedName, data, options={}) {
   return oldActorTokenHelpersDeleteEmbeddedEntity.bind(this)(embeddedName, data, options);
 }
 
-var d20Roll
+var d20Roll;
+var dice;
+var actorSheetFlags;
+
 export async function patchingInitSetup() {
   
   //TODO remove this when token create active effects calls a hook
@@ -199,11 +204,18 @@ export async function patchingInitSetup() {
   
   console.warn("system is ", game.system)
     //@ts-ignore
-  let dice;
-  //@ts-ignore
-  if (game.system.id === "dnd5e") dice = await import("../../../systems/dnd5e/module/dice.js");
-  //@ts-ignore
-  else if (game.system.id === "sw5e") dice = await import("../../../systems/sw5e/module/dice.js")
+  if (game.system.id === "dnd5e") {
+    //@ts-ignore
+    dice = await import("../../../systems/dnd5e/module/dice.js");
+    //@ts-ignore
+    actorSheetFlags = await import("../../../systems/dnd5e/module/apps/actor-flags.js");
+  }
+  else if (game.system.id === "sw5e") {
+    //@ts-ignore
+    dice = await import("../../../systems/sw5e/module/dice.js")
+    //@ts-ignore
+    actorSheetFlags = await import("../../../systems/sw5e/module/apps/actor-flags.js");
+  }
   if (!dice) console.error ("Dice not defined! Many things won't work")
   else  d20Roll = dice?.d20Roll;
 }
@@ -243,4 +255,38 @@ export function patchingSetup() {
   oldReplaceFormulaData = Roll.replaceFormulaData;
   //@ts-ignore
   Roll.replaceFormulaData = replaceFormulaData;
+
+  if (game.system.id === "dnd5e" && game.system.data.version === 0.99) {
+    //@ts-ignore
+    actorSheetFlags.default.prototype._updateObject = _updateObject;
+  }
 };
+
+async function _updateObject(event, formData) {
+  const actor = this.object;
+  let updateData = expandObject(formData);
+
+  // Unset any flags which are "false"
+  let unset = false;
+  const flags = updateData.flags.dnd5e;
+  for ( let [k, v] of Object.entries(flags) ) {
+    //@ts-ignore
+    if ( [undefined, null, "", false, 0].includes(v) ) {
+      delete flags[k];
+      if ( hasProperty(actor.data.flags, `dnd5e.${k}`) ) {
+        unset = true;
+        flags[`-=${k}`] = null;
+      }
+    }
+  }
+
+  // Clear any bonuses which are whitespace only
+  for ( let b of Object.values(updateData.data.bonuses ) ) {
+    for ( let [k, v] of Object.entries(b) ) {
+      b[k] = v.trim();
+    }
+  }
+
+  // Diff the data against any applied overrides and apply
+  await actor.update(diffObject(actor.overrides || {}, updateData), {diff: false});
+}

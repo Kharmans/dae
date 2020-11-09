@@ -1,3 +1,7 @@
+0.2.21
+* Updated to support new critical hit flags.
+* Move other flags to base data pass to ensure derived fields are processed.
+* Fix for 0.99 bug that duplicates applicaiton of bonuses.
 0.2.20
 * Added confirmation dialog and config setting when deleting active effects and changes.
 * Added new data.abilities.ABL.dc to modifgy individual saving throw dcs.
