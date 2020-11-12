@@ -113,6 +113,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   _keySelected(event) {
     const target = event.target;
+    $(target.parentElement.parentElement.children[1]).find(".keyinput").val(ValidSpec.allSpecs[target.selectedIndex].fieldSpec)
     return this.submit({preventClose: true}).then(() => this.render());
    }
   /* ----------------------------------------- */
@@ -120,7 +121,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-    html.find(".key").change(this._keySelected.bind(this))
+    html.find(".keylist").change(this._keySelected.bind(this))
   }
 
   /* ----------------------------------------- */
@@ -171,9 +172,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "string") {
         if (typeof c.value === "number") c.value = `${c.value}`;
       }
+      //@ts-ignore
+      c.priority = Number.isNumeric(c.priority) ? parseInt(c.priority) : c.mode * 10;
     }
-    if (parseInt(formData.duration.startTime) === 0) 
+    if (parseInt(formData.duration.startTime) === 0) {
       formData.duration.startTime = game.time.worldTime;
+    }
     setProperty(formData, "flags.dae.transfer", formData.transfer);
     //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
     if (this.object.parent.isOwned) { // we are editing an owned item
@@ -183,10 +187,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
           mergeObject(efData, expandObject(formData), {overwrite:true, inplace: true})
       })
       this.object.parent.actor.updateOwnedItem(itemData)
-  
-     // return this.object.parent.Actor.updateOwnedItem({"_id"})
-    }
-    else {
+    } else {
       return this.object.update(formData);
     }
   }

@@ -286,33 +286,24 @@ var oldPrepareData;
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
-  applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj)
+  applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj, {}, false)
 }
 /*
  * Replace default appplyAffects to do value lookups
  */
-function applyDaeEffects(specList) {
+function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
   const overrides = {};
   if (!this.effects || this.effects.size === 0)  return this.overrides || {};
-  const rollData = daeRollData(this);
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, e) => {
     // e.data.disabled = effectDisabled(this, e.data)
     if ( e.data.disabled ) return changes;
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(e.data.changes
-      .filter(c => {return specList[c.key] !== undefined})
+      .filter(c => {return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined)})
       .map(c => {
         c = duplicate(c);
-        if (typeof specList[c.key].sampleValue === "number" && typeof c.value === "string") {
-          debug("appplyDaeEffects: Doing eval of ", c, c.value)
-          try {
-            c.value = new Roll(c.value, rollData).roll().total;
-          } catch (err) {
-            console.warn("change value calculation failed for", this, c);
-            console.warn(err)
-          };
-        }
+
         c.effect = e;
         c.priority = c.priority ?? (c.mode * 10);
         return c;
@@ -322,11 +313,21 @@ function applyDaeEffects(specList) {
   changes.sort((a, b) => a.priority - b.priority);
 
   if (changes.length > 0) debug("Applying change ", this.name, changes)
-
   // Apply all changes
-  for ( let change of changes ) {
-    const result = change.effect.apply(this, change);
-    if ( result !== null ) overrides[change.key] = result;
+  for ( let c of changes ) {
+    if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
+      const rollData = daeRollData(this);
+      debug("appplyDaeEffects: Doing eval of ", c, c.value)
+      try {
+        c.value = new Roll(c.value, rollData).roll().total;
+      } catch (err) {
+        console.warn("change value calculation failed for", this, c);
+        console.warn(err)
+      };
+    }
+
+    const result = c.effect.apply(this, c);
+    if ( result !== null ) overrides[c.key] = result;
   }
 
   // Expand the set of final overrides
@@ -557,7 +558,7 @@ function prepareData() {
       this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
     }
   }
-  applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj);
+  applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj, ValidSpec.baseSpecsObj, true);
   debug("prepare data: after passes", this.data);
 }
 
@@ -879,10 +880,10 @@ export function generateArmorEffect(itemData, origin, armorData) {
       return armorEffectFromFormula(`@abilities.dex.mod + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
     case "light":
       //@ts-ignore
-      return armorEffectFromFormula(`(@abilities.dex.mod > ${armorData.dex || 99} ? ${armorData.dex || 99} : @abilities.dex.mod)+ ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
+      return armorEffectFromFormula(`@abilities.dex.mod > ${armorData.dex || 99} ? ${armorData.dex || 99} + ${armorData.value} : @abilities.dex.mod + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
     case "medium":
       //@ts-ignore
-      return armorEffectFromFormula(`(@abilities.dex.mod > ${armorData.dex || 2} ? ${armorData.dex || 2} : @abilities.dex.mod)+ ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
+      return armorEffectFromFormula(`@abilities.dex.mod > ${armorData.dex || 2} ? ${armorData.dex || 2} + ${armorData.value}: @abilities.dex.mod + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
       case "heavy":
       //@ts-ignore
       return armorEffectFromFormula(`${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);

@@ -77,8 +77,8 @@
     <div>
       {{ startTimeString }}
       {{#if durationString}}
-        -> 
-        {{durationString}}
+      ->
+      {{durationString}}
       {{/if}}
     </div>
     {{/if}}
@@ -134,37 +134,41 @@
     </header>
     <ol class="changes-list">
       {{#each effect.changes as |change i|}}
-      <div class="key">
-        <li class="effect-change flexrow" data-index="{{i}}">
-          <div class="key">
-            <select name="changes.{{i}}.key" data-dtype="String">
-              {{selectOptions ../validFields selected=change.key}}
-            </select>
-          </div>
-          <div class="mode">
-            <select name="changes.{{i}}.mode" data-dtype="Number">
-              {{selectOptions change.modes selected=change.mode}}
-            </select>
-          </div>
-          {{#if change.options}}
-          <div class="value">
-            <select name="changes.{{i}}.value" data-dtype="String">
-              {{selectOptions change.options selected=change.value localize=false}}
-            </select>
-          </div>
-          {{else}}
-          <div class="value">
-            <input type="text" name="changes.{{i}}.value" value="{{change.value}}" />
-          </div>
-          {{/if}}
-          <div class="priority">
-            <input type="text" name="changes.{{i}}.priority" value="{{change.priority}}" />
-          </div>
-          <div class="effect-controls">
-            <a class="effect-control" data-action="delete"><i class="fas fa-trash"></i></a>
-          </div>
-        </li>
-        {{/each}}
+      <li class="effect-change flexrow" data-index="{{i}}">
+        <div class="formgroup">
+        <div class="keylist">
+          <select name="selectedKey" data-dtype="String">
+            {{selectOptions ../validFields selected=change.key}}
+          </select>
+        </div>
+        <div class="key">
+          <input class="keyinput" type="text" name="changes.{{i}}.key" value="{{change.key}}" />
+        </div>
+      </div>
+        <div class="mode">
+          <select name="changes.{{i}}.mode" data-dtype="Number">
+            {{selectOptions change.modes selected=change.mode}}
+          </select>
+        </div>
+        {{#if change.options}}
+        <div class="value">
+          <select name="changes.{{i}}.value" data-dtype="String">
+            {{selectOptions change.options selected=change.value localize=false}}
+          </select>
+        </div>
+        {{else}}
+        <div class="value">
+          <input type="text" name="changes.{{i}}.value" value="{{change.value}}" />
+        </div>
+        {{/if}}
+        <div class="priority">
+          <input type="text" name="changes.{{i}}.priority" value="{{change.priority}}" />
+        </div>
+        <div class="effect-controls">
+          <a class="effect-control" data-action="delete"><i class="fas fa-trash"></i></a>
+        </div>
+      </li>
+      {{/each}}
     </ol>
   </section>
 

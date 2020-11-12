@@ -168,7 +168,7 @@ activateListeners(html) {
   html.find('.effect-edit').click(async ev => {
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     let effect = this.object.effects.get(effect_id);
-    new CONFIG.ActiveEffect.sheetClass(effect).render(true);
+    new DAEActiveEffectConfig(effect).render(true);
   })
   html.find('.effect-add').click(async ev => {
     const effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
@@ -191,7 +191,7 @@ activateListeners(html) {
     //@ts-ignore
     const effectId = (await this.object.createEmbeddedEntity("ActiveEffect", AEDATA))._id;
     let effect = this.object.effects.get(effectId)
-    new CONFIG.ActiveEffect.sheetClass(effect).render(true);
+    new DAEActiveEffectConfig(effect).render(true);
     this.render();
   })
 
