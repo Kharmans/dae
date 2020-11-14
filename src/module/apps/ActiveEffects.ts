@@ -50,12 +50,15 @@ getData() {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }
     newAe.isTemporary = ae.isTemporary;
+    newAe.sourceName = ae.sourceName;
+    if (newAe.sourceName === newAe.label) newAe.sourceName = "";
+    else newAe.sourceName = `(${newAe.sourceName})`;
     if (this.filters.has("summary")) {
       newAe.changes = [];
       return newAe;
     }
     newAe.changes.map(change=> {
-      change.label=ValidSpec.allSpecsObj[change.key]?.label || "None"; 
+      change.label=ValidSpec.allSpecsObj[change.key]?.label || change.key; 
       if (typeof change.value === "string" && change.value.length > 40) {
         change.value = change.value.substring(0, 30) + " ... ";
       } else if (Array.isArray(change.value)) {

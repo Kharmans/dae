@@ -15,13 +15,13 @@
   {{/if}}
   <section>
     <div class="dnd5e sheet acctor inventory-filters flexrow 3">
-    <div style="border: 2px groove #eeede0">
-    <ul class="filter-list flexrow" data-filter="inventory">
-      <li class="filter-item" data-filter="summary">{{localize "dae.summaryFilter"}}</li>
-      <li class="filter-item" data-filter="enabled">{{localize "dae.enabledFilter"}}</li>
-      <li class="filter-item" data-filter="temporary">{{localize "dae.temporaryFilter"}}</li>
-    </ul>
-   </div>
+      <div style="border: 2px groove #eeede0">
+        <ul class="filter-list flexrow" data-filter="inventory">
+          <li class="filter-item" data-filter="summary">{{localize "dae.summaryFilter"}}</li>
+          <li class="filter-item" data-filter="enabled">{{localize "dae.enabledFilter"}}</li>
+          <li class="filter-item" data-filter="temporary">{{localize "dae.temporaryFilter"}}</li>
+        </ul>
+      </div>
   </section>
   <section>
     <div class="dnd5e sheet item ">
@@ -48,26 +48,29 @@
 
         {{#each actives as |effect iid|}}
         <li class="flexrow effect-header" effect-id="{{effect._id}}">
-          <div class="effect-label">{{effect.label}}</div>
-          <div><img src="{{effect.icon}}" style="height:20px"></div>
+          <div class="effect-label">
+            <img src="{{effect.icon}}" style="height:20px">
+            {{effect.label}}
+            {{effect.sourceName}}
+          </div>
           {{#if effect.transfer}}
-              <i class="fas fa-arrow-down" style="padding-top:4px"></i>
+          <i class="fas fa-arrow-down" style="padding-top:4px"></i>
           {{else}}
-            <i class="fas fa-arrow-right" style="padding-top:4px"></i>
+          <i class="fas fa-arrow-right" style="padding-top:4px"></i>
           {{/if}}
           {{#if effect.disabled}}
-            <div>&nbsp{{localize "dae.disabled"}}</div>
+          <div>&nbsp{{localize "dae.disabled"}}</div>
           {{else}}
-            {{#if effect.isTemporary}}
-              <div>{{effect.duration.label}}</div>
-            {{else}}
-            <div>&nbsp{{localize "dae.enabled"}}</div>
-            {{/if}}
+          {{#if effect.isTemporary}}
+          <div>{{effect.duration.label}}</div>
+          {{else}}
+          <div>&nbsp{{localize "dae.enabled"}}</div>
+          {{/if}}
           {{/if}}
 
           <div class="effect-controls dae-effect-list">
             <a class="effect-edit" title={{localize dae.edit}}><i class="fas fa-edit"></i></a>
-          {{#unless ../isOwned }}
+            {{#unless ../isOwned }}
             <a class="effect-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
             {{/unless}}
           </div>
@@ -77,9 +80,9 @@
           <div class="effect-name">{{change.label}}</div>
           <div class="effect-mode">{{lookup ../../modes @change.mode}}</div>
           <div class="effect-value">{{change.value}}</div>
-        {{/each}}
+          {{/each}}
         </li>
-      {{/each}}
+        {{/each}}
       </ol>
       {{/if}}
     </div>

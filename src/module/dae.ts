@@ -14,6 +14,7 @@ export var cubActive;
 export var furnaceActive;
 export var itemacroActive;
 export var calculateArmor;
+export var applyBaseAC;
 export var debugEnabled;
 export var useAbilitySave;
 export var activeConditions;
@@ -554,7 +555,7 @@ function prepareData() {
 
   oldPrepareData.bind(this)();
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
-    if (calculateArmor && this.data.type === "character" && !this.data.flags.dnd5e?.isPolymorphed) {
+    if (applyBaseAC && this.data.type === "character" && !this.data.flags.dnd5e?.isPolymorphed) {
       this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
     }
   }
@@ -894,8 +895,10 @@ export function generateArmorEffect(itemData, origin, armorData) {
 }
 
 function armorEffectFromFormula(formula, mode, itemData, origin) {
+  let label = `AC${itemData.data.armor.type === "shield" ? "+" : "="}${itemData.data.armor.value}`;
+  if (["light", "medium"].includes(itemData.data.armor.type)) label += "+dex.mod";
   return {
-    label: itemData.name,
+    label,
     icon: itemData.img,
     changes: [
       {
@@ -1014,6 +1017,7 @@ export function fetchParams() {
   requireItemTarget = game.settings.get("dae", "requireItemTarget");
   playersCanSeeEffects = game.settings.get("dae", "playersCanSeeEffects");
   calculateArmor = game.settings.get("dae", "calculateArmor");
+  applyBaseAC = game.settings.get("dae", "applyBaseAC");
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")
