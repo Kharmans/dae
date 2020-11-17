@@ -203,6 +203,8 @@
     "dae.conditions": "상태 이상",
     "dae.calculateArmor.Name": "AC 자동 계산",
     "dae.calculateArmor.Hint":  "사용할 경우 Dynamic Effects가 인벤토리 내의 갑옷/방패의 AC를 자동적으로 계산한다. 그 외 아이템들도 여전히 AC를 수정할 수 있다.",
+    "dae.applyBaseAC.Name": "기본 AC 자동 계산",
+    "dae.applyBaseAC.Hint": "캐릭터(NPC 제외) 설정시 기본 AC가 10+민첩 수정치로 설정된다.",
     "dae.applyingEffects": "효과 적용",
     "dae.removingEffects": "효과 삭제",
     "dae.tokenMagic": "TokenMagic",
