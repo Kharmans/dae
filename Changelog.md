@@ -12,6 +12,7 @@ Example
 ```
 DAE.migrateActorDAESRD(game.actors.getName("The name of the actor"), false)
 ```
+Update ko.json thanks @KLO
 0.2.23
 * Added disable base AC calc (10+dex.mod). Use this wwith care since disabling it means the base AC for the character will be whatever you type into the AC field.
 * A few tidy ups on the ActiveEffects screen. Show effect source, show fields that do not have labels instead of None.
