@@ -243,11 +243,11 @@ export function patchingSetup() {
   oldRollSkill = CONFIG.Actor.entityClass.prototype.rollSkill;
   if (useAbilitySave && d20Roll) {
     //@ts-ignore
-    CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
+    // CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
     //@ts-ignore
     CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;
     //@ts-ignore
-    CONFIG.Actor.entityClass.prototype.rollSkill = rollSkill;  
+    //CONFIG.Actor.entityClass.prototype.rollSkill = rollSkill;  
   }
   //@ts-ignore
   log("dae | Patching Roll.replaceFormulaData");

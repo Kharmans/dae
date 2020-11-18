@@ -1,3 +1,5 @@
+import { cubActive } from "./dae";
+
 const ACTIVE_EFFECT_MODES = {
   CUSTOM: 0,
   MULTIPLY: 1,
@@ -7,164 +9,145 @@ const ACTIVE_EFFECT_MODES = {
   OVERRIDE: 5
 };
 
+const OVERRIDE = ACTIVE_EFFECT_MODES.OVERRIDE;
+var dnd5eStatusEffects = null;
+export function procStatusEffects(enable: boolean) {
+  // Don't fiddle if cub is enabled - leave it to CUB.
+  if (cubActive) return;
+  /*
+  if (!dnd5eStatusEffects) dnd5eStatusEffects = duplicate(CONFIG.statusEffects);
+  CONFIG.statusEffects = duplicate(dnd5eStatusEffects);
+  */
+  if (enable) {
+    DAEStatusEffects.forEach(se => {
+      let cse = CONFIG.statusEffects.find(cse => cse?.id === se.id);
+      if (cse) mergeObject(cse, se, {inplace:true, overwrite: true, insertKeys: true});
+      else {
+        console.error("Pushing ", se);
+        CONFIG.statusEffects.push(se);
+      }
+    })
+  }
+}
 export let DAEStatusEffects = [
   {
     id: "dead",
-    label: "EFFECT.StatusDead",
-    icon: "icons/svg/skull.svg",
     changes: [
-      {
-        key: "data.attributes.speed.value",
-        mode: ACTIVE_EFFECT_MODES.OVERRIDE,
-        priority: 50,
-        value: "0 FT"
-      }
+      {key: "data.attributes.movement.fly", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.swim", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.walk", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.burrow", mode: OVERRIDE,priority: 50, value: 0},
+      {key: "data.attributes.movement.climb", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "flags.midi-qol.fail.ability.all", value: 1, mode: OVERRIDE, priority: 50},
+      {key: "flags.midi-qol.fail.attack.all", value: 1, mode: OVERRIDE, priority: 50},
+      {key: "flags.midi-qol.fail.spell.all", value: 1, mode: OVERRIDE, priority: 50},
     ],
     flags: {dae: {statusId:"death"}}
   },
   {
     id: "unconscious",
-    label: "EFFECT.StatusUnconscious",
-    icon: "icons/svg/unconscious.svg",
-    flags: {dae: {statusId: "unconscious"}}
+    flags: {dae: {statusId: "unconscious"}},
+    changes: [
+      {key: "data.attributes.movement.fly", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.swim", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.walk", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.burrow", mode: OVERRIDE,priority: 50, value: 0},
+      {key: "data.attributes.movement.climb", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "flags.midi-qol.fail.ability.save.dex", value: 1, mode: OVERRIDE, priority: 50},
+      {key: "flags.midi-qol.fail.ability.save.str", value: 1, mode: OVERRIDE, priority: 50},
+      {key: "flags.midi-qol.grants.advantage.attack.all", value: 1, mode: OVERRIDE, priority: 50}
+    ],
   },
   {
     id: "sleep",
-    label: "EFFECT.StatusAsleep",
-    icon: "icons/svg/sleep.svg",
     flags: {dae: {statusId:"sleep"}}
   },
   {
     id: "stun",
-    label: "EFFECT.StatusStunned",
-    icon: "icons/svg/daze.svg",
     flags: {dae: {statusId:"stunned"}}
   },
   {
     id: "prone",
-    label: "EFFECT.StatusProne",
-    icon: "icons/svg/falling.svg",
     flags: {dae: {statusId:"prone"}}
-
   },
   {
     id: "restrain",
-    label: "EFFECT.StatusRestrained",
-    icon: "icons/svg/net.svg",
     flags: {dae: {statusId:"restrained"}}
   },
   {
+    id: "grappled",
+    flags: {dae: {statusId:"grappled"}},
+    label: "Grappled",
+    icon: "icons/svg/padlock.svg",
+    changes: [
+      {key: "data.attributes.movement.fly", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.swim", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.walk", mode: OVERRIDE, priority: 50, value: 0},
+      {key: "data.attributes.movement.burrow", mode: OVERRIDE,priority: 50, value: 0},
+      {key: "data.attributes.movement.climb", mode: OVERRIDE, priority: 50, value: 0},
+    ],
+  },
+  {
     id: "paralysis",
-    label: "EFFECT.StatusParalysis",
-    icon: "icons/svg/paralysis.svg",
     flags: {dae: {statusId:"paralyzed"}}
   },
-  {
-    id: "petrified",
-    label: "EFFECT.StatusParalysis",
-    icon: "icons/svg/paralysis.svg",
-    flags: {dae: {statusId:"petrified"}}
-  },
+
   {
     id: "fly",
-    label: "EFFECT.StatusFlying",
-    icon: "icons/svg/wing.svg",
     flags: {dae: {statusId:"flying"}}
   },
   {
     id: "blind",
-    label: "EFFECT.StatusBlind",
-    icon: "icons/svg/blind.svg",
-    flags: {dae: {statusId:"blinded"}}
+    flags: {dae: {statusId:"blinded"}},
+    changes: [
+      {key: "flags.midi-qol.disadvantage.attack.all", value: 1, mode: OVERRIDE, priority: 50},
+      {key: "flags.midi-qol.grants.advantage.attack.all", value: 1, mode: OVERRIDE, priority: 50},
+    ],
   },
   {
     id: "deaf",
-    label: "EFFECT.StatusDeaf",
-    icon: "icons/svg/deaf.svg",
     flags: {dae: {statusId:"deafened"}}
   },
   {
     id: "silence",
-    label: "EFFECT.StatusSilenced",
-    icon: "icons/svg/silenced.svg",
-    flags: {dae: {statusId:"silenced"}}
+    flags: {dae: {statusId:"silenced"}},
+    changes: [
+      {key: "flags.midi-qol.fail.spell.verbal", value: 1, mode: OVERRIDE, priority: 50},
+    ],
   },
   {
     id: "fear",
-    label: "EFFECT.StatusFear",
-    icon: "icons/svg/terror.svg",
-    flags: {dae: {statusId:"frightened"}}
+    flags: {dae: {statusId:"frightened"}},
+    changes: [
+      {key: "flags.midi-qol.disadvantage.attack.all", value: 1, mode: OVERRIDE, priority: 50},
+      {key: "flags.midi-qol.disadvantage.ability.check.all", value: 1, mode: OVERRIDE, priority: 50},
+    ],
   },
   {
     id: "burning",
-    label: "EFFECT.StatusBurning",
-    icon: "icons/svg/fire.svg"
   },
   {
     id: "frozen",
-    label: "EFFECT.StatusFrozen",
-    icon: "icons/svg/frozen.svg"
   },
   {
     id: "shock",
-    label: "EFFECT.StatusShocked",
-    icon: "icons/svg/lightning.svg"
   },
   {
     id: "corrode",
-    label: "EFFECT.StatusCorrode",
-    icon: "icons/svg/acid.svg"
   },
   {
     id: "bleeding",
-    label: "EFFECT.StatusBleeding",
-    icon: "icons/svg/blood.svg"
   },
   {
     id: "disease",
-    label: "EFFECT.StatusDisease",
-    icon: "icons/svg/biohazard.svg",
     flags: {dae: {statusId:"diseased"}}
   },
   {
     id: "poison",
-    label: "EFFECT.StatusPoison",
-    icon: "icons/svg/poison.svg",
     flags: {dae: {statusId:"poisoned"}}
   },
   {
-    id: "radiation",
-    label: "EFFECT.StatusRadiation",
-    icon: "icons/svg/radiation.svg"
-  },
-  {
-    id: "regen",
-    label: "EFFECT.StatusRegen",
-    icon: "icons/svg/regen.svg"
-  },
-  {
-    id: "degen",
-    label: "EFFECT.StatusDegen",
-    icon: "icons/svg/degen.svg"
-  },
-  {
-    id: "upgrade",
-    label: "EFFECT.StatusUpgrade",
-    icon: "icons/svg/upgrade.svg"
-  },
-  {
-    id: "downgrade",
-    label: "EFFECT.StatusDowngrade",
-    icon: "icons/svg/downgrade.svg"
-  },
-  {
-    id: "target",
-    label: "EFFECT.StatusTarget",
-    icon: "icons/svg/target.svg"
-  },
-  {
     id: "eye",
-    label: "EFFECT.StatusMarked",
     icon: "icons/svg/eye.svg"
   },
   {
@@ -173,29 +156,14 @@ export let DAEStatusEffects = [
     icon: "icons/svg/sun.svg"
   },
   {
-    id: "bless",
-    label: "EFFECT.StatusBlessed",
-    icon: "icons/svg/angel.svg"
-  },
-  {
-    id: "fireShield",
-    label: "EFFECT.StatusFireShield",
-    icon: "icons/svg/fire-shield.svg"
-  },
-  {
-    id: "coldShield",
-    label: "EFFECT.StatusIceShield",
-    icon: "icons/svg/ice-shield.svg"
-  },
-  {
-    id: "magicShield",
-    label: "EFFECT.StatusMagicShield",
-    icon: "icons/svg/mage-shield.svg"
-  },
-  {
-    id: "holyShield",
-    label: "EFFECT.StatusHolyShield",
-    icon: "icons/svg/holy-shield.svg"
+    id: "invisible",
+    label: "Invisible",
+    icon: "icons/svg/explosion.svg",
+    flags: {dae: {statusId:"invisible"}},
+    changes: [
+      {key: "flags.midi-qol.advantage.attack.all", value: 1, mode: OVERRIDE, priority: 50},
+      {key: "flags.midi-qol.grants.disadvantage.attack.all", value: 1, mode: OVERRIDE, priority: 50},
+    ],
   },
 ];
 
@@ -203,3 +171,9 @@ export let DAEStatusEffects = [
 // grappled
 //exhaustion
 // invisible
+/*
+  {
+    id: "petrified",
+    flags: {dae: {statusId:"petrified"}}
+  },
+  */

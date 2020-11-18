@@ -16,10 +16,9 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { GMAction, GMActionMessage } from './module/GMAction';
-import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems } from './module/migration';
+import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems, migrateActorDAESRD, migrateAllActorsDAESRD } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup } from './module/patching';
-import { DAEStatusEffects } from './module/statusEffects';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag } from './module/daeMacros';
 
@@ -42,15 +41,7 @@ export let daeAlternateStatus;
 /* Initialize module					*/
 /* ------------------------------------ */
 Hooks.once('init', async function() {
-  DAEStatusEffects.forEach(se => {
-    let cse = CONFIG.statusEffects.find(cse => cse?.id === se.id);
-    if (cse) mergeObject(cse, se, {inplace:true, overwrite: true, insertKeys: true});
-    else CONFIG.statusEffects.push(se);
-  })
-  daeAlternateStatus = {};
-  CONFIG.statusEffects.forEach(se => {
-    if (se.flags?.dae) daeAlternateStatus[se.id] = se.flags.dae;
-  });
+
 	// Register custom module settings
   registerSettings();
   fetchParams();
@@ -82,7 +73,6 @@ Hooks.once('setup', function() {
 	GMAction.initActions();
 	daeSetupActions();
   patchingSetup();
-
 	//@ts-ignore
 	window.DAE = {
     ValidSpec,
@@ -108,7 +98,9 @@ Hooks.once('setup', function() {
     moveToken: moveToken,
     renameToken: renameToken,
     getTokenFlag: getTokenFlag,
-    setTokenFlag: setTokenFlag
+    setTokenFlag: setTokenFlag,
+    migrateActorDAESRD: migrateActorDAESRD,
+    migrateAllActorsDAESRD: migrateAllActorsDAESRD,
   }
 });
 

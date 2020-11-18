@@ -190,8 +190,6 @@
     "dae.notes": "Notes",
     "dae.playersCanSeeEffects.Name": "Allow players to see details of effects",
     "dae.playersCanSeeEffects.Hint": "If off do not show players the item effects tab or detailed effects summary for passive items. TRUSTED Players can edit effects",
-    "dae.playerControlsInvisibleTokens.Name": "Player controls their hidden token (Experimental) *** WILL FORCE RELOAD ***",
-    "dae.playerControlsInvisibleTokens.Hint":  "If true the player can control/see their token even if the token is hidden (experimental feature)",
     "dae.tokenEffects.Name": "Enable Token Effects",
     "dae.tokenEffects.Hint":  "Allows effects that target a specific token, e.g. invisible, blind (experimental feature)",
     "dae.macro": "Macro",

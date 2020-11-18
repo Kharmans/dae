@@ -2,6 +2,7 @@ import { requestGMAction, GMAction, applyActiveEffects } from "./GMAction";
 import { warn, error, debug, setDebugLevel, daeAlternateStatus } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
+import { procStatusEffects } from "./statusEffects";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -19,6 +20,7 @@ export var debugEnabled;
 export var useAbilitySave;
 export var activeConditions;
 export var confirmDelete;
+export var ehnanceStatusEffects;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -94,29 +96,29 @@ export class ValidSpec {
         "data.bonuses.weapon.damage": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.spell.damage": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.languages.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.languages.value": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.languages.value": ["", -1],
         "data.traits.languages.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.di.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.di.value": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.di.value": ["", -1],
         "data.traits.di.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.dr.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.dr.value": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.dr.value": ["", -1],
         "data.traits.dr.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.dv.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.dv.value": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.dv.value": ["", -1],
         "data.traits.dv.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.ci.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.ci.value": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.ci.value": ["", -1],
         "data.traits.ci.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.toolProf.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.toolProf.value": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.toolProf.custom": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.toolProf.value": ["", -1],
+        "data.traits.toolProf.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.armorProf.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.armorProf.value": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.armorProf.custom": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.armorProf.value": ["", -1],
+        "data.traits.armorProf.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.weaponProf.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.weaponProf.value": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.weaponProf.custom": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.traits.weaponProf.value": ["", -1],
+        "data.traits.weaponProf.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.size": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
         "data.resources.primary.max": [0, -1],
         "data.resources.primary.label": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
@@ -262,8 +264,10 @@ function effectDisabled(actor, efData, itemData = null) {
   const ci = actor.data.data.traits?.ci?.value;
   const statusId = efData.flags?.core?.statusId;
   disabled  = disabled || (ci && ci.includes(statusId));
+  /* TODO revist this 
   const alternate = statusId && daeAlternateStatus[statusId];
   disabled  = disabled || (ci && ci.includes(alternate));
+  */
 
   // transfer effects with an origin will override default enable/disable
 //  if (efData.origin && efData.flags?.dae?.transfer) {
@@ -539,7 +543,7 @@ function attackDamageBonusEval(bonusString, actor) {
 }
 
 function doCustomValue(actor, current, change, validValues) {
-  if (current.includes(change.value)) return true;
+  if ((current || []).includes(change.value)) return true;
   if (!validValues.includes(change.value)) return true;
   setProperty(actor.data, change.key, current.concat([change.value]))
   return true;
@@ -681,7 +685,7 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
-        else if (f === "@item") return this.data;
+        else if (f === "@item") return this?.data;
         else if (f === "@spellLevel") return spellLevel;
         else if (f === "@item.level") return spellLevel;
         else if (f === "@damage") return damageTotal;
@@ -707,7 +711,7 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
-        else if (f === "@item") return this.id;
+        else if (f === "@item") return this?.data;
         else if (f === "@spellLevel") return spellLevel;
         else if (f === "@item.level") return spellLevel;
         else if (f === "@damage") return damageTotal;
@@ -849,7 +853,7 @@ export function createArmorEffect(actor, itemData) {
   // armor created on actor, screae armor effect.
   const origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
   // const origin = actor.items.get(itemData._id).uuid;
-  itemData.effects = itemData.effects.filter(efData => !efData.flags.dae?.armorEffect);
+  itemData.effects = itemData.effects?.filter(efData => !efData.flags.dae?.armorEffect) || [];
   switch(itemData.data.armor.type) {
     case "natural":
       setProperty(itemData, "flags.dae.alwaysActive", true);
@@ -1021,7 +1025,8 @@ export function fetchParams() {
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")
-
+  ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");
+  procStatusEffects(ehnanceStatusEffects);
   let useDAESheet = game.settings.get("dae", "useDAESheet");
   if (useDAESheet) {
     CONFIG.ActiveEffect.sheetClass = DAEActiveEffectConfig;

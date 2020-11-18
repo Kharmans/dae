@@ -172,6 +172,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "string") {
         if (typeof c.value === "number") c.value = `${c.value}`;
       }
+      // stored mode is a selection index ok for the list, but not "forced Mode"
+      if (ValidSpec.allSpecsObj[c.key]?.forcedMode !== -1) c.mode = ValidSpec.allSpecsObj[c.key]?.forcedMode || c.mode;
       //@ts-ignore
       c.priority = Number.isNumeric(c.priority) ? parseInt(c.priority) : c.mode * 10;
     }

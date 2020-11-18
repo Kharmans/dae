@@ -1,8 +1,22 @@
+0.2.24
+* Reduce restriction on some of the the custom fields.
+* Fix for armor/weapon proficiences active effects if the list was empty
+* Fix for forced mode effects not picking up the mode correctly.
+* Added functions to migrate actor owned items to Dynamic-Effects-SRD items. The function will look through an actor and replace items that have analogues in the Dynamic-Effects-SRD (and optionally the DND5E SRD). This is useful for characters that have been imported with vtta-beyond. Or any actors whose items could do with a refresh.
+```
+DAE.migrateActorDAESRD(actor, includeSRD)
+```
+actor is any actor, includeSRD is a boolean, if true will also use the DND5E compendia for migation.
+This is a new feature and might have bugs - I managed to trash one test world with an earlier version - so MAKE A BACKUP OF YOUR ACTOR FIRST!!!!!.
+Example
+```
+DAE.migrateActorDAESRD(game.actors.getName("The name of the actor"), false)
+```
 0.2.23
 * Added disable base AC calc (10+dex.mod). Use this wwith care since disabling it means the base AC for the character will be whatever you type into the AC field.
 * A few tidy ups on the ActiveEffects screen. Show effect source, show fields that do not have labels instead of None.
 * Changed auto created AC effects to show the effect as the name.
-Updated ko.json thanks @KLO
+* Updated ko.json thanks @KLO
 0.2.22
 * Modify DAE config to support both pull down list of fields and direct enttry of fields. There is no checking done for direct entry fields so you are on your own if you type in the wrong thing.
 * DAE window for actors/items ALWAYS use DAE active config. Opening an active effect from the actor/item effects tab on the item/actor is now configured via the config setting.

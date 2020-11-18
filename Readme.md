@@ -1,26 +1,26 @@
 ## What does DAE do?
-First off you probably don't need DAE. The core foundry system has active effects that do at leat 80% of what you might want. For convenience you might install DAE but you so the default Active Effect Config Screen (option setting) until DND5E has effects editing on actor/item sheets.
+First off you probably don't need DAE. The core foundry system has active effects that do at least 80% of what you might want.  
 
-DAE does add some features to core Active Effects, so if the following features might be useful go ahead and use DAE. DAE builds on core active effects so any core active effect is also a DAE active effect.
-0. Pending the release of 0.7.5 an "Active Effects" editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but not addition.
+DAE does add some features to core Active Effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.
+0. An DAE editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but not addition/deletion.
 1. Transfer effects (from an item) are enabled/disbled according to the following rule which overrides the default behaviour
   * If the "Always Enabled" flag is set on the item the effect is enabled.
   * If the "Enabled on Equip" flags is set on the item and the item is equiped the effect is enabled.
   * Otherwise if the item is attuned and equipped the effect is active.  
   If you modify the enable/disable flag (suspended) on the actor effect, that will override the above rules until the item is updated.
-2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value core restricts you to numbers and strigs.
-3. An extended set of fields you can modify, some of which are custom fields to support drop down lists of possible value, like all of the traits.
+2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value, core restricts you to numbers and strings.
+3. An extended set of fields you can modify, some of which are custom only fields to support drop down lists of possible value, like all of the traits, immunities which you cannot edit in core active effects.
 4. The ability to update derived fields, such as abilities.dex.mod. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
 5 The ability to perform arithmetic in field data definitions, like 
 ```
 ceil(@classes.rogue.levels/2)
 ```
-6. A slightly extended active effect editor that provides a list of valid fields, a drop down list of options and drop down lists for restricted field values.
+6. A slightly extended active effect editor that provides a list of valid fields, a drop down list of options and drop down lists for restricted field values and the ability to set the priority of an effect.
 
 ## Quick start for dynamic effects users - who are migrating from dynamic effects.
 Pick an actor and do
 ```
-DAE.migrateActorItems(game.actors.getName("ActorName")).
+DAE.migrateActorItems(game.actors.getName("The name of the actor")).
 ```
 The actor should have the items migrated (and the transferred effects applied). You should be able to see the values on the actor correctly calculated. (Also see the section **Migrating from DynamicEffects**)
 
@@ -28,7 +28,7 @@ To see the effects active on the actor use (as a macro or from the console)
 ```
 new DAE.ActiveEffects({actor: game.actors.getName("Actor's name")}, {}).render(true)
 ```
-or choose "Active Effects" from the character sheet title bar. Or you can do (from the console)
+or choose "DAE" from the character sheet title bar. Or you can do (from the console)
 ```
 game.actors.getName("Actor Name").effects
 ```
@@ -36,8 +36,8 @@ game.actors.getName("Actor Name").effects
 Functions that previously started with "DynamicEffects." are now "DAE.".  
 
 ## Major Features not implemented
-* Expiry. Now Supported. The about time solution is supported to provide time based expiry (i.e. duration in seconds/minutes and rounds converted to seconds). There is another module times-up which supports time based expry plus knows about rounds/turns and links to the combat tracker. Both/either can be installed and play nicely together. If times-up is installed it takes over the expiry of effects.
-* Sample compendia. Only has a few items. I reccommend the exceled DAE SRD module that has many items/spells created
+* Expiry. The about time solution is supported to provide time based expiry (i.e. duration in seconds/minutes and rounds converted to seconds). There is another module times-up which supports time based expry plus knows about rounds/turns and links to the combat tracker. Both/either can be installed and play nicely together. If times-up is installed it takes over the expiry of effects. You can have both installed at the same time and they wont tread on each others toes.
+* Sample compendia. Only has a few items. I reccommend the excellent DAE SRD module that has many items/spells created
 * From at least dnd 0.95 up to dnd5e 0.98 there is a problem will all monsters in the monster compendium and the data.data.bonuses.mwak/rwak/msak/rsak bonuses. The problem manifests as an error when creating an Active Effect to update these bonuses. A supplied function, 
 ```
 DAE.fixupBonuses()
@@ -52,8 +52,8 @@ DAE.fixupBonuses()
  ```
 * Changing actor spellDC. The way that works is to use Bonuses Spell DC. Anything else won't do what you want.
 * Ability Saving Throw bonuses. DND5e does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
-* Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified field to the existing data.
-* Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any dereived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
+* Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified value to the existing data.
+* Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
 
 ## Dynamic Active Effects Blurb
 Dynamic Active Effects (DAE) is a replacement for Dynamiceffects (which will NOT work in 0.71+, and won't be ported).
@@ -63,18 +63,22 @@ With the release of 0.7.1+ much of the functionality of Dynamiceffects has been 
 
 The foundry Core Active Effects allow you to modify a base value (defined in template.json - most fields you can edit in the character sheet) and apply a fixed value or string to it. There are additional options in core that were not present in dynamic effects, see **Calculation** below.
 
-Foundry core Active Effects are attached to an item and are designated as transfer or non-transfer. Transfer effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. 
+Foundry core Active Effects attached to an item and are designated as transfer or non-transfer. Transfer effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. 
+
 Non-transfer effects are not moved from the item to any actor without additional functions, which DAE/midi-qol provide.
 
+You can create active effects directly on an actor and bypass the whole transfer/non-transfer question.
 
 ### Editing
 A preliminary edit function is supplied, which may change in the future.
 Active effects for Actors and Items can be edited. Owned Item active effects cannot be edited.
 
 ### Actor Active Effects
-On the title bar of the character sheet is an option "Active Effects" that will display a form showing all of the active effects on the actor (transfer and non-transfer). Effects may be removed using this form, but that's all. You need to edit the owned item casusing the effect or re-apply the non-transfer to make any changes to active effects on the character. (This may change in future versions).
+On the title bar of the character sheet is an option "DAE" that will display a form showing all of the active effects on the actor (transfer and non-transfer). You can change the actor effects to your hearts content - HOWEVER changing the effects on the owned item will overwrite the corresponding active effects on the actor. You are free to create active effects on the actor that are not linked to any item.
 
 Active effects that are transfer effects are displayed with a down arrow. Non-transfer effects are displayed with a right arrow.
+
+If the effect has a duration the remaining duration, in rounds/turns or seconds is displayed.
 
 ### Calculations
 Core system active effects are calculated before the game system specific calculation of "derived" fields (prepareDerivedData). For dnd5e prepareDerivedData calculates all the ability modifiers, skill totals, and spell slots available. DAE adds an additional effect application pass that occurs after the system specific prepareDerivedData() completes.
@@ -367,4 +371,44 @@ Remove all ActiveEffects from the actor, both transfer and non-transfer, for exa
 ```
 DAE.removeActorEffects(game.actors.getName("ActorName"))
 ```
+
+
+##**Case Study - Aromor class**
+Armor class causes much confusion about how it operates. 
+If you enable auto base AC it sets the AC of the character equal to 10 + dex mod before doing any armor calculations. If this is NOT set calculation use the value typed into the AC fields as the base AC value.
+
+DAE calculates the AC for various items as follows:
+For equipment marked as armor or natural armor DAE creates an active effect when the item is added to the inverntory that sets the AC equal to the items AC value plus applicable dex mods. For shields it ADDs the armor value to the armor class. These effects are ONLY created when the item is added to the invenroty (or the migrateAllActors script is run).
+
+Recall that there is a "base" AC number stored in the character. If you are wearning armor this number is not used since the AC is set to the armor value plus dex modifier. Say you have leather armor whose AC is 11 plux dex mod (and a dex mod of 3). When the aromor is worn the character AC will be set to 14 no matter what the base value of AC is. If you type 15 into the base AC field (setting the base character value) the displayed AC will not change. If you then unequip the armor the displayed AC will go from 13 to 15.  
+
+    +----------+----------+-----------+  
+    | Base AC  | Item  AC | Displayed |  
+    +----------+----------+-----------+  
+    |   10     |  14      |   14      | Armor Item is equipped  
+    +----------+----------+-----------+  
+    |   10     |  14      |   10      | Armor Item is NOT equipped  
+    +----------+----------+-----------+  
+    |   15     |  14      |   15      | Armor Item is NOT equipped  
+    +----------+----------+-----------+  
+    |   15     |  14      |   14      | Armor Item is equipped  
+    +----------+----------+-----------+ 
+
+Shields add to the calculated AC.
+
+    +----------+----------+-----------+-----------+  
+    | Base AC  | Item  AC | Shield AC | Displayed |  
+    +----------+----------+-----------+-----------+  
+    | 17       |   14     |    2      | 16        | Armor equipped & shield equiped  
+    +----------+----------+-----------+-----------+  
+    | 17       |   14     |    2      | 14        | Armor equipped & shield NOT equiped  
+    +----------+----------+-----------+-----------+  
+    | 17       |   14     |    2      | 19        | Armor NOT equipped & shield equiped  
+    +----------+----------+-----------+-----------+  
+    | 17       |   14     |    2      | 17        | Armor NOT equipped & shield NOT equiped  
+    +----------+----------+-----------+-----------+  
+
+A number of sample characters etc come with their armor class base value set (assuming there is no dynamic effects). Once dynamiceffects is enabled the displayed AC may be different to the base value, if the armor, shield or dex does not match the expected stored value.
+
+Armor calculations are applied whenever the item is equipped.
 

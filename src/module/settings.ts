@@ -72,6 +72,15 @@ export const registerSettings = function () {
     onChange: fetchParams
   })
 
+  game.settings.register("dae", "ehnanceStatusEffects", {
+    name: "dae.enhanceStatusEffects.Name",
+    hint: "dae.enhanceStatusEffects.Hint",
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
 
   game.settings.register("dae", "ZZDebug", {
     name: "dae.Debug.Name",
@@ -83,4 +92,5 @@ export const registerSettings = function () {
     choices: {none: "None", warn: "warnings", debug: "debug", all: "all"},
     onChange: fetchParams
   })
+
 };
