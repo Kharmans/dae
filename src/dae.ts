@@ -20,7 +20,7 @@ import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, f
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup } from './module/patching';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
-import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag } from './module/daeMacros';
+import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setupDAEMacros, setFlag, unsetFlag, getFlag } from './module/daeMacros';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
@@ -60,8 +60,15 @@ Hooks.once('init', async function() {
 Hooks.once('ready', async function () {
   debug("ready setup actions")
   daeReadyActions();
-
+  setupDAEMacros();
   GMAction.readyActions();
+  console.error("Setting time periods")
+
+  CONFIG.DND5E.timePeriods["1Action"] = i18n("dae.1Action")
+  CONFIG.DND5E.timePeriods["1Attack"] = i18n("dae.1Attack")
+  CONFIG.DND5E.timePeriods["1Hit"] = i18n("dae.1Hit")
+  CONFIG.DND5E.timePeriods["turnStart"] = i18n("dae.turnStart")
+  CONFIG.DND5E.timePeriods["turnEnd"] = i18n("dae.turnEnd")
 })
 /* ------------------------------------ */
 /* Setup module							*/
@@ -99,6 +106,9 @@ Hooks.once('setup', function() {
     renameToken: renameToken,
     getTokenFlag: getTokenFlag,
     setTokenFlag: setTokenFlag,
+    setFlag: setFlag,
+    unsetFlag: unsetFlag,
+    getFlag: getFlag,
     migrateActorDAESRD: migrateActorDAESRD,
     migrateAllActorsDAESRD: migrateAllActorsDAESRD,
   }

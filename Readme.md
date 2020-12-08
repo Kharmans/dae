@@ -1,8 +1,8 @@
 ## What does DAE do?
-First off you probably don't need DAE. The core foundry system has active effects that do at least 80% of what you might want.  
+First off you probably don't need DAE. The core foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and using DAE only if you run into a roadblock on what you want to do.
 
 DAE does add some features to core Active Effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.
-0. An DAE editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but not addition/deletion.
+0. A DAE editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but not addition/deletion.
 1. Transfer effects (from an item) are enabled/disbled according to the following rule which overrides the default behaviour
   * If the "Always Enabled" flag is set on the item the effect is enabled.
   * If the "Enabled on Equip" flags is set on the item and the item is equiped the effect is enabled.
@@ -34,9 +34,22 @@ game.actors.getName("Actor Name").effects
 ```
 
 Functions that previously started with "DynamicEffects." are now "DAE.".  
+## Active Effect Expiry
+Expiry of effects requires additional modules to be installed.
+* about-time provides time based expiry (i.e. duration in seconds/minutes and rounds converted to seconds).
+* times-up supports time based expry plus knows about rounds/turns and links to the combat tracker. 
+* midi-qol supports a handful of specail expires (see below) that are otherwise tricky to support.
+Any/all of the modules can be installed, play nicely together. If times-up is installed it takes over the expiry of effects. 
+
+* [Requires midi-qol 0.3.34+] Items support additional active effect durations that can be specified:
+  * 1Attack: active effects last for one attack - requires workflow automation
+  * 1Action: active effects last for one action - requires workflow automation 
+  * 1Hit: active effects last until the next successful hit - requires workflow automation 
+  * turnStart: effects last until the start of self/target's next turn (check combat tracker)  
+  * turnEnd: effects last until the end of self/target's next turn (checks combat tracker)  
+All of these effects expire at the end of the comabt
 
 ## Major Features not implemented
-* Expiry. The about time solution is supported to provide time based expiry (i.e. duration in seconds/minutes and rounds converted to seconds). There is another module times-up which supports time based expry plus knows about rounds/turns and links to the combat tracker. Both/either can be installed and play nicely together. If times-up is installed it takes over the expiry of effects. You can have both installed at the same time and they wont tread on each others toes.
 * Sample compendia. Only has a few items. I reccommend the excellent DAE SRD module that has many items/spells created
 * From at least dnd 0.95 up to dnd5e 0.98 there is a problem will all monsters in the monster compendium and the data.data.bonuses.mwak/rwak/msak/rsak bonuses. The problem manifests as an error when creating an Active Effect to update these bonuses. A supplied function, 
 ```
@@ -54,7 +67,11 @@ DAE.fixupBonuses()
 * Ability Saving Throw bonuses. DND5e does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
 * Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified value to the existing data.
 * Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
-
+### Initiative
+Changes to initiative are challening due to the way it is calculated and rolled in the dnd5e system. Here is a quick guide to what you can do.
+  * init.value is now set before prepareDerived data is run, so it appears on the character sheet (in the "mod" field and in the total), but cannot reference dex.mod etc.
+  * init.bonus is set after prepareDerivedData so will not show up on the character sheet but CAN reference fields like dex.mod
+  * init.total can be updated and will show up on the character sheet but will NOT be included in rolls.
 ## Dynamic Active Effects Blurb
 Dynamic Active Effects (DAE) is a replacement for Dynamiceffects (which will NOT work in 0.71+, and won't be ported).
 

@@ -308,3 +308,7 @@ export async function fixupActors() {
     await actor.createOwnedItem(replaceItems)
     console.warn(actor.name, "replaced ", count, " out of ", replaceItems.length,  " items from the DAE SRD");
   }
+
+  function removeDynamiceffects(actor) {
+  //.update({"flags.-=dynamiceffects": null})
+  }

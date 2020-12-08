@@ -295,3 +295,66 @@ let _addEffects = (app, html, data) => {
   debug("Title element ", titleElement);
   openBtn.insertAfter(titleElement);
 }
+
+export function getFlag(actor: Actor | string, flagId: string) {
+  if (typeof actor === "string") actor = game.actors.get(actor);
+  if (!actor) return console.error(`dae.getFlag: actor not defined`)
+  return getProperty(actor.data, `flags.dae.${flagId}`)
+}
+
+export function setFlag(actor: Actor | string, flagId: string, value: any) {
+  if (typeof actor === "string") actor = game.actors.get(actor);
+  if (!actor) return console.error(`dae.setFlag: actor not defined`)
+  return requestGMAction(GMAction.actions.setFlag, { actorId: actor.id, flagId, value})
+}
+
+export function unsetFlag(actor: Actor | string, flagId) {
+  if (typeof actor === "string") actor = game.actors.get(actor);
+  if (!actor) return console.error(`dae.setFlag: actor not defined`)
+  return requestGMAction(GMAction.actions.unsetFlag, { actorId: actor.id, flagId})
+
+}
+
+export function myExecuteMacro(macroName: string, ...args) {
+  const macro = game.macros.getName(macroName);
+  //@ts-ignore base macro.execute does not support args
+  macro.execute(...args);
+}
+
+export async function setupDAEMacros() {
+  if (game.user.isGM) {
+    var macro;
+    console.error("Deleting macros");
+    ["dae.1Hit", "dae.1Action", "dae.turnEnd", "dae.turnStart"].forEach(macroName => {
+      const macros = game.macros.filter(m=> m.name === macroName);
+      macros.forEach(m => {
+        console.error("Deleting ", m.name, m.id)
+        // m.delete()
+      })
+    });
+    console.error("Creating macros")
+   //@ts-ignore
+    console.error("macro is ", game.macros.getName("dae.1Hit").data.command)
+  }
+}
+export function hookCondition(activate, actor, hookName: string, removeConditionMacro: string, actionMacro: string, ...actionArgs) {
+  const flagName = `${hookName}${removeConditionMacro}${actionMacro}`;
+  const remove = false;
+  if (activate) {
+    const hookId = Hooks.on(hookName, (...hookArgs) => {
+
+      myExecuteMacro(removeConditionMacro, actor, ...hookArgs, ...actionArgs)
+    })
+    let currentHooks = getProperty(actor.data, `flags.dae.${flagName}`) || [];
+    currentHooks.push(hookId);
+    actor.setFlag("dae", `${flagName}`, currentHooks);
+  } else {
+    let currentHooks = getProperty(actor.data, `flags.dae.${flagName}`) || [];
+    currentHooks.forEach(hookId => {
+      Hooks.off(hookName, hookId);
+    })
+    actor.unsetFlag("dae", `${flagName}`);
+
+
+  }
+}

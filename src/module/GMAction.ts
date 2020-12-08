@@ -1,5 +1,6 @@
-import { aboutTimeInstalled, timesUpInstalled } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime } from "./dae";
 import { warn, debug, error } from "../dae";
+import { DAEStatusEffects } from "./statusEffects";
 
 export class GMActionMessage {
   action: string;
@@ -54,7 +55,9 @@ export class GMAction {
     moveToken: "moveToken",
     applyTokenMagic: "applyTokenMagic",
     applyActiveEffects: "applyActiveEffects",
-    setTokenFlag: "setTokenFlag"
+    setTokenFlag: "setTokenFlag",
+    setFlag: "setFlag",
+    unsetFlag: "unsetFlag",
   }
 
   private static actionQueue = [];
@@ -126,6 +129,7 @@ export class GMAction {
     //@ts-ignore
     var actorId = data.actorId;
     var scene;
+    var actor;
     switch (action) {
       case "testMessage":
         console.log("DyamicEffects | test message received", data);
@@ -164,6 +168,16 @@ export class GMAction {
         //@ts-ignore
         update[`flags.dae.${data.flagName}`] = data.flagValue;
         await scene.updateEmbeddedEntity("Token", update);
+        break;
+      case this.actions.setFlag:
+        actor = game.actors.get(actorId);
+        //@ts-ignore flagId, value
+        if (actor) actor.setFlag("dae", data.flagId, data.value);
+        break;
+      case this.actions.unsetFlag:
+        actor = game.actors.get(actorId);
+        //@ts-ignore flagId, value
+        if (actor) actor.unsetFlag("dae", data.flagId);
         break;
       case this.actions.blindToken:
         //@ts-ignore
@@ -289,6 +303,9 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               ae.duration.startRound = game.combat?.round;
               ae.duration.startTurn = game.combat?.turn;
             } 
+            if (["1Hit", "1Attack", "1Action", "turnStart", "turnEnd"].includes(itemDuration.units)) {
+              setProperty(ae, "flags.dae.specialDuration", itemDuration.units)
+            }
           }
         })
         warn("gm action apply effect", token, actEffects)
@@ -312,7 +329,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             let duration = aeData.duration.seconds || 0;
             if (aeData.duration && aboutTimeInstalled) {
               game.Gametime.doIn({seconds: duration}, removeEffect, token.id, aeData)
-            } else if (duration) { //TODO decide what to do for token magic vs macros
+            } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
               setTimeout(removeEffect, duration * 1000 || 6000, token.id, aeData);
             }
           })
@@ -353,7 +370,15 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
       case "year": 
       case "years":return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
       case "inst": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
-      default: return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
+      case "turnStart": return {type: useTurns ? "turns" : "seconds", seconds: 6, rounds: 1, turns: 0};
+      case "turnEnd": return {type: useTurns ? "turns" : "seconds", seconds: 6, rounds: 1, turns: 1};
+      // These have no time based expiry
+      case "1Action":
+      case "1Attack":
+      case "1Hit": return {type: "seconds", seconds: 3600, rounds: undefined, turns: undefined};
+      default: 
+        console.warn("dae | unknown time unit found", itemDuration.units);
+        return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
     }
   } else {
     // do about time stuff
@@ -377,7 +402,17 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
       case "month": return {type: "seconds", seconds: game.Gametime.DTNow().add({"months": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
       case "year": return {type: "seconds", seconds: game.Gametime.DTNow().add({"years": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
       case "inst": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
-      default: return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
+      case "turnStart": return {type: useTurns ? "turns" : "seconds", seconds: 6, rounds: 1, turns: 0}; // at most 1 round
+      case "turnEnd": return {type: useTurns ? "turns" : "seconds", seconds: 6, rounds: 1, turns: 1}; // at most 1 round + 1 turn
+
+      // These have no time based expiry
+      case "1Action":
+      case "1Attack":
+      case "1Hit": return {type: "seconds", seconds: 3600, rounds: undefined, turns: undefined};
+      default:
+        console.warn("dae | unknown time unit found", itemDuration.units);
+        return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
+
 
 //      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
     }

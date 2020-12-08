@@ -1,3 +1,30 @@
+0.2.26
+* added 3 DAE.functios, 
+```
+DAE.setFlag(actor, flagName, value)
+DAE.unsetFlag(actor, flagName, value)
+DAE.getFlag(actor, flagName)
+```
+to allow setting/getting/unsetting flags in the dae scope even if the actor is not owned by the caller.
+
+* [BREAKING[ Initiative changes
+  * init.value is now set before prepareDerived data is run, so it appears on the character sheet (in the "mod" field and in the total), but cannot reference dex.mod etc.
+  * init.bonus is set after prepareDerivedData so will not show up on the character sheet but CAN reference fields like dex.mod
+  * init.total can be updated and will show up on the character sheet but will NOT be included in rolls.
+
+
+* [Requires midi-qol 0.3.34+] Items support additional active effect durations that can be specified:
+  * 1Attack: active effects last for one attack - requires workflow automation
+  * 1Action: active effects last for one action - requires workflow automation 
+  * 1Hit: active effects last until the next successful hit - requires workflow automation 
+  * turnStart: effects last until the start of self/target's next turn (check combat tracker)  
+  * turnEnd: effects last until the end of self/target's next turn (checks combat tracker)  
+  All of these effects expire at the end of combat
+
+  * new settings flag to enable/disable real time expriy of effects if no about-time/times-up installed.
+
+0.2.25
+Remove init.value, use init.total instaead.
 0.2.24
 * Reduce restriction on some of the the custom fields.
 * Fix for armor/weapon proficiences active effects if the list was empty
@@ -58,7 +85,7 @@ Known Bug: Active Effects on tokens are not removed from the active effects disp
 * Started fixing up some field definitions to enforce modes where approriate.
 * added DAE.setTokenFlag(token,flagName, flagValue) and DAE.getTokenFlag functions to allow non-GM users to set/get flags.dae.flagName on a token. Useful to record state on things like traps.
 * Maybe an inmprovment on the effect config tab.
-* Config option to switch between the Core active effect config shett and the DAE config sheet. It is easier to create effects that don't work with DAE using the default sheet.
+* Config option to switch between the Core active effect config sheet and the DAE config sheet. It is easier to create effects that don't work with DAE using the default sheet.
 * 1/2 of a fix for fastforward of ability saving throws incompatibility with midi-qol.
 * Updated cn.json. Thanks Mitch Hwang
 * Updated pt-BR.json. Thanks @innocenti
@@ -72,14 +99,14 @@ ELSE if the item specicfies a duration use that;
 Otherwise do not set a duration (which means the status will bot attack to the token).
 Instantaneous spells attract a duration of 1 second/turn.
 You don't have to be in combat to apply effects anymore.
-* Experimental support for editing effects on owned items. YOu cannot add effects to an item only change/delete those already there.
+* Experimental support for editing effects on owned items. You cannot add effects to an item only change/delete those already there.
 * You can have more than one active effects window open at a time.
 0.2.12 
 fix for non-string being entered into string
 0.2.11
 * Fix for eval of non-transfer effect arguments incorrectly adding spaces between terms.
 * Added back the ability to reference @values in bonuses.heal.damage.
-**Chaged duration setting** for applied non-transfer effects.
+**Changed duration setting** for applied non-transfer effects.
 * If the active effect specifies a duration then the effect duration is used, if there is no duration specified in the effect the item duration is used, otherwise no duration is set. A duration of instantaneous is either 1 turn if in combat or 1 rounds worth of seconds otherwise.
 * When applying an item effect during combat an item duration in minutes is converted to rounds/turns.
 * If times-up is installed DAE will not schedule the automatic removal of effects, but leave it to times-up.

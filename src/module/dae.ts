@@ -21,6 +21,7 @@ export var useAbilitySave;
 export var activeConditions;
 export var confirmDelete;
 export var ehnanceStatusEffects;
+export var expireRealTime
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -74,7 +75,9 @@ export class ValidSpec {
         "data.attributes.hp.max": [0, -1],
         "data.attributes.hp.tempmax": [0, -1],
         "data.attributes.hp.min": [0, -1],
+        // This does not work look at CONFIG.Comabt.initiative.formula
         "data.attributes.init.total": [0, -1],
+        "data.attributes.init.mod": [0, -1],
         "data.attributes.hd": [0, -1],
         "data.attributes.prof": [0, ACTIVE_EFFECT_MODES.CUSTOM], 
         "data.abilities.str.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
@@ -144,19 +147,19 @@ export class ValidSpec {
         specials[`data.bonuses.${id}.attack`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
         specials[`data.bonuses.${id}.damage`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       })
+
       // move all the characteer flags to specials so that the can be custom effects only
       Object.keys(CONFIG.DND5E.characterFlags).forEach(key=> {
         let theKey = `flags.dnd5e.${key}`;
         if (["flags.dnd5e.weaponCriticalThreshold", 
-          "flags.d5e.spellCriticalThreshold",
           "flags.dnd5e.meleeCriticalDamageDice"].includes(theKey)) {
           specials[theKey] = [0, -1];
           delete baseValues[theKey];
         }
         else baseValues[theKey] = false;
-
       }); 
 
+      // delete baseValues["data.attributes.init.value"];
       // patch for missing fields
 
       // needs to be int and in base values since it is used in prepare derived data 
@@ -222,22 +225,22 @@ export class ValidSpec {
         this.derivedSpecs.push(validSpec);
       })
     }
-      this.allSpecs = this.baseSpecs.concat(this.derivedSpecs);
-      if (["dnd5e", "sw5e"].includes(game.system.id)) {
-        // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
-        // and initiative bonus depends on advantage on initiative
-        this.allSpecs.forEach(m => {
-          if (["attributes.hp", "attributes.ac"] .includes(m._fieldSpec)) {
-            m._sampleValue = 0;
-          }
-        });
-      }
-      this.allSpecs.sort((a,b) => {return a._fieldSpec < b._fieldSpec ? -1 : 1});
-      this.baseSpecs.sort((a,b) => {return a._fieldSpec < b._fieldSpec ? -1 : 1});
-      this.derivedSpecs.sort((a,b) => {return a._fieldSpec < b._fieldSpec ? -1 : 1});
-      this.allSpecs.forEach(ms => this.allSpecsObj[ms._fieldSpec] = ms);
-      this.baseSpecs.forEach(ms => this.baseSpecsObj[ms._fieldSpec] = ms);
-      this.derivedSpecs.forEach(ms => this.derivedSpecsObj[ms._fieldSpec] = ms);
+    this.allSpecs = this.baseSpecs.concat(this.derivedSpecs);
+    if (["dnd5e", "sw5e"].includes(game.system.id)) {
+      // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
+      // and initiative bonus depends on advantage on initiative
+      this.allSpecs.forEach(m => {
+        if (["attributes.hp", "attributes.ac"] .includes(m._fieldSpec)) {
+          m._sampleValue = 0;
+        }
+      });
+    }
+    this.allSpecs.sort((a,b) => {return a._fieldSpec < b._fieldSpec ? -1 : 1});
+    this.baseSpecs.sort((a,b) => {return a._fieldSpec < b._fieldSpec ? -1 : 1});
+    this.derivedSpecs.sort((a,b) => {return a._fieldSpec < b._fieldSpec ? -1 : 1});
+    this.allSpecs.forEach(ms => this.allSpecsObj[ms._fieldSpec] = ms);
+    this.baseSpecs.forEach(ms => this.baseSpecsObj[ms._fieldSpec] = ms);
+    this.derivedSpecs.forEach(ms => this.derivedSpecsObj[ms._fieldSpec] = ms);
   }
 
   static localizeSpecs() {
@@ -668,7 +671,7 @@ function daeTokenMagic(enable, actor, effects) {
 function daeRollData(actor) {
   let rollData = actor.getRollData();
   rollData.data = rollData;
-  rollData.flags = actor.flags;
+  rollData.flags = actor.data.flags;
   return rollData;
 }
 
@@ -725,10 +728,9 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
       });
       change.value = fields.join("");
       // context.actor = actor.data;
-      if (doRolls &&  typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
+      if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
         value = new Roll(change.value, context).roll().total
-      }
-      else value = change.value;          
+      } else value = change.value;          
       break;
   };
   debug("evalargs: change is ", change);
@@ -1033,4 +1035,5 @@ export function fetchParams() {
   } else {
     CONFIG.ActiveEffect.sheetClass = ActiveEffectConfig;
   }
+  expireRealTime = game.settings.get("dae", "expireRealTime");
 }

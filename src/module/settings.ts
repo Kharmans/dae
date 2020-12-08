@@ -20,6 +20,16 @@ export const registerSettings = function () {
     hint: game.i18n.localize("dae.useDAESheet.Hint"),
   });
 
+  game.settings.register("dae", "expireRealTime", {
+    name: "dae.expireRealTime.Name",
+    hint: "dae.expireRealTime.Hint",
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+  
   game.settings.register("dae", "playersCanSeeEffects", {
     scope: "world",
     default: "None",
@@ -70,7 +80,7 @@ export const registerSettings = function () {
     type: Boolean,
     config: true,
     onChange: fetchParams
-  })
+  });
 
   game.settings.register("dae", "ehnanceStatusEffects", {
     name: "dae.enhanceStatusEffects.Name",
