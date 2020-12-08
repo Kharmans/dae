@@ -1,4 +1,4 @@
-0.2.26
+0.2.25
 * added 3 DAE.functios, 
 ```
 DAE.setFlag(actor, flagName, value)
@@ -23,8 +23,6 @@ to allow setting/getting/unsetting flags in the dae scope even if the actor is n
 
   * new settings flag to enable/disable real time expriy of effects if no about-time/times-up installed.
 
-0.2.25
-Remove init.value, use init.total instaead.
 0.2.24
 * Reduce restriction on some of the the custom fields.
 * Fix for armor/weapon proficiences active effects if the list was empty
