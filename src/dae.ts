@@ -62,8 +62,6 @@ Hooks.once('ready', async function () {
   daeReadyActions();
   // setupDAEMacros();
   GMAction.readyActions();
-  console.error("Setting time periods")
-
   CONFIG.DND5E.timePeriods["1Action"] = i18n("dae.1Action")
   CONFIG.DND5E.timePeriods["1Attack"] = i18n("dae.1Attack")
   CONFIG.DND5E.timePeriods["1Hit"] = i18n("dae.1Hit")

@@ -3,7 +3,7 @@
   "title": "Dynamic effects using Active Effects",
   "description": "replacement for dynamic effects",
   "version": "0.2.26",
-  "compatibleCoreVersion": "0.7.6",
+  "compatibleCoreVersion": "0.7.8",
   "minimumCoreVersion": "0.7.4",
   "scripts": ["libs/tokenizer.min.js"],
   "esmodules": [
