@@ -332,9 +332,6 @@ export async function setupDAEMacros() {
         // m.delete()
       })
     });
-    console.error("Creating macros")
-   //@ts-ignore
-    console.error("macro is ", game.macros.getName("dae.1Hit").data.command)
   }
 }
 export function hookCondition(activate, actor, hookName: string, removeConditionMacro: string, actionMacro: string, ...actionArgs) {

@@ -60,7 +60,7 @@ Hooks.once('init', async function() {
 Hooks.once('ready', async function () {
   debug("ready setup actions")
   daeReadyActions();
-  setupDAEMacros();
+  // setupDAEMacros();
   GMAction.readyActions();
   console.error("Setting time periods")
 
