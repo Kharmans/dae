@@ -1,3 +1,19 @@
+0.2.27
+[BREAKING] change to special expiry effects:
+* removed from item duration (too cluttered)
+* added as optional field in Effect Duration panel. (You must use DAE effect editor)
+* If about-time is installed and enabled and a temporary effect has a duration in seconds, the remaining time in the DAE effects window will show the remaining time in H:M:S.
+* Added support for isAttacked and isDamaged expiry conditions.
+* When entering the start time on the DAE duration tab the value is interpreted as an offset from the current game time. So 0 means now +60 means in 1 minutes time, -30 means 30 seconds ago.
+
+Example: Guiding Bolt. Start with the SRD guiding bolt spell 
+* Bring up the DAE editor for the item and add an effect.
+* On the duration tab, set the duration to be 1 round + 1 turn and the special expiry isAttacked.
+* On the effects tab add an effect
+flags.midi-qol.grants.advantage.attack.all OVERRIDE 1.
+Now when you cast the spell at a target and hit, the effect will be applied that grants advantage on the next attack.
+
+0.2.26 remove setupDAE macro errors
 0.2.25
 * added 3 DAE.functios, 
 ```

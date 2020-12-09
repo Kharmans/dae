@@ -1,5 +1,5 @@
 import { ValidSpec, aboutTimeInstalled, confirmDelete } from "../dae";
-import { i18n, confirmAction } from "../../dae";
+import { i18n, confirmAction, daeSpecialDurations } from "../../dae";
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
@@ -75,7 +75,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       obj[e[1]] = game.i18n.localize("EFFECT.MODE_"+e[0]);
       return obj;
     }, {});
-
+    data.specialDuration =  daeSpecialDurations;
     data.effect = this.object.data;
     if (this.object.parent) {
       data.isItem = this.object.parent.__proto__.constructor.name === CONFIG.Item.entityClass.name
@@ -177,8 +177,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       //@ts-ignore
       c.priority = Number.isNumeric(c.priority) ? parseInt(c.priority) : c.mode * 10;
     }
-    if (parseInt(formData.duration.startTime) === 0) {
-      formData.duration.startTime = game.time.worldTime;
+    //@ts-ignore isNumeric
+    if (Number.isNumeric(formData.duration.startTime)) {
+      formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
     }
     setProperty(formData, "flags.dae.transfer", formData.transfer);
     //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});

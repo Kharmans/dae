@@ -241,10 +241,12 @@
     "dae.noGM": "No GM Client connected",
     "dae.expireRealTime.Name": "Expire timed effects in real time",
     "dae.expireRealTime.Hint": "If enabled and about-time/times-up not installed timed effects will expire in real time.",
+    "dae.isAttacked": "Is Attacked",
+    "dae.isDamaged": "Is Damaged",
     "dae.1Action": "One Action",
     "dae.1Attack": "One Attack",
-    "dae.1Hit": "One Successful Hit",
-    "dae.turnStart": "Start of next Turn",
-    "dae.turnEnd": "End of Next Turn"
+    "dae.1Hit": "One Hit",
+    "dae.turnStart": "Start next turn",
+    "dae.turnEnd": "End next turn"
 }
 

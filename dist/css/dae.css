@@ -64,6 +64,13 @@
   border-right: 1px solid #c9c7b8;
   min-width: 120;
 }
+.dnd5e.sheet.item .dae-effect-list .effect-value-value
+{
+  flex: 0 0 240px;
+  border-left: 1px solid #c9c7b8;
+  border-right: 1px solid #c9c7b8;
+  min-width: 120;
+}
 .dnd5e.sheet.item .dae-effect-list .effect-list {
   list-style: none;
   margin: 0;

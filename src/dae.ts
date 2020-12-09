@@ -57,16 +57,31 @@ Hooks.once('init', async function() {
 	// Register custom sheets (if any)
 });
 
+export let daeSpecialDurations;
 Hooks.once('ready', async function () {
   debug("ready setup actions")
   daeReadyActions();
   // setupDAEMacros();
   GMAction.readyActions();
+  daeSpecialDurations =  {
+    "None": "",
+    "1Action": i18n("dae.1Action"),
+    "1Attack": i18n("dae.1Attack"),
+    "1Hit": i18n("dae.1Hit"),
+    "turnStart": i18n("dae.turnStart"),
+    "turnEnd": i18n("dae.turnEnd"),
+    "isAttacked": i18n("dae.isAttacked"),
+    "isDamaged": i18n("dae.isDamaged")
+  }
+  /*
   CONFIG.DND5E.timePeriods["1Action"] = i18n("dae.1Action")
   CONFIG.DND5E.timePeriods["1Attack"] = i18n("dae.1Attack")
   CONFIG.DND5E.timePeriods["1Hit"] = i18n("dae.1Hit")
   CONFIG.DND5E.timePeriods["turnStart"] = i18n("dae.turnStart")
   CONFIG.DND5E.timePeriods["turnEnd"] = i18n("dae.turnEnd")
+  CONFIG.DND5E.timePeriods["isAttacked"] = i18n("dae.isAttacked")
+  CONFIG.DND5E.timePeriods["isDamaged"] = i18n("dae.isDamaged")
+  */
 })
 /* ------------------------------------ */
 /* Setup module							*/

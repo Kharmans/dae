@@ -118,6 +118,15 @@
         <input type="number" name="duration.startTurn" value="{{ effect.duration.startTurn }}" />
       </div>
     </div>
+    <div class="form-group">
+      <label>Special Expiry</label>
+      <label>{{flags.dae.specialDuration}}</label>
+      <div class="expriy">
+        <select name="flags.dae.specialDuration" data-dtype="String">
+          {{selectOptions specialDuration selected=effect.flags.dae.specialDuration}}
+        </select>
+      </div>
+    </div>
   </section>
 
   <!-- Effects Tab -->

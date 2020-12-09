@@ -1,6 +1,6 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { playersCanSeeEffects, ValidSpec, cubActive, confirmDelete } from "../dae"
-import { warn, debug, i18n, confirmAction } from "../../dae";
+import { playersCanSeeEffects, ValidSpec, cubActive, confirmDelete, aboutTimeInstalled } from "../dae"
+import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 import { filters } from "pixi.js";
 
@@ -46,10 +46,16 @@ getData() {
   let actives = this.object.effects.map(ae=> {
     let newAe = duplicate(ae.data);
     newAe.duration = duplicate(ae.duration);
-    if (newAe.duration.label) {
+    if (aboutTimeInstalled && newAe.duration?.type === "seconds") {
+      newAe.duration.label = game.Gametime.DTM.timeString(ae.duration.remaining)
+    } else if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }
-    newAe.isTemporary = ae.isTemporary;
+    if ((ae.data.flags?.dae?.specialDuration ?? "None") !== "None")
+    {
+      newAe.duration.label += ", " + daeSpecialDurations[ae.data.flags.dae.specialDuration];
+      newAe.isTemporary  = true;
+    } else newAe.isTemporary = ae.isTemporary ;
     newAe.sourceName = ae.sourceName;
     if (newAe.sourceName === newAe.label) newAe.sourceName = "";
     else newAe.sourceName = `(${newAe.sourceName})`;
