@@ -11,6 +11,7 @@ export class ActiveEffects extends FormApplication {
   effectHookIdu = null;
   effectHookIdc = null;
   effectHookIdd = null;
+  effectHookIdt = null;
   timeHookId = null;
   combatHookId = null;
   effect;
@@ -215,12 +216,21 @@ activateListeners(html) {
     if (Array.from(this.object.effects).some(ef=>ef.isTemporary))
       setTimeout(() => this.render(), 0)
   }
+  function tkHandler(scene, tokenData, update) {
+    if (tokenData.actorId !== this.object.id) return;
+    if (!update.actorData?.effects) return;
+    setTimeout(() => this.render(), 0);
+  }
+  
   if (!this.effectHookIdu)
     this.effectHookIdu = Hooks.on("updateActiveEffect", efhandler.bind(this, "update"));
   if (!this.effectHookIdc)
     this.effectHookIdc = Hooks.on("createActiveEffect", efhandler.bind(this, "create"));
   if (!this.effectHookIdd)
     this.effectHookIdd = Hooks.on("deleteActiveEffect", efhandler.bind(this, "delete"));
+  if (!this.effectHookIdt)
+    this.effectHookIdt = Hooks.on("updateToken", tkHandler.bind(this));
+
   if (!this.itemHookId)
     this.itemHookId = Hooks.on("updateOwnedItem", efhandler.bind(this, "owneditem"))
   if (!this.timeHookId) 
@@ -228,12 +238,15 @@ activateListeners(html) {
   if(!this.combatHookId) 
     this.combatHookId = Hooks.on("updateCombat", tmHandler.bind(this));
 
+
 }
 async close() {
   Hooks.off("updateActiveEffect", this.effectHookIdu);
   Hooks.off("createActiveEffect", this.effectHookIdc);
   Hooks.off("deleteActiveEffect", this.effectHookIdd);
   Hooks.off("updateWorldTime", this.timeHookId);
+  Hooks.off("updateToken", this.effectHookIdt);
+
   Hooks.off("updateOwnedItem", this.itemHookId);
   Hooks.off("updateCombat", this.combatHookId);
   return super.close()

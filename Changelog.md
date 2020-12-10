@@ -1,3 +1,20 @@
+0.2.28
+* fix for effects not being removed from DAE Active Effects when displaying a token's effects.
+* [Experimental] First stage of active effects that support changes to actor owned items, reference the item as:
+* items.name...., so for example (or items.index)
+  items.Longsword.data.attackBonus (the first item named Longsword)
+* items.5.data.attackBonus (for the 5th item - not very useful)
+* items.actionType..... where action type is one of:
+    ["mwak", "rwak", "msak", "rsak", "save", "heal", "abil", "util", "other"]
+
+to change all melee weapons to use cha mod instead do:
+```
+items.mwak.data.ability OVERRIDE cha
+```
+```
+items.mwak.data.damage.parts[0][1] ADD +1d4
+all melee weapons do an extra 1d4 damage.
+
 0.2.27
 [BREAKING] change to special expiry effects:
 * removed from item duration (too cluttered)

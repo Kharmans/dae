@@ -22,6 +22,7 @@ export var activeConditions;
 export var confirmDelete;
 export var ehnanceStatusEffects;
 export var expireRealTime
+export var daeActionTypeKeys;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -291,6 +292,7 @@ function effectDisabled(actor, efData, itemData = null) {
 }
 
 var oldPrepareData;
+var oldApply;
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
@@ -356,6 +358,8 @@ function daeCustomEffect(actor, change) {
     setProperty(actor.data, change.key, value);
     return true;
   }
+
+
   switch(change.key) {
     case "data.traits.di.all":
     case "data.traits.dr.all":
@@ -937,6 +941,36 @@ export function localDeleteFilters(tokenId: string, filterName: string) {
 
 export var tokenizer;
 
+function daeApply(actor, change) {
+  if (change.key.startsWith("items")) {
+    console.error("dae Apply ", change)
+    let originalKey = duplicate(change.key);
+    const fields = change.key.split(".");
+    const name = fields[1];
+    let indices;
+    if (daeActionTypeKeys.includes(name)) {
+      const items = actor.data.items.map((iData, index) => iData.data.actionType === name ? index : -1)
+      indices = items.filter(index => index !== -1)
+      console.error("multi indices are ", indices)
+    } else {
+      const items = actor.data.items.filter(i=>i.actionType === name);
+      indices = [actor.data.items.findIndex(i=>i.name === name)];
+      console.error("single indices are ", indices)
+    }
+    for (let index of indices) {
+      fields[1] = index;
+      if (fields[1] !== -1) {
+        change.key = fields.join(".");
+        console.error("changed key is ", change.key)
+        var rval = oldApply.bind(this)(actor, change)
+      }
+    }
+    change.key = originalKey;
+    return rval;
+  }
+  return oldApply.bind(this)(actor, change)
+}
+
 export function daeInitActions() {
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
     acAffectingArmorTypes = ["light", "medium", "heavy", "bonus", "natural", "shield"];
@@ -946,11 +980,15 @@ export function daeInitActions() {
   // We will call this in prepareData
   oldPrepareData = CONFIG.Actor.entityClass.prototype.prepareData;
   CONFIG.Actor.entityClass.prototype.prepareData = prepareData;
+
+  oldApply = CONFIG.ActiveEffect.entityClass.prototype.apply;
+  CONFIG.ActiveEffect.entityClass.prototype.apply = daeApply;
   // replace the default applyActiveEffects with the dae one so that prepareData will call us
   // Adds some extra field maniuplations and supports lookups
   //@ts-ignore
   CONFIG.Actor.entityClass.prototype.applyActiveEffects = applyBaseActiveEffects;
 
+  daeActionTypeKeys =  Object.keys(CONFIG.DND5E.itemActionTypes)
   // This supplies DAE custom effects
   Hooks.on("applyActiveEffect", daeCustomEffect); 
   // Updating an owned item - first update any actor effects

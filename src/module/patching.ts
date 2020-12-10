@@ -234,20 +234,22 @@ function replaceFormulaData(formula, data, {missing = "", warn = false}) {
 }
 
 export function patchingSetup() {
-  log("Patching actor.rollAbilitySave: override default save is ", useAbilitySave)
-  //@ts-ignore
-  oldRollAbilitySave = CONFIG.Actor.entityClass.prototype.rollAbilitySave;
-  //@ts-ignore
-  oldRollAbilityTest = CONFIG.Actor.entityClass.prototype.rollAbilityTest;
-  //@ts-ignore
-  oldRollSkill = CONFIG.Actor.entityClass.prototype.rollSkill;
-  if (useAbilitySave && d20Roll) {
+  if (["dnd5e", "sw5e"].includes(game.system.id)) {
+    log("Patching actor.rollAbilitySave: override default save is ", useAbilitySave)
     //@ts-ignore
-    // CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
+    oldRollAbilitySave = CONFIG.Actor.entityClass.prototype.rollAbilitySave;
     //@ts-ignore
-    CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;
+    oldRollAbilityTest = CONFIG.Actor.entityClass.prototype.rollAbilityTest;
     //@ts-ignore
-    //CONFIG.Actor.entityClass.prototype.rollSkill = rollSkill;  
+    oldRollSkill = CONFIG.Actor.entityClass.prototype.rollSkill;
+    if (useAbilitySave && d20Roll) {
+      //@ts-ignore
+      // CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
+      //@ts-ignore
+      CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;
+      //@ts-ignore
+      //CONFIG.Actor.entityClass.prototype.rollSkill = rollSkill;  
+    }
   }
   //@ts-ignore
   log("dae | Patching Roll.replaceFormulaData");

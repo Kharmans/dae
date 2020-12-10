@@ -14,7 +14,6 @@
     {
       "name": "premadeitems",
       "label": "Premade Items",
-      "system": ["dnd5e", "sw5e"],
       "path": "./packs/premadeitems.db",
       "module": "world",
       "entity": "Item",
