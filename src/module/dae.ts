@@ -944,7 +944,6 @@ export var tokenizer;
 
 function daeApply(actor, change) {
   if (change.key.startsWith("items")) {
-    console.error("dae Apply ", change)
     let originalKey = duplicate(change.key);
     const fields = change.key.split(".");
     const name = fields[1];
@@ -952,17 +951,14 @@ function daeApply(actor, change) {
     if (daeActionTypeKeys.includes(name)) {
       const items = actor.data.items.map((iData, index) => iData.data.actionType === name ? index : -1)
       indices = items.filter(index => index !== -1)
-      console.error("multi indices are ", indices)
     } else {
       const items = actor.data.items.filter(i=>i.actionType === name);
       indices = [actor.data.items.findIndex(i=>i.name === name)];
-      console.error("single indices are ", indices)
     }
     for (let index of indices) {
       fields[1] = index;
       if (fields[1] !== -1) {
         change.key = fields.join(".");
-        console.error("changed key is ", change.key)
         var rval = oldApply.bind(this)(actor, change)
       }
     }
