@@ -259,7 +259,8 @@ export function isActive(itemData) {
   if (!daeFlags) return false;
     let active = daeFlags.alwaysActive 
     || (daeFlags.activeEquipped && itemData.data.equipped)
-    || (itemData.data.attuned && itemData.data.equipped)
+    //TODO replace this with symbolic constant when available.
+    || (itemData.data.attunement === 2 && itemData.data.equipped)
   return active;
 }
 

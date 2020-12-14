@@ -1,8 +1,12 @@
 0.2.28
 * fix for effects not being removed from DAE Active Effects when displaying a token's effects.
-* [Experimental] First stage of active effects that support changes to actor owned items, reference the item as:
-* items.name...., so for example (or items.index)
-  items.Longsword.data.attackBonus (the first item named Longsword)
+* Fix for 1.2.0 attunement changes (which should fix the equip item active effect problem)
+* support the new attributes.senses changes
+* Added new senses darkvision etc text.
+* [Experimental] First stage of active effects that support changes to actor owned items. This is definitely experimental, use at your own risk. Reference the item as:
+* items.name,(or items.index;
+*  items.Longsword.data.attackBonus (the first item named Longsword)  
+  items.Longsword.data.attackBOnus ADD 2
 * items.5.data.attackBonus (for the 5th item - not very useful)
 * items.actionType..... where action type is one of:
     ["mwak", "rwak", "msak", "rsak", "save", "heal", "abil", "util", "other"]
@@ -13,7 +17,8 @@ items.mwak.data.ability OVERRIDE cha
 ```
 ```
 items.mwak.data.damage.parts[0][1] ADD +1d4
-all melee weapons do an extra 1d4 damage.
+```
+all melee weapons do an extra 1d4 damage.(You would not do this since there is already a bonuses field that does this)
 
 0.2.27
 [BREAKING] change to special expiry effects:
