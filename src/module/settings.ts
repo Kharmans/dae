@@ -29,7 +29,15 @@ export const registerSettings = function () {
     config: true,
     onChange: fetchParams
   });
-  
+  game.settings.register("dae", "displayTraits", {
+    scope: "world",
+    default: false,
+    config: true,
+    type: Boolean,
+    onChange: fetchParams,
+    name: game.i18n.localize("dae.displayTraits.Name"),
+    hint: game.i18n.localize("dae.displayTraits.Hint"),
+  });
   game.settings.register("dae", "playersCanSeeEffects", {
     scope: "world",
     default: "None",

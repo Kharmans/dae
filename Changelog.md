@@ -1,3 +1,9 @@
+0.2.29
+* Interim solution to display post active effects values in special traits page. This will last only unitl there is a dnd5e core solution to seeing what the post active effect application bonsues/flags are. Enable via config setting, requires reload.
+* update ja.json. Thans @touge
+* fix for spellCriticalThreshold active effect
+* fix for sw5e and proficiency mods, save mod rolls, damage bonuses.
+
 0.2.28
 * fix for effects not being removed from DAE Active Effects when displaying a token's effects.
 * Fix for 1.2.0 attunement changes (which should fix the equip item active effect problem)

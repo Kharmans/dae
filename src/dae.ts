@@ -18,7 +18,7 @@ import { daeReadyActions} from "./module/dae";
 import { GMAction, GMActionMessage } from './module/GMAction';
 import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems, migrateActorDAESRD, migrateAllActorsDAESRD } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
-import { patchingSetup, patchingInitSetup } from './module/patching';
+import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setupDAEMacros, setFlag, unsetFlag, getFlag } from './module/daeMacros';
 
@@ -73,6 +73,8 @@ Hooks.once('ready', async function () {
     "isAttacked": i18n("dae.isAttacked"),
     "isDamaged": i18n("dae.isDamaged")
   }
+  
+  patchSpecialTraits();
   /*
   CONFIG.DND5E.timePeriods["1Action"] = i18n("dae.1Action")
   CONFIG.DND5E.timePeriods["1Attack"] = i18n("dae.1Attack")

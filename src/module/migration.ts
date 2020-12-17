@@ -1,7 +1,6 @@
 
 import { debug, warn, log } from "../dae";
 import { ValidSpec, createArmorEffect } from "./dae";
-import { removeActiveEffectsToken } from "./daeMacros";
 
 //@ts-ignore
 const EFFECTMODES = ACTIVE_EFFECT_MODES;

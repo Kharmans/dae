@@ -1,4 +1,4 @@
-import { useAbilitySave, daeCreateActiveEffectActions, daeDeleteActiveEffectActions } from "./dae";
+import { useAbilitySave, daeCreateActiveEffectActions, daeDeleteActiveEffectActions, displayTraits } from "./dae";
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error,  } from "../dae";
@@ -191,12 +191,12 @@ var actorSheetFlags;
 export async function patchingInitSetup() {
   
   //TODO remove this when token create active effects calls a hook
-  log("Paatching ActorTokenHelpers deleteEmbeddedEntity")
+  log("Patching ActorTokenHelpers deleteEmbeddedEntity")
   //@ts-ignore
   oldActorTokenHelpersDeleteEmbeddedEntity = ActorTokenHelpers.prototype.deleteEmbeddedEntity;
   //@ts-ignore
   ActorTokenHelpers.prototype.deleteEmbeddedEntity = deleteEmbeddedEntityToken;
-  log("Paatching ActorTokenHelpers createEmbeddedEntity")
+  log("Patching ActorTokenHelpers createEmbeddedEntity")
   //@ts-ignore
   oldActorTokenHelpersCreateEmbeddedEntity = ActorTokenHelpers.prototype.createEmbeddedEntity;
   //@ts-ignore
@@ -206,15 +206,13 @@ export async function patchingInitSetup() {
     //@ts-ignore
   if (game.system.id === "dnd5e") {
     //@ts-ignore
-    dice = await import("../../../systems/dnd5e/module/dice.js");
+    dice = game.dnd5e.dice;
     //@ts-ignore
-    actorSheetFlags = await import("../../../systems/dnd5e/module/apps/actor-flags.js");
+    actorSheetFlags = game.dnd5e.applications.ActorSheetFlags;
   }
   else if (game.system.id === "sw5e") {
     //@ts-ignore
-    dice = await import("../../../systems/sw5e/module/dice.js")
-    //@ts-ignore
-    actorSheetFlags = await import("../../../systems/sw5e/module/apps/actor-flags.js");
+    dice = game.sw5e.dice;
   }
   if (!dice) console.error ("Dice not defined! Many things won't work")
   else  d20Roll = dice?.d20Roll;
@@ -259,12 +257,62 @@ export function patchingSetup() {
   //@ts-ignore
   Roll.replaceFormulaData = replaceFormulaData;
 
-  if (game.system.id === "dnd5e" && game.system.data.version === 0.99) {
-    //@ts-ignore
-    actorSheetFlags.default.prototype._updateObject = _updateObject;
-  }
+
 };
 
+// Patch for actor-flags app to display settings including active effects
+export function patchSpecialTraits() {
+  if (!displayTraits) return;
+  if (["dnd5e"].includes(game.system.id) && isNewerVersion(game.system.data.version, "1.1.0")) {
+    //@ts-ignore
+    actorSheetFlags.prototype._updateObject = _updateObject;
+    actorSheetFlags.prototype._getFlags = _getFlags;
+    actorSheetFlags.prototype._getBonuses = _getBonuses;
+  }
+}
+
+function _getFlags() {
+  const flags = {};
+  const baseData = this.entity.data;
+  for ( let [k, v] of Object.entries(CONFIG.DND5E.characterFlags) ) {
+    //@ts-ignore
+    if ( !flags.hasOwnProperty(v.section) ) flags[v.section] = {};
+    let flag = duplicate(v);
+    //@ts-ignore
+    flag.type = v.type.name;
+    //@ts-ignore
+    flag.isCheckbox = v.type === Boolean;
+    //@ts-ignore
+    flag.isSelect = v.hasOwnProperty('choices');
+    //@ts-ignore
+    flag.value = getProperty(baseData.flags, `dnd5e.${k}`);
+    //@ts-ignore
+    flags[v.section][`flags.dnd5e.${k}`] = flag;
+  }
+  return flags;
+}
+
+function _getBonuses() {
+  const bonuses = [
+    {name: "data.bonuses.mwak.attack", label: "DND5E.BonusMWAttack"},
+    {name: "data.bonuses.mwak.damage", label: "DND5E.BonusMWDamage"},
+    {name: "data.bonuses.rwak.attack", label: "DND5E.BonusRWAttack"},
+    {name: "data.bonuses.rwak.damage", label: "DND5E.BonusRWDamage"},
+    {name: "data.bonuses.msak.attack", label: "DND5E.BonusMSAttack"},
+    {name: "data.bonuses.msak.damage", label: "DND5E.BonusMSDamage"},
+    {name: "data.bonuses.rsak.attack", label: "DND5E.BonusRSAttack"},
+    {name: "data.bonuses.rsak.damage", label: "DND5E.BonusRSDamage"},
+    {name: "data.bonuses.abilities.check", label: "DND5E.BonusAbilityCheck"},
+    {name: "data.bonuses.abilities.save", label: "DND5E.BonusAbilitySave"},
+    {name: "data.bonuses.abilities.skill", label: "DND5E.BonusAbilitySkill"},
+    {name: "data.bonuses.spell.dc", label: "DND5E.BonusSpellDC"}
+  ];
+  for ( let b of bonuses ) {
+    //@ts-ignore
+    b.value = getProperty(this.object.data, b.name) || "";
+  }
+  return bonuses;
+}
 async function _updateObject(event, formData) {
   const actor = this.object;
   let updateData = expandObject(formData);

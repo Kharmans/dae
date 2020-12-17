@@ -23,6 +23,7 @@ export var confirmDelete;
 export var ehnanceStatusEffects;
 export var expireRealTime
 export var daeActionTypeKeys;
+export var displayTraits;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -144,7 +145,11 @@ export class ValidSpec {
         specials[`data.bonuses.abilities.${id}`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       });
       */
-      ["mwak", "rwak", "msak", "rsak"].forEach(id => {
+
+      let attackTypes = ["mwak", "rwak", "msak", "rsak"];
+      if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
+
+      attackTypes.forEach(id => {
         specials[`data.bonuses.${id}.attack`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
         specials[`data.bonuses.${id}.damage`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       })
@@ -153,7 +158,8 @@ export class ValidSpec {
       Object.keys(CONFIG.DND5E.characterFlags).forEach(key=> {
         let theKey = `flags.dnd5e.${key}`;
         if (["flags.dnd5e.weaponCriticalThreshold", 
-          "flags.dnd5e.meleeCriticalDamageDice"].includes(theKey)) {
+          "flags.dnd5e.meleeCriticalDamageDice",
+          "flags.dnd5e.spellCriticalThreshold"].includes(theKey)) {
           specials[theKey] = [0, -1];
           delete baseValues[theKey];
         }
@@ -360,6 +366,10 @@ function daeCustomEffect(actor, change) {
     return true;
   }
 
+  let spellAttacks = ["msak", "rsak"]
+  let weaponAttacks = ["mwak", "rwak"];
+  if (game.system.id === "sw5e") spellAttacks = ["mpak", "rpak"];
+  let attackTypes = weaponAttacks.concat(spellAttacks);
 
   switch(change.key) {
     case "data.traits.di.all":
@@ -411,7 +421,7 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.All-Attacks":
       value = attackDamageBonusEval(change.value, actor)
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
-      ["mwak", "rwak", "msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].attack += value);
+      attackTypes.forEach(atType => actor.data.data.bonuses[atType].attack += value);
       return true;
     case "data.bonuses.spell.attack":
       value = attackDamageBonusEval(change.value, actor)
@@ -421,22 +431,22 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.weapon.attacks":
       value = attackDamageBonusEval(change.value, actor)
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
-      ["mwak", "rwak"].forEach(atType => actor.data.data.bonuses[atType].attack += value);
+      weaponAttacks.forEach(atType => actor.data.data.bonuses[atType].attack += value);
       return true;
     case "data.bonuses.All-Damage":
       value = attackDamageBonusEval(change.value, actor)
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
-      ["mwak", "rwak", "msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].damage += value);
+      attackTypes.forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.weapon.damage":
       value = attackDamageBonusEval(change.value, actor)
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
-      ["mwak", "rwak"].forEach(atType => actor.data.data.bonuses[atType].damage += value);
+      weaponAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.spell.damage":
       value = attackDamageBonusEval(change.value, actor)
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
-      ["msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].damage += value);
+      spellAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.mwak.attack":
     case "data.bonuses.mwak.damage":
@@ -444,6 +454,10 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.rwak.damage":
     case "data.bonuses.msak.attack":
     case "data.bonuses.msak.damage":
+    case "data.bonuses.mpak.attack":
+    case "data.bonuses.mpak.damage":
+    case "data.bonuses.rpak.attack":
+    case "data.bonuses.rpak.damage":
     case "data.bonuses.rsak.attack":
     case "data.bonuses.rsak.damage":
     case "data.bonuses.abilities.save":
@@ -482,8 +496,9 @@ function daeCustomEffect(actor, change) {
       data.attributes.prof += value;
 
       // update ability mods/saves if proficient
+      const spellField = game.system.id === "sw5e" ? "power" : "spell"
       //@ts-ignore
-      const dcBonus = Number.isNumeric(data.bonuses.spell.dc) ? parseInt(data.bonuses.spell.dc) : 0;
+      const dcBonus = Number.isNumeric(data.bonuses[spellField].dc) ? parseInt(data.bonuses[spellField].dc) : 0;
       for (let [id, abl] of Object.entries(data.abilities)) {
         //@ts-ignore
         abl.prof += (abl.proficient || 0) * value;
@@ -493,7 +508,14 @@ function daeCustomEffect(actor, change) {
         abl.dc += value;
       }
       // update spell dcs
-      actor._computeSpellcastingDC(actor.data);
+      switch (game.system.id) {
+        case "sw5e": 
+          actor._computePowercastingDC(actor.data);
+          break;
+        case "dnd5e":
+          actor._computeSpellcastingDC(actor.data);
+          break;
+      }
       const bonuses = getProperty(data, "bonuses.abilities") || {};
       if (actor.data.type === "vehicle") return true;
 
@@ -1071,4 +1093,5 @@ export function fetchParams() {
     CONFIG.ActiveEffect.sheetClass = ActiveEffectConfig;
   }
   expireRealTime = game.settings.get("dae", "expireRealTime");
+  displayTraits = game.settings.get("dae", "displayTraits");
 }
