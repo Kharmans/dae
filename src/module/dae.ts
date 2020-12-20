@@ -3,6 +3,7 @@ import { warn, error, debug, setDebugLevel, daeAlternateStatus } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { procStatusEffects } from "./statusEffects";
+import { updatePatches } from "./patching";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -622,6 +623,7 @@ async function daeMacro(enable, actor, effects) {
   debug("dae macro ", enable, actor, effects)
   if (!Array.isArray(effects)) effects = [effects];
   effects.forEach(async effect=>  {
+    //@ts-ignore
     let item = (effect.origin && await fromUuid(effect.origin)) || null;
     effect.changes?.forEach(async change => {
       if (!["macro.execute", "macro.itemMacro"].includes(change.key)) return;
@@ -1094,4 +1096,5 @@ export function fetchParams() {
   }
   expireRealTime = game.settings.get("dae", "expireRealTime");
   displayTraits = game.settings.get("dae", "displayTraits");
+  updatePatches();
 }

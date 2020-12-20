@@ -134,6 +134,8 @@ Hooks.once('setup', function() {
 /* ------------------------------------ */
 
 Hooks.once("ready", () => {
+  if (!game.modules.get("lib-wrapper")?.active && game.user.isGM)
+    ui.notifications.warn("The 'Dynamic effects using Active Effects' module recommends to install and activate the 'libWrapper' module.");
 })
 
 export function confirmAction(toCheck: boolean, confirmFunction) {
