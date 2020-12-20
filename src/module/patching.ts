@@ -181,7 +181,7 @@ async function deleteEmbeddedEntityToken(embeddedName, data, options={}) {
       daeDeleteActiveEffectActions(this, effects)
     }
   }
-  return oldActorTokenHelpersDeleteEmbeddedEntity.bind(this)(embeddedName, data, options);
+  return await oldActorTokenHelpersDeleteEmbeddedEntity.bind(this)(embeddedName, data, options);
 }
 
 var d20Roll;
