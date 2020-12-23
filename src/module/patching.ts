@@ -3,10 +3,7 @@ import { useAbilitySave, daeCreateActiveEffectActions, daeDeleteActiveEffectActi
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error,  } from "../dae";
 
-var oldRollAbilitySave;
-
 function rollAbilitySave(abilityId, options={event, fastForward:null, advantage:null, disadvantage:null}) {
-  if (!useAbilitySave) return oldRollAbilitySave.bind(this)(abilityId, options);
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
 
@@ -54,7 +51,6 @@ function rollAbilitySave(abilityId, options={event, fastForward:null, advantage:
   return d20Roll(rollData);
 }
 
-var oldRollAbilityTest;
 function rollAbilityTest(abilityId, options={parts: []}) {
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
@@ -103,7 +99,6 @@ function rollAbilityTest(abilityId, options={parts: []}) {
   return d20Roll(rollData);
 }
 
-var oldRollSkill;
 function rollSkill(skillId, options={parts: []}) {
   const skl = this.data.data.skills[skillId];
   const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
@@ -150,12 +145,10 @@ function rollSkill(skillId, options={parts: []}) {
   return d20Roll(rollData);
 }
 
-var oldActorTokenHelpersDeleteEmbeddedEntity;
-var oldActorTokenHelpersCreateEmbeddedEntity;
-
 //TODO: when this Hooks.on("createActiveEffect") workds for tokens
-async function createEmbeddedEntityToken(embeddedName, data, options={}) {
-  let created = await oldActorTokenHelpersCreateEmbeddedEntity.bind(this)(embeddedName, data, options);
+async function createEmbeddedEntityToken(wrapped, ...args) {
+  let [ embeddedName, data, options={} ] = args;
+  let created = await wrapped(...args);
   if (embeddedName === "ActiveEffect") {
     debug("Token: create Active Effect", embeddedName, data, options);
     data = data instanceof Array ? data : [data];
@@ -168,7 +161,8 @@ async function createEmbeddedEntityToken(embeddedName, data, options={}) {
 }
 
 //TODO: when this Hooks.on("deleteActiveEffect") workds for tokens
-async function deleteEmbeddedEntityToken(embeddedName, data, options={}) {
+async function deleteEmbeddedEntityToken(wrapped, ...args) {
+    let [ embeddedName, data, options={} ] = args;
     if (embeddedName === "ActiveEffect") {
     debug("Token: delete Active Effect", embeddedName, data, options);
     data = data instanceof Array ? data : [data];
@@ -181,35 +175,44 @@ async function deleteEmbeddedEntityToken(embeddedName, data, options={}) {
       daeDeleteActiveEffectActions(this, effects)
     }
   }
-  return oldActorTokenHelpersDeleteEmbeddedEntity.bind(this)(embeddedName, data, options);
+  return await wrapped(...args);
 }
 
 var d20Roll;
 var dice;
-var actorSheetFlags;
 
 export async function patchingInitSetup() {
-  
   //TODO remove this when token create active effects calls a hook
-  log("Patching ActorTokenHelpers deleteEmbeddedEntity")
+  log("Patching ActorTokenHelpers.prototype.deleteEmbeddedEntity");
+  log("Patching ActorTokenHelpers.prototype.createEmbeddedEntity");
   //@ts-ignore
-  oldActorTokenHelpersDeleteEmbeddedEntity = ActorTokenHelpers.prototype.deleteEmbeddedEntity;
-  //@ts-ignore
-  ActorTokenHelpers.prototype.deleteEmbeddedEntity = deleteEmbeddedEntityToken;
-  log("Patching ActorTokenHelpers createEmbeddedEntity")
-  //@ts-ignore
-  oldActorTokenHelpersCreateEmbeddedEntity = ActorTokenHelpers.prototype.createEmbeddedEntity;
-  //@ts-ignore
-  ActorTokenHelpers.prototype.createEmbeddedEntity = createEmbeddedEntityToken;
+  if (game.modules.get("lib-wrapper")?.active) {
+    //@ts-ignore
+    libWrapper.register("dae", "ActorTokenHelpers.prototype.deleteEmbeddedEntity", deleteEmbeddedEntityToken, "WRAPPER");
+    //@ts-ignore
+    libWrapper.register("dae", "ActorTokenHelpers.prototype.createEmbeddedEntity", createEmbeddedEntityToken, "WRAPPER");
+  } else {
+    //@ts-ignore
+    const oldActorTokenHelpersDeleteEmbeddedEntity = ActorTokenHelpers.prototype.deleteEmbeddedEntity;
+    //@ts-ignore
+    ActorTokenHelpers.prototype.deleteEmbeddedEntity = function () {
+      return deleteEmbeddedEntityToken.call(this, oldActorTokenHelpersDeleteEmbeddedEntity.bind(this), ...arguments);
+    };
+    //@ts-ignore
+    const oldActorTokenHelpersCreateEmbeddedEntity = ActorTokenHelpers.prototype.createEmbeddedEntity;
+    //@ts-ignore
+    ActorTokenHelpers.prototype.createEmbeddedEntity = function () {
+      return createEmbeddedEntityToken.call(this, oldActorTokenHelpersCreateEmbeddedEntity.bind(this), ...arguments);
+    };
+  }
   
   console.warn("system is ", game.system)
     //@ts-ignore
   if (game.system.id === "dnd5e") {
     //@ts-ignore
     dice = game.dnd5e.dice;
-    //@ts-ignore
-    actorSheetFlags = game.dnd5e.applications.ActorSheetFlags;
   }
+    //@ts-ignore
   else if (game.system.id === "sw5e") {
     //@ts-ignore
     dice = game.sw5e.dice;
@@ -220,54 +223,129 @@ export async function patchingInitSetup() {
 
 // Allow limited recursion of the formula replace function for things like
 // bonuses.heal.damage in spell formulas.
-var oldReplaceFormulaData;
-// function replaceFormulaData(formula, data, {missing = "", warn = false}) {
-function replaceFormulaData(formula, data, {missing = "", warn=false}={missing: "", warn: false}) {
+function replaceFormulaData(wrapped, formula, ...args) {
   let result = formula;
   const maxIterations = 3;
   for (let i = 0; i < maxIterations; i++) {
     if (!result.includes("@")) break;
-    result = oldReplaceFormulaData.bind(this)(result, data, {missing, warn});
+    result = wrapped(result, ...args);
   }
   return result;
 }
 
-export function patchingSetup() {
-  if (["dnd5e", "sw5e"].includes(game.system.id)) {
-    log("Patching actor.rollAbilitySave: override default save is ", useAbilitySave)
-    //@ts-ignore
-    oldRollAbilitySave = CONFIG.Actor.entityClass.prototype.rollAbilitySave;
-    //@ts-ignore
-    oldRollAbilityTest = CONFIG.Actor.entityClass.prototype.rollAbilityTest;
-    //@ts-ignore
-    oldRollSkill = CONFIG.Actor.entityClass.prototype.rollSkill;
-    if (useAbilitySave && d20Roll) {
-      //@ts-ignore
-      // CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
-      //@ts-ignore
-      CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;
-      //@ts-ignore
-      //CONFIG.Actor.entityClass.prototype.rollSkill = rollSkill;  
-    }
-  }
-  //@ts-ignore
-  log("dae | Patching Roll.replaceFormulaData");
-  //@ts-ignore
-  oldReplaceFormulaData = Roll.replaceFormulaData;
-  //@ts-ignore
-  Roll.replaceFormulaData = replaceFormulaData;
-
-
+export function updatePatches() {
+  patchAbilitySave();
+  patchSpecialTraits();
 };
+
+var abilitySavePatched = false;
+
+function patchAbilitySave() {
+  if (!d20Roll)
+    return;
+  //@ts-ignore
+  if (["dnd5e", "sw5e"].includes(game.system.id)) {
+    log(`Patching CONFIG.Actor.entityClass.prototype.rollAbilitySave (override=${useAbilitySave})`);
+    if (!useAbilitySave) {
+      if (abilitySavePatched) {
+        //@ts-ignore
+        if (game.modules.get("lib-wrapper")?.active) {
+          //@ts-ignore
+          // libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilityTest");
+          //@ts-ignore
+          libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave");
+          //@ts-ignore
+          // libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollSkill");
+        } else {
+          window.location.reload();
+        }
+      }
+    } else {
+      if (!abilitySavePatched) {
+        //@ts-ignore
+        if (game.modules.get("lib-wrapper")?.active) {
+          //@ts-ignore
+          // libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilityTest", rollAbilityTest, "OVERRIDE");
+          //@ts-ignore
+          libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave", rollAbilitySave, "OVERRIDE");
+          //@ts-ignore
+          // libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollSkill", rollSkill, "OVERRIDE");
+        } else {
+          //@ts-ignore
+          // CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
+          //@ts-ignore
+          CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;
+          //@ts-ignore
+          // CONFIG.Actor.entityClass.prototype.rollSkill = rollSkill;
+        }
+      }
+    }
+    abilitySavePatched = useAbilitySave;
+  }
+};
+
+export function patchingSetup() {
+  patchAbilitySave();
+
+  //@ts-ignore
+  log("Patching Roll.replaceFormulaData");
+  //@ts-ignore
+  if (game.modules.get("lib-wrapper")?.active) {
+    //@ts-ignore
+    libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
+  } else {
+    //@ts-ignore
+    const oldReplaceFormulaData = Roll.replaceFormulaData;
+    //@ts-ignore
+    Roll.replaceFormulaData = function () {
+      return replaceFormulaData.call(this, oldReplaceFormulaData.bind(this), ...arguments);
+    };
+  }
+};
+
+var specialTraitsPatched = false;
 
 // Patch for actor-flags app to display settings including active effects
 export function patchSpecialTraits() {
-  if (!displayTraits) return;
+  //@ts-ignore
   if (["dnd5e"].includes(game.system.id) && isNewerVersion(game.system.data.version, "1.1.0")) {
-    //@ts-ignore
-    actorSheetFlags.prototype._updateObject = _updateObject;
-    actorSheetFlags.prototype._getFlags = _getFlags;
-    actorSheetFlags.prototype._getBonuses = _getBonuses;
+    log(`Patching game.dnd5e.applications.ActorSheetFlags.prototype._updateObject (override=${displayTraits})`);
+    log(`Patching game.dnd5e.applications.ActorSheetFlags.prototype._getFlags (override=${displayTraits})`);
+    log(`Patching game.dnd5e.applications.ActorSheetFlags.prototype._getBonuses (override=${displayTraits})`);
+    if (!displayTraits) {
+      if (specialTraitsPatched) {
+        //@ts-ignore
+        if (game.modules.get("lib-wrapper")?.active) {
+          //@ts-ignore
+          libWrapper.unregister("dae", "game.dnd5e.applications.ActorSheetFlags.prototype._updateObject");
+          //@ts-ignore
+          libWrapper.unregister("dae", "game.dnd5e.applications.ActorSheetFlags.prototype._getFlags");
+          //@ts-ignore
+          libWrapper.unregister("dae", "game.dnd5e.applications.ActorSheetFlags.prototype._getBonuses");
+        } else {
+          window.location.reload();
+        }
+      }
+    } else {
+      if (!specialTraitsPatched) {
+        //@ts-ignore
+        if (game.modules.get("lib-wrapper")?.active) {
+          //@ts-ignore
+          libWrapper.register("dae", "game.dnd5e.applications.ActorSheetFlags.prototype._updateObject", _updateObject, "OVERRIDE");
+          //@ts-ignore
+          libWrapper.register("dae", "game.dnd5e.applications.ActorSheetFlags.prototype._getFlags", _getFlags, "OVERRIDE");
+          //@ts-ignore
+          libWrapper.register("dae", "game.dnd5e.applications.ActorSheetFlags.prototype._getBonuses", _getBonuses, "OVERRIDE");
+        } else {
+          //@ts-ignore
+          const actorSheetFlags = game.dnd5e.applications.ActorSheetFlags;
+          actorSheetFlags.prototype._updateObject = _updateObject;
+          actorSheetFlags.prototype._getFlags = _getFlags;
+          actorSheetFlags.prototype._getBonuses = _getBonuses;
+        }
+      }
+    }
+    specialTraitsPatched = displayTraits;
   }
 }
 
