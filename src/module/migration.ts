@@ -247,6 +247,11 @@ export async function fixupActors() {
     });
   }
 
+  export async function migrateAllNPCDAESRD(includeSRD = false) {
+    game.actors.filter(a=>a.data.type !== "character").forEach(async a => {
+      await migrateActorDAESRD(a, includeSRD);
+    });
+  }
   export async function migrateActorDAESRD(actor, includeSRD = false) {
     if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
       ui.notifications.warn("DAE SRD Module not active");
@@ -304,6 +309,7 @@ export async function fixupActors() {
     })
     let removeItems = actor.items.map(i=> i.id);
     await actor.deleteOwnedItem(removeItems);
+    await actor.deleteEmbeddedEntity("ActiveEffect", actor.effects.map(ae=>ae.id))
     await actor.createOwnedItem(replaceItems)
     console.warn(actor.name, "replaced ", count, " out of ", replaceItems.length,  " items from the DAE SRD");
   }

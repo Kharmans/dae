@@ -16,7 +16,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { GMAction, GMActionMessage } from './module/GMAction';
-import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems, migrateActorDAESRD, migrateAllActorsDAESRD } from './module/migration';
+import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -59,6 +59,8 @@ Hooks.once('init', async function() {
 
 export let daeSpecialDurations;
 Hooks.once('ready', async function () {
+  if (!["dnd5e", "sw5e"].includes(game.system.id)) return;
+
   debug("ready setup actions")
   daeReadyActions();
   // setupDAEMacros();
@@ -89,6 +91,7 @@ Hooks.once('ready', async function () {
 /* Setup module							*/
 /* ------------------------------------ */
 Hooks.once('setup', function() {
+  if (!["dnd5e", "sw5e"].includes(game.system.id)) return;
 	// Do anything after initialization but before
   // ready
   debug("setup actions")
@@ -126,6 +129,8 @@ Hooks.once('setup', function() {
     getFlag: getFlag,
     migrateActorDAESRD: migrateActorDAESRD,
     migrateAllActorsDAESRD: migrateAllActorsDAESRD,
+    migrateAllNPCDAESRD: migrateAllNPCDAESRD
+    
   }
 });
 
@@ -134,6 +139,7 @@ Hooks.once('setup', function() {
 /* ------------------------------------ */
 
 Hooks.once("ready", () => {
+  if (!["dnd5e", "sw5e"].includes(game.system.id)) return;
   if (!game.modules.get("lib-wrapper")?.active && game.user.isGM)
     ui.notifications.warn("The 'Dynamic effects using Active Effects' module recommends to install and activate the 'libWrapper' module.");
 })

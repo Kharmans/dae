@@ -321,7 +321,6 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       .filter(c => {return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined)})
       .map(c => {
         c = duplicate(c);
-
         c.effect = e;
         c.priority = c.priority ?? (c.mode * 10);
         return c;
@@ -465,7 +464,7 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.abilities.check":
     case "data.bonuses.abilities.skill":
       // TODO: remove if fixed in core
-      const result = attackDamageBonusEval(change.value, actor)
+      const result = attackDamageBonusEval(change.value, actor);
       value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
       setProperty(actor.data, change.key, current + value);
       return true;
@@ -885,7 +884,7 @@ export function createArmorEffect(actor, itemData) {
   const origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
   // const origin = actor.items.get(itemData._id).uuid;
   itemData.effects = itemData.effects?.filter(efData => !efData.flags.dae?.armorEffect) || [];
-  switch(itemData.data.armor.type) {
+  switch(itemData.data.armor?.type) {
     case "natural":
       setProperty(itemData, "flags.dae.alwaysActive", true);
       //@ts-ignore
@@ -931,7 +930,7 @@ export function generateArmorEffect(itemData, origin, armorData) {
 
 function armorEffectFromFormula(formula, mode, itemData, origin) {
   let label = `AC${itemData.data.armor.type === "shield" ? "+" : "="}${itemData.data.armor.value}`;
-  if (["light", "medium"].includes(itemData.data.armor.type)) label += "+dex.mod";
+  if (["light", "medium"].includes(itemData.data.armor?.type)) label += "+dex.mod";
   return {
     label,
     icon: itemData.img,
