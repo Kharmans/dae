@@ -1,7 +1,12 @@
+0.2.31  
+Fix for data.bonuses.weapon.attack not working.
+updated ja.json thanks @touge
+
 0.2.30 
 fix for creating new equipment on character sheet throwing an error.
 Incorporated libwrapper thanks dev7355608
 [BREAKING] Change module.json to work with dnd5e/sw5e only, due to silent incompatibilities with other systems. If you want others added let me know.
+
 0.2.29
 * Interim solution to display post active effects values in special traits page. This will last only unitl there is a dnd5e core solution to seeing what the post active effect application bonsues/flags are. Enable via config setting, requires reload.
 * update ja.json. Thans @touge

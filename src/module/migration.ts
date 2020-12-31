@@ -226,6 +226,7 @@ export async function fixupActors() {
   var dndSRDSpellsPack;
   var dndSRDclassesPack;
   var dndSRDClassfeaturesPack;
+  var dndSRDMonsterfeaturesPack;
 
   export async function loadPacks() {
     if (packsLoaded) return;
@@ -237,7 +238,8 @@ export async function fixupActors() {
     dndSRDItemsPack = await game.packs.get("dnd5e.items").getContent();
     dndSRDSpellsPack = await game.packs.get("dnd5e.spells").getContent();
     dndSRDclassesPack = await game.packs.get("dnd5e.classes").getContent();
-    dndSRDClassfeaturesPack = await game.packs.get("dnd5e.classfeatures").getContent();
+    dndSRDMonsterfeaturesPack = await game.packs.get("dnd5e.monsterfeatures")?.getContent();
+    dndSRDClassfeaturesPack = await game.packs.get("dnd5e.classfeatures")?.getContent();
     packsLoaded = true;
   }
 
@@ -265,7 +267,8 @@ export async function fixupActors() {
       let replaceData;
       switch(itemData.type) {
         case "feat":
-          if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, featsPack, dndSRDclassesPack, dndSRDClassfeaturesPack]);
+          let srdFeats = (actor?.data?.type === "npc") ? dndSRDMonsterfeaturesPack : dndSRDClassfeaturesPack;
+          if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, featsPack, dndSRDclassesPack, srdFeats]);
           else replaceData = findDAEItem(itemData, [midiPack, featsPack]);
           if (replaceData) console.warn("migrating", actor.name, replaceData.name, replaceData)
           if (replaceData) {

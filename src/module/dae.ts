@@ -370,7 +370,6 @@ function daeCustomEffect(actor, change) {
   let weaponAttacks = ["mwak", "rwak"];
   if (game.system.id === "sw5e") spellAttacks = ["mpak", "rpak"];
   let attackTypes = weaponAttacks.concat(spellAttacks);
-
   switch(change.key) {
     case "data.traits.di.all":
     case "data.traits.dr.all":
@@ -413,7 +412,7 @@ function daeCustomEffect(actor, change) {
     case "data.traits.armorProf.all":
       setProperty(actor.data, "data.traits.armorProf.value", Object.keys(CONFIG.DND5E.armorProficiencies))
       return true;
-    case "data.traits.weaponProf.value":
+    case "data.traits.weaponProf.value": 
       return doCustomValue(actor, current, change, Object.keys(CONFIG.DND5E.weaponProficiencies))
     case "data.traits.weaponProf.all":
       setProperty(actor.data, "data.traits.weaponProf.value", Object.keys(CONFIG.DND5E.weaponProficiencies))
@@ -428,7 +427,7 @@ function daeCustomEffect(actor, change) {
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       ["msak", "rsak"].forEach(atType => actor.data.data.bonuses[atType].attack += value);
       return true;
-    case "data.bonuses.weapon.attacks":
+    case "data.bonuses.weapon.attack":
       value = attackDamageBonusEval(change.value, actor)
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       weaponAttacks.forEach(atType => actor.data.data.bonuses[atType].attack += value);
@@ -594,6 +593,9 @@ function prepareData() {
     }
   }
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj, ValidSpec.baseSpecsObj, true);
+  //TODO find another way to tdo this
+  this._prepareOwnedItems(this.data.items)
+
   debug("prepare data: after passes", this.data);
 }
 
@@ -633,7 +635,6 @@ async function daeMacro(enable, actor, effects) {
       if (change.key === "macro.execute") {
         const macro = game.macros.getName(change.value[0]);
         if (!macro) {
-          console.error(`No macro ${change.value[0]} found`);
           //TODO localize this
           ui.notifications.warn(`No macro ${change.value[0]} found`)
         }
