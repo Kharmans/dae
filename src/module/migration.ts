@@ -210,7 +210,7 @@ export async function fixupActors() {
 
   function findDAEItem(itemData, packs) {
     for (let pack of packs) {
-      let matchItem = pack.find(pd => pd.name === itemData.name);
+      let matchItem = pack.find(pd => pd.name === itemData.name && pd.type === itemData.type);
       if (matchItem) return matchItem;
     }
     return undefined;
