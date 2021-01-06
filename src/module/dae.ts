@@ -138,8 +138,8 @@ export class ValidSpec {
         // "flags.midi-qol.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.heal.damage": ["", -1],
         "data.bonuses.heal.attack": ["", -1],
-        "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
+        "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM]
+        // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
       /* try moving this to basevalues pass 
