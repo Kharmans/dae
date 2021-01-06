@@ -324,11 +324,9 @@ export function myExecuteMacro(macroName: string, ...args) {
 export async function setupDAEMacros() {
   if (game.user.isGM) {
     var macro;
-    console.error("Deleting macros");
     ["dae.1Hit", "dae.1Action", "dae.turnEnd", "dae.turnStart"].forEach(macroName => {
       const macros = game.macros.filter(m=> m.name === macroName);
       macros.forEach(m => {
-        console.error("Deleting ", m.name, m.id)
         // m.delete()
       })
     });

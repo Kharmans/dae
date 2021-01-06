@@ -1,7 +1,12 @@
+0.2.32
+* Added it.json thanks @Simone [UTC +1]#6710 
+* Fix for token magic effects on unlinked tokens  
+* flags.dae custom field format remains flagname values, but values are now evaluated.
+  So flags.dae CUSTOM test @abilities.dex.mod will set the flag to the value of the modifier.
 0.2.31  
 Fix for data.bonuses.weapon.attack not working.
 updated ja.json thanks @touge
-
+cd ../midi-q
 0.2.30 
 fix for creating new equipment on character sheet throwing an error.
 Incorporated libwrapper thanks dev7355608

@@ -138,7 +138,8 @@ export class ValidSpec {
         // "flags.midi-qol.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.heal.damage": ["", -1],
         "data.bonuses.heal.attack": ["", -1],
-        "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM]
+        "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
       /* try moving this to basevalues pass 
@@ -549,7 +550,7 @@ function daeCustomEffect(actor, change) {
       return true;
     case "flags.dae": 
       let list = change.value.split(" ");
-      setProperty(actor.data, `flags.dae.${list[0]}`, list.splice(1).join(" "));
+      setProperty(actor.data, `flags.dae.${list[0]}`, new Roll(list.splice(1).join(" "), daeRollData(actor)).roll().total);
       return true;
     }
 }

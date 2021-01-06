@@ -23,7 +23,6 @@ export function procStatusEffects(enable: boolean) {
       let cse = CONFIG.statusEffects.find(cse => cse?.id === se.id);
       if (cse) mergeObject(cse, se, {inplace:true, overwrite: true, insertKeys: true});
       else {
-        console.error("Pushing ", se);
         CONFIG.statusEffects.push(se);
       }
     })

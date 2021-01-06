@@ -186,11 +186,12 @@ export async function patchingInitSetup() {
   log("Patching ActorTokenHelpers.prototype.deleteEmbeddedEntity");
   log("Patching ActorTokenHelpers.prototype.createEmbeddedEntity");
   //@ts-ignore
-  if (game.modules.get("lib-wrapper")?.active) {
+  if (game.modules.get("lib-wrapper")?.active && false) {
     //@ts-ignore
     libWrapper.register("dae", "ActorTokenHelpers.prototype.deleteEmbeddedEntity", deleteEmbeddedEntityToken, "WRAPPER");
     //@ts-ignore
     libWrapper.register("dae", "ActorTokenHelpers.prototype.createEmbeddedEntity", createEmbeddedEntityToken, "WRAPPER");
+    
   } else {
     //@ts-ignore
     const oldActorTokenHelpersDeleteEmbeddedEntity = ActorTokenHelpers.prototype.deleteEmbeddedEntity;
