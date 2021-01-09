@@ -25,6 +25,7 @@ export var ehnanceStatusEffects;
 export var expireRealTime
 export var daeActionTypeKeys;
 export var displayTraits;
+export var lookupCUB;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -314,9 +315,19 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
   const overrides = {};
   if (!this.effects || this.effects.size === 0)  return this.overrides || {};
   // Organize non-disabled effects by their application priority
-  const changes = this.effects.reduce((changes, e) => {
+  const changes = this.effects.reduce((changes, effect) => {
+    var e = effect;
     // e.data.disabled = effectDisabled(this, e.data)
-    if ( e.data.disabled ) return changes;
+    if ( effect.data.disabled ) return changes;
+    if (cubActive && e.data.label.startsWith("CUB:")) {
+      const cubConditionName = effect.data.label.split(":").splice(1).join(":");
+      const cubCondition = game.cub.getCondition(cubConditionName)
+      if (cubCondition?.activeEffect) {
+        e = CONFIG.ActiveEffect.entityClass.create(cubCondition.activeEffect);
+        // e.data = cubCondition.activeEffect;
+      }
+    }
+
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(e.data.changes
       .filter(c => {return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined)})
@@ -550,7 +561,10 @@ function daeCustomEffect(actor, change) {
       return true;
     case "flags.dae": 
       let list = change.value.split(" ");
-      setProperty(actor.data, `flags.dae.${list[0]}`, new Roll(list.splice(1).join(" "), daeRollData(actor)).roll().total);
+      let flagName = list[0];
+      value = new Roll(list.splice(1).join(" "), daeRollData(actor)).roll().total
+      setProperty(actor.data, `flags.dae.${flagName}`, value);
+      setProperty(actor.data.data, `flags.dae.${flagName}`, value);
       return true;
     }
 }
@@ -595,7 +609,7 @@ function prepareData() {
   }
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj, ValidSpec.baseSpecsObj, true);
   //TODO find another way to tdo this
-  this._prepareOwnedItems(this.data.items)
+  // this._prepareOwnedItems(this.data.items)
 
   debug("prepare data: after passes", this.data);
 }
@@ -1097,5 +1111,6 @@ export function fetchParams() {
   }
   expireRealTime = game.settings.get("dae", "expireRealTime");
   displayTraits = game.settings.get("dae", "displayTraits");
+  lookupCUB = game.settings.get("dae", "lookupCUB");
   updatePatches();
 }

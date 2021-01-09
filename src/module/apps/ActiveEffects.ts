@@ -1,5 +1,5 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { playersCanSeeEffects, ValidSpec, cubActive, confirmDelete, aboutTimeInstalled } from "../dae"
+import { playersCanSeeEffects, ValidSpec, cubActive, confirmDelete, aboutTimeInstalled, lookupCUB } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 import { filters } from "pixi.js";
@@ -95,7 +95,11 @@ getData() {
 
   let efl = CONFIG.statusEffects.map(se => {return {"id": se.id, "label": i18n(se.label)}}).sort((a,b) => a.label < b.label ? -1 : 1);
   this.effectList = {"new": "new"}
-  efl.forEach(se => this.effectList[se.id] = se.label);
+  efl.forEach(se => {
+    if (cubActive && lookupCUB && game.cub.getCondition(se.label)) {
+      this.effectList[se.id] = "CUB:"+ se.label;
+    } else this.effectList[se.id] = se.label;
+  });
 
   const isItem = this.object.__proto__.constructor.name === CONFIG.Item.entityClass.name;
   let data = {
@@ -183,15 +187,22 @@ activateListeners(html) {
   html.find('.effect-add').click(async ev => {
     const effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
     let AEDATA;
-    if (effect_name === "new")
-    //@ts-ignore
-    AEDATA = {
-      label: "New Active Effect",
-      icon: this.object.img || "icons/svg/mystery-man.svg",
-      changes: [],
-      transfer: false,
-    };
-    else {
+    if (effect_name === "new") {
+      //@ts-ignore
+      AEDATA = {
+        label: "New Active Effect",
+        icon: this.object.img || "icons/svg/mystery-man.svg",
+        changes: [],
+        transfer: false,
+      }
+    } else if (cubActive && lookupCUB && game.cub.getCondition(effect_name.replace("CUB:",""))) {
+      AEDATA = {
+        label: effect_name,
+        icon: game.cub.getCondition(effect_name.replace("CUB:","")).activeEffect?.icon || "icons/svg/mystery-man.svg",
+        changes: [],
+        transfer: false
+      };
+    } else {
       let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
       AEDATA = CONFIG.statusEffects.find(se => se.id === id);
       AEDATA.label = i18n(AEDATA.label);

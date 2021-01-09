@@ -1,3 +1,8 @@
+0.2.33
+* Change to flags.DAE CUSTOM flagName rollExpression. Values set this way are available to other roll expressions via @flags.dae.flagName, for example in attack/damage rolls or whatever.
+* Support for CUB: active effects. If the effect label is CUB:conditionName (e.g. CUB:Blinded) the active effect will be loaded from CUB during perpareData, the CUB condition activeEffect will REPLACE ALLL data in the active effect (don't put other changes with the CUB:condition). The link between cub conditions and DAE will be "live", except that changing CUB conditions does not trigger prepareData you will need to edit the actor or reload for changes made to cub conditons to take effect.
+* New config flag. If lookup CUB is set the DAE create effect for CUB conditions will create a lookup effect.
+* Removed extra call to _prepareOwnedItems in dae prepareData as it caused some problems. This will break active effects that change item properties until I can find a fix.
 0.2.32
 * Added it.json thanks @Simone [UTC +1]#6710 
 * Fix for token magic effects on unlinked tokens  
