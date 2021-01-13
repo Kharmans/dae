@@ -254,7 +254,7 @@
     "dae.turnEnd": "End next turn",
     "dae.displayTraits.Name": "Include active effects in special traits display",
     "dae.displayTraits.Hint": "Special traits display includes active effects changes. Entered values are assumed to be to the pre-active effect value",
-    "dae.lookupCUB.Name": "Configure creating Condition active effects",
-    "dae.lookupCUB.Hint": "If true CUB conditions are referenced as CUB:condition to be looked up during prepareData. If false condition active effect is copied when the effect is created"
+    "dae.lookupCUB.Name": "Add runtime lookup CUB condition active effects",
+    "dae.lookupCUB.Hint": "If true CUB conditions referenced as CUB:condition active effects are copied each time prepareData is called. If false condition active effect is copied when the effect is created"
 }
 

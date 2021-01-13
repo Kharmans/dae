@@ -272,6 +272,8 @@ export async function fixupActors() {
           else replaceData = findDAEItem(itemData, [midiPack, featsPack]);
           if (replaceData) console.warn("migrating", actor.name, replaceData.name, replaceData)
           if (replaceData) {
+            setProperty(replaceData.data, "equipped", itemData.data.equipped)
+            setProperty(replaceData.data, "attunement", itemData.data.attunement)
             setProperty(replaceData.data.flags, "dae.migrated", true);
             replaceItems.push(replaceData.data);
             count++;
@@ -283,6 +285,7 @@ export async function fixupActors() {
           else replaceData = findDAEItem(itemData, [midiPack, spellPack]);
           if (replaceData) console.warn("migrating ", actor.name, replaceData.name, replaceData)
           if (replaceData) {
+            setProperty(replaceData.data, "prepared", itemData.data.prepared)
             setProperty(replaceData.data.flags, "dae.migrated", true);
             replaceItems.push(replaceData.data);
             count++;
@@ -299,6 +302,8 @@ export async function fixupActors() {
           else replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack]);
           if (replaceData) console.warn("migrated", actor.name, replaceData.name, replaceData)
           if (replaceData) {
+            setProperty(replaceData.data, "data.equipped", itemData.data.equipped)
+            setProperty(replaceData.data, "data.attunement", itemData.data.attunement)
             setProperty(replaceData.data.flags, "dae.migrated", true);
             replaceItems.push(replaceData.data);
             count++;

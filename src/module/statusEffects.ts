@@ -165,14 +165,3 @@ export let DAEStatusEffects = [
     ],
   },
 ];
-
-// sleep? - no condition
-// grappled
-//exhaustion
-// invisible
-/*
-  {
-    id: "petrified",
-    flags: {dae: {statusId:"petrified"}}
-  },
-  */

@@ -96,8 +96,9 @@ getData() {
   let efl = CONFIG.statusEffects.map(se => {return {"id": se.id, "label": i18n(se.label)}}).sort((a,b) => a.label < b.label ? -1 : 1);
   this.effectList = {"new": "new"}
   efl.forEach(se => {
-    if (cubActive && lookupCUB && game.cub.getCondition(se.label)) {
-      this.effectList[se.id] = "CUB:"+ se.label;
+    if (cubActive && game.cub.getCondition(se.label) && se.id.startsWith("combat-utility-belt")) {
+      if (lookupCUB) this.effectList["CUB:"+se.id] = "CUB:"+ se.label;
+      this.effectList[se.id] = se.label + " (CUB)";
     } else this.effectList[se.id] = se.label;
   });
 
@@ -185,7 +186,7 @@ activateListeners(html) {
     new DAEActiveEffectConfig(effect).render(true);
   })
   html.find('.effect-add').click(async ev => {
-    const effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
+    let effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
     let AEDATA;
     if (effect_name === "new") {
       //@ts-ignore
@@ -198,10 +199,12 @@ activateListeners(html) {
     } else if (cubActive && lookupCUB && game.cub.getCondition(effect_name.replace("CUB:",""))) {
       AEDATA = {
         label: effect_name,
-        icon: game.cub.getCondition(effect_name.replace("CUB:","")).activeEffect?.icon || "icons/svg/mystery-man.svg",
+        icon: game.cub.getCondition(effect_name.replace("CUB:","")).activeEffect?.icon || game.cub.getCondition(effect_name.replace("CUB:","")).icon || "icons/svg/mystery-man.svg",
         changes: [],
         transfer: false
       };
+      let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
+      AEDATA["flags.core.statusId"] = id;
     } else {
       let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
       AEDATA = CONFIG.statusEffects.find(se => se.id === id);

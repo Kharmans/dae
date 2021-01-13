@@ -371,16 +371,6 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
       case "year": 
       case "years":return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
       case "inst": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
-      /* TODO remove
-      case "turnStart": return {type: useTurns ? "turns" : "seconds", seconds: 6, rounds: 1, turns: 0};
-      case "turnEnd": return {type: useTurns ? "turns" : "seconds", seconds: 6, rounds: 1, turns: 1};
-      // These have no time based expiry
-      case "isAttacked":
-      case "isDamaged":
-      case "1Action":
-      case "1Attack":
-      case "1Hit": return {type: "seconds", seconds: 3600, rounds: undefined, turns: undefined};
-      */
       default: 
         console.warn("dae | unknown time unit found", itemDuration.units);
         return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
@@ -407,17 +397,6 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
       case "month": return {type: "seconds", seconds: game.Gametime.DTNow().add({"months": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
       case "year": return {type: "seconds", seconds: game.Gametime.DTNow().add({"years": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
       case "inst": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
-      /*
-      case "turnStart": return {type: useTurns ? "turns" : "seconds", seconds: 6, rounds: 1, turns: 0}; // at most 1 round
-      case "turnEnd": return {type: useTurns ? "turns" : "seconds", seconds: 6, rounds: 1, turns: 1}; // at most 1 round + 1 turn
-
-      // These have no time based expiry
-      case "isAttacked":
-      case "isDamaged":
-      case "1Action":
-      case "1Attack":
-      case "1Hit": return {type: "seconds", seconds: 3600, rounds: undefined, turns: undefined};
-      */
       default:
         console.warn("dae | unknown time unit found", itemDuration.units);
         return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};

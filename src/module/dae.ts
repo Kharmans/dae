@@ -571,6 +571,7 @@ function daeCustomEffect(actor, change) {
 
 // Special case handling of (expr)dX
 function attackDamageBonusEval(bonusString, actor) {
+  /*
   if (typeof bonusString === "string") {
     const special = bonusString.match(/\((.*)\)d([0-9]*)/);
     if (special && special.length === 3) {
@@ -583,9 +584,9 @@ function attackDamageBonusEval(bonusString, actor) {
       }
     }
   }
+  */
   return `${bonusString}`;
 }
-
 function doCustomValue(actor, current, change, validValues) {
   if ((current || []).includes(change.value)) return true;
   if (!validValues.includes(change.value)) return true;
@@ -1049,6 +1050,7 @@ export function daeInitActions() {
   tokenizer = new DETokenizeThis({
     shouldTokenize: ['(', ')', ',', '*', '/', '%', '+', '=', '!=', '!', '<', '> ', '<=', '>=', '^']
   });
+
 }
 
 function initActorSheetHook(app, html, data) {

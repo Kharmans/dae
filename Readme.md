@@ -279,6 +279,8 @@ The above discussion applies to non-transfer effects. Transfer effects, which ar
 **macro.itemMacro "macro_name" args**  
 The same as macro.execute, but the item is inspected to find the itemacro stored there. You can create itemMacro macros with the **itemmacro** module.
 
+If you are using macro.itemMacro please make sure you disable the ItemMacro config settings "character sheet hook" and "hookbar hook" or when you use the item the macro will get called bypassing the data settings from midi-qol/dae and won't work. The setting is per player so each player needs to change the setting to disabled.
+
 **macro.tokenMagic "filterName"**
 Will apply the specified token magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.
 
@@ -347,6 +349,19 @@ https://gitlab.com/tposney/about-time
 If the module is installed and active effects can update the actors gm-notes field. A useful place to track info that can't be applied to the character sheet.
 
 https://github.com/syl3r86/gm-notes
+
+### Integration with Combat Utility Belt
+**as of 0.3.50 the integration with Combat Utility Belt has changed.**
+You create an active effect that takes it's changes from CUB via the drop down list in the DAE Active Effects Screen. "new" is pre-selected but you choose various items from that list, including CUB conditions.
+
+CUB conditions are applied in 2 ways:
+If you select condition (CUB) from the drop down list DAE will copy the active effect from CUB into the actor/item. From then on it won't change, any changes you make in condition lab will NOT be reflected in actors who have the condition applied via DAE/midi-qol.
+
+If the active effect name is CUB:condition (e.g. CUB:Blinded) then whenever prepare data is called for the actor DAE will lookup the condition active effect from CUB (CUB has it's own active effect editor and you can create active effects to reflect the condition) and use those changes to affect the actor.
+
+The is a config flag "Include active effects in special traits display" which enables the creation of CUB:effects in the DAE Active Effects screen.
+
+If an active effect is named CUB:condition, the condition is ALWAYS looked up during preparedata whatever the config setting is.
 
 ### Really cool Core functionality that you can use....
 You can add your own custom effects without needing any DAE module changes. Say you want to add the average of str.mod and dex.mod to AC (and DAE does not support it) and the expressions don't work...  

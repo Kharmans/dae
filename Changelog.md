@@ -1,3 +1,10 @@
+0.2.34
+Fixes for CUB: conditions editing. Both runtime lookup via CUB:Condition and effect creation time copy of active effects are supported at the same time.
+* fix for not creating status icon for CUB:Condition.
+* new effect list now displays "CUB:Condtion" for runtime lookup and "Condition (CUB) "for creation time copy effrects.
+* you can disable CUB: via the config setting flag.
+* [BREAKING] migrateActorDAESRD now copies the existing items equipped/attuned flag.
+* Updated Readme.md with a description of Cub conditions and how they work.
 0.2.33
 * Change to flags.DAE CUSTOM flagName rollExpression. Values set this way are available to other roll expressions via @flags.dae.flagName, for example in attack/damage rolls or whatever.
 * Support for CUB: active effects. If the effect label is CUB:conditionName (e.g. CUB:Blinded) the active effect will be loaded from CUB during perpareData, the CUB condition activeEffect will REPLACE ALLL data in the active effect (don't put other changes with the CUB:condition). The link between cub conditions and DAE will be "live", except that changing CUB conditions does not trigger prepareData you will need to edit the actor or reload for changes made to cub conditons to take effect.
@@ -11,7 +18,6 @@
 0.2.31  
 Fix for data.bonuses.weapon.attack not working.
 updated ja.json thanks @touge
-cd ../midi-q
 0.2.30 
 fix for creating new equipment on character sheet throwing an error.
 Incorporated libwrapper thanks dev7355608
