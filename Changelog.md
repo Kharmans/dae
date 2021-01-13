@@ -1,7 +1,7 @@
 0.2.34
 Fixes for CUB: conditions editing. Both runtime lookup via CUB:Condition and effect creation time copy of active effects are supported at the same time.
 * fix for not creating status icon for CUB:Condition.
-* new effect list now displays "CUB:Condtion" for runtime lookup and "Condition (CUB) "for creation time copy effrects.
+* new effect list now displays "CUB:Condtion" for runtime lookup and "Condition (CUB)" for creation time copy effects.
 * you can disable CUB: via the config setting flag.
 * [BREAKING] migrateActorDAESRD now copies the existing items equipped/attuned flag.
 * Updated Readme.md with a description of Cub conditions and how they work.
