@@ -77,15 +77,6 @@ Hooks.once('ready', async function () {
   }
   
   patchSpecialTraits();
-  /*
-  CONFIG.DND5E.timePeriods["1Action"] = i18n("dae.1Action")
-  CONFIG.DND5E.timePeriods["1Attack"] = i18n("dae.1Attack")
-  CONFIG.DND5E.timePeriods["1Hit"] = i18n("dae.1Hit")
-  CONFIG.DND5E.timePeriods["turnStart"] = i18n("dae.turnStart")
-  CONFIG.DND5E.timePeriods["turnEnd"] = i18n("dae.turnEnd")
-  CONFIG.DND5E.timePeriods["isAttacked"] = i18n("dae.isAttacked")
-  CONFIG.DND5E.timePeriods["isDamaged"] = i18n("dae.isDamaged")
-  */
 })
 /* ------------------------------------ */
 /* Setup module							*/

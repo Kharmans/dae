@@ -97,7 +97,7 @@ getData() {
   this.effectList = {"new": "new"}
   efl.forEach(se => {
     if (cubActive && game.cub.getCondition(se.label) && se.id.startsWith("combat-utility-belt")) {
-      if (lookupCUB) this.effectList["CUB:"+se.id] = "CUB:"+ se.label;
+      if (lookupCUB && this.object.__proto__.constructor.name === CONFIG.Item.entityClass.name) this.effectList["CUB:"+se.id] = "CUB:"+ se.label;
       this.effectList[se.id] = se.label + " (CUB)";
     } else this.effectList[se.id] = se.label;
   });
@@ -188,6 +188,7 @@ activateListeners(html) {
   html.find('.effect-add').click(async ev => {
     let effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
     let AEDATA;
+    let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
     if (effect_name === "new") {
       //@ts-ignore
       AEDATA = {
@@ -197,16 +198,11 @@ activateListeners(html) {
         transfer: false,
       }
     } else if (cubActive && lookupCUB && game.cub.getCondition(effect_name.replace("CUB:",""))) {
-      AEDATA = {
-        label: effect_name,
-        icon: game.cub.getCondition(effect_name.replace("CUB:","")).activeEffect?.icon || game.cub.getCondition(effect_name.replace("CUB:","")).icon || "icons/svg/mystery-man.svg",
-        changes: [],
-        transfer: false
-      };
-      let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
+      id = id.replace("CUB:", "");
+      AEDATA = CONFIG.statusEffects.find(se => se.id === id);
+      AEDATA.label = "CUB:" + i18n(AEDATA.label);
       AEDATA["flags.core.statusId"] = id;
     } else {
-      let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
       AEDATA = CONFIG.statusEffects.find(se => se.id === id);
       AEDATA.label = i18n(AEDATA.label);
       //TODO remove this when core has this already?

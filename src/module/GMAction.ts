@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, cubActive } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -256,10 +256,9 @@ let applyTokenMagic = async (tokenId: string, effectId: string, duration: number
 export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId=null) {
   debug("gmaction apply effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   tokenList.forEach(async tid => {
-
     const token = canvas.tokens.get(tid);
     if (token) {
-      let actEffects = duplicate(activeEffects)
+      let actEffects = activeEffects;
       let removeList = [];
       // TODO redo this as a reduce
       actEffects.forEach(newAE => {
@@ -279,6 +278,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
               change.value = change.value.map(f=> f === "@itemCardId" ? itemCardId : f);
               change.value = change.value.map(f=> f === "@target" ? tid : f);
+              change.value = change.value.map(f=> typeof f === "string" && f.startsWith("@@") ? f.slice(1) : f);
             }
           })
          setProperty(ae, "flags.dae.token", tid)
@@ -302,11 +302,6 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               ae.duration.startRound = game.combat?.round;
               ae.duration.startTurn = game.combat?.turn;
             } 
-            /* TODO remove
-            if (["1Hit", "1Attack", "1Action", "turnStart", "turnEnd", "isAttacked", "isDamaged"].includes(itemDuration.units)) {
-              setProperty(ae, "flags.dae.specialDuration", itemDuration.units)
-            }
-            */
           }
         })
         warn("gm action apply effect", token, actEffects)

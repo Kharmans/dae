@@ -1,3 +1,6 @@
+0.2.35
+Support @@... fields in macro arguments, to defer evaluation. Specifically for some edge cases in Active Auras.
+There are too many bugs in the current CUB:Condition code - so I'm going to disable it for now.
 0.2.34
 Fixes for CUB: conditions editing. Both runtime lookup via CUB:Condition and effect creation time copy of active effects are supported at the same time.
 * fix for not creating status icon for CUB:Condition.

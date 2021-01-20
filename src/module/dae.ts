@@ -316,29 +316,18 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
   if (!this.effects || this.effects.size === 0)  return this.overrides || {};
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, effect) => {
-    var e = effect;
     // e.data.disabled = effectDisabled(this, e.data)
     if ( effect.data.disabled ) return changes;
-    if (cubActive && e.data.label.startsWith("CUB:")) {
-      const cubConditionName = effect.data.label.split(":").splice(1).join(":");
-      const cubCondition = game.cub.getCondition(cubConditionName)
-      if (cubCondition?.activeEffect) {
-        e = CONFIG.ActiveEffect.entityClass.create(cubCondition.activeEffect);
-        // e.data = cubCondition.activeEffect;
-      }
-    }
-
     // TODO find a solution for flags.? perhaps just a generic speclist
-    return changes.concat(e.data.changes
+    return changes.concat(effect.data.changes
       .filter(c => {return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined)})
       .map(c => {
         c = duplicate(c);
-        c.effect = e;
+        c.effect = effect;
         c.priority = c.priority ?? (c.mode * 10);
         return c;
       }));
   }, []);
-
   changes.sort((a, b) => a.priority - b.priority);
 
   if (changes.length > 0) debug("Applying change ", this.name, changes)
@@ -601,6 +590,22 @@ function doCustomValue(actor, current, change, validValues) {
 */
 function prepareData() {
   debug("prepare data: before passes", this.name, this._data);
+  if (lookupCUB && this._data.effects) {
+    this._data.effects.forEach(ef => {
+      console.error("testing effect ", ef)
+      const id = ef.flags.core?.statusId || "";
+      if (id.includes("combat-utility-belt")) {
+        console.error("id is ", id)
+        const newChanges = CONFIG.statusEffects.find(se=>se.id === id);
+        if (newChanges) {
+          console.error("changes are ", duplicate(ef.changes), newChanges)
+          ef.changes = duplicate(newChanges.changes);
+          console.error("new changes are ", ef.changes);
+          this.effects = undefined;
+        }
+      }
+    })
+  }
 
   oldPrepareData.bind(this)();
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
@@ -644,10 +649,8 @@ async function daeMacro(enable, actor, effects) {
     let item = (effect.origin && await fromUuid(effect.origin)) || null;
     effect.changes?.forEach(async change => {
       if (!["macro.execute", "macro.itemMacro"].includes(change.key)) return;
-      if (typeof change.value === "string") { //args have not been evaled yet
         let rollData = daeRollData(actor)
         change.value = evalArgs.bind(item)({context: rollData, actor, change, doRolls: true})
-      }
       if (change.key === "macro.execute") {
         const macro = game.macros.getName(change.value[0]);
         if (!macro) {
@@ -729,8 +732,10 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
   switch (change.key) {
     case "macro.itemMacro":
     case "macro.execute":
-      tokenizer.tokenize(change.value, (token) => fields.push(token))
+      if (Array.isArray(change.value)) fields = change.value;
+      else tokenizer.tokenize(change.value, (token) => fields.push(token))
       fields = fields.map(f => {
+        if (typeof f === "string" && f.startsWith("@@")) return f.slice(1);
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
         else if (f === "@item") return this?.data;
@@ -740,10 +745,12 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
         else if (f === "@target") return "@target";
         else if (f === "@itemCardId") return itemCardId;
         else if (f === "@unique") return randomID();
-        else if (f === "@actor") return actor.data;
+        else if (f === "@actor") return duplicate(actor.data);
         else if (f === "@critical") return critical;
         else if (f === "@fumble") return fumble;
         else if (f === "@whisper") return whisper;
+        else if (f === "@change") return change;
+
         else if (typeof f === "string" && f.startsWith("@")) {
           return getProperty(context, f.slice(1))
         }
@@ -755,7 +762,8 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
       } else value = fields;
       break;
     default:
-      tokenizer.tokenize(`${change.value}`, (token) => fields.push(token));
+      if (Array.isArray(change.value)) fields = change.value;
+      else tokenizer.tokenize(change.value, (token) => fields.push(token))
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
@@ -765,7 +773,9 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
         else if (f === "@damage") return damageTotal;
         else if (f === "@target") return "<not-defined>"
         else if (f === "@unique") return randomID();
-        else if (f=== "@actor") return actor.id;
+        else if (f === "@actor") return actor.id;
+        else if (f === "@critical") return critical;
+        else if (f === "@fumble") return fumble;
         else if (doRolls && typeof f === "string" && f.startsWith("@")) {
           return getProperty(context, f.slice(1))
         }
@@ -1114,5 +1124,6 @@ export function fetchParams() {
   expireRealTime = game.settings.get("dae", "expireRealTime");
   displayTraits = game.settings.get("dae", "displayTraits");
   lookupCUB = game.settings.get("dae", "lookupCUB");
+  lookupCUB = false;
   updatePatches();
 }
