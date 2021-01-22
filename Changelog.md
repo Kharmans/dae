@@ -1,3 +1,23 @@
+0.2.36
+* Fix for TrapWorkflow not auto fast forwarding rolls.
+* Fix? for changes to proficiency bonus.
+* **special durations/macro repeats only shown if the required modules loaded (midi-qol/times-up)**.
+* Part of a co-ordninated release with times-up (required) to support calling a macro at the start/end of a tokens turn. This allows most effects that do something each turn.
+  * Create an effect, macro repeat set to startEachTurn or endEachTurn and any macros on the effect will get called each turn (requires times-up), with args[0] set to "each". 
+    * You can delete the effect as part of the macro. There can be other changes in the effect and they will remain active until the effect is deleted. 
+    * You can specify a time based expiry as well.
+    * See times up for some sample macros that you can use for these sorts of effects
+* Pass an additional argument to each macro with some useful information (see the times-up readme for sample usage of the fields):
+```
+  {
+    effectId,
+    origin,
+    efData,
+    actorId,
+    tokenId
+  }
+```
+
 0.2.35
 Support @@... fields in macro arguments, to defer evaluation. Specifically for some edge cases in Active Auras.
 There are too many bugs in the current CUB:Condition code - so I'm going to disable it for now.

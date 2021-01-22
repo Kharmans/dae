@@ -187,6 +187,7 @@ export async function patchingInitSetup() {
   log("Patching ActorTokenHelpers.prototype.createEmbeddedEntity");
   //@ts-ignore
   if (game.modules.get("lib-wrapper")?.active && false) {
+    // ignored at the momemnt because of the way these are setup on the tokens themselves.
     //@ts-ignore
     libWrapper.register("dae", "ActorTokenHelpers.prototype.deleteEmbeddedEntity", deleteEmbeddedEntityToken, "WRAPPER");
     //@ts-ignore
@@ -252,9 +253,9 @@ function patchAbilitySave() {
         //@ts-ignore
         if (game.modules.get("lib-wrapper")?.active) {
           //@ts-ignore
-          // libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilityTest");
-          //@ts-ignore
           libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave");
+          //@ts-ignore
+          // libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilityTest");
           //@ts-ignore
           // libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollSkill");
         } else {
@@ -266,16 +267,16 @@ function patchAbilitySave() {
         //@ts-ignore
         if (game.modules.get("lib-wrapper")?.active) {
           //@ts-ignore
-          // libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilityTest", rollAbilityTest, "OVERRIDE");
-          //@ts-ignore
           libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave", rollAbilitySave, "OVERRIDE");
+          //@ts-ignore
+          // libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilityTest", rollAbilityTest, "OVERRIDE");
           //@ts-ignore
           // libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollSkill", rollSkill, "OVERRIDE");
         } else {
           //@ts-ignore
-          // CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
-          //@ts-ignore
           CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;
+          //@ts-ignore
+          // CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
           //@ts-ignore
           // CONFIG.Actor.entityClass.prototype.rollSkill = rollSkill;
         }

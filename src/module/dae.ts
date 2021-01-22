@@ -460,6 +460,8 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.rpak.damage":
     case "data.bonuses.rsak.attack":
     case "data.bonuses.rsak.damage":
+    case "data.bonuses.heal.attack":
+    case "data.bonuses.heal.damage":
     case "data.bonuses.abilities.save":
     case "data.bonuses.abilities.check":
     case "data.bonuses.abilities.skill":
@@ -513,8 +515,11 @@ function daeCustomEffect(actor, change) {
           actor._computePowercastingDC(actor.data);
           break;
         case "dnd5e":
-          actor._computeSpellcastingDC(actor.data);
-          break;
+          // Compute owned item attributes which depend on prepared Actor data
+          this.items.forEach(item => {
+            item.getSaveDC();
+            item.getAttackToHit();
+          });
       }
       const bonuses = getProperty(data, "bonuses.abilities") || {};
       if (actor.data.type === "vehicle") return true;
@@ -621,7 +626,7 @@ function prepareData() {
 }
 
 export function daeCreateActiveEffectActions(actor, effects) {
-  daeMacro(true, actor, effects);
+  daeMacro("on", actor, effects, {});
   daeTokenMagic(true, actor, effects);
 }
 
@@ -631,7 +636,7 @@ export function daeDeleteActiveEffectActions(actor, effects) {
   effects.forEach(effect => {
     if (!effect.transfer) return; //TODO find out why this is here
   })
-  daeMacro(false, actor, effects);
+  daeMacro("off", actor, effects, {});
   daeTokenMagic(false, actor, effects)
 }
 
@@ -640,15 +645,23 @@ function daeUpdateActiveEffectActions(...args) {
 
 }
 
-async function daeMacro(enable, actor, effects) {
+export async function daeMacro(action: string, actor, effects, lastArgOptions = {}) {
   if (actor.__proto__.constructor.name === CONFIG.Item.entityClass.name) return;
-  debug("dae macro ", enable, actor, effects)
+  debug("dae macro ", action, actor, effects)
+  let result;
   if (!Array.isArray(effects)) effects = [effects];
   effects.forEach(async effect=>  {
     //@ts-ignore
     let item = (effect.origin && await fromUuid(effect.origin)) || null;
     effect.changes?.forEach(async change => {
       if (!["macro.execute", "macro.itemMacro"].includes(change.key)) return;
+      let lastArg = mergeObject(lastArgOptions, {
+          effectId: effect._id,
+          origin: effect.origin,
+          efData: effect,
+          actorId: actor.id,
+          tokenId: actor.token?.id
+      }, {overwrite: false, insertKeys:true, insertValues: true});
         let rollData = daeRollData(actor)
         change.value = evalArgs.bind(item)({context: rollData, actor, change, doRolls: true})
       if (change.key === "macro.execute") {
@@ -659,17 +672,17 @@ async function daeMacro(enable, actor, effects) {
         }
         if (furnaceActive) {
           //@ts-ignore
-          await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1))
+          result = await macro.execute(action, ...(duplicate(change.value.slice(1))), lastArg)
         } else {
           console.warn("Furnace not active - so no macro arguments supported");
-          await macro.execute();
+          result = await macro.execute();
         }
       } else if (change.key === "macro.itemMacro") {
-        let macroCommand = change.value[0]; // this is populated in evalArgs
+        let macroCommand = change.macro; // this is populated in evalArgs
         // macroCommand = `ChatMessage.create({content: "Item macro for ${itemData.name} called"})\n` + macroCommand;
         if (!macroCommand) {
           macroCommand = `ChatMessage.create({content: "No Item Macro for ${item?.name}"})`;
-          return;
+          return null;
         }
         let macro =  await CONFIG.Macro.entityClass.create({
           name: "DAE-Item-Macro",
@@ -679,17 +692,16 @@ async function daeMacro(enable, actor, effects) {
           flags: { "dnd5e.itemMacro": true }
         }, { displaySheet: false, temporary: true });
         if (furnaceActive) {
-          await macro.execute(enable ? "on" : "off", ...duplicate(change.value).splice(1));
+          result = await macro.execute(action, ...duplicate(change.value), lastArg);
         } else {
           console.warn("Furnace not active - so no macro arguments supported")
-          await macro.execute();
+          result = await macro.execute();
         }
       }
     });
   })
-  return true;
+  return result;
 }
-
 
 function daeTokenMagic(enable, actor, effects) {
   // TODO lookup enabled from the item.isActive
@@ -757,8 +769,9 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
         else return f;
       });
       if (change.key === "macro.itemMacro") {
-        let macroCommand = this?.data?.flags?.itemacro?.macro?.data.command || 'console.warn("No macro defined for item")';
-        value = [macroCommand].concat(fields)
+        let macroCommand = this?.flags?.itemacro?.macro?.data.command || 'console.warn("No macro defined for item")';
+        change.macro = macroCommand;
+        value = fields;
       } else value = fields;
       break;
     default:
@@ -814,7 +827,7 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
       let doRolls = (["macro.execute", "macro.itemMacro"].includes(change.key))
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
-      change.value = evalArgs.bind(this)({context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper})
+      change.value = evalArgs.bind(this.data)({context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper})
     })
     activeEffectData.origin = this.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;

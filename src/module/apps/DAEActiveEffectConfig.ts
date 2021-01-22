@@ -1,5 +1,5 @@
 import { ValidSpec, aboutTimeInstalled, confirmDelete } from "../dae";
-import { i18n, confirmAction, daeSpecialDurations } from "../../dae";
+import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats } from "../../dae";
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
@@ -76,6 +76,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       return obj;
     }, {});
     data.specialDuration =  daeSpecialDurations;
+    data.macroRepeats = daeMacroRepeats;
+    console.error("macros... ", data.macroRepeatsEnabled, data.macroRepeats)
+
     data.effect = this.object.data;
     if (this.object.parent) {
       data.isItem = this.object.parent.__proto__.constructor.name === CONFIG.Item.entityClass.name
@@ -100,7 +103,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (aboutTimeInstalled && data.effect.duration?.startTime) {
       const Gametime = game.Gametime;
       const startTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime).shortDate();
-      data.startTimeString = startTime.date + " " + startTime.time;
+      data.startTimeString = (startTime.date + " " + startTime.time) || "";
       if (data.effect.duration.seconds) {
         const endTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime + data.effect.duration.seconds).shortDate();
         data.durationString = endTime.date + " " + endTime.time;
@@ -108,6 +111,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
     data.sourceName = await this.object.sourceName;
     // data.effect.flags.dae.stackable = this.object.data.flags?.dae?.stackable ||false;
+
     return data;
   }
 
