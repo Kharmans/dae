@@ -77,7 +77,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }, {});
     data.specialDuration =  daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
-    console.error("macros... ", data.macroRepeatsEnabled, data.macroRepeats)
 
     data.effect = this.object.data;
     if (this.object.parent) {

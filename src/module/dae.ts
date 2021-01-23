@@ -777,6 +777,7 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
     default:
       if (Array.isArray(change.value)) fields = change.value;
       else tokenizer.tokenize(change.value, (token) => fields.push(token))
+      if (typeof change.value === 'number') return change.value
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
@@ -798,7 +799,8 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
       // context.actor = actor.data;
       if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
         value = new Roll(change.value, context).roll().total
-      } else value = change.value;          
+      } else value = change.value;
+
       break;
   };
   debug("evalargs: change is ", change);
@@ -828,6 +830,7 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       change.value = evalArgs.bind(this.data)({context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper})
+
     })
     activeEffectData.origin = this.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
