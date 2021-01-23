@@ -736,6 +736,7 @@ function daeRollData(actor) {
 }
 
 function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null}) {
+  // change so that this is item.data, rather than item.
   //@ts-ignore
   let filteredChanges = [];
   //@ts-ignore effects not defined
@@ -744,13 +745,15 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
   switch (change.key) {
     case "macro.itemMacro":
     case "macro.execute":
-      if (Array.isArray(change.value)) fields = change.value;
+      if (Array.isArray(change.value)) {
+        fields = change.value;
+      }
       else tokenizer.tokenize(change.value, (token) => fields.push(token))
       fields = fields.map(f => {
         if (typeof f === "string" && f.startsWith("@@")) return f.slice(1);
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
-        else if (f === "@item") return this?.data;
+        else if (f === "@item") return duplicate(this);
         else if (f === "@spellLevel") return spellLevel;
         else if (f === "@item.level") return spellLevel;
         else if (f === "@damage") return damageTotal;
@@ -775,13 +778,13 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
       } else value = fields;
       break;
     default:
+      if (typeof change.value === 'number') return change.value
       if (Array.isArray(change.value)) fields = change.value;
       else tokenizer.tokenize(change.value, (token) => fields.push(token))
-      if (typeof change.value === 'number') return change.value
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
-        else if (f === "@item") return this?.data;
+        else if (f === "@item") return duplicate(this);
         else if (f === "@spellLevel") return spellLevel;
         else if (f === "@item.level") return spellLevel;
         else if (f === "@damage") return damageTotal;
@@ -795,7 +798,7 @@ function evalArgs({context, actor, change, spellLevel = 0, damageTotal = 0, doRo
         }
         else return f;
       });
-      change.value = fields.join("");
+      change.value = fields.join(" ");
       // context.actor = actor.data;
       if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
         value = new Roll(change.value, context).roll().total

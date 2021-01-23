@@ -1,4 +1,8 @@
-0.2.37 
+0.2.39
+Bugfix for @item returning item.data.data instead of item.dat
+0.2.38  
+Bugfix for spaces in token magic effect application
+0.2.37  
 Bugfix for vanishing effect values when applied  
 0.2.36
 * Fix for TrapWorkflow not auto fast forwarding rolls.
