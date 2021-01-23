@@ -1,3 +1,5 @@
+0.2.37 
+Bugfix for vanishing effect values when applied  
 0.2.36
 * Fix for TrapWorkflow not auto fast forwarding rolls.
 * Fix? for changes to proficiency bonus.
