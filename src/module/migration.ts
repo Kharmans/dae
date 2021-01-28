@@ -177,10 +177,12 @@ export async function migrateAllActors() {
 }
 
 export async function fixupMonstersCompendium() {
-  const pack = game.packs.get("dnd5e.monsters");
+  // TODO fix this for sw5e?
+  const pack = game.packs.get(`dnd5e.monsters`);
   let locked = pack.locked;
   pack.configure({locked: false})
   let content = await pack.getContent()
+  // TODO fix this for sw5e?
   content.forEach(entity=>["mwak","rwak","rsak","msak"]
     .forEach(id=>entity.data.data.bonuses[id]={attack: "", damage: ""}))
   content.forEach(async actor=>await pack.updateEntity(actor.data))
@@ -190,6 +192,7 @@ export async function fixupActors() {
   game.actors.forEach(async actor => {
     const bonuses = duplicate(actor.data.data.bonuses);
     let found = false;
+    // TODO fix this for sw5e?
     ["mwak","rwak","rsak","msak"].forEach(bonusId => {
       if (typeof actor.data.data.bonuses[bonusId] === "string") {
         bonuses[bonusId] = {"attack": "", "damage": ""};
@@ -235,11 +238,11 @@ export async function fixupActors() {
     featsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Feats").getContent();
     midiPack =  await game.packs.get("Dynamic-Effects-SRD.DAE SRD Midi-collection").getContent();
     magicItemsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Magic Items").getContent();
-    dndSRDItemsPack = await game.packs.get("dnd5e.items").getContent();
-    dndSRDSpellsPack = await game.packs.get("dnd5e.spells").getContent();
-    dndSRDclassesPack = await game.packs.get("dnd5e.classes").getContent();
-    dndSRDMonsterfeaturesPack = await game.packs.get("dnd5e.monsterfeatures")?.getContent();
-    dndSRDClassfeaturesPack = await game.packs.get("dnd5e.classfeatures")?.getContent();
+    dndSRDItemsPack = await game.packs.get(`${game.system.id}.items`).getContent();
+    dndSRDSpellsPack = await game.packs.get(`${game.system.id}.spells`).getContent();
+    dndSRDclassesPack = await game.packs.get(`${game.system.id}.classes`).getContent();
+    dndSRDMonsterfeaturesPack = await game.packs.get(`${game.system.id}.monsterfeatures`)?.getContent();
+    dndSRDClassfeaturesPack = await game.packs.get(`${game.system.id}.classfeatures`)?.getContent();
     packsLoaded = true;
   }
 

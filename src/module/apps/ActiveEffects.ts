@@ -1,5 +1,5 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { playersCanSeeEffects, ValidSpec, cubActive, confirmDelete, aboutTimeInstalled, lookupCUB } from "../dae"
+import { playersCanSeeEffects, ValidSpec, cubActive, confirmDelete, aboutTimeInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 import { filters } from "pixi.js";
@@ -52,11 +52,11 @@ getData() {
     } else if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }
-    if ((ae.data.flags?.dae?.specialDuration ?? "None") !== "None")
-    {
-      newAe.duration.label += ", " + daeSpecialDurations[ae.data.flags.dae.specialDuration];
-      newAe.isTemporary  = true;
-    } else newAe.isTemporary = ae.isTemporary ;
+    let specialDuration = getProperty(ae.data.flags, "dae.specialDuration") || [daeSpecialDurations["None"]];
+    if (typeof specialDuration === "string") specialDuration = [ae.data.flags.dae.specialDuration]
+    newAe.duration.label += ", " + `[${specialDuration.map(dur => daeSpecialDurations[dur])}]`;
+    newAe.isTemporary  = true;
+    newAe.isTemporary = ae.isTemporary ;
     newAe.sourceName = ae.sourceName;
     if (newAe.sourceName === newAe.label) newAe.sourceName = "";
     else newAe.sourceName = `(${newAe.sourceName})`;
@@ -97,7 +97,6 @@ getData() {
   this.effectList = {"new": "new"}
   efl.forEach(se => {
     if (cubActive && game.cub.getCondition(se.label) && se.id.startsWith("combat-utility-belt")) {
-      if (lookupCUB && this.object.__proto__.constructor.name === CONFIG.Item.entityClass.name) this.effectList["CUB:"+se.id] = "CUB:"+ se.label;
       this.effectList[se.id] = se.label + " (CUB)";
     } else this.effectList[se.id] = se.label;
   });
@@ -197,11 +196,6 @@ activateListeners(html) {
         changes: [],
         transfer: false,
       }
-    } else if (cubActive && lookupCUB && game.cub.getCondition(effect_name.replace("CUB:",""))) {
-      id = id.replace("CUB:", "");
-      AEDATA = CONFIG.statusEffects.find(se => se.id === id);
-      AEDATA.label = "CUB:" + i18n(AEDATA.label);
-      AEDATA["flags.core.statusId"] = id;
     } else {
       AEDATA = CONFIG.statusEffects.find(se => se.id === id);
       AEDATA.label = i18n(AEDATA.label);

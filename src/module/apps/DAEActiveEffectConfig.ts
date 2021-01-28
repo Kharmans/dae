@@ -75,10 +75,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       obj[e[1]] = game.i18n.localize("EFFECT.MODE_"+e[0]);
       return obj;
     }, {});
-    data.specialDuration =  daeSpecialDurations;
+    data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
 
-    data.effect = this.object.data;
     if (this.object.parent) {
       data.isItem = this.object.parent.__proto__.constructor.name === CONFIG.Item.entityClass.name
       data.isActor = this.object.parent.__proto__.constructor.name === CONFIG.Actor.entityClass.name
@@ -107,6 +106,11 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         const endTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime + data.effect.duration.seconds).shortDate();
         data.durationString = endTime.date + " " + endTime.time;
       }
+    }
+    if (!data.effect.flags.dae?.specialDuration)
+      setProperty(data.effect.flags, "dae.specialDuration", []);
+    if (typeof data.effect.flags.dae?.specialDuration === "string") {
+      data.effect.flags.dae.specialDuration = [data.effect.flags.dae.specialDuration]
     }
     data.sourceName = await this.object.sourceName;
     // data.effect.flags.dae.stackable = this.object.data.flags?.dae?.stackable ||false;
@@ -152,7 +156,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     const idx = last ? last.dataset.index+1 : 0;
     const change = $(`
     <li class="effect-change" data-index="${idx}">
-        <input type="text" name="changes.${idx}.key" value="data.attributes.str.mod"/>
+        <input type="text" name="changes.${idx}.key" value=""/>
         <input type="number" name="changes.${idx}.mode" value="2"/>
         <input type="text" name="changes.${idx}.value" value="0"/>
         <input type="number" name="changes.${idx}.priority" value="0">

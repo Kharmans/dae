@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, cubActive } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -28,7 +28,7 @@ export let requestGMAction = async (action: string, data: {}, debugLog: boolean 
   // if (!game.user.isTrusted) return;
   if (!intendedGM) {
     ui.notifications.error(`${game.user.name} ${game.i18n.localize("dae.noGM")}`);
-    console.error("dae | No GM user connected - cannot do request ", action, data);
+    error("dae | No GM user connected - cannot do request ", action, data);
     return;
   }
   //@ts-ignore
@@ -129,6 +129,7 @@ export class GMAction {
     var actorId = data.actorId;
     var scene;
     var actor;
+    var token;
     switch (action) {
       case "testMessage":
         console.log("DyamicEffects | test message received", data);
@@ -169,12 +170,24 @@ export class GMAction {
         await scene.updateEmbeddedEntity("Token", update);
         break;
       case this.actions.setFlag:
+        token = canvas.tokens.get(actorId)
+        if (token) {
+          //@ts-ignore flagId, value
+          await token.actor.setFlag("dae", data.FlagId, data.value)
+          break;
+        }
         actor = game.actors.get(actorId);
         //@ts-ignore flagId, value
         if (actor) actor.setFlag("dae", data.flagId, data.value);
         break;
       case this.actions.unsetFlag:
-        actor = game.actors.get(actorId);
+        token = canvas.tokens.get(actorId)
+        if (token) {
+          //@ts-ignore flagId, value
+          await token.actor.unsetFlag("dae", data.FlagId)
+          break;
+        }
+        actor = game.actors.get(actorId, tokenId);
         //@ts-ignore flagId, value
         if (actor) actor.unsetFlag("dae", data.flagId);
         break;
@@ -253,8 +266,8 @@ let applyTokenMagic = async (tokenId: string, effectId: string, duration: number
   }
 }
 
-export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId=null) {
-  debug("gmaction apply effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
+export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null) {
+  // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   tokenList.forEach(async tid => {
     const token = canvas.tokens.get(tid);
     if (token) {
@@ -263,27 +276,19 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       // TODO redo this as a reduce
       actEffects.forEach(newAE => {
         removeList = removeList.concat(
-          token.actor.effects.filter(ae => ae.data.origin === newAE.origin 
-            && getProperty(ae.data, "flags.dae.transfer") === false 
+          token.actor.effects.filter(ae => ae.data.origin === newAE.origin
+            && getProperty(ae.data, "flags.dae.transfer") === false
             && !getProperty(ae.data, "flags.dae.stackable")));
       });
-      removeList = removeList.map(ae=>ae.data._id);
-      if (removeList.length > 0)
+      if (removeList.length > 0) {
+        removeList = removeList.map(ae => ae.data._id);
         await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
+      }
       if (activate) {
-        actEffects.forEach(ae=> {
-          warn("Apply active effects ", ae, itemCardId)
-          setProperty(ae.flags, "dae.transfer", false);
-          ae.changes.forEach(change=> {
-            if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
-              change.value = change.value.map(f=> f === "@itemCardId" ? itemCardId : f);
-              change.value = change.value.map(f=> f === "@target" ? tid : f);
-              change.value = change.value.map(f=> typeof f === "string" && f.startsWith("@@") ? f.slice(1) : f);
-            }
-          })
-         setProperty(ae, "flags.dae.token", tid)
-         // convert item duration to seconds/rounds/turns according to combat
-         if (ae.duration.seconds) {
+        actEffects.forEach(ae => {
+          setProperty(ae, "flags.dae.token", tid)
+          // convert item duration to seconds/rounds/turns according to combat
+          if (ae.duration.seconds) {
             ae.duration.startTime = game.time.worldTime;
           } else if (ae.duration.rounds || ae.duration.turns) {
             ae.duration.startRound = game.combat?.round;
@@ -301,15 +306,31 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               ae.duration.turns = convertedDuration.turns;
               ae.duration.startRound = game.combat?.round;
               ae.duration.startTurn = game.combat?.turn;
-            } 
+            }
           }
+          warn("Apply active effects ", ae, itemCardId)
+          setProperty(ae.flags, "dae.transfer", false);
+          ae.changes.map(change => {
+            if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
+              if (typeof change.value === "string" || typeof change.value === "number") {
+              } else {
+                change.value = duplicate(change.value).map(f => {
+                  if (f === "@itemCardId") return itemCardId;
+                  if (f === "@target") return tid;
+                  if (typeof f === "string" && f.startsWith("@@")) return;
+                  return f;
+                })
+              }
+            }
+            return change;
+          })
         })
         warn("gm action apply effect", token, actEffects)
         let removeList = await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
 
         //TODO remove this when timesup is in the wild.
         if (!timesUpInstalled) { // do the kludgey old form removal
-            let removeEffect = async (tokenId, removeEffect) => {
+          let removeEffect = async (tokenId, removeEffect) => {
             const token = canvas.tokens.get(tokenId);
             const actor = token?.actor;
             if (actor) {
@@ -318,19 +339,19 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
                 await token.actor.deleteEmbeddedEntity("ActiveEffect", removeId)
             }
           }
-  
+
           if (!Array.isArray(removeList)) removeList = [removeList];
           removeList.forEach(aeData => {
             warn("removing effect ", aeData, " in ", aeData.duration, " seconds ")
             let duration = aeData.duration.seconds || 0;
             if (aeData.duration && aboutTimeInstalled) {
-              game.Gametime.doIn({seconds: duration}, removeEffect, token.id, aeData)
+              game.Gametime.doIn({ seconds: duration }, removeEffect, token.id, aeData)
             } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
               setTimeout(removeEffect, duration * 1000 || 6000, token.id, aeData);
             }
           })
         }
-       }
+      }
     };
   });
 }

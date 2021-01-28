@@ -20,7 +20,7 @@ import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, f
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
-import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setupDAEMacros, setFlag, unsetFlag, getFlag } from './module/daeMacros';
+import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag } from './module/daeMacros';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
@@ -73,10 +73,11 @@ Hooks.once('ready', async function () {
     daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
     daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
     daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
-  }
-  if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {
     daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
     daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
+  }
+  if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {
+
     daeMacroRepeats= {
       "none": "",
       "startEveryTurn" : i18n("dae.startEveryTurn"),
@@ -129,7 +130,6 @@ Hooks.once('setup', function() {
     migrateActorDAESRD: migrateActorDAESRD,
     migrateAllActorsDAESRD: migrateAllActorsDAESRD,
     migrateAllNPCDAESRD: migrateAllNPCDAESRD
-    
   }
 });
 

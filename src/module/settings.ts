@@ -29,15 +29,7 @@ export const registerSettings = function () {
     config: true,
     onChange: fetchParams
   });
-  game.settings.register("dae", "lookupCUB", {
-    name: game.i18n.localize("dae.lookupCUB.Name"),
-    hint: game.i18n.localize("dae.lookupCUB.Hint"),
-    scope: "world",
-    default: true,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
+
   game.settings.register("dae", "displayTraits", {
     scope: "world",
     default: false,

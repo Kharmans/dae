@@ -1,3 +1,22 @@
+0.2.40
+* Support data.arritbutes.movement.all (CUSTOM EFFECT ONLY) supporting
+  * value => replace current with value
+  * +value => add value to current
+  * -value => subtract value from current
+  * *value => multiply current by value
+  * /value => divide current by value
+The leading character in the string is what effects the overall evaluation, so +5 is NOT the same as 5.
+* Fix a subtle bug in the data.bonuses.All-Attacks etc custom effects, which would double apply if using the DAE alternate special traits page.
+* SpecialDuration is now a multi select field. All options chosen will be checked to see if the effect should expire, if you make silly combinations be it on your head. (ctl/shift to multi select)
+* A lot of rework to make things more sw5e compatible.
+* Boolean flags values (Halfing Lucky, Elven Accuracy and so on) now support ONLY CUSTOM as an action type and accept 1 or true to turn flag on, anything else turns it off.
+* Fixed a bug in effect editing where the changes to actor effects would only show up when the actor prepareData is called.
+
+* [macro.execute] It turns out that the orgin passed in lastArg ALWAYS refers to the world actor, not the token actor that caused the macro to be run. So if you want the actual item refer to lastArg.efData.flags.dae.itemData instead.
+* If using DAE.setFlag(actor, flag, value)/DAE.getFlag(actor, flag) or DAE.unsetFlag(actor, flag) it would always affect the world acotr. You can now pass a token/tokenId to the function and it will affect the actor associated with the token, rather than the world actor.
+* ~~Some~~ Lots of fiddling with macro.execute behaviour to try and make item data more reliable. Smallish, but non-zero chance that some macro.execute behaviour got broken.
+* A fix for created ownedItems having the correct origin set for contained active effects.
+
 0.2.39
 Bugfix for @item returning item.data.data instead of item.dat
 0.2.38  
