@@ -1,4 +1,4 @@
-0.2.40
+0.2.40  
 * Support data.arritbutes.movement.all (CUSTOM EFFECT ONLY) supporting
   * value => replace current with value
   * +value => add value to current
