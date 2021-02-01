@@ -1,3 +1,6 @@
+0.2.42
+* Remove accidental dependency on midi-qol.
+* supply awesomeplete.css.map
 0.2.41
 * Fix for mods to data.attributes.prof calling of _computeSpellCastingProgression being undefined.
 * Fixed a couple edge cases in dae.setFlag/dae.getFlag/dae.unsetFlag if you were passing a token instead of an actor.

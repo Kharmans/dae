@@ -29,7 +29,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (midiActive)  this.fieldsList = this.fieldsList.concat(window.MidiQOL.midiFlags);
     this.fieldsList.sort();
     //@ts-ignore
-    log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL.midiFlags.length} come from midi-qol and ${ValidSpec.allSpecs.length} from dae`);
+    log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL?.midiFlags.length || 0} come from midi-qol and ${ValidSpec.allSpecs.length} from dae`);
     this.fieldsList = this.fieldsList.join(", ");
     this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
     Object.keys(CONFIG.DND5E.damageResistanceTypes).forEach(type => {
