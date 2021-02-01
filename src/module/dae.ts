@@ -4,6 +4,7 @@ import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { procStatusEffects } from "./statusEffects";
 import { updatePatches } from "./patching";
+import { macroReadySetup } from "./daeMacros";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -15,6 +16,8 @@ export var playersCanSeeEffects = "view";
 export var cubActive;
 export var furnaceActive;
 export var itemacroActive;
+export var conditionalVisibilityActive;
+export var midiActive;
 export var calculateArmor;
 export var applyBaseAC;
 export var debugEnabled;
@@ -142,6 +145,9 @@ export class ValidSpec {
         // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
+      specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
 
       /* try moving this to basevalues pass 
@@ -267,6 +273,7 @@ export class ValidSpec {
         const localizedString = i18n(CONFIG.DND5E.characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
         m._label = `Flags ${localizedString}`;
       }
+      if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
       return m
     });
   }
@@ -406,7 +413,7 @@ function daeCustomEffect(actor, change) {
     case "data.traits.di.value":
     case "data.traits.dr.value":
     case "data.traits.dv.value":
-      return doCustomValue(actor, current, change, Object.keys(CONFIG.DND5E.damageResistanceTypes));
+      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.damageResistanceTypes));
     case "data.traits.di.custom":
     case "data.traits.dr.custom":
     case "data.traits.dv.custom":
@@ -422,34 +429,33 @@ function daeCustomEffect(actor, change) {
       setProperty(actor.data, "data.traits.languages.value", Object.keys(CONFIG.DND5E.languages))
       return true;
     case "data.traits.languages.value":
-      return doCustomValue(actor, current, change, Object.keys(CONFIG.DND5E.languages));
+      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.languages));
     case "data.traits.ci.all":
       setProperty(actor.data, "data.traits.ci.value", Object.keys(CONFIG.DND5E.conditionTypes))
       return true;
     case "data.traits.ci.value":
-      return doCustomValue(actor, current, change, Object.keys(CONFIG.DND5E.conditionTypes))
+      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.conditionTypes))
     case "data.traits.toolProf.value":
-      return doCustomValue(actor, current, change, Object.keys(CONFIG.DND5E.toolProficiencies))
+      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.toolProficiencies))
     case "data.traits.toolProf.all":
       setProperty(actor.data, "data.traits.toolProf.value", Object.keys(CONFIG.DND5E.toolProficiencies))
       return true;
     case "data.traits.armorProf.value":
-      return doCustomValue(actor, current, change, Object.keys(CONFIG.DND5E.armorProficiencies))
+      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.armorProficiencies))
     case "data.traits.armorProf.all":
       setProperty(actor.data, "data.traits.armorProf.value", Object.keys(CONFIG.DND5E.armorProficiencies))
       return true;
     case "data.traits.weaponProf.value": 
-      return doCustomValue(actor, current, change, Object.keys(CONFIG.DND5E.weaponProficiencies))
+      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.weaponProficiencies))
     case "data.traits.weaponProf.all":
       setProperty(actor.data, "data.traits.weaponProf.value", Object.keys(CONFIG.DND5E.weaponProficiencies))
       return true;
-      /*
+      /* replaced by expanded list
     case "data.bonuses.All-Attacks":
       value = attackDamageBonusEval(change.value, actor)
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       attackTypes.forEach(atType => actor.data.data.bonuses[atType].attack += value);
       return true;
-      */
     case "data.bonuses.spell.attack":
       value = attackDamageBonusEval(change.value, actor)
       value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
@@ -497,7 +503,7 @@ function daeCustomEffect(actor, change) {
       // TODO: remove if fixed in core
       const result = attackDamageBonusEval(change.value, actor);
       value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
-      setProperty(actor.data, change.key, current + value);
+      setProperty(actor.data, change.key, (current || "") + value);
       return true;
 
     case "data.attributes.movement.all":
@@ -534,7 +540,7 @@ function daeCustomEffect(actor, change) {
       if (value) {
         setProperty(actor.data, change.key, current + value);
       }
-      actor._computeSpellcastingDC(actor.data)
+      actor._computeSpellcastingProgression(actor.data)
       return true;
 
     case "data.attributes.prof":
@@ -564,10 +570,10 @@ function daeCustomEffect(actor, change) {
       // update spell dcs
       switch (game.system.id) {
         case "sw5e": 
-          actor._computePowercastingDC(actor.data);
+          actor._computePowercastingProgression(actor.data);
           break;
         case "dnd5e":
-          this._computeSpellcastingProgression(actor.data);
+          actor._computeSpellcastingProgression(actor.data);
           // Compute owned item attributes which depend on prepared Actor data
           break;
       };
@@ -634,12 +640,29 @@ function attackDamageBonusEval(bonusString, actor) {
     }
   }
   */
-  return `${bonusString}`;
+  return `${bonusString || ""}`;
 }
 function doCustomValue(actor, current, change, validValues) {
   if ((current || []).includes(change.value)) return true;
   if (!validValues.includes(change.value)) return true;
   setProperty(actor.data, change.key, current.concat([change.value]))
+  return true;
+}
+
+function doCustomArrayValue(actor, current, change, validValues) {
+  if (getType(change.value) === "string" && change.value[0] === "-") {
+    const checkValue = change.value.slice(1);
+    const currentIndex = (current ?? []).indexOf(checkValue)
+    if (currentIndex === -1) return true;
+    if (!validValues.includes(checkValue)) return true;
+    const returnValue = duplicate(current);
+    returnValue.splice(currentIndex, 1)
+    setProperty(actor.data, change.key, returnValue);
+  } else {
+    if ((current ?? []).includes(change.value)) return true;
+    if (!validValues.includes(change.value)) return true;
+    setProperty(actor.data, change.key, current.concat([change.value]))
+  }
   return true;
 }
 
@@ -664,19 +687,35 @@ function prepareData() {
   debug("prepare data: after passes", this.data);
 }
 
-export function daeCreateActiveEffectActions(actor, effects) {
-  daeMacro("on", actor, effects, {});
-  daeTokenMagic(true, actor, effects);
-}
-
-export function daeDeleteActiveEffectActions(actor, effects) {
+export async function daeCreateActiveEffectActions(actor, effects) {
   if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
   if (!Array.isArray(effects)) effects = [effects];
+  const promises = [
+    daeMacro("on", actor, effects, {}),
+    daeTokenMagic(true, actor, effects),
+    daeCub(true, actor, effects),
+    daeCV(true, actor, effects)
+  ];
+  await Promise.all(promises);
+  return true;
+}
+
+export async function daeDeleteActiveEffectActions(actor, effects) {
+  if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
+  if (!Array.isArray(effects)) effects = [effects];
+  /*
   effects.forEach(effect => {
     if (!effect.transfer) return; //TODO find out why this is here
   })
-  daeMacro("off", actor, effects, {});
-  daeTokenMagic(false, actor, effects)
+  */
+  const promises = [
+    daeMacro("off", actor, effects, {}),
+    daeTokenMagic(false, actor, effects),
+    daeCub(false, actor, effects),
+    daeCV(false, actor, effects)
+  ];
+  await Promise.all(promises);
+  return true;
 }
 
 function daeUpdateActiveEffectActions(...args) {
@@ -684,12 +723,58 @@ function daeUpdateActiveEffectActions(...args) {
 
 }
 
+async function daeCV(enable, actor, effects) {
+//  if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
+  debug("dae CV ", actor, effects, enable)
+
+  //@ts-ignore
+  const CV = window.ConditionalVisibility;
+//  if (!Array.isArray(effects)) effects = [effects];
+  let tokens = [actor.token];
+  if (!actor.token) tokens = actor.getActiveTokens();
+  await effects.forEach(async effect => {
+    await effect.changes?.forEach(async change => {
+      if (change.key === "macro.ConditionalVisibility") {
+        if (enable) {
+          if (change.value === "hidden")
+            CV.hide(tokens)
+          else
+            CV.toggleCondition(tokens, change.value, true);
+        } else {
+          Hooks.once("updateToken", (...args) => { // do it this way so the conditions are corectly updated before CUB fires
+            // token = canvas.tokens.get(token.id); // get the new token data
+            if (change.value === "hidden")
+              CV.unHide(tokens);
+            else
+              CV.toggleCondition(tokens, change.value, false);
+          });
+        }
+      } else if (change.key === "macro.ConditionalVisibilityVision") {
+        if (enable) {
+          tokens.forEach(t => {
+            t.setFlag("conditional-visibility", change.value, true)
+          })
+        } else {
+          Hooks.once("updateToken", (...args) => { // do it this way so the conditions are corectly updated before CUB fires
+            // token = canvas.tokens.get(token.id); // get the new token data
+            tokens.forEach(t => {
+              t.setFlag("conditional-visibility", change.value, false)
+            })
+          });
+        }
+      }
+    })
+  });
+}
+  
+  
 export async function daeMacro(action: string, actor, effects, lastArgOptions = {}) {
-  if (actor.__proto__.constructor.name === CONFIG.Item.entityClass.name) return;
-  debug("dae macro ", action, actor, effects)
+//  if (actor.__proto__.constructor.name === CONFIG.Item.entityClass.name) return;
   let result;
   if (!Array.isArray(effects)) effects = [effects];
   // Work out what itemdata should be
+
+  warn("Dae macro ", action, actor, effects, lastArgOptions)
   effects.forEach(async effect=>  {
       //@ts-ignore
     // let item = (effect.origin && await fromUuid(effect.origin)) || null;
@@ -718,7 +803,10 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
         const macro = game.macros.getName(change.value[0]);
         if (!macro) {
           //TODO localize this
-          ui.notifications.warn(`No macro ${change.value[0]} found`)
+          if (action !== "off") {
+            ui.notifications.warn(`macro.execute | No macro ${change.value[0]} found`)
+            error(`macro.execute | No macro ${change.value[0]} found`);
+          }
         }
         if (furnaceActive) {
           //@ts-ignore
@@ -746,18 +834,48 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
           console.warn("Furnace not active - so no macro arguments supported")
           result = await macro.execute();
         }
+        /*
+        if (action === "on") await game.cub.addCondition(condition, [canvas.tokens.get(effect.flags.dae.token)])
+        else if (action === "off") await game.cub.removeCondition(condition, [canvas.tokens.get(effect.flags.dae.token)])
+        */
       }
     });
   })
   return result;
 }
 
-function daeTokenMagic(enable, actor, effects) {
+async function daeCub(enable, actor, effects) {
   // TODO lookup enabled from the item.isActive
-  if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
+  //if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
+  debug("dae CUB ", actor, effects, enable)
+
+  const cub = game.cub;
+  if (!cub) return;
+  //if (!Array.isArray(effects)) effects = [effects];
+  await effects.forEach(async effect => {
+    await effect.changes?.forEach(async change => {
+      if (change.key === "macro.CUB") {
+        let tokens = [actor.token];
+        if (!actor.token) tokens = actor.getActiveTokens();
+        if (enable) {
+          warn("dae cub: Adding condition ", change.value)
+          await cub.addCondition(change.value, tokens); 
+        } else {
+          Hooks.once("updateToken", (...args) => { // do it this way so the conditions are corectly updated before CUB fires
+            cub.removeCondition(change.value, tokens, {warn: false}); 
+          })
+        }
+      }
+    })
+  })
+}
+
+async function daeTokenMagic(enable, actor, effects) {
+  // TODO lookup enabled from the item.isActive
+//  if (actor.__proto__.constructor.name !== CONFIG.Actor.entityClass.name) return;
   debug("dae token magic ", actor, effects, enable)
 
-  if (!Array.isArray(effects)) effects = [effects];
+//  if (!Array.isArray(effects)) effects = [effects];
   effects.forEach(effect=> {
     effect.changes?.forEach(change=> {
       if (change.key === "macro.tokenMagic") {
@@ -787,7 +905,7 @@ function daeRollData(actor) {
 
 async function evalArgs({effectData = null, itemData = null, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null}) {
   // change so that this is item.data, rather than item.
-  if (itemData) effectData.flags.dae.itemData = itemData;
+  if (itemData) setProperty(effectData.flags, "dae.itemData", itemData);
   if (typeof change.value === 'number')
     return change; // nothing to do
   //@ts-ignore
@@ -798,18 +916,20 @@ async function evalArgs({effectData = null, itemData = null, context, actor, cha
   if (change.key === "macro.tokenMagic") return change;
   const argsAlreadyEval = Array.isArray(change.value)
   if (change.key === "macro.itemMacro") {
-    const currentItemData = getProperty(effectData.flags, "dae.itemData")
+    if (!itemData) itemData = getProperty(effectData.flags, "dae.itemData")
     let macroCommand = getProperty(effectData.flags, "dae.itemData.flags.itemacro.macro.data.command");
-    if (!macroCommand && !currentItemData) { // we never got an item do a last ditch attempt
+    if (!macroCommand && !itemData) { // we never got an item do a last ditch attempt
       // TODO check if the actor is a token and if so find the item on the token instead
-      const itemData = await fromUuid(effectData.origin); 
       warn("eval args: fetching item from effectData/origin ", effectData.origin)
-      console.error("eval args: fetching item from effectData/origin ", effectData.origin)
+      itemData = await fromUuid(effectData.origin); 
       //@ts-ignore
       macroCommand = itemData?.flags.itemacro?.macro.data.command;
       if (effectData) setProperty(effectData.flags, "dae.itemData", itemData);
     }
-    if (!macroCommand) macroCommand = 'console.error("No macro defined for item")';
+    if (!macroCommand) {
+      macroCommand = `if (!args || args[0] === "on") {ui.notifications.warn("macro.itemMacro | No macro found for item ${itemData?.name}");}`;
+      error(`No macro found for item ${itemData?.name}`);
+    }
     change.macro = macroCommand;
   }
 
@@ -842,13 +962,13 @@ async function evalArgs({effectData = null, itemData = null, context, actor, cha
         else if (f === "@change") return change;
         else if (typeof f === "string" && f.startsWith("@")) {
           return getProperty(context, f.slice(1))
-        }
+        } 
         else return f;
       });
 
       value = fields;
       break;
-    default:
+    default: 
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
         else if (f === "@token") return ChatMessage.getSpeaker().token;
@@ -858,7 +978,7 @@ async function evalArgs({effectData = null, itemData = null, context, actor, cha
         else if (f === "@damage") return damageTotal;
         else if (f === "@target") return "<not-defined>"
         else if (f === "@unique") return randomID();
-        else if (f === "@actor") return actor.id;
+        else if (f === "@actor") return duplicate(actor.data);
         else if (f === "@critical") return critical;
         else if (f === "@fumble") return fumble;
         else if (doRolls && typeof f === "string" && f.startsWith("@")) {
@@ -907,7 +1027,8 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
     activeEffectData.origin = this.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
     activeEffectData.transfer = false;
-    activeEffectData.disabled = false;
+    // disabled is no longer set, use the definition of the active effect since this is always fixable.
+    // activeEffectData.disabled = false;
     return activeEffectData;
   });
   
@@ -1167,7 +1288,6 @@ export function daeInitActions() {
   tokenizer = new DETokenizeThis({
     shouldTokenize: ['(', ')', ',', '*', '/', '%', '+', '=', '!=', '!', '<', '> ', '<=', '>=', '^']
   });
-
 }
 
 function initActorSheetHook(app, html, data) {
@@ -1209,7 +1329,9 @@ export function daeSetupActions() {
   }
   //@ts-ignore
   itemacroActive = game.modules.get("itemacro")?.active;
-  furnaceActive = game.modules.get("furnace")?.active
+  furnaceActive = game.modules.get("furnace")?.active;
+  conditionalVisibilityActive = game.modules.get("conditional-visibility")?.active;
+  midiActive = game.modules.get("midi-qol")?.active;
 }
 
 export function fetchParams() {

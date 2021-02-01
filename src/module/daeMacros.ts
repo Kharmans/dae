@@ -297,12 +297,19 @@ let _addEffects = (app, html, data) => {
 }
 
 export function getFlag(actor: Actor | Token | string, flagId: string) {
-  let theActor : Actor | Token;
+  let theActor : Actor;
+  if (!actor) return error(`dae.getFlag: actor not defined`);
   if (typeof actor === "string") {
     theActor = canvas.tokens.get(actor)?.actor;
     if (!theActor) theActor = game.actors.get(actor);
-  } else theActor = actor;
-  if (!theActor) return console.error(`dae.getFlag: actor not defined`)
+  } else {
+    const id = actor.id;
+    const token: Token = canvas.tokens.get(actor.id);
+    if (token) theActor = token.actor;
+    else theActor = game.actors.get(actor.id)
+  }
+  if (!theActor) return error(`dae.getFlag: actor not defined`)
+  warn("dae get flag ", actor, theActor, getProperty(theActor.data, `flags.dae.${flagId}`))
   return getProperty(theActor.data, `flags.dae.${flagId}`)
 }
 
@@ -310,7 +317,7 @@ export function setFlag(actor: Actor | Token | string, flagId: string, value: an
   if (typeof actor === "string") {
     return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
-  if (!actor) return console.error(`dae.setFlag: actor not defined`)
+  if (!actor) return error(`dae.setFlag: actor not defined`)
   return requestGMAction(GMAction.actions.setFlag, { actorId: actor.id, flagId, value})
 }
 
@@ -318,7 +325,7 @@ export function unsetFlag(actor: Actor | Token | string, flagId) {
   if (typeof actor === "string") {
     return requestGMAction(GMAction.actions.unsetFlag, { actorId: actor, flagId})
   }
-  if (!actor) return console.error(`dae.setFlag: actor not defined`)
+  if (!actor) return error(`dae.setFlag: actor not defined`)
   return requestGMAction(GMAction.actions.unsetFlag, { actorId: actor.id, flagId})
 
 }

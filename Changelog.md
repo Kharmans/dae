@@ -1,3 +1,17 @@
+0.2.41
+* Fix for mods to data.attributes.prof calling of _computeSpellCastingProgression being undefined.
+* Fixed a couple edge cases in dae.setFlag/dae.getFlag/dae.unsetFlag if you were passing a token instead of an actor.
+* In the effects drop down list any effects that are influenced by DAE behaviour are marked with (*). This means that either it is only supported via DAE, or that it is a DAE CUSTOM field, or the change is applied after prepareData would normally apply the change. This gives you an idea of what effects will work if there is no DAE installed. iN particular all the flags.midi-qol fields WILL work without DAE.
+* [BREAKING] when transfering a non-transfer effect the suspended value in the effect definition will be used, rather than the previous behaviour of it always being false.
+* Allow removal of weapon/armor/tool profs ci/dr/di/dv via the CUSTOM field (-value in drop down list).
+* Added auto complete for change target field. Do choose from the yellow list when using the auto-complete it will set the valid Modes and populate data as appropriate, at most ten matches are displayed, you can match on any part of the string. (The list of midi-qol flags is partially hand generated and it would be a mircale if there is not a typo in there somewhere so be warned, also in the first pass I include everything that dae knows about so it's possible something that should not be there is).
+* All of the flags.midi-qol fields are set to force override.
+* added macro.CUB to apply CUB conditions to target actors. Effects applied via cub.addCondition() and removed via cub.removeCondition() so applied effects will match current CUB definitions.  (Requires combat-utility belt). This is probably the better way to apply cub conditions to tokens.
+* added macro.ConditionalVisibility that lets you set conditional effects onto tokens. (Requires conditional-visibility) For example if you specify macro.ConditionVisibility CUSTOM invisible the token will be come invisible and disappear for actors that don't have seee invisible (see below).
+* added macro.ConditionalVisibilityVision that lets you set conditional visibility vision effects onto tokens. (Requires conditional-visibility active) maacro.ConditionalVisibilityVision seeinvisible will let the recipient see invisible tokens.
+
+* Clarification: any of the macro effects ONLY work if transferred from an item to an actor (either transfer or non-transfer) but will not work if the effect is manually created on the actor. The effect is applied on effect creation (macros called with "on") and removed on effect deletion (macros called with "off"). Suspending the effect has no effect on these, only creation and deletion.
+
 0.2.40  
 * Support data.arritbutes.movement.all (CUSTOM EFFECT ONLY) supporting
   * value => replace current with value

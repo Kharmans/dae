@@ -173,7 +173,9 @@ export class GMAction {
         token = canvas.tokens.get(actorId)
         if (token) {
           //@ts-ignore flagId, value
-          await token.actor.setFlag("dae", data.FlagId, data.value)
+          warn("dae setting flag to ", token.actor, data.flagId, data.value)
+          //@ts-ignore flagId, values
+          await token.actor.setFlag("dae", data.flagId, data.value)
           break;
         }
         actor = game.actors.get(actorId);
@@ -183,11 +185,13 @@ export class GMAction {
       case this.actions.unsetFlag:
         token = canvas.tokens.get(actorId)
         if (token) {
+          //@ts-ignore
+          warn("dae unsetting flag to ", token.actor, data.flagId)
           //@ts-ignore flagId, value
-          await token.actor.unsetFlag("dae", data.FlagId)
+          await token.actor.unsetFlag("dae", data.flagId)
           break;
         }
-        actor = game.actors.get(actorId, tokenId);
+        actor = game.actors.get(actorId);
         //@ts-ignore flagId, value
         if (actor) actor.unsetFlag("dae", data.flagId);
         break;
@@ -238,6 +242,7 @@ let createToken = async (userId: string, data: {targetSceneId: string, tokenData
   let targetScene = scenes.get(data.targetSceneId);
   return await targetScene.createEmbeddedEntity('Token', mergeObject(duplicate(data.tokenData), {"x": data.x, "y": data.y, hidden: false}, {overwrite: true, inplace:true}))
 }
+
 //Set the hidden status for a token.
 let setTokenVisibility = async(userId: string, data: {targetSceneId: string, tokenId: string, hidden: boolean}) => {
   if (!data.targetSceneId || !data.tokenId) return;
@@ -309,6 +314,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             }
           }
           warn("Apply active effects ", ae, itemCardId)
+
           setProperty(ae.flags, "dae.transfer", false);
           ae.changes.map(change => {
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
@@ -321,7 +327,11 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
                   return f;
                 })
               }
-            }
+            } /* TODO remove 
+              else if (change.key === "macro.cub") {
+              warn ("Change value for macro.cub is ", change.value)
+              change.value.push(tid)
+            } */
             return change;
           })
         })

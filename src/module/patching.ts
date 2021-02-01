@@ -161,9 +161,8 @@ async function createEmbeddedEntityToken(wrapped, ...args) {
   if (embeddedName === "ActiveEffect") {
     debug("Token: create Active Effect", embeddedName, data, options);
     data = data instanceof Array ? data : [data];
-
     if (data.length > 0) {
-      daeCreateActiveEffectActions(this, created)
+      await daeCreateActiveEffectActions(this, created)
     }
   }
   return created;
@@ -181,7 +180,7 @@ async function deleteEmbeddedEntityToken(wrapped, ...args) {
       if (effect) effects.push(effect.data);
     })
     if (effects.length > 0) {
-      daeDeleteActiveEffectActions(this, effects)
+      await daeDeleteActiveEffectActions(this, effects)
     }
   }
   return await wrapped(...args);
