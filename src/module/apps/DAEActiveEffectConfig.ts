@@ -63,7 +63,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
     if (cubActive) {
       this.cubConditionList = {}
-      game.cub.conditions.forEach(cubc => {
+      game.cub.conditions?.forEach(cubc => {
         this.cubConditionList[cubc.name] = cubc.name;
       })
     }

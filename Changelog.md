@@ -1,3 +1,5 @@
+0.2.43
+* Fix for editing conditions is CUB installed but active conditions not defined.
 0.2.42
 * Remove accidental dependency on midi-qol.
 * supply awesomeplete.css.map
