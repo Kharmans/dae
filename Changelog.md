@@ -2,7 +2,6 @@
 * Fix for editing conditions if CUB installed but active conditions not defined.
 * A couple of fixes for sw5e.
 * Many changes to support concentration automation in midi-qol.
-* updated ja.json
 [BREAKING] Sort of, well not much, actually much better. The item flags active for equipped/always active for transfer effects have been removed and replaced with a new rule and no checkboxes.
 * **Transfer effects** for feats and spells are toggled from the dnd5e effects tab.
 * Anything else follows the rule that transfer active effects for the item are enabled if it is equipped and is not "requires attunement" using the data from the item itself.  
