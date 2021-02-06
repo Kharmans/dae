@@ -4,10 +4,8 @@ First off you probably don't need DAE. The core foundry system has active effect
 DAE does add some features to core Active Effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.
 0. A DAE editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but not addition/deletion.
 1. Transfer effects (from an item) are enabled/disbled according to the following rule which overrides the default behaviour
-  * If the "Always Enabled" flag is set on the item the effect is enabled.
-  * If the "Enabled on Equip" flags is set on the item and the item is equiped the effect is enabled.
-  * Otherwise if the item is attuned and equipped the effect is active.  
-  If you modify the enable/disable flag (suspended) on the actor effect, that will override the above rules until the item is updated.
+* Transfer effects for feats and spells use the "disabled/suspended" setting. You can toggle from the effects tab on the item/character sheet.
+* Anything else follow the obvious dnd5e rule that transfer effects for an item apply if the item is equipped and attuned/does not require attunement. If you modify the enable/disable flag (suspended) on the actor effect, that will override the rule until the item is updated.
 2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value, core restricts you to numbers and strings.
 3. An extended set of fields you can modify, some of which are custom only fields to support drop down lists of possible value, like all of the traits, immunities which you cannot edit in core active effects.
 4. The ability to update derived fields, such as abilities.dex.mod. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
@@ -299,7 +297,6 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
   const item = await Item.create({
     name: "Ring of Protection",
     type: "consumable",
-    flags: {dae: {activeEquipped: false, alwaysActive: false}}
   })
   await item.createEmbeddedEntity("ActiveEffect", [EXAMPLE_TRANSFERRED_EFFECT]);
 
@@ -357,11 +354,7 @@ You create an active effect that takes it's changes from CUB via the drop down l
 CUB conditions are applied in 2 ways:
 If you select condition (CUB) from the drop down list DAE will copy the active effect from CUB into the actor/item. From then on it won't change, any changes you make in condition lab will NOT be reflected in actors who have the condition applied via DAE/midi-qol.
 
-If the active effect name is CUB:condition (e.g. CUB:Blinded) then whenever prepare data is called for the actor DAE will lookup the condition active effect from CUB (CUB has it's own active effect editor and you can create active effects to reflect the condition) and use those changes to affect the actor.
-
-The is a config flag "Include active effects in special traits display" which enables the creation of CUB:effects in the DAE Active Effects screen.
-
-If an active effect is named CUB:condition, the condition is ALWAYS looked up during preparedata whatever the config setting is.
+Alternatively use macro.CUB to apply a condition that is looked up from CUB when applied.
 
 ### Really cool Core functionality that you can use....
 You can add your own custom effects without needing any DAE module changes. Say you want to add the average of str.mod and dex.mod to AC (and DAE does not support it) and the expressions don't work...  

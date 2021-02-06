@@ -15,7 +15,7 @@ import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
-import { GMAction, GMActionMessage } from './module/GMAction';
+import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
 import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
@@ -73,11 +73,10 @@ Hooks.once('ready', async function () {
     daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
     daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
     daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
-    daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
-    daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
   }
   if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {
-
+    daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
+    daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
     daeMacroRepeats= {
       "none": "",
       "startEveryTurn" : i18n("dae.startEveryTurn"),
@@ -129,7 +128,8 @@ Hooks.once('setup', function() {
     getFlag: getFlag,
     migrateActorDAESRD: migrateActorDAESRD,
     migrateAllActorsDAESRD: migrateAllActorsDAESRD,
-    migrateAllNPCDAESRD: migrateAllNPCDAESRD
+    migrateAllNPCDAESRD: migrateAllNPCDAESRD,
+    convertDuration
   }
 });
 

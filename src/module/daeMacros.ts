@@ -16,128 +16,6 @@ export let activateItem = () => {
   // return new ActiveItemSelector(token.actor, {}).render(true);
 }
 
-let effectNameString = function (actor, item, active) {
-  let btnStyling = 'width: 22px; height:22px; font-size:10px;line-height:1px';
-  btnStyling = "width: 60px; padding:0px; line-height:1px;";
-  if (!active) btnStyling = btnStyling.concat("font-weight: bold; color: green");
-  let activeString = active ? `${game.i18n.localize("dae.disable")}`
-    : `${game.i18n.localize("dae.enable")}`;
-  let buttonID = `${item.name}`;
-  let btntxt = `<button type="button" id="[${item.name}][${item.type}]" style="${btnStyling}">${activeString}</button>`;
-  return `<div class="dae-toggle dae-${active ? "active" : "inactive"}-button">${item.name}: ${btntxt}</div>`
-  //               : `<div class="dae-toggle id="${item.name}" dae-inactive-button">${item.name}: ${btntxt}</div>`;
-}
-
-export let getEffects = (allEffects: boolean = false, summary: boolean = true, {token = null, activeOnly = false}) => {
-}
-
-let createEffectString = (actor, detailed, activeOnly = false) => {
-  
-}
-
-export let daeShowEffects = (detailed = true, {token = null, activeOnly = false}={}) => {
-  const speaker = ChatMessage.getSpeaker();
-  token = token || canvas.tokens.get(speaker.token);
-  if (!token) {
-    ui.notifications.warn(`${game.i18n.localize("dae.noSelection")}`)
-    return;
-  }
-  return effectsActor(detailed, {token, activeOnly});
-}
-
-export let effectsActor = (detailed = true, {token = null, actor = null, activeOnly = false}) => {
-  if (!token?.actor && !actor) return;
-  let flavor = `${"Effect List"}`;
-  let effectString = createEffectString(token?.actor || actor, detailed, activeOnly);
-  const speaker = {actor: token?.actor?.id || actor.id, alias: token?.actor?.name || actor.name, token: token?.id};
-  ChatMessage.create({
-    user: game.user.id,
-    speaker,
-    content: effectString,
-    whisper: [game.user.id], // ChatMessage.getWhisperIDs("GM"),
-    type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-    flags: { daeEffects: true, detailed: detailed }
-  });
-}
-
-let activateHandler = async (message, html, data) => {
-  if (!getProperty(message, "data.flags.daeEffects")) return;
-  let buttons = html.find(".dae-toggle");
-  const speaker = message.data.speaker;
-  const token = canvas.tokens.get(speaker.token);
-  let actor = token?.actor;
-  if (!actor) actor = game.actors.get(speaker.actor);
-  if (!actor) return;
-
-  for (let i = 0; i < buttons.length; i++) {
-    let button = buttons[i];
-    const matches = button.children[0].id.match(/\[([^\]]*)\]\[([^\]]*)\]/);
-    if (!matches) return;
-    const itemName = matches[1];
-    const itemType = matches[2];
-    button.addEventListener("click", async (ev) => {
-      ev.stopPropagation();
-      await toggleActorEffect(actor, itemName, itemType); // have to await so that we geet updated status
-      let messageString = createEffectString(actor, getProperty(message, "data.flags.detailed"))
-      message.update({ "_id": message._id, "content": messageString })
-    });
-  };
-  let actives = html.find(".active-effect-delete");
-  for (let i = 0; i < actives.length; i++) {
-    let active = actives[i];
-    let id = active.id;
-    active.addEventListener("click", async (ev)=> {
-      let token = canvas.tokens.get(message.data.speaker.token);
-      let activeEffects = getProperty(token.actor.data, "flags.dae.activeEffects") || [];
-      activeEffects = activeEffects.filter(tem => tem.itemId !== id);
-      await token.actor.update({"flags.dae.activeEffects": activeEffects}, {});
-      let messageString = createEffectString(token.actor, getProperty(message, "data.flags.detailed"))
-      message.update({ "_id": message._id, "content": messageString })
-    })
-  }
-}
-
-Hooks.on("renderChatMessage", activateHandler);
-
-export let daeSetPassiveEffect = (itemName: string, setValue = false, itemType: string = "") => {
-  const speaker = ChatMessage.getSpeaker();
-  const token = canvas.tokens.get(speaker.token);
-  if (!token) {
-    ui.notifications.warn(`${game.i18n.localize("dae.noSelection")}`)
-    return;
-  }
-  return toggleActorEffect(token.actor, itemName, itemType, setValue)
-}
-
-export let daeTogglePassiveEffect = (itemName: string, itemType: string = "") => {
-  const speaker = ChatMessage.getSpeaker();
-  const token = canvas.tokens.get(speaker.token);
-  if (!token) {
-    ui.notifications.warn(`${game.i18n.localize("dae.noSelection")}`)
-    return;
-  }
-  return toggleActorEffect(token.actor, itemName, itemType, undefined)
-}
-
-/*
-export let toggleTokenEffect = async (tokenId: string, itemName: string, itemType: String, overRide: boolean = undefined) => {
-  if (!tokenId) return false;
-  let token = canvas.tokens.get(tokenId);
-  return toggleActorEffect(token.actor, itemName, itemType, overRide);
-}
-*/
-export let toggleActorIdEffect = async (actorId: string, itemName: string, itemType: String = "", overRide: boolean = undefined) => {
-  return toggleActorEffect(game.actors.get(actorId), itemName, itemType, overRide);
-}
-
-let toggleActorEffect = async (actor: Actor, itemName: string, itemType: String, overRide: boolean = undefined) => {
-}
-
-export let removeActiveEffectsToken = () => {
-  if (!game.user.isGM) return;
-  //canvas.tokens.controlled.forEach(token => removeAllTokenEffects(token));
-}
-
 let tokenScene = (tokenName, sceneName) => {
   if (!sceneName) {
     //@ts-ignore
@@ -258,21 +136,7 @@ export let restoreVision = async (tokenId: any) => {
 }
 
 export let macroReadySetup = () => {
-  //@ts-ignore
-  let pcSheetNames = Object.values(CONFIG.Actor.sheetClasses.character).concat(Object.values(CONFIG.Actor.sheetClasses.npc))
-    //@ts-ignore
-    .map((sheetClass) => sheetClass.cls)
-    .map((sheet) => sheet.name);
 
-    debug("Sheet names are ", pcSheetNames)
-  pcSheetNames.forEach(sheetName => {
-    Hooks.on("render" + sheetName, (app, html, data) => {
-      // only for GMs or the owner of this character
-      debug("In add button ", app, data)
-      if (!data.owner || !data.actor) return;
-      _addEffects(app, html, data);
-    });
-  })
 }
 
 export function getTokenFlag(token: Token, flagName: string) {
@@ -282,18 +146,6 @@ export function getTokenFlag(token: Token, flagName: string) {
 export function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {
   const tokenId = (typeof token === "string") ? token : token.id;
   return requestGMAction(GMAction.actions.setTokenFlag, { tokenId: tokenId, sceneId: canvas.scene.id, flagName, flagValue })
-}
-
-let _addEffects = (app, html, data) => {
-  let openBtn = $(`<a class="open-de-effects" title="${"DEEffects"}"><i class="fas fa-clipboard"></i>${"Show DE"}</a>`);
-  debug("Open button called ", openBtn);
-  openBtn.click(ev => {
-    effectsActor(ev.shiftKey, {actor: app.object})
-  });
-  html.closest('.app').find('.open-de-effects').remove();
-  let titleElement = html.closest('.app').find('.window-title');
-  debug("Title element ", titleElement);
-  openBtn.insertAfter(titleElement);
 }
 
 export function getFlag(actor: Actor | Token | string, flagId: string) {

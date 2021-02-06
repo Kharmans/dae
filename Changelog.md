@@ -1,5 +1,20 @@
 0.2.43
-* Fix for editing conditions is CUB installed but active conditions not defined.
+* Fix for editing conditions if CUB installed but active conditions not defined.
+* A couple of fixes for sw5e.
+* Many changes to support concentration automation in midi-qol.
+* updated ja.json
+[BREAKING] Sort of, well not much, actually much better. The item flags active for equipped/always active for transfer effects have been removed and replaced with a new rule and no checkboxes.
+* **Transfer effects** for feats and spells are toggled from the dnd5e effects tab.
+* Anything else follows the rule that transfer active effects for the item are enabled if it is equipped and is not "requires attunement" using the data from the item itself.  
+
+This make much more sense. Feats you enable/disable from the actor/item effects tab.
+Things, rings, weapons etc, must be equipped and either be attuned or  attunment not required for the effects to be enbled.
+
+With this change the DAE Actor/Item effects window is only required for editing owned items. Everything else can be done from the standard dnd5e actor/item effects tab. If youenable the DAE active effect editor as the default editor you really never need to click on the DAE button on the title bar.
+
+* When an item is first added to an actor the "suspended" flag on the item is used to set the initial enabled/disalbed state.
+* And, as has always been the case, you can override item **transfer effects** enabled/disabled status form the actor effects tab and will remain enabled/disabled until the item updates (e.g. equipped/unequipped).
+
 0.2.42
 * Remove accidental dependency on midi-qol.
 * supply awesomeplete.css.map

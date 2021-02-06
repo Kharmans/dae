@@ -1,7 +1,6 @@
-
 <form autocomplete="off">
-  
- 
+
+
   <script>
     var url = "./modules/dae/libs/awesomplete.min.js"
     $.getScript(url);
@@ -123,25 +122,28 @@
         <input type="number" name="duration.startTurn" value="{{ effect.duration.startTurn }}" />
       </div>
     </div>
-    <div class="form-group">
-      <label>Special Expiry</label>
-      <div class="expriy">
-        <select name="flags.dae.specialDuration" multiple>
-          {{selectOptions specialDuration selected=effect.flags.dae.specialDuration}}
-        </select>
-      </div>
-    </div>
 
-    {{#if macroRepeats}}
-    <div class="form-group">
-      <label>Macro Repeat</label>
-      <div class="repeat">
-        <select name="flags.dae.macroRepeat" data-dtype="String">
-          {{selectOptions macroRepeats selected=effect.flags.dae.macroRepeat}}
-        </select>
+      <div class="form-group">
+        <label>Special Expiry</label>
+        <div class="expriy form-fields">
+          <select name="flags.dae.specialDuration" multiple>
+            {{selectOptions specialDuration selected=effect.flags.dae.specialDuration}}
+          </select>
+        </div>
       </div>
+
+      {{#if macroRepeats}}
+
+      <div class="form-group">
+        <label>Macro Repeat</label>
+        <div class="repeat  form-fields">
+          <select name="flags.dae.macroRepeat" data-dtype="String">
+            {{selectOptions macroRepeats selected=effect.flags.dae.macroRepeat}}
+          </select>
+        </div>
+      </div>
+      {{/if}}
     </div>
-    {{/if}}
 
   </section>
 
@@ -163,8 +165,8 @@
         <div class="formgroup">
           <div class="key">
             <div>
-              <input class="awesomplete keyinput" style="width:280px" type="text" name="changes.{{i}}.key" value="{{change.key}}"
-                data-list="{{../fieldsList}}" />
+              <input class="awesomplete keyinput" style="width:280px" type="text" name="changes.{{i}}.key"
+                value="{{change.key}}" data-list="{{../fieldsList}}" />
             </div>
           </div>
           <div class="keylist">

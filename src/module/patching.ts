@@ -160,10 +160,11 @@ async function createEmbeddedEntityToken(wrapped, ...args) {
   let created = await wrapped(...args);
   if (embeddedName === "ActiveEffect") {
     debug("Token: create Active Effect", embeddedName, data, options);
-    data = data instanceof Array ? data : [data];
-    if (data.length > 0) {
+    let theData = data instanceof Array ? data : [data];
+    if (theData.length > 0) {
       await daeCreateActiveEffectActions(this, created)
     }
+    // if (!args[0].length) Hooks.callAll("dae.createActiveEffect", this, ...args)
   }
   return created;
 }
@@ -171,19 +172,21 @@ async function createEmbeddedEntityToken(wrapped, ...args) {
 //TODO: when this Hooks.on("deleteActiveEffect") workds for tokens
 async function deleteEmbeddedEntityToken(wrapped, ...args) {
   let [embeddedName, data, options = {}] = args;
+  let effects = [];
   if (embeddedName === "ActiveEffect") {
     debug("Token: delete Active Effect", embeddedName, data, options);
-    data = data instanceof Array ? data : [data];
-    let effects = [];
-    data.forEach(effectId => {
+    const theData = data instanceof Array ? data : [data];
+    theData.forEach(effectId => {
       let effect = this.effects.get(effectId);
       if (effect) effects.push(effect.data);
     })
-    if (effects.length > 0) {
-      await daeDeleteActiveEffectActions(this, effects)
-    }
   }
-  return await wrapped(...args);
+  const returnValue = await wrapped(...args);
+  if (effects.length > 0) {
+    await daeDeleteActiveEffectActions(this, effects)
+  }
+  // if (embeddedName === "ActiveEffect") Hooks.callAll("dae.deleteActiveEffect", this, ...args)
+  return returnValue;
 }
 
 var d20Roll;

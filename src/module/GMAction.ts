@@ -57,6 +57,7 @@ export class GMAction {
     setTokenFlag: "setTokenFlag",
     setFlag: "setFlag",
     unsetFlag: "unsetFlag",
+    deleteEffects: "deleteEffects"
   }
 
   private static actionQueue = [];
@@ -213,6 +214,10 @@ export class GMAction {
         //@ts-ignore
         await applyTokenMagic(data.tokenId, data.effectId, data.duration);
         break;
+      case this.actions.deleteEffects:
+        //@ts-ignore
+        await deleteEffects(data.targets, data.origin)
+        break;
 
       default:
         console.warn("dae invalid message received", action, data)
@@ -220,6 +225,18 @@ export class GMAction {
   }
 }
 
+let deleteEffects = async (targets, origin: string) => {
+  for (let idData of targets) {
+    let target = canvas.tokens.get(idData.tokenId);
+    let targetActor = target?.actor;
+    if (!targetActor) targetActor = game.actors.get(idData.actorId);
+    if (!targetActor) {
+      error("could not find actor for ", idData);
+    }
+    const effectsToDelete = targetActor.effects.filter(ef => ef.data.origin === origin);
+    targetActor.deleteEmbeddedEntity("ActiveEffect", effectsToDelete.map(ef=>ef.id));
+  }
+}
 // delete a token from the specified scene and recreate it on the target scene.
 let recreateToken = async (userId: string, data: {startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number}) => {
   createToken(userId, data);
@@ -323,15 +340,11 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
                 change.value = duplicate(change.value).map(f => {
                   if (f === "@itemCardId") return itemCardId;
                   if (f === "@target") return tid;
-                  if (typeof f === "string" && f.startsWith("@@")) return;
+                  // if (typeof f === "string" && f.startsWith("@@")) return;
                   return f;
                 })
               }
-            } /* TODO remove 
-              else if (change.key === "macro.cub") {
-              warn ("Change value for macro.cub is ", change.value)
-              change.value.push(tid)
-            } */
+            }
             return change;
           })
         })

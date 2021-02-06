@@ -1,18 +1,4 @@
 <form autocomplete="off">
-  {{#if isItem}}
-  <section>
-    <div class="flexrow" height="30px">
-      <label>{{localize "dae.Active"}}</label>
-      <input type="checkbox" name="flags.dae.activeEquipped" value="flags.dae.activeEquipped" data-dtype="{{Boolean}}"
-        {{checked flags.dae.activeEquipped}} />
-    </div>
-    <div class="flexrow" height="30px">
-      <label>{{localize "dae.Cursed"}}</label>
-      <input type="checkbox" name="flags.dae.alwaysActive" value="1" data-dtype="{{Boolean}}"
-        {{checked flags.dae.alwaysActive}} />
-    </div>
-  </section>
-  {{/if}}
   <section>
     <div class="dnd5e sheet acctor inventory-filters flexrow 3">
       <div style="border: 2px groove #eeede0">
