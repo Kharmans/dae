@@ -1,3 +1,8 @@
+0.2.45
+Fix for multiple GMs logged in and concentration
+Fix for broked multi effect application.
+0.2.44
+Packaging issues.
 0.2.43
 * Fix for editing conditions if CUB installed but active conditions not defined.
 * A couple of fixes for sw5e.

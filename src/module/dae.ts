@@ -300,7 +300,7 @@ function effectDisabled(actor, efData, itemData = null) {
       itemData = itemId && actor.items.get(itemId);
     }
     // for transfer effects this take priority over disabled setting
-    if (itemData && !["feat", "spell"].includes(itemData.type)) {
+    if (itemData && !["feat", "spell", "power"].includes(itemData.type)) {
       // item is disabled if it is not equipped
       // OR item is equipped but attunment === requires attunement
       disabled = !itemData.data.equipped || itemData.data.attunement === 1;
@@ -769,7 +769,7 @@ export async function daeCreateActiveEffectActions(actor, effects) {
 
   let hook = "createActiveEffect";
   // because of the fiddle for tokens this is called in the update vs preUpdate for tokens
-  if (actor.isToken && game.user === game.users.find(user=> user.isGM && user.active))
+  if (actor.isToken && game.user.isGM)
     await update();
   else  Hooks.once(hook, update);
   return true;
@@ -805,7 +805,7 @@ export async function daeDeleteActiveEffectActions(actor, effects) {
 
   let hook = "deleteActiveEffect";
   // if (tokens[0].actor.isToken) hook = "dae.deleteActiveEffect";
-  if (actor.isToken && game.user === game.users.find(user=> user.isGM && user.active))
+  if (actor.isToken && game.user.isGM)
     await update()
   else Hooks.once(hook, update);
   return true;
@@ -829,7 +829,7 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
     // let item = (effect.origin && await fromUuid(effect.origin)) || null;
     if (!effect.changes) continue;
     for (let change of effect.changes) {
-      if (!["macro.execute", "macro.itemMacro"].includes(change.key)) return;
+      if (!["macro.execute", "macro.itemMacro"].includes(change.key)) continue;
       let lastArg = mergeObject(lastArgOptions, {
         //@ts-ignore - undefined fields
           effectId: effect._id,
@@ -842,28 +842,27 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
         var tokenId = ChatMessage.getSpeaker({actor}).token
       let rollData = daeRollData(actor);
       //@ts-ignore
-      change = await evalArgs({itemData: null, effectData: effect, context: rollData, actor, change, doRolls: true})
-      if (change.key === "macro.execute") {
-        const macro = game.macros.getName(change.value[0]);
+      const theChange = await evalArgs({itemData: null, effectData: effect, context: rollData, actor, change, doRolls: true})
+      if (theChange.key === "macro.execute") {
+        const macro = game.macros.getName(theChange.value[0]);
         if (!macro) {
           //TODO localize this
           if (action !== "off") {
-            ui.notifications.warn(`macro.execute | No macro ${change.value[0]} found`)
-            error(`macro.execute | No macro ${change.value[0]} found`);
+            ui.notifications.warn(`macro.execute | No macro ${theChange.value[0]} found`)
+            error(`macro.execute | No macro ${theChange.value[0]} found`);
+            continue;
           }
         }
         if (furnaceActive) {
           //@ts-ignore
-          result = await macro.execute(action, ...(duplicate(change.value.slice(1))), lastArg)
+          result = await macro.execute(action, ...(duplicate(theChange.value.slice(1))), lastArg)
         } else {
           console.warn("Furnace not active - so no macro arguments supported");
           result = await macro.execute();
         }
-      } else if (change.key === "macro.itemMacro") {
+      } else if (theChange.key === "macro.itemMacro") {
         let macroCommand = getProperty(effect.flags, "dae.macroCommand"); // this is populated in evalArgs
-        if (!macroCommand) {
-          return null;
-        }
+        if (!macroCommand) continue;
         let macro =  await CONFIG.Macro.entityClass.create({
           name: "DAE-Item-Macro",
           type: "script",
@@ -873,7 +872,7 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
           flags: { "dnd5e.itemMacro": true }
         }, { displaySheet: false, temporary: true });
         if (furnaceActive) {
-          result = await macro.execute(action, ...duplicate(change.value), lastArg);
+          result = await macro.execute(action, ...duplicate(theChange.value), lastArg);
         } else {
           console.warn("Furnace not active - so no macro arguments supported")
           result = await macro.execute();
