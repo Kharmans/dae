@@ -292,15 +292,20 @@ function effectDisabled(actor, efData, itemData = null) {
   disabled  = disabled || (ci && ci.includes(alternate));
   */
 
-  // transfer effects with an origin will override default enable/disable
-//  if (efData.origin && efData.flags?.dae?.transfer) {
+  // transfer effects depend on the item to disable/enable (if there is one)
   if (efData.flags?.dae?.transfer) {
-    if (!itemData && efData.origin) {
+    if (!itemData && efData.origin) { // itemData not passed, see if we have the item
       let [actorType, actorId, itemType, itemId] = efData.origin.split(".");
       itemData = itemId && actor.items.get(itemId);
     }
-    // for transfer effects this take priority over disabled setting
-    if (itemData && !["feat", "spell", "power"].includes(itemData.type)) {
+    // Non eequip items
+    let nonEquipItems = ["feat", "spell"];
+    if (game.system.id === "sw5e") {
+      nonEquipItems = ["archetype", "background", "class", "classfeature", "feat", 
+                      "fightingmastery", "fightingstyle", "lightsaberform", "power", "species"];
+    }
+
+    if (itemData && !nonEquipItems.includes(itemData.type)) {
       // item is disabled if it is not equipped
       // OR item is equipped but attunment === requires attunement
       disabled = !itemData.data.equipped || itemData.data.attunement === 1;

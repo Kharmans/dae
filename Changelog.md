@@ -1,6 +1,8 @@
+0.2.46
+Fix for sw5e non-equipped items not seting disabled correctly on transferred effects.
 0.2.45
 Fix for multiple GMs logged in and concentration
-Fix for broked multi effect application.
+Fix for broken multi effect application.
 0.2.44
 Packaging issues.
 0.2.43

@@ -1,19 +1,25 @@
 ## What does DAE do?
 First off you probably don't need DAE. The core foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and using DAE only if you run into a roadblock on what you want to do.
 
+If you've come here because someone said you should use the module, here's a little bit of background. 
+
+This module modifies how active effects behave over and above what is supported in core. An active effect allows you to modify values on an actor, strength, dexterity and so on. You can create effects directy on an actor or create them on an item and have them transfer to the actor when the item is added to the actor.
+
 DAE does add some features to core Active Effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.
 0. A DAE editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but not addition/deletion.
 1. Transfer effects (from an item) are enabled/disbled according to the following rule which overrides the default behaviour
-* Transfer effects for feats and spells use the "disabled/suspended" setting. You can toggle from the effects tab on the item/character sheet.
-* Anything else follow the obvious dnd5e rule that transfer effects for an item apply if the item is equipped and attuned/does not require attunement. If you modify the enable/disable flag (suspended) on the actor effect, that will override the rule until the item is updated.
+  * If the item that the effect came from (transfer effect) and the item can't be equipped simply use the "disabled/suspended" setting. You can toggle from the effects tab on the item/character sheet.
+  * Anything else follows the obvious dnd5e rule that transfer effects for an item apply if the item is equipped and attuned/does not require attunement. If you modify the enable/disable flag (suspended) on the actor effect, that will override the rule until the item is updated.
 2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value, core restricts you to numbers and strings.
-3. An extended set of fields you can modify, some of which are custom only fields to support drop down lists of possible value, like all of the traits, immunities which you cannot edit in core active effects.
+3. An extended set of fields you can modify, some of which are custom only fields to support drop down lists of possible value, like all of the traits, immunities some of which you cannot edit in core active effects.
 4. The ability to update derived fields, such as abilities.dex.mod. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
-5 The ability to perform arithmetic in field data definitions, like 
+5. The ability to perform arithmetic in field data definitions, like 
+6. Support for an API that allows non-transfer effects to be applied to a targeet token. In combination with midi-qol it allows you to have spells/weapons/features apply non-transfer effects to other tokens.
 ```
 ceil(@classes.rogue.levels/2)
 ```
 6. A slightly extended active effect editor that provides a list of valid fields, a drop down list of options and drop down lists for restricted field values and the ability to set the priority of an effect.
+7. The ability to call macros when active effects are applied to an actor.
 
 ## Quick start for dynamic effects users - who are migrating from dynamic effects.
 Pick an actor and do
