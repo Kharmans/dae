@@ -1,5 +1,8 @@
+0.2.47
+Fix for @target not being correctly set with multiple targets.
+Remove dependency on game.Gametime, uses window.Gametime instead.
 0.2.46
-Fix for sw5e non-equipped items not seting disabled correctly on transferred effects.
+Fix for sw5e non-equipped items not setting disabled correctly on transferred effects.
 0.2.45
 Fix for multiple GMs logged in and concentration
 Fix for broken multi effect application.

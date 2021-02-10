@@ -306,8 +306,9 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         removeList = removeList.map(ae => ae.data._id);
         await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
       }
-      if (activate) {
-        actEffects.forEach(ae => {
+      if (activate) { 
+        let dupEffects = duplicate(actEffects)
+        dupEffects.forEach(ae => {
           setProperty(ae, "flags.dae.token", tid)
           // convert item duration to seconds/rounds/turns according to combat
           if (ae.duration.seconds) {
@@ -349,7 +350,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           })
         })
         warn("gm action apply effect", token, actEffects)
-        let removeList = await token.actor.createEmbeddedEntity("ActiveEffect", actEffects);
+        let removeList = await token.actor.createEmbeddedEntity("ActiveEffect", dupEffects);
 
         //TODO remove this when timesup is in the wild.
         if (!timesUpInstalled) { // do the kludgey old form removal

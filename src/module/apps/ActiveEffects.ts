@@ -48,7 +48,8 @@ getData() {
     let newAe = duplicate(ae.data);
     newAe.duration = duplicate(ae.duration);
     if (aboutTimeInstalled && newAe.duration?.type === "seconds") {
-      newAe.duration.label = game.Gametime.DTM.timeString(ae.duration.remaining)
+      //@ts-ignore
+      newAe.duration.label = window.Gametime.DTM.timeString(ae.duration.remaining)
     } else if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }

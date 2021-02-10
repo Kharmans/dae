@@ -190,7 +190,8 @@ truesight: false
       if (!change.priority) change.priority = change.mode * 10;
     });
     if (aboutTimeInstalled && data.effect.duration?.startTime) {
-      const Gametime = game.Gametime;
+      //@ts-ignore
+      const Gametime = window.Gametime;
       const startTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime).shortDate();
       data.startTimeString = (startTime.date + " " + startTime.time) || "";
       if (data.effect.duration.seconds) {
