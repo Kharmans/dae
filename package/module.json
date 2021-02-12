@@ -2,7 +2,7 @@
   "name": "dae",
   "title": "Dynamic effects using Active Effects",
   "description": "replacement for dynamic effects",
-  "version": "0.2.47",
+  "version": "0.2.48",
   "compatibleCoreVersion": "0.7.9",
   "minimumCoreVersion": "0.7.4",
   "minimumSystemVersion": "1.2.3",
@@ -71,5 +71,5 @@
   "url": "https://gitlab.com/tposney/dae",
   "author": "tposney",
   "manifest": "https://gitlab.com/tposney/dae/raw/master/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.2.47.zip"
+  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.2.48.zip"
 }

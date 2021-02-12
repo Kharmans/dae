@@ -1,3 +1,7 @@
+0.2.48
+Updated ja.json
+Ensure that tokenId is set in lastArg for macro calls.
+Make multi select more visible.
 0.2.47
 Fix for @target not being correctly set with multiple targets.
 Remove dependency on game.Gametime, uses window.Gametime instead.
