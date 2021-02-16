@@ -300,7 +300,7 @@ export async function fixupActors() {
         case "loot":
         case "consumable":
         case "tool":
-        case "bakcpack":
+        case "backpack":
           if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack, dndSRDItemsPack]);
           else replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack]);
           if (replaceData) console.warn("migrated", actor.name, replaceData.name, replaceData)
