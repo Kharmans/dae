@@ -232,7 +232,7 @@
     "dae.noGM": "No GM Client connected",
     "dae.expireRealTime.Name": "Expire timed effects in real time",
     "dae.expireRealTime.Hint": "If enabled and about-time/times-up not installed timed effects will expire in real time.",
-    "dae.isAttacked": "Is Atttacked: Expires if the character is attacked",
+    "dae.isAttacked": "Is Attacked: Expires if the character is attacked",
     "dae.isDamaged": "is Damaged: Expires if the character is damaged",
     "dae.1Action": "1 Action: Expires on the next action (item roll) of the character",
     "dae.1Attack": "1 Attack: Expires on the next attack by the character",
