@@ -579,15 +579,18 @@ function daeCustomEffect(actor, change) {
           break;
       };
 
-      this.items.forEach(item => {
-        item.getSaveDC();
-        item.getAttackToHit();
-      });
+      if (this?.items) {
+        this.items.forEach(item => {
+          item.getSaveDC();
+          item.getAttackToHit();
+        });
+      }
+      
       const bonuses = getProperty(data, "bonuses.abilities") || {};
       if (actor.data.type === "vehicle") return true;
 
       // update skills if proficient
-      const flags = actorData.flags[game.systsem.id] || {};
+      const flags = actorData.flags[game.system.id] || {};
       const feats = CONFIG.DND5E.characterFlags;
       const athlete = flags.remarkableAthlete;
       const joat = flags.jackOfAllTrades;
