@@ -192,7 +192,7 @@ activateListeners(html) {
     if (effect_name === "new") {
       //@ts-ignore
       AEDATA = {
-        label: "New Active Effect",
+        label: this.object.name,
         icon: this.object.img || "icons/svg/mystery-man.svg",
         changes: [],
         transfer: false,

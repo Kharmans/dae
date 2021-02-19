@@ -1,3 +1,11 @@
+0.2.49
+* Fixed an error in passing parameters to macro.execute/macro.itemMacro when there are no @parameters.
+* A little re-ordering of actions when adding/removing concentration that hopefully will remove a DAE/CUB race condition.
+* Deprecation of @actor as a macro parameter.
+* Added an additional special trait, Damage Bonus Macro (flags.dnd5e.DamageBonusMacro), which is a comma separated list of macro names that midi-qol will call wehen calculating damage for a successful damage applicaiton. See midi-qol for details.
+* When set via CUSTOM mode, dae will handling creating the comma separated list. 
+* Appears on the special traits page and can also be set by hand there.
+* Adding damage this way is expensive since it requires a macro compilation and execution each time you do damage. If you can add the damage via bonuses.mwak.damage you should do so.
 0.2.48
 Updated ja.json
 Ensure that tokenId is set in lastArg for macro calls.

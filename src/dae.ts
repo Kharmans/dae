@@ -83,6 +83,7 @@ Hooks.once('ready', async function () {
       "endEveryTurn" : i18n("dae.endEveryTurn")
     };
   }
+
   patchSpecialTraits();
 })
 /* ------------------------------------ */

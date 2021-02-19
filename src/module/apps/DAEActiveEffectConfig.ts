@@ -206,11 +206,6 @@ truesight: false
     }
     data.sourceName = await this.object.sourceName;
     data.fieldsList =  this.fieldsList;
-    // console.error("data fieldsList ", data.fieldsList)
-
-
-    // data.effect.flags.dae.stackable = this.object.data.flags?.dae?.stackable ||false;
-
     return data;
   }
 
