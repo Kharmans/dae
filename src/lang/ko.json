@@ -244,6 +244,6 @@
     "dae.displayTraits.Name": "특수 특성 표시에 활성화 효과를 포함한다",
     "dae.displayTraits.Hint": "특수 특성 표시에는 활성화 효과 변화가 포함된다. 입력된 값은 사전 활성화 효과 값으로 가정된다.",
     "dae.lookupCUB.Name": "CUB 상태이상 활성화 효과 검색 런타임 추가",
-    "dae.lookupCUB.Hint": "활성화 시 CUB:condition active effects로 참조되는 CUB 상태이상이 준비 데이터가 호출될 때마다 복사된다. 비활성화시 효과가 생성될 때 활성화 효과가 복사된다.",
+    "dae.lookupCUB.Hint": "활성화 시 CUB:condition active effects로 참조되는 CUB 상태이상이 준비 데이터가 호출될 때마다 복사된다. 비활성화시 효과가 생성될 때 활성화 효과가 복사된다."
 }
 
