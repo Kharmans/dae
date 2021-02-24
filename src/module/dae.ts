@@ -484,7 +484,6 @@ function daeCustomEffect(actor, change) {
       // TODO: remove if fixed in core
       let result = attackDamageBonusEval(change.value, actor);
       result = replaceAtFields(result, actor);
-      console.error("custom result is ", result, change.value)
       value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
       setProperty(actor.data, change.key, (current || "") + value);
       return true;
@@ -549,7 +548,6 @@ function replaceAtFields(value, actor) {
   tokenizer.tokenize(value, (token) => {
     if (typeof token === "string" && token.startsWith("@")) {
       rollData = rollData || daeRollData(actor);
-      console.error(token.slice(1), rollData);
       const existing = getProperty(rollData, token.slice(1));
       fields.push(existing ?? token)
       fields.push()
