@@ -1,5 +1,5 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { playersCanSeeEffects, ValidSpec, cubActive, confirmDelete, aboutTimeInstalled } from "../dae"
+import { ValidSpec, cubActive, confirmDelete, aboutTimeInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 import { filters } from "pixi.js";

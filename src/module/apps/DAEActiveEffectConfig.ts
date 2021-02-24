@@ -139,7 +139,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
 
-
+/*
     blindsight: false
 devilssight: false
 hidden: false
@@ -149,6 +149,7 @@ obscured: false
 seeinvisible: true
 tremorsense: false
 truesight: false
+*/
     if (spec === "data.traits.size") return CONFIG.DND5E.actorSizes;
     
     return false;

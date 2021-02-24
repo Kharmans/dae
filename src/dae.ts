@@ -25,7 +25,7 @@ import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTile
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
   // 0 = none, warnings = 1, debug = 2, all = 3
-  CONFIG.debug.hooks = debugEnabled >= 3;
+  if (debugEnabled >= 3) CONFIG.debug.hooks = true;
 }
 export var debugEnabled;
 // 0 = none, warnings = 1, debug = 2, all = 3
@@ -33,6 +33,7 @@ export let debug = (...args) => {if (debugEnabled > 1) console.log("DEBUG: dae |
 export let log = (...args) => console.log("dae | ", ...args);
 export let warn = (...args) => {if (debugEnabled > 0) console.warn("dae | ", ...args)};
 export let error = (...args) => console.error("dae | ", ...args)
+export let timelog = (...args) => warn("dae | ", Date.now(), ...args);
 export let i18n = key => {
   return game.i18n.localize(key);
 };
@@ -130,7 +131,8 @@ Hooks.once('setup', function() {
     migrateActorDAESRD: migrateActorDAESRD,
     migrateAllActorsDAESRD: migrateAllActorsDAESRD,
     migrateAllNPCDAESRD: migrateAllNPCDAESRD,
-    convertDuration
+    convertDuration,
+    confirmAction
   }
 });
 
@@ -144,11 +146,11 @@ Hooks.once("ready", () => {
     ui.notifications.warn("The 'Dynamic effects using Active Effects' module recommends to install and activate the 'libWrapper' module.");
 })
 
-export function confirmAction(toCheck: boolean, confirmFunction) {
+export function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {
   if (toCheck) {
     let d = new Dialog({
         // localize this text
-        title: i18n("dae.confirm"),
+        title,
         content: `<p>${i18n("dae.sure")}</p>`,
         buttons: {
             one: {

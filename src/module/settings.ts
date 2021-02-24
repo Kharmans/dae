@@ -39,16 +39,6 @@ export const registerSettings = function () {
     name: game.i18n.localize("dae.displayTraits.Name"),
     hint: game.i18n.localize("dae.displayTraits.Hint"),
   });
-  game.settings.register("dae", "playersCanSeeEffects", {
-    scope: "world",
-    default: "None",
-    config: true,
-    type: String,
-    choices: {none: "Never", view: "View Only", edit: "Edit"},
-    onChange: fetchParams,
-    name: game.i18n.localize("dae.playersCanSeeEffects.Name"),
-    hint: game.i18n.localize("dae.playersCanSeeEffects.Hint"),
-  });
 
   game.settings.register("dae", "useAbilitySave", {
     name: game.i18n.localize("dae.useAbilitySave.Name"),

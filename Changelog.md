@@ -1,3 +1,12 @@
+0.2.50
+* Fixed a bug in conditional visibility setting
+* [BREAKING] Moved data.attributes.prof to prepare data phase. No referencing derived values (abilities.cha.mod etc) in effects that modify data.attributes.prof. Should now correctly update those things that depend of data.attributes.prof.
+* [MAYBE-BREAKING] Change to string fields. @fields that can be evaluated when doing prepare data will be looked up. So a damage bonus of (@classes.rouge.levels)d6[fire] will be replaced with (3)d6[fire] when applied to the damage bonus field. Dice rolls and fields that do not exist when the evaluation is done (1d4, or @item.level) will be left unchanged.
+* Minor changes to the special handling of (expr)d6 effects. Any problems ping me.
+* Added handy spreadsheet for flags.midi-qol settings thanks (dstein766)
+https://docs.google.com/spreadsheets/d/1Vze_sJhhMwLZDj1IKI5w1pvfuynUO8wxE2j8AwNbnHE/edit?usp=sharing
+* updated ko.json, cn.json many thanks @klo and Mitch Hwang
+
 0.2.49
 * Fixed an error in passing parameters to macro.execute/macro.itemMacro when there are no @parameters.
 * A little re-ordering of actions when adding/removing concentration that hopefully will remove a DAE/CUB race condition.
