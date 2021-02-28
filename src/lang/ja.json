@@ -232,7 +232,6 @@
     "dae.noGM": "GMクライアントが接続されていません。",
     "dae.expireRealTime.Name": "持続時間をリアルタイムで失効させる",
     "dae.expireRealTime.Hint": "この機能を有効で、かつ About-Time / Times-Up がインストールされていない場合、設定された持続時間はリアルタイムで減少し、時間切れになります。",
-
     "dae.isAttacked": "【攻撃されたとき】攻撃を受けたとき期限切れになります。",
     "dae.isDamaged": "【ダメージを受けたとき】ダメージを受けたとき期限切れになります。",
     "dae.1Action": "【1回のアクション】次のアクション（アイテムロール）で期限切れになります。",
@@ -242,11 +241,14 @@
     "dae.turnEnd": "【次ターンの終わりまで】次のターンの終了時に期限切れになります（戦闘中のみ）。",
     "dae.startEveryTurn": "【各ターンの開始時】ターン開始時にエフェクトマクロを実行します。",
     "dae.endEveryTurn": "【各ターンの終了時】ターン終了時にエフェクトマクロを実行します。",
-
     "dae.displayTraits.Name": "例外的特性にアクティブ効果を反映する",
     "dae.displayTraits.Hint": "例外的特性シートに、アクティブ効果によるボーナスなどが反映されるようになります（要再読み込み）。特性の値を手動で変更するときは、アクティブ効果適用前に行ってください（でないと上書されます）。",
     "dae.lookupCUB.Name": "状態アクティブ効果の作成設定",
     "dae.lookupCUB.Hint": "有効の場合、「Combat Utility Belt」モジュールによる状態がprepareDataから検索され，“CUB:状態名”として参照されます。無効にすると状態アクティブ効果は効果が作成されたときに複製されます。",
 
-    "dae.appearance": "外見"
+    "dae.appearance": "外見",
+    "dae.abil": "abil |",
+    "dae.CUB": "CUB",
+    "dae.ConditionalVisibility": "Conditional Visibility",
+    "dae.ConditionalVisibilityVision": "Conditional Visibility（感覚）"
 }

@@ -6,7 +6,10 @@ import { debug, log, error, warn, } from "../dae";
 function rollAbilitySave(abilityId, options = { event, fastForward: null, advantage: null, disadvantage: null }) {
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
-
+  if (!abl) {
+    error("rollAbilitySave: ability not specified");
+    return undefined;
+  }
   const parts = ["@save"];
   const data = this.getRollData()
   // data = {save: abl.save}; // TP use abl.save rather than abl.mod
@@ -15,7 +18,7 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
   // Include a global actor ability save bonus - if it is numberic it has already been included
   const actorBonus = getProperty(this.data.data.bonuses, "abilities.save");
   //@ts-ignore
-  if (!!actorBonus && !Number.isNumeric(actorBonus)) {
+  if (!!actorBonus) {
     parts.push("@saveBonus");
     //@ts-ignore
     data.saveBonus = actorBonus;
@@ -242,7 +245,7 @@ function replaceFormulaData(wrapped, ...args) {
   const maxIterations = 3;
   for (let i = 0; i < maxIterations; i++) {
     if (!result.includes("@")) break;
-    result = wrapped(result, data, missing, warn);
+    result = wrapped(result, data, {missing, warn});
   }
   return result;
 }
