@@ -67,7 +67,7 @@ export class ValidSpec {
     // data.attributes.prof/data.details.level and data.attributes.hd are all calced in prepareBaseData
     baseValues["data.attributes.prof"] = [0];
     baseValues["data.details.level"] = [0];
-    baseValues["data.detaila.hd"] = 0;
+    baseValues["data.attributes.hd"] = 0;
 
     //@ts-ignore
     if (game.modules.get("gm-notes")?.active) {
