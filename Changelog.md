@@ -1,11 +1,16 @@
+0.2.52
+* removed unsued enhance status effects setting.
+* added support for attributes.movement.hover
+* added support for new special duration fields
 0.2.51
-Added bug reporter support.
-* Renabled handling of missing fields in damage rolls. (won't affect most people).
+* Added bug reporter support.
+* Reenabled handling of missing fields in damage rolls. (won't affect most people).
 * Fix for ignoring single simple numeric bonuses.abilities.save when using DAE modified saving throw.
+* updated ja.json, thanks Brother Sharp and @louge
 0.2.50
 * Fixed a bug in conditional visibility setting
 * [BREAKING] Moved data.attributes.prof to prepare data phase. No referencing derived values (abilities.cha.mod etc) in effects that modify data.attributes.prof. Should now correctly update those things that depend of data.attributes.prof.
-* [MAYBE-BREAKING] Change to string fields. @fields that can be evaluated when doing prepare data will be looked up. So a damage bonus of (@classes.rouge.levels)d6[fire] will be replaced with (3)d6[fire] when applied to the damage bonus field. Dice rolls and fields that do not exist when the evaluation is done (1d4, or @item.level) will be left unchanged.
+* [MAYBE-BREAKING] Change to string fields. @fields that can be evaluated when doing prepare data will be looked up. So a damage bonus of (@classes.rogue.levels)d6[fire] will be replaced with (3)d6[fire] when applied to the damage bonus field. Dice rolls and fields that do not exist when the evaluation is done (1d4, or @item.level) will be left unchanged.
 * Minor changes to the special handling of (expr)d6 effects. Any problems ping me.
 * Added handy dandy spreadsheet for flags.midi-qol settings thanks (dstein766)
 https://docs.google.com/spreadsheets/d/1Vze_sJhhMwLZDj1IKI5w1pvfuynUO8wxE2j8AwNbnHE/edit?usp=sharing

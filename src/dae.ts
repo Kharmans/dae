@@ -68,13 +68,6 @@ Hooks.once('ready', async function () {
   // setupDAEMacros();
   GMAction.readyActions();
   daeSpecialDurations = {"None": ""};
-  if (game.modules.get("midi-qol")?.active) {
-    daeSpecialDurations["1Action"] = i18n("dae.1Action");
-    daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
-    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
-    daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
-    daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
-  }
   if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {
     daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
     daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
@@ -83,6 +76,24 @@ Hooks.once('ready', async function () {
       "startEveryTurn" : i18n("dae.startEveryTurn"),
       "endEveryTurn" : i18n("dae.endEveryTurn")
     };
+  if (game.modules.get("midi-qol")?.active) {
+    daeSpecialDurations["1Action"] = i18n("dae.1Action");
+    daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
+    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
+    daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
+    daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
+    daeSpecialDurations["isSave"] = `${i18n("dae.isSaveBase")}: ${i18n("dae.isSaveDetail")}`;
+    daeSpecialDurations["isSaveSuccess"] = `${i18n("dae.isSaveBase")} ${i18n("dae.success")}: ${i18n("dae.isSaveDetail")}`;
+    daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isSaveBase")} ${i18n("dae.failure")}: ${i18n("dae.isSaveDetail")}`;
+
+    Object.keys(CONFIG.DND5E.abilities).forEach(abl => {
+      daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isSaveBase")}-${CONFIG.DND5E.abilities[abl]}: ${i18n("dae.isSaveDetail")}`;
+    })
+    Object.keys(CONFIG.DND5E.damageTypes).forEach(dt=> {
+      daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}-${CONFIG.DND5E.damageTypes[dt]}`;
+    });
+  }
+
   }
 
   patchSpecialTraits();

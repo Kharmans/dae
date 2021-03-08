@@ -145,6 +145,7 @@ export class ValidSpec {
 
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
         // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
@@ -406,6 +407,9 @@ function daeCustomEffect(actor, change) {
   }
 
   switch(change.key) {
+    case "data.attributes.movement.hover":
+      setProperty(actor.data, change.key, change.value ? true : false);
+      return true;
     case "data.traits.di.all":
     case "data.traits.dr.all":
     case "data.traits.dv.all":
@@ -1286,8 +1290,10 @@ export function fetchParams() {
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")
+  /* TODO decide what to do about enhancing status effects or not
   ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");
   procStatusEffects(ehnanceStatusEffects);
+  */
   let useDAESheet = game.settings.get("dae", "useDAESheet");
   if (useDAESheet) {
     CONFIG.ActiveEffect.sheetClass = DAEActiveEffectConfig;
