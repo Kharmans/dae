@@ -10,17 +10,18 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
     error("rollAbilitySave: ability not specified");
     return undefined;
   }
-  const parts = ["@save"];
   const data = this.getRollData()
+  const parts = ["@save"];
   // data = {save: abl.save}; // TP use abl.save rather than abl.mod
   data.save = abl.save;
-
   // Include a global actor ability save bonus - if it is numberic it has already been included
   const actorBonus = getProperty(this.data.data.bonuses, "abilities.save");
-  //@ts-ignore
+  //@ts-ignore isNumberic
+  const saveBonus = Number.isNumeric(actorBonus) ? parseInt(actorBonus) : 0;
+  data.save -= saveBonus; // this was added in prepareDerivedData
+
   if (!!actorBonus) {
     parts.push("@saveBonus");
-    //@ts-ignore
     data.saveBonus = actorBonus;
   }
 
@@ -39,13 +40,7 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
     parts: parts,
     data: data,
     title: game.i18n.format(savePromptTitle, { ability: label }),
-    messageData,
-    //@ts-ignore shfitKey
-    fastForward: options.fastForward || options.disadvantage || options.advantage || (options.event?.shiftKey || options.event?.ctrlKey || options.event?.altKey || options.event?.metaKey),
-    //@ts-ignore altKey
-    advantage: options.advantage || options.event?.altKey,
-    //@ts-ignore ctrlKey
-    disadvantage: options.disadvantage || options.event?.ctrlKey || options.event?.metaKey,
+    messageData
   });
 
   //@ts-ignore

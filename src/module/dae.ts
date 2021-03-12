@@ -73,6 +73,13 @@ export class ValidSpec {
     if (game.modules.get("gm-notes")?.active) {
       baseValues["flags.gm-notes.notes"] = "";
     }
+
+    if (game.modules.get("skill-customization-5e")?.active && game.system.id === "dnd5e") {
+      Object.keys(CONFIG.DND5E.skills).forEach(skl => {
+        baseValues[`flags.skill-customization-5e.${skl}.skill-bonus`]  = "";
+      })
+    }
+
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     if (["dnd5e", "sw5e"].includes(game.system.id)) { 
@@ -156,15 +163,20 @@ export class ValidSpec {
       specials[`flags.${game.system.id}.DamageBonusMacro`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
 
       ["check", "save", "skill"].forEach(id => {
-        specials[`data.bonuses.abilities.${id}`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        specials[`data.bonuses.abilities.${id}`] = ["", -1];
       });
 
+      if (game.system.id === "sw5e") {
+        specials["data.attributes.powerForceLightDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+        specials["data.attributes.powerForceDarkDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+        specials["data.attributes.powerForceUnivDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+        specials["data.attributes.powerTechDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+      }
       let attackTypes = ["mwak", "rwak", "msak", "rsak"];
       if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
-
       attackTypes.forEach(id => {
-        specials[`data.bonuses.${id}.attack`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-        specials[`data.bonuses.${id}.damage`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        specials[`data.bonuses.${id}.attack`] = ["", -1];
+        specials[`data.bonuses.${id}.damage`] = ["", -1];
       })
 
       // move all the characteer flags to specials so that the can be custom effects only
@@ -213,7 +225,7 @@ export class ValidSpec {
         validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
       }
       if (spec.includes("data.bonuses.abilities")) {
-        validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
+        validSpec.forcedMode = -1;
       }
       if (spec.includes(`flags.${game.system.id}`))
         validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
@@ -485,6 +497,10 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.abilities.save":
     case "data.bonuses.abilities.check":
     case "data.bonuses.abilities.skill":
+    case "data.bonuses.power.forceLightDC":
+    case "data.bonuses.power.forceDarkDC":
+    case "data.bonuses.power.forceUnivDC":
+    case "data.bonuses.power.techDC":
       // TODO: remove if fixed in core
       let result = attackDamageBonusEval(change.value, actor);
       result = replaceAtFields(result, actor);
@@ -503,6 +519,7 @@ function daeCustomEffect(actor, change) {
         }
       }
       value = Number(change.value);
+      console.error("custom change is ", change.vaalue, op, movement)
       Object.keys(movement).forEach(key => {
         if (typeof movement[key] === "number") {
           switch (op) {
@@ -521,6 +538,11 @@ function daeCustomEffect(actor, change) {
     case "data.abilities.wis.dc": 
     case "data.abilities.cha.dc": 
     case "data.abilities.con.dc": 
+    case "data.attributes.powerForceLightDC":
+    case "data.attributes.powerForceDarkDC":
+    case "data.attributes.powerForceUnivDC":
+    case "data.attributes.powerTechDC":
+
       //@ts-ignore
       value = Number.isNumeric(change.value) ? parseInt(change.value) : 0;
       if (value) {

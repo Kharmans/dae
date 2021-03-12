@@ -1,5 +1,8 @@
+0.2.53
+Support for skill-customization-5e so that you can add roll bonuses to skills via dae. Requires skill-customization-5e to be installed. Remeber to put a + in fromt of the bonus, otherwise it will simply concatenate with the existing field.
+* support for sw5e A4 release.
+* [BREAKING] For all of the core dnd5e bonus fields, the allowed modes have been changed to allow any mode type. **Unless you have a specific need for non custom** you should choose CUSTOM for these fields, which acts like a smarter ADD. If you don't do custom you will need to make sure that you add the + in front of the field as required and @field lookups will only be done at roll time, not before.
 0.2.52
-* removed unsued enhance status effects setting.
 * added support for attributes.movement.hover
 * added support for new special duration fields
 0.2.51
