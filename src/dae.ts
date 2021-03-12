@@ -76,6 +76,7 @@ Hooks.once('ready', async function () {
       "startEveryTurn" : i18n("dae.startEveryTurn"),
       "endEveryTurn" : i18n("dae.endEveryTurn")
     };
+  }
   if (game.modules.get("midi-qol")?.active) {
     daeSpecialDurations["1Action"] = i18n("dae.1Action");
     daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
@@ -92,8 +93,6 @@ Hooks.once('ready', async function () {
     Object.keys(CONFIG.DND5E.damageTypes).forEach(dt=> {
       daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}-${CONFIG.DND5E.damageTypes[dt]}`;
     });
-  }
-
   }
 
   patchSpecialTraits();

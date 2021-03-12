@@ -285,7 +285,10 @@ truesight: false
     }
     //@ts-ignore isNumeric
     if (Number.isNumeric(formData.duration.startTime)) {
-      formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
+      let startTime = parseInt(formData.duration.startTime);
+      if (startTime <= 3600) { // Only acdept durations of 1 hour or less as the start time field
+        formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
+      }
     }
     setProperty(formData, "flags.dae.transfer", formData.transfer);
     //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
