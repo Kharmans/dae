@@ -16,9 +16,7 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
   data.save = abl.save;
   // Include a global actor ability save bonus - if it is numberic it has already been included
   const actorBonus = getProperty(this.data.data.bonuses, "abilities.save");
-  //@ts-ignore isNumberic
-  const saveBonus = Number.isNumeric(actorBonus) ? parseInt(actorBonus) : 0;
-  data.save -= saveBonus; // this was added in prepareDerivedData
+  data.save -= abl.saveBonus; // this was added in prepareDerivedData
 
   if (!!actorBonus) {
     parts.push("@saveBonus");

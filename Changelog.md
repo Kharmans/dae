@@ -1,3 +1,5 @@
+0.2.55
+* Fix for double adding global save bonus.
 0.2.54
 Fix for special durations not displaying if times-up not installed.
 Fix for creation of enormous durations when updating existing duration.
