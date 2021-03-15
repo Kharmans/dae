@@ -326,5 +326,5 @@ export async function fixupActors() {
   }
 
   function removeDynamiceffects(actor) {
-  //.update({"flags.-=dynamiceffects": null})
+  actor.update({"flags.-=dynamiceffects": null})
   }

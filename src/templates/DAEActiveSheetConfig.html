@@ -121,27 +121,41 @@
       </div>
     </div>
 
-      <div class="form-group">
-        <label>Special Expiry</label>
-        <div class="expriy form-fields">
-          <select name="flags.dae.specialDuration" multiple style="background-color:whitesmoke">
-            {{selectOptions specialDuration selected=effect.flags.dae.specialDuration}}
-          </select>
-        </div>
-      </div>
 
-      {{#if macroRepeats}}
-      <div class="form-group">
-        <label>Macro Repeat</label>
-        <div class="repeat  form-fields">
-          <select name="flags.dae.macroRepeat" data-dtype="String">
-            {{selectOptions macroRepeats selected=effect.flags.dae.macroRepeat}}
-          </select>
-        </div>
+
+    {{#if macroRepeats}}
+    <div class="form-group">
+      <label>Macro Repeat</label>
+      <div class="repeat  form-fields">
+        <select name="flags.dae.macroRepeat" data-dtype="String">
+          {{selectOptions macroRepeats selected=effect.flags.dae.macroRepeat}}
+        </select>
       </div>
-      {{/if}}
     </div>
+    {{/if}}
 
+    <div style="border: 2px groove #eeede0; padding: 3px; text-align: center;">
+    <div class="effect-special-duration flexrow">
+      <div class="" style="width: 90%; text-align: center;">
+        Special Duration
+      </div>
+      <div class="effect-controls" style="width:25px; align-content: right;">
+        <a class="effect-control" data-action="add-specDur"><i class="far fa-plus-square"></i></a>
+      </div>
+    </div>
+    <ol class="special-duration-list">
+      {{#each effect.flags.dae.specialDuration as |label i|}}
+      <li class="effect-special-duration flexrow" data-index="{{i}}">
+        <div class="formgroup">
+          <select name="flags.dae.specialDuration.{{i}}" data-dtype="string" style="width:90%; flex-grow:9;">
+            {{selectOptions ../specialDuration selected=label}}
+          </select>
+            <a class="effect-controls effect-control" style="width:25px; align-content:right; flex-grow: 1;" data-action="delete-specDur"><i class="fas fa-trash"></i></a>
+        </div>
+      </li>
+      {{/each}}
+    </ol>
+  </div>
   </section>
 
   <!-- Effects Tab -->

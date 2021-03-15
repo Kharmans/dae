@@ -179,7 +179,7 @@ truesight: false
     data.effect.changes.forEach(change => {
       if (change.key.startsWith("flags.midi-qol")) {
         //@ts-ignore
-        change.modes = [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]]
+        change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
       } 
       else if ([-1, undefined].includes(ValidSpec.allSpecsObj[change.key]?.forcedMode)) {
         change.modes = allModes;
@@ -244,7 +244,34 @@ truesight: false
           button.closest(".effect-change").remove();
           this.submit({preventClose: true}).then(() => this.render());
         });
+      case "add-specDur":
+        this._addSpecDuration(button);
+        return this.submit({preventClose: true}).then(() => this.render());
+      case "delete-specDur":
+        return confirmAction(confirmDelete, () => {
+          button.closest(".effect-special-duration").remove();
+          this.submit({preventClose: true}).then(() => this.render());
+        });
     }
+  }
+
+  _addSpecDuration(button) {
+    const durations = button.closest(".tab").querySelector(".special-duration-list");
+    const last = durations.lastElementChild;
+    const idx = last ? last.dataset.index+1 : 0;
+    const duration = $(` 
+    <li class="effect-special-duration flexrow" data-index="${idx}">
+    <div class="formgroup">
+      <select name="flags.dae.specialDuration.${idx}" data-dtype="string">
+        {{selectOptions ../specialDuration selected=label}}
+      </select>
+      <div class="effect-controls">
+        <a class="effect-control" data-action="delete-specDur"><i class="fas fa-trash"></i></a>
+      </div>
+    </div>
+  </li>
+    `);
+    durations.appendChild(duration[0])
   }
 
   /* ----------------------------------------- */
@@ -283,6 +310,12 @@ truesight: false
       //@ts-ignore
       c.priority = Number.isNumeric(c.priority) ? parseInt(c.priority) : c.mode * 10;
     }
+    if (formData.flags?.dae?.specialDuration) {
+      const newSpecDur = []
+      Object.values(formData.flags?.dae?.specialDuration).forEach(value => newSpecDur.push(value));
+      formData.flags.dae.specialDuration = newSpecDur;
+    }
+  
     //@ts-ignore isNumeric
     if (Number.isNumeric(formData.duration.startTime)) {
       let startTime = parseInt(formData.duration.startTime);
@@ -304,18 +337,3 @@ truesight: false
     }
   }
 }
-
-/*
-<div class="keylist">
-<select name="selectedKey" data-dtype="String">
-  {{selectOptions ../validFields selected=change.key}}
-</select>
-</div>
-
-<input class="keyinput" type="text" name="changes.{{i}}.key" value="{{change.key}}" />
-          <div class="keylist">
-            <select name="selectedKey" data-dtype="String">
-              {{selectOptions ../validFields selected=change.key}}
-            </select>
-          </div>
-*/

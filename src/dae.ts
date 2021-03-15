@@ -81,6 +81,7 @@ Hooks.once('ready', async function () {
     daeSpecialDurations["1Action"] = i18n("dae.1Action");
     daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
     daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
+    daeSpecialDurations["DamageDealt"] = i18n("dae.DamageDealt");
     daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
     daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
     daeSpecialDurations["isSave"] = `${i18n("dae.isSaveBase")}: ${i18n("dae.isSaveDetail")}`;
