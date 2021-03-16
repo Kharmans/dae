@@ -1,3 +1,9 @@
+0.2.57
+Support for some more expiry modes for midi-qol.
+0.2.56
+* First pass cleaning up special duration editing.
+* Added damage dealt special duration expiry.
+* Changed flags.dnd5e.... to allow any mode. Unless you know what you are doing CUSTOM mode is recommended.
 0.2.55
 * Fix for double adding global save bonus.
 0.2.54

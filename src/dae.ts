@@ -84,16 +84,23 @@ Hooks.once('ready', async function () {
     daeSpecialDurations["DamageDealt"] = i18n("dae.DamageDealt");
     daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
     daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
-    daeSpecialDurations["isSave"] = `${i18n("dae.isSaveBase")}: ${i18n("dae.isSaveDetail")}`;
-    daeSpecialDurations["isSaveSuccess"] = `${i18n("dae.isSaveBase")} ${i18n("dae.success")}: ${i18n("dae.isSaveDetail")}`;
-    daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isSaveBase")} ${i18n("dae.failure")}: ${i18n("dae.isSaveDetail")}`;
-
+    daeSpecialDurations["isSave"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}`;
+    daeSpecialDurations["isSaveSuccess"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
+    daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
+    daeSpecialDurations["isCheck"] = `${i18n("dae.isRollBase")} ${i18n("dae.isCheckDetail")}`;
+    daeSpecialDurations["isSkill"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")}`;
     Object.keys(CONFIG.DND5E.abilities).forEach(abl => {
-      daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isSaveBase")}-${CONFIG.DND5E.abilities[abl]}: ${i18n("dae.isSaveDetail")}`;
+      daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}`;
+      daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isCheckDetail")}`;
     })
     Object.keys(CONFIG.DND5E.damageTypes).forEach(dt=> {
-      daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}-${CONFIG.DND5E.damageTypes[dt]}`;
+      daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${CONFIG.DND5E.damageTypes[dt]}`;
     });
+    Object.keys(CONFIG.DND5E.skills).forEach(skillId=> {
+      daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId]}`;
+    });
+
+    CONFIG.DND5E.skills
   }
 
   patchSpecialTraits();
