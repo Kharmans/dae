@@ -143,6 +143,11 @@ export function getTokenFlag(token: Token, flagName: string) {
     return getProperty(token, `data.flags.dae.${flagName}`);
 }
 
+export function deleteActiveEffect(tokenId: string, origin: string) {
+  console.error("Delete effects ", tokenId, origin)
+  requestGMAction(GMAction.actions.deleteEffects, {targets: [{tokenId}], origin});
+}
+
 export function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {
   const tokenId = (typeof token === "string") ? token : token.id;
   return requestGMAction(GMAction.actions.setTokenFlag, { tokenId: tokenId, sceneId: canvas.scene.id, flagName, flagValue })

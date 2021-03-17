@@ -20,7 +20,7 @@ import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, f
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
-import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag } from './module/daeMacros';
+import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect } from './module/daeMacros';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
@@ -146,6 +146,7 @@ Hooks.once('setup', function() {
     setFlag: setFlag,
     unsetFlag: unsetFlag,
     getFlag: getFlag,
+    deleteActiveEffect: deleteActiveEffect,
     migrateActorDAESRD: migrateActorDAESRD,
     migrateAllActorsDAESRD: migrateAllActorsDAESRD,
     migrateAllNPCDAESRD: migrateAllNPCDAESRD,

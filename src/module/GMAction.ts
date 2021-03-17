@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, daeCreateActiveEffectActions } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -233,8 +233,8 @@ let deleteEffects = async (targets, origin: string) => {
     if (!targetActor) {
       error("could not find actor for ", idData);
     }
-    const effectsToDelete = targetActor.effects.filter(ef => ef.data.origin === origin);
-    await targetActor.deleteEmbeddedEntity("ActiveEffect", effectsToDelete.map(ef=>ef.id));
+    const effectsToDelete = targetActor.effects?.filter(ef => ef.data.origin === origin);
+    if (effectsToDelete?.length > 0) await targetActor.deleteEmbeddedEntity("ActiveEffect", effectsToDelete.map(ef=>ef.id));
   }
 }
 // delete a token from the specified scene and recreate it on the target scene.

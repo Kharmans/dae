@@ -1,3 +1,5 @@
+0.2.58
+Added export of Dae.deleteActiveEffect(tokenId, uuid) to remove effects identified by uid from the token identified by tokenId. Will pass to a GM client if available.
 0.2.57
 Support for some more expiry modes for midi-qol.
 0.2.56
