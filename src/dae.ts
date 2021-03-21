@@ -80,6 +80,11 @@ Hooks.once('ready', async function () {
   if (game.modules.get("midi-qol")?.active) {
     daeSpecialDurations["1Action"] = i18n("dae.1Action");
     daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
+    let attackTypes = ["mwak", "rwak", "msak", "rsak"];
+    if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
+    attackTypes.forEach(at => {
+      daeSpecialDurations[`1Attack:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${i18n("dae.1Attack")}`;
+    })
     daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
     daeSpecialDurations["DamageDealt"] = i18n("dae.DamageDealt");
     daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
@@ -99,8 +104,6 @@ Hooks.once('ready', async function () {
     Object.keys(CONFIG.DND5E.skills).forEach(skillId=> {
       daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId]}`;
     });
-
-    CONFIG.DND5E.skills
   }
 
   patchSpecialTraits();
