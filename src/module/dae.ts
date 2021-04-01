@@ -344,6 +344,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
   if (!this.effects || this.effects.size === 0)  return this.overrides || {};
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, effect) => {
+    console.error(effect.data.label, "disabled ", effect.data.disabled)
     // e.data.disabled = effectDisabled(this, e.data)
     if ( effect.data.disabled ) return changes;
     // TODO find a solution for flags.? perhaps just a generic speclist
@@ -630,7 +631,7 @@ function doCustomArrayValue(actor, current, change, validValues) {
 * add an additional pass after derivfed data
 */
 function prepareData() {
-  debug("prepare data: before passes", this.name, this._data);
+  debug("prepare data: before passes", this.name, this.data._source);
 
   oldPrepareData.bind(this)();
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
@@ -924,8 +925,8 @@ async function evalArgs({effectData = null, itemData = null, context, actor, cha
         else if (f === "@itemCardId") return itemCardId;
         else if (f === "@unique") return randomID();
         else if (f === "@actor") {
-          console.warn("dae | @actor is deprecated please consider an alternative argument to get the data");
-          return duplicate(actor.data);
+          console.warn("dae | @actor now passes actor.id NOT actor.data");
+          return actor.id;
         } else if (f === "@critical") return critical;
         else if (f === "@fumble") return fumble;
         else if (f === "@whisper") return whisper;
@@ -949,8 +950,8 @@ async function evalArgs({effectData = null, itemData = null, context, actor, cha
         else if (f === "@target") return "<not-defined>"
         else if (f === "@unique") return randomID();
         else if (f === "@actor") {
-          console.warn("dae | @actor is deprecated please consider an alternative argument to get the data");
-          return duplicate(actor.data);
+          console.warn("dae | @actor now passes actor.id NOT actor.data");
+          return actor.id;
         } else if (f === "@critical") return critical;
         else if (f === "@fumble") return fumble;
         else if (doRolls && typeof f === "string" && f.startsWith("@")) {
@@ -1016,45 +1017,47 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
 }
 
 // Update the actor active effects when editing an owned item
-function ownedItemUpdate(actor, ownedItem, updates) {
-  const updatedItem = mergeObject(ownedItem, updates, {overwrite: true, inplace:false});
-  Hooks.once("updateOwnedItem", async () => {
+function preUpdateItem(item, updates, options, user) {
+  if (!item.actor) return true;
+  const updatedItem = mergeObject(item.data, updates, {overwrite: true, inplace:false});
+  Hooks.once("updateItem", async () => {
     if (updates.effects) {
       let additions = updatedItem.effects; 
       additions = additions.filter(ef=>ef.transfer) || [];
       debug("additions post filter are ", updates.effects, additions)
-      const itemUuid = actor.items.get(ownedItem._id).uuid;
-      let deletions = actor.effects.filter(aef => {
+      const itemUuid = item.uuid;
+      let deletions = item.actor.effects.filter(aef => {
         const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
         return isTransfer && (aef.data.origin === itemUuid);
       })
       deletions = deletions.map(ef => ef.id || ef._id);
-      const origin = `Actor.${actor.id}.OwnedItem.${updates._id}`
+      const origin = item.uuid; // `Actor.${item.actor.id}.Item.${updates._id}`
       additions.forEach(efData => {
-        efData.disabled = effectDisabled(actor, efData, updatedItem)
+        efData.disabled = effectDisabled(item.actor, efData, updatedItem)
         efData.origin = origin;
       });
       debug("owneditemupdate ", additions, deletions);
       //TODO: change this so we can do an updateEmbeddedEntitty.
       // It does require matching the active effect ids to the source item
       if (deletions.length > 0) {
-        await actor.deleteEmbeddedEntity("ActiveEffect", deletions).then(() => {
-          if (additions.length > 0) actor.createEmbeddedEntity("ActiveEffect", additions);
+        await item.actor.deleteEmbeddedDocuments("ActiveEffect", deletions).then(() => {
+          if (additions.length > 0) item.actor.createEmbeddedDocuments("ActiveEffect", additions);
         });
       } else if (additions.length > 0) {
-        await actor.createEmbeddedEntity("ActiveEffect", additions);
+        await item.actor.createEmbeddedDocuments("ActiveEffect", additions);
       }
     } else {
-      const origin = `Actor.${actor.id}.OwnedItem.${updates._id}`;
-      let effects = actor.effects.filter(aef => {
+      const origin = item.uuid; // `Actor.${item.actor.id}.Item.${updates._id}`;
+      let effects = item.actor.effects.filter(aef => {
         let isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
         return (aef.data.origin === origin) && isTransfer;
       }).map(aef => {
         const data = duplicate(aef.data);
-        data.disabled = effectDisabled(actor, aef.data, updatedItem);
+        data.disabled = effectDisabled(item.actor, aef.data, updatedItem);
+        console.error("Setting disabled to ", data.disabled, )
         return data;
       })
-      if (effects.length > 0) await actor.updateEmbeddedEntity("ActiveEffect", effects);
+      if (effects.length > 0) await item.actor.updateEmbeddedDocuments("ActiveEffect", effects);
     }
   });
   return true;
@@ -1064,7 +1067,7 @@ export function updateArmorEffect(actor, itemData, updateData, ...args) {
     // Armor value has been changed so recrreate owned item and actor effects
     let theEffects = duplicate(itemData.effects?.filter(efData => !efData.flags?.dae?.armorEffect)) || [];
     let existingEffect = duplicate(itemData.effects?.find(efData => efData.flags?.dae?.armorEffect) || {});
-    const origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
+    const origin = `Actor.${actor.id}.Item.${itemData._id}`;
     // const origin = actor.items.get(itemData._id)
     let armorEffect = generateArmorEffect(itemData, origin, mergeObject(itemData.data.armor, updateData.data.armor, {overwrite: true}));
     let newEffect = mergeObject(existingEffect, armorEffect, {overwrite: true, inplace:true, insertKeys: true, insertValues: true});
@@ -1076,15 +1079,15 @@ export function updateArmorEffect(actor, itemData, updateData, ...args) {
   return true;
 }
 
-export function ownedItemCreate(actor, itemData) {
+export function preCreateItem(item, itemData, options, user) {
   // create armor effects if required
-  createArmorEffect(actor, itemData);
-
+  // TODO find out why this is not creating the extra effect
+  createArmorEffect(item.actor, itemData);
+  itemData.name = "My item name";
   // set the disabled/enabled flag
-  for (let i = 0; i < itemData.effects?.length || 0; i++) {
-    itemData.effects[i].origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
-    itemData.effects[i].disabled = effectDisabled(actor, itemData.effects[i], itemData);
-  };
+  itemData.effects.forEach(ef => {
+    ef.disabled = effectDisabled(item.actor, ef, item.data)
+  })
   return true;
 }
 
@@ -1092,7 +1095,7 @@ export function createArmorEffect(actor, itemData) {
   if (!itemData.effects && itemData.data.effects) itemData = itemData.data;
   if (!calculateArmor || itemData.type !== "equipment") return true;
   // armor created on actor, screae armor effect.
-  const origin = `Actor.${actor.id}.OwnedItem.${itemData._id}`;
+  const origin = `Actor.${actor.id}.Item.${itemData._id}`;
   // const origin = actor.items.get(itemData._id).uuid;
   itemData.effects = itemData.effects?.filter(efData => !efData.flags.dae?.armorEffect) || [];
   switch(itemData.data.armor?.type) {
@@ -1177,7 +1180,8 @@ export function localDeleteFilters(tokenId: string, filterName: string) {
 export var tokenizer;
 
 function daeApply(actor, change) {
-  if (change.key.startsWith("items")) {
+  //TODO revisit this for item changes
+  if (false && change.key.startsWith("items")) {
     let originalKey = duplicate(change.key);
     const fields = change.key.split(".");
     const name = fields[1];
@@ -1241,10 +1245,11 @@ export function daeInitActions() {
   Hooks.on("preUpdateOwnedItem", updateArmorEffect)
   // If updating effects recreate actor effects for updated item.
   // Toggle equip active as well
-  Hooks.on("preUpdateOwnedItem", ownedItemUpdate);
+  Hooks.on("preUpdateItem", preUpdateItem);
+  
 
   // Do any create effects, .e.g. enabled/disaabled, armor
-  Hooks.on("preCreateOwnedItem", ownedItemCreate)
+  Hooks.on("preCreateItem", preCreateItem)
 
   // macros are called on active effect creationg and deletion
   Hooks.on("preCreateActiveEffect", daeCreateActiveEffectActions);

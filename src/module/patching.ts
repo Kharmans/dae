@@ -2,6 +2,8 @@ import { useAbilitySave, daeCreateActiveEffectActions, daeDeleteActiveEffectActi
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error, warn, } from "../dae";
+import { libWrapper } from "../libs/shim.js";
+
 
 function rollAbilitySave(abilityId, options = { event, fastForward: null, advantage: null, disadvantage: null }) {
   const label = CONFIG.DND5E.abilities[abilityId];
@@ -50,171 +52,10 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
   return d20Roll(rollData);
 }
 
-function rollAbilityTest(abilityId, options = { parts: [] }) {
-  const label = CONFIG.DND5E.abilities[abilityId];
-  const abl = this.data.data.abilities[abilityId];
-
-  const data = this.getRollData();
-  // Construct parts
-  const parts = ["@mod"];
-  data.mod = abl.mod;
-
-  // Add feat-related proficiency bonuses
-  const feats = this.data.flags[game.system.id] || {};
-  if (feats.remarkableAthlete && CONFIG.DND5E.characterFlags.remarkableAthlete.abilities.includes(abilityId)) {
-    parts.push("@proficiency");
-    data.proficiency = Math.ceil(0.5 * this.data.data.attributes.prof);
-  }
-  else if (feats.jackOfAllTrades) {
-    parts.push("@proficiency");
-    data.proficiency = Math.floor(0.5 * this.data.data.attributes.prof);
-  }
-
-  // Add global actor bonus
-  const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
-  if (bonuses.check) {
-    parts.push("@checkBonus");
-    data.checkBonus = bonuses.check;
-  }
-
-  // Add provided extra roll parts now because they will get clobbered by mergeObject below
-  if (options.parts?.length > 0) {
-    parts.push(...options.parts);
-  }
-
-  const messageData = {};
-  messageData[`flags.${game.system.id}.roll`] = { type: "ability", abilityId };
-  const abilityPromptTitle = game.system.id === "dnd5e" ? "DND5E.AbilityPromptTitle" : "SW5E.AbilityPromptTitle";
-  // Roll and return
-  const rollData = mergeObject(options, {
-    parts: parts,
-    //@ts-ignore
-    data,
-    title: game.i18n.format(abilityPromptTitle, { ability: label }),
-    messageData
-  });
-  //@ts-ignore
-  if (game.system.id !== "sw5e") rollData.halflingLucky = feats.halflingLucky;
-
-  //@ts-ignore
-  rollData.speaker = options.speaker || ChatMessage.getSpeaker({ actor: this });
-  return d20Roll(rollData);
-}
-
-function rollSkill(skillId, options = { parts: [] }) {
-  const skl = this.data.data.skills[skillId];
-  const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
-
-  const data = this.getRollData();
-  // Compose roll parts and data
-  const parts = ["@mod"];
-  data.mod = skl.mod + skl.prof;
-
-  // Ability test bonus
-  if (bonuses.check) {
-    data["checkBonus"] = bonuses.check;
-    parts.push("@checkBonus");
-  }
-
-  // Skill check bonus
-  if (bonuses.skill) {
-    data["skillBonus"] = bonuses.skill;
-    parts.push("@skillBonus");
-  }
-
-  // Add provided extra roll parts now because they will get clobbered by mergeObject below
-  if (options.parts?.length > 0) {
-    parts.push(...options.parts);
-  }
-
-  // Reliable Talent applies to any skill check we have full or better proficiency in
-  const reliableTalent = (skl.value >= 1 && this.getFlag(game.system.id, "reliableTalent"));
-
-  const messageData = {};
-  messageData[`flags.${game.system.id}.roll`] = { type: "skill", skillId };
-  const skillPromptTitle = game.system.id === "dnd5e" ? "DND5E.SkillPromptTitle" : "SW5E.SkillPromptTitle";
-  // Roll and return
-  const rollData = mergeObject(options, {
-    parts: parts,
-    //@ts-ignore
-    data: data,
-    title: game.i18n.format(skillPromptTitle, { skill: CONFIG.DND5E.skills[skillId] }),
-    reliableTalent: reliableTalent,
-    messageData
-  });
-  //@ts-ignore
-  if (game.system.id === "dnd5e") rollData.halflingLucky = this.getFlag("dnd5e", "halflingLucky"),
-
-    //@ts-ignore
-    rollData.speaker = options.speaker || ChatMessage.getSpeaker({ actor: this });
-  return d20Roll(rollData);
-}
-
-//TODO: when this Hooks.on("createActiveEffect") works for tokens
-async function createEmbeddedEntityToken(wrapped, ...args) {
-  let [embeddedName, data, options = {}] = args;
-  let created = await wrapped(...args);
-  if (embeddedName === "ActiveEffect") {
-    debug("Token: create Active Effect", embeddedName, data, options);
-    let theData = data instanceof Array ? data : [data];
-    if (theData.length > 0) {
-      await daeCreateActiveEffectActions(this, created)
-    }
-    // if (!args[0].length) Hooks.callAll("dae.createActiveEffect", this, ...args)
-  }
-  return created;
-}
-
-//TODO: when this Hooks.on("deleteActiveEffect") workds for tokens
-async function deleteEmbeddedEntityToken(wrapped, ...args) {
-  let [embeddedName, data, options = {}] = args;
-  let effects = [];
-  if (embeddedName === "ActiveEffect") {
-    debug("Token: delete Active Effect", embeddedName, data, options);
-    const theData = data instanceof Array ? data : [data];
-    theData.forEach(effectId => {
-      let effect = this.effects.get(effectId);
-      if (effect) effects.push(effect.data);
-    })
-  }
-  const returnValue = await wrapped(...args);
-  if (effects.length > 0) {
-    await daeDeleteActiveEffectActions(this, effects)
-  }
-  // if (embeddedName === "ActiveEffect") Hooks.callAll("dae.deleteActiveEffect", this, ...args)
-  return returnValue;
-}
-
 var d20Roll;
 var dice;
 
 export async function patchingInitSetup() {
-  //TODO remove this when token create active effects calls a hook
-  log("Patching ActorTokenHelpers.prototype.deleteEmbeddedEntity");
-  log("Patching ActorTokenHelpers.prototype.createEmbeddedEntity");
-  //@ts-ignore
-  if (game.modules.get("lib-wrapper")?.active && false) {
-    // ignored at the momemnt because of the way these are setup on the tokens themselves.
-    //@ts-ignore
-    libWrapper.register("dae", "ActorTokenHelpers.prototype.deleteEmbeddedEntity", deleteEmbeddedEntityToken, "WRAPPER");
-    //@ts-ignore
-    libWrapper.register("dae", "ActorTokenHelpers.prototype.createEmbeddedEntity", createEmbeddedEntityToken, "WRAPPER");
-
-  } else {
-    //@ts-ignore
-    const oldActorTokenHelpersDeleteEmbeddedEntity = ActorTokenHelpers.prototype.deleteEmbeddedEntity;
-    //@ts-ignore
-    ActorTokenHelpers.prototype.deleteEmbeddedEntity = function () {
-      return deleteEmbeddedEntityToken.call(this, oldActorTokenHelpersDeleteEmbeddedEntity.bind(this), ...arguments);
-    };
-    //@ts-ignore
-    const oldActorTokenHelpersCreateEmbeddedEntity = ActorTokenHelpers.prototype.createEmbeddedEntity;
-    //@ts-ignore
-    ActorTokenHelpers.prototype.createEmbeddedEntity = function () {
-      return createEmbeddedEntityToken.call(this, oldActorTokenHelpersCreateEmbeddedEntity.bind(this), ...arguments);
-    };
-  }
-
   warn("system is ", game.system)
   //@ts-ignore
   if (game.system.id === "dnd5e") {
@@ -258,36 +99,13 @@ function patchAbilitySave() {
     log(`Patching CONFIG.Actor.entityClass.prototype.rollAbilitySave (override=${useAbilitySave})`);
     if (!useAbilitySave) {
       if (abilitySavePatched) {
-        //@ts-ignore
-        if (game.modules.get("lib-wrapper")?.active) {
-          //@ts-ignore
-          libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave");
-          //@ts-ignore
-          // libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilityTest");
-          //@ts-ignore
-          // libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollSkill");
-        } else {
-          window.location.reload();
-        }
+        libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave");
+      } else {
+        window.location.reload();
       }
     } else {
       if (!abilitySavePatched) {
-        //@ts-ignore
-        if (game.modules.get("lib-wrapper")?.active) {
-          //@ts-ignore
-          libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave", rollAbilitySave, "OVERRIDE");
-          //@ts-ignore
-          // libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilityTest", rollAbilityTest, "OVERRIDE");
-          //@ts-ignore
-          // libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollSkill", rollSkill, "OVERRIDE");
-        } else {
-          //@ts-ignore
-          CONFIG.Actor.entityClass.prototype.rollAbilitySave = rollAbilitySave;
-          //@ts-ignore
-          // CONFIG.Actor.entityClass.prototype.rollAbilityTest = rollAbilityTest;
-          //@ts-ignore
-          // CONFIG.Actor.entityClass.prototype.rollSkill = rollSkill;
-        }
+        libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave", rollAbilitySave, "OVERRIDE");
       }
     }
     abilitySavePatched = useAbilitySave;
@@ -296,21 +114,8 @@ function patchAbilitySave() {
 
 export function patchingSetup() {
   patchAbilitySave();
-
-  //@ts-ignore
   log("Patching Roll.replaceFormulaData");
-  //@ts-ignore
-  if (game.modules.get("lib-wrapper")?.active) {
-    //@ts-ignore
-    libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
-  } else {
-    //@ts-ignore
-    const oldReplaceFormulaData = Roll.replaceFormulaData;
-    //@ts-ignore
-    Roll.replaceFormulaData = function () {
-      return replaceFormulaData.call(this, oldReplaceFormulaData.bind(this), ...arguments);
-    };
-  }
+  libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
 };
 
 var specialTraitsPatched = false;
@@ -325,35 +130,15 @@ export function patchSpecialTraits() {
     log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses (override=${displayTraits})`);
     if (!displayTraits) {
       if (specialTraitsPatched) {
-        //@ts-ignore
-        if (game.modules.get("lib-wrapper")?.active) {
-          //@ts-ignore
-          libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject`);
-          //@ts-ignore
-          libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags`);
-          //@ts-ignore
-          libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses`);
-        } else {
-          window.location.reload();
-        }
+        libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject`);
+        libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags`);
+        libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses`);
       }
     } else {
       if (!specialTraitsPatched) {
-        //@ts-ignore
-        if (game.modules.get("lib-wrapper")?.active) {
-          //@ts-ignore
-          libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject`, _updateObject, "OVERRIDE");
-          //@ts-ignore
-          libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags`, _getFlags[game.system.id], "OVERRIDE");
-          //@ts-ignore
-          libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses`, _getBonuses[game.system.id], "OVERRIDE");
-        } else {
-          //@ts-ignore
-          const actorSheetFlags = game[game.system.id].applications.ActorSheetFlags;
-          actorSheetFlags.prototype._updateObject = _updateObject;
-          actorSheetFlags.prototype._getFlags = _getFlags[game.system.id];
-          actorSheetFlags.prototype._getBonuses = _getBonuses[game.system.id];
-        }
+        libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject`, _updateObject, "OVERRIDE");
+        libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags`, _getFlags[game.system.id], "OVERRIDE");
+        libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses`, _getBonuses[game.system.id], "OVERRIDE");
       }
     }
     specialTraitsPatched = displayTraits;

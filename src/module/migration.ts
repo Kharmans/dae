@@ -3,7 +3,7 @@ import { debug, warn, log } from "../dae";
 import { ValidSpec, createArmorEffect } from "./dae";
 
 //@ts-ignore
-const EFFECTMODES = ACTIVE_EFFECT_MODES;
+const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
 
 function migrateDynamicEffect(effects: [{
   active: boolean, 

@@ -168,7 +168,7 @@ export class GMAction {
         const update = {"_id": tokenId};
         //@ts-ignore
         update[`flags.dae.${data.flagName}`] = data.flagValue;
-        await scene.updateEmbeddedEntity("Token", update);
+        await scene.updateEmbeddedDocuments("Token", update);
         break;
       case this.actions.setFlag:
         token = canvas.tokens.get(actorId)
@@ -199,12 +199,12 @@ export class GMAction {
       case this.actions.blindToken:
         //@ts-ignore
         scene = game.scenes.get(data.sceneId);
-        await scene.updateEmbeddedEntity("Token", {"_id": tokenId, vision: false})
+        await scene.updateEmbeddedDocuments("Token", {"_id": tokenId, vision: false})
         break;
       case this.actions.restoreVision:
         //@ts-ignore
         scene = game.scenes.get(data.sceneId);
-        await scene.updateEmbeddedEntity("Token", {"_id": tokenId, vision: true})
+        await scene.updateEmbeddedDocuments("Token", {"_id": tokenId, vision: true})
         break;
       case this.actions.renameToken:
         //@ts-ignore
@@ -234,7 +234,7 @@ let deleteEffects = async (targets, origin: string) => {
       error("could not find actor for ", idData);
     }
     const effectsToDelete = targetActor.effects?.filter(ef => ef.data.origin === origin);
-    if (effectsToDelete?.length > 0) await targetActor.deleteEmbeddedEntity("ActiveEffect", effectsToDelete.map(ef=>ef.id));
+    if (effectsToDelete?.length > 0) await targetActor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef=>ef.id));
   }
 }
 // delete a token from the specified scene and recreate it on the target scene.
@@ -250,7 +250,7 @@ let deleteToken = async (userId: string, data: {startSceneId: string, tokenData:
   let scenes = game.scenes;
   let startScene = scenes.get(data.startSceneId);
   //@ts-ignore
-  await startScene.deleteEmbeddedEntity("Token", data.tokenData._id);
+  await startScene.deleteEmbeddedDocuments("Token", data.tokenData._id);
 }
 // delete a token from the specified scene and recreate it on the target scene.
 let createToken = async (userId: string, data: {targetSceneId: string, tokenData: {}, x: number, y: number}) => {
@@ -263,18 +263,18 @@ let createToken = async (userId: string, data: {targetSceneId: string, tokenData
 //Set the hidden status for a token.
 let setTokenVisibility = async(userId: string, data: {targetSceneId: string, tokenId: string, hidden: boolean}) => {
   if (!data.targetSceneId || !data.tokenId) return;
-  //@ts-ignore
   let scene = game.scenes.get(data.targetSceneId);
-  await scene.updateEmbeddedEntity("Token", {"_id": data.tokenId, "hidden": data.hidden})
+  //@ts-ignore
+  await scene.updateEmbeddedDocuments("Token", {"_id": data.tokenId, "hidden": data.hidden})
   return "token visibility complete"
 }
 
 // Set the hidden staturs for a tile
 let setTileVisibility = async(userId: string, data: {targetSceneId: string, tileId: string, hidden: boolean}) => {
   if (!data.targetSceneId || !data.tileId) return;
-  //@ts-ignore
   let scene = game.scenes.get(data.targetSceneId);
-  return await scene.updateEmbeddedEntity("Tile", {"_id": data.tileId, "hidden": data.hidden})
+  //@ts-ignore
+  return await scene.updateEmbeddedDocuments("Tile", {"_id": data.tileId, "hidden": data.hidden})
 }
 
 let applyTokenMagic = async (tokenId: string, effectId: string, duration: number) => {
@@ -304,7 +304,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       });
       if (removeList.length > 0) {
         removeList = removeList.map(ae => ae.data._id);
-        await token.actor.deleteEmbeddedEntity("ActiveEffect", removeList)
+        await token.actor.deleteEmbeddedDocuments("ActiveEffect", removeList)
       }
       if (activate) { 
         let dupEffects = duplicate(actEffects)
@@ -350,7 +350,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           })
         })
         warn("gm action apply effect", token, actEffects)
-        let removeList = await token.actor.createEmbeddedEntity("ActiveEffect", dupEffects);
+        let removeList = await token.actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
 
         //TODO remove this when timesup is in the wild.
         if (!timesUpInstalled) { // do the kludgey old form removal
@@ -360,7 +360,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             if (actor) {
               let removeId = removeEffect._id;
               if (removeId)
-                await token.actor.deleteEmbeddedEntity("ActiveEffect", removeId)
+                await token.actor.deleteEmbeddedDocuments("ActiveEffect", removeId)
             }
           }
 
