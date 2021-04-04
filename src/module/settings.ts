@@ -10,6 +10,7 @@ export const registerSettings = function () {
     type: Boolean,
     onChange: fetchParams
   });
+  
   game.settings.register("dae", "useDAESheet", {
     scope: "world",
     default: true,
@@ -20,6 +21,16 @@ export const registerSettings = function () {
     hint: game.i18n.localize("dae.useDAESheet.Hint"),
   });
 
+  game.settings.register("dae", "noDupDamageMacro", {
+    name: "dae.noDupDamageMacro.Name",
+    hint: "dae.noDupDamageMacro.Hint",
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+
+  });
   game.settings.register("dae", "expireRealTime", {
     name: "dae.expireRealTime.Name",
     hint: "dae.expireRealTime.Hint",

@@ -232,7 +232,7 @@ export async function patchingInitSetup() {
 
 // Allow limited recursion of the formula replace function for things like
 // bonuses.heal.damage in spell formulas.
-function replaceFormulaData(wrapped, ...args) {
+export function replaceFormulaData(wrapped, ...args) {
   let [formula, data, {missing="", warn=false}={}] = args;
   let result = formula;
   const maxIterations = 3;

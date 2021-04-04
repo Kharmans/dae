@@ -3,7 +3,7 @@ import { warn, error, debug, setDebugLevel, daeAlternateStatus, i18n, timelog } 
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { procStatusEffects } from "./statusEffects";
-import { updatePatches } from "./patching";
+import { replaceFormulaData, updatePatches } from "./patching";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -26,6 +26,7 @@ export var ehnanceStatusEffects;
 export var expireRealTime
 export var daeActionTypeKeys;
 export var displayTraits;
+export var noDupDamageMacro;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -409,6 +410,8 @@ function daeCustomEffect(actor, change) {
   const damageBonusMacroFlag = `flags.${game.system.id}.DamageBonusMacro`;
   if (change.key === damageBonusMacroFlag) {
     let current = getProperty(actor.data, change.key);
+    // includes wont work for macro names that are subsets of other macro names
+    if (noDupDamageMacro && current?.split(",").some(macro => macro === change.value)) return true;
     setProperty(actor.data, change.key, current ? `${current},${change.value}`: change.value)
     return true;
   }
@@ -558,10 +561,14 @@ function daeCustomEffect(actor, change) {
 
     case "flags.dae": 
       let list = change.value.split(" ");
-      let flagName = list[0];
-      value = new Roll(list.splice(1).join(" "), daeRollData(actor)).roll().total
+      const flagName = list[0];
+      let formula = list.splice(1).join(" ")
+      const rollData = daeRollData(actor);
+      const flagValue = getProperty(rollData.flags, `dae.${flagName}`) ?? "";
+      // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
+      setProperty(rollData, `flags.dae.${flagName}`, flagValue);
+      value = new Roll(formula, rollData).roll().total
       setProperty(actor.data, `flags.dae.${flagName}`, value);
-      setProperty(actor.data.data, `flags.dae.${flagName}`, value);
       return true;
     }
 }
@@ -830,7 +837,7 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
             result = await macro.execute(action, ...(duplicate(theChange.value.slice(1))), lastArg)
           } else {
             console.warn("Furnace not active - so no macro arguments supported");
-            result = await macro.execute();
+            result = macro.execute();
           }
         } else if (theChange.key === "macro.itemMacro") {
           let macroCommand = getProperty(effect.flags, "dae.macroCommand"); // this is populated in evalArgs
@@ -847,7 +854,7 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
             result = await macro.execute(action, ...duplicate(theChange.value), lastArg);
           } else {
             console.warn("Furnace not active - so no macro arguments supported")
-            result = await macro.execute();
+            result = macro.execute();
           }
           /*
           if (action === "on") await game.cub.addCondition(condition, [canvas.tokens.get(effect.flags.dae.token)])
@@ -1312,6 +1319,7 @@ export function fetchParams() {
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")
+  noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
   /* TODO decide what to do about enhancing status effects or not
   ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");
   procStatusEffects(ehnanceStatusEffects);

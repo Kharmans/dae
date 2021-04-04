@@ -254,6 +254,9 @@ Macros have changed substantially in their implementation. When you have a non-t
 Since the macro attaches to the target actor the macro can schedule itself to be activated on other events, such as combat updates to support damage over time effects.
 
 **macro.execute "macro_name" args**  
+
+Using macros with arguments requires that you have the Furnace module installed and advanced macros enabled. That is the only setting you will want to enable.
+
 This will call the macro "macro_name" with args[0] = "on" and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with args[0] = "off" when the active effect is deleted from the target actor.
 In addition to the standard ```@values``` the following are supported (only as macro argruments)  
 ```@target``` will pass the token id of the targeted token  
