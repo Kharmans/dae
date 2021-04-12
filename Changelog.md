@@ -1,3 +1,5 @@
+## 0.2.61
+* Updated for change in MidiQOL.configSettings
 ## 0.2.60  
 * Added config flags noDupDamageMacro which if set will remove duplicates of the same damage macro from the actor traits. Useful if you have an omnibus damage macro that covers several effects.
 * Allow flags.dae CUSTOM flagName @flags.dae.flagName + 1, without throwing undefined warning

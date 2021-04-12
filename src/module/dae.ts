@@ -710,7 +710,7 @@ export async function daeCreateActiveEffectActions(actor, effects) {
   const theEffects = Array.isArray(effects) ? effects : [effects];
   const token = actor.isToken ? actor.token : actor.getActiveTokens()[0];
   //@ts-ignore
-  const checkConcentration = (cubActive && window.MidiQOL?.configSettings?.concentrationAutomation) 
+  const checkConcentration = (cubActive && window.MidiQOL?.configSettings()?.concentrationAutomation) 
 
   //@ts-ignore
   const CV = window.ConditionalVisibility;
@@ -749,7 +749,7 @@ export async function daeDeleteActiveEffectActions(actor, effects) {
   const theEffects = Array.isArray(effects) ? effects : [effects];
   const token = actor.isToken ? actor.token : actor.getActiveTokens()[0];
   //@ts-ignore
-  const checkConcentration = (cubActive && window.MidiQOL?.configSettings?.concentrationAutomation) 
+  const checkConcentration = (cubActive && window.MidiQOL?.configSettings()?.concentrationAutomation) 
   //@ts-ignore
   const CV = window.ConditionalVisibility;
   //@ts-ignore
