@@ -1,3 +1,7 @@
+## 0.2.62
+* Fix to make flags data available in actor.getRollData()
+* Some more sw5e tidy up in dae editor to support SW5E specific CONFIG.
+
 ## 0.2.61
 * Updated for change in MidiQOL.configSettings
 ## 0.2.60  

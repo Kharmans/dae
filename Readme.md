@@ -286,7 +286,11 @@ The above discussion applies to non-transfer effects. Transfer effects, which ar
 **macro.itemMacro "macro_name" args**  
 The same as macro.execute, but the item is inspected to find the itemacro stored there. You can create itemMacro macros with the **itemmacro** module.
 
-If you are using macro.itemMacro please make sure you disable the ItemMacro config settings "character sheet hook" and "hookbar hook" or when you use the item the macro will get called bypassing the data settings from midi-qol/dae and won't work. The setting is per player so each player needs to change the setting to disabled.
+If you are using macro.itemMacro please make sure you disable the ItemMacro config settings:
+* "character sheet hook" else when you use the item the macro will get called bypassing midi-qol/dae completely and none of the arguments will get populated.
+* "override default macro execution"  IF this is enabled the hotbar hooks will directly call the item macro and won't work as expected for dae/midi.
+
+The setting is per player so each player needs to change the setting to disabled.  
 
 **macro.tokenMagic "filterName"**
 Will apply the specified token magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.
