@@ -254,6 +254,9 @@ Macros have changed substantially in their implementation. When you have a non-t
 Since the macro attaches to the target actor the macro can schedule itself to be activated on other events, such as combat updates to support damage over time effects.
 
 **macro.execute "macro_name" args**  
+
+Using macros with arguments requires that you have the Furnace module installed and advanced macros enabled. That is the only setting you will want to enable.
+
 This will call the macro "macro_name" with args[0] = "on" and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with args[0] = "off" when the active effect is deleted from the target actor.
 In addition to the standard ```@values``` the following are supported (only as macro argruments)  
 ```@target``` will pass the token id of the targeted token  
@@ -283,7 +286,11 @@ The above discussion applies to non-transfer effects. Transfer effects, which ar
 **macro.itemMacro "macro_name" args**  
 The same as macro.execute, but the item is inspected to find the itemacro stored there. You can create itemMacro macros with the **itemmacro** module.
 
-If you are using macro.itemMacro please make sure you disable the ItemMacro config settings "character sheet hook" and "hookbar hook" or when you use the item the macro will get called bypassing the data settings from midi-qol/dae and won't work. The setting is per player so each player needs to change the setting to disabled.
+If you are using macro.itemMacro please make sure you disable the ItemMacro config settings:
+* "character sheet hook" else when you use the item the macro will get called bypassing midi-qol/dae completely and none of the arguments will get populated.
+* "override default macro execution"  IF this is enabled the hotbar hooks will directly call the item macro and won't work as expected for dae/midi.
+
+The setting is per player so each player needs to change the setting to disabled.  
 
 **macro.tokenMagic "filterName"**
 Will apply the specified token magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.

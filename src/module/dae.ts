@@ -3,7 +3,7 @@ import { warn, error, debug, setDebugLevel, daeAlternateStatus, i18n, timelog } 
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { procStatusEffects } from "./statusEffects";
-import { updatePatches } from "./patching";
+import { replaceFormulaData, updatePatches } from "./patching";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -26,6 +26,7 @@ export var ehnanceStatusEffects;
 export var expireRealTime
 export var daeActionTypeKeys;
 export var displayTraits;
+export var noDupDamageMacro;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -179,8 +180,10 @@ export class ValidSpec {
         specials[`data.bonuses.${id}.damage`] = ["", -1];
       })
 
+
       // move all the characteer flags to specials so that the can be custom effects only
-      Object.keys(CONFIG.DND5E.characterFlags).forEach(key=> {
+      let charFlagKeys = (game.system.id === "dnd5e") ?  Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
+      charFlagKeys.forEach(key=> {
         let theKey = `flags.${game.system.id}.${key}`;
         if ([`flags.${game.system.id}.weaponCriticalThreshold`, 
           `flags.${game.system.id}.powerCriticalThreshold`, 
@@ -213,7 +216,7 @@ export class ValidSpec {
       Object.keys(specials).forEach(key => {
         delete baseValues[key]
       })
-      delete baseValues["data.attributes.init.bonus"];
+      delete baseValues["data.attributes.init.total"];
       delete baseValues["data.attributes.init.mod"];
       delete baseValues["flags"];
     }
@@ -285,7 +288,8 @@ export class ValidSpec {
       m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`)).join(" ");
       if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
         const fieldId = m.fieldSpec.replace(fieldStart, "");
-        const localizedString = i18n(CONFIG.DND5E.characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
+        const characterFlags = (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags : CONFIG.SW5E.characterFlags;
+        const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
         m._label = `Flags ${localizedString}`;
       }
       if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
@@ -330,6 +334,7 @@ function effectDisabled(actor, efData, itemData = null) {
 }
 
 var oldPrepareData;
+var oldGetRollData;
 var oldApply;
 
 // this function replaces applyActiveEffects in Actor
@@ -410,6 +415,8 @@ function daeCustomEffect(actor, change) {
   const damageBonusMacroFlag = `flags.${game.system.id}.DamageBonusMacro`;
   if (change.key === damageBonusMacroFlag) {
     let current = getProperty(actor.data, change.key);
+    // includes wont work for macro names that are subsets of other macro names
+    if (noDupDamageMacro && current?.split(",").some(macro => macro === change.value)) return true;
     setProperty(actor.data, change.key, current ? `${current},${change.value}`: change.value)
     return true;
   }
@@ -427,12 +434,18 @@ function daeCustomEffect(actor, change) {
     case "data.traits.dr.all":
     case "data.traits.dv.all":
       const key = change.key.replace(".all", ".value")
-      setProperty(actor.data, key, Object.keys(CONFIG.DND5E.damageResistanceTypes))
+      if (game.system.id === "dnd5e")
+        setProperty(actor.data, key, Object.keys(CONFIG.DND5E.damageResistanceTypes))
+      else
+      setProperty(actor.data, key, Object.keys(CONFIG.SW5E.damageResistanceTypes))
       return true;
     case "data.traits.di.value":
     case "data.traits.dr.value":
     case "data.traits.dv.value":
-      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.damageResistanceTypes));
+      if (game.system.id === "dnd5e")
+        return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.damageResistanceTypes));
+      else
+      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.damageResistanceTypes));
     case "data.traits.di.custom":
     case "data.traits.dr.custom":
     case "data.traits.dv.custom":
@@ -445,29 +458,59 @@ function daeCustomEffect(actor, change) {
       setProperty(actor.data, change.key, value)
       return true;
     case "data.traits.languages.all":
-      setProperty(actor.data, "data.traits.languages.value", Object.keys(CONFIG.DND5E.languages))
+      if (game.system.id === "dnd5e")
+        setProperty(actor.data, "data.traits.languages.value", Object.keys(CONFIG.DND5E.languages))
+      else
+        setProperty(actor.data, "data.traits.languages.value", Object.keys(CONFIG.SW5E.languages))
       return true;
     case "data.traits.languages.value":
-      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.languages));
-    case "data.traits.ci.all":
-      setProperty(actor.data, "data.traits.ci.value", Object.keys(CONFIG.DND5E.conditionTypes))
-      return true;
+      if (game.system.id === "dnd5e")
+        return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.languages));
+      else
+        return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.languages));
+      case "data.traits.ci.all":
+        if (game.system.id === "dnd5e")
+          setProperty(actor.data, "data.traits.ci.value", Object.keys(CONFIG.DND5E.conditionTypes))
+        else
+          setProperty(actor.data, "data.traits.ci.value", Object.keys(CONFIG.SW5E.conditionTypes))
+        return true;
     case "data.traits.ci.value":
-      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.conditionTypes))
-    case "data.traits.toolProf.value":
-      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.toolProficiencies))
+      if (game.system.id === "dnd5e")
+        return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.conditionTypes))
+      else
+        return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.conditionTypes))
+      case "data.traits.toolProf.value":
+        if (game.system.id === "dnd5e")
+          return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.toolProficiencies))
+        else
+          return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.toolProficiencies))
     case "data.traits.toolProf.all":
-      setProperty(actor.data, "data.traits.toolProf.value", Object.keys(CONFIG.DND5E.toolProficiencies))
+      if (game.system.id === "dnd5e")
+        setProperty(actor.data, "data.traits.toolProf.value", Object.keys(CONFIG.DND5E.toolProficiencies))
+      else
+        setProperty(actor.data, "data.traits.toolProf.value", Object.keys(CONFIG.SW5E.toolProficiencies))
       return true;
     case "data.traits.armorProf.value":
-      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.armorProficiencies))
+      if (game.system.id === "dnd5e")
+        return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.armorProficiencies))
+      else
+        return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.armorProficiencies))
     case "data.traits.armorProf.all":
-      setProperty(actor.data, "data.traits.armorProf.value", Object.keys(CONFIG.DND5E.armorProficiencies))
+      if (game.system.id === "dnd5e")
+        setProperty(actor.data, "data.traits.armorProf.value", Object.keys(CONFIG.DND5E.armorProficiencies))
+      else
+        setProperty(actor.data, "data.traits.armorProf.value", Object.keys(CONFIG.SW5E.armorProficiencies))
       return true;
     case "data.traits.weaponProf.value": 
+    if (game.system.id === "dnd5e")
       return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.weaponProficiencies))
+    else
+      return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.weaponProficiencies))
     case "data.traits.weaponProf.all":
-      setProperty(actor.data, "data.traits.weaponProf.value", Object.keys(CONFIG.DND5E.weaponProficiencies))
+      if (game.system.id === "dnd5e")
+        setProperty(actor.data, "data.traits.weaponProf.value", Object.keys(CONFIG.DND5E.weaponProficiencies))
+      else
+        setProperty(actor.data, "data.traits.weaponProf.value", Object.keys(CONFIG.SW5E.weaponProficiencies))
       return true;
     case "data.bonuses.weapon.damage":
       value = attackDamageBonusEval(change.value, actor)
@@ -520,7 +563,6 @@ function daeCustomEffect(actor, change) {
         }
       }
       value = Number(change.value);
-      console.error("custom change is ", change.vaalue, op, movement)
       Object.keys(movement).forEach(key => {
         if (typeof movement[key] === "number") {
           switch (op) {
@@ -559,10 +601,14 @@ function daeCustomEffect(actor, change) {
 
     case "flags.dae": 
       let list = change.value.split(" ");
-      let flagName = list[0];
-      value = new Roll(list.splice(1).join(" "), daeRollData(actor)).roll().total
+      const flagName = list[0];
+      let formula = list.splice(1).join(" ")
+      const rollData = daeRollData(actor);
+      const flagValue = getProperty(rollData.flags, `dae.${flagName}`) ?? "";
+      // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
+      setProperty(rollData, `flags.dae.${flagName}`, flagValue);
+      value = new Roll(formula, rollData).roll().total
       setProperty(actor.data, `flags.dae.${flagName}`, value);
-      setProperty(actor.data.data, `flags.dae.${flagName}`, value);
       return true;
     }
 }
@@ -704,7 +750,7 @@ export async function daeCreateActiveEffectActions(actor, effects) {
   const theEffects = Array.isArray(effects) ? effects : [effects];
   const token = actor.isToken ? actor.token : actor.getActiveTokens()[0];
   //@ts-ignore
-  const checkConcentration = (cubActive && window.MidiQOL?.configSettings?.concentrationAutomation) 
+  const checkConcentration = (cubActive && window.MidiQOL?.configSettings()?.concentrationAutomation) 
 
   //@ts-ignore
   const CV = window.ConditionalVisibility;
@@ -743,7 +789,7 @@ export async function daeDeleteActiveEffectActions(actor, effects) {
   const theEffects = Array.isArray(effects) ? effects : [effects];
   const token = actor.isToken ? actor.token : actor.getActiveTokens()[0];
   //@ts-ignore
-  const checkConcentration = (cubActive && window.MidiQOL?.configSettings?.concentrationAutomation) 
+  const checkConcentration = (cubActive && window.MidiQOL?.configSettings()?.concentrationAutomation) 
   //@ts-ignore
   const CV = window.ConditionalVisibility;
   //@ts-ignore
@@ -831,7 +877,7 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
             result = await macro.execute(action, ...(duplicate(theChange.value.slice(1))), lastArg)
           } else {
             console.warn("Furnace not active - so no macro arguments supported");
-            result = await macro.execute();
+            result = macro.execute();
           }
         } else if (theChange.key === "macro.itemMacro") {
           let macroCommand = getProperty(effect.flags, "dae.macroCommand"); // this is populated in evalArgs
@@ -848,7 +894,7 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
             result = await macro.execute(action, ...duplicate(theChange.value), lastArg);
           } else {
             console.warn("Furnace not active - so no macro arguments supported")
-            result = await macro.execute();
+            result = macro.execute();
           }
           /*
           if (action === "on") await game.cub.addCondition(condition, [canvas.tokens.get(effect.flags.dae.token)])
@@ -1208,6 +1254,12 @@ function daeApply(actor, change) {
 
 var spellAttacks, weaponAttacks, attackTypes, bonusSelectors;
 
+function getRollData() {
+  const data = oldGetRollData.bind(this)();
+  data.flags = this.data.flags;
+  return data;
+}
+
 export function daeInitActions() {
   // Setup attack types and expansion change mappings
   spellAttacks = ["msak", "rsak"]
@@ -1227,9 +1279,14 @@ export function daeInitActions() {
   }
   ValidSpec.createValidMods();
 
+  //TODO move this to libWrapper.
+
   // We will call this in prepareData
   oldPrepareData = CONFIG.Actor.entityClass.prototype.prepareData;
   CONFIG.Actor.entityClass.prototype.prepareData = prepareData;
+
+  oldGetRollData = CONFIG.Actor.entityClass.prototype.getRollData;
+  CONFIG.Actor.entityClass.prototype.getRollData = getRollData;
 
   oldApply = CONFIG.ActiveEffect.entityClass.prototype.apply;
   CONFIG.ActiveEffect.entityClass.prototype.apply = daeApply;
@@ -1238,7 +1295,10 @@ export function daeInitActions() {
   //@ts-ignore
   CONFIG.Actor.entityClass.prototype.applyActiveEffects = applyBaseActiveEffects;
 
-  daeActionTypeKeys =  Object.keys(CONFIG.DND5E.itemActionTypes)
+  if (game.system.id === "dnd5e")
+    daeActionTypeKeys =  Object.keys(CONFIG.DND5E.itemActionTypes)
+  else
+    daeActionTypeKeys =  Object.keys(CONFIG.SW5E.itemActionTypes)
   // This supplies DAE custom effects
   Hooks.on("applyActiveEffect", daeCustomEffect); 
   // Updating an owned item - first update any actor effects
@@ -1317,6 +1377,7 @@ export function fetchParams() {
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")
+  noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
   /* TODO decide what to do about enhancing status effects or not
   ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");
   procStatusEffects(ehnanceStatusEffects);

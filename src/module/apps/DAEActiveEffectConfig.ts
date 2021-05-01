@@ -30,37 +30,70 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     this.fieldsList.sort();
     //@ts-ignore
     log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL?.midiFlags?.length || 0} come from midi-qol and ${ValidSpec.allSpecs.length} from dae`);
-    this.fieldsList = this.fieldsList.join(", ");
-    this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
-    Object.keys(CONFIG.DND5E.damageResistanceTypes).forEach(type => {
-      this.traitList[`-${type}`] = `-${CONFIG.DND5E.damageResistanceTypes[type]}`;
-    });
+    if (game.system.id === "dnd5e") {
+      this.fieldsList = this.fieldsList.join(", ");
+      this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
+      Object.keys(CONFIG.DND5E.damageResistanceTypes).forEach(type => {
+        this.traitList[`-${type}`] = `-${CONFIG.DND5E.damageResistanceTypes[type]}`;
+      });
 
-    this.languageList = duplicate(CONFIG.DND5E.languages);
-    Object.keys(CONFIG.DND5E.languages).forEach(type => {
-      this.languageList[`-${type}`] = `-${CONFIG.DND5E.languages[type]}`;
-    });
+      this.languageList = duplicate(CONFIG.DND5E.languages);
+      Object.keys(CONFIG.DND5E.languages).forEach(type => {
+        this.languageList[`-${type}`] = `-${CONFIG.DND5E.languages[type]}`;
+      });
 
-    this.conditionList = duplicate(CONFIG.DND5E.conditionTypes);
-    Object.keys(CONFIG.DND5E.conditionTypes).forEach(type => {
-      this.conditionList[`-${type}`] = `-${CONFIG.DND5E.conditionTypes[type]}`;
-    });
+      this.conditionList = duplicate(CONFIG.DND5E.conditionTypes);
+      Object.keys(CONFIG.DND5E.conditionTypes).forEach(type => {
+        this.conditionList[`-${type}`] = `-${CONFIG.DND5E.conditionTypes[type]}`;
+      });
 
-    this.toolProfList = duplicate(CONFIG.DND5E.toolProficiencies);
-    Object.keys(CONFIG.DND5E.toolProficiencies).forEach(type => {
-      this.toolProfList[`-${type}`] = `-${CONFIG.DND5E.toolProficiencies[type]}`;
-    });
+      this.toolProfList = duplicate(CONFIG.DND5E.toolProficiencies);
+      Object.keys(CONFIG.DND5E.toolProficiencies).forEach(type => {
+        this.toolProfList[`-${type}`] = `-${CONFIG.DND5E.toolProficiencies[type]}`;
+      });
 
-    this.armorProfList = duplicate(CONFIG.DND5E.armorProficiencies);
-    Object.keys(CONFIG.DND5E.armorProficiencies).forEach(type => {
-      this.armorProfList[`-${type}`] = `-${CONFIG.DND5E.armorProficiencies[type]}`;
-    });
+      this.armorProfList = duplicate(CONFIG.DND5E.armorProficiencies);
+      Object.keys(CONFIG.DND5E.armorProficiencies).forEach(type => {
+        this.armorProfList[`-${type}`] = `-${CONFIG.DND5E.armorProficiencies[type]}`;
+      });
 
-    this.weaponProfList = duplicate(CONFIG.DND5E.weaponProficiencies);
-    Object.keys(CONFIG.DND5E.weaponProficiencies).forEach(type => {
-      this.weaponProfList[`-${type}`] = `-${CONFIG.DND5E.weaponProficiencies[type]}`;
-    });
+      this.weaponProfList = duplicate(CONFIG.DND5E.weaponProficiencies);
+      Object.keys(CONFIG.DND5E.weaponProficiencies).forEach(type => {
+        this.weaponProfList[`-${type}`] = `-${CONFIG.DND5E.weaponProficiencies[type]}`;
+      });
+    } else {
+      this.fieldsList = this.fieldsList.join(", ");
+      this.traitList = duplicate(CONFIG.SW5E.damageResistanceTypes);
+      Object.keys(CONFIG.SW5E.damageResistanceTypes).forEach(type => {
+        this.traitList[`-${type}`] = `-${CONFIG.SW5E.damageResistanceTypes[type]}`;
+      });
 
+      this.languageList = duplicate(CONFIG.SW5E.languages);
+      Object.keys(CONFIG.SW5E.languages).forEach(type => {
+        this.languageList[`-${type}`] = `-${CONFIG.SW5E.languages[type]}`;
+      });
+
+      this.conditionList = duplicate(CONFIG.SW5E.conditionTypes);
+      Object.keys(CONFIG.SW5E.conditionTypes).forEach(type => {
+        this.conditionList[`-${type}`] = `-${CONFIG.SW5E.conditionTypes[type]}`;
+      });
+
+      this.toolProfList = duplicate(CONFIG.SW5E.toolProficiencies);
+      Object.keys(CONFIG.SW5E.toolProficiencies).forEach(type => {
+        this.toolProfList[`-${type}`] = `-${CONFIG.SW5E.toolProficiencies[type]}`;
+      });
+
+      this.armorProfList = duplicate(CONFIG.SW5E.armorProficiencies);
+      Object.keys(CONFIG.SW5E.armorProficiencies).forEach(type => {
+        this.armorProfList[`-${type}`] = `-${CONFIG.SW5E.armorProficiencies[type]}`;
+      });
+
+      this.weaponProfList = duplicate(CONFIG.SW5E.weaponProficiencies);
+      Object.keys(CONFIG.SW5E.weaponProficiencies).forEach(type => {
+        this.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
+      });
+
+    }
     if (cubActive) {
       this.cubConditionList = {}
       game.cub.conditions?.forEach(cubc => {
@@ -131,8 +164,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       return this.traitList;
     if (spec.includes("data.skills") && spec.includes("value"))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
-    if (spec.includes("data.skills") && spec.includes("ability"))
-      return CONFIG.DND5E.abilities;
+    if (spec.includes("data.skills") && spec.includes("ability")) {
+      if (game.system.id === "dnd5e")
+        return CONFIG.DND5E.abilities;
+      else
+        return CONFIG.SW5E.abilities;
+    }
     if (spec.includes("tokenMagic"))
       return this.tokenMagicEffects;
     if (spec === "macro.CUB") return this.cubConditionList;

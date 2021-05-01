@@ -1,32 +1,41 @@
-0.2.59
+## 0.2.62
+* Fix to make flags data available in actor.getRollData()
+* Some more sw5e tidy up in dae editor to support SW5E specific CONFIG.
+
+## 0.2.61
+* Updated for change in MidiQOL.configSettings
+## 0.2.60  
+* Added config flags noDupDamageMacro which if set will remove duplicates of the same damage macro from the actor traits. Useful if you have an omnibus damage macro that covers several effects.
+* Allow flags.dae CUSTOM flagName @flags.dae.flagName + 1, without throwing undefined warning
+## 0.2.59  
 * Added  support for 1Attack:mwak, 1Attack:rwak, 1Attack:msak and 1Attack:rsak special durations.
-0.2.58
+## 0.2.58  
 * Added export of Dae.deleteActiveEffect(tokenId, uuid) to remove effects identified by uid from the token identified by tokenId. Will pass to a GM client if required/available.
-0.2.57
+## 0.2.57  
 Support for some more expiry modes for midi-qol.
-0.2.56
+## 0.2.56  
 * First pass cleaning up special duration editing.
 * Added damage dealt special duration expiry.
 * Changed flags.dnd5e.... to allow any mode. Unless you know what you are doing CUSTOM mode is recommended.
-0.2.55
+## 0.2.55  
 * Fix for double adding global save bonus.
-0.2.54
-Fix for special durations not displaying if times-up not installed.
-Fix for creation of enormous durations when updating existing duration.
-0.2.53
+## 0.2.54  
+* Fix for special durations not displaying if times-up not installed.
+* Fix for creation of enormous durations when updating existing duration.
+## 0.2.53  
 Support for skill-customization-5e so that you can add roll bonuses (like 1d4) to skills via dae. Requires skill-customization-5e to be installed. Remember to put a + in fromt of the bonus, otherwise it will simply concatenate with the existing field.
 * support for sw5e A4 release.
 * Fix for double adding global save bonus.
 * [BREAKING] For all of the core dnd5e bonus fields, the allowed modes have been changed to allow any mode type. **Unless you have a specific need for non custom** you should choose CUSTOM for these fields, which acts like a smarter ADD. If you don't do custom you will need to make sure that you add the + in front of the field as required and @field lookups will only be done at roll time, not before.
-0.2.52
+## 0.2.52  
 * added support for attributes.movement.hover
 * added support for new special duration fields
-0.2.51
+## 0.2.51  
 * Added bug reporter support.
 * Reenabled handling of missing fields in damage rolls. (won't affect most people).
 * Fix for ignoring single simple numeric bonuses.abilities.save when using DAE modified saving throw.
 * updated ja.json, thanks Brother Sharp and @louge
-0.2.50
+## 0.2.50  
 * Fixed a bug in conditional visibility setting
 * [BREAKING] Moved data.attributes.prof to prepare data phase. No referencing derived values (abilities.cha.mod etc) in effects that modify data.attributes.prof. Should now correctly update those things that depend of data.attributes.prof.
 * [MAYBE-BREAKING] Change to string fields. @fields that can be evaluated when doing prepare data will be looked up. So a damage bonus of (@classes.rogue.levels)d6[fire] will be replaced with (3)d6[fire] when applied to the damage bonus field. Dice rolls and fields that do not exist when the evaluation is done (1d4, or @item.level) will be left unchanged.
@@ -35,7 +44,7 @@ Support for skill-customization-5e so that you can add roll bonuses (like 1d4) t
 https://docs.google.com/spreadsheets/d/1Vze_sJhhMwLZDj1IKI5w1pvfuynUO8wxE2j8AwNbnHE/edit?usp=sharing
 * updated ko.json, cn.json many thanks @klo and Mitch Hwang
 
-0.2.49
+## 0.2.49  
 * Fixed an error in passing parameters to macro.execute/macro.itemMacro when there are no @parameters.
 * A little re-ordering of actions when adding/removing concentration that hopefully will remove a DAE/CUB race condition.
 * Deprecation of @actor as a macro parameter.
@@ -43,25 +52,25 @@ https://docs.google.com/spreadsheets/d/1Vze_sJhhMwLZDj1IKI5w1pvfuynUO8wxE2j8AwNb
 * When set via CUSTOM mode, dae will handling creating the comma separated list. 
 * Appears on the special traits page and can also be set by hand there.
 * Adding damage this way is expensive since it requires a macro compilation and execution each time you do damage. If you can add the damage via bonuses.mwak.damage you should do so.
-0.2.48
-Updated ja.json
-Ensure that tokenId is set in lastArg for macro calls.
-Make multi select more visible.
-0.2.47
-Fix for @target not being correctly set with multiple targets.
-Remove dependency on game.Gametime, uses window.Gametime instead.
-0.2.46
-Fix for sw5e non-equipped items not setting disabled correctly on transferred effects.
-0.2.45
-Fix for multiple GMs logged in and concentration
-Fix for broken multi effect application.
-0.2.44
+## 0.2.48  
+* Updated ja.json
+* Ensure that tokenId is set in lastArg for macro calls.
+* Make multi select more visible.
+## 0.2.47  
+* Fix for @target not being correctly set with multiple targets.
+* Remove dependency on game.Gametime, uses window.Gametime instead.
+## 0.2.46  
+* Fix for sw5e non-equipped items not setting disabled correctly on transferred effects.
+## 0.2.45  
+* Fix for multiple GMs logged in and concentration
+* Fix for broken multi effect application.
+## 0.2.44  
 Packaging issues.
-0.2.43
+## 0.2.43  
 * Fix for editing conditions if CUB installed but active conditions not defined.
 * A couple of fixes for sw5e.
 * Many changes to support concentration automation in midi-qol.
-[BREAKING] Sort of, well not much, actually much better. The item flags active for equipped/always active for transfer effects have been removed and replaced with a new rule and no checkboxes.
+* [BREAKING] Sort of, well not much, actually much better. The item flags active for equipped/always active for transfer effects have been removed and replaced with a new rule and no checkboxes.
 * **Transfer effects** for feats and spells are toggled from the dnd5e effects tab.
 * Anything else follows the rule that transfer active effects for the item are enabled if it is equipped and is not "requires attunement" using the data from the item itself.  
 
@@ -73,10 +82,10 @@ With this change the DAE Actor/Item effects window is only required for editing 
 * When an item is first added to an actor the "suspended" flag on the item is used to set the initial enabled/disalbed state.
 * And, as has always been the case, you can override item **transfer effects** enabled/disabled status form the actor effects tab and will remain enabled/disabled until the item updates (e.g. equipped/unequipped).
 
-0.2.42
+## 0.2.42  
 * Remove accidental dependency on midi-qol.
 * supply awesomeplete.css.map
-0.2.41
+## 0.2.41  
 * Fix for mods to data.attributes.prof calling of _computeSpellCastingProgression being undefined.
 * Fixed a couple edge cases in dae.setFlag/dae.getFlag/dae.unsetFlag if you were passing a token instead of an actor.
 * In the effects drop down list any effects that are influenced by DAE behaviour are marked with (*). This means that either it is only supported via DAE, or that it is a DAE CUSTOM field, or the change is applied after prepareData would normally apply the change. This gives you an idea of what effects will work if there is no DAE installed. iN particular all the flags.midi-qol fields WILL work without DAE.
@@ -90,7 +99,7 @@ With this change the DAE Actor/Item effects window is only required for editing 
 
 * Clarification: any of the macro effects ONLY work if transferred from an item to an actor (either transfer or non-transfer) but will not work if the effect is manually created on the actor. The effect is applied on effect creation (macros called with "on") and removed on effect deletion (macros called with "off"). Suspending the effect has no effect on these, only creation and deletion.
 
-0.2.40  
+## 0.2.40  
 * Support data.arritbutes.movement.all (CUSTOM EFFECT ONLY) supporting
   * value => replace current with value
   * +value => add value to current
@@ -109,13 +118,13 @@ The leading character in the string is what effects the overall evaluation, so +
 * ~~Some~~ Lots of fiddling with macro.execute behaviour to try and make item data more reliable. Smallish, but non-zero chance that some macro.execute behaviour got broken.
 * A fix for created ownedItems having the correct origin set for contained active effects.
 
-0.2.39
-Bugfix for @item returning item.data.data instead of item.dat
-0.2.38  
-Bugfix for spaces in token magic effect application
-0.2.37  
-Bugfix for vanishing effect values when applied  
-0.2.36
+## 0.2.39  
+* Bugfix for @item returning item.data.data instead of item.dat
+## 0.2.38  
+* Bugfix for spaces in token magic effect application
+## 0.2.37  
+* Bugfix for vanishing effect values when applied  
+## 0.2.36  
 * Fix for TrapWorkflow not auto fast forwarding rolls.
 * Fix? for changes to proficiency bonus.
 * **special durations/macro repeats only shown if the required modules loaded (midi-qol/times-up)**.
@@ -135,41 +144,45 @@ Bugfix for vanishing effect values when applied
   }
 ```
 
-0.2.35
-Support @@... fields in macro arguments, to defer evaluation. Specifically for some edge cases in Active Auras.
-There are too many bugs in the current CUB:Condition code - so I'm going to disable it for now.
-0.2.34
-Fixes for CUB: conditions editing. Both runtime lookup via CUB:Condition and effect creation time copy of active effects are supported at the same time.
+## 0.2.35  
+* Support @@... fields in macro arguments, to defer evaluation. Specifically for some edge cases in Active Auras.
+* There are too many bugs in the current CUB:Condition code - so I'm going to disable it for now.
+## 0.2.34  
+* Fixes for CUB: conditions editing. Both runtime lookup via CUB:Condition and effect creation time copy of active effects are supported at the same time.
 * fix for not creating status icon for CUB:Condition.
 * new effect list now displays "CUB:Condtion" for runtime lookup and "Condition (CUB)" for creation time copy effects.
 * you can disable CUB: via the config setting flag.
 * [BREAKING] migrateActorDAESRD now copies the existing items equipped/attuned flag.
 * Updated Readme.md with a description of Cub conditions and how they work.
-0.2.33
+
+## 0.2.33  
 * Change to flags.DAE CUSTOM flagName rollExpression. Values set this way are available to other roll expressions via @flags.dae.flagName, for example in attack/damage rolls or whatever.
 * Support for CUB: active effects. If the effect label is CUB:conditionName (e.g. CUB:Blinded) the active effect will be loaded from CUB during perpareData, the CUB condition activeEffect will REPLACE ALLL data in the active effect (don't put other changes with the CUB:condition). The link between cub conditions and DAE will be "live", except that changing CUB conditions does not trigger prepareData you will need to edit the actor or reload for changes made to cub conditons to take effect.
 * New config flag. If lookup CUB is set the DAE create effect for CUB conditions will create a lookup effect.
 * Removed extra call to _prepareOwnedItems in dae prepareData as it caused some problems. This will break active effects that change item properties until I can find a fix.
-0.2.32
+
+## 0.2.32  
 * Added it.json thanks @Simone [UTC +1]#6710 
 * Fix for token magic effects on unlinked tokens  
 * flags.dae custom field format remains flagname values, but values are now evaluated.
   So flags.dae CUSTOM test @abilities.dex.mod will set the flag to the value of the modifier.
-0.2.31  
-Fix for data.bonuses.weapon.attack not working.
-updated ja.json thanks @touge
-0.2.30 
-fix for creating new equipment on character sheet throwing an error.
-Incorporated libwrapper thanks dev7355608
-[BREAKING] Change module.json to work with dnd5e/sw5e only, due to silent incompatibilities with other systems. If you want others added let me know.
 
-0.2.29
+## 0.2.31  
+* Fix for data.bonuses.weapon.attack not working.
+* updated ja.json thanks @louge
+
+## 0.2.30  
+* fix for creating new equipment on character sheet throwing an error.
+* Incorporated libwrapper thanks dev7355608
+* [BREAKING] Change module.json to work with dnd5e/sw5e only, due to silent incompatibilities with other systems. If you want others added let me know.
+
+## 0.2.29  
 * Interim solution to display post active effects values in special traits page. This will last only unitl there is a dnd5e core solution to seeing what the post active effect application bonsues/flags are. Enable via config setting, requires reload.
 * update ja.json. Thans @touge
 * fix for spellCriticalThreshold active effect
 * fix for sw5e and proficiency mods, save mod rolls, damage bonuses.
 
-0.2.28
+## 0.2.28  
 * fix for effects not being removed from DAE Active Effects when displaying a token's effects.
 * Fix for 1.2.0 attunement changes (which should fix the equip item active effect problem)
 * support the new attributes.senses changes
@@ -191,23 +204,23 @@ items.mwak.data.damage.parts[0][1] ADD +1d4
 ```
 all melee weapons do an extra 1d4 damage.(You would not do this since there is already a bonuses field that does this)
 
-0.2.27
-[BREAKING] change to special expiry effects:
+## 0.2.27  
+* [BREAKING] change to special expiry effects:
 * removed from item duration (too cluttered)
 * added as optional field in Effect Duration panel. (You must use DAE effect editor)
 * If about-time is installed and enabled and a temporary effect has a duration in seconds, the remaining time in the DAE effects window will show the remaining time in H:M:S.
 * Added support for isAttacked and isDamaged expiry conditions.
 * When entering the start time on the DAE duration tab the value is interpreted as an offset from the current game time. So 0 means now +60 means in 1 minutes time, -30 means 30 seconds ago.
 
-Example: Guiding Bolt. Start with the SRD guiding bolt spell 
+Example: Guiding Bolt. Start with the SRD guiding bolt spell  
 * Bring up the DAE editor for the item and add an effect.
 * On the duration tab, set the duration to be 1 round + 1 turn and the special expiry isAttacked.
 * On the effects tab add an effect
-flags.midi-qol.grants.advantage.attack.all OVERRIDE 1.
+flags.midi-qol.grants.advantage.attack.all OVERRIDE 1.  
 Now when you cast the spell at a target and hit, the effect will be applied that grants advantage on the next attack.
 
-0.2.26 remove setupDAE macro errors
-0.2.25
+## 0.2.26 remove setupDAE macro errors  
+## 0.2.25  
 * added 3 DAE.functios, 
 ```
 DAE.setFlag(actor, flagName, value)
@@ -232,7 +245,7 @@ to allow setting/getting/unsetting flags in the dae scope even if the actor is n
 
   * new settings flag to enable/disable real time expriy of effects if no about-time/times-up installed.
 
-0.2.24
+## 0.2.24  
 * Reduce restriction on some of the the custom fields.
 * Fix for armor/weapon proficiences active effects if the list was empty
 * Fix for forced mode effects not picking up the mode correctly.
@@ -247,34 +260,34 @@ Example
 DAE.migrateActorDAESRD(game.actors.getName("The name of the actor"), false)
 ```
 Update ko.json thanks @KLO
-0.2.23
+## 0.2.23  
 * Added disable base AC calc (10+dex.mod). Use this wwith care since disabling it means the base AC for the character will be whatever you type into the AC field.
 * A few tidy ups on the ActiveEffects screen. Show effect source, show fields that do not have labels instead of None.
 * Changed auto created AC effects to show the effect as the name.
 * Updated ko.json thanks @KLO
-0.2.22
+## 0.2.22  
 * Modify DAE config to support both pull down list of fields and direct enttry of fields. There is no checking done for direct entry fields so you are on your own if you type in the wrong thing.
 * DAE window for actors/items ALWAYS use DAE active config. Opening an active effect from the actor/item effects tab on the item/actor is now configured via the config setting.
 * Fix bug for negative DEX mod in AC calc for imported items. This will require you to remove from the actor inventory and readd the armor that is causing problems to the actor inventory.
 * [BREAKING] Effects that modify derived fields, like dex.mod, would not be included in later active effects if the target field is numeric. e.g. a change to dex.mod would not impact AC (which uses dex.mod for light/medium armor). They now affect the later calculations provided there priority # is less than that of the later calc. So setting dex.mod + 5 prioirty 1, will impact AC calculations which run at priority 7 by default.
-0.2.21
+## 0.2.21  
 * Updated to support new critical hit flags.
 * Move other flags to base data pass to ensure derived fields are processed.
 * Fix for 0.99 bug that duplicates applicaiton of bonuses.
-0.2.20
+## 0.2.20  
 * Added confirmation dialog and config setting when deleting active effects and changes.
 * Added new data.abilities.ABL.dc to modifgy individual saving throw dcs.
 * Put back support for @damage, @fumble, @critical, @whipser in non-transfer effects that are not macros. If this affected you you'll know.
-0.2.19
+## 0.2.19  
 * Move saving throw bonus to base values pass so it can be picked up by dnd5e derived data pass. Should fix the bonus ignored problem.
 * Added overload of rollSkill and rollAbilityTest so that @values can be looked up.
 * Fix for base AC calculation on polymorphed characters.
-0.2.18
+## 0.2.18  
 Fix for needing to toggle equipment on first equip to set active status correctly.
 If times-up is not active, don't convert durations to rounds/turns, leave in seconds for about-time to process.
-0.2.17
+## 0.2.17  
 Limit conversion of minutes -> rounds for up to 10 rounds, longer will stay in seconds.
-0.2.16
+## 0.2.16  
 * Corrected handling of traits.size
 * Fixed not setting up CONFIG.statusEffects correctly.
 * first steps to no n-dnd5e compatibility.
@@ -282,7 +295,7 @@ Limit conversion of minutes -> rounds for up to 10 rounds, longer will stay in s
 * Fixed an edge case for effects on tokens being removed and calling macros/token magic effects.
 * made data.abilities.save/check/skill into custom effects to reduce errors on data entry.
 Known Bug: Active Effects on tokens are not removed from the active effects display, but are actually removed from the token.
-0.2.14
+## 0.2.14  
 * fix a bug in deciding to apply effects if dynamic effects is installed.
 * add custom option for abilities.save,check,skill fields to handle the string vs number issue.
 * Bring back support flags.dnd5e for special traits/weapon critical threshold
@@ -298,19 +311,19 @@ Known Bug: Active Effects on tokens are not removed from the active effects disp
 * Updated pt-BR.json. Thanks @innocenti
 * A little patch for the SW5E guys, it appears they don't like halflings.
 
-0.2.13
+## 0.2.13  
 * Duration setting on applied effects should be correct now.
-Rules are:
-If the active effect specifies a duration use that;
-ELSE if the item specicfies a duration use that;
-Otherwise do not set a duration (which means the status will bot attack to the token).
-Instantaneous spells attract a duration of 1 second/turn.
-You don't have to be in combat to apply effects anymore.
-* Experimental support for editing effects on owned items. You cannot add effects to an item only change/delete those already there.
-* You can have more than one active effects window open at a time.
-0.2.12 
-fix for non-string being entered into string
-0.2.11
+Rules are:  
+If the active effect specifies a duration use that;  
+ELSE if the item specicfies a duration use that;  
+Otherwise do not set a duration (which means the status will bot attack to the token).  
+Instantaneous spells attract a duration of 1 second/turn.  
+You don't have to be in combat to apply effects anymore.  
+* Experimental support for editing effects on owned items. You cannot add effects to an item only change/delete those already there.  
+* You can have more than one active effects window open at a time.  
+## 0.2.12  
+* fix for non-string being entered into string
+## 0.2.11  
 * Fix for eval of non-transfer effect arguments incorrectly adding spaces between terms.
 * Added back the ability to reference @values in bonuses.heal.damage.
 **Changed duration setting** for applied non-transfer effects.
@@ -318,43 +331,46 @@ fix for non-string being entered into string
 * When applying an item effect during combat an item duration in minutes is converted to rounds/turns.
 * If times-up is installed DAE will not schedule the automatic removal of effects, but leave it to times-up.
 * When applying active effects only effects you don't have owner permission on will be applied by the GM. This means that macros will run either in the players client (if they own the target) or on the GM client (if they don't)
-0.2.10 
+
+## 0.2.10  
 * Fix for very fast timeouts if active effects not installed. A subsequent release will clean up the whole timeout piece.
 * Support for new CUB version. When creating an active effect from the acitve effects sheet (item or actor), you can choose one of the CUB effects from the drop down list (left of the + button). This will prepopulate with the CUB data, so equipping (if transfer) or applying if non-transfer will trigger the cub condition. Removal will work as well.
 * "Fix" so that subsequent applications of the same active effect on the same target don't stack but extend duration. 
 * Support multiple non-transfer effects on an item. E.g. A spell that does +1AC for 120 seconds and a CUB condition (Invisible say) 180 seconds. Each effect expires individually.
 * Fix for armor migration. Shields now have priority 7 and base armor priority 4, so there should be no conflict. If you have not editied effects you can rerun migration with no problems.
-0.2.9 cant remember
-v0.2.8 bugfix for transferred effects
-v0.2.7
-Remove dnd5e class/module references so that it should work out of the box for sw5e
-v0.2.6
-Added support for itemCardId being passed through the eval stage, added ciritcal and fimble as @parameters.
 
-v0.2.5 packaging
-v0.2.4 fixes a bad bug in item creation with transfer effects
-v0.2.3 packaging issue
-v0.2.2
-Display error message if macro not found and don't throw error.
-Some support work for DamageOnlyWorkflows in midi-qol
-v0.2.1
+## 0.2.9 cant remember  
+v0.2.8 bugfix for transferred effects  
+v0.2.7  
+* Remove dnd5e class/module references so that it should work out of the box for sw5e
+v0.2.6  
+* Added support for itemCardId being passed through the eval stage, added ciritcal and fimble as @parameters.
+
+v0.2.5 packaging  
+v0.2.4 fixes a bad bug in item creation with transfer effects  
+v0.2.3 packaging issue  
+v0.2.2  
+* Display error message if macro not found and don't throw error.
+* Some support work for DamageOnlyWorkflows in midi-qol
+
+v0.2.1  
 * Due to a brain spasm I completely messed up the implementation of conditions. Now, DAE uses CONFIG.statusEffects to apply conditions. You can add a condition effect to an item/actor by selecting from the drop down list next to the add effect button which will create a prepopulated effect for you. 
 
 For actors it is easier just to use the status effects toggle from the HUD (core functionality). 
 
-Conditions can be transfer/non-transfer and should just work, over time I will add actual effects for conditions. There are some oddities with conditions and immunities, but sort of work.
+Conditions can be transfer/non-transfer and should just work, over time I will add actual effects for conditions. There are some oddities with conditions and immunities, but sort of work.  
 * Cub condition support will require the next release of CUB (my implementation was just too broken).
 * The filter feature on Actor/Item Active sheets was stupid and I've cleaned that up to be more obvious.
 * Fix for simple bonuses like the number 1 not working.
 * Fixed a bug in the non-transfer active effect code that ignored @spellLevel and @item.level
 * Fixed a few bugs with disabled/enabled effect settinngs.
 
-In dynamic effects there were passive and active effects. As of 0.7.4 the rule is
+In dynamic effects there were passive and active effects. As of 0.7.4 the rule is  
 * transfer effect === passive effect (in dynamic effects)
 * non-transfer effect === active effect (in dynamic effects)l not to be confused with 0.7.4 "Active Effects" which covers both transfer and non-transfer effects.
 
-So changes to AC from having armor is a transfer effect (applied to the actor hen the item is equpped) is a passive effect.
-A bless spell that adds to the target saves/AC when cast is a non-transfer effect, and requires application to be applied to the target. Having the spell in your inventory does not increase your AC, but casting the spell on something increases the something's AC/Save. This is a non-transfer effect.
+So changes to AC from having armor is a transfer effect (applied to the actor hen the item is equpped) is a passive effect.  
+A bless spell that adds to the target saves/AC when cast is a non-transfer effect, and requires application to be applied to the target. Having the spell in your inventory does not increase your AC, but casting the spell on something increases the something's AC/Save. This is a non-transfer effect.  
 
 Unlike dynamic effects, you can create (0.7.4) "Active Effects" directly on an actor, e.g. +1 damage bonus, even if there is no item that created the effect.
 
