@@ -216,7 +216,7 @@ export class ValidSpec {
       Object.keys(specials).forEach(key => {
         delete baseValues[key]
       })
-      delete baseValues["data.attributes.init.bonus"];
+      delete baseValues["data.attributes.init.total"];
       delete baseValues["data.attributes.init.mod"];
       delete baseValues["flags"];
     }
@@ -562,7 +562,6 @@ function daeCustomEffect(actor, change) {
         }
       }
       value = Number(change.value);
-      console.error("custom change is ", change.vaalue, op, movement)
       Object.keys(movement).forEach(key => {
         if (typeof movement[key] === "number") {
           switch (op) {
