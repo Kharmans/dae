@@ -144,7 +144,6 @@ export function getTokenFlag(token: Token, flagName: string) {
 }
 
 export function deleteActiveEffect(actorUuid: string, origin: string) {
-  console.error("Delete effects ", actorUuid, origin)
   requestGMAction(GMAction.actions.deleteEffects, {targets: [{actorUuid}], origin});
 }
 

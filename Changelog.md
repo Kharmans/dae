@@ -1,8 +1,8 @@
 ## 0.8.0
-* Updated for new foundry version 0.8.3 and dnd 1.3.0 (both required).
+* Updated for new foundry version 0.8.3 and dnd 1.3.1 (both required).
 * Armor updates now recognise the armor dex value if present, which overrides light/medium/heavy.
 * Editing an owned item's transfer effects will update both the item and the actor effects.
-* Updated concentration to remove requirement for CUB concentration. Will use CUB concentration if present, otherwise will use MQ internal version. Different icon so you can tell which is active.
+* Updated concentration to remove requirement for CUB concentration. Will use CUB concentration if present, otherwise will use MQ internal version. Different icon so you can tell which is active. Will work standalone until CUB is 0.8.x compatible.
 
 ## 0.2.62
 * Fix to make flags data available in actor.getRollData()

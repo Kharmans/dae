@@ -1051,9 +1051,9 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
   // Split up targets according to whether they are owned on not. Owned targets have effects applied locally, only unowned are passed ot the GM
   const targetList = Array.from(targets);
   //@ts-ignore
-  let ownedTargets = targetList.filter(t=>t.actor?.permission === 3).map(t=> typeof t === "string" ? t : t.uuid);
+  let ownedTargets = targetList.filter(t=>t.actor?.permission === 3).map(t=> typeof t === "string" ? t : t.document.uuid);
   //@ts-ignore
-  let unOwnedTargets = targetList.filter(t=>t.actor?.permission !== 3).map(t=> typeof t === "string" ? t : t.uuid);;
+  let unOwnedTargets = targetList.filter(t=>t.actor?.permission !== 3).map(t=> typeof t === "string" ? t : t.document.uuid);;
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
   requestGMAction(GMAction.actions.applyActiveEffects, {activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId})
   applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
@@ -1211,7 +1211,6 @@ export function daeReadyActions() {
   //@ts-ignore
   aboutTimeInstalled = game.modules.get("about-time")?.active;
   timesUpInstalled = game.modules.get("times-up")?.active;
-  console.error("Times up installed is ", timesUpInstalled)
 }
 
 export function localDeleteFilters(tokenId: string, filterName: string) {

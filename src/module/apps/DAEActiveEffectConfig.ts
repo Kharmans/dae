@@ -202,7 +202,6 @@ truesight: false
       obj[e[1]] = game.i18n.localize("EFFECT.MODE_"+e[0]);
       return obj;
     }, {});
-    console.error("all modes are ", allModes)
     //@ts-ignore
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
@@ -339,21 +338,7 @@ truesight: false
     formData = expandObject(formData);
     if (!formData.changes) formData.changes = [];
     formData.changes = Object.values(formData.changes);
-    /*
-    for ( let c of formData.changes ) {
-      if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number") {
-        //@ts-ignore
-        if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
-      }
-      if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "string") {
-        if (typeof c.value === "number") c.value = `${c.value}`;
-      }
-      // stored mode is a selection index ok for the list, but not "forced Mode"
-      if (ValidSpec.allSpecsObj[c.key]?.forcedMode !== -1) c.mode = ValidSpec.allSpecsObj[c.key]?.forcedMode ?? c.mode;
-      //@ts-ignore
-      c.priority = Number.isNumeric(c.priority) ? parseInt(c.priority) : c.mode * 10;
-    }
-    */
+
     if (formData.flags?.dae?.specialDuration) {
       const newSpecDur = []
       Object.values(formData.flags?.dae?.specialDuration).forEach(value => newSpecDur.push(value));

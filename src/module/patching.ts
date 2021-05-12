@@ -259,7 +259,6 @@ async function _updateObject(event, formData) {
     }
   }
 
-  // console.error(actor.overrides, updateData)
   // Diff the data against any applied overrides and apply
   await actor.update(diffObject(actor.overrides || {}, updateData), { diff: false });
 }
