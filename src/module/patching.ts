@@ -1,4 +1,4 @@
-import { useAbilitySave, daeCreateActiveEffectActions, daeDeleteActiveEffectActions, displayTraits } from "./dae";
+import { useAbilitySave,  displayTraits } from "./dae";
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error, warn, } from "../dae";
@@ -96,16 +96,16 @@ function patchAbilitySave() {
     return;
   //@ts-ignore
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
-    log(`Patching CONFIG.Actor.entityClass.prototype.rollAbilitySave (override=${useAbilitySave})`);
+    log(`Patching CONFIG.Actor.documentClass.prototype.rollAbilitySave (override=${useAbilitySave})`);
     if (!useAbilitySave) {
       if (abilitySavePatched) {
-        libWrapper.unregister("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave");
+        libWrapper.unregister("dae", "CONFIG.Actor.documentClass.prototype.rollAbilitySave");
       } else {
         window.location.reload();
       }
     } else {
       if (!abilitySavePatched) {
-        libWrapper.register("dae", "CONFIG.Actor.entityClass.prototype.rollAbilitySave", rollAbilitySave, "OVERRIDE");
+        libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.rollAbilitySave", rollAbilitySave, "OVERRIDE");
       }
     }
     abilitySavePatched = useAbilitySave;

@@ -1,13 +1,7 @@
 import { cubActive } from "./dae";
 
-const ACTIVE_EFFECT_MODES = {
-  CUSTOM: 0,
-  MULTIPLY: 1,
-  ADD: 2,
-  DOWNGRADE: 3,
-  UPGRADE: 4,
-  OVERRIDE: 5
-};
+//@ts-ignore ACTIVE_EFFECT_MODES
+const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
 
 const OVERRIDE = ACTIVE_EFFECT_MODES.OVERRIDE;
 var dnd5eStatusEffects = null;

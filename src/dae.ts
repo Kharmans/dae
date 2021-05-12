@@ -13,7 +13,7 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro} from "./module/dae";
+import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
 import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD } from './module/migration';
@@ -154,7 +154,9 @@ Hooks.once('setup', function() {
     migrateAllActorsDAESRD: migrateAllActorsDAESRD,
     migrateAllNPCDAESRD: migrateAllNPCDAESRD,
     convertDuration,
-    confirmAction
+    confirmAction,
+    DAEfromUuid: DAEfromUuid,
+    DAEfromActorUuid: DAEfromActorUuid
   }
 });
 

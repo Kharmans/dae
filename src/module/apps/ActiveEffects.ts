@@ -103,7 +103,8 @@ getData() {
     } else this.effectList[se.id] = se.label;
   });
 
-  const isItem = this.object.__proto__.constructor.name === CONFIG.Item.entityClass.name;
+  //@ts-ignore documentClass;
+  const isItem = this.object instanceof CONFIG.Item.documentClass;
   let data = {
     actives: actives, 
     isGM: game.user.isGM,

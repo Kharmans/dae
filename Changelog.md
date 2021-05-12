@@ -1,3 +1,9 @@
+## 0.8.0
+* Updated for new foundry version 0.8.2 and dnd 1.3.0 (both required).
+* Armor updates now recognise the armor dex value if present, which overrides light/medium/heavy.
+* Editing an owned item's transfer effects will update both the item and the actor effects.
+* Updated concentration to remove requirement for CUB concentration. Will use CUB concentration if present, otherwise will use MQ internal version. Different icon so you can tell which is active.
+
 ## 0.2.62
 * Fix to make flags data available in actor.getRollData()
 * Some more sw5e tidy up in dae editor to support SW5E specific CONFIG.
