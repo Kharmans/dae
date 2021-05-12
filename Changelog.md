@@ -1,4 +1,4 @@
-## 0.8.0
+## 0.8.0/1
 * Updated for new foundry version 0.8.3 and dnd 1.3.1 (both required).
 * Armor updates now recognise the armor dex value if present, which overrides light/medium/heavy.
 * Editing an owned item's transfer effects will update both the item and the actor effects.
