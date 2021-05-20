@@ -2,10 +2,10 @@
   "name": "dae",
   "title": "Dynamic effects using Active Effects",
   "description": "replacement for dynamic effects",
-  "version": "0.8.0",
-  "compatibleCoreVersion": "0.8.3",
-  "minimumCoreVersion": "0.8.3",
-  "minimumSystemVersion": "1.3.1",
+  "version": "0.8.2",
+  "compatibleCoreVersion": "0.8.4",
+  "minimumCoreVersion": "0.8.4",
+  "minimumSystemVersion": "1.3.2",
   "scripts": ["libs/tokenizer.min.js"],
   "systems": ["dnd5e", "sw5e"],
   "esmodules": [
@@ -73,5 +73,5 @@
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
   "allowBugReporter": true,
   "manifest": "https://gitlab.com/tposney/dae/raw/08x/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/08x/package/dae-v0.8.0.zip"
+  "download": "https://gitlab.com/tposney/dae/raw/08x/package/dae-v0.8.2.zip"
 }

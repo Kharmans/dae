@@ -183,6 +183,7 @@ activateListeners(html) {
     })
   });
   html.find('.effect-edit').click(async ev => {
+    if (this.object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     let effect = this.object.effects.get(effect_id);
     new DAEActiveEffectConfig(effect).render(true);

@@ -1,3 +1,7 @@
+## 0.8.2
+* Fix for activating items dragged from compendiums to an actor.
+* Improve duration display for item effects before they are transferred from the item to the actor.
+
 ## 0.8.0/1
 * Updated for new foundry version 0.8.3 and dnd 1.3.1 (both required).
 * Armor updates now recognise the armor dex value if present, which overrides light/medium/heavy.
