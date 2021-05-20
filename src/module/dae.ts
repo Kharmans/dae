@@ -1063,7 +1063,7 @@ export function applyNonTransferEffects(activate, targets, {whisper = false, spe
 function preUpdateItem(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   Hooks.once("updateItem", async () => {
-    if (updates.data.armor && candidate.data.data.armor?.type) { // TODO find out why SRD items have an armor value
+    if (updates.data?.armor && candidate.data.data.armor?.type) { // TODO find out why SRD items have an armor value
       let updatedActorEffectData = updateArmorEffect(candidate, updates);
       const origin = candidate.uuid; // `Actor.${item.actor.id}.Item.${updates._id}`;
       if (updatedActorEffectData.length > 0) {
