@@ -1091,7 +1091,6 @@ export function applyNonTransferEffects(activate, targets, { whisper = false, sp
 // Update the actor active effects when editing an owned item
 function preUpdateItem(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
-  console.error("pre update item ", candidate, updates)
   Hooks.once("updateItem", async () => {
     if (updates.data?.armor && candidate.data.data.armor?.type) { // TODO find out why SRD items have an armor value
       let updatedActorEffectData = updateArmorEffect(candidate, updates);
@@ -1139,7 +1138,6 @@ function preUpdateItem(candidate, updates, options, user) {
           efData = { "_id": efData._id, "disabled": newDisabled };
         }
       })
-      console.error("pre update item updates are ", existingEffectsData)
       if (effectsChanged) await candidate.parent.updateEmbeddedDocuments("ActiveEffect", existingEffectsData);
     }
   });

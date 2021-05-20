@@ -1,3 +1,6 @@
+## 0.8.3
+remove some left over debug
+
 ## 0.8.2
 * Fix for activating items dragged from compendiums to an actor.
 * Improve duration display for item effects before they are transferred from the item to the actor.
