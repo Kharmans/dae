@@ -213,7 +213,14 @@ let deleteEffects = async (targets, origin: string) => {
       error("could not find actor for ", idData);
     }
     const effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === origin);
-    if (effectsToDelete?.length > 0) await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef=>ef.id));
+    if (effectsToDelete?.length > 0) {
+      try {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef=>ef.id));
+      } catch(err) {
+        console.error("delete effects failed ", err)
+        // TODO can get thrown since more than one thing tries to delete an effect
+      };
+    }
   }
 }
 // delete a token from the specified scene and recreate it on the target scene.

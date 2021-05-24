@@ -739,17 +739,22 @@ async function handleAddConcentration(actor, effect, tokens) {
   if (!isConcentration) return false;
 }
 
-async function handleRemoveConcentration(actor, effect, tokens) {
+async function handleRemoveConcentration(effect, tokens) {
   // TODO fix this to be localised
+  let actor = effect.parent;
   let concentrationLabel = game.cub?.active ? game.settings.get("combat-utility-belt", "concentratorConditionName") : "Concentrating";
   let isConcentration = effect.data.label === concentrationLabel;
 
   if (!isConcentration) return false;
   const concentrationData = getProperty(actor.data.flags, "midi-qol.concentration-data");
   if (!concentrationData) return;
-  concentrationData.templates.forEach(templateUuid => DAEfromUuid(templateUuid).delete());
-  requestGMAction(GMAction.actions.deleteEffects, { targets: concentrationData.targets, origin: concentrationData.uuid });
-  await actor.unsetFlag("midi-qol", "concentration-data")
+  try {
+    await actor.unsetFlag("midi-qol", "concentration-data")
+    concentrationData.templates.forEach(templateUuid => DAEfromUuid(templateUuid).delete());
+    requestGMAction(GMAction.actions.deleteEffects, { targets: concentrationData.targets, origin: concentrationData.uuid });
+  } catch (err) {
+    console.warn("dae | error deleteing effects: ", err)
+  }
 }
 
 export async function preCreateActiveEffect(activeEffect, effectData, options, userId) {
@@ -802,7 +807,7 @@ export async function preDeleteActiveEffect(effect, ...args) {
   //@ts-ignore
   const tokenMagic = window.TokenMagic;
 
-  let update = async () => {
+  let update = async (effect, options, user) => {
     const actor = effect.parent;
     if (token && effect.changes) {
       for (let change of effect.data.changes) {
@@ -811,7 +816,7 @@ export async function preDeleteActiveEffect(effect, ...args) {
         if (CV) await removeCVChange(actor, change, [token], CV);
       }
     }
-    if (checkConcentration) await handleRemoveConcentration(actor, effect, [token]);
+    if (checkConcentration) await handleRemoveConcentration(effect, [token]);
     // TODO clean this up eventually
     daeMacro("off", actor, effect.data, {});
   }
@@ -821,7 +826,6 @@ export async function preDeleteActiveEffect(effect, ...args) {
 
 
 function preUpdateActiveEffect(activeEffect, changes, options, userCalendarSpec) {
-  return;
   const parent = activeEffect.parent;
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return;
@@ -833,7 +837,6 @@ function preUpdateActiveEffect(activeEffect, changes, options, userCalendarSpec)
   //@ts-ignore
   const tokenMagic = window.TokenMagic;
   const oldDisabled = activeEffect.data.disabled;
-  console.error("pre update active effect", oldDisabled, changes.disabled)
 
   let update = async (newEffect, changes) => {
     // Just deal with equipped etc

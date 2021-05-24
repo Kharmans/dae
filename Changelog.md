@@ -1,5 +1,8 @@
 ## 0.8.3
-remove some left over debug
+* remove some left over debug.
+
+Issues: 
+* Occascional problem when expiring concentration effects (versus removing concentration) via times-up (and probably about-time) which leaves an effect present after reload.
 
 ## 0.8.2
 * Fix for activating items dragged from compendiums to an actor.

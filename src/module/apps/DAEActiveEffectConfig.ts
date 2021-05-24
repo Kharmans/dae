@@ -346,12 +346,12 @@ truesight: false
     } else setProperty(formData.flags, "dae.specialDuration", []);
   
     //@ts-ignore isNumeric
-    if (Number.isNumeric(formData.duration.startTime)) {
+    if (Number.isNumeric(formData.duration.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
       let startTime = parseInt(formData.duration.startTime);
-      if (startTime <= 3600) { // Only acdept durations of 1 hour or less as the start time field
+      if (Math.abs(startTime) <= 3600) { // Only acdept durations of 1 hour or less as the start time field
         formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
       }
-    }
+    } else delete formData.duration.startTime;
     setProperty(formData, "flags.dae.transfer", formData.transfer);
     //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
     if (this.object.parent.isOwned) { // we are editing an owned item
