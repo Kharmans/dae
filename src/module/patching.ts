@@ -100,8 +100,6 @@ function patchAbilitySave() {
     if (!useAbilitySave) {
       if (abilitySavePatched) {
         libWrapper.unregister("dae", "CONFIG.Actor.documentClass.prototype.rollAbilitySave");
-      } else {
-        window.location.reload();
       }
     } else {
       if (!abilitySavePatched) {
