@@ -66,8 +66,8 @@ export class ValidSpec {
     _characterSpec["data"] = duplicate(characterSpec);
     let baseValues = flattenObject(_characterSpec);
     // data.attributes.prof/data.details.level and data.attributes.hd are all calced in prepareBaseData
-    baseValues["data.attributes.prof"] = [0];
-    baseValues["data.details.level"] = [0];
+    baseValues["data.attributes.prof"] = 0;
+    baseValues["data.details.level"] = 0;
     baseValues["data.attributes.hd"] = 0;
 
     //@ts-ignore
@@ -153,7 +153,7 @@ export class ValidSpec {
 
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
+        "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM],
         // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
@@ -574,6 +574,7 @@ function daeCustomEffect(actor, change) {
         }
       })
       return true;
+
     case "data.abilities.str.dc": 
     case "data.abilities.dex.dc": 
     case "data.abilities.int.dc": 
@@ -584,12 +585,15 @@ function daeCustomEffect(actor, change) {
     case "data.attributes.powerForceDarkDC":
     case "data.attributes.powerForceUnivDC":
     case "data.attributes.powerTechDC":
-
       //@ts-ignore
       value = Number.isNumeric(change.value) ? parseInt(change.value) : 0;
       if (value) {
         setProperty(actor.data, change.key, current + value);
       }
+      // Spellcasting DC
+      const ad = actor.data.data;
+      const spellcastingAbility = ad.abilities[ad.attributes.spellcasting];
+      ad.attributes.spelldc = spellcastingAbility ? spellcastingAbility.dc : 8 + ad.attributes.prof;
       if (actor.items) {
         actor.items.forEach(item => {
           item.getSaveDC();
@@ -981,8 +985,12 @@ async function evalArgs({effectData = null, itemData = null, context, actor, cha
         } 
         else return f;
       });
-
       value = fields;
+      break;
+    case "macro.CUB":
+    case "macro.ConditionalVisibility":
+    case "macro.ConditionalVisibilityVision":
+      value = fields.join(" ")
       break;
     default: 
       fields = fields.map(f => {
@@ -1004,7 +1012,7 @@ async function evalArgs({effectData = null, itemData = null, context, actor, cha
         }
         else return f;
       });
-      change.value = fields.join(" ");
+      change.value = fields.join("");
       // context.actor = actor.data;
       if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
         value = new Roll(change.value, context).roll().total

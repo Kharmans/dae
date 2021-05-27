@@ -1,3 +1,11 @@
+## 0.2.64
+* Fix for data.attributes.prof effects
+* fix for spellcasting dc not being set when updating abilitiy.dc
+* Fix for adding spaces to roll expression on effect apply.
+
+## 0.2.63
+* Now hosted on the 079 archive branch
+
 ## 0.2.62
 * Fix to make flags data available in actor.getRollData()
 * Some more sw5e tidy up in dae editor to support SW5E specific CONFIG.
