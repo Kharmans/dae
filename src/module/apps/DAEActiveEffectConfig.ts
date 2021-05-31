@@ -343,15 +343,18 @@ truesight: false
       const newSpecDur = []
       Object.values(formData.flags?.dae?.specialDuration).forEach(value => newSpecDur.push(value));
       formData.flags.dae.specialDuration = newSpecDur;
-    } else setProperty(formData.flags, "dae.specialDuration", []);
-  
+    } else setProperty(formData, "flags.dae.specialDuration", []);
+    //@ts-ignore
+  console.error("DAE edit ", formData.duration.startTime, Number.isNumeric(formData.duration.startTime) )
     //@ts-ignore isNumeric
     if (Number.isNumeric(formData.duration.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
       let startTime = parseInt(formData.duration.startTime);
       if (Math.abs(startTime) <= 3600) { // Only acdept durations of 1 hour or less as the start time field
         formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
       }
-    } else delete formData.duration.startTime;
+    } else if (this.object.parent.isOwned) formData.duration.startTime = null;
+
+    console.error("formdata is ", formData)
     setProperty(formData, "flags.dae.transfer", formData.transfer);
     //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
     if (this.object.parent.isOwned) { // we are editing an owned item
@@ -362,7 +365,9 @@ truesight: false
       })
       return this.object.parent.actor.updateEmbeddedDocuments("Item", [itemData], {diff: true});
     } else {
-      return this.object.update(formData);
+      console.error("formdata is ", formData)
+      await this.object.update(formData);
+
     }
   }
 }

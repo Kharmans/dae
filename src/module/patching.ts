@@ -55,7 +55,7 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
 var d20Roll;
 var dice;
 
-export async function patchingInitSetup() {
+export function patchingInitSetup() {
   warn("system is ", game.system)
   //@ts-ignore
   if (game.system.id === "dnd5e") {
@@ -70,6 +70,13 @@ export async function patchingInitSetup() {
   if (!dice) console.error("Dice not defined! Many things won't work")
   else d20Roll = dice?.d20Roll;
 }
+
+
+export function patchGetInitiativeFormula() {
+  warn("Patching Combatant getInitiativeFormula")
+  //@ts-ignore Combatant
+  Combatant.prototype._getInitiativeFormula = getInitiativeFormula;
+}  
 
 // Allow limited recursion of the formula replace function for things like
 // bonuses.heal.damage in spell formulas.
@@ -148,7 +155,7 @@ const _getFlags = { "dnd5e": _getFlagsdnd5e, "sw5e": _getFlagssw5e };
 
 function _getFlagsdnd5e() {
   const flags = {};
-  const baseData = this.entity.data;
+  const baseData = this.document.data;
   for (let [k, v] of Object.entries(CONFIG.DND5E.characterFlags)) {
     //@ts-ignore
     if (!flags.hasOwnProperty(v.section)) flags[v.section] = {};
@@ -169,7 +176,7 @@ function _getFlagsdnd5e() {
 
 function _getFlagssw5e() {
   const flags = {};
-  const baseData = this.entity.data;
+  const baseData = this.document.data;
   for (let [k, v] of Object.entries(CONFIG.DND5E.characterFlags)) {
     //@ts-ignore
     if (!flags.hasOwnProperty(v.section)) flags[v.section] = {};
@@ -260,3 +267,31 @@ async function _updateObject(event, formData) {
   // Diff the data against any applied overrides and apply
   await actor.update(diffObject(actor.overrides || {}, updateData), { diff: false });
 }
+
+export function getInitiativeFormula() {
+  console.error("inside getinitiativeformula")
+  const actor = this.actor;
+  if ( !actor ) return "1d20";
+  const init = actor.data.data.attributes.init;
+
+  // Construct initiative formula parts
+  let nd = 1;
+  let mods = "";
+  const adv = actor.getFlag("dnd5e", "initiativeAdv");
+  const disadv = actor.getFlag("dnd5e", "initiativeDisadv");
+  if (adv && !disadv) {
+    nd = 2;
+    mods = "kh";
+  } else if (disadv && !adv) {
+    nd = 2;
+    mods = "kl";
+  }
+  if (actor.getFlag("dnd5e", "halflingLucky")) mods += "r1=1";
+
+  const parts = [`${nd}d20${mods}`, init.mod, (init.prof !== 0) ? init.prof : null, (init.bonus !== 0) ? init.bonus : null];
+
+  // Optionally apply Dexterity tiebreaker
+  const tiebreaker = game.settings.get("dnd5e", "initiativeDexTiebreaker");
+  if ( tiebreaker ) parts.push(actor.data.data.abilities.dex.value / 100);
+  return parts.filter(p => p !== null).join(" + ");
+};

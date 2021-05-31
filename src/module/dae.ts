@@ -163,7 +163,7 @@ export class ValidSpec {
       specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.DamageBonusMacro`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-
+      specials[`flags.${game.system.id}.initiativeDisadv`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       ["check", "save", "skill"].forEach(id => {
         specials[`data.bonuses.abilities.${id}`] = ["", -1];
       });
@@ -304,9 +304,7 @@ function effectDisabled(actor, efData, itemData = null) {
   const ci = actor.data.data.traits?.ci?.value;
   const statusId = efData.flags?.core?.statusId;
   disabled = disabled || (ci && ci.includes(statusId));
-  /* TODO revist this 
-  const alternate = statusId && daeAlternateStatus[statusId];
-  disabled  = disabled || (ci && ci.includes(alternate));
+  /* TODO revist emabling/disabling according to condition immunities
   */
 
   // transfer effects depend on the item to disable/enable (if there is one)
@@ -593,6 +591,11 @@ function daeCustomEffect(actor, change) {
       if (value) {
         setProperty(actor.data, change.key, current + value);
       }
+      // Spellcasting DC
+      const ad = actor.data.data;
+      const spellcastingAbility = ad.abilities[ad.attributes.spellcasting];
+      ad.attributes.spelldc = spellcastingAbility ? spellcastingAbility.dc : 8 + ad.attributes.prof;
+      
       if (actor.items) {
         actor.items.forEach(item => {
           item.getSaveDC();
@@ -619,19 +622,13 @@ function daeCustomEffect(actor, change) {
 function replaceAtFields(value, actor) {
   if (typeof value !== "string") return value;
   if (!value.includes("@")) return value;
-  let fields = [];
-  let rollData;
-  tokenizer.tokenize(value, (token) => {
-    if (typeof token === "string" && token.startsWith("@")) {
-      rollData = rollData || daeRollData(actor);
-      const existing = getProperty(rollData, token.slice(1));
-      fields.push(existing ?? token)
-      fields.push()
-    } else
-      fields.push(token)
-  })
-  return fields.join("");
+  let re = /@[\w\.]+/g
+  let rollData = daeRollData(actor);
+  let result = duplicate(value);
+  for (let match of value.match(re) || []) result = result.replace(match.replace("@data.", "@"), getProperty(rollData, match.slice(1)))
+  return result;
 }
+
 // Special case handling of (expr)dX
 function attackDamageBonusEval(bonusString, actor) {
   return bonusString;
@@ -682,7 +679,7 @@ function doCustomArrayValue(actor, current, change, validValues) {
 */
 function prepareData(wrapped) {
   debug("prepare data: before passes", this.name, this.data._source);
-
+  this.overrides = {};
   wrapped();
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
     if (applyBaseAC && this.data.type === "character" && !this.data.flags[game.system.id]?.isPolymorphed) {
@@ -999,6 +996,7 @@ async function evalArgs({ effectData = null, itemData = null, context, actor, ch
         else if (f === "@target") return "@target";
         else if (f === "@itemCardId") return itemCardId;
         else if (f === "@unique") return randomID();
+        else if (f === "@actorUuid") return actor.uuid;
         else if (f === "@actor") {
           console.warn("dae | @actor now passes actor.id NOT actor.data");
           return actor.id;
@@ -1011,9 +1009,12 @@ async function evalArgs({ effectData = null, itemData = null, context, actor, ch
         }
         else return f;
       });
-
       value = fields;
       break;
+    case "macro.CUB":
+    case "macro.ConditionalVisibility":
+    case "macro.ConditionalVisibilityVision":
+      value = fields.join(" ")
     default:
       fields = fields.map(f => {
         if (f === "@scene") return canvas.scene.id;
@@ -1024,6 +1025,7 @@ async function evalArgs({ effectData = null, itemData = null, context, actor, ch
         else if (f === "@damage") return damageTotal;
         else if (f === "@target") return "<not-defined>"
         else if (f === "@unique") return randomID();
+        else if (f === "@actorUuid") return actor.uuid;
         else if (f === "@actor") {
           console.warn("dae | @actor now passes actor.id NOT actor.data");
           return actor.id;
@@ -1034,7 +1036,7 @@ async function evalArgs({ effectData = null, itemData = null, context, actor, ch
         }
         else return f;
       });
-      change.value = fields.join(" ");
+      change.value = fields.join("");
       if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
         //@ts-ignore evaluate
         value = new Roll(change.value, context).evaluate({ async: false }).total;
@@ -1169,7 +1171,7 @@ export function preCreateItem(candidate, data, options, user) {
     if (efData.transfer) {
       setProperty(efData, "flags.dae.transfer", true)
       efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
-      setProperty(efData, "duration.startTime", 0);
+      //setProperty(efData, "duration.startTime", 0);
     }
   })
   //TODO check this.

@@ -1,3 +1,14 @@
+## 0.8.6
+* Fix about-time effect only expriy when there is an effect duration specified (rather than an item duration) which would expire next round. This was not a problem if times-up was installed.
+
+## 0.8.5
+* Added support for flags.dnd5e.initiativeDisadv which forces disadvantage on initiative rolls
+* Fix for data.attributes.prof effects.
+* fix for spellcasting dc not being set when updating abilitiy.dc
+* Fix for adding spaces to roll expression on effect apply.
+* Note. With 0.8.x if an attribute is being modified by an active effect the underlying can't be changed. This is a foundry feature not a dae one.
+* Fixed a bug in dae such that once an attribute was modified by an active effect it could no longer be changed even if the effect was removed.
+
 ## 0.8.4
 * fix for window reload loop when use ability save setting is false.
 

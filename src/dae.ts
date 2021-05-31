@@ -18,7 +18,7 @@ import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
 import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
-import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
+import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect } from './module/daeMacros';
 
@@ -107,6 +107,7 @@ Hooks.once('ready', async function () {
   }
 
   patchSpecialTraits();
+  patchGetInitiativeFormula();
 })
 /* ------------------------------------ */
 /* Setup module							*/

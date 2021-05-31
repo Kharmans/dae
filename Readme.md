@@ -51,11 +51,15 @@ Expiry of effects requires additional modules to be installed.
   * 1Attack: active effects last for one attack - requires workflow automation
   * 1Action: active effects last for one action - requires workflow automation 
   * 1Hit: active effects last until the next successful hit - requires workflow automation 
-  * turnStart: effects last until the start of self/target's next turn (check combat tracker)  
-  * turnEnd: effects last until the end of self/target's next turn (checks combat tracker)  
   * isAttacked: the effect lasts until the next attack against the target. Requires workflow automation.
   * isDamaged: the effect lasts until the target takes damage. Requires workflow automation.
 All of these effects automatically expire at the end of the comabt.
+
+Requires times-up installed and active.
+  * turnStart: effects last until the start of self/target's next turn (check combat tracker)  
+  * turnEnd: effects last until the end of self/target's next turn (checks combat tracker)
+  * If you want an effect on a target that expires at the start of the caster's next turn set the duration to 1 round
+  * If you want an effect on a target that expires at the end of the caster's next turn set the duration to 1 round + 1 turn.  
 
 ## Major Features not implemented
 * Sample compendia. Only has a few items. I reccommend the excellent DAE SRD module that has many items/spells created
@@ -242,6 +246,7 @@ Provides a bonus to ability saves. This is only active if the "Use ability save 
 * "data.spells.pact.level"
 * "data.spells[1-9].override"
 * "data.spellspact.override" 
+* flags.dnd5e.initiativeAdv, flags.dnd5e.initiativeDisadv. Give adv/disadv on initiative rolls.
 Spell slots.value and spellslots.max are not able to be modified with DAE.
 
 * "macro.execute"                     CUSTOM
@@ -394,28 +399,6 @@ Your custom effects can create new fields on the actor as well (DAE does this fo
   There is a compendium of items that have been setup to work with DAE. All active effects work best if both midi-qol and about-time/times up are installed and active, but will still funciton without them.
 
   The sample macros compendium has been updated. It is very limited but should provide some help in getting started. You should definitely look at the excelled DAE SRD compendia from @Kandashi for a wealth of pre-configured items/spells/macros.
-
-## Migrating from DynamicEffects ##
-### DAE.migrateItem(item)
-Migrates dynamiceffects to DAE for all effects on the item, both active and passive, for example:
-```
-DAE.migrateItem(game.items.getName("My item"))
-```
-### DAE.convertAllItems()
-Migrate all dyamiceffects on all items in the world. Does not include owned items.
-### DAE.migrateActorItems(actor)
-Migrate all effects for owned items on the actor, for example
-```
-DAE.migrateActorItems(game.actors.getName("actor name"))
-```
-### DAE.migrateAllActors()
-Migrate all actor items, does not include tokens. Linked tokens will be upgraded
-### DAE.removeActorEffects(actor)
-Remove all ActiveEffects from the actor, both transfer and non-transfer, for example:
-```
-DAE.removeActorEffects(game.actors.getName("ActorName"))
-```
-
 
 ##**Case Study - Aromor class**
 Armor class causes much confusion about how it operates. 

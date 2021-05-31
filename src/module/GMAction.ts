@@ -339,27 +339,31 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         })
         warn("gm action apply effect", token, actEffects)
         let removeList = await token.actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
+        console.error("Remove list is ", removeList)
 
         //TODO remove this when timesup is in the wild.
         if (!timesUpInstalled) { // do the kludgey old form removal
-          let removeEffect = async (tokenUuid, removeEffect) => {
+          let doRemoveEffect = async (tokenUuid, removeEffect) => {
             //@ts-ignore
             const token = window.DAE.DAEfromUuid(tokenUuid)
-            let removeId = removeEffect.id;
+            let removeId = removeEffect._id;
             if (removeId) {
               await token.actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
             }
           }
 
           if (!Array.isArray(removeList)) removeList = [removeList];
-          removeList.forEach(aeData => {
+          removeList.forEach(ae => {
             // need to do separately as they might have different durations
-            warn("removing effect ", aeData, " in ", aeData.duration, " seconds ")
-            let duration = aeData.duration.seconds || 0;
-            if (aeData.duration && aboutTimeInstalled) {
-              game.Gametime.doIn({ seconds: duration }, removeEffect, token.uuid, aeData)
+            let duration = ae.data.duration?.seconds || 0;
+            if (!duration) {
+              duration = ((ae.data.duration.rounds ?? 0) + ((ae.data.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
+            }
+            warn("removing effect ", ae.data, " in ", duration, " seconds ")
+            if (duration && aboutTimeInstalled) {
+              game.Gametime.doIn({ seconds: duration }, doRemoveEffect, token.uuid, ae.data)
             } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
-              setTimeout(removeEffect, duration * 1000 || 6000, token.uuid, aeData);
+              setTimeout(doRemoveEffect, duration * 1000 || 6000, token.uuid, ae.data);
             }
           })
         }
