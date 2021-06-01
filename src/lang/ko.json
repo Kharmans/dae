@@ -234,16 +234,24 @@
     "dae.expireRealTime.Hint": "활성화 시 about-time/times-up 모듈이 설치되지 않은 경우 시간 효과가 실시간으로 만료된다.",
     "dae.isAttacked": "피격: 캐릭터가 공격당하면 만료된다",
     "dae.isDamaged": "피해: 캐릭터가 피해를 입으면 만료된다",
+    "dae.isRollBase": "캐릭터가 굴림을 하는 경우 만료된다: ",
+    "dae.isSaveDetail": "내성 굴림",
+    "dae.isCheckDetail": "능력 판정",
+    "dae.isSkillDetail": "기술 판정",
     "dae.1Action": "1 액션: 캐릭터의 다음 행동(아이템 굴림)에 만료된다",
     "dae.1Attack": "1 공격: 캐릭터의 다음 공격에 만료된다",
     "dae.1Hit": "1 명중: 캐릭터가 다음 명중시 만료된다",
+    "dae.DamageDealt": "피해 입음: 캐릭터가 피해를 입을 때 만료된다.",
     "dae.turnStart": "턴 시작: 캐릭터의 다음 턴 시작 시 만료된다(전투 시)",
     "dae.turnEnd": "턴 종료: 캐릭터의 다음 턴 종료 시 만료된다(전투 시)",
     "dae.startEveryTurn": "각 턴 시작: 캐릭터의 각 턴 시작 시 효과 매크로를 실행한다",
     "dae.endEveryTurn": "각 턴 종료: 캐릭터의 각 턴 종료 시 효과 매크로를 실행한다",
     "dae.displayTraits.Name": "특수 특성 표시에 활성화 효과를 포함한다",
     "dae.displayTraits.Hint": "특수 특성 표시에는 활성화 효과 변화가 포함된다. 입력된 값은 사전 활성화 효과 값으로 가정된다.",
-    "dae.lookupCUB.Name": "CUB 상태이상 활성화 효과 검색 런타임 추가",
-    "dae.lookupCUB.Hint": "활성화 시 CUB:condition active effects로 참조되는 CUB 상태이상이 준비 데이터가 호출될 때마다 복사된다. 비활성화시 효과가 생성될 때 활성화 효과가 복사된다."
+    "dae.ConditionalVisibility": "Conditional Visibility",
+    "dae.ConditionalVisibilityVision": "CV Vision",
+    "dae.noDupDamageMacro.Name": "중복 피해 매크로 없음",
+    "dae.noDupDamageMacro.Hint": "이 옵션을 선택하면 중복된 피해 매크로가 무시된다."
+
 }
 
