@@ -1,16 +1,16 @@
-## 0.8.7
-* Fix for not detecting a token in combat when setting the expiry for item duration bassed effects.
+## **0.8.7** This is a big one. DO NOT UPDATE JUST BEFORE GAME TIME>
+* Fix for not detecting a token in combat when setting the expiry for item duration based effects.
 * removed dynamiceffects migration code.
 * Fixed an effect creation bug that would throw an error when creating a new active effect.
 * Sort of fix for some expressions that the new Roll parser rejects - see below.
-* Fix for AC calculation on heavy armor in old calcs. See below.
+* Fix for AC calculation on heavy armor in old calculations. See below.
 * Support advanced-macros as well as Furnace for macro application.
 * New flag disable active effects. When set NO active effects are evaluated on an actor. It's convenient if you want to edit base values that have effects on them.
 * There have been extensive changes to the code that evaluate arguments passed to macros. There are no intended changes to the behaviour but bugs are possible.
 
 [BREAKING] Due to changes in the way Rolls are evaluated in 0.8.6+ the following rules will apply:
   1. If the target field is numeric then it will be fully evaluated when active effects are applied. **NO** dice expressions are supported. (A temporary work around is supported until foundry 0.9)
-  2. If the target field is a string no evalation will be performed and it will be left to foundry to do te roll, if any. This means that conditional operators (a < b ? c : d) won't work in bonus fields or similar.
+  2. If the target field is a string no evaaluation will be performed and it will be left to foundry to do the roll, if any. This means that conditional operators (a < b ? c : d) won't work in bonus fields or similar.
 
 [BREAKING] A new mechanism for calculating AC that should be much more reliable. You configure auto ac calculation per actor. So if you import from DND Beyond and the ac is correct you can just leave it the way it is.
 * To use: BACKUP YOUR WORLD FIRST. I have run this on my actual game and it worked fine, but anything is possible.
@@ -20,16 +20,16 @@
   await DAE.cleanArmorWorld()
   ```
   This will remove all existing armor effects from actors/tokens and items, but not compendia.
-  - If you dont' want any of the AC calcluations to be automatic do nothing else. (The cleanup clears the DAE settings for auto armor calculation).
-  - Renable active effects by changing Disable Active Effects to off in the settings.
-  - Auto armor class calculation is now enabled per actor by features that can be dragged to the charcter/token.
+  - If you dont' want any of the AC calculations to be automatic do nothing else. (The cleanup clears the DAE settings for auto armor calculation).
+  - Re-enable active effects by changing Disable Active Effects to off in the settings.
+  - Auto armor class calculation is now enabled per actor by features that can be dragged to the character/token.
   - Choose an ac calc feature: (if armor/shields are equipped the best armor and shield will be used instead).
     - Default AC - 10 + dex mod
     - Barbarian's AC - 10 + dex mod + con mod
     - Monk's AC - 10 + dex mod + wis mod
-    - Draconic Resillience - 13 + dex mod.
+    - Draconic Resilience - 13 + dex mod.
   and drag it to the character sheet. You can disable automatic armor calculation by toggling the effect or removing the feature from the actor. 
-  - Any armor bonuses from spells/items should be set with a priority > 5 or they will be overwritten. (Add defaults to 20 so it should gernerall not be a problem).
+  - Any armor bonuses from spells/items should be set with a priority > 5 or they will be overwritten. (Add defaults to 20 so it should gernerally not be a problem).
   - You can create calcs with different base AC formula quite easily by copying one of the existing supplied calculations.
   - The name of the feature does not matter, so you can rename them to whatever you want.
   
