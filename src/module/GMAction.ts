@@ -342,7 +342,6 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         })
         warn("gm action apply effect", token, actEffects)
         let removeList = await token.actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
-        console.error("Remove list is ", removeList)
 
         //TODO remove this when timesup is in the wild.
         if (!timesUpInstalled) { // do the kludgey old form removal

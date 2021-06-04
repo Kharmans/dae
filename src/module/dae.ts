@@ -911,8 +911,12 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         //@ts-ignore 
         const theChange = await evalArgs({ itemData: null, effectData, context: daeRollData(actor), actor, change, doRolls: true })
+        let args = [];
+        if (typeof theChange.value === "string") {
+          tokenizer.tokenize(theChange.value, (token) => args.push(token));
+        } else args = change.value;
         if (theChange.key === "macro.execute" || theChange.key.includes("macro.itemMacro")) {
-            const macro = await getMacro(theChange, null, effectData);
+            const macro = await getMacro({key: change.key, name: args[0]}, null, effectData);
             if (!macro) {
               //TODO localize this
               if (action !== "off") {
@@ -922,8 +926,6 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
               }
             }
 
-            let args = [];
-            tokenizer.tokenize(theChange.value, (token) => args.push(token))
             // insert item data
           if (furnaceActive) {
               if (theChange.key === "macro.execute")
@@ -981,13 +983,6 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   switch (change.key) {
     case "macro.itemMacro":
     case "macro.execute": // for macros we want to tokeniz the arguments
-    /*
-      let fields = [];
-      tokenizer.tokenize(returnChange.value, (token) => fields.push(token))
-      // insert item data
-      fields = fields.map(field => field === "@itemData" ? itemData : field);
-      returnChange.value = fields; 
-      */
       break;
     case "macro.CUB":
     case "macro.ConditionalVisibility":
@@ -1005,11 +1000,11 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   return returnChange;
 }
 
-export async function getMacro(change, itemData, effectData) {
-  if (change.key === "macro.execute") {
+export async function getMacro({key, name}, itemData, effectData) {
+  if (key === "macro.execute") {
     // the first argument conatins the macro name
-    return  game.macros.getName(change.value[0]);
-  } else if (change.key.startsWith("macro.itemMacro")) {
+    return  game.macros.getName(name);
+  } else if (key.startsWith("macro.itemMacro")) {
     // Get the macro command for the macro TODO look at using an item name as well?
 
     // 1. Try and get item dat to look for the command in.

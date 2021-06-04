@@ -1,3 +1,6 @@
+## 0.8.8
+* Fix for macro.execute failures.
+
 ## **0.8.7** This is a big one. DO NOT UPDATE JUST BEFORE GAME TIME>
 * Fix for not detecting a token in combat when setting the expiry for item duration based effects.
 * removed dynamiceffects migration code.
