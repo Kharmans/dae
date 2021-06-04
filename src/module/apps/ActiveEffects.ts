@@ -207,7 +207,9 @@ activateListeners(html) {
       AEDATA["flags.core.statusId"] = id;
     }
     //@ts-ignore
-    const effectId = (await this.object.createEmbeddedEntity("ActiveEffect", AEDATA))._id;
+    const created = await this.object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
+    if (!created || created.legnth === 0) return;
+    const effectId = created[0].id;
     let effect = this.object.effects.get(effectId)
     new DAEActiveEffectConfig(effect).render(true);
     this.render();

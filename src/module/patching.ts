@@ -84,9 +84,14 @@ export function replaceFormulaData(wrapped, ...args) {
   let [formula, data, {missing="", warn=false}={}] = args;
   let result = formula;
   const maxIterations = 3;
+  if (typeof formula !== "string") return formula;
   for (let i = 0; i < maxIterations; i++) {
     if (!result.includes("@")) break;
-    result = wrapped(result, data, {missing, warn});
+    try {
+      result = wrapped(result, data, {missing, warn});
+    } catch(err) {
+      console.error(err, ...args);
+    }
   }
   return result;
 }

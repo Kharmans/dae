@@ -1,14 +1,3 @@
-/**
- * This is your TypeScript entry file for Foundry VTT.
- * Register custom settings, sheets, and constants using the Foundry API.
- * Change this heading to be more descriptive to your module, or remove it.
- * Author: [your name]
- * Content License: [copyright and-or license] If using an existing system
- * 					you may want to put a (link to a) license or copyright
- * 					notice here (e.g. the OGL).
- * Software License: [your license] Put your desired license here, which
- * 					 determines how others may use and modify your module
- */
 
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
@@ -16,7 +5,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
-import { migrateItem, migrateActorItems, migrateAllActors, removeActorEffects, fixupMonstersCompendium, fixupActors, fixupBonuses, migrateAllItems, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD } from './module/migration';
+import { cleanArmorWorld, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
 import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -127,15 +116,6 @@ Hooks.once('setup', function() {
     GMAction,
     doEffects,
     daeMacro: daeMacro,
-    migrateItem: migrateItem,
-    convertAllItems: migrateAllItems,
-    migrateActorItems: migrateActorItems,
-    migrateAllItems: migrateAllItems,
-    migrateAllActors: migrateAllActors,
-    fixupMonstersCompendium: fixupMonstersCompendium,
-    fixupActors: fixupActors,
-    removeActorEffects: removeActorEffects,
-    fixupBonuses: fixupBonuses,
     ActiveEffects: ActiveEffects,
     DAEActiveEffectConfig: DAEActiveEffectConfig,
     teleportToToken: teleportToToken,
@@ -157,7 +137,14 @@ Hooks.once('setup', function() {
     convertDuration,
     confirmAction,
     DAEfromUuid: DAEfromUuid,
-    DAEfromActorUuid: DAEfromActorUuid
+    DAEfromActorUuid: DAEfromActorUuid,
+    removeItemArmorEffects: removeItemArmorEffects,
+    removeActorEffectsArmorEffects: removeActorEffectsArmorEffects,
+    removeActorArmorEffects: removeActorArmorEffects,
+    removeAllActorArmorEffects: removeAllActorArmorEffects,
+    removeAllTokenArmorEffects: removeAllTokenArmorEffects,
+    removeAllItemsArmorEffects: removeAllItemsArmorEffects,
+    cleanArmorWorld: cleanArmorWorld
   }
 });
 

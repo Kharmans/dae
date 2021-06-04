@@ -28,6 +28,7 @@ export var expireRealTime
 export var daeActionTypeKeys;
 export var displayTraits;
 export var noDupDamageMacro;
+export var disableEffects;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -155,7 +156,7 @@ export class ValidSpec {
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
-        // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
+      // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -339,6 +340,7 @@ function applyBaseActiveEffects() {
  * Replace default appplyAffects to do value lookups
  */
 function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
+  if (disableEffects) return;
   const overrides = {};
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   // Organize non-disabled effects by their application priority
@@ -365,16 +367,25 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       console.warn("dae | @data.key is deprecated, use @key instead", c.value)
       c.value = c.value.replace(/@data./g, "@");
     }
-    if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
-      const rollData = daeRollData(this);
-      debug("appplyDaeEffects: Doing eval of ", c, c.value)
-      try {
-        //@ts-ignore evaluate - TODO work out how to do this async
-        c.value = new Roll(c.value, rollData).evaluate({ async: false }).total;
-      } catch (err) {
-        console.warn("change value calculation failed for", this, c);
-        console.warn(err)
-      };
+    //@ts-ignore
+    if (c.mode !==  CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
+      if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string" ) {
+        debug("appplyDaeEffects: Doing eval of ", c, c.value)
+        try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
+          let value = replaceAtFields(c.value, daeRollData(this));
+           //@ts-ignore - this will throw an error if there are roll expressions
+            c.value = Roll.safeEval(value)
+        } catch (err) { // safeEval failed try a roll
+          try {
+            console.warn("dae | you are using dice expressions in a numeric field this will be disabled when foundry 0.9 is release")
+            //@ts-ignore evaluate - TODO work out how to do this async
+            c.value = new Roll(c.value).evaluate({ async: false }).total;
+          } catch(err) {
+            console.warn("change value calculation failed for", this, c);
+            console.warn(err)
+          }
+        }
+      }
     }
 
     const result = c.effect.apply(this, c);
@@ -514,14 +525,16 @@ function daeCustomEffect(actor, change) {
       return true;
     case "data.bonuses.weapon.damage":
       value = attackDamageBonusEval(change.value, actor)
-      value = replaceAtFields(value, actor);
-      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
+      value = replaceAtFields(value, daeRollData(actor));
+      if (current)
+        value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       weaponAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.spell.damage":
       value = attackDamageBonusEval(change.value, actor)
-      value = replaceAtFields(value, actor);
-      value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
+      value = replaceAtFields(value, daeRollData(actor));
+      if (current)
+        value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       spellAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.mwak.attack":
@@ -547,8 +560,9 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.power.techDC":
       // TODO: remove if fixed in core
       let result = attackDamageBonusEval(change.value, actor);
-      result = replaceAtFields(result, actor);
-      value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
+      value = replaceAtFields(result, daeRollData(actor));
+      if (current)
+        value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
       setProperty(actor.data, change.key, (current || "") + value);
       return true;
 
@@ -616,16 +630,23 @@ function daeCustomEffect(actor, change) {
       value = new Roll(formula, rollData).evaluate({ async: false }).total;
       setProperty(actor.data, `flags.dae.${flagName}`, value);
       return true;
+
+    case "data.attributes.ac.value":
+      if (change.value === "AutoCalc")  {
+        computeAC(actor, change);
+      }
+      return true;
   }
 }
 
-function replaceAtFields(value, actor) {
+export function replaceAtFields(value, context) {
   if (typeof value !== "string") return value;
   if (!value.includes("@")) return value;
-  let re = /@[\w\.]+/g
-  let rollData = daeRollData(actor);
+  // Remove @data references
   let result = duplicate(value);
-  for (let match of value.match(re) || []) result = result.replace(match.replace("@data.", "@"), getProperty(rollData, match.slice(1)))
+  let re = /@[\w\.]+/g
+  for (let match of value.match(re) || []) 
+    result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)))
   return result;
 }
 
@@ -783,7 +804,7 @@ export async function preCreateActiveEffect(activeEffect, effectData, options, u
       }
     };
     //TODO clean this up eventually
-    daeMacro("on", parent, theEffects, {});
+    await daeMacro("on", parent, theEffects, {});
   };
   Hooks.once("createActiveEffect", update);
   return true;
@@ -815,7 +836,7 @@ export async function preDeleteActiveEffect(effect, ...args) {
     }
     if (checkConcentration) await handleRemoveConcentration(effect, [token]);
     // TODO clean this up eventually
-    daeMacro("off", actor, effect.data, {});
+    await daeMacro("off", actor, effect.data, {});
   }
   Hooks.once("deleteActiveEffect", update)
   return true;
@@ -873,68 +894,55 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
   // Work out what itemdata should be
 
   warn("Dae macro ", action, actor, effects, lastArgOptions)
-  for (let effect of effects) {
-    if (!effect.changes) continue;
-    for (let change of effect.changes) {
+  for (let effectData of effects) {
+    if (!effectData.changes) continue;
+    for (let change of effectData.changes) {
       try {
         if (!["macro.execute", "macro.itemMacro"].includes(change.key)) continue;
         let lastArg = mergeObject(lastArgOptions, {
           //@ts-ignore - undefined fields
-          effectId: effect._id,
-          origin: effect.origin,
-          efData: effect,
+          effectId: effectData._id,
+          origin: effectData.origin,
+          efData: effectData,
           actorId: actor.id,
           actorUuid: actor.uuid,
           tokenId: actor.token ? actor.token.id : (await getSelfTarget(actor))?.id,
           tokenUuid: actor.token ? actor.token.uuid : (await getSelfTarget(actor))?.uuid,
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         //@ts-ignore 
-        if (!lastArgOptions?.tokenId) // avoid a gratuitous getSpeaker if not required
-          var tokenId = ChatMessage.getSpeaker({ actor }).token
-        let rollData = daeRollData(actor);
-        //@ts-ignore
-        const theChange = await evalArgs({ itemData: null, effectData: effect, context: rollData, actor, change, doRolls: true })
-        if (theChange.key === "macro.execute") {
-          const macro = game.macros.getName(theChange.value[0]);
-          if (!macro) {
-            //TODO localize this
-            if (action !== "off") {
-              ui.notifications.warn(`macro.execute | No macro ${theChange.value[0]} found`)
-              error(`macro.execute | No macro ${theChange.value[0]} found`);
-              continue;
+        const theChange = await evalArgs({ itemData: null, effectData, context: daeRollData(actor), actor, change, doRolls: true })
+        if (theChange.key === "macro.execute" || theChange.key.includes("macro.itemMacro")) {
+            const macro = await getMacro(theChange, null, effectData);
+            if (!macro) {
+              //TODO localize this
+              if (action !== "off") {
+                ui.notifications.warn(`macro.execute/macro.itemMacro | No macro ${theChange.value[0]} found`)
+                error(`macro.execute/macro.itemMacro | No macro ${theChange.value[0]} found`);
+                continue;
+              }
+            }
+
+            let args = [];
+            tokenizer.tokenize(theChange.value, (token) => args.push(token))
+            // insert item data
+          if (furnaceActive) {
+              if (theChange.key === "macro.execute")
+                //@ts-ignore
+                result = await macro.execute(action, ...args.slice(1), lastArg)
+              else
+                //@ts-ignore
+                result = await macro.execute(action, ...args, lastArg)
+            } else {
+              console.warn("Furnace not active - so no macro arguments supported");
+              //@ts-ignore
+              result = macro.execute({ actor });
             }
           }
-          if (furnaceActive) {
-            //@ts-ignore
-            result = await macro.execute(action, ...(duplicate(theChange.value.slice(1))), lastArg)
-          } else {
-            console.warn("Furnace not active - so no macro arguments supported");
-            result = macro.execute();
-          }
-        } else if (theChange.key === "macro.itemMacro") {
-          let macroCommand = getProperty(effect.flags, "dae.macroCommand"); // this is populated in evalArgs
-          if (!macroCommand) continue;
-          let macro = await CONFIG.Macro.documentClass.create({
-            name: "DAE-Item-Macro",
-            type: "script",
-            img: null,
-            command: macroCommand,
-            // TODO see if this should change.
-            flags: { "dnd5e.itemMacro": true }
-          }, { displaySheet: false, temporary: true });
-          if (furnaceActive) {
-            result = await macro.execute(action, ...duplicate(theChange.value), lastArg);
-          } else {
-            console.warn("Furnace not active - so no macro arguments supported")
-            result = macro.execute();
-          }
+        } catch (err) {
+          console.warn(err);
         }
-      } catch (err) {
-        console.warn(err);
-      }
     };
   }
-  return result;
 }
 
 function daeRollData(actor) {
@@ -943,24 +951,75 @@ function daeRollData(actor) {
   return rollData;
 }
 
-async function evalArgs({ effectData = null, itemData = null, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null }) {
+export async function evalArgs({ effectData = null, itemData = null, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null }) {
   // change so that this is item.data, rather than item.
   if (itemData) setProperty(effectData.flags, "dae.itemData", itemData);
-  if (typeof change.value === 'number')
+  if (typeof change.value !== 'string')
     return change; // nothing to do
-  //@ts-ignore
-  let filteredChanges = [];
-  //@ts-ignore effects not defined
-  let fields = [];
-  let value;
-  if (change.key === "macro.tokenMagic") return change;
-  const argsAlreadyEval = Array.isArray(change.value)
-  if (change.key === "macro.itemMacro") {
+  const returnChange = duplicate(change);
+  const contextToUse = context;
+  contextToUse.scene = canvas.scene.id;
+  contextToUse.token = ChatMessage.getSpeaker({ actor }).token;
+  contextToUse["target"] = "@target";
+  context["targetUuid"] = "@targetUuid"
+  contextToUse["itemData"] = "@itemData";
+  // what to do for item
+  contextToUse.spellLevel = spellLevel;
+  contextToUse["item.level"] = spellLevel;
+  contextToUse.damage = damageTotal;
+  contextToUse.itemCardId = itemCardId;
+  contextToUse.unique = randomID();
+  contextToUse.actor = actor.id;
+  contextToUse.actorUuid = actor.uuid;
+  contextToUse.critical = critical;
+  contextToUse.fumble = fumble;
+  contextToUse.whisper = whisper;
+  contextToUse.change = JSON.stringify(change.toJSON);;
+  contextToUse.itemId = itemData?.id ? itemData._id : "undefineed";
+  // TODO work out item uuid
+  returnChange.value = replaceAtFields(returnChange.value, contextToUse);
+  switch (change.key) {
+    case "macro.itemMacro":
+    case "macro.execute": // for macros we want to tokeniz the arguments
+    /*
+      let fields = [];
+      tokenizer.tokenize(returnChange.value, (token) => fields.push(token))
+      // insert item data
+      fields = fields.map(field => field === "@itemData" ? itemData : field);
+      returnChange.value = fields; 
+      */
+      break;
+    case "macro.CUB":
+    case "macro.ConditionalVisibility":
+    case "macro.ConditionalVisibilityVision":
+    case "macro.tokenMagic":
+      break;
+    default:
+      if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
+        //@ts-ignore evaluate
+        returnChange.value = new Roll(returnChange.value, context).evaluate({ async: false }).total;
+      };
+      break;
+  };
+  debug("evalargs: change is ", returnChange);
+  return returnChange;
+}
+
+export async function getMacro(change, itemData, effectData) {
+  if (change.key === "macro.execute") {
+    // the first argument conatins the macro name
+    return  game.macros.getName(change.value[0]);
+  } else if (change.key.startsWith("macro.itemMacro")) {
+    // Get the macro command for the macro TODO look at using an item name as well?
+
+    // 1. Try and get item dat to look for the command in.
     if (!itemData) itemData = getProperty(effectData.flags, "dae.itemData")
     let macroCommand = getProperty(effectData.flags, "dae.itemData.flags.itemacro.macro.data.command");
+
+    // Could not get the macro from the itemData or we had not Itemdata
     if (!macroCommand && !itemData) { // we never got an item do a last ditch attempt
       warn("eval args: fetching item from effectData/origin ", effectData.origin)
-      itemData = DAEfromActorUuid(effectData.origin);
+      itemData = DAEfromActorUuid(effectData?.origin); // Try and get it from the effectData
       //@ts-ignore
       macroCommand = itemData?.flags.itemacro?.macro.data.command;
       if (effectData) setProperty(effectData.flags, "dae.itemData", itemData);
@@ -969,118 +1028,50 @@ async function evalArgs({ effectData = null, itemData = null, context, actor, ch
       macroCommand = `if (!args || args[0] === "on") {ui.notifications.warn("macro.itemMacro | No macro found for item ${itemData?.name}");}`;
       error(`No macro found for item ${itemData?.name}`);
     }
-    if (effectData) setProperty(effectData.flags, "dae.macroCommand", macroCommand)
+    if (effectData) setProperty(effectData.flags, "dae.macroCommand", macroCommand);
+    return CONFIG.Macro.documentClass.create({
+      name: "DAE-Item-Macro",
+      type: "script",
+      img: null,
+      command: macroCommand,
+      // TODO see if this should change.
+      flags: { "dnd5e.itemMacro": true }
+    }, { displaySheet: false, temporary: true });
   }
-
-  if (argsAlreadyEval) {
-    // already an array so no tokenizing
-    fields = change.value;
-    // We have already done evalArgs
-  }/*  else if (typeof change.value === "string" && change.value.indexOf("@") === -1) {
-    fields = [change.value];
-  } */ else {
-    // the normal args case do the lookups.
-    tokenizer.tokenize(change.value, (token) => fields.push(token))
-  }
-  switch (change.key) {
-    case "macro.itemMacro":
-    case "macro.execute":
-      fields = fields.map(f => {
-        if (typeof f === "string" && f.startsWith("@@")) return f.slice(1);
-        if (f === "@scene") return canvas.scene.id;
-        else if (f === "@token") return ChatMessage.getSpeaker({ actor }).token;
-        else if (f === "@item") return effectData.flags.dae?.itemData;
-        else if (f === "@spellLevel") return spellLevel;
-        else if (f === "@item.level") return spellLevel;
-        else if (f === "@damage") return damageTotal;
-        else if (f === "@target") return "@target";
-        else if (f === "@itemCardId") return itemCardId;
-        else if (f === "@unique") return randomID();
-        else if (f === "@actorUuid") return actor.uuid;
-        else if (f === "@actor") {
-          console.warn("dae | @actor now passes actor.id NOT actor.data");
-          return actor.id;
-        } else if (f === "@critical") return critical;
-        else if (f === "@fumble") return fumble;
-        else if (f === "@whisper") return whisper;
-        else if (f === "@change") return change;
-        else if (typeof f === "string" && f.startsWith("@")) {
-          return getProperty(context, f.slice(1))
-        }
-        else return f;
-      });
-      value = fields;
-      break;
-    case "macro.CUB":
-    case "macro.ConditionalVisibility":
-    case "macro.ConditionalVisibilityVision":
-      value = fields.join(" ")
-    default:
-      fields = fields.map(f => {
-        if (f === "@scene") return canvas.scene.id;
-        else if (f === "@token") return ChatMessage.getSpeaker({ actor }).token;
-        else if (f === "@item") effectData.flags.dae?.itemData;
-        else if (f === "@spellLevel") return spellLevel;
-        else if (f === "@item.level") return spellLevel;
-        else if (f === "@damage") return damageTotal;
-        else if (f === "@target") return "<not-defined>"
-        else if (f === "@unique") return randomID();
-        else if (f === "@actorUuid") return actor.uuid;
-        else if (f === "@actor") {
-          console.warn("dae | @actor now passes actor.id NOT actor.data");
-          return actor.id;
-        } else if (f === "@critical") return critical;
-        else if (f === "@fumble") return fumble;
-        else if (doRolls && typeof f === "string" && f.startsWith("@")) {
-          return getProperty(context, f.slice(1))
-        }
-        else return f;
-      });
-      change.value = fields.join("");
-      if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
-        //@ts-ignore evaluate
-        value = new Roll(change.value, context).evaluate({ async: false }).total;
-      } else value = change.value;
-      break;
-  };
-  debug("evalargs: change is ", change);
-
-  change.value = value;
-  return change;
 }
-
 /*
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
-export function doEffects(item, activate, targets = undefined,
+export async function doEffects(item, activate, targets = undefined,
   { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false }) {
-  applyNonTransferEffects.bind(item)(activate, targets, { whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
+  return applyNonTransferEffects.bind(item)(activate, targets, { whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
 }
 
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client if the token is not owned
-export function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId }) {
+export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId }) {
   if (!targets) return;
   let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false))
   if (appliedEffects.length === 0) return;
   const rollData = daeRollData(this.actor); //TODO if not caster eval move to evalArgs call
-  appliedEffects.map(activeEffectData => {
-    activeEffectData.changes.map(async change => {
-      let doRolls = (["macro.execute", "macro.itemMacro"].includes(change.key))
+  // appliedEffects.map(activeEffectData => {
+  for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
+    for (let [changeIndex, change] of activeEffectData.changes.entries()) {
+      //activeEffectData.changes.map(async change => {
+      let doRolls = (["macro.execute", "macro.itemMacro"].includes(change.key));
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
-      let returnValue = await evalArgs({ itemData: this.data, effectData: activeEffectData, context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper })
-      return returnValue;
-    })
-    activeEffectData.origin = this.uuid;
-    activeEffectData.duration.startTime = game.time.worldTime;
-    activeEffectData.transfer = false;
-    // disabled is no longer set, use the definition of the active effect since this is always fixable.
-    // activeEffectData.disabled = false;
-    return activeEffectData;
-  });
+      let newChange = await evalArgs({ itemData: this.data, effectData: activeEffectData, context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper })
+      activeEffectData.origin = this.uuid;
+      activeEffectData.duration.startTime = game.time.worldTime;
+      activeEffectData.transfer = false;
+      activeEffectData.changes[changeIndex] = newChange;
+      // disabled is no longer set, use the definition of the active effect since this is always fixable.
+      // activeEffectData.disabled = false;
+    };
+  }
 
   // Split up targets according to whether they are owned on not. Owned targets have effects applied locally, only unowned are passed ot the GM
   const targetList = Array.from(targets);
@@ -1097,7 +1088,7 @@ export function applyNonTransferEffects(activate, targets, { whisper = false, sp
 function preUpdateItem(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   Hooks.once("updateItem", async () => {
-    if (updates.data?.armor && candidate.data.data.armor?.type) { // TODO find out why SRD items have an armor value
+    if (updates.data?.armor && candidate.data.data.armor?.type && calculateArmor) { // TODO find out why SRD items have an armor value
       let updatedActorEffectData = updateArmorEffect(candidate, updates);
       const origin = candidate.uuid; // `Actor.${item.actor.id}.Item.${updates._id}`;
       if (updatedActorEffectData.length > 0) {
@@ -1148,6 +1139,63 @@ function preUpdateItem(candidate, updates, options, user) {
   });
   return true;
 }
+
+function computeAC(actor, change) {
+  const baseAC = actor.data.data.attributes.ac.value;
+  let bestArmorAC = 0;
+  let armorLabel = "";
+  let bestShieldAC = 0;
+  let shieldLabel = "";
+  let newAC;
+  for (let item of actor.items) {
+    if (item.type !== "equipment" || !item.data.data.equipped) continue;
+    if (!item.data.data.armor) continue;
+    const armorData = item.data.data.armor;
+    switch (armorData.type) {
+      case "shield":
+        if (armorData.value > bestShieldAC) {
+          bestShieldAC = armorData.value;
+          shieldLabel = item.label;
+        }
+        break;
+      case "natural":
+        newAC = armorData.value + Math.min(armorData.dex ?? 99, actor.data.data.abilities.dex.mod);
+        if (armorData.value > bestArmorAC) {
+          bestArmorAC = newAC;
+          armorLabel = item.label
+        }
+        break;
+      case "light":
+        newAC = armorData.value + Math.min(armorData.dex ?? 99, actor.data.data.abilities.dex.mod);
+        if (armorData.value > bestArmorAC) {
+          bestArmorAC = newAC;
+          armorLabel = item.label
+        }
+        break;
+      case "medium":
+        newAC = armorData.value + Math.min(armorData.dex ?? 2, actor.data.data.abilities.dex.mod);
+        if (armorData.value > bestArmorAC) {
+          bestArmorAC = newAC;
+          armorLabel = item.label
+        }
+        break;
+      case "heavy":
+        newAC = armorData.value + Math.min(armorData.dex ?? 0, actor.data.data.abilities.dex.mod);
+        if (armorData.value > bestArmorAC) {
+          bestArmorAC = newAC;
+          armorLabel = item.label
+        }
+        break
+      default:
+        break;
+    }
+  }
+  if (bestArmorAC > actor.data.data.attributes.ac.value) {
+    actor.data.data.attributes.ac.value = bestArmorAC;
+  }
+  actor.data.data.attributes.ac.value += bestShieldAC;
+  return true;
+}
 export function updateArmorEffect(candidate, updates) {
   let itemData = candidate.data;
   // Armor value has been changed so recrreate owned item and actor effects
@@ -1166,7 +1214,7 @@ export function updateArmorEffect(candidate, updates) {
 export function preCreateItem(candidate, data, options, user) {
   if (!candidate.isOwned) return;
   // create armor effects if required - this in in the preCreate hook so udpating the candidate is enough
-  createArmorEffect(candidate, data);
+  if (calculateArmor) createArmorEffect(candidate, data);
   data.effects.forEach(efData => {
     if (efData.transfer) {
       setProperty(efData, "flags.dae.transfer", true)
@@ -1181,12 +1229,12 @@ export function preCreateItem(candidate, data, options, user) {
 }
 
 export function createArmorEffect(item, itemData) {
-  if (!calculateArmor || itemData.type !== "equipment") return true;
+  if (itemData.type !== "equipment") return true;
   // armor created on actor, screae armor effect.
   const origin = item.uuid; //`Actor.${actor.id}.Item.${itemData._id}`;
   // const origin = actor.items.get(itemData._id).uuid;
   itemData.effects = itemData.effects?.filter(efData => !efData.flags.dae?.armorEffect) || [];
-  switch (itemData.data.armor?.type) {
+  if (calculateArmor) switch (itemData.data.armor?.type) {
     case "natural":
       //@ts-ignore
       itemData.effects.push(generateArmorEffect(itemData, origin, itemData.data.armor));
@@ -1221,7 +1269,7 @@ export function generateArmorEffect(itemData, origin, armorData) {
       return armorEffectFromFormula(`{@abilities.dex.mod,${armorData.dex || 2}}kl + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
     case "heavy":
       //@ts-ignore
-      return armorEffectFromFormula(`{@abilities.dex.mod,${armorData.dex || 0}}kl`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
+      return armorEffectFromFormula(`{@abilities.dex.mod,${armorData.dex || 0}}kl + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
     default:
       return null;
       break;
@@ -1398,7 +1446,7 @@ export function daeSetupActions() {
   }
   //@ts-ignore
   itemacroActive = game.modules.get("itemacro")?.active;
-  furnaceActive = game.modules.get("furnace")?.active;
+  furnaceActive = game.modules.get("furnace")?.active || game.modules.get("advanced-macros")?.active;
   conditionalVisibilityActive = game.modules.get("conditional-visibility")?.active;
   midiActive = game.modules.get("midi-qol")?.active;
 }
@@ -1411,6 +1459,7 @@ export function fetchParams() {
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
+  disableEffects = game.settings.get("dae", "disableEffects")
   /* TODO decide what to do about enhancing status effects or not
   ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");
   procStatusEffects(ehnanceStatusEffects);
@@ -1447,20 +1496,7 @@ export function DAEfromUuid(uuid) {
 
 export function DAEfromActorUuid(uuid) {
   let parts = uuid.split(".");
-  let doc;
-
-  const [docName, docId] = parts.slice(0, 2);
-  parts = parts.slice(2);
-  const collection = CONFIG[docName].collection.instance;
-  doc = collection.get(docId);
-
-  // Embedded Documents
-  while (parts.length > 1) {
-    const [embeddedName, embeddedId] = parts.slice(0, 2);
-    doc = doc.getEmbeddedDocument(embeddedName, embeddedId);
-    parts = parts.slice(2);
-  }
-
+  let doc = DAEfromUuid(uuid);
   if (doc instanceof CONFIG.Token.documentClass) doc = doc.actor;
   return doc || null;
 }

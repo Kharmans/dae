@@ -345,7 +345,6 @@ truesight: false
       formData.flags.dae.specialDuration = newSpecDur;
     } else setProperty(formData, "flags.dae.specialDuration", []);
     //@ts-ignore
-  console.error("DAE edit ", formData.duration.startTime, Number.isNumeric(formData.duration.startTime) )
     //@ts-ignore isNumeric
     if (Number.isNumeric(formData.duration.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
       let startTime = parseInt(formData.duration.startTime);
@@ -354,7 +353,6 @@ truesight: false
       }
     } else if (this.object.parent.isOwned) formData.duration.startTime = null;
 
-    console.error("formdata is ", formData)
     setProperty(formData, "flags.dae.transfer", formData.transfer);
     //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
     if (this.object.parent.isOwned) { // we are editing an owned item
@@ -365,9 +363,7 @@ truesight: false
       })
       return this.object.parent.actor.updateEmbeddedDocuments("Item", [itemData], {diff: true});
     } else {
-      console.error("formdata is ", formData)
       await this.object.update(formData);
-
     }
   }
 }

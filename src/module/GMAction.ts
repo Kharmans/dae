@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -306,7 +306,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             ae.duration.startTurn = game.combat?.turn;
           } else { // no specific duration on effect use spell duration
             //@ts-ignore
-            const inCombat = (game.combat?.turns.some(turnData => turnData.tokenId === token.data._id));
+            const inCombat = (game.combat?.turns.some(turnData => turnData.tokenId === token.id));
             const convertedDuration = convertDuration(itemDuration, inCombat);
             debug("converted duration ", convertedDuration, inCombat, itemDuration)
             if (convertedDuration.type === "seconds") {
@@ -324,7 +324,10 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           setProperty(ae.flags, "dae.transfer", false);
           ae.changes.map(change => {
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
-              if (typeof change.value === "string" || typeof change.value === "number") {
+              if (typeof change.value === "number") {
+              } else if (typeof change.value === "string") {
+                const context = {"target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target"};
+                change.value = replaceAtFields(duplicate(change.value), context);
               } else {
                 change.value = duplicate(change.value).map(f => {
                   if (f === "@itemCardId") return itemCardId;

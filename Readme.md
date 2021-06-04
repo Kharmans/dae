@@ -400,10 +400,30 @@ Your custom effects can create new fields on the actor as well (DAE does this fo
 
   The sample macros compendium has been updated. It is very limited but should provide some help in getting started. You should definitely look at the excelled DAE SRD compendia from @Kandashi for a wealth of pre-configured items/spells/macros.
 
-##**Case Study - Aromor class**
+## Armor Class
+## 0.8.7 AC calculation
+A new mechanism for calculating AC that should be MUCH more reliable. You can configure auto ac calculation per actor. So if you import from DND Beyond and the ac is correct you can just leave it the way it is.
+* To use migrate from the pre 0.8.6 auto calculation:
+  - Enable "disable active effects setting in dae"
+  - From the console run 
+  ```
+  await DAE.cleanArmorWorld()
+  ```
+  This will remove all existing armor effects from actors/tokens and items, but not compendia.
+  - If you dont' want any of the AC calcluations to be automatic do nothing else. (The cleanup clears the flags for auto calculation).
+
+  - Auto armor class calculation is now **enabled** per character by features that can be dragged to the charcter/token.
+  - Choose a an ac calc feature:
+    - Default AC
+    - Barbarian's AC
+    - Monk's AC
+    - Draconic Resillience.
+  and drag it to the character sheet. You can disable automatic armor calculation by toggling the effect or removing the feature from the actor. 
+  - You can create calcs with different base AC formula quite easily by copying one of the existing supplied calculations.
 Armor class causes much confusion about how it operates. 
 If you enable auto base AC it sets the AC of the character equal to 10 + dex mod before doing any armor calculations. If this is NOT set calculation use the value typed into the AC fields as the base AC value.
 
+##**Case Study - Aromor class** - pre 0.8.7
 DAE calculates the AC for various items as follows:
 For equipment marked as armor or natural armor DAE creates an active effect when the item is added to the inverntory that sets the AC equal to the items AC value plus applicable dex mods. For shields it ADDs the armor value to the armor class. These effects are ONLY created when the item is added to the invenroty (or the migrateAllActors script is run).
 

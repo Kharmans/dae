@@ -5,211 +5,85 @@ import { ValidSpec, createArmorEffect } from "./dae";
 //@ts-ignore
 const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
 
-function migrateDynamicEffect(effects: [{
-  active: boolean, 
-  modSpecKey: string
-  mode: string, 
-  value: string | boolean | number | []
-  //@ts-ignore
-}]): {actives, passives} {
-  let actives = [];
-  let passives = [];
-  effects.forEach(ef => {
-    let newEffect = {
-      key: ef.modSpecKey,
-      //@ts-ignore
-      value: Number.isNumeric(ef.value) ? parseInt(ef.value) : ef.value,
-      mode: 0,
-      priority: 0
+export async function removeItemArmorEffects(items, name = "") {
+  let promises = [];
+  for (let item of items) {
+    let toDelete = [];
+    if (!item.effects) continue;
+    for (let effect of item.effects) {
+      if (effect.data.flags?.dae?.armorEffect) toDelete.push(effect.id);
     }
-    if (ef.modSpecKey === "macro.macroExecute") 
-      ef.modSpecKey = "macro.execute";
-    if (ef.modSpecKey === "data.attributes.spelldc") {
-      ef.modSpecKey = "data.bonuses.spell.dc";
-    }
-    if (!ValidSpec.allSpecsObj[ef.modSpecKey]) {
-      console.error("Could not find ", ef.modSpecKey, " effect not migrated")
-    } else {
-      if (ValidSpec.allSpecsObj[ef.modSpecKey].forcedMode !== -1) {
-        newEffect.mode = ValidSpec.allSpecsObj[ef.modSpecKey].forcedMode;
-        newEffect.priority = ValidSpec.allSpecsObj[ef.modSpecKey].forcedMode * 10;
-      } else if (ef.mode === "+") {
-        newEffect.mode = EFFECTMODES.ADD;
-        newEffect.priority = EFFECTMODES.ADD * 10;
-      } else if (ef.mode === "=") { // dynamic effects = mode happen before others
-        newEffect.mode = EFFECTMODES.OVERRIDE;
-        newEffect.priority = 5;
-      }
-      (ef.active ? actives : passives).push(newEffect)
-    }
-  })
-  return {actives, passives};
-}
-
-//@ts-ignore
-export async function migrateItem(item: CONFIG.Item.EntityClass): CONFIG.Item.EntityClass {
-  if (getProperty(item.data.flags, "dynamiceffects.effects")?.length > 0) {
-    let activeEffects = migrateDynamicEffect(item.data.flags.dynamiceffects.effects);
-    debug("migrate Item ", activeEffects)
-    setProperty(item.data.flags, "dae", {});
-    const TRANSFER_DATA = {
-      label: `${item.name}`,
-      icon: item.img,
-      changes: activeEffects.passives,
-      transfer: true,
-      origin: ""
-    }
-    setProperty(TRANSFER_DATA, "flags.dae.transfer", true)
-    const APPLIED_DATA = {
-      label: `${item.name}`,
-      icon: item.img,
-      changes: activeEffects.actives,
-      transfer: false
-    }
-    setProperty(APPLIED_DATA, "flags.dae.transfer", false)
-    if (activeEffects.passives.length + activeEffects.actives.length === 0) return null;
-    log("Migrating ", item.name, activeEffects)
-
-    let ae = [];
-    debug("Migrating item effects", item.data.effects)
-    await item.deleteEmbeddedEntity("ActiveEffect", item.data.effects?.map(i => i._id));
-    if (activeEffects.passives.length > 0) ae.push(TRANSFER_DATA);
-    if (activeEffects.actives.length > 0) ae.push(APPLIED_DATA);
-    if (getProperty(item.data.flags, "dynamiceffects")) {
-      if (getProperty(item.data.flags, "dynamiceffects")) {
-        setProperty(item.data.flags, "dae.alwaysActive", getProperty(item.data.flags, "dynamiceffects.alwaysActive"))
-        setProperty(item.data.flags, "dae.activeEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive"))
+    if (toDelete.length > 0) {
+      if (item.parent) {
+        let itemData = duplicate(item.data._source);
+        for (let effectId of toDelete) {
+          // a bit kludgy but there will only be a single item to delete
+          itemData.effects = itemData.effects.filter(effectData => effectData._id !== effectId);
+        }
+        console.warn(`deleting ${name}: Ownded Item effects ${item.name}`, itemData.effects);
+        await item.parent.deleteEmbeddedDocuments("Item", [itemData._id]);
+        await item.parent.createEmbeddedDocuments("Item", [itemData]);
+      } else {
+        console.warn(`deleting ${name}: Item effects ${item.name}`);
+        await item.deleteEmbeddedDocuments("ActiveEffect", toDelete);
       }
     }
-    item.createEmbeddedEntity("ActiveEffect", ae);
   }
 }
-//@ts-ignore
-export function migrateOwnedItem(item: CONFIG.Item.EntityClass, actor = null): CONFIG.Item.EntityClass {
-  if (getProperty(item.data.flags, "dynamiceffects.effects")?.length > 0 || item.data.type === "equipment") {
-    let activeEffects = migrateDynamicEffect(item.data.flags.dynamiceffects?.effects || []);
-    setProperty(item.data.flags, "dae", {});
-    debug("migrate Item ", activeEffects)
-    const TRANSFER_DATA = {
-      label: `${item.name}`,
-      icon: item.img,
-      changes: activeEffects.passives,
-      transfer: true,
-      origin: ""
-    }
-    setProperty(TRANSFER_DATA, "flags.dae.transfer", true)
-    const APPLIED_DATA = {
-      label: `${item.name}`,
-      icon: item.img,
-      changes: activeEffects.actives,
-      transfer: false
-    }
-    setProperty(APPLIED_DATA, "flags.dae.transfer", false)
-    // if (activeEffects.passives.length + activeEffects.actives.length === 0) return null;
-    let theItem = item;
-    const isOwned = theItem.isOwned;
-    warn("Migrating owned item ", theItem.name, activeEffects)
-    if (!actor) actor = item.actor;
 
-    if (isOwned) {
-      let itemData = duplicate(item.data)
-      itemData.effects = [];
-      let id = item.id || item._id || item.data._id;
-      if (actor) {
-        const origin = `Actor.${actor.id}.OwnedItem.${theItem.data._id}`;
-        TRANSFER_DATA.origin = origin;
+export async function removeActorEffectsArmorEffects(actor, name = "") {
+  let promises = [];
+    let toDelete = [];
+    if (!actor.effects) return [];;
+    for (let effect of actor.effects) {
+      if (effect.data.flags?.dae?.armorEffect) toDelete.push(effect.id);
+    }
+    if (toDelete.length > 0) {
+      console.warn(`deleting ${name}: Actor effects ${actor.name}`, toDelete);
+      await actor.deleteEmbeddedDocuments("ActiveEffect", toDelete);
+    }
+}
+
+export async function removeActorArmorEffects(actor) {
+  if (!(actor instanceof Actor)) {
+    console.warn(actor, " is not an actor");
+    return;
+  }
+  await removeItemArmorEffects(actor.items, actor.name);
+  await removeActorEffectsArmorEffects(actor, actor.name);
+}
+
+export async function removeAllActorArmorEffects() {
+  let promises = [];
+  for (let actor of game.actors) {
+    promises.push(removeActorArmorEffects(actor));
+  }
+  return Promise.all(promises);
+}
+
+export async function removeAllTokenArmorEffects() {
+  let promises = [];
+  for (let scene of game.scenes) {
+    //@ts-ignore
+    for (let tokenDocument of scene.tokens) {
+      if (!tokenDocument.isLinked && tokenDocument.actor) {
+        promises.push(removeActorArmorEffects(tokenDocument.actor))
       }
-      let ae = [];
-      // await item.deleteEmbeddedEntity("ActiveEffect", theItem.effects.map(i => i.data._id));
-      // warn("Deleting effects ", theItem.effects.map(ef => ef.data._id))
-      if (activeEffects.passives.length > 0) ae.push(TRANSFER_DATA);
-      if (activeEffects.actives.length > 0) ae.push(APPLIED_DATA);
-      itemData.effects = ae;
-      if (getProperty(theItem.data.flags, "dynamiceffects")) {
-        setProperty(itemData.flags, "dae.alwaysActive", getProperty(item.data.flags, "dynamiceffects.alwaysActive"))
-        setProperty(itemData.flags, "dae.activeEquipped", getProperty(item.data.flags, "dynamiceffects.equipActive"))
-      }
-      createArmorEffect(actor, itemData)
-      return itemData;
     }
   }
-  return 
-}
-export function migrateAllItems() {
-  game.items.entities.forEach(item => {
-    migrateItem(item);
-  })
+  return Promise.all(promises);
 }
 
-export async function migrateActorItems(actor) {
-  const ids = actor.effects.map(ef => ef.data._id);
-  let delResults = await actor.deleteEmbeddedEntity("ActiveEffect", ids);
-  warn("Deletion results are ", delResults)
-
-  log("Migrating Actor ", actor.name)
-  const itemIds = actor.items.map(i=>i.id);
-  let itemsData = [];
-  itemIds.forEach(async id=> {
-    const item = actor.items.get(id);
-    let results = migrateOwnedItem(item, actor);
-    if (results) {
-      warn("Migrated ", item.name, results)
-      itemsData.push(results);
-    }
-  })
-
-  const deleteItemIds = itemsData.map(id=>id._id);
-  debug("deleted ids are ", deleteItemIds)
-  await actor.deleteEmbeddedEntity("OwnedItem", deleteItemIds)
-  await actor.createEmbeddedEntity("OwnedItem", itemsData)
-  actor.items.forEach(item => {
-
-  })
+export async function removeAllItemsArmorEffects() {
+  return removeItemArmorEffects(game.items, "World");
 }
 
-export async function removeActorEffects(actor) {
-  let activeEffects = actor.effects.map(ef=>ef.id);
-  await actor.deleteEmbeddedEntity("ActiveEffect", activeEffects)
+export async function cleanArmorWorld() {
+  game.settings.set("dae", "applyBaseAC", false);
+  game.settings.set("dae", "calculateArmor", false);
+  Promise.all([removeAllItemsArmorEffects(), removeAllActorArmorEffects(), removeAllTokenArmorEffects()]);
 }
 
-export async function migrateAllActors() {
-  game.actors.forEach(actor => migrateActorItems(actor))
-}
-
-export async function fixupMonstersCompendium() {
-  // TODO fix this for sw5e?
-  const pack = game.packs.get(`dnd5e.monsters`);
-  let locked = pack.locked;
-  pack.configure({locked: false})
-  let content = await pack.getContent()
-  // TODO fix this for sw5e?
-  content.forEach(entity=>["mwak","rwak","rsak","msak"]
-    .forEach(id=>entity.data.data.bonuses[id]={attack: "", damage: ""}))
-  content.forEach(async actor=>await pack.updateEntity(actor.data))
-  pack.configure({locked: locked})
-}
-export async function fixupActors() {
-  game.actors.forEach(async actor => {
-    const bonuses = duplicate(actor.data.data.bonuses);
-    let found = false;
-    // TODO fix this for sw5e?
-    ["mwak","rwak","rsak","msak"].forEach(bonusId => {
-      if (typeof actor.data.data.bonuses[bonusId] === "string") {
-        bonuses[bonusId] = {"attack": "", "damage": ""};
-        found = true;
-      }
-    })
-    if (found) {
-      console.warn("Fixing actor ", actor.name, actor.id, bonuses)
-      await actor.update({"data.bonuses": bonuses});
-    }
-  })
-}
-
-  export async function fixupBonuses() {
-    fixupMonstersCompendium();
-    fixupActors();
-  }
 
   function findDAEItem(itemData, packs) {
     for (let pack of packs) {
