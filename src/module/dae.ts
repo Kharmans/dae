@@ -888,7 +888,6 @@ export async function getSelfTarget(actor) {
 }
 
 export async function daeMacro(action: string, actor, effects, lastArgOptions = {}) {
-  //  if (actor.__proto__.constructor.name === CONFIG.Item.entityClass.name) return;
   let result;
   if (!Array.isArray(effects)) effects = [effects];
   // Work out what itemdata should be
@@ -1175,7 +1174,7 @@ function computeAC(actor, change) {
         }
         break;
       case "heavy":
-        newAC = armorData.value + Math.min(armorData.dex ?? 0, actor.data.data.abilities.dex.mod);
+        newAC = armorData.value;
         if (armorData.value > bestArmorAC) {
           bestArmorAC = newAC;
           armorLabel = item.label
@@ -1406,7 +1405,7 @@ function initActorSheetHook(app, html, data) {
   let title = game.i18n.localize('dae.ActiveEffectName');
   let openBtn = $(`<a class="open-actor-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
   openBtn.click(ev => {
-    new ActiveEffects(app.entity, {}).render(true);
+    new ActiveEffects(app.document, {}).render(true);
   });
   html.closest('.app').find('.open-actor-effect').remove();
   let titleElement = html.closest('.app').find('.window-title');
@@ -1414,11 +1413,10 @@ function initActorSheetHook(app, html, data) {
 }
 
 function initItemSheetHook(app, html, data) {
-  // if (app.entity.isOwned) return;
   let title = game.i18n.localize('dae.ActiveEffectName');
   let openBtn = $(`<a class="open-item-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
   openBtn.click(ev => {
-    new ActiveEffects(app.entity, {}).render(true);
+    new ActiveEffects(app.document, {}).render(true);
   });
   html.closest('.app').find('.open-item-effect').remove();
   let titleElement = html.closest('.app').find('.window-title');

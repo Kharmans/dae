@@ -1,3 +1,8 @@
+## 0.8.9
+* Change base AC calcs to override so that negative dex mods are applied.
+* Change heavy armor calcs to always ignore dex mod.
+* If you have already implemented the AC calcs in 0.8.7 you will need to delete the AC calc feature on any actors that have it and replace it with the new item from the premade-items compendium. (Will only affect characters with negative dex mods)
+
 ## 0.8.8
 * Fix for macro.execute failures.
 
