@@ -2,8 +2,7 @@ import { requestGMAction, GMAction, applyActiveEffects } from "./GMAction";
 import { warn, error, debug, setDebugLevel, i18n, timelog } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
-import { procStatusEffects } from "./statusEffects";
-import { replaceFormulaData, updatePatches } from "./patching";
+import { updatePatches } from "./patching";
 import { libWrapper } from "../libs/shim";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
@@ -379,7 +378,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
           try {
             console.warn("dae | you are using dice expressions in a numeric field this will be disabled when foundry 0.9 is release")
             //@ts-ignore evaluate - TODO work out how to do this async
-            c.value = new Roll(c.value).evaluate({ async: false }).total;
+            c.value = new Roll(value).evaluate({ async: false }).total;
           } catch(err) {
             console.warn("change value calculation failed for", this, c);
             console.warn(err)
@@ -990,7 +989,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
       break;
     default:
       if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
-        //@ts-ignore evaluate
+        //@ts-ignore evaluate - probably need to make this a saveEval
         returnChange.value = new Roll(returnChange.value, context).evaluate({ async: false }).total;
       };
       break;
@@ -1062,17 +1061,21 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
       activeEffectData.duration.startTime = game.time.worldTime;
       activeEffectData.transfer = false;
       activeEffectData.changes[changeIndex] = newChange;
-      // disabled is no longer set, use the definition of the active effect since this is always fixable.
-      // activeEffectData.disabled = false;
     };
   }
 
   // Split up targets according to whether they are owned on not. Owned targets have effects applied locally, only unowned are passed ot the GM
   const targetList = Array.from(targets);
   //@ts-ignore
-  let ownedTargets = targetList.filter(t => t.actor?.permission === 3).map(t => typeof t === "string" ? t : t.document.uuid);
+  let ownedTargets = targetList.filter(t => t.actor?.permission === 3).map(
+    //@ts-ignore
+    t => typeof t === "string" ? t : (t.uuid === "Token.") ? t.actor.uuid : t.uuid
+  );
   //@ts-ignore
-  let unOwnedTargets = targetList.filter(t => t.actor?.permission !== 3).map(t => typeof t === "string" ? t : t.document.uuid);;
+  let unOwnedTargets = targetList.filter(t => t.actor?.permission !== 3).map(
+    //@ts-ignore
+    t => typeof t === "string" ? t : (t.uuid === "Token.") ? t.actor.uuid : t.uuid
+  );
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
   requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
   applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
@@ -1082,6 +1085,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
 function preUpdateItem(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   Hooks.once("updateItem", async () => {
+    // TODO remove this when the old ac method goes away
     if (updates.data?.armor && candidate.data.data.armor?.type && calculateArmor) { // TODO find out why SRD items have an armor value
       let updatedActorEffectData = updateArmorEffect(candidate, updates);
       const origin = candidate.uuid; // `Actor.${item.actor.id}.Item.${updates._id}`;
@@ -1115,6 +1119,7 @@ function preUpdateItem(candidate, updates, options, user) {
         await candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
       }
     } else if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
+      // TODO look at evaulating this on the fly during prepare data
       const existingEffectsData = candidate.parent.effects
         ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
         ?.map(ef => duplicate(ef.data));
@@ -1190,6 +1195,7 @@ function computeAC(actor, change) {
   actor.data.data.attributes.ac.value += bestShieldAC;
   return true;
 }
+// TODO remove this when old ac removed
 export function updateArmorEffect(candidate, updates) {
   let itemData = candidate.data;
   // Armor value has been changed so recrreate owned item and actor effects
@@ -1222,6 +1228,7 @@ export function preCreateItem(candidate, data, options, user) {
   return true;
 }
 
+// TODO remove this when turning off old armor calcs
 export function createArmorEffect(item, itemData) {
   if (itemData.type !== "equipment") return true;
   // armor created on actor, screae armor effect.
@@ -1245,6 +1252,7 @@ export function createArmorEffect(item, itemData) {
   return true;
 }
 
+//TODO remove this when deleting old armor effects
 export function generateArmorEffect(itemData, origin, armorData) {
   switch (armorData.type) {
     case "shield":
@@ -1270,6 +1278,7 @@ export function generateArmorEffect(itemData, origin, armorData) {
   }
 }
 
+// TODO remove this when deleting old armor effects
 function armorEffectFromFormula(formula, mode, itemData, origin) {
   let label = `AC${itemData.data.armor.type === "shield" ? "+" : "="}${itemData.data.armor.value}`;
   if ("light" === itemData.data.armor?.type) label += `+min(dex.mod, ${itemData.data.armor?.dex || "unlimited"})`;
