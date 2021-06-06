@@ -6,6 +6,9 @@ When filing an issue **PLEASE PLEASE PLEASE*** include at least the following:
 * Other modules you are using and their version, especially things like, Midi Qol and Better Rolls. And if you routinely use more than 10 modules, please make sure you can reproduce the problem with only a few moudles loaded. The problem might be a module interaction. I don't have time to investigate the combination of a 100 modules and their interactions with DAE so it has to be narrowed down.
 * Try and give a more complete description than X stopped working.
 
+**My aromor class is not cacluating correctly**
+There is lots going on here. The short answer is please migrate to the new AC calcuation shceme if you are having problems. See the AC discussion below.
+
 ## What does DAE do?
 First off you probably don't need DAE. The core foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and using DAE only if you run into a roadblock on what you want to do.
 
@@ -331,10 +334,6 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
 
   ```
 Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
-
-**Armor** The system applies standard DND rules for calculating armor class based on what armor you have eqipped (for natual armor the armor does not need to be equipped). Shield type items add to the armor class. "Effects" can alter armor class as well.
-
-Armor behaves slightly differently to other items. The active effect for the armor is created when the armor is added to the character and then the effect is transferred to the Actor. (This means you do not need to edit every piece of armor to create the active effects)
 
 ### Macro Functions ##
 Because dropping an item onto a character transfers the active effects to the actor many of the activation functions have been scrapped.
