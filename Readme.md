@@ -6,7 +6,7 @@ When filing an issue **PLEASE PLEASE PLEASE** include at least the following:
 * Other modules you are using and their version, especially things like, Midi Qol and Better Rolls. And if you routinely use more than 10 modules, please make sure you can reproduce the problem with only a few moudles loaded. The problem might be a module interaction. I don't have time to investigate the combination of a 100 modules and their interactions with DAE so it has to be narrowed down.
 * Try and give a more complete description than X stopped working.
 
-## My aromor class is not caccalculatingluating correctly
+## My aromor class is not calculating correctly
 There is lots going on here. The short answer is please migrate to the new AC calcuation shceme if you are having problems. See the AC discussion below. The 2 line version is:  
 1 From the console or a script macro run  
 ```
