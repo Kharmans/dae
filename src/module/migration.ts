@@ -85,120 +85,120 @@ export async function cleanArmorWorld() {
 }
 
 
-  function findDAEItem(itemData, packs) {
-    for (let pack of packs) {
-      let matchItem = pack.find(pd => pd.name === itemData.name && pd.type === itemData.type);
-      if (matchItem) return matchItem;
+function findDAEItem(itemData, packs) {
+  for (let pack of packs) {
+    let matchItem = pack.find(pd => pd.name === itemData.name && pd.type === itemData.type);
+    if (matchItem) return matchItem;
+  }
+  return undefined;
+}
+
+var packsLoaded = false;
+var itemPack;
+var spellPack;
+var featsPack;
+var midiPack;
+var magicItemsPack;
+var dndSRDItemsPack;
+var dndSRDSpellsPack;
+var dndSRDclassesPack;
+var dndSRDClassfeaturesPack;
+var dndSRDMonsterfeaturesPack;
+
+export async function loadPacks() {
+  if (packsLoaded) return;
+  itemPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Items").getContent();
+  spellPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Spells").getContent();
+  featsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Feats").getContent();
+  midiPack =  await game.packs.get("Dynamic-Effects-SRD.DAE SRD Midi-collection").getContent();
+  magicItemsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Magic Items").getContent();
+  dndSRDItemsPack = await game.packs.get(`${game.system.id}.items`).getContent();
+  dndSRDSpellsPack = await game.packs.get(`${game.system.id}.spells`).getContent();
+  dndSRDclassesPack = await game.packs.get(`${game.system.id}.classes`).getContent();
+  dndSRDMonsterfeaturesPack = await game.packs.get(`${game.system.id}.monsterfeatures`)?.getContent();
+  dndSRDClassfeaturesPack = await game.packs.get(`${game.system.id}.classfeatures`)?.getContent();
+  packsLoaded = true;
+}
+
+export async function migrateAllActorsDAESRD(includeSRD = false) {
+  game.actors.forEach(async a => {
+    await migrateActorDAESRD(a, includeSRD);
+  });
+}
+
+export async function migrateAllNPCDAESRD(includeSRD = false) {
+  game.actors.filter(a=>a.data.type !== "character").forEach(async a => {
+    await migrateActorDAESRD(a, includeSRD);
+  });
+}
+export async function migrateActorDAESRD(actor, includeSRD = false) {
+  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
+    ui.notifications.warn("DAE SRD Module not active");
+    return;
+  }
+  if (!packsLoaded) await loadPacks();
+  const items = actor.data.items;
+  let replaceItems = [];
+  let count = 0;
+  items.forEach(itemData => {
+    let replaceData;
+    switch(itemData.type) {
+      case "feat":
+        let srdFeats = (actor?.data?.type === "npc") ? dndSRDMonsterfeaturesPack : dndSRDClassfeaturesPack;
+        if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, featsPack, dndSRDclassesPack, srdFeats]);
+        else replaceData = findDAEItem(itemData, [midiPack, featsPack]);
+        if (replaceData) console.warn("migrating", actor.name, replaceData.name, replaceData)
+        if (replaceData) {
+          setProperty(replaceData.data, "equipped", itemData.data.equipped)
+          setProperty(replaceData.data, "attunement", itemData.data.attunement)
+          setProperty(replaceData.data.flags, "dae.migrated", true);
+          replaceItems.push(replaceData.toObject());
+          count++;
+        }
+        else replaceItems.push(itemData.toObject())
+        break;
+      case "spell":
+        if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, spellPack, dndSRDSpellsPack]);
+        else replaceData = findDAEItem(itemData, [midiPack, spellPack]);
+        if (replaceData) console.warn("migrating ", actor.name, replaceData.name, replaceData)
+        if (replaceData) {
+          setProperty(replaceData.data, "prepared", itemData.data.prepared)
+          setProperty(replaceData.data.flags, "dae.migrated", true);
+          replaceItems.push(replaceData.toObject());
+          count++;
+        }
+        else replaceItems.push(itemData.toObject())
+        break;
+      case "equipment":
+      case "weapon":
+      case "loot":
+      case "consumable":
+      case "tool":
+      case "backpack":
+        if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack, dndSRDItemsPack]);
+        else replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack]);
+        if (replaceData) console.warn("migrated", actor.name, replaceData.name, replaceData)
+        if (replaceData) {
+          setProperty(replaceData.data, "data.equipped", itemData.data.equipped)
+          setProperty(replaceData.data, "data.attunement", itemData.data.attunement)
+          setProperty(replaceData.data.flags, "dae.migrated", true);
+          replaceItems.push(replaceData.data);
+          count++;
+        }
+        else replaceItems.push(itemData.toObject());
+        break;
+      default:
+        replaceItems.push(itemData.toObject())
+        break;
     }
-    return undefined;
-  }
+  })
+  let removeItems = actor.items.map(i=> i.id);
+  await actor.deleteEmbeddedDocuments("Item", [], { deleteAll: true });
+  await actor.deleteEmbeddedDocuments("ActiveEffect", [], { deleteAll: true });
+  await actor.createEmbeddedDocuments("Item", replaceItems, { addFeatures: false, promptAddFeatures: false });
+  console.warn(actor.name, "replaced ", count, " out of ", replaceItems.length,  " items from the DAE SRD");
+}
 
-  var packsLoaded = false;
-  var itemPack;
-  var spellPack;
-  var featsPack;
-  var midiPack;
-  var magicItemsPack;
-  var dndSRDItemsPack;
-  var dndSRDSpellsPack;
-  var dndSRDclassesPack;
-  var dndSRDClassfeaturesPack;
-  var dndSRDMonsterfeaturesPack;
-
-  export async function loadPacks() {
-    if (packsLoaded) return;
-    itemPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Items").getContent();
-    spellPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Spells").getContent();
-    featsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Feats").getContent();
-    midiPack =  await game.packs.get("Dynamic-Effects-SRD.DAE SRD Midi-collection").getContent();
-    magicItemsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Magic Items").getContent();
-    dndSRDItemsPack = await game.packs.get(`${game.system.id}.items`).getContent();
-    dndSRDSpellsPack = await game.packs.get(`${game.system.id}.spells`).getContent();
-    dndSRDclassesPack = await game.packs.get(`${game.system.id}.classes`).getContent();
-    dndSRDMonsterfeaturesPack = await game.packs.get(`${game.system.id}.monsterfeatures`)?.getContent();
-    dndSRDClassfeaturesPack = await game.packs.get(`${game.system.id}.classfeatures`)?.getContent();
-    packsLoaded = true;
-  }
-
-  export async function migrateAllActorsDAESRD(includeSRD = false) {
-    game.actors.forEach(async a => {
-      await migrateActorDAESRD(a, includeSRD);
-    });
-  }
-
-  export async function migrateAllNPCDAESRD(includeSRD = false) {
-    game.actors.filter(a=>a.data.type !== "character").forEach(async a => {
-      await migrateActorDAESRD(a, includeSRD);
-    });
-  }
-  export async function migrateActorDAESRD(actor, includeSRD = false) {
-    if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
-      ui.notifications.warn("DAE SRD Module not active");
-      return;
-    }
-    if (!packsLoaded) await loadPacks();
-    const items = actor.data.items;
-    let replaceItems = [];
-    let count = 0;
-    items.forEach(itemData => {
-      let replaceData;
-      switch(itemData.type) {
-        case "feat":
-          let srdFeats = (actor?.data?.type === "npc") ? dndSRDMonsterfeaturesPack : dndSRDClassfeaturesPack;
-          if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, featsPack, dndSRDclassesPack, srdFeats]);
-          else replaceData = findDAEItem(itemData, [midiPack, featsPack]);
-          if (replaceData) console.warn("migrating", actor.name, replaceData.name, replaceData)
-          if (replaceData) {
-            setProperty(replaceData.data, "equipped", itemData.data.equipped)
-            setProperty(replaceData.data, "attunement", itemData.data.attunement)
-            setProperty(replaceData.data.flags, "dae.migrated", true);
-            replaceItems.push(replaceData.data);
-            count++;
-          }
-          else replaceItems.push(itemData)
-          break;
-        case "spell":
-          if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, spellPack, dndSRDSpellsPack]);
-          else replaceData = findDAEItem(itemData, [midiPack, spellPack]);
-          if (replaceData) console.warn("migrating ", actor.name, replaceData.name, replaceData)
-          if (replaceData) {
-            setProperty(replaceData.data, "prepared", itemData.data.prepared)
-            setProperty(replaceData.data.flags, "dae.migrated", true);
-            replaceItems.push(replaceData.data);
-            count++;
-          }
-          else replaceItems.push(itemData)
-          break;
-        case "equipment":
-        case "weapon":
-        case "loot":
-        case "consumable":
-        case "tool":
-        case "backpack":
-          if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack, dndSRDItemsPack]);
-          else replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack]);
-          if (replaceData) console.warn("migrated", actor.name, replaceData.name, replaceData)
-          if (replaceData) {
-            setProperty(replaceData.data, "data.equipped", itemData.data.equipped)
-            setProperty(replaceData.data, "data.attunement", itemData.data.attunement)
-            setProperty(replaceData.data.flags, "dae.migrated", true);
-            replaceItems.push(replaceData.data);
-            count++;
-          }
-          else replaceItems.push(itemData);
-          break;
-        default:
-          replaceItems.push(itemData)
-          break;
-      }
-    })
-    let removeItems = actor.items.map(i=> i.id);
-    await actor.deleteOwnedItem(removeItems);
-    await actor.deleteEmbeddedEntity("ActiveEffect", actor.effects.map(ae=>ae.id))
-    await actor.createOwnedItem(replaceItems)
-    console.warn(actor.name, "replaced ", count, " out of ", replaceItems.length,  " items from the DAE SRD");
-  }
-
-  function removeDynamiceffects(actor) {
+function removeDynamiceffects(actor) {
   actor.update({"flags.-=dynamiceffects": null})
-  }
+}
