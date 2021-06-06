@@ -370,8 +370,8 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
     if (c.mode !==  CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
       if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string" ) {
         debug("appplyDaeEffects: Doing eval of ", c, c.value)
+        let value = replaceAtFields(c.value, daeRollData(this));
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
-          let value = replaceAtFields(c.value, daeRollData(this));
            //@ts-ignore - this will throw an error if there are roll expressions
             c.value = Roll.safeEval(value)
         } catch (err) { // safeEval failed try a roll
