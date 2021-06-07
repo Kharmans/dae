@@ -1,3 +1,10 @@
+## 0.8.12
+* Fix for roll expressions in numeric field evaluation.
+* Fix for concentration removal.
+* Fix for a bug when removing multiple effects from the same item were present (tried to remove one effect twice and ignored the other) resulting in an effect not present on actor message.
+* Allow limited recursion of @field lookups, so you can define have @flags.mymodule.specialBonus = @abilities.dex.mod and get back the dex mod in your expressions.
+* In the new AC calculation, add magical bonus to computed AC for equipment of type "magical bonus" - always added if equipped and attuned. So if you want a +1 to AC "something" you can set it as magical bonus and enter a 1 into the Armor Class value.
+
 ## 0.8.9
 * Change base AC calcs to override so that negative dex mods are applied.
 * Change heavy armor calcs to always ignore dex mod.

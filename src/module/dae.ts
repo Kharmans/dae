@@ -322,7 +322,7 @@ function effectDisabled(actor, efData, itemData = null) {
     if (itemData && !nonEquipItems.includes(itemData.type)) {
       // item is disabled if it is not equipped
       // OR item is equipped but attunment === requires attunement
-      disabled = !itemData.data.equipped || itemData.data.attunement === 1;
+      disabled = !itemData.data.equipped || itemData.data.attunement === CONFIG.DND5E.attunementTypes.REQUIRED;
     }
   }
   // if not calcullating armor disable armor effects
@@ -376,7 +376,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
             c.value = Roll.safeEval(value)
         } catch (err) { // safeEval failed try a roll
           try {
-            console.warn("dae | you are using dice expressions in a numeric field this will be disabled when foundry 0.9 is release")
+            console.warn("dae | you are using dice expressions in a numeric field this will be disabled when foundry 0.9 is released")
             //@ts-ignore evaluate - TODO work out how to do this async
             c.value = new Roll(value).evaluate({ async: false }).total;
           } catch(err) {
@@ -632,20 +632,24 @@ function daeCustomEffect(actor, change) {
 
     case "data.attributes.ac.value":
       if (change.value === "AutoCalc")  {
-        computeAC(actor, change);
+        actor.data.data.attributes.ac.value = computeAC(actor, actor.data.data.abilities.dex.mod);
       }
       return true;
   }
 }
 
-export function replaceAtFields(value, context) {
+export function replaceAtFields(value, context, maxIterations = 4) {
   if (typeof value !== "string") return value;
+  let count = 0;
   if (!value.includes("@")) return value;
-  // Remove @data references
-  let result = duplicate(value);
   let re = /@[\w\.]+/g
-  for (let match of value.match(re) || []) 
-    result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)))
+  let result = duplicate(value);
+  // Remove @data references allow a little bit of recursive lookup
+  do {
+    count += 1;
+    for (let match of value.match(re) || []) 
+      result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)))
+  } while (count < maxIterations && result.includes("@"));
   return result;
 }
 
@@ -977,7 +981,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   contextToUse.change = JSON.stringify(change.toJSON);;
   contextToUse.itemId = itemData?.id ? itemData._id : "undefineed";
   // TODO work out item uuid
-  returnChange.value = replaceAtFields(returnChange.value, contextToUse);
+  returnChange.value = replaceAtFields(returnChange.value, contextToUse, 2); // limit to a couple of lookups - since @token -> @token
   switch (change.key) {
     case "macro.itemMacro":
     case "macro.execute": // for macros we want to tokeniz the arguments
@@ -1057,22 +1061,26 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       let newChange = await evalArgs({ itemData: this.data, effectData: activeEffectData, context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper })
-      activeEffectData.origin = this.uuid;
-      activeEffectData.duration.startTime = game.time.worldTime;
-      activeEffectData.transfer = false;
       activeEffectData.changes[changeIndex] = newChange;
+
     };
+    activeEffectData.origin = this.uuid;
+    activeEffectData.duration.startTime = game.time.worldTime;
+    activeEffectData.transfer = false;
+    appliedEffects[aeIndex] = activeEffectData;
   }
 
   // Split up targets according to whether they are owned on not. Owned targets have effects applied locally, only unowned are passed ot the GM
   const targetList = Array.from(targets);
+  const stringTokens = targetList.filter(t=> typeof t === "string");
+  if (stringTokens.length) console.warn("String tokens in apply non transfer are ", stringTokens);
   //@ts-ignore
-  let ownedTargets = targetList.filter(t => t.actor?.permission === 3).map(
+  let ownedTargets = targetList.filter(t => t.isOwner).map(
     //@ts-ignore
     t => typeof t === "string" ? t : (t.uuid === "Token.") ? t.actor.uuid : t.uuid
   );
   //@ts-ignore
-  let unOwnedTargets = targetList.filter(t => t.actor?.permission !== 3).map(
+  let unOwnedTargets = targetList.filter(t => !t.isOwner).map(
     //@ts-ignore
     t => typeof t === "string" ? t : (t.uuid === "Token.") ? t.actor.uuid : t.uuid
   );
@@ -1139,18 +1147,23 @@ function preUpdateItem(candidate, updates, options, user) {
   return true;
 }
 
-function computeAC(actor, change) {
+function computeAC(actor, dexMod) {
   const baseAC = actor.data.data.attributes.ac.value;
   let bestArmorAC = 0;
   let armorLabel = "";
   let bestShieldAC = 0;
   let shieldLabel = "";
+  let bonusAC = 0;
   let newAC;
   for (let item of actor.items) {
     if (item.type !== "equipment" || !item.data.data.equipped) continue;
     if (!item.data.data.armor) continue;
     const armorData = item.data.data.armor;
     switch (armorData.type) {
+      case "bonus":
+        if ([CONFIG.DND5E.attunementTypes.ATTUNED, CONFIG.DND5E.attunementTypes.NONE].includes(item.data.data.attunement))
+          bonusAC += armorData.value;
+        break;
       case "shield":
         if (armorData.value > bestShieldAC) {
           bestShieldAC = armorData.value;
@@ -1189,11 +1202,10 @@ function computeAC(actor, change) {
         break;
     }
   }
-  if (bestArmorAC > actor.data.data.attributes.ac.value) {
-    actor.data.data.attributes.ac.value = bestArmorAC;
+  if (bestArmorAC > 0) {
+    return bestArmorAC + bestShieldAC + bonusAC;
   }
-  actor.data.data.attributes.ac.value += bestShieldAC;
-  return true;
+  return actor.data.data.attributes.ac.value + bestShieldAC + bonusAC;
 }
 // TODO remove this when old ac removed
 export function updateArmorEffect(candidate, updates) {
@@ -1215,7 +1227,7 @@ export function preCreateItem(candidate, data, options, user) {
   if (!candidate.isOwned) return;
   // create armor effects if required - this in in the preCreate hook so udpating the candidate is enough
   if (calculateArmor) createArmorEffect(candidate, data);
-  data.effects.forEach(efData => {
+  data.effects?.forEach(efData => {
     if (efData.transfer) {
       setProperty(efData, "flags.dae.transfer", true)
       efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);

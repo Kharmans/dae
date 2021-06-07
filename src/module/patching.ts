@@ -274,7 +274,6 @@ async function _updateObject(event, formData) {
 }
 
 export function getInitiativeFormula() {
-  console.error("inside getinitiativeformula")
   const actor = this.actor;
   if ( !actor ) return "1d20";
   const init = actor.data.data.attributes.init;

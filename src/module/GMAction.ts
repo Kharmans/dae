@@ -280,19 +280,19 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   tokenList.forEach(async tid => {
     const token = DAEfromUuid(tid) || canvas.tokens.get(tid);
+    let actor = token.actor ? token.actor : token; // assume if we did not get a token it is an actor
     if (token) {
+      // Remove any existing effects that are not stackable or transfer from the same origin
       let actEffects = activeEffects;
-      let removeList = [];
-      // TODO redo this as a reduce
-      actEffects.forEach(newAE => {
-        removeList = removeList.concat(
-          token.actor.effects.filter(ae => ae.data.origin === newAE.origin
+      const origins = actEffects.map(aeData => aeData.origin);
+      // find all active effects that are not stackable and have the same origin as one of our new effects
+      let removeList = actor.effects.filter(ae => origins.includes(ae.data.origin)
             && getProperty(ae.data, "flags.dae.transfer") === false
-            && !getProperty(ae.data, "flags.dae.stackable")));
-      });
+            && !getProperty(ae.data, "flags.dae.stackable")
+      );
       if (removeList.length > 0) {
         removeList = removeList.map(ae => ae.data._id);
-        await token.actor.deleteEmbeddedDocuments("ActiveEffect", removeList)
+        await actor.deleteEmbeddedDocuments("ActiveEffect", removeList)
       }
       if (activate) { 
         let dupEffects = duplicate(actEffects)
@@ -341,7 +341,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           })
         })
         warn("gm action apply effect", token, actEffects)
-        let removeList = await token.actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
+        let removeList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
 
         //TODO remove this when timesup is in the wild.
         if (!timesUpInstalled) { // do the kludgey old form removal
@@ -350,7 +350,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             const token = window.DAE.DAEfromUuid(tokenUuid)
             let removeId = removeEffect._id;
             if (removeId) {
-              await token.actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
+              await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
             }
           }
 
@@ -375,6 +375,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
 }
 
 export function convertDuration(itemDuration: {units: string, value: number}, inCombat) {
+  // TODO rewrite this abomination
   const useTurns = inCombat && timesUpInstalled;
   if (!itemDuration) return {type: "seconds", seconds: 0, rounds: 0, turns: 0};
   if (!aboutTimeInstalled ) {
