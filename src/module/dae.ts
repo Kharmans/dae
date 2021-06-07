@@ -1333,7 +1333,7 @@ export var tokenizer;
 
 function daeApply(wrapped, actor, change) {
   //TODO revisit this for item changes, requires setProperty(map, "index", value) to work.
-  if (change.key.startsWith("items") && false) {
+  if (change.key?.startsWith("items") && false) {
     let originalKey = duplicate(change.key);
     const fields = change.key.split(".");
     const name = fields[1];
@@ -1391,7 +1391,8 @@ export function daeInitActions() {
 
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", getRollData, "WRAPPER");
 
-  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
+  // TODO put this back when doing item effects.
+  // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
 
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
 

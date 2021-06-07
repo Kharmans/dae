@@ -1,3 +1,6 @@
+## 0.8.13
+* Patch to avoid DAE/Active Aura's libwrapper conflict.
+
 ## 0.8.12
 * Fix for roll expressions in numeric field evaluation.
 * Fix for concentration removal.
