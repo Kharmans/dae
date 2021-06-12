@@ -1,3 +1,12 @@
+## 0.8.14
+* Fix for set/get flag.
+* Fix for updates with no effects defined.
+* Some fixes for using uuids instead of ids.
+* Fix for adding/removing token magic effects.
+* Fix for removing effects that are created by other active effects.
+* Fix for concentration checks on unlinked tokens.
+* Experimental - change effect value entry field to a text area rather than text field.
+
 ## 0.8.13
 * Patch to avoid DAE/Active Aura's libwrapper conflict.
 

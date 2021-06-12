@@ -48,6 +48,8 @@ getData() {
     let newAe = duplicate(ae.data);
     newAe.duration = duplicate(ae.duration);
     if (aboutTimeInstalled && newAe.duration?.type === "seconds") {
+      //TODO change these to a simple calendar function after release
+      //TODO change this to window.Gametime.ElapsedTime.timeString permanently
       //@ts-ignore
       newAe.duration.label = window.Gametime.DTM.timeString(ae.duration.remaining)
     } else if (newAe.duration.label) {

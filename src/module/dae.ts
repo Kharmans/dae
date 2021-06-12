@@ -718,13 +718,13 @@ function prepareData(wrapped) {
 
 async function addTokenMagicChange(actor, change, tokens, tokenMagic) {
   for (let token of tokens) {
-    await tokenMagic.addFilters(token, change.value);
+    await tokenMagic.addFilters(token.object, change.value);
   }
 }
 
 async function removeTokenMagicChange(actor, change, tokens, tokenMagic) {
   for (let token of tokens) {
-    await tokenMagic.deleteFilters(token, change.value);
+    await tokenMagic.deleteFilters(token.object, change.value);
   }
 }
 
@@ -772,7 +772,7 @@ async function handleRemoveConcentration(effect, tokens) {
   try {
     await actor.unsetFlag("midi-qol", "concentration-data")
     concentrationData.templates.forEach(templateUuid => DAEfromUuid(templateUuid).delete());
-    requestGMAction(GMAction.actions.deleteEffects, { targets: concentrationData.targets, origin: concentrationData.uuid });
+     requestGMAction(GMAction.actions.deleteEffects, { targets: concentrationData.targets, origin: concentrationData.uuid });
   } catch (err) {
     console.warn("dae | error deleteing effects: ", err)
   }
@@ -828,9 +828,9 @@ export async function preDeleteActiveEffect(effect, ...args) {
   //@ts-ignore
   const tokenMagic = window.TokenMagic;
 
-  let update = async (effect, options, user) => {
+  let update = async (oldEffect, options, user) => {
     const actor = effect.parent;
-    if (token && effect.changes) {
+    if (token && effect.data.changes) {
       for (let change of effect.data.changes) {
         if (cubActive && change.key === "macro.CUB") await game.cub.removeCondition(change.value, [token], { warn: false });
         if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
@@ -1235,8 +1235,10 @@ export function preCreateItem(candidate, data, options, user) {
     }
   })
   //TODO check this.
-  delete candidate.data.effects;
-  candidate.data.update({ "effects": data.effects });
+  if (data.effects) {
+    delete candidate.data.effects;
+    candidate.data.update({ "effects": data.effects });
+  }
   return true;
 }
 

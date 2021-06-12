@@ -173,15 +173,19 @@ export function setFlag(actor: Actor | Token | string, flagId: string, value: an
   if (typeof actor === "string") {
     return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
+  if (actor instanceof Token) actor = actor.actor;
   if (!actor) return error(`dae.setFlag: actor not defined`)
-  return requestGMAction(GMAction.actions.setFlag, { actorId: actor.id, flagId, value})
+  return requestGMAction(GMAction.actions.setFlag, { actorId: actor.id, actorUuid: actor.uuid, flagId, value})
 }
 
 export function unsetFlag(actor: Actor | Token | string, flagId) {
+  //@ts-ignore
+
   if (typeof actor === "string") {
     return requestGMAction(GMAction.actions.unsetFlag, { actorId: actor, flagId})
   }
+  if (actor instanceof Token) actor = actor.actor;
   if (!actor) return error(`dae.setFlag: actor not defined`)
-  return requestGMAction(GMAction.actions.unsetFlag, { actorId: actor.id, flagId})
+  return requestGMAction(GMAction.actions.unsetFlag, { actorId: actor.id, actorUuid: actor.uuid, flagId})
 
 }

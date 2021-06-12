@@ -19,8 +19,7 @@ export class GMActionMessage {
 export let requestGMAction = async (action: string, data: {}, debugLog: boolean = false) => {
   if (game.user.isGM) {
     //@ts-ignore
-    return await 
-    GMAction.processAction(action, game.user.id, duplicate(data));
+    return await GMAction.processAction(action, game.user.id, duplicate(data));
   }
   //@ts-ignore
   let intendedGM = game.users.entities.find(u => u.isGM && u.active);
@@ -128,6 +127,8 @@ export class GMAction {
     var requester = userId;
     //@ts-ignore
     var actorUuid = data.actorUuid;
+    //@ts-ignore
+    var actorId = data.actorId;
     var scene;
     var actor;
     var token;
@@ -168,6 +169,7 @@ export class GMAction {
         await DAEfromUuid(actorUuid)?.update(update)
         break;
       case this.actions.setFlag:
+        if (!actorUuid)
         //@ts-ignore flagId, value
         await DAEfromUuid(actorUuid)?.setFlag("dae", data.flagId, data.value)
           break;
@@ -378,6 +380,7 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
   // TODO rewrite this abomination
   const useTurns = inCombat && timesUpInstalled;
   if (!itemDuration) return {type: "seconds", seconds: 0, rounds: 0, turns: 0};
+  // TODO when simple calendar update happens revisit this.
   if (!aboutTimeInstalled ) {
     switch (itemDuration.units) {
       case "turn":  

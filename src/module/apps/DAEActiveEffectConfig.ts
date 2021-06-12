@@ -234,7 +234,7 @@ truesight: false
     if (aboutTimeInstalled && data.effect.duration?.startTime) {
       //@ts-ignore
       const Gametime = window.Gametime;
-      const startTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime).shortDate();
+      let startTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime).shortDate();
       data.startTimeString = (startTime.date + " " + startTime.time) || "";
       if (data.effect.duration.seconds) {
         const endTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime + data.effect.duration.seconds).shortDate();
