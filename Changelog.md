@@ -1,3 +1,6 @@
+## 0.8.15
+* Hopefully the last fix for set/get flag DAE call.
+
 ## 0.8.14
 * Fix for set/get flag.
 * Fix for updates with no effects defined.

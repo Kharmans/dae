@@ -169,13 +169,17 @@ export class GMAction {
         await DAEfromUuid(actorUuid)?.update(update)
         break;
       case this.actions.setFlag:
-        if (!actorUuid)
+        if (!actorUuid) {
+          //@ts-ignore flagId, value
+          await game.actors.get(actorId)?.setFlag("dae", data.flagId, data.value)
+          break;
+        }
         //@ts-ignore flagId, value
-        await DAEfromUuid(actorUuid)?.setFlag("dae", data.flagId, data.value)
+          await DAEfromActorUuid(actorUuid)?.setFlag("dae", data.flagId, data.value)
           break;
       case this.actions.unsetFlag:
         //@ts-ignore
-        await DAEfromUuid(actorUuid)?.unsetFlag("dae", data.flagId)
+        await DAEfromActorUuid(actorUuid)?.unsetFlag("dae", data.flagId)
           break;
         break;
       case this.actions.blindToken:
