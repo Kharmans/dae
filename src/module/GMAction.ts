@@ -332,7 +332,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
-                const context = {"target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target"};
+                const context = {"target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData"};
                 change.value = replaceAtFields(duplicate(change.value), context);
               } else {
                 change.value = duplicate(change.value).map(f => {

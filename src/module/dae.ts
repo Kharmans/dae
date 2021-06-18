@@ -718,13 +718,15 @@ function prepareData(wrapped) {
 
 async function addTokenMagicChange(actor, change, tokens, tokenMagic) {
   for (let token of tokens) {
-    await tokenMagic.addFilters(token.object, change.value);
+    if (token.object) token = token.object; // in case we have a token document
+    await tokenMagic.addFilters(token, change.value);
   }
 }
 
 async function removeTokenMagicChange(actor, change, tokens, tokenMagic) {
   for (let token of tokens) {
-    await tokenMagic.deleteFilters(token.object, change.value);
+    if (token.object) token = token.object; // in case we have a token document
+    await tokenMagic.deleteFilters(token, change.value);
   }
 }
 
@@ -882,12 +884,12 @@ function preUpdateActiveEffect(activeEffect, changes, options, userCalendarSpec)
   return true;
 }
 
-export async function getSelfTarget(actor) {
-  if (actor.token) return actor.token;
-  const speaker = ChatMessage.getSpeaker({ actor })
+export function getSelfTarget(actor) {
+    if (actor.token) return actor.token;
+  const speaker = ChatMessage.getSpeaker({actor})
   if (speaker.token) return canvas.tokens.get(speaker.token);
-  //@ts-ignore TokenDocument
-  new TokenDocument({}, { actor });
+  //@ts-ignore this is a token document not a token ??
+  return new TokenDocument(actor.getTokenData(), {actor});
 }
 
 export async function daeMacro(action: string, actor, effects, lastArgOptions = {}) {
@@ -908,14 +910,18 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
           efData: effectData,
           actorId: actor.id,
           actorUuid: actor.uuid,
-          tokenId: actor.token ? actor.token.id : (await getSelfTarget(actor))?.id,
-          tokenUuid: actor.token ? actor.token.uuid : (await getSelfTarget(actor))?.uuid,
+          tokenId: actor.token ? actor.token.id : getSelfTarget(actor)?.id,
+          tokenUuid: actor.token ? actor.token.uuid : getSelfTarget(actor)?.uuid,
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         //@ts-ignore 
         const theChange = await evalArgs({ itemData: null, effectData, context: daeRollData(actor), actor, change, doRolls: true })
         let args = [];
         if (typeof theChange.value === "string") {
           tokenizer.tokenize(theChange.value, (token) => args.push(token));
+          args = args.map(arg => {
+            if (["@item", "@itemData"].includes(arg)) return effectData.flags.dae.itemData;
+            return arg;
+          })
         } else args = change.value;
         if (theChange.key === "macro.execute" || theChange.key.includes("macro.itemMacro")) {
             const macro = await getMacro({key: change.key, name: args[0]}, null, effectData);
@@ -958,6 +964,7 @@ function daeRollData(actor) {
 export async function evalArgs({ effectData = null, itemData = null, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null }) {
   // change so that this is item.data, rather than item.
   if (itemData) setProperty(effectData.flags, "dae.itemData", itemData);
+  let itemId = getProperty(effectData.flags, "dae.itemData._id");
   if (typeof change.value !== 'string')
     return change; // nothing to do
   const returnChange = duplicate(change);
@@ -967,6 +974,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   contextToUse["target"] = "@target";
   context["targetUuid"] = "@targetUuid"
   contextToUse["itemData"] = "@itemData";
+  contextToUse["item"] = "@item"
   // what to do for item
   contextToUse.spellLevel = spellLevel;
   contextToUse["item.level"] = spellLevel;
@@ -979,7 +987,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   contextToUse.fumble = fumble;
   contextToUse.whisper = whisper;
   contextToUse.change = JSON.stringify(change.toJSON);;
-  contextToUse.itemId = itemData?.id ? itemData._id : "undefineed";
+  contextToUse.itemId = itemId;
   // TODO work out item uuid
   returnChange.value = replaceAtFields(returnChange.value, contextToUse, 2); // limit to a couple of lookups - since @token -> @token
   switch (change.key) {
@@ -1016,7 +1024,7 @@ export async function getMacro({key, name}, itemData, effectData) {
     // Could not get the macro from the itemData or we had not Itemdata
     if (!macroCommand && !itemData) { // we never got an item do a last ditch attempt
       warn("eval args: fetching item from effectData/origin ", effectData.origin)
-      itemData = DAEfromActorUuid(effectData?.origin); // Try and get it from the effectData
+      itemData = DAEfromUuid(effectData?.origin)?.data; // Try and get it from the effectData
       //@ts-ignore
       macroCommand = itemData?.flags.itemacro?.macro.data.command;
       if (effectData) setProperty(effectData.flags, "dae.itemData", itemData);

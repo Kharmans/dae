@@ -1,3 +1,7 @@
+## 0.8.16
+* Fix for tokenMagic effect application
+* Fix for @item parameters to macros
+
 ## 0.8.15
 * Hopefully the last fix for set/get flag DAE call.
 
