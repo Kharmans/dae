@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -384,8 +384,7 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
   // TODO rewrite this abomination
   const useTurns = inCombat && timesUpInstalled;
   if (!itemDuration) return {type: "seconds", seconds: 0, rounds: 0, turns: 0};
-  // TODO when simple calendar update happens revisit this.
-  if (!aboutTimeInstalled ) {
+  if (!simpleCalendarInstalled ) {
     switch (itemDuration.units) {
       case "turn":  
       case "turns": return {type: useTurns? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value};
@@ -418,31 +417,23 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
         return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
     }
   } else {
-    // do about time stuff
-    var dtMod;
     switch (itemDuration.units) {
       case "turn":  
       case "turns": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns:itemDuration.value};
       case "round": 
       case "rounds": return {type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0}
       case "second": return {type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0};
-      case "minute": 
-        let durSeconds = game.Gametime.DTNow().add({"minutes": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds();
-        if (durSeconds / CONFIG.time.roundTime <= 10) {
-          return {type: useTurns ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
-        } else {
-          return {type: "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
-        }
-      case "hour": return {type: "seconds", seconds: game.Gametime.DTNow().add({"hours": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
-      case "day": return {type: "seconds", seconds: game.Gametime.DTNow().add({"days": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
-      case "week": return {type: "seconds", seconds: game.Gametime.DTNow().add({"weeks": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
-      case "month": return {type: "seconds", seconds: game.Gametime.DTNow().add({"months": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
-      case "year": return {type: "seconds", seconds: game.Gametime.DTNow().add({"years": itemDuration.value}).toSeconds() - game.Gametime.DTNow().toSeconds(), rounds: 0, turns: 0};
-      case "inst": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
       default:
-        console.warn("dae | unknown time unit found", itemDuration.units);
-        return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
-
+        let interval = {}
+        interval[itemDuration.units] = itemDuration.value;
+        //@ts-ignore
+        const durationSeconds = window.SimpleCalendar.api.timestampPlusInterval(game.time.currentTime, interval) - game.time.worldTime;
+        if (durationSeconds / CONFIG.time.roundTime <= 10) {
+          return {type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0};
+        } else {
+          return {type: "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0};
+        }
+        
 
 //      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
     }

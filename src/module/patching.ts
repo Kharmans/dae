@@ -7,49 +7,50 @@ import { libWrapper } from "../libs/shim.js";
 
 function rollAbilitySave(abilityId, options = { event, fastForward: null, advantage: null, disadvantage: null }) {
   const label = CONFIG.DND5E.abilities[abilityId];
-  const abl = this.data.data.abilities[abilityId];
-  if (!abl) {
-    error("rollAbilitySave: ability not specified");
-    return undefined;
-  }
-  const data = this.getRollData()
-  const parts = ["@save"];
-  // data = {save: abl.save}; // TP use abl.save rather than abl.mod
-  data.save = abl.save;
-  // Include a global actor ability save bonus - if it is numberic it has already been included
-  const actorBonus = getProperty(this.data.data.bonuses, "abilities.save");
-  data.save -= abl.saveBonus; // this was added in prepareDerivedData
+    const abl = this.data.data.abilities[abilityId];
 
-  if (!!actorBonus) {
-    parts.push("@saveBonus");
-    data.saveBonus = actorBonus;
-  }
+    // Construct parts
+    const parts = ["@mod"];
+    const data = {mod: abl.save};
 
-  // Add provided extra roll parts now because they will get clobbered by mergeObject below
-  //@ts-ignore
-  if (options.parts?.length > 0) {
-    //@ts-ignore
-    parts.push(...options.parts);
-  }
-  const savePromptTitle = game.system.id === "dnd5e" ? "DND5E.SavePromptTitle" : "SW5E.SavePromptTitle";
-  const messageData = {};
-  messageData[`flags.${game.system.id}.roll`] = { type: "save", abilityId };
-  // Roll and return
-  const rollData = mergeObject(options, {
-    //@ts-ignore
-    parts: parts,
-    data: data,
-    title: game.i18n.format(savePromptTitle, { ability: label }),
-    messageData
-  });
+/*
+    // Include proficiency bonus
+    if ( abl.prof > 0 ) {
+      parts.push("@prof");
+      //@ts-ignore
+      data.prof = abl.prof;
+    }
+    */
 
-  //@ts-ignore
-  if (game.system.id !== "sw5e") rollData.halflingLucky = this.getFlag("dnd5e", "halflingLucky");
+    // Include a global actor ability save bonus
+    const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
+    if ( bonuses.save ) {
+      parts.push("@saveBonus");
+      //@ts-ignore
+      data.saveBonus = bonuses.save;
+    }
 
-  //@ts-ignore
-  rollData.speaker = options.speaker || ChatMessage.getSpeaker({ actor: this });
-  //@ts-ignore
-  return d20Roll(rollData);
+    // Add provided extra roll parts now because they will get clobbered by mergeObject below
+      //@ts-ignore
+      if (options.parts?.length > 0) {
+      //@ts-ignore
+      parts.push(...options.parts);
+    }
+
+    // Roll and return
+      //@ts-ignore
+      const rollData = foundry.utils.mergeObject(options, {
+      parts: parts,
+      data: data,
+      title: game.i18n.format("DND5E.SavePromptTitle", {ability: label}),
+      halflingLucky: this.getFlag("dnd5e", "halflingLucky"),
+      messageData: {
+      //@ts-ignore
+      speaker: options.speaker || ChatMessage.getSpeaker({actor: this}),
+        "flags.dnd5e.roll": {type: "save", abilityId }
+      }
+    });
+    return d20Roll(rollData);
 }
 
 var d20Roll;

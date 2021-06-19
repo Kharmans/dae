@@ -10,6 +10,8 @@ let templates = {};
 
 export var aboutTimeInstalled = false;
 export var timesUpInstalled = false;
+export var simpleCalendarInstalled = false;
+
 export var requireItemTarget = true;
 export var cubActive;
 export var furnaceActive;
@@ -159,8 +161,9 @@ export class ValidSpec {
       };
 
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      // TODO reactivate when cond vis is 0.8.6 ready
+      // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.DamageBonusMacro`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.initiativeDisadv`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
@@ -180,7 +183,6 @@ export class ValidSpec {
         specials[`data.bonuses.${id}.attack`] = ["", -1];
         specials[`data.bonuses.${id}.damage`] = ["", -1];
       })
-
 
       // move all the characteer flags to specials so that the can be custom effects only
       let charFlagKeys = (game.system.id === "dnd5e") ? Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
@@ -703,7 +705,7 @@ function doCustomArrayValue(actor, current, change, validValues) {
 */
 function prepareData(wrapped) {
   debug("prepare data: before passes", this.name, this.data._source);
-  this.overrides = {};
+  this.overrides = {};7
   wrapped();
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
     if (applyBaseAC && this.data.type === "character" && !this.data.flags[game.system.id]?.isPolymorphed) {
@@ -790,7 +792,8 @@ export async function preCreateActiveEffect(activeEffect, effectData, options, u
   const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
 
   //@ts-ignore
-  const CV = window.ConditionalVisibility;
+  
+  const CV = conditionalVisibilityActive ? window.ConditionalVisibility : null;
   //@ts-ignore
   const tokenMagic = window.TokenMagic;
 
@@ -800,7 +803,7 @@ export async function preCreateActiveEffect(activeEffect, effectData, options, u
       if (token) {
         if (effect.changes) {
           for (let change of effect.changes) {
-            if (CV) addCVChange(parent, change, [token], CV); //TODO check disabled
+            if (CV && change.key) addCVChange(parent, change, [token], CV); //TODO check disabled
             if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
             if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
           }
@@ -826,7 +829,7 @@ export async function preDeleteActiveEffect(effect, ...args) {
   const checkConcentration = window.MidiQOL?.configSettings()?.concentrationAutomation;
 
   //@ts-ignore
-  const CV = window.ConditionalVisibility;
+  const CV = window.ConditionalVisibility && undefined;
   //@ts-ignore
   const tokenMagic = window.TokenMagic;
 
@@ -856,7 +859,7 @@ function preUpdateActiveEffect(activeEffect, changes, options, userCalendarSpec)
   //@ts-ignore
   const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
   //@ts-ignore
-  const CV = window.ConditionalVisibility;
+  const CV = window.ConditionalVisibility && undefined;
   //@ts-ignore
   const tokenMagic = window.TokenMagic;
   const oldDisabled = activeEffect.data.disabled;
@@ -963,31 +966,35 @@ function daeRollData(actor) {
 
 export async function evalArgs({ effectData = null, itemData = null, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null }) {
   // change so that this is item.data, rather than item.
-  if (itemData) setProperty(effectData.flags, "dae.itemData", itemData);
+  if (itemData) {
+    if (itemData._source) itemData = itemData.toObject(false);
+    setProperty(effectData.flags, "dae.itemData", itemData);
+  }
   let itemId = getProperty(effectData.flags, "dae.itemData._id");
   if (typeof change.value !== 'string')
     return change; // nothing to do
   const returnChange = duplicate(change);
-  const contextToUse = context;
-  contextToUse.scene = canvas.scene.id;
-  contextToUse.token = ChatMessage.getSpeaker({ actor }).token;
-  contextToUse["target"] = "@target";
-  context["targetUuid"] = "@targetUuid"
-  contextToUse["itemData"] = "@itemData";
-  contextToUse["item"] = "@item"
-  // what to do for item
-  contextToUse.spellLevel = spellLevel;
+  const contextToUse = mergeObject({
+    scene: canvas.scene.id,
+    token: ChatMessage.getSpeaker({ actor }).token,
+    target: "@target",
+    targetUuid: "@targetUuid",
+    itemData: "@itemData",
+    item: "@item",
+    spellLevel: spellLevel,
+    damage: damageTotal,
+    itemCardId: itemCardId,
+    unique: randomID(),
+    actor: actor.id,
+    actorUuid: actor.uuid,
+    critical: critical,
+    fumble: fumble,
+    whisper: whisper,
+    change: JSON.stringify(change.toJSON),
+    itemId: itemId
+  }, context, {overwrite: false});
   contextToUse["item.level"] = spellLevel;
-  contextToUse.damage = damageTotal;
-  contextToUse.itemCardId = itemCardId;
-  contextToUse.unique = randomID();
-  contextToUse.actor = actor.id;
-  contextToUse.actorUuid = actor.uuid;
-  contextToUse.critical = critical;
-  contextToUse.fumble = fumble;
-  contextToUse.whisper = whisper;
-  contextToUse.change = JSON.stringify(change.toJSON);;
-  contextToUse.itemId = itemId;
+
   // TODO work out item uuid
   returnChange.value = replaceAtFields(returnChange.value, contextToUse, 2); // limit to a couple of lookups - since @token -> @token
   switch (change.key) {
@@ -1024,9 +1031,10 @@ export async function getMacro({key, name}, itemData, effectData) {
     // Could not get the macro from the itemData or we had not Itemdata
     if (!macroCommand && !itemData) { // we never got an item do a last ditch attempt
       warn("eval args: fetching item from effectData/origin ", effectData.origin)
-      itemData = DAEfromUuid(effectData?.origin)?.data; // Try and get it from the effectData
+      itemData = DAEfromUuid(effectData?.origin)?.data.toObject(false); // Try and get it from the effectData
       //@ts-ignore
       macroCommand = itemData?.flags.itemacro?.macro.data.command;
+
       if (effectData) setProperty(effectData.flags, "dae.itemData", itemData);
     }
     if (!macroCommand) {
@@ -1329,6 +1337,7 @@ export function daeReadyActions() {
   // initSheetTab();
   //@ts-ignore
   aboutTimeInstalled = game.modules.get("about-time")?.active;
+  simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.actice
   timesUpInstalled = game.modules.get("times-up")?.active;
 }
 
@@ -1472,7 +1481,7 @@ export function daeSetupActions() {
   //@ts-ignore
   itemacroActive = game.modules.get("itemacro")?.active;
   furnaceActive = game.modules.get("furnace")?.active || game.modules.get("advanced-macros")?.active;
-  conditionalVisibilityActive = game.modules.get("conditional-visibility")?.active;
+  conditionalVisibilityActive = false && game.modules.get("conditional-visibility")?.active;
   midiActive = game.modules.get("midi-qol")?.active;
 }
 

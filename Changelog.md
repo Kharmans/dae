@@ -1,6 +1,13 @@
+## 0.8.17
+* Fix for saving throws when use ability.save instead of ability.mod is set.
+* Fix for item data passed via macro arguments.
+* Switch to use SimpleCalendar for time/date calculations.
+* Disabled support for conditional visibility - until an updated version is released
+
 ## 0.8.16
 * Fix for tokenMagic effect application
 * Fix for @item parameters to macros
+* Updated ko.json - thanks @klo
 
 ## 0.8.15
 * Hopefully the last fix for set/get flag DAE call.

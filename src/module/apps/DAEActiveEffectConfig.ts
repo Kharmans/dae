@@ -102,7 +102,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
     const ConditionalVisibilityNames = ["invisible", "hidden", "obscured", "indarkness"];
     const ConditionalVisibilityVisionNames = ["blindsight", "devilssight", "seeinvisible", "tremorsense", "truesight"]
-    if (conditionalVisibilityActive) {
+    if (conditionalVisibilityActive && false) {
       this.ConditionalVisibilityList = {};
       ConditionalVisibilityNames.forEach(cvc => {
         this.ConditionalVisibilityList[cvc] = i18n(`CONVIS.${cvc}`);
