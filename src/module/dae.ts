@@ -1345,7 +1345,7 @@ export function daeReadyActions() {
   // initSheetTab();
   //@ts-ignore
   aboutTimeInstalled = game.modules.get("about-time")?.active;
-  simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.actice
+  simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.active;
   timesUpInstalled = game.modules.get("times-up")?.active;
 }
 

@@ -1,4 +1,7 @@
 
+## 0.8.19
+* Fix for effect expriy calculation
+
 ## 0.8.18
 * Fix for some deprecation warnings.
 * Added DAE.addAutoFields(srring[]) which adds to the auto complete list for active effect edits.

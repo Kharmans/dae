@@ -277,6 +277,7 @@ Since the macro attaches to the target actor the macro can schedule itself to be
 **macro.execute "macro_name" args**  
 
 Using macros with arguments requires that you have the Furnace module installed and advanced macros enabled. That is the only setting you will want to enable.
+Furnace is now deprecated, the module Advanced Macros is a direct replacement and DAE will work with it if installed and active.
 
 This will call the macro "macro_name" with args[0] = "on" and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with args[0] = "off" when the active effect is deleted from the target actor.
 In addition to the standard ```@values``` the following are supported (only as macro argruments)  
@@ -290,8 +291,10 @@ In addition to the standard ```@values``` the following are supported (only as m
 ```@actor``` The actor.data for the actor that used the item.  
 ```@FIELD`` The value of the FIELD within the actor that used the item, e.g. @abilities.str.mod.  
 ```@unique``` A randomly generated unique id.  
+```##field``` The ## means the argument will not be evaluated using caster values, but will be replaced with @field when it is applied to the target.
 
-An additional argument (in addition to those specified in the macro.execute definition) is the actor data for the target token appended to the argument list.  
+An additional argument (in addition to those specified in the macro.execute definition) is lastArgs, which includes a lot of information for executing the macro.
+
 For example, if the macro.execute definition is
 ```
 macro.execute CUSTOM "My macro" 5 @ailities.str.mod
@@ -332,10 +335,10 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
     name: "Ring of Protection",
     type: "consumable",
   })
-  await item.createEmbeddedEntity("ActiveEffect", [EXAMPLE_TRANSFERRED_EFFECT]);
+  await item.createEmbeddedDocuments("ActiveEffect", [EXAMPLE_TRANSFERRED_EFFECT]);
 
   let actor = game.actors.getName("My actor")
-  await actor.createEmbeddedEntity("OwnedItem", item.data)
+  await actor.createEmbededDocuments("Item", [item.data])
 
   ```
 Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.

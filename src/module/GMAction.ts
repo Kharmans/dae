@@ -410,7 +410,7 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
       case "month": 
       case "months": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
       case "year": 
-      case "years":return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
+      case "years":return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0};
       case "inst": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
       default: 
         console.warn("dae | unknown time unit found", itemDuration.units);
@@ -427,7 +427,7 @@ export function convertDuration(itemDuration: {units: string, value: number}, in
         let interval = {}
         interval[itemDuration.units] = itemDuration.value;
         //@ts-ignore
-        const durationSeconds = window.SimpleCalendar.api.timestampPlusInterval(game.time.currentTime, interval) - game.time.worldTime;
+        const durationSeconds = window.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - game.time.worldTime;
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
           return {type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0};
         } else {
