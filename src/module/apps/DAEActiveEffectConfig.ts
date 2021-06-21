@@ -1,6 +1,15 @@
 import { ValidSpec, aboutTimeInstalled, confirmDelete, midiActive, cubActive, conditionalVisibilityActive } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 
+export var otherFields = [];
+
+export function addAutoFields(fields: string[]) {
+  fields.forEach(f => {
+    if (!otherFields.includes(f)) otherFields.push(f)
+  })
+  otherFields.sort();
+}
+
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
   fieldsList;
@@ -25,8 +34,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     } else this.tokenMagicEffects["invalid"] = "module not installed"
 
     this.fieldsList = Object.keys(ValidSpec.allSpecsObj);
+    this.fieldsList = this.fieldsList.concat(otherFields)
     //@ts-ignore
-    if (window.MidiQOL?.midiFlags)  this.fieldsList = this.fieldsList.concat(window.MidiQOL.midiFlags);
+    // if (window.MidiQOL?.midiFlags)  this.fieldsList = this.fieldsList.concat(window.MidiQOL.midiFlags);
     this.fieldsList.sort();
     //@ts-ignore
     log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL?.midiFlags?.length || 0} come from midi-qol and ${ValidSpec.allSpecs.length} from dae`);

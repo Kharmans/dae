@@ -1,3 +1,9 @@
+
+## 0.8.18
+* Fix for some deprecation warnings.
+* Added DAE.addAutoFields(srring[]) which adds to the auto complete list for active effect edits.
+* New option for argument evaluation when applying effects. If you apply an effect to a target token, by default @values are evaluated in the context of the caster/attacker and then the effect is created on the target. If you specify ##field, the evaluation will be deferred and evaluated on the target token.
+
 ## 0.8.17
 * Fix for saving throws when use ability.save instead of ability.mod is set.
 * Fix for item data passed via macro arguments.

@@ -1,5 +1,5 @@
 import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled } from "./dae";
-import { warn, debug, error } from "../dae";
+import { warn, debug, error, log } from "../dae";
 
 export class GMActionMessage {
   action: string;
@@ -223,7 +223,7 @@ let deleteEffects = async (targets, origin: string) => {
       try {
         await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef=>ef.id));
       } catch(err) {
-        console.error("delete effects failed ", err)
+        warn("delete effects failed ", err)
         // TODO can get thrown since more than one thing tries to delete an effect
       };
     }

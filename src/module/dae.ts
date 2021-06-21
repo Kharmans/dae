@@ -359,7 +359,6 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       }));
   }, []);
   changes.sort((a, b) => a.priority - b.priority);
-
   if (changes.length > 0) debug("Applying change ", this.name, changes)
   // Apply all changes
   for (let c of changes) {
@@ -379,6 +378,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
         } catch (err) { // safeEval failed try a roll
           try {
             console.warn("dae | you are using dice expressions in a numeric field this will be disabled when foundry 0.9 is released")
+            console.warn(`Change is ${c.key}: ${c.value}`)
             //@ts-ignore evaluate - TODO work out how to do this async
             c.value = new Roll(value).evaluate({ async: false }).total;
           } catch(err) {
@@ -624,7 +624,7 @@ function daeCustomEffect(actor, change) {
       const flagName = list[0];
       let formula = list.splice(1).join(" ")
       const rollData = daeRollData(actor);
-      const flagValue = getProperty(rollData.flags, `dae.${flagName}`) ?? "";
+      const flagValue = getProperty(rollData.flags, `dae.${flagName}`) || 0;
       // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
       setProperty(rollData, `flags.dae.${flagName}`, flagValue);
       //@ts-ignore evaluate TODO work out async
@@ -649,8 +649,9 @@ export function replaceAtFields(value, context, maxIterations = 4) {
   // Remove @data references allow a little bit of recursive lookup
   do {
     count += 1;
-    for (let match of value.match(re) || []) 
+    for (let match of value.match(re) || []) {
       result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)))
+    }
   } while (count < maxIterations && result.includes("@"));
   return result;
 }
@@ -997,6 +998,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
 
   // TODO work out item uuid
   returnChange.value = replaceAtFields(returnChange.value, contextToUse, 2); // limit to a couple of lookups - since @token -> @token
+  returnChange.value = returnChange.value.replace("##", "@");
   switch (change.key) {
     case "macro.itemMacro":
     case "macro.execute": // for macros we want to tokeniz the arguments
@@ -1093,7 +1095,13 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   //@ts-ignore
   let ownedTargets = targetList.filter(t => t.isOwner).map(
     //@ts-ignore
-    t => typeof t === "string" ? t : (t.uuid === "Token.") ? t.actor.uuid : t.uuid
+    t => {
+      if (typeof t === "string") return t;
+      //@ts-ignore t.document
+      if (t.document) return t.document.uuid;
+      //@ts-ignore .uuid
+      return t.uuid;
+    }
   );
   //@ts-ignore
   let unOwnedTargets = targetList.filter(t => !t.isOwner).map(

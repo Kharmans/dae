@@ -8,7 +8,7 @@ import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
 import { cleanArmorWorld, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
-import { DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
+import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect } from './module/daeMacros';
 
 export let setDebugLevel = (debugText: string) => {
@@ -144,7 +144,8 @@ Hooks.once('setup', function() {
     removeAllActorArmorEffects: removeAllActorArmorEffects,
     removeAllTokenArmorEffects: removeAllTokenArmorEffects,
     removeAllItemsArmorEffects: removeAllItemsArmorEffects,
-    cleanArmorWorld: cleanArmorWorld
+    cleanArmorWorld: cleanArmorWorld,
+    addAutoFields: addAutoFields
   }
 });
 

@@ -96,7 +96,6 @@ export function replaceFormulaData(wrapped, ...args) {
   }
   return result;
 }
-
 export function updatePatches() {
   patchAbilitySave();
   patchSpecialTraits();
