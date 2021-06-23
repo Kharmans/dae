@@ -21,7 +21,7 @@ If you've come here because someone said you should use the module, here's a lit
 
 This module modifies how active effects behave over and above what is supported in core. An active effect allows you to modify values on an actor, strength, dexterity and so on. You can create effects directy on an actor or create them on an item and have them transfer to the actor when the item is added to the actor.
 
-DAE does add some features to core Active Effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.
+DAE does add some features to core Active Effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.  
 0. A DAE editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but not addition/deletion.
 1. Transfer effects (from an item) are enabled/disbled according to the following rule which overrides the default behaviour
   * If the item that the effect came from (transfer effect) and the item can't be equipped simply use the "disabled/suspended" setting. You can toggle from the effects tab on the item/character sheet.
@@ -30,30 +30,13 @@ DAE does add some features to core Active Effects, so if the following features 
 3. An extended set of fields you can modify, some of which are custom only fields to support drop down lists of possible value, like all of the traits, immunities some of which you cannot edit in core active effects.
 4. The ability to update derived fields, such as abilities.dex.mod. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
 5. The ability to perform arithmetic in field data definitions, like 
-6. Support for an API that allows non-transfer effects to be applied to a targeet token. In combination with midi-qol it allows you to have spells/weapons/features apply non-transfer effects to other tokens.
 ```
 ceil(@classes.rogue.levels/2)
 ```
-6. A slightly extended active effect editor that provides a list of valid fields, a drop down list of options and drop down lists for restricted field values and the ability to set the priority of an effect.
-7. The ability to call macros when active effects are applied to an actor.
+6. Support for an API that allows non-transfer effects to be applied to a targeet token. In combination with midi-qol it allows you to have spells/weapons/features apply non-transfer effects to other tokens.
 
-## Quick start for dynamic effects users - who are migrating from dynamic effects.
-Pick an actor and do
-```
-DAE.migrateActorItems(game.actors.getName("The name of the actor")).
-```
-The actor should have the items migrated (and the transferred effects applied). You should be able to see the values on the actor correctly calculated. (Also see the section **Migrating from DynamicEffects**)
-
-To see the effects active on the actor use (as a macro or from the console)
-```
-new DAE.ActiveEffects({actor: game.actors.getName("Actor's name")}, {}).render(true)
-```
-or choose "DAE" from the character sheet title bar. Or you can do (from the console)
-```
-game.actors.getName("Actor Name").effects
-```
-
-Functions that previously started with "DynamicEffects." are now "DAE.".  
+7. A slightly extended active effect editor that provides a list of valid fields, a drop down list of options and drop down lists for restricted field values and the ability to set the priority of an effect.
+8. The ability to call macros when active effects are applied to an actor.
 
 ## Active Effect Expiry
 Expiry of effects requires additional modules to be installed.
@@ -79,20 +62,14 @@ Requires times-up installed and active.
 
 ## Major Features not implemented
 * Sample compendia. Only has a few items. I reccommend the excellent DAE SRD module that has many items/spells created
-* From at least dnd 0.95 up to dnd5e 0.98 there is a problem will all monsters in the monster compendium and the data.data.bonuses.mwak/rwak/msak/rsak bonuses. The problem manifests as an error when creating an Active Effect to update these bonuses. A supplied function, 
-```
-DAE.fixupBonuses()
-```
- will correct the problem in the Monsters SRD compendium and for all actors in the world.  
 
  ## Useful bits.
- * One of the most common things to do with dynamic effects is to create a damage bonus as a number of dice based on level. For DAE this requires a specific syntax in the damage bonus field. **in 0.7.3** this seems to cause a problem with critical hit resolution in dnd5e, so the DAE bonus is converted when applied to the actor.  
- To roll a number of d6 equal to 1/2 the rogue level rounded up use, in any of the damage bonus fields.
+ * One of the most common things to do with dynamic effects is to create a damage bonus as a number of dice based on level. For DAE this requires a specific syntax in the damage bonus field. 
  ```
  (ceil(@classes.rogue.levels/2))d6
  ```
 * Changing actor spellDC. The way that works is to use Bonuses Spell DC. Anything else won't do what you want.
-* Ability Saving Throw bonuses. DND5e does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
+* Ability Saving Throw bonuses. The supplied DND5E system does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
 * Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified value to the existing data.
 * Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
 
@@ -261,9 +238,10 @@ Allows modification of the ability modifier.
 Provides a bonus to ability saves. This is only active if the "Use ability save field when rolling saving throws" module setting is enabled. This will use the save plus rather than the ability modifier when rolling saving throws.
 * "data.spells.pact.level"
 * "data.spells[1-9].override"
-* "data.spellspact.override" 
-* flags.dnd5e.initiativeAdv, flags.dnd5e.initiativeDisadv. Give adv/disadv on initiative rolls.
+* "data.spellspact.override"  
 Spell slots.value and spellslots.max are not able to be modified with DAE.
+
+* flags.dnd5e.initiativeAdv, flags.dnd5e.initiativeDisadv. Give adv/disadv on initiative rolls.
 
 * "macro.execute"                     CUSTOM
 * "macro.itemMacro"                   CUSTOM
@@ -351,7 +329,7 @@ The macro functions in dynamicitems have been replaced in DAE with the following
   ```
   new DAE.ActiveEffects(actor, {}).render(true)
   ```
-  * Display a form  enabled/disabled passive and active effects for the selected token. Effects cannot be edited but deleted **TODO** allow edits
+  * Display a form with enabled/disabled passive and active effects for the selected token. 
 
 ```
 DAE.doEffects(item, activate, targets, {whisper = false, spellLevel = 0, damageTotal = null})
@@ -361,7 +339,7 @@ activate (boolean) enables/disables the actor effects.
 targets is an array of target tokens or token ids.
 
 ### Integration with midi-qol ###
-When rolling an item (weapon, spell, feature, tool, consumable) non-transfer active effects are applied to the targeted tokens. If the definition of the item indicates that it is self then effects are applied to self. So, a bless spell when cast will apply the active effects to the targeted tokens. 
+When rolling an item (weapon, spell, feature, tool, consumable) using midi-qol, non-transfer active effects are applied to the targeted tokens. If the definition of the item indicates that it is self then effects are applied to self. So, a bless spell when cast will apply the active effects to the targeted tokens. 
 
 midi-qol uses the foundry targeting system to decide who to apply effects to. If a spell is marked as target self then the effects are applied to the casting/using actor. 
 
@@ -373,6 +351,13 @@ https://gitlab.com/tposney/midi-qol
 If the underlying spell, wepaon, feat, consumable etc has a duration then the active effects for that item will be applied to the targeted tokens (or self if the item is specified as self) and after the duration specified in the item the effects will be removed. So a bless spell with a duration of 1 minute will apply the active effect bonuses for 1 minute of gametime. A potion of giant strength will apply the new strength for the duration specified in the potion consumable. There are a few sample items in the premade compendium to get you started.
 
 https://gitlab.com/tposney/about-time  
+
+### Integration with times-up
+Times-up is the preferred way to expire effects, since as well as time based expiration it support duration in rounds/turns.
+
+In addition times-up provides some special expirations for effects, turn start and turn end which will cause the effect to expire at the start/end of the characteres turn.
+
+times-up also provides 2 macro repeat settings (turn start/turn end). If set for an effect that has a macro.execute/macro.itemMacro setting, the macro will be called at the start/end of the characters turn, with args[0] === "each". You can use this setting for damage over time effects.
 
 ### Integration with GM-Notes.
 

@@ -9,7 +9,7 @@ import { cleanArmorWorld, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAll
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
-import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect } from './module/daeMacros';
+import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken } from './module/daeMacros';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
@@ -145,7 +145,8 @@ Hooks.once('setup', function() {
     removeAllTokenArmorEffects: removeAllTokenArmorEffects,
     removeAllItemsArmorEffects: removeAllItemsArmorEffects,
     cleanArmorWorld: cleanArmorWorld,
-    addAutoFields: addAutoFields
+    addAutoFields: addAutoFields,
+    createToken: createToken
   }
 });
 

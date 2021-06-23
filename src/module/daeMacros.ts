@@ -77,6 +77,11 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
   return teleport(token, target.scene, target.token.x + xGridOffset * target.scene.data.grid, target.token.y + yGridOffset * canvas.scene.data.grid)
 }
 
+export async function createToken (tokenData, x, y) {
+  let targetSceneId = canvas.scene.id;
+  requestGMAction(GMAction.actions.createToken, {userId: game.user.id, targetSceneId, tokenData, x, y})
+}
+
 export let teleport = async (token: Token, targetScene, xpos, ypos) => {
   let x = parseInt(xpos);
   let y = parseInt(ypos);
@@ -96,6 +101,7 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
     //@ts-ignore
     CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
     let sourceSceneId = canvas.scene.id;
+    
     requestGMAction(GMAction.actions.recreateToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     canvas.pan({ x: xpos, y: ypos });
     return true;

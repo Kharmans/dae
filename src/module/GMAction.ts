@@ -244,8 +244,8 @@ let deleteToken = async (userId: string, data: {startSceneId: string, tokenData:
   //@ts-ignore
   await startScene.deleteEmbeddedDocuments("Token", data.tokenData._id);
 }
-// delete a token from the specified scene and recreate it on the target scene.
-let createToken = async (userId: string, data: {targetSceneId: string, tokenData: {}, x: number, y: number}) => {
+
+export async function createToken(userId: string, data: {targetSceneId: string, tokenData: {}, x: number, y: number}) {
   //@ts-ignore
   let scenes = game.scenes;
   let targetScene = scenes.get(data.targetSceneId);
@@ -353,7 +353,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         if (!timesUpInstalled) { // do the kludgey old form removal
           let doRemoveEffect = async (tokenUuid, removeEffect) => {
             //@ts-ignore
-            const token = window.DAE.DAEfromUuid(tokenUuid)
+            const actor = window.DAE.DAEfromUuid(tokenUuid).actor;
             let removeId = removeEffect._id;
             if (removeId) {
               await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])

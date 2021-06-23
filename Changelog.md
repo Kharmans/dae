@@ -1,4 +1,7 @@
 
+## 0.8.20
+* Fix for deleting expired effects
+
 ## 0.8.19
 * Fix for effect expriy calculation
 
