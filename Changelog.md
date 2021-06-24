@@ -1,4 +1,6 @@
 
+## 0.8.23
+* Fix for new bug when removing concentration with spell templates not set
 ## 0.8.22
 [EXPERIMENTAL] Which means don't upgrade to this version 5 minutes before game time. 0..8.21 remains available via manifest link.
 * Possible fix for longstanding error when apply CUB conditions in tandem with other effects
