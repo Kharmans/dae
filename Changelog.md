@@ -1,4 +1,8 @@
 
+## 0.8.22
+[EXPERIMENTAL] Which means don't upgrade to this version 5 minutes beofe game time.
+* Possible fix for longstanding error when apply CUB conditons in tandem with other conditions
+
 ## 0.8.21
 Fix for @item.level throwing an error.
 Fix for broken repeated replace in replace @ fields.

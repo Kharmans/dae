@@ -157,7 +157,7 @@ export class ValidSpec {
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
-      // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
+        // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -368,20 +368,20 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       c.value = c.value.replace(/@data./g, "@");
     }
     //@ts-ignore
-    if (c.mode !==  CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
-      if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string" ) {
+    if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
+      if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value)
         let value = replaceAtFields(c.value, daeRollData(this));
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
-           //@ts-ignore - this will throw an error if there are roll expressions
-            c.value = Roll.safeEval(value)
+          //@ts-ignore - this will throw an error if there are roll expressions
+          c.value = Roll.safeEval(value)
         } catch (err) { // safeEval failed try a roll
           try {
             console.warn("dae | you are using dice expressions in a numeric field this will be disabled when foundry 0.9 is released")
             console.warn(`Change is ${c.key}: ${c.value}`)
             //@ts-ignore evaluate - TODO work out how to do this async
             c.value = new Roll(value).evaluate({ async: false }).total;
-          } catch(err) {
+          } catch (err) {
             console.warn("change value calculation failed for", this, c);
             console.warn(err)
           }
@@ -610,7 +610,7 @@ function daeCustomEffect(actor, change) {
       const ad = actor.data.data;
       const spellcastingAbility = ad.abilities[ad.attributes.spellcasting];
       ad.attributes.spelldc = spellcastingAbility ? spellcastingAbility.dc : 8 + ad.attributes.prof;
-      
+
       if (actor.items) {
         actor.items.forEach(item => {
           item.getSaveDC();
@@ -633,7 +633,7 @@ function daeCustomEffect(actor, change) {
       return true;
 
     case "data.attributes.ac.value":
-      if (change.value === "AutoCalc")  {
+      if (change.value === "AutoCalc") {
         actor.data.data.attributes.ac.value = computeAC(actor, actor.data.data.abilities.dex.mod);
       }
       return true;
@@ -707,7 +707,7 @@ function doCustomArrayValue(actor, current, change, validValues) {
 */
 function prepareData(wrapped) {
   debug("prepare data: before passes", this.name, this.data._source);
-  this.overrides = {};7
+  this.overrides = {}; 7
   wrapped();
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
     if (applyBaseAC && this.data.type === "character" && !this.data.flags[game.system.id]?.isPolymorphed) {
@@ -762,7 +762,7 @@ async function addCVChange(actor, change, tokens, CV) {
 
 async function handleAddConcentration(actor, effect, tokens) {
   let concentrationLabel = game.cub?.active ? game.settings.get("combat-utility-belt", "concentratorConditionName") : "Concentrating";
-  const isConcentration = effect.label === concentrationLabel;
+  const isConcentration = effect.data.label === concentrationLabel;
   if (!isConcentration) return false;
 }
 
@@ -786,6 +786,103 @@ async function handleRemoveConcentration(effect, tokens) {
   }
 }
 
+export async function createActiveEffect(activeEffect, options, userId) {
+  if (game.user.id !== userId) return;
+  const parent = activeEffect.parent;
+  //@ts-ignore documentClass TODO
+  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return;
+  const theEffects = Array.isArray(activeEffect) ? activeEffect : [activeEffect];
+  const token = parent.isToken ? parent.token : parent.getActiveTokens()[0];
+  //@ts-ignore
+  const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
+  //@ts-ignore
+  const CV = conditionalVisibilityActive ? window.ConditionalVisibility : null;
+  //@ts-ignore
+  const tokenMagic = window.TokenMagic;
+  for (let effect of theEffects) {
+    if (token) {
+      if (effect.data.changes) {
+        for (let change of effect.data.changes) {
+          if (CV && change.key) addCVChange(parent, change, [token], CV); //TODO check disabled
+          if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
+          if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
+        }
+      }
+      if (checkConcentration)  handleAddConcentration(parent, effect, [token]);
+    }
+  };
+  //TODO clean this up eventually
+   daeMacro("on", parent, theEffects.map(ef => ef.data), {});
+  return true;
+}
+
+
+export async function deleteActiveEffect(effect, diff, userId) {
+  if (userId !== game.user.id) return;
+  //@ts-ignore documentClass
+  if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return;
+  const actor = effect.parent;
+  const token = actor.isToken ? actor.token : actor.getActiveTokens()[0];
+  //@ts-ignore
+  //  const checkConcentration = (cubActive && window.MidiQOL?.configSettings()?.concentrationAutomation) 
+  //@ts-ignore
+  const checkConcentration = window.MidiQOL?.configSettings()?.concentrationAutomation;
+
+  //@ts-ignore
+  const CV = window.ConditionalVisibility && undefined;
+  //@ts-ignore
+  const tokenMagic = window.TokenMagic;
+  if (token && effect.data.changes) {
+    for (let change of effect.data.changes) {
+      if (cubActive && change.key === "macro.CUB")
+         await game.cub.removeCondition(change.value, [token], { warn: false });
+      if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
+      if (CV)  removeCVChange(actor, change, [token], CV);
+    }
+  }
+  if (checkConcentration)  handleRemoveConcentration(effect, [token]);
+  // TODO clean this up eventually
+   daeMacro("off", actor, effect.data, {});
+  return true;
+}
+
+
+async function updateActiveEffect(activeEffect, changes, options, userId) {
+  if (userId !== game.user.id) return;
+  const parent = activeEffect.parent;
+  //@ts-ignore documentClass TODO
+  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return;
+  const token = parent.isToken ? parent.token : parent.getActiveTokens()[0];
+  //@ts-ignore
+  const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
+  //@ts-ignore
+  const CV = window.ConditionalVisibility && undefined;
+  //@ts-ignore
+  const tokenMagic = window.TokenMagic;
+  const disabled = activeEffect.data.disabled;
+  if (changes.disabled === undefined) return;
+
+  // Just deal with equipped etc
+  warn("add active effect actions", parent, changes)
+  if (token) {
+    if (changes.disabled) {
+      for (let change of activeEffect.data.changes) {
+        if (CV) removeCVChange(parent, change, [token], CV);
+        if (cubActive && change.key === "macro.CUB") game.cub.removeCondition(change.value, [token], {warn: false});
+        if (tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(parent, change, [token], tokenMagic);
+      }
+    } else {
+      for (let change of activeEffect.data.changes) {
+        if (CV) addCVChange(parent, change, [token], CV);
+        if (cubActive && change.key === "macro.CUB") game.cub.addCondition(change.value, [token]);
+        if (tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(parent, change, [token], tokenMagic);
+      }
+    }
+  }
+  return true;
+}
+
+// TODO remove this
 export async function preCreateActiveEffect(activeEffect, effectData, options, userId) {
   const parent = activeEffect.parent;
   //@ts-ignore documentClass TODO
@@ -796,7 +893,7 @@ export async function preCreateActiveEffect(activeEffect, effectData, options, u
   const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
 
   //@ts-ignore
-  
+
   const CV = conditionalVisibilityActive ? window.ConditionalVisibility : null;
   //@ts-ignore
   const tokenMagic = window.TokenMagic;
@@ -808,7 +905,9 @@ export async function preCreateActiveEffect(activeEffect, effectData, options, u
         if (effect.changes) {
           for (let change of effect.changes) {
             if (CV && change.key) addCVChange(parent, change, [token], CV); //TODO check disabled
-            if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
+            if (cubActive && change.key === "macro.CUB") {
+              setTimeout(() => game.cub.addCondition(change.value, [token], 250));
+            }
             if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
           }
         }
@@ -822,6 +921,7 @@ export async function preCreateActiveEffect(activeEffect, effectData, options, u
   return true;
 }
 
+// TODO remove this
 export async function preDeleteActiveEffect(effect, ...args) {
   //@ts-ignore documentClass
   if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return;
@@ -841,7 +941,9 @@ export async function preDeleteActiveEffect(effect, ...args) {
     const actor = effect.parent;
     if (token && effect.data.changes) {
       for (let change of effect.data.changes) {
-        if (cubActive && change.key === "macro.CUB") await game.cub.removeCondition(change.value, [token], { warn: false });
+        if (cubActive && change.key === "macro.CUB") {
+          setTimeout(() => game.cub.removeCondition(change.value, [token], { warn: false }, 100));
+        }
         if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
         if (CV) await removeCVChange(actor, change, [token], CV);
       }
@@ -854,7 +956,7 @@ export async function preDeleteActiveEffect(effect, ...args) {
   return true;
 }
 
-
+// TODO remove this
 function preUpdateActiveEffect(activeEffect, changes, options, userCalendarSpec) {
   const parent = activeEffect.parent;
   //@ts-ignore documentClass TODO
@@ -875,13 +977,13 @@ function preUpdateActiveEffect(activeEffect, changes, options, userCalendarSpec)
       if (newEffect.disabled) {
         for (let change of newEffect.data.changes) {
           if (CV) removeCVChange(parent, change, [token], CV);
-          if (cubActive && change.key === "macro.CUB") await game.cub.removeCondition(change.value, [token]);
+          if (cubActive && change.key === "macro.CUB") await game.cub.removeCondition(change.value, token, { warn: false });
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
         }
       } else {
         for (let change of newEffect.data.changes) {
           if (CV) addCVChange(parent, change, [token], CV);
-          if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
+          if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, token);
           if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
         }
       }
@@ -892,20 +994,19 @@ function preUpdateActiveEffect(activeEffect, changes, options, userCalendarSpec)
 }
 
 export function getSelfTarget(actor) {
-    if (actor.token) return actor.token;
-  const speaker = ChatMessage.getSpeaker({actor})
+  if (actor.token) return actor.token;
+  const speaker = ChatMessage.getSpeaker({ actor })
   if (speaker.token) return canvas.tokens.get(speaker.token);
   //@ts-ignore this is a token document not a token ??
-  return new TokenDocument(actor.getTokenData(), {actor});
+  return new TokenDocument(actor.getTokenData(), { actor });
 }
 
-export async function daeMacro(action: string, actor, effects, lastArgOptions = {}) {
+export async function daeMacro(action: string, actor, effectsData, lastArgOptions = {}) {
   let result;
-  if (!Array.isArray(effects)) effects = [effects];
+  if (!Array.isArray(effectsData)) effectsData = [effectsData];
   // Work out what itemdata should be
-
-  warn("Dae macro ", action, actor, effects, lastArgOptions)
-  for (let effectData of effects) {
+  warn("Dae macro ", action, actor, effectsData, lastArgOptions)
+  for (let effectData of effectsData) {
     if (!effectData.changes) continue;
     for (let change of effectData.changes) {
       try {
@@ -931,33 +1032,33 @@ export async function daeMacro(action: string, actor, effects, lastArgOptions = 
           })
         } else args = change.value;
         if (theChange.key === "macro.execute" || theChange.key.includes("macro.itemMacro")) {
-            const macro = await getMacro({key: change.key, name: args[0]}, null, effectData);
-            if (!macro) {
-              //TODO localize this
-              if (action !== "off") {
-                ui.notifications.warn(`macro.execute/macro.itemMacro | No macro ${theChange.value[0]} found`)
-                error(`macro.execute/macro.itemMacro | No macro ${theChange.value[0]} found`);
-                continue;
-              }
-            }
-
-            // insert item data
-          if (furnaceActive) {
-              if (theChange.key === "macro.execute")
-                //@ts-ignore
-                result = await macro.execute(action, ...args.slice(1), lastArg)
-              else
-                //@ts-ignore
-                result = await macro.execute(action, ...args, lastArg)
-            } else {
-              console.warn("Furnace not active - so no macro arguments supported");
-              //@ts-ignore
-              result = macro.execute({ actor });
+          const macro = await getMacro({ key: change.key, name: args[0] }, null, effectData);
+          if (!macro) {
+            //TODO localize this
+            if (action !== "off") {
+              ui.notifications.warn(`macro.execute/macro.itemMacro | No macro ${theChange.value[0]} found`)
+              error(`macro.execute/macro.itemMacro | No macro ${theChange.value[0]} found`);
+              continue;
             }
           }
-        } catch (err) {
-          console.warn(err);
+
+          // insert item data
+          if (furnaceActive) {
+            if (theChange.key === "macro.execute")
+              //@ts-ignore
+              result = await macro.execute(action, ...args.slice(1), lastArg)
+            else
+              //@ts-ignore
+              result = await macro.execute(action, ...args, lastArg)
+          } else {
+            console.warn("Furnace not active - so no macro arguments supported");
+            //@ts-ignore
+            result = macro.execute({ actor });
+          }
         }
+      } catch (err) {
+        console.warn(err);
+      }
     };
   }
 }
@@ -997,7 +1098,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     whisper: whisper,
     change: JSON.stringify(change.toJSON),
     itemId: itemId
-  }, context, {overwrite: false});
+  }, context, { overwrite: false });
 
   // TODO work out item uuid
   returnChange.value = replaceAtFields(returnChange.value, contextToUse, 2); // limit to a couple of lookups - since @token -> @token
@@ -1022,10 +1123,10 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   return returnChange;
 }
 
-export async function getMacro({key, name}, itemData, effectData) {
+export async function getMacro({ key, name }, itemData, effectData) {
   if (key === "macro.execute") {
     // the first argument conatins the macro name
-    return  game.macros.getName(name);
+    return game.macros.getName(name);
   } else if (key.startsWith("macro.itemMacro")) {
     // Get the macro command for the macro TODO look at using an item name as well?
 
@@ -1093,7 +1194,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
 
   // Split up targets according to whether they are owned on not. Owned targets have effects applied locally, only unowned are passed ot the GM
   const targetList = Array.from(targets);
-  const stringTokens = targetList.filter(t=> typeof t === "string");
+  const stringTokens = targetList.filter(t => typeof t === "string");
   if (stringTokens.length) console.warn("String tokens in apply non transfer are ", stringTokens);
   //@ts-ignore
   let ownedTargets = targetList.filter(t => t.isOwner).map(
@@ -1112,8 +1213,10 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
     t => typeof t === "string" ? t : (t.uuid === "Token.") ? t.actor.uuid : t.uuid
   );
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
-  requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
-  applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
+  if (unOwnedTargets.length > 0)
+    requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
+  if (ownedTargets.length > 0)
+    applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
 }
 
 // Update the actor active effects when editing an owned item
@@ -1439,9 +1542,16 @@ export function daeInitActions() {
 
 
   // macros are called on active effect creationg and deletion
+  /* TODO remove this
   Hooks.on("preCreateActiveEffect", preCreateActiveEffect);
   Hooks.on("preDeleteActiveEffect", preDeleteActiveEffect);
   Hooks.on("preUpdateActiveEffect", preUpdateActiveEffect); //consider on/off for enable/disable
+  */
+  Hooks.on("createActiveEffect", createActiveEffect);
+  Hooks.on("deleteActiveEffect", deleteActiveEffect);
+  Hooks.on("updateActiveEffect", updateActiveEffect); //consider on/off for enable/disable
+
+
 
   // Add the active effects title bar actions
   Hooks.on('renderActorSheet', initActorSheetHook);
