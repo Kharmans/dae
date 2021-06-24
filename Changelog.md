@@ -1,7 +1,7 @@
 
 ## 0.8.22
-[EXPERIMENTAL] Which means don't upgrade to this version 5 minutes beofe game time.
-* Possible fix for longstanding error when apply CUB conditons in tandem with other conditions
+[EXPERIMENTAL] Which means don't upgrade to this version 5 minutes before game time. 0..8.21 remains available via manifest link.
+* Possible fix for longstanding error when apply CUB conditions in tandem with other effects
 
 ## 0.8.21
 Fix for @item.level throwing an error.

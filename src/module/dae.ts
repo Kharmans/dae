@@ -777,7 +777,7 @@ async function handleRemoveConcentration(effect, tokens) {
   const concentrationData = getProperty(actor.data.flags, "midi-qol.concentration-data");
   if (!concentrationData) return;
   try {
-    concentrationData.templates.forEach(templateUuid => DAEfromUuid(templateUuid).delete());
+    concentrationData.templates?.forEach(templateUuid => DAEfromUuid(templateUuid).delete());
     requestGMAction(GMAction.actions.deleteEffects, { targets: concentrationData.targets, origin: concentrationData.uuid });
     await actor.unsetFlag("midi-qol", "concentration-data")
 
