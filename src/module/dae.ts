@@ -646,10 +646,11 @@ export function replaceAtFields(value, context, maxIterations = 4) {
   if (!value.includes("@")) return value;
   let re = /@[\w\.]+/g
   let result = duplicate(value);
+  result = result.replace("@item.level", "@itemLevel") // fix for outdate item.level
   // Remove @data references allow a little bit of recursive lookup
   do {
     count += 1;
-    for (let match of value.match(re) || []) {
+    for (let match of result.match(re) || []) {
       result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)))
     }
   } while (count < maxIterations && result.includes("@"));
@@ -769,15 +770,17 @@ async function handleRemoveConcentration(effect, tokens) {
   // TODO fix this to be localised
   let actor = effect.parent;
   let concentrationLabel = game.cub?.active ? game.settings.get("combat-utility-belt", "concentratorConditionName") : "Concentrating";
+  // Change this to 
   let isConcentration = effect.data.label === concentrationLabel;
 
   if (!isConcentration) return false;
   const concentrationData = getProperty(actor.data.flags, "midi-qol.concentration-data");
   if (!concentrationData) return;
   try {
-    await actor.unsetFlag("midi-qol", "concentration-data")
     concentrationData.templates.forEach(templateUuid => DAEfromUuid(templateUuid).delete());
-     requestGMAction(GMAction.actions.deleteEffects, { targets: concentrationData.targets, origin: concentrationData.uuid });
+    requestGMAction(GMAction.actions.deleteEffects, { targets: concentrationData.targets, origin: concentrationData.uuid });
+    await actor.unsetFlag("midi-qol", "concentration-data")
+
   } catch (err) {
     console.warn("dae | error deleteing effects: ", err)
   }
@@ -983,6 +986,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     itemData: "@itemData",
     item: "@item",
     spellLevel: spellLevel,
+    itemLevel: spellLevel,
     damage: damageTotal,
     itemCardId: itemCardId,
     unique: randomID(),
@@ -994,7 +998,6 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     change: JSON.stringify(change.toJSON),
     itemId: itemId
   }, context, {overwrite: false});
-  contextToUse["item.level"] = spellLevel;
 
   // TODO work out item uuid
   returnChange.value = replaceAtFields(returnChange.value, contextToUse, 2); // limit to a couple of lookups - since @token -> @token

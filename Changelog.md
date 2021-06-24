@@ -1,4 +1,8 @@
 
+## 0.8.21
+Fix for @item.level throwing an error.
+Fix for broken repeated replace in replace @ fields.
+
 ## 0.8.20
 * Fix for deleting expired effects
 
