@@ -69,6 +69,7 @@ Hooks.once('ready', async function () {
   if (game.modules.get("midi-qol")?.active) {
     daeSpecialDurations["1Action"] = i18n("dae.1Action");
     daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
+    daeSpecialDurations["1Reaction"] = i18n("dae.1Reaction")
     let attackTypes = ["mwak", "rwak", "msak", "rsak"];
     if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
     attackTypes.forEach(at => {

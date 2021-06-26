@@ -596,6 +596,7 @@ function daeCustomEffect(actor, change) {
     case "data.abilities.wis.dc":
     case "data.abilities.cha.dc":
     case "data.abilities.con.dc":
+    case "data.bonuses.spell.dc":
     case "data.attributes.powerForceLightDC":
     case "data.attributes.powerForceDarkDC":
     case "data.attributes.powerForceUnivDC":
@@ -604,7 +605,7 @@ function daeCustomEffect(actor, change) {
       //@ts-ignore
       value = Number.isNumeric(change.value) ? parseInt(change.value) : 0;
       if (value) {
-        setProperty(actor.data, change.key, current + value);
+        setProperty(actor.data, change.key, Number(current) + value);
       }
       // Spellcasting DC
       const ad = actor.data.data;
