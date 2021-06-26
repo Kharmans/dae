@@ -251,7 +251,8 @@
     "dae.ConditionalVisibility": "Conditional Visibility",
     "dae.ConditionalVisibilityVision": "CV Vision",
     "dae.noDupDamageMacro.Name": "중복 피해 매크로 없음",
-    "dae.noDupDamageMacro.Hint": "이 옵션을 선택하면 중복된 피해 매크로가 무시된다."
+    "dae.noDupDamageMacro.Hint": "이 옵션을 선택하면 중복된 피해 매크로가 무시된다.",
+    "dae.DisableEffects.Name": "모든 활성화 효과 처리 비활성화",
+    "dae.DisableEffects.Hint": "설정 시 캐릭터에게 활성화 효과가 적용되지 않는다. 활성화 효과에 의해 수정된 캐릭터 수치를 변경하려는 경우에 유용하다."
 
 }
-
