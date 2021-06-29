@@ -43,7 +43,7 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
       parts: parts,
       data: data,
       title: game.i18n.format("DND5E.SavePromptTitle", {ability: label}),
-      halflingLucky: this.getFlag("dnd5e", "halflingLucky"),
+      halflingLucky: game.system.id === "dnd5e" ? this.getFlag("dnd5e", "halflingLucky") : undefined,
       messageData: {
       //@ts-ignore
       speaker: options.speaker || ChatMessage.getSpeaker({actor: this}),
@@ -58,16 +58,7 @@ var dice;
 
 export function patchingInitSetup() {
   warn("system is ", game.system)
-  //@ts-ignore
-  if (game.system.id === "dnd5e") {
-    //@ts-ignore
-    dice = game.dnd5e.dice;
-  }
-  //@ts-ignore
-  else if (game.system.id === "sw5e") {
-    //@ts-ignore
-    dice = game.sw5e.dice;
-  }
+  dice = game[game.system.id].dice
   if (!dice) console.error("Dice not defined! Many things won't work")
   else d20Roll = dice?.d20Roll;
 }
@@ -281,8 +272,8 @@ export function getInitiativeFormula() {
   // Construct initiative formula parts
   let nd = 1;
   let mods = "";
-  const adv = actor.getFlag("dnd5e", "initiativeAdv");
-  const disadv = actor.getFlag("dnd5e", "initiativeDisadv");
+  const adv = actor.getFlag(game.system.id, "initiativeAdv");
+  const disadv = actor.getFlag(game.system.id, "initiativeDisadv");
   if (adv && !disadv) {
     nd = 2;
     mods = "kh";
@@ -290,12 +281,12 @@ export function getInitiativeFormula() {
     nd = 2;
     mods = "kl";
   }
-  if (actor.getFlag("dnd5e", "halflingLucky")) mods += "r1=1";
+  if (game.system.id === "dnd5e" && actor.getFlag("dnd5e", "halflingLucky")) mods += "r1=1";
 
   const parts = [`${nd}d20${mods}`, init.mod, (init.prof !== 0) ? init.prof : null, (init.bonus !== 0) ? init.bonus : null];
 
   // Optionally apply Dexterity tiebreaker
-  const tiebreaker = game.settings.get("dnd5e", "initiativeDexTiebreaker");
+  const tiebreaker = game.settings.get(game.system.id, "initiativeDexTiebreaker");
   if ( tiebreaker ) parts.push(actor.data.data.abilities.dex.value / 100);
   return parts.filter(p => p !== null).join(" + ");
 };

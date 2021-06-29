@@ -18,44 +18,42 @@ export let activateItem = () => {
 
 let tokenScene = (tokenName, sceneName) => {
   if (!sceneName) {
-    //@ts-ignore
-    for (let scene of game.scenes.entities) {
-      //@ts-ignore scene.data.tokens
-      let token = scene.data.tokens.find(t => t.name === tokenName);
-      if (token) {
-        return { scene, token };
-      }
+    for (let scene of game.scenes) {
+      //@ts-ignore
+      let found = scene.tokens.getName(tokenName);
+      if (found) return {scene, found}
     }
   } else {
     //@ts-ignore
-    let scene = game.scenes.entities.find(t => t.name === sceneName);
+    let scene = game.scenes.getName(sceneName)
     if (scene) {
-      //@ts-ignore scene.data.tokens
-      let token = scene.data.tokens.find(t => t.name === tokenName);
-      if (token) {
-        return { scene, token };
+      //@ts-ignore
+      let found = scene.tokens.getName(tokenName)
+      if (found) {
+        return { scene, found };
       }
     }
   }
-  return null;
+  return {scene: null, tokenDocument: null};
 }
 
 export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
-  let target = tokenScene(targetTokenName, targetSceneName);
+  let {scene, found} = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
     warn("Dynmaiceffects | moveToken: Token not found");
     return ("Token not found")
   }
-  if (!target) {
+  if (!found) {
     warn("dae | moveToken: Target Not found");
     return `Token ${targetTokenName} not found`;
   }
   return await requestGMAction(GMAction.actions.recreateToken,
     { userId: game.user.id,
       startSceneId: canvas.scene.id,
-       targetSceneId: target.scene.id, tokenData: token.data,
-       x: target.token.x + xGridOffset * canvas.scene.data.grid,
-       y: target.token.y + yGridOffset * canvas.scene.data.grid
+      tokenUuid: token.uuid,
+       targetSceneId: scene.id, tokenData: token.data,
+       x: found.data.x + xGridOffset * canvas.scene.data.grid,
+       y: found.data.y + yGridOffset * canvas.scene.data.grid
   });
 }
 
@@ -64,17 +62,17 @@ export let renameToken = async(token: Token, newName: string) => {
 }
 
 export let teleportToToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
-  let target = tokenScene(targetTokenName, targetSceneName);
+  let {scene, found}  = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
     error("dae| teleportToToken: Token not found");
     return ("Token not found")
   }
-  if (!target) {
+  if (!found) {
     error("dae| teleportToToken: Target Not found");
     return `Token ${targetTokenName} not found`;
   }
   //@ts-ignore target.scene.data.grid
-  return teleport(token, target.scene, target.token.x + xGridOffset * target.scene.data.grid, target.token.y + yGridOffset * canvas.scene.data.grid)
+  return teleport(token, scene, found.data.x + xGridOffset * canvas.scene.data.grid, found.data.y + yGridOffset * canvas.scene.data.grid)
 }
 
 export async function createToken (tokenData, x, y) {
@@ -83,7 +81,7 @@ export async function createToken (tokenData, x, y) {
 }
 
 export let teleport = async (token: Token, targetScene, xpos, ypos) => {
-  let x = parseInt(xpos);
+  let x = Number(xpos);
   let y = parseInt(ypos);
 
   if (isNaN(x) || isNaN(y)) {
@@ -102,7 +100,7 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
     CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
     let sourceSceneId = canvas.scene.id;
     
-    requestGMAction(GMAction.actions.recreateToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
+    requestGMAction(GMAction.actions.recreateToken, { userId: game.user.id, tokenUuid: token.uuid, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     canvas.pan({ x: xpos, y: ypos });
     return true;
   }
@@ -111,7 +109,7 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
   Hooks.once("canvasReady", async () => {
     await requestGMAction(GMAction.actions.createToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     // canvas.pan({ x: xpos, y: ypos });
-    await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
+    await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, tokenUuid: token.uuid});
   })
 
   // Need to stop animation since we are going to delete the token and if that happens before the animation completes we get an error

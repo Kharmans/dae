@@ -6,8 +6,7 @@ export class GMActionMessage {
   sender: string;
   targetGM: string; // gm id
   data: {};
-  constructor(action: string, sender: string, targetGM: string, data: {})
-  {
+  constructor(action: string, sender: string, targetGM: string, data: {}) {
     this.action = action;
     this.sender = sender;
     this.targetGM = targetGM;
@@ -36,7 +35,7 @@ export let requestGMAction = async (action: string, data: {}, debugLog: boolean 
   //@ts-ignore
   game.socket.emit(DAE.GMAction._moduleSocket, message, resp => {
     debug("message sent")
-   });
+  });
 }
 
 export class GMAction {
@@ -56,7 +55,7 @@ export class GMAction {
     setTokenFlag: "setTokenFlag",
     setFlag: "setFlag",
     unsetFlag: "unsetFlag",
-    deleteEffects: "deleteEffects"
+    deleteEffects: "deleteEffects",
   }
 
   private static actionQueue = [];
@@ -75,7 +74,7 @@ export class GMAction {
   public static initActions() {
   }
 
-  public static setupActions () {
+  public static setupActions() {
   }
 
   public static readyActions() {
@@ -84,14 +83,14 @@ export class GMAction {
   }
 
   static chatEffects = (userId: string, actorId: string, itemData, tokenList: string[], flavor: string, whisper: boolean) => {
-    let names = tokenList.filter(tid => canvas.tokens.get(tid)).map(tid=> canvas.tokens.get(tid).name);
+    let names = tokenList.filter(tid => canvas.tokens.get(tid)).map(tid => canvas.tokens.get(tid).name);
     if (names.length > 0) {
       let chatData = {
         user: game.users.get(userId),
-        speaker: {actor: game.actors.get(actorId)},
+        speaker: { actor: game.actors.get(actorId) },
         content: `${flavor} (${itemData.name}): ${names}`,
         type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        flags: { }
+        flags: {}
       };
       //@ts-ignore
       if (whisper) chatData.whisper = ChatMessage.getWhisperRecipients("GM");
@@ -99,7 +98,7 @@ export class GMAction {
     }
   }
 
-  public static async processAction(action:string, userId: string, data: {}) {
+  public static async processAction(action: string, userId: string, data: {}) {
     this.processSingleAction(action, userId, data);
   }
 
@@ -108,7 +107,7 @@ export class GMAction {
     this.processingActions = this.actionQueue.length > 0;
     while (this.processingActions) {
       debug("Processing Actions ", this.actionQueue.length)
-      let {action, userId, data} = this.actionQueue[0];
+      let { action, userId, data } = this.actionQueue[0];
       debug("Processing actions ", action, userId, data)
       await this.processSingleAction(action, userId, data);
       this.actionQueue = this.actionQueue.slice(1)
@@ -116,7 +115,7 @@ export class GMAction {
     }
   }
 
-  public static async processSingleAction(action:string, userId: string, data: {}) {
+  public static async processSingleAction(action: string, userId: string, data: {}) {
     var actorUuid: string;
     //@ts-ignore
     let itemData = data.itemData;
@@ -140,11 +139,11 @@ export class GMAction {
         break;
       case this.actions.setTokenVisibility:
         //@ts-ignore
-        await DAEfromUuid(tokenUuid)?.update({hidden: data.hidden})
+        await DAEfromUuid(tokenUuid)?.update({ hidden: data.hidden })
         break;
       case this.actions.setTileVisibility:
         //@ts-ignore
-        await DAEfromUuid(data.tileUuid)?.update({vlisible: data.hidden})
+        await DAEfromUuid(data.tileUuid)?.update({ vlisible: data.hidden })
         break;
       case this.actions.applyActiveEffects:
         //@ts-ignore
@@ -175,22 +174,22 @@ export class GMAction {
           break;
         }
         //@ts-ignore flagId, value
-          await DAEfromActorUuid(actorUuid)?.setFlag("dae", data.flagId, data.value)
-          break;
+        await DAEfromActorUuid(actorUuid)?.setFlag("dae", data.flagId, data.value)
+        break;
       case this.actions.unsetFlag:
         //@ts-ignore
         await DAEfromActorUuid(actorUuid)?.unsetFlag("dae", data.flagId)
-          break;
+        break;
         break;
       case this.actions.blindToken:
-        await DAEfromUuid(tokenUuid)?.update({vision: false})
+        await DAEfromUuid(tokenUuid)?.update({ vision: false })
         break;
       case this.actions.restoreVision:
-        DAEfromUuid(tokenUuid)?.update({vision: true})
+        DAEfromUuid(tokenUuid)?.update({ vision: true })
         break;
       case this.actions.renameToken:
         //@ts-ignore
-        canvas.tokens.placeables.find(t=> t.id === data.tokenData._id).update({"name": data.newName})
+        canvas.tokens.placeables.find(t => t.id === data.tokenData._id).update({ "name": data.newName })
         break;
       case this.actions.applyTokenMagic:
         let token = DAEfromUuid(tokenUuid);
@@ -203,8 +202,9 @@ export class GMAction {
         break;
       case this.actions.deleteEffects:
         //@ts-ignore
-        await deleteEffects(data.targets, data.origin)
+        await deleteEffects(data.targets, data.origin, data.ignore)
         break;
+
 
       default:
         console.warn("dae invalid message received", action, data)
@@ -212,17 +212,17 @@ export class GMAction {
   }
 }
 
-let deleteEffects = async (targets, origin: string) => {
+let deleteEffects = async (targets, origin: string, ignore: string[]) => {
   for (let idData of targets) {
-    let actor = idData.tokenUuid? DAEfromActorUuid(idData.tokenUuid) : idData.actorUuid ? DAEfromUuid(idData.actorUuid) : undefined;
+    let actor = idData.tokenUuid ? DAEfromActorUuid(idData.tokenUuid) : idData.actorUuid ? DAEfromUuid(idData.actorUuid) : undefined;
     if (!actor) {
       error("could not find actor for ", idData);
     }
-    const effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === origin);
+    const effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === origin && !ignore.includes(ef.uuid));
     if (effectsToDelete?.length > 0) {
       try {
-        await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef=>ef.id));
-      } catch(err) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
+      } catch (err) {
         warn("delete effects failed ", err)
         // TODO can get thrown since more than one thing tries to delete an effect
       };
@@ -230,14 +230,15 @@ let deleteEffects = async (targets, origin: string) => {
   }
 }
 // delete a token from the specified scene and recreate it on the target scene.
-let recreateToken = async (userId: string, data: {startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number}) => {
+let recreateToken = async (userId: string, data: { startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) => {
   createToken(userId, data);
-  deleteToken(userId, data);
+  //@ts-ignore
+  DAEfromUuid(data.tokenUuid)?.delete();
   return;
 }
 
 // delete a token from the specified scene and recreate it on the target scene.
-let deleteToken = async (userId: string, data: {startSceneId: string, tokenData: {}, x: number, y: number}) => {
+let deleteToken = async (userId: string, data: { startSceneId: string, tokenData: {}, x: number, y: number }) => {
   //@ts-ignore
   let scenes = game.scenes;
   let startScene = scenes.get(data.startSceneId);
@@ -245,11 +246,11 @@ let deleteToken = async (userId: string, data: {startSceneId: string, tokenData:
   await startScene.deleteEmbeddedDocuments("Token", data.tokenData._id);
 }
 
-export async function createToken(userId: string, data: {targetSceneId: string, tokenData: {}, x: number, y: number}) {
+export async function createToken(userId: string, data: { targetSceneId: string, tokenData: {}, x: number, y: number }) {
   //@ts-ignore
   let scenes = game.scenes;
   let targetScene = scenes.get(data.targetSceneId);
-  return await targetScene.createEmbeddedEntity('Token', mergeObject(duplicate(data.tokenData), {"x": data.x, "y": data.y, hidden: false}, {overwrite: true, inplace:true}))
+  return await targetScene.createEmbeddedEntity('Token', mergeObject(duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true }))
 }
 
 /* TODO remove
@@ -284,7 +285,7 @@ let applyTokenMagic = async (tokenId: string, effectId: string, duration: number
 */
 export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
-  tokenList.forEach(async tid => {
+  for (let tid of tokenList) {
     const token = DAEfromUuid(tid) || canvas.tokens.get(tid);
     let actor = token.actor ? token.actor : token; // assume if we did not get a token it is an actor
     if (token) {
@@ -293,14 +294,14 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       const origins = actEffects.map(aeData => aeData.origin);
       // find all active effects that are not stackable and have the same origin as one of our new effects
       let removeList = actor.effects.filter(ae => origins.includes(ae.data.origin)
-            && getProperty(ae.data, "flags.dae.transfer") === false
-            && !getProperty(ae.data, "flags.dae.stackable")
+        && getProperty(ae.data, "flags.dae.transfer") === false
+        && !getProperty(ae.data, "flags.dae.stackable")
       );
       if (removeList.length > 0) {
         removeList = removeList.map(ae => ae.data._id);
-        await actor.deleteEmbeddedDocuments("ActiveEffect", removeList)
+        const result = await actor.deleteEmbeddedDocuments("ActiveEffect", removeList)
       }
-      if (activate) { 
+      if (activate) {
         let dupEffects = duplicate(actEffects)
         dupEffects.forEach(ae => {
           setProperty(ae, "flags.dae.token", tid)
@@ -332,7 +333,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
-                const context = {"target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData"};
+                const context = { "target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };
                 change.value = replaceAtFields(duplicate(change.value), context);
               } else {
                 change.value = duplicate(change.value).map(f => {
@@ -355,7 +356,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             //@ts-ignore
             const actor = window.DAE.DAEfromUuid(tokenUuid).actor;
             let removeId = removeEffect._id;
-            if (removeId) {
+            if (removeId && actor.effects.get(removeId)) {
               await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
             }
           }
@@ -377,65 +378,65 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         }
       }
     };
-  });
+  };
 }
 
-export function convertDuration(itemDuration: {units: string, value: number}, inCombat) {
+export function convertDuration(itemDuration: { units: string, value: number }, inCombat) {
   // TODO rewrite this abomination
   const useTurns = inCombat && timesUpInstalled;
-  if (!itemDuration) return {type: "seconds", seconds: 0, rounds: 0, turns: 0};
-  if (!simpleCalendarInstalled ) {
+  if (!itemDuration) return { type: "seconds", seconds: 0, rounds: 0, turns: 0 };
+  if (!simpleCalendarInstalled) {
     switch (itemDuration.units) {
-      case "turn":  
-      case "turns": return {type: useTurns? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value};
-      case "round": 
-      case "rounds": return {type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0}
+      case "turn":
+      case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value };
+      case "round":
+      case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0 }
       case "second":
-      case "seconds": 
-          return {type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds:  itemDuration.value / CONFIG.time.roundTime, turns: 0}
-      case "minute": 
-      case "minutes": 
+      case "seconds":
+        return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0 }
+      case "minute":
+      case "minutes":
         let durSeconds = itemDuration.value * 60
         if (durSeconds / CONFIG.time.roundTime <= 10) {
-          return {type: useTurns ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
+          return { type: useTurns ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0 };
         } else {
-          return {type: "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0};
+          return { type: "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0 };
         }
-      case "hour": 
-      case "hours" :return {type: "seconds", seconds: itemDuration.value * 60 * 60, rounds: 0, turns: 0};
-      case "day": 
-      case "days": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24, rounds: 0, turns: 0};
+      case "hour":
+      case "hours": return { type: "seconds", seconds: itemDuration.value * 60 * 60, rounds: 0, turns: 0 };
+      case "day":
+      case "days": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24, rounds: 0, turns: 0 };
       case "week":
-      case "weeks": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 7, rounds: 0, turns: 0};
-      case "month": 
-      case "months": return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0};
-      case "year": 
-      case "years":return {type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0};
-      case "inst": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1};
-      default: 
+      case "weeks": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 7, rounds: 0, turns: 0 };
+      case "month":
+      case "months": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0 };
+      case "year":
+      case "years": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0 };
+      case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
+      default:
         console.warn("dae | unknown time unit found", itemDuration.units);
-        return {type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined};
+        return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
     }
   } else {
     switch (itemDuration.units) {
-      case "turn":  
-      case "turns": return {type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns:itemDuration.value};
-      case "round": 
-      case "rounds": return {type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0}
-      case "second": return {type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0};
+      case "turn":
+      case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value };
+      case "round":
+      case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0 }
+      case "second": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0 };
       default:
         let interval = {}
         interval[itemDuration.units] = itemDuration.value;
         //@ts-ignore
         const durationSeconds = window.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - game.time.worldTime;
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
-          return {type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0};
+          return { type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };
         } else {
-          return {type: "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0};
+          return { type: "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };
         }
-        
 
-//      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
+
+      //      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
     }
   }
 }

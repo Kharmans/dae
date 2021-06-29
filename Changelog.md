@@ -1,4 +1,9 @@
 
+## 0.8.25
+* Rework of adding cub/tokenmagic etc logic - hopefully more reliable and may reduce conflicts between various effects. Removing multiple TMFX effects should work now. (Don't update 5 minutes before game time).
+* Changes so that concentration removal (in tandem times-up/midi-qol) is cleaner and hopefully does not produce "No such entity in collection messages"
+* Some changes for sw5e
+
 ## 0.8.24
 * Added special duration 1Reaction.
 * Fix for data.bonuses.spell.dc
