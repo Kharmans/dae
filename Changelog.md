@@ -1,6 +1,8 @@
 
+## 0.8.27
+Updated premade items compendium to be correct for AC calcs
+
 ## 0.8.26
-* Renable conditional visibility for the new version: https://github.com/szefo09/conditional-visibility
 * Fix for DAEDeleteActiveEffect causing an error.
 
 ## 0.8.25

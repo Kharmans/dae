@@ -739,12 +739,12 @@ async function removeCVChange(actor, change, tokenDocuments, CV) {
   const tokens = tokenDocuments.map(t=>t.object ? t.object : t)
   if (change.key === "macro.ConditionalVisibility") {
     if (change.value === "hidden")
-      CV?.unHide(tokens);
+      await CV?.unHide(tokens);
     else
-      CV?.setCondition(tokens, change.value, false);
+      await CV?.setCondition(tokens, change.value, false);
   } else if (change.key === "macro.ConditionalVisibilityVision") {
     for (let t of tokens) {
-      t.setFlag("conditional-visibility", change.value, false)
+      await t.setFlag("conditional-visibility", change.value, false)
     }
   }
 }
@@ -753,12 +753,12 @@ async function addCVChange(actor, change, tokenDocuments, CV) {
   const tokens = tokenDocuments.map(t=>t.object ? t.object : t)
   if (change.key === "macro.ConditionalVisibility") {
     if (change.value === "hidden")
-      CV?.hide(tokens)
+      await CV?.hide(tokens)
     else
-      CV?.setCondition(tokens, change.value, true);
+      await CV?.setCondition(tokens, change.value, true);
   } else if (change.key === "macro.ConditionalVisibilityVision") {
     for (let t of tokens) {
-      t.setFlag("conditional-visibility", change.value, true)
+      await t.setFlag("conditional-visibility", change.value, true)
     }
   }
 }
@@ -812,7 +812,7 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
     if (token) {
       if (this.data.changes) {
         for (let change of this.data.changes) {
-          if (CV && change.key) addCVChange(parent, change, [token], CV); //TODO check disabled
+          if (CV && change.key) await addCVChange(parent, change, [token], CV); //TODO check disabled
           if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
           if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
         }
@@ -851,13 +851,13 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
     if (token) {
       if (changes.disabled) {
         for (let change of this.data.changes) {
-          if (CV) removeCVChange(parent, change, [token], CV);
+          if (CV) await removeCVChange(parent, change, [token], CV);
           if (cubActive && change.key === "macro.CUB") await game.cub.removeCondition(change.value, [token], { warn: false });
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
         }
       } else {
         for (let change of this.data.changes) {
-          if (CV) addCVChange(parent, change, [token], CV);
+          if (CV) await addCVChange(parent, change, [token], CV);
           if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
           if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
         }
@@ -890,7 +890,7 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
         if (cubActive && change.key === "macro.CUB")
           await game.cub.removeCondition(change.value, [token], { warn: false });
         if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
-        if (CV) removeCVChange(actor, change, [token], CV);
+        if (CV) await removeCVChange(actor, change, [token], CV);
       }
     }
     // TODO clean this up eventually
