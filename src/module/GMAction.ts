@@ -212,9 +212,10 @@ export class GMAction {
   }
 }
 
-let deleteEffects = async (targets, origin: string, ignore: string[]) => {
+let deleteEffects = async (targets, origin: string, ignore: string[] = []) => {
   for (let idData of targets) {
     let actor = idData.tokenUuid ? DAEfromActorUuid(idData.tokenUuid) : idData.actorUuid ? DAEfromUuid(idData.actorUuid) : undefined;
+    if (actor.actor) actor = actor.actor;
     if (!actor) {
       error("could not find actor for ", idData);
     }

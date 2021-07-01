@@ -735,7 +735,8 @@ async function removeTokenMagicChange(actor, change, tokens, tokenMagic) {
   }
 }
 
-async function removeCVChange(actor, change, tokens, CV) {
+async function removeCVChange(actor, change, tokenDocuments, CV) {
+  const tokens = tokenDocuments.map(t=>t.object ? t.object : t)
   if (change.key === "macro.ConditionalVisibility") {
     if (change.value === "hidden")
       CV?.unHide(tokens);
@@ -748,7 +749,8 @@ async function removeCVChange(actor, change, tokens, CV) {
   }
 }
 
-async function addCVChange(actor, change, tokens, CV) {
+async function addCVChange(actor, change, tokenDocuments, CV) {
+  const tokens = tokenDocuments.map(t=>t.object ? t.object : t)
   if (change.key === "macro.ConditionalVisibility") {
     if (change.value === "hidden")
       CV?.hide(tokens)
@@ -795,37 +797,6 @@ async function handleRemoveConcentration(effect, tokens) {
   return true;
 }
 
-/* TODO remove this
-export async function createActiveEffect(activeEffect, options, userId) {
-  if (game.user.id !== userId) return;
-  const parent = activeEffect.parent;
-  //@ts-ignore documentClass TODO
-  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return;
-  const theEffects = Array.isArray(activeEffect) ? activeEffect : [activeEffect];
-  const token = parent.isToken ? parent.token : parent.getActiveTokens()[0];
-  //@ts-ignore
-  const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
-  //@ts-ignore
-  const CV = conditionalVisibilityActive ? window.ConditionalVisibility : null;
-  //@ts-ignore
-  const tokenMagic = window.TokenMagic;
-  for (let effect of theEffects) {
-    if (token) {
-      if (effect.data.changes) {
-        for (let change of effect.data.changes) {
-          if (CV && change.key) addCVChange(parent, change, [token], CV); //TODO check disabled
-          if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
-          if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
-        }
-      }
-      if (checkConcentration) handleAddConcentration(parent, effect, [token]);
-    }
-  };
-  //TODO clean this up eventually
-  daeMacro("on", parent, theEffects.map(ef => ef.data), {});
-  return true;
-}
-*/
 async function _preCreateActiveEffect(wrapped, data, options, user) {
   const parent = this.parent;
   //@ts-ignore documentClass TODO
@@ -869,7 +840,7 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
     //@ts-ignore
     const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
     //@ts-ignore
-    const CV = window.ConditionalVisibility && undefined;
+    const CV = window.ConditionalVisibility;
     //@ts-ignore
     const tokenMagic = window.TokenMagic;
     const disabled = this.data.disabled;
@@ -911,7 +882,7 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
     checkConcentration = window.MidiQOL?.configSettings()?.concentrationAutomation;
 
     //@ts-ignore
-    const CV = window.ConditionalVisibility && undefined;
+    const CV = window.ConditionalVisibility;
     //@ts-ignore
     const tokenMagic = window.TokenMagic;
     if (token && this.data.changes) {
@@ -936,75 +907,6 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
     else return wrapped(...args)
   }
 }
-
-/* TODO remove this
-export async function deleteActiveEffect(effect, diff, userId) {
-  if (userId !== game.user.id) return;
-  //@ts-ignore documentClass
-  if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return;
-  const actor = effect.parent;
-  const token = actor.isToken ? actor.token : actor.getActiveTokens()[0];
-  //@ts-ignore
-  //  const checkConcentration = (cubActive && window.MidiQOL?.configSettings()?.concentrationAutomation) 
-  //@ts-ignore
-  const checkConcentration = window.MidiQOL?.configSettings()?.concentrationAutomation;
-
-  //@ts-ignore
-  const CV = window.ConditionalVisibility && undefined;
-  //@ts-ignore
-  const tokenMagic = window.TokenMagic;
-  if (token && effect.data.changes) {
-    for (let change of effect.data.changes) {
-      if (cubActive && change.key === "macro.CUB")
-        await game.cub.removeCondition(change.value, [token], { warn: false });
-      if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
-      if (CV) removeCVChange(actor, change, [token], CV);
-    }
-  }
-  if (checkConcentration) handleRemoveConcentration(effect, [token]);
-  // TODO clean this up eventually
-  daeMacro("off", actor, effect.data, {});
-  return true;
-}
-*/
-
-/* TODO remove this
-async function updateActiveEffect(activeEffect, changes, options, userId) {
-  if (userId !== game.user.id) return;
-  const parent = activeEffect.parent;
-  //@ts-ignore documentClass TODO
-  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return;
-  const token = parent.isToken ? parent.token : parent.getActiveTokens()[0];
-  //@ts-ignore
-  const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
-  //@ts-ignore
-  const CV = window.ConditionalVisibility && undefined;
-  //@ts-ignore
-  const tokenMagic = window.TokenMagic;
-  const disabled = activeEffect.data.disabled;
-  if (changes.disabled === undefined) return;
-
-  // Just deal with equipped etc
-  warn("add active effect actions", parent, changes)
-  if (token) {
-    if (changes.disabled) {
-      for (let change of activeEffect.data.changes) {
-        if (CV) removeCVChange(parent, change, [token], CV);
-        if (cubActive && change.key === "macro.CUB") await game.cub.removeCondition(change.value, [token], { warn: false });
-        if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
-      }
-    } else {
-      for (let change of activeEffect.data.changes) {
-        if (CV) addCVChange(parent, change, [token], CV);
-        if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
-        if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
-      }
-    }
-  }
-  return true;
-}
-
-*/
 export function getSelfTarget(actor) {
   if (actor.token) return actor.token;
   const speaker = ChatMessage.getSpeaker({ actor })
@@ -1619,7 +1521,7 @@ export function daeSetupActions() {
   //@ts-ignore
   itemacroActive = game.modules.get("itemacro")?.active;
   furnaceActive = game.modules.get("furnace")?.active || game.modules.get("advanced-macros")?.active;
-  conditionalVisibilityActive = false && game.modules.get("conditional-visibility")?.active;
+  conditionalVisibilityActive = game.modules.get("conditional-visibility")?.active;
   midiActive = game.modules.get("midi-qol")?.active;
 }
 

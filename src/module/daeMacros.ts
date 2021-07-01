@@ -147,8 +147,8 @@ export function getTokenFlag(token: Token, flagName: string) {
     return getProperty(token, `data.flags.dae.${flagName}`);
 }
 
-export function deleteActiveEffect(actorUuid: string, origin: string) {
-  requestGMAction(GMAction.actions.deleteEffects, {targets: [{actorUuid}], origin});
+export function deleteActiveEffect(actorUuid: string, origin: string, ignore: string[] = []) {
+  requestGMAction(GMAction.actions.deleteEffects, {targets: [{actorUuid}], origin, ignore});
 }
 
 export function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {

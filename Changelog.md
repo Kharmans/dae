@@ -1,4 +1,8 @@
 
+## 0.8.26
+* Renable conditional visibility for the new version: https://github.com/szefo09/conditional-visibility
+* Fix for DAEDeleteActiveEffect causing an error.
+
 ## 0.8.25
 * Rework of adding cub/tokenmagic etc logic - hopefully more reliable and may reduce conflicts between various effects. Removing multiple TMFX effects should work now. (Don't update 5 minutes before game time).
 * Changes so that concentration removal (in tandem times-up/midi-qol) is cleaner and hopefully does not produce "No such entity in collection messages"
