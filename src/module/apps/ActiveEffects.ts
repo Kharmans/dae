@@ -97,7 +97,9 @@ getData() {
     e.transfer = e.transfer ?? e.flags?.dae?.transfer ?? true;
   });
 
-  let efl = CONFIG.statusEffects.map(se => {return {"id": se.id, "label": i18n(se.label)}}).sort((a,b) => a.label < b.label ? -1 : 1);
+  let efl = CONFIG.statusEffects
+  .map(se => {return {"id": se.id, "label": se.id.startsWith("combat-utility-belt.") ? se.label : i18n(se.label)}})
+  .sort((a,b) => a.label < b.label ? -1 : 1);
   this.effectList = {"new": "new"}
   efl.forEach(se => {
     if (cubActive && game.cub.getCondition(se.label) && se.id.startsWith("combat-utility-belt")) {
