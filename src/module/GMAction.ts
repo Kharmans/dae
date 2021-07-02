@@ -293,19 +293,24 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       // Remove any existing effects that are not stackable or transfer from the same origin
       let actEffects = activeEffects;
       const origins = actEffects.map(aeData => aeData.origin);
-      // find all active effects that are not stackable and have the same origin as one of our new effects
-      let removeList = actor.effects.filter(ae => origins.includes(ae.data.origin)
-        && getProperty(ae.data, "flags.dae.transfer") === false
-        && !getProperty(ae.data, "flags.dae.stackable")
-      );
+      // find existing active effect that have same origin as one of our new effects            
+      let currentStacks = 1;
+      let removeList = actor.effects.filter(ae => origins.includes(ae.data.origin) && getProperty(ae.data, "flags.dae.transfer") === false);
       if (removeList.length > 0) {
+        currentStacks = removeList.filter(ae => getProperty(ae.data, "flags.dae.stackable")).reduce((acc, ae) => acc + (getProperty(ae.data, "flags.dae.stacks") ?? 1), 1)
         removeList = removeList.map(ae => ae.data._id);
-        const result = await actor.deleteEmbeddedDocuments("ActiveEffect", removeList)
+        const result = await actor.deleteEmbeddedDocuments("ActiveEffect", removeList);
       }
       if (activate) {
-        let dupEffects = duplicate(actEffects)
+        let dupEffects = duplicate(actEffects);
         dupEffects.forEach(ae => {
-          setProperty(ae, "flags.dae.token", tid)
+          setProperty(ae, "flags.dae.token", tid);
+          if (getProperty(ae, "flags.dae.stackable")) {
+            setProperty(ae, "flags.dae.stacks", currentStacks);
+            if (currentStacks > 1) {
+              ae.label = `${ae.label} (${getProperty(ae, "flags.dae.stacks")})`;
+            }
+          }
           // convert item duration to seconds/rounds/turns according to combat
           if (ae.duration.seconds) {
             ae.duration.startTime = game.time.worldTime;
