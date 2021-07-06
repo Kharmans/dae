@@ -1,4 +1,7 @@
 
+## 0.8.29
+Add new DDB AC item to premade items pack
+
 ## 0.8.28
 * Added DAE.fixupDDBAC() which fixes up the AC calcs for the new AC scheme for characters imported from DDB via ddbimporter. The newly applied effect will use the baseAC from the imported character together with any armor/shields/bonuses. It can be run multiple times and won't cause any problems, so you can run this each time you import via ddbImporter. This is only relevant to those using ddb importer.
 * Change to stackable effects. Support the current implementation (option multi) or instead of applying the same effect multiple times maintain a count of how many times the effect has been stacked (count), stored in effect.data.flags.dae.stacks. This  makes stacking effects like wounds very easy to implement. Thanks @Seriousness for the PR.
