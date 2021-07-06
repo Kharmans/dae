@@ -202,3 +202,17 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
 function removeDynamiceffects(actor) {
   actor.update({"flags.-=dynamiceffects": null})
 }
+
+export async function fixupDDBAC(allActors = false) {
+  try {
+    const itemName = "DDB AC";
+    const content = await game.packs.get("dae.premadeitems").getContent();
+    const item = content.find(i=> i.name === itemName);
+    game.actors.filter(a=>a.data.flags.ddbimporter && a.data.flags.ddbimporter.baseAC)
+      .filter(a=> allActors || a.type === "character")
+      .filter(a=> !a.items.getName(itemName))
+      .forEach(a=> a.createEmbeddedDocuments("Item", [item.toObject()]))
+  } catch(err) {
+    console.error("dae | migration did not complete", err);
+  }
+}

@@ -103,6 +103,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         this.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
       });
 
+
+
     }
     if (cubActive) {
       this.cubConditionList = {}
@@ -215,6 +217,7 @@ truesight: false
     //@ts-ignore
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
+    data.stackableOptions = i18n("dae.stackableOptions");
 
     if (this.object.parent) {
       //@ts-ignore documentClass

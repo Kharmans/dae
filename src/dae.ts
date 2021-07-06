@@ -5,7 +5,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
-import { cleanArmorWorld, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects } from './module/migration';
+import { cleanArmorWorld, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -69,13 +69,14 @@ Hooks.once('ready', async function () {
   if (game.modules.get("midi-qol")?.active) {
     daeSpecialDurations["1Action"] = i18n("dae.1Action");
     daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
+    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
     daeSpecialDurations["1Reaction"] = i18n("dae.1Reaction")
     let attackTypes = ["mwak", "rwak", "msak", "rsak"];
     if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
     attackTypes.forEach(at => {
       daeSpecialDurations[`1Attack:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${i18n("dae.1Attack")}`;
+      daeSpecialDurations[`1Hit:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${i18n("dae.1Hit")}`;
     })
-    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
     daeSpecialDurations["DamageDealt"] = i18n("dae.DamageDealt");
     daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
     daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
@@ -147,7 +148,8 @@ Hooks.once('setup', function() {
     removeAllItemsArmorEffects: removeAllItemsArmorEffects,
     cleanArmorWorld: cleanArmorWorld,
     addAutoFields: addAutoFields,
-    createToken: createToken
+    createToken: createToken,
+    fixupDDBAC: fixupDDBAC
   }
 });
 

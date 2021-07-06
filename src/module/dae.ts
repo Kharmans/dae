@@ -652,7 +652,7 @@ export function replaceAtFields(value, context, maxIterations = 4) {
   do {
     count += 1;
     for (let match of result.match(re) || []) {
-      result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)))
+      result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)) || "")
     }
   } while (count < maxIterations && result.includes("@"));
   return result;

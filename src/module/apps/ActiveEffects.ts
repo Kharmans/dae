@@ -98,13 +98,11 @@ getData() {
   });
 
   let efl = CONFIG.statusEffects
-  .map(se => {return {"id": se.id, "label": se.id.startsWith("combat-utility-belt.") ? se.label : i18n(se.label)}})
+  .map(se => {return {"id": se.id, "label": se.id.startsWith("combat-utility-belt.") ? `${se.label} (CUB)` : i18n(se.label)}})
   .sort((a,b) => a.label < b.label ? -1 : 1);
   this.effectList = {"new": "new"}
   efl.forEach(se => {
-    if (cubActive && game.cub.getCondition(se.label) && se.id.startsWith("combat-utility-belt")) {
-      this.effectList[se.id] = se.label + " (CUB)";
-    } else this.effectList[se.id] = se.label;
+    this.effectList[se.id] = se.label;
   });
 
   //@ts-ignore documentClass;

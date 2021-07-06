@@ -265,7 +265,7 @@ let setTokenVisibility = async(userId: string, data: {targetSceneId: string, tok
 }
 
 
-// Set the hidden staturs for a tile
+// Set the hidden status for a tile
 let setTileVisibility = async(userId: string, data: {targetSceneId: string, tileId: string, hidden: boolean}) => {
   if (!data.targetSceneId || !data.tileId) return;
   let scene = game.scenes.get(data.targetSceneId);
@@ -295,9 +295,9 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       const origins = actEffects.map(aeData => aeData.origin);
       // find existing active effect that have same origin as one of our new effects            
       let currentStacks = 1;
-      let removeList = actor.effects.filter(ae => origins.includes(ae.data.origin) && getProperty(ae.data, "flags.dae.transfer") === false);
+      let removeList = actor.effects.filter(ae => origins.includes(ae.data.origin) && getProperty(ae.data, "flags.dae.transfer") === false && getProperty(ae.data, "flags.dae.stackable") !== "multi");
       if (removeList.length > 0) {
-        currentStacks = removeList.filter(ae => getProperty(ae.data, "flags.dae.stackable")).reduce((acc, ae) => acc + (getProperty(ae.data, "flags.dae.stacks") ?? 1), 1)
+        currentStacks = removeList.filter(ae => getProperty(ae.data, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae.data, "flags.dae.stacks") ?? 1), 1)
         removeList = removeList.map(ae => ae.data._id);
         const result = await actor.deleteEmbeddedDocuments("ActiveEffect", removeList);
       }
@@ -305,11 +305,9 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         let dupEffects = duplicate(actEffects);
         dupEffects.forEach(ae => {
           setProperty(ae, "flags.dae.token", tid);
-          if (getProperty(ae, "flags.dae.stackable")) {
+          if (getProperty(ae, "flags.dae.stackable") === "count") {
             setProperty(ae, "flags.dae.stacks", currentStacks);
-            if (currentStacks > 1) {
-              ae.label = `${ae.label} (${getProperty(ae, "flags.dae.stacks")})`;
-            }
+            ae.label = `${ae.label} (${getProperty(ae, "flags.dae.stacks")})`;
           }
           // convert item duration to seconds/rounds/turns according to combat
           if (ae.duration.seconds) {
