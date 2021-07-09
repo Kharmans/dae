@@ -371,7 +371,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
       if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value)
-        let value = replaceAtFields(c.value, daeRollData(this));
+        let value = replaceAtFields(c.value, daeRollData(this), { blankValue: 0, maxIterations: 3 });
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
           //@ts-ignore - this will throw an error if there are roll expressions
           c.value = Roll.safeEval(value)
@@ -641,7 +641,7 @@ function daeCustomEffect(actor, change) {
   }
 }
 
-export function replaceAtFields(value, context, maxIterations = 4) {
+export function replaceAtFields(value, context, options: { blankValue: string | number, maxIterations: number } = { blankValue: "", maxIterations: 4 }) {
   if (typeof value !== "string") return value;
   let count = 0;
   if (!value.includes("@")) return value;
@@ -652,9 +652,9 @@ export function replaceAtFields(value, context, maxIterations = 4) {
   do {
     count += 1;
     for (let match of result.match(re) || []) {
-      result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)) || "")
+      result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)) || options.blankValue)
     }
-  } while (count < maxIterations && result.includes("@"));
+  } while (count < options.maxIterations && result.includes("@"));
   return result;
 }
 
@@ -736,7 +736,7 @@ async function removeTokenMagicChange(actor, change, tokens, tokenMagic) {
 }
 
 async function removeCVChange(actor, change, tokenDocuments, CV) {
-  const tokens = tokenDocuments.map(t=>t.object ? t.object : t)
+  const tokens = tokenDocuments.map(t => t.object ? t.object : t)
   if (change.key === "macro.ConditionalVisibility") {
     if (change.value === "hidden")
       await CV?.unHide(tokens);
@@ -750,7 +750,7 @@ async function removeCVChange(actor, change, tokenDocuments, CV) {
 }
 
 async function addCVChange(actor, change, tokenDocuments, CV) {
-  const tokens = tokenDocuments.map(t=>t.object ? t.object : t)
+  const tokens = tokenDocuments.map(t => t.object ? t.object : t)
   if (change.key === "macro.ConditionalVisibility") {
     if (change.value === "hidden")
       await CV?.hide(tokens)
@@ -797,12 +797,36 @@ async function handleRemoveConcentration(effect, tokens) {
   return true;
 }
 
-async function _preCreateActiveEffect(wrapped, data, options, user) {
-  const parent = this.parent;
+function _onCreateActiveEffect(...args) {
+  let [effect, options, userId] = args;
+  if (userId !== game.user.id) return true;
+  const parent = effect.parent;
   //@ts-ignore documentClass TODO
-  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(data, options, user);
+  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return true;
+  const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
   try {
-    const token = parent.isToken ? parent.token : parent.getActiveTokens()[0];
+    if (token && effect.data.changes) {
+      for (let change of effect.data.changes) {
+        if (cubActive && change.key === "macro.CUB") {
+          game.cub.addCondition(change.value, [token]);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("dae | create effect error", err);
+  } finally {
+    return true;
+  }
+}
+
+async function _preCreateActiveEffect(wrapped, ...args) {
+  const parent = this.parent;
+  let result;
+  let wrappedCalled;
+  //@ts-ignore documentClass TODO
+  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
+  try {
+    const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
     //@ts-ignore
     const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
     //@ts-ignore
@@ -813,7 +837,6 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
       if (this.data.changes) {
         for (let change of this.data.changes) {
           if (CV && change.key) await addCVChange(parent, change, [token], CV); //TODO check disabled
-          if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
           if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
         }
       }
@@ -824,7 +847,42 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {
-    return wrapped(data, options, user);
+    return wrapped(...args)
+  }
+}
+
+export function _onUpdateActiveEffect(...args) {
+  let [effect, changes, options, userId] = args;
+  if (userId !== game.user.id) return true;
+  const parent = effect.parent;
+  //@ts-ignore documentClass TODO
+  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return true;
+
+  try {
+    const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
+    if (changes.disabled === undefined) return true;
+
+    // Just deal with equipped etc
+    warn("add active effect actions", parent, changes)
+    if (token && effect.data.changes) {
+      if (changes.disabled) {
+        for (let change of effect.data.changes) {
+          if (cubActive && change.key === "macro.CUB") {
+            // game.cub.removeCondition(change.value, [token], { warn: false });
+              game.cub.removeCondition(change.value, [token], { warn: false });
+          }
+        }
+      } else {
+        for (let change of effect.data.changes) {
+          if (cubActive && change.key === "macro.CUB") 
+            game.cub.addCondition(change.value, [token]);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("dae | updating active effect error", err)
+  } finally {
+    return true;
   }
 }
 
@@ -832,18 +890,17 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
   const parent = this.parent;
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) {
-    return wrapped(changes, options, user) ;
+    return wrapped(changes, options, user);
   }
 
   try {
-    const token = parent.isToken ? parent.token : parent.getActiveTokens()[0];
+    const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
     //@ts-ignore
     const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
     //@ts-ignore
     const CV = window.ConditionalVisibility;
     //@ts-ignore
     const tokenMagic = window.TokenMagic;
-    const disabled = this.data.disabled;
     if (changes.disabled === undefined) return;
 
     // Just deal with equipped etc
@@ -852,13 +909,11 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
       if (changes.disabled) {
         for (let change of this.data.changes) {
           if (CV) await removeCVChange(parent, change, [token], CV);
-          if (cubActive && change.key === "macro.CUB") await game.cub.removeCondition(change.value, [token], { warn: false });
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
         }
       } else {
         for (let change of this.data.changes) {
           if (CV) await addCVChange(parent, change, [token], CV);
-          if (cubActive && change.key === "macro.CUB") await game.cub.addCondition(change.value, [token]);
           if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
         }
       }
@@ -870,13 +925,35 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
   }
 }
 
+export function _onDeleteActiveEffect(...args) {
+  let [effect, option, userId] = args;
+  if (game.user.id !== userId) return true;
+  //@ts-ignore documentClass
+  if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return true;
+  const actor = effect.parent;
+  const token = actor.isToken ? actor.token.object : actor.getActiveTokens()[0];
+  try {
+    if (token && effect.data.changes) {
+      for (let change of effect.data.changes) {
+        if (cubActive && change.key === "macro.CUB") {
+          game.cub.removeCondition(change.value, [token], { warn: false });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("dae | error deleting active effect ", err);
+  }
+  finally {
+    return true;
+  }
+}
+
 export async function _preDeleteActiveEffect(wrapped, ...args) {
   //@ts-ignore documentClass
   if (!(this.parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
   let checkConcentration;
   const actor = this.parent;
-  const token = actor.isToken ? actor.token : actor.getActiveTokens()[0];
-  let result;
+  const token = actor.isToken ? actor.token.object : actor.getActiveTokens()[0];
   try {
     //@ts-ignore
     checkConcentration = window.MidiQOL?.configSettings()?.concentrationAutomation;
@@ -887,8 +964,6 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
     const tokenMagic = window.TokenMagic;
     if (token && this.data.changes) {
       for (let change of this.data.changes) {
-        if (cubActive && change.key === "macro.CUB")
-          await game.cub.removeCondition(change.value, [token], { warn: false });
         if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
         if (CV) await removeCVChange(actor, change, [token], CV);
       }
@@ -903,10 +978,10 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
     console.warn("dae | error deleting active effect ", err);
   }
   finally {
-    if (result) return result;
-    else return wrapped(...args)
+    return wrapped(...args)
   }
 }
+
 export function getSelfTarget(actor) {
   if (actor.token) return actor.token;
   const speaker = ChatMessage.getSpeaker({ actor })
@@ -1015,7 +1090,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   }, context, { overwrite: false });
 
   // TODO work out item uuid
-  returnChange.value = replaceAtFields(returnChange.value, contextToUse, 2); // limit to a couple of lookups - since @token -> @token
+  returnChange.value = replaceAtFields(returnChange.value, contextToUse, { blankValue: 0, maxIterations: 2 }); // limit to a couple of lookups - since @token -> @token
   returnChange.value = returnChange.value.replace("##", "@");
   switch (change.key) {
     case "macro.itemMacro":
@@ -1130,7 +1205,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   if (unOwnedTargets.length > 0)
     requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
   if (ownedTargets.length > 0) {
-      const result = await applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
+    const result = await applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
   }
 
 }
@@ -1268,7 +1343,6 @@ export function updateArmorEffect(candidate, updates) {
   //@ts-ignore disabled
   armorEffectData.disabled = effectDisabled(candidate.parent, armorEffectData, candidate.data);
   return [armorEffectData];
-  return [];
 }
 
 export function preCreateItem(candidate, data, options, user) {
@@ -1461,15 +1535,12 @@ export function daeInitActions() {
 
   // macros are called on active effect creationg and deletion
   CONFIG.ActiveEffect.documentClass
-  /* 
-    Hooks.on("createActiveEffect", createActiveEffect);
-    Hooks.on("deleteActiveEffect", deleteActiveEffect);
-    Hooks.on("updateActiveEffect", updateActiveEffect); //consider on/off for enable/disable
-    */
-  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER")
-  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "WRAPPER")
-  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "WRAPPER")
-
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER");
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "WRAPPER");
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "WRAPPER");
+  Hooks.on("createActiveEffect", _onCreateActiveEffect);
+  Hooks.on("deleteActiveEffect", _onDeleteActiveEffect);
+  Hooks.on("updateActiveEffect", _onUpdateActiveEffect);
 
 
   // Add the active effects title bar actions

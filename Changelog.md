@@ -1,4 +1,7 @@
 
+## 0.8.30
+* Re-organise application of macro.CUB to reduce incidence of cub condtions not being applied/removed. More than one macro.CUB on an effect is likely a problem.
+
 ## 0.8.29
 Add new DDB AC item to premade items pack
 
