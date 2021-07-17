@@ -1,4 +1,10 @@
 
+## 0.8.31
+* updated ko.json
+* added special duration definition for isMoved.
+* Fix for auto disabling effects attached to class items.
+* Added special duration 1Spell
+
 ## 0.8.30
 * Re-organise application of macro.CUB to reduce incidence of cub condtions not being applied/removed. More than one macro.CUB on an effect is likely a problem.
 

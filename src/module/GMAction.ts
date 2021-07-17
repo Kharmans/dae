@@ -333,6 +333,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           warn("Apply active effects ", ae, itemCardId)
 
           setProperty(ae.flags, "dae.transfer", false);
+
           ae.changes.map(change => {
             if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
               if (typeof change.value === "number") {

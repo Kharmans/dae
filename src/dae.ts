@@ -27,6 +27,7 @@ export let i18n = key => {
   return game.i18n.localize(key);
 };
 export let daeAlternateStatus;
+export let changesQueue;
 /* ------------------------------------ */
 /* Initialize module					*/
 /* ------------------------------------ */
@@ -44,7 +45,8 @@ Hooks.once('init', async function() {
 	// Preload Handlebars templates
 	await preloadTemplates();
 
-	// Register custom sheets (if any)
+  //@ts-ignore Semaphore
+  changesQueue = new window.Semaphore(1);
 });
 
 export let daeSpecialDurations;
@@ -68,6 +70,7 @@ Hooks.once('ready', async function () {
   }
   if (game.modules.get("midi-qol")?.active) {
     daeSpecialDurations["1Action"] = i18n("dae.1Action");
+    daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
     daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
     daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
     daeSpecialDurations["1Reaction"] = i18n("dae.1Reaction")
@@ -85,6 +88,7 @@ Hooks.once('ready', async function () {
     daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
     daeSpecialDurations["isCheck"] = `${i18n("dae.isRollBase")} ${i18n("dae.isCheckDetail")}`;
     daeSpecialDurations["isSkill"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")}`;
+    daeSpecialDurations["isMoved"] = i18n("dae.isMoved");
     Object.keys(CONFIG.DND5E.abilities).forEach(abl => {
       daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}`;
       daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isCheckDetail")}`;

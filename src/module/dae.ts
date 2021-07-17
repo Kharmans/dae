@@ -315,7 +315,7 @@ function effectDisabled(actor, efData, itemData = null) {
       itemData = DAEfromUuid(efData.origin).document.data;
     }
     // Non eequip items
-    let nonEquipItems = ["feat", "spell"];
+    let nonEquipItems = ["feat", "spell", "class"];
     if (game.system.id === "sw5e") {
       nonEquipItems = ["archetype", "background", "class", "classfeature", "feat",
         "fightingmastery", "fightingstyle", "lightsaberform", "power", "species"];
@@ -652,7 +652,7 @@ export function replaceAtFields(value, context, options: { blankValue: string | 
   do {
     count += 1;
     for (let match of result.match(re) || []) {
-      result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)) || options.blankValue)
+      result = result.replace(match.replace("@data.", "@"), getProperty(context, match.slice(1)) ?? options.blankValue)
     }
   } while (count < options.maxIterations && result.includes("@"));
   return result;
@@ -987,7 +987,7 @@ export function getSelfTarget(actor) {
   const speaker = ChatMessage.getSpeaker({ actor })
   if (speaker.token) return canvas.tokens.get(speaker.token);
   //@ts-ignore this is a token document not a token ??
-  return new TokenDocument(actor.getTokenData(), { actor });
+  return new CONFIG.Token.documentClass(actor.getTokenData(), { actor });
 }
 
 export async function daeMacro(action: string, actor, effectsData, lastArgOptions = {}) {
@@ -1191,7 +1191,11 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
     t => {
       if (typeof t === "string") return t;
       //@ts-ignore t.document
-      if (t.document) return t.document.uuid;
+      if (t.document) return t.document.uuid; // means we have a token
+      //@ts-ignore
+      if (t instanceof CONFIG.Actor.documentClass) return t.uuid;
+      //@ts-ignore
+      if (t instanceof CONFIG.Token.documentClass) return t.actor?.uuid;
       //@ts-ignore .uuid
       return t.uuid;
     }
@@ -1353,7 +1357,6 @@ export function preCreateItem(candidate, data, options, user) {
     if (efData.transfer) {
       setProperty(efData, "flags.dae.transfer", true)
       efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
-      //setProperty(efData, "duration.startTime", 0);
     }
   })
   //TODO check this.
@@ -1407,7 +1410,7 @@ export function generateArmorEffect(itemData, origin, armorData) {
       return armorEffectFromFormula(`{@abilities.dex.mod,${armorData.dex || 2}}kl + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
     case "heavy":
       //@ts-ignore
-      return armorEffectFromFormula(`{@abilities.dex.mod,${armorData.dex || 0}}kl + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
+      return armorEffectFromFormula(`${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
     default:
       return null;
       break;

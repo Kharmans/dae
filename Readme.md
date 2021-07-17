@@ -260,6 +260,7 @@ Furnace is now deprecated, the module Advanced Macros is a direct replacement an
 This will call the macro "macro_name" with args[0] = "on" and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with args[0] = "off" when the active effect is deleted from the target actor.
 In addition to the standard ```@values``` the following are supported (only as macro argruments)  
 ```@target``` will pass the token id of the targeted token  
+```@targetUuid``` will pass the Uuid of the targeted token
 ```@scene``` will pass the scene id of the scene on which the user who activated the effect is located.  
 ```@item``` will pass the item data of the item that was used in the activation  
 ```@spellLevel``` if using midi qol this will be the spell level the spell was cast at.  
