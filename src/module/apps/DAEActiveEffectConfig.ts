@@ -1,4 +1,4 @@
-import { ValidSpec, aboutTimeInstalled, confirmDelete, midiActive, cubActive, conditionalVisibilityActive } from "../dae";
+import { ValidSpec, aboutTimeInstalled, confirmDelete, midiActive, cubActive, conditionalVisibilityActive, ceActive } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 
 export var otherFields = [];
@@ -20,6 +20,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   armorProfList;
   weaponProfList;
   cubConditionList;
+  ceEffectList;
   ConditionalVisibilityList;
   ConditionalVisibilityVisionList;
   validFields;
@@ -102,15 +103,19 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       Object.keys(CONFIG.SW5E.weaponProficiencies).forEach(type => {
         this.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
       });
-
-
-
     }
     if (cubActive) {
       this.cubConditionList = {}
       game.cub.conditions?.forEach(cubc => {
         this.cubConditionList[cubc.name] = cubc.name;
       })
+    }
+    if (ceActive) {
+      this.ceEffectList = {};
+      game.dfreds.effects?.all.forEach(ceEffect => {
+        this.ceEffectList[ceEffect.name] = ceEffect.name;
+      })
+
     }
     const ConditionalVisibilityNames = ["invisible", "hidden", "obscured", "indarkness"];
     const ConditionalVisibilityVisionNames = ["blindsight", "devilssight", "seeinvisible", "tremorsense", "truesight"]
@@ -185,6 +190,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec.includes("tokenMagic"))
       return this.tokenMagicEffects;
     if (spec === "macro.CUB") return this.cubConditionList;
+    if (spec === "macro.CE") return this.ceEffectList;
     if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
 

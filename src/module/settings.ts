@@ -81,6 +81,12 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
+  game.settings.register("dae", "ArmorDisabled", {
+    scope: "world",
+    default: 0,
+    config: false,
+    type: Number,
+  });
 
   game.settings.register("dae", "confirmDelete", {
     name: game.i18n.localize("dae.confirmDelete.Name"),

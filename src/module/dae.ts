@@ -14,6 +14,7 @@ export var simpleCalendarInstalled = false;
 
 export var requireItemTarget = true;
 export var cubActive;
+export var ceActive;
 export var furnaceActive;
 export var itemacroActive;
 export var conditionalVisibilityActive;
@@ -161,6 +162,7 @@ export class ValidSpec {
       };
 
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       // TODO reactivate when cond vis is 0.8.6 ready
       // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -634,6 +636,7 @@ function daeCustomEffect(actor, change) {
       return true;
 
     case "data.attributes.ac.value":
+      if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.3.9")) return true;
       if (change.value === "AutoCalc") {
         actor.data.data.attributes.ac.value = computeAC(actor, actor.data.data.abilities.dex.mod);
       }
@@ -708,7 +711,7 @@ function doCustomArrayValue(actor, current, change, validValues) {
 */
 function prepareData(wrapped) {
   debug("prepare data: before passes", this.name, this.data._source);
-  this.overrides = {}; 7
+  this.overrides = {};
   wrapped();
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
     if (applyBaseAC && this.data.type === "character" && !this.data.flags[game.system.id]?.isPolymorphed) {
@@ -803,12 +806,16 @@ function _onCreateActiveEffect(...args) {
   const parent = effect.parent;
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return true;
+  const actor = parent;
   const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
   try {
     if (token && effect.data.changes) {
       for (let change of effect.data.changes) {
         if (cubActive && change.key === "macro.CUB") {
           game.cub.addCondition(change.value, [token]);
+        }
+        if (ceActive && change.key === "macro.CE") {
+          game.dfreds.effectHandler._toggleEffect(change.value, [actor])
         }
       }
     }
@@ -871,11 +878,18 @@ export function _onUpdateActiveEffect(...args) {
             // game.cub.removeCondition(change.value, [token], { warn: false });
               game.cub.removeCondition(change.value, [token], { warn: false });
           }
+          if (ceActive && change.key === "macro.CE") {
+            game.dfreds.effectHandler._toggleEffect(change.value, [token.actor])
+          }
         }
       } else {
         for (let change of effect.data.changes) {
-          if (cubActive && change.key === "macro.CUB") 
+          if (cubActive && change.key === "macro.CUB") {
             game.cub.addCondition(change.value, [token]);
+          }
+          if (ceActive && change.key === "macro.CE") {
+            game.dfreds.effectHandler._toggleEffect(change.value, [token.actor])
+          }
         }
       }
     }
@@ -930,13 +944,16 @@ export function _onDeleteActiveEffect(...args) {
   if (game.user.id !== userId) return true;
   //@ts-ignore documentClass
   if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return true;
-  const actor = effect.parent;
-  const token = actor.isToken ? actor.token.object : actor.getActiveTokens()[0];
+  const actor = effect.parent;;
+  const token = actor.token ? actor.token : actor.getActiveTokens()[0];
   try {
     if (token && effect.data.changes) {
       for (let change of effect.data.changes) {
         if (cubActive && change.key === "macro.CUB") {
           game.cub.removeCondition(change.value, [token], { warn: false });
+        }
+        if (ceActive && change.key === "macro.CE") {
+          game.dfreds.effectHandler._toggleEffect(change.value, [actor])
         }
       }
     }
@@ -1582,6 +1599,8 @@ export function daeSetupActions() {
   //@ts-ignore
   cubActive = game.modules.get("combat-utility-belt")?.active;
   //@ts-ignore
+  ceActive = game.modules.get("dfreds-convenient-effects")?.active;
+  //@ts-ignore
   debug("Combat utility belt active ", cubActive, " and cub version is ", game.modules.get("combat-utility-belt")?.data.version)
 
   //@ts-ignore
@@ -1600,9 +1619,18 @@ export function daeSetupActions() {
 }
 
 export function fetchParams() {
+
   requireItemTarget = game.settings.get("dae", "requireItemTarget");
   calculateArmor = game.settings.get("dae", "calculateArmor");
   applyBaseAC = game.settings.get("dae", "applyBaseAC");
+  if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.3.9") && applyBaseAC) {
+    game.settings.set("dae", "applyBaseAC", false);
+    applyBaseAC = false;
+  }
+  if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.3.9") && calculateArmor) {
+    game.settings.set("dae", "calculateArmor", false);
+    calculateArmor = false;
+  }
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")

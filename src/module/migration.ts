@@ -1,5 +1,5 @@
 
-import { debug, warn, log } from "../dae";
+import { debug, warn, log, i18n } from "../dae";
 import { ValidSpec, createArmorEffect } from "./dae";
 
 //@ts-ignore
@@ -214,5 +214,84 @@ export async function fixupDDBAC(allActors = false) {
       .forEach(a=> a.createEmbeddedDocuments("Item", [item.toObject()]))
   } catch(err) {
     console.error("dae | migration did not complete", err);
+  }
+}
+
+export function checkArmorDisabled() {
+  if (
+    game.system.id === "dnd5e" 
+        && isNewerVersion(game.system.data.version, "1.3.9") 
+        && game.settings.get("dae", "ArmorDisabled") < 1) {
+    let d = new Dialog({
+      // localize this text
+      title: i18n("dae.confirm"),
+      content: `<h2>You have updated to DND 1.4.x</h2><p>DND 1.4.x auto calculates AC</p><p> Auto calculation in DAE will be disabled</p>`,
+      buttons: {
+          one: {
+              icon: '<i class="fas fa-cross"></i>',
+              label: "Disable DAE AC",
+              callback: ()=>{
+                if (game.settings.get("dae", "calculateArmor") || game.settings.get("dae", "applyBaseAC")) {
+                  cleanArmorWorld();
+                }
+                cleanDAEArmorWorld();
+                game.settings.set("dae", "ArmorDisabled", 1)
+                game.settings.set("dae", "calculateArmor", false); 
+                game.settings.set("dae", "applyBaseAC", false);
+              }
+          },
+        },
+        default: "one"
+      });
+    d.render(true);
+  }
+}
+
+export async function cleanDAEArmorWorld() {
+  await removeAllActorArmorItems();
+  await removeAllTokenArmorItems();
+}
+
+export async function removeAllActorArmorItems() {
+  let promises = [];
+  for (let actor of game.actors) {
+    //@ts-ignore
+    await removeActorArmorItems(actor);
+  }
+}
+
+export async function removeAllTokenArmorItems() {
+  let promises = [];
+  for (let scene of game.scenes) {
+    //@ts-ignore
+    for (let tokenDocument of scene.tokens) {
+      if (!tokenDocument.isLinked && tokenDocument.actor) {
+        await removeActorArmorItems(tokenDocument.actor);
+      }
+    }
+  }
+}
+
+export async function removeActorArmorItems(actor: Actor) {
+  let promises = [];
+  for (let item of actor.items) {
+    let toDelete = [];
+    //@ts-ignore
+    if (!item.effects) continue;
+    //@ts-ignore
+    for (let effect of item.effects) {
+      for (let change of effect.data.changes) {
+        if (change.key === "data.attributes.ac.value" && change.value === "AutoCalc") {
+          //@ts-ignore
+          console.warn("Removing DAE Item ", actor.name, item.name, item.id)
+          //@ts-ignore
+          toDelete.push(item.id)
+        }
+      }
+    }
+    if (toDelete.length > 0) {
+      //@ts-ignore
+      await actor.deleteEmbeddedDocuments("Item", toDelete)
+    }
   }
 }

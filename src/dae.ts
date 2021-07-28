@@ -5,7 +5,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
-import { cleanArmorWorld, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects } from './module/migration';
+import { checkArmorDisabled, cleanArmorWorld, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -35,7 +35,6 @@ Hooks.once('init', async function() {
 
 	// Register custom module settings
   registerSettings();
-  fetchParams();
 	debug('Init setup actions');
   daeInitActions();
   patchingInitSetup();
@@ -53,6 +52,7 @@ export let daeSpecialDurations;
 export let  daeMacroRepeats;
 Hooks.once('ready', async function () {
   if (!["dnd5e", "sw5e"].includes(game.system.id)) return;
+  fetchParams();
 
   debug("ready setup actions")
   daeReadyActions();
@@ -165,6 +165,7 @@ Hooks.once("ready", () => {
   if (!["dnd5e", "sw5e"].includes(game.system.id)) return;
   if (!game.modules.get("lib-wrapper")?.active && game.user.isGM)
     ui.notifications.warn("The 'Dynamic effects using Active Effects' module recommends to install and activate the 'libWrapper' module.");
+  checkArmorDisabled();
 })
 
 export function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {

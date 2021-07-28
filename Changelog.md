@@ -1,4 +1,15 @@
 
+## 0.8.32
+* Added check for dnd5e 1.4.0 to remove all DAE armor calculations since 1.4.0 takes over AC calculations. Differences to note:
+  * With dnd5e 1.4.0 dae will do NO ac changes except those setup as active effects.
+  * A one off migration is run the first time the world is started after dnd5e 1.4 is isntalled:
+    * removes all dae generated armor active effects
+    * removes all dae calculation items (Default AC etc).
+    * disables all dae ac calculation options.
+  * dnd5e 1.4.0 does not manage items of type magical bonus, so those will have to be redone as active effects.
+  * dnd5e 1.4.0 does not choose the best armor if you have more than one equipped, so you will need to check equipped items.
+* preliminary support for convenient effects via macro.CE (definitely experimental)
+
 ## 0.8.31
 * updated ko.json
 * added special duration definition for isMoved.
