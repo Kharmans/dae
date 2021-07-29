@@ -2,7 +2,7 @@ import { requestGMAction, GMAction, applyActiveEffects } from "./GMAction";
 import { warn, error, debug, setDebugLevel, i18n, timelog } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
-import { updatePatches } from "./patching";
+import { patchPrepareArmorClassAttribution, updatePatches } from "./patching";
 import { libWrapper } from "../libs/shim";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
@@ -73,6 +73,9 @@ export class ValidSpec {
     baseValues["data.attributes.prof"] = [0];
     baseValues["data.details.level"] = [0];
     baseValues["data.attributes.hd"] = 0;
+    baseValues["data.attributes.ac.bonus"] = 0;
+    baseValues["data.attributes.ac.base"] = 0;
+    baseValues["data.attributes.ac.cover"] = 0;
 
     //@ts-ignore
     if (game.modules.get("gm-notes")?.active) {
@@ -1465,6 +1468,8 @@ export function daeReadyActions() {
   aboutTimeInstalled = game.modules.get("about-time")?.active;
   simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.active;
   timesUpInstalled = game.modules.get("times-up")?.active;
+  patchPrepareArmorClassAttribution();
+
 }
 
 export function localDeleteFilters(tokenId: string, filterName: string) {

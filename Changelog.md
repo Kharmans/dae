@@ -1,4 +1,9 @@
 
+## 0.8.33
+* Fix for ac.bonus not being refelected in ac calculations.
+* Update the ac attribution to include effects that modify data.attributes.ac.value
+* Drop the minimum version back to 1.3.6
+
 ## 0.8.32
 * Added check for dnd5e 1.4.0 to remove all DAE armor calculations since 1.4.0 takes over AC calculations. Differences to note:
   * With dnd5e 1.4.0 dae will do NO ac changes except those setup as active effects.
@@ -8,7 +13,8 @@
     * disables all dae ac calculation options.
   * dnd5e 1.4.0 does not manage items of type magical bonus, so those will have to be redone as active effects.
   * dnd5e 1.4.0 does not choose the best armor if you have more than one equipped, so you will need to check equipped items.
-* preliminary support for convenient effects via macro.CE (definitely experimental)
+  * because of the way that dnd5e calculates AC changes in AC due to dex mod changes will NOT be reflected in the final AC.
+* preliminary support for convenient effects via macro.CE (definitely experimental).
 
 ## 0.8.31
 * updated ko.json

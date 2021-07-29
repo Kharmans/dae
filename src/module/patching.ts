@@ -62,7 +62,43 @@ export function patchingInitSetup() {
   if (!dice) console.error("Dice not defined! Many things won't work")
   else d20Roll = dice?.d20Roll;
 }
+let sheetWrapped;
+function _prepareArmorClassAttribution(data) {
+  const attributions = sheetWrapped.bind(this)(data);
+  if (!this.object.data.effects) return attributions;
+  for (let effect of this.object.data.effects) {
+    for (let change of effect.data.changes) {
+      if (change.key === "data.attributes.ac.value") {
+        attributions.push({
+          label: effect.data.label,
+          mode: change.mode,
+          value: change.value
+        })
+      }
+    }
+  }
+  return attributions;
+}
 
+export function patchPrepareArmorClassAttribution() {
+  if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.4.0")) {
+    /* TODO put this back when I find out how to do this.
+    for(let chartype of Object.keys(CONFIG.Actor.sheetClasses)) {
+      for (let sheet of Object.keys(CONFIG.Actor.sheetClasses[chartype])) {
+        if (CONFIG.Actor.sheetClasses[chartype][sheet].cls.prototype._prepareArmorClassAttribution) {
+          libWrapper.register("dae", `CONFIG.Actor.sheetClasses.${chartype}["${sheet}"].cls.prototype._prepareArmorClassAttribution`, _prepareArmorClassAttribution, "WRAPPER");
+        }
+      }
+    }
+    // libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+    */
+    //@ts-ignore
+    sheetWrapped = CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution;
+    //@ts-ignore
+    CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution = _prepareArmorClassAttribution;
+
+  }
+}
 
 export function patchGetInitiativeFormula() {
   warn("Patching Combatant getInitiativeFormula")
