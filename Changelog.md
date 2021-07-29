@@ -2,7 +2,7 @@
 ## 0.8.33
 * Fix for ac.bonus not being refelected in ac calculations.
 * Update the ac attribution to include effects that modify data.attributes.ac.value
-* Drop the minimum version back to 1.3.6
+* Requires dnd 1.4.0 or later
 
 ## 0.8.32
 * Added check for dnd5e 1.4.0 to remove all DAE armor calculations since 1.4.0 takes over AC calculations. Differences to note:
