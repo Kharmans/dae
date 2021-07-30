@@ -1,3 +1,6 @@
+## 0.8.35
+* Update for convenient effects version 1.6.2
+* updated ko.json, ja.json, thanks @klo, @Brother Sharp
 
 ## 0.8.34
 * DAE now **requires** libWrapper 1.8.0 as a dependency.

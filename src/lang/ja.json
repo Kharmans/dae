@@ -109,7 +109,7 @@
     "dae.Edit": "アイテム編集",
     "dae.Delete": "アイテム削除",
     "dae.EffectTarget": "効果対象",
-    "dae.ActiveEffectName": "動的効果",
+    "dae.ActiveEffectName": "拡張効果",
     "dae.TransferEffects": "転送効果",
     "dae.NonTransferEffects": "非転送効果",
     "dae.EffectMode": "モード",
@@ -213,6 +213,7 @@
     "dae.temporaryFilter": "一時的な効果",
     "dae.Priority": "プライオリティ",
     "dae.Stackable": "累積を許可する",
+    "dae.stackableOptions": {"none": "効果は累積しない", "multi": "効果は累積して適用される", "count": "累積するたびカウントが1増加"},
     "dae.useDAESheet.Name": "DAEのアクティブ効果設定シートを使用する",
     "dae.useDAESheet.Hint": "無効にするとコア機能のアクティブ効果設定シートを使用します。",
     "dae.confirm": "確認ダイアログ",
@@ -233,6 +234,7 @@
     "dae.expireRealTime.Name": "持続時間をリアルタイムで失効させる",
     "dae.expireRealTime.Hint": "この機能を有効で、かつ About-Time / Times-Up がインストールされていない場合、設定された持続時間はリアルタイムで減少し、時間切れになります。",
     "dae.isAttacked": "【攻撃されたとき】攻撃を受けたとき期限切れになります。",
+    "dae.isMoved": "【移動時】コマの移動が発生したときに期限切れになります。",
     "dae.isDamaged": "【ダメージを受けたとき】次の種別のダメージを受けたとき期限切れになります。",
     "dae.isRollBase": "【次のロールを行ったとき】",
     "dae.isSaveDetail": "セーヴィング・スロー",
@@ -240,6 +242,8 @@
     "dae.isSkillDetail": "技能判定",
     "dae.1Action": "【1回のアクション】次のアクション（アイテムロール）で期限切れになります。",
     "dae.1Attack": "【1回の攻撃】次の攻撃で期限切れになります。",
+    "dae.1Spell": "【1回の呪文】：キャラクターが次に呪文を唱えると期限切れになります。",
+    "dae.1Reaction": "【1回のリアクション】リアクションのきっかけとなった攻撃の完了後に期限切れになります。",
     "dae.1Hit": "【1回のヒット】次にヒットが得られたときに期限切れになります。",
     "dae.DamageDealt": "【ダメージを与えたとき】キャラクターがダメージを与えたときに期限切れになります。",
     "dae.turnStart": "【次ターンの初めまで】次のターンの開始時に期限切れになります（戦闘中のみ）。",
@@ -250,7 +254,10 @@
     "dae.displayTraits.Hint": "例外的特性シートに、アクティブ効果によるボーナスなどが反映されるようになります（要再読み込み）。特性の値を手動で変更するときは、アクティブ効果適用前に行ってください（でないと上書されます）。",
     "dae.ConditionalVisibility": "Conditional Visibility",
     "dae.ConditionalVisibilityVision": "CV（感覚）",
-
+    "dae.noDupDamageMacro.Name": "ダメージマクロを重複させない",
+    "dae.noDupDamageMacro.Hint": "有効にすると、重複したダメージマクロは無視されます。",
+    "dae.DisableEffects.Name": "アクティブ効果の処理をすべて無効にする",
+    "dae.DisableEffects.Hint": "有効にすると、アクティブ効果がキャラクターに適用されなくなります。アクティブ効果によって自動更新される値を、手動で変更したいときなどに使用します。",
 
     "dae.SW5E": "翻訳作業者へ：以下はSW5E専用のワードです。対応させたい人がいましたら翻訳をお願いします。",
     "dae.force": "Force",
@@ -290,5 +297,7 @@
     
     "dae.appearance": "外見",
     "dae.abil": "abil |",
-    "dae.CUB": "CUB"
+    "dae.CUB": "CUB",
+    "dae.originalClass": "オリジナル・クラス",
+    "dae.initiativeDisadv": "イニシアチブ不利"
 }

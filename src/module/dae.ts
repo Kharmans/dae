@@ -818,7 +818,7 @@ function _onCreateActiveEffect(...args) {
           game.cub.addCondition(change.value, [token]);
         }
         if (ceActive && change.key === "macro.CE") {
-          game.dfreds.effectHandler._toggleEffect(change.value, [actor])
+          game.dfreds.effectHandler.addEffect({effectName: change.value, actor, origin: effect.data.origin})
         }
       }
     }
@@ -882,7 +882,7 @@ export function _onUpdateActiveEffect(...args) {
               game.cub.removeCondition(change.value, [token], { warn: false });
           }
           if (ceActive && change.key === "macro.CE") {
-            game.dfreds.effectHandler._toggleEffect(change.value, [token.actor])
+            game.dfreds.effectHandler.removeEffect(change.value, token.actor)
           }
         }
       } else {
@@ -891,7 +891,7 @@ export function _onUpdateActiveEffect(...args) {
             game.cub.addCondition(change.value, [token]);
           }
           if (ceActive && change.key === "macro.CE") {
-            game.dfreds.effectHandler._toggleEffect(change.value, [token.actor])
+            game.dfreds.effectHandler.addEffect({effectName: change.value, actor: token.actor, origin: effect.data.origin})
           }
         }
       }
@@ -956,7 +956,7 @@ export function _onDeleteActiveEffect(...args) {
           game.cub.removeCondition(change.value, [token], { warn: false });
         }
         if (ceActive && change.key === "macro.CE") {
-          game.dfreds.effectHandler._toggleEffect(change.value, [actor])
+          game.dfreds.effectHandler.removeEffect(change.value, actor)
         }
       }
     }
@@ -1604,7 +1604,7 @@ export function daeSetupActions() {
   //@ts-ignore
   cubActive = game.modules.get("combat-utility-belt")?.active;
   //@ts-ignore
-  ceActive = game.modules.get("dfreds-convenient-effects")?.active;
+  ceActive = game.modules.get("dfreds-convenient-effects")?.active && isNewerVersion(game.modules.get("dfreds-convenient-effects").data.version, "1.6.2");
   //@ts-ignore
   debug("Combat utility belt active ", cubActive, " and cub version is ", game.modules.get("combat-utility-belt")?.data.version)
 
