@@ -5,7 +5,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
-import { checkArmorDisabled, cleanArmorWorld, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects } from './module/migration';
+import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -163,8 +163,7 @@ Hooks.once('setup', function() {
 
 Hooks.once("ready", () => {
   if (!["dnd5e", "sw5e"].includes(game.system.id)) return;
-  if (!game.modules.get("lib-wrapper")?.active && game.user.isGM)
-    ui.notifications.warn("The 'Dynamic effects using Active Effects' module recommends to install and activate the 'libWrapper' module.");
+  checkLibWrapperVersion();
   checkArmorDisabled();
 })
 

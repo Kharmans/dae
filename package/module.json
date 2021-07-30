@@ -2,7 +2,7 @@
   "name": "dae",
   "title": "Dynamic effects using Active Effects",
   "description": "replacement for dynamic effects",
-  "version": "0.8.33",
+  "version": "0.8.34",
   "compatibleCoreVersion": "0.8.8",
   "minimumCoreVersion": "0.8.4",
   "minimumSystemVersion": "1.4.0",
@@ -11,6 +11,9 @@
   "esmodules": [
     "dae.js", "module/patching.js"
   ],
+  "dependencies" : [ {
+    "name": "lib-wrapper", "type": "module"
+  }],
   "styles": ["css/dae.css", "css/awesomplete.css"],
   "packs": [
     {
@@ -73,5 +76,5 @@
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
   "allowBugReporter": true,
   "manifest": "https://gitlab.com/tposney/dae/raw/master/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.8.33.zip"
+  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.8.34.zip"
 }

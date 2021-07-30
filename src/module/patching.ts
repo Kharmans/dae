@@ -1,8 +1,7 @@
-import { useAbilitySave,  displayTraits } from "./dae";
+import { useAbilitySave,  displayTraits, libWrapper } from "./dae";
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error, warn, } from "../dae";
-import { libWrapper } from "../libs/shim.js";
 
 
 function rollAbilitySave(abilityId, options = { event, fastForward: null, advantage: null, disadvantage: null }) {
@@ -62,9 +61,8 @@ export function patchingInitSetup() {
   if (!dice) console.error("Dice not defined! Many things won't work")
   else d20Roll = dice?.d20Roll;
 }
-let sheetWrapped;
-function _prepareArmorClassAttribution(data) {
-  const attributions = sheetWrapped.bind(this)(data);
+function _prepareArmorClassAttribution(wrapped, data) {
+  const attributions = wrapped(data);
   if (!this.object.data.effects) return attributions;
   for (let effect of this.object.data.effects) {
     for (let change of effect.data.changes) {
@@ -82,7 +80,8 @@ function _prepareArmorClassAttribution(data) {
 
 export function patchPrepareArmorClassAttribution() {
   if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.4.0")) {
-    /* TODO put this back when I find out how to do this.
+    if (!isNewerVersion("1.8.0", game.modules.get("lib-wrapper").data.version)) {
+      /* TODO put this back when I find out how to do this. Maybe not required.
     for(let chartype of Object.keys(CONFIG.Actor.sheetClasses)) {
       for (let sheet of Object.keys(CONFIG.Actor.sheetClasses[chartype])) {
         if (CONFIG.Actor.sheetClasses[chartype][sheet].cls.prototype._prepareArmorClassAttribution) {
@@ -90,13 +89,14 @@ export function patchPrepareArmorClassAttribution() {
         }
       }
     }
-    // libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
     */
-    //@ts-ignore
-    sheetWrapped = CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution;
-    //@ts-ignore
-    CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution = _prepareArmorClassAttribution;
-
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['dnd5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+    } else if (game.system.id === "sw5e" && isNewerVersion(game.system.data.version, "1.4.0")) {
+      // TODO come back and implement for sw5e when available.
+    }
+    
   }
 }
 

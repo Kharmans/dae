@@ -1,4 +1,8 @@
 
+## 0.8.34
+* DAE now reuqires libWrapper 1.8.0. 
+* Update AC attribution for NPC and Vehicles.
+
 ## 0.8.33
 * Fix for ac.bonus not being refelected in ac calculations.
 * Update the ac attribution to include effects that modify data.attributes.ac.value

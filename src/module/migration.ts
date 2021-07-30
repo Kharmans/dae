@@ -217,6 +217,23 @@ export async function fixupDDBAC(allActors = false) {
   }
 }
 
+export function checkLibWrapperVersion() {
+  if (isNewerVersion("1.8.0", game.modules.get("lib-wrapper").data.version)) {
+    let d = new Dialog({
+      // localize this text
+      title: i18n("dae.confirm"),
+      content: `<h2>DAE requires libWrapper version 1.8.0 or later</p>`,
+      buttons: {
+          one: {
+              icon: '<i class="fas fa-cross"></i>',
+          },
+        },
+        default: "one"
+      });
+    d.render(true);
+  }
+}
+
 export function checkArmorDisabled() {
   if (
     game.system.id === "dnd5e" 

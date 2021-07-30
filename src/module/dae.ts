@@ -3,7 +3,6 @@ import { warn, error, debug, setDebugLevel, i18n, timelog } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { patchPrepareArmorClassAttribution, updatePatches } from "./patching";
-import { libWrapper } from "../libs/shim";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -31,6 +30,7 @@ export var daeActionTypeKeys;
 export var displayTraits;
 export var noDupDamageMacro;
 export var disableEffects;
+export var libWrapper;
 
 let debugLog = true;
 let acAffectingArmorTypes = [];
@@ -1469,7 +1469,6 @@ export function daeReadyActions() {
   simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.active;
   timesUpInstalled = game.modules.get("times-up")?.active;
   patchPrepareArmorClassAttribution();
-
 }
 
 export function localDeleteFilters(tokenId: string, filterName: string) {
@@ -1518,6 +1517,7 @@ function getRollData(wrapped) {
 }
 
 export function daeInitActions() {
+  libWrapper = globalThis.libWrapper;
   // Setup attack types and expansion change mappings
   spellAttacks = ["msak", "rsak"]
   weaponAttacks = ["mwak", "rwak"];
