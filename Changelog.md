@@ -1,6 +1,6 @@
 
 ## 0.8.34
-* DAE now reuqires libWrapper 1.8.0. 
+* DAE now **requires** libWrapper 1.8.0 as a dependency.
 * Update AC attribution for NPC and Vehicles.
 
 ## 0.8.33
