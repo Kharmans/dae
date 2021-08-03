@@ -778,7 +778,7 @@ async function handleAddConcentration(actor, effect, tokens) {
 async function handleRemoveConcentration(effect, tokens) {
   // TODO fix this to be localised
   let actor = effect.parent;
-  let concentrationLabel = game.cub?.active ? game.settings.get("combat-utility-belt", "concentratorConditionName") : "Concentrating";
+  let concentrationLabel = game.modules.get("combat-utility-belt")?.active ? game.settings.get("combat-utility-belt", "concentratorConditionName") : "Concentrating";
   // Change this to 
   let isConcentration = effect.data.label === concentrationLabel;
   if (!isConcentration) return false;

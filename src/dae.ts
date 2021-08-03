@@ -189,5 +189,11 @@ export function confirmAction(toCheck: boolean, confirmFunction, title = i18n("d
     });
     d.render(true);
   } else return confirmFunction();
-};
+}
+
+Hooks.once('libChangelogsReady', function() {
+  //@ts-ignore
+  const libch = libChangelogs;
+
+})
 

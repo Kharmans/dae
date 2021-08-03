@@ -1,3 +1,6 @@
+## 0.8.36 
+* Fix for concentration with non-english installs
+
 ## 0.8.35
 * Update for convenient effects version 1.6.2
 * updated ko.json, ja.json, thanks @klo, @Brother Sharp
