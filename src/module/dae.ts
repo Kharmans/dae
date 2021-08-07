@@ -30,6 +30,7 @@ export var daeActionTypeKeys;
 export var displayTraits;
 export var noDupDamageMacro;
 export var disableEffects;
+export var daeTitleBar;
 export var libWrapper;
 
 let debugLog = true;
@@ -782,6 +783,7 @@ async function handleRemoveConcentration(effect, tokens) {
   // Change this to 
   let isConcentration = effect.data.label === concentrationLabel;
   if (!isConcentration) return false;
+
   // If concentration has expired and times-up installed - leave it to TU.
   if (timesUpInstalled) {
     const worldTime = game.time.worldTime
@@ -790,7 +792,7 @@ async function handleRemoveConcentration(effect, tokens) {
     expired = expired || (duration && duration.remaining <= 0 && duration.type === "turns");
     if (expired) return true;
   }
-  const concentrationData = getProperty(actor.data.flags, "midi-qol.concentration-data");
+  const concentrationData = actor.getFlag("midi-qol", "concentration-data");
   if (!concentrationData) return false;
   try {
     await actor.unsetFlag("midi-qol", "concentration-data")
@@ -817,9 +819,7 @@ function _onCreateActiveEffect(...args) {
         if (cubActive && change.key === "macro.CUB") {
           game.cub.addCondition(change.value, [token]);
         }
-        if (ceActive && change.key === "macro.CE") {
-          game.dfreds.effectHandler.addEffect({effectName: change.value, actor, origin: effect.data.origin})
-        }
+
       }
     }
   } catch (err) {
@@ -837,17 +837,21 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
   try {
     const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
-    //@ts-ignore
-    const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
-    //@ts-ignore
-    const CV = conditionalVisibilityActive ? window.ConditionalVisibility : null;
-    //@ts-ignore
-    const tokenMagic = window.TokenMagic;
+    const checkConcentration = (globalThis.MidiQOL?.configSettings()?.concentrationAutomation)
+    const CV = conditionalVisibilityActive ? globalThis.ConditionalVisibility : null;
+    const tokenMagic = globalThis.TokenMagic;
     if (token) {
       if (this.data.changes) {
         for (let change of this.data.changes) {
           if (CV && change.key) await addCVChange(parent, change, [token], CV); //TODO check disabled
           if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
+          if (ceActive && change.key === "macro.CE") {
+            if (game.dfreds.effectInterface) {
+              await game.dfreds.effectInterface.addEffect(change.value, parent.uuid)//, this.data.origin)
+            } else {
+              game.dfreds.effectHandler.addEffect({effectName: change.value, parent, origin: this.data.origin})
+            }
+          }
         }
       }
       if (checkConcentration) await handleAddConcentration(parent, this, [token]);
@@ -881,17 +885,11 @@ export function _onUpdateActiveEffect(...args) {
             // game.cub.removeCondition(change.value, [token], { warn: false });
               game.cub.removeCondition(change.value, [token], { warn: false });
           }
-          if (ceActive && change.key === "macro.CE") {
-            game.dfreds.effectHandler.removeEffect(change.value, token.actor)
-          }
         }
       } else {
         for (let change of effect.data.changes) {
           if (cubActive && change.key === "macro.CUB") {
             game.cub.addCondition(change.value, [token]);
-          }
-          if (ceActive && change.key === "macro.CE") {
-            game.dfreds.effectHandler.addEffect({effectName: change.value, actor: token.actor, origin: effect.data.origin})
           }
         }
       }
@@ -912,12 +910,9 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
 
   try {
     const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
-    //@ts-ignore
-    const checkConcentration = (window.MidiQOL?.configSettings()?.concentrationAutomation)
-    //@ts-ignore
-    const CV = window.ConditionalVisibility;
-    //@ts-ignore
-    const tokenMagic = window.TokenMagic;
+    const checkConcentration = (globalThis.MidiQOL?.configSettings()?.concentrationAutomation)
+    const CV = globalThis.ConditionalVisibility;
+    const tokenMagic = globalThis.TokenMagic;
     if (changes.disabled === undefined) return;
 
     // Just deal with equipped etc
@@ -927,11 +922,25 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
         for (let change of this.data.changes) {
           if (CV) await removeCVChange(parent, change, [token], CV);
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
+          if (ceActive && change.key === "macro.CE") {
+            if (game.dfreds.effectInterface) {
+              await game.dfreds.effectInterface.removeEffect(change.value, token.actor.uuid)
+            } else {
+              game.dfreds.effectHandler.removeEffect(change.value, token.actor)
+            }
+          }
         }
       } else {
         for (let change of this.data.changes) {
           if (CV) await addCVChange(parent, change, [token], CV);
           if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
+          if (ceActive && change.key === "macro.CE") {
+            if (game.dfreds.effectInterface) {
+              await game.dfreds.effectInterface.addEffect(change.value, token.actor.uuid)//, this.data.origin)
+            } else {
+              game.dfreds.effectHandler.addEffect({effectName: change.value, actor: token.actor, origin: this.data.origin})
+            }
+          }
         }
       }
     }
@@ -945,18 +954,21 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
 export function _onDeleteActiveEffect(...args) {
   let [effect, option, userId] = args;
   if (game.user.id !== userId) return true;
+
   //@ts-ignore documentClass
   if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return true;
-  const actor = effect.parent;;
+  const actor = effect.parent;
   const token = actor.token ? actor.token : actor.getActiveTokens()[0];
+  const checkConcentration = globalThis.MidiQOL?.configSettings()?.concentrationAutomation;
+  if (checkConcentration) {
+    /// result = await wrapped(...args);
+    handleRemoveConcentration(effect, [token]);
+  }
   try {
     if (token && effect.data.changes) {
       for (let change of effect.data.changes) {
         if (cubActive && change.key === "macro.CUB") {
           game.cub.removeCondition(change.value, [token], { warn: false });
-        }
-        if (ceActive && change.key === "macro.CE") {
-          game.dfreds.effectHandler.removeEffect(change.value, actor)
         }
       }
     }
@@ -971,29 +983,27 @@ export function _onDeleteActiveEffect(...args) {
 export async function _preDeleteActiveEffect(wrapped, ...args) {
   //@ts-ignore documentClass
   if (!(this.parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
-  let checkConcentration;
   const actor = this.parent;
   const token = actor.isToken ? actor.token.object : actor.getActiveTokens()[0];
   try {
-    //@ts-ignore
-    checkConcentration = window.MidiQOL?.configSettings()?.concentrationAutomation;
-
-    //@ts-ignore
-    const CV = window.ConditionalVisibility;
-    //@ts-ignore
-    const tokenMagic = window.TokenMagic;
+    const CV = globalThis.ConditionalVisibility;
+    const tokenMagic = globalThis.TokenMagic;
     if (token && this.data.changes) {
       for (let change of this.data.changes) {
         if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
         if (CV) await removeCVChange(actor, change, [token], CV);
+        if (ceActive && change.key === "macro.CE") {
+          if (game.dfreds.effectInterface) {
+            await game.dfreds.effectInterface.removeEffect(change.value, token.actor.uuid)
+          } else {
+            game.dfreds.effectHandler.removeEffect(change.value, token.actor)
+          }
+        }
       }
     }
     // TODO clean this up eventually
     daeMacro("off", actor, this.data, {});
-    if (checkConcentration) {
-      /// result = await wrapped(...args);
-      handleRemoveConcentration(this, [token]);
-    }
+
   } catch (err) {
     console.warn("dae | error deleting active effect ", err);
   }
@@ -1472,8 +1482,7 @@ export function daeReadyActions() {
 }
 
 export function localDeleteFilters(tokenId: string, filterName: string) {
-  //@ts-ignore
-  let tokenMagic = window.TokenMagic;
+  let tokenMagic = globalThis.TokenMagic;
   let token = canvas.tokens.get(tokenId);
   tokenMagic.deleteFilters(token, filterName);
 }
@@ -1579,6 +1588,7 @@ export function daeInitActions() {
 }
 
 function initActorSheetHook(app, html, data) {
+  if (!daeTitleBar) return;
   let title = game.i18n.localize('dae.ActiveEffectName');
   let openBtn = $(`<a class="open-actor-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
   openBtn.click(ev => {
@@ -1590,6 +1600,7 @@ function initActorSheetHook(app, html, data) {
 }
 
 function initItemSheetHook(app, html, data) {
+  if (!daeTitleBar) return false;
   let title = game.i18n.localize('dae.ActiveEffectName');
   let openBtn = $(`<a class="open-item-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
   openBtn.click(ev => {
@@ -1640,7 +1651,8 @@ export function fetchParams() {
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
-  disableEffects = game.settings.get("dae", "disableEffects")
+  disableEffects = game.settings.get("dae", "disableEffects");
+  daeTitleBar = game.settings.get("dae", "DAETitleBar")
   /* TODO decide what to do about enhancing status effects or not
   ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");
   procStatusEffects(ehnanceStatusEffects);

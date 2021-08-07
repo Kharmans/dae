@@ -1,3 +1,7 @@
+## 0.8.37
+* Update for new convenient effects release - requires 1.8.0.
+* Added option to disable DAE title bar buttons.
+
 ## 0.8.36 
 * Fix for concentration with non-english installs
 
