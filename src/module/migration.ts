@@ -312,3 +312,39 @@ export async function removeActorArmorItems(actor: Actor) {
     }
   }
 }
+
+export async function cleanEffectOrigins() {
+  await cleanAllActorEffectOrigins();
+  await cleanAllTokenEffectOrigins();
+}
+
+export async function cleanAllActorEffectOrigins() {
+  //@ts-ignore
+  for (let actor of game.actors.contents) {
+    //@ts-ignore
+    let ownedItemEffects = actor.effects.filter(ef => ef.data.origin?.includes("OwnedItem"));
+    let updates = ownedItemEffects.map(ef => {return {_id: ef.id, origin: ef.data.origin.replace("OwnedItem", "Item")}});
+    if (updates.length > 0) {
+      await actor.updateEmbeddedDocuments("ActiveEffect", updates)
+      console.warn("Updates are ", actor.name, updates)
+    }
+  }
+}
+
+
+export async function cleanAllTokenEffectOrigins() {
+  for (let scene of game.scenes) {
+    //@ts-ignore
+    for (let tokenDocument of scene.tokens) {
+      if (!tokenDocument.isLinked && tokenDocument.actor) {
+        const actor = tokenDocument.actor;
+        let ownedItemEffects = actor.effects.filter(ef => ef.data.origin?.includes("OwnedItem"));
+        let updates = ownedItemEffects.map(ef => {return {_id: ef.id, origin: ef.data.origin.replace("OwnedItem", "Item")}});
+        if (updates.length > 0) {
+          await actor.updateEmbeddedDocuments("ActiveEffect", updates)
+          console.warn("Updates are ", actor.name, updates)
+        }
+      }
+    }
+  }
+}
