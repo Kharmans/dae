@@ -181,7 +181,7 @@ activateListeners(html) {
   html.find('.effect-delete').click(async ev => {
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     confirmAction(confirmDelete, () => {
-      this.object.deleteEmbeddedEntity("ActiveEffect", effect_id).then(() => this.render());
+      this.object.deleteEmbeddedDocuments("ActiveEffect", [effect_id]).then(() => this.render());
     })
   });
   html.find('.effect-edit').click(async ev => {

@@ -1,6 +1,6 @@
 
 import { debug, warn, log, i18n } from "../dae";
-import { ValidSpec, createArmorEffect } from "./dae";
+import { ValidSpec } from "./dae";
 
 //@ts-ignore
 const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;

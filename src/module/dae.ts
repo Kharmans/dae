@@ -18,8 +18,6 @@ export var furnaceActive;
 export var itemacroActive;
 export var conditionalVisibilityActive;
 export var midiActive;
-export var calculateArmor;
-export var applyBaseAC;
 export var debugEnabled;
 export var useAbilitySave;
 export var activeConditions;
@@ -34,7 +32,6 @@ export var daeTitleBar;
 export var libWrapper;
 
 let debugLog = true;
-let acAffectingArmorTypes = [];
 
 export class ValidSpec {
   static allSpecs: ValidSpec[] = [];
@@ -333,9 +330,6 @@ function effectDisabled(actor, efData, itemData = null) {
       disabled = !itemData.data.equipped || itemData.data.attunement === CONFIG.DND5E.attunementTypes.REQUIRED;
     }
   }
-  // if not calcullating armor disable armor effects
-  if (efData.flags.dae?.armorEffect)
-    disabled = disabled || !calculateArmor;
   return disabled;
 }
 
@@ -638,13 +632,6 @@ function daeCustomEffect(actor, change) {
       value = new Roll(formula, rollData).evaluate({ async: false }).total;
       setProperty(actor.data, `flags.dae.${flagName}`, value);
       return true;
-
-    case "data.attributes.ac.value":
-      if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.3.9")) return true;
-      if (change.value === "AutoCalc") {
-        actor.data.data.attributes.ac.value = computeAC(actor, actor.data.data.abilities.dex.mod);
-      }
-      return true;
   }
 }
 
@@ -717,11 +704,6 @@ function prepareData(wrapped) {
   debug("prepare data: before passes", this.name, this.data._source);
   this.overrides = {};
   wrapped();
-  if (["dnd5e", "sw5e"].includes(game.system.id)) {
-    if (applyBaseAC && this.data.type === "character" && !this.data.flags[game.system.id]?.isPolymorphed) {
-      this.data.data.attributes.ac.value = 10 + Number(this.data.data.abilities.dex.mod);
-    }
-  }
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj, ValidSpec.baseSpecsObj, true);
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.data.items)
@@ -1038,7 +1020,7 @@ export async function daeMacro(action: string, actor, effectsData, lastArgOption
           actorId: actor.id,
           actorUuid: actor.uuid,
           tokenId: actor.token ? actor.token.id : getSelfTarget(actor)?.id,
-          tokenUuid: actor.token ? actor.token.uuid : getSelfTarget(actor)?.uuid,
+          tokenUuid: actor.token ? actor.token.document.uuid : getSelfTarget(actor)?.document.uuid,
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         //@ts-ignore 
         const theChange = await evalArgs({ itemData: null, effectData, context: daeRollData(actor), actor, change, doRolls: true })
@@ -1249,14 +1231,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
 function preUpdateItem(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   Hooks.once("updateItem", async () => {
-    // TODO remove this when the old ac method goes away
-    if (updates.data?.armor && candidate.data.data.armor?.type && calculateArmor) { // TODO find out why SRD items have an armor value
-      let updatedActorEffectData = updateArmorEffect(candidate, updates);
-      const origin = candidate.uuid; // `Actor.${item.actor.id}.Item.${updates._id}`;
-      if (updatedActorEffectData.length > 0) {
-        await candidate.parent.updateEmbeddedDocuments("ActiveEffect", updatedActorEffectData);
-      }
-    } else if (updates.effects) { // item effects have changed - update transferred effects
+    if (updates.effects) { // item effects have changed - update transferred effects
       const itemUuid = candidate.uuid;
       // delete all actor effects for the given item
       let deletions = [];
@@ -1303,86 +1278,8 @@ function preUpdateItem(candidate, updates, options, user) {
   return true;
 }
 
-function computeAC(actor, dexMod) {
-  const baseAC = actor.data.data.attributes.ac.value;
-  let bestArmorAC = 0;
-  let armorLabel = "";
-  let bestShieldAC = 0;
-  let shieldLabel = "";
-  let bonusAC = 0;
-  let newAC;
-  for (let item of actor.items) {
-    if (item.type !== "equipment" || !item.data.data.equipped) continue;
-    if (!item.data.data.armor) continue;
-    const armorData = item.data.data.armor;
-    switch (armorData.type) {
-      case "bonus":
-        if ([CONFIG.DND5E.attunementTypes.ATTUNED, CONFIG.DND5E.attunementTypes.NONE].includes(item.data.data.attunement))
-          bonusAC += armorData.value;
-        break;
-      case "shield":
-        if (armorData.value > bestShieldAC) {
-          bestShieldAC = armorData.value;
-          shieldLabel = item.label;
-        }
-        break;
-      case "natural":
-        newAC = armorData.value + Math.min(armorData.dex ?? 99, actor.data.data.abilities.dex.mod);
-        if (armorData.value > bestArmorAC) {
-          bestArmorAC = newAC;
-          armorLabel = item.label
-        }
-        break;
-      case "light":
-        newAC = armorData.value + Math.min(armorData.dex ?? 99, actor.data.data.abilities.dex.mod);
-        if (armorData.value > bestArmorAC) {
-          bestArmorAC = newAC;
-          armorLabel = item.label
-        }
-        break;
-      case "medium":
-        newAC = armorData.value + Math.min(armorData.dex ?? 2, actor.data.data.abilities.dex.mod);
-        if (armorData.value > bestArmorAC) {
-          bestArmorAC = newAC;
-          armorLabel = item.label
-        }
-        break;
-      case "heavy":
-        newAC = armorData.value;
-        if (armorData.value > bestArmorAC) {
-          bestArmorAC = newAC;
-          armorLabel = item.label
-        }
-        break
-      default:
-        break;
-    }
-  }
-  if (bestArmorAC > 0) {
-    return bestArmorAC + bestShieldAC + bonusAC;
-  }
-  return actor.data.data.attributes.ac.value + bestShieldAC + bonusAC;
-}
-
-// TODO remove this when old ac removed
-export function updateArmorEffect(candidate, updates) {
-  let itemData = candidate.data;
-  // Armor value has been changed so recrreate owned item and actor effects
-  const origin = candidate.uuid;
-  let existingEffect = candidate.parent.effects?.find(ef => ef.data.flags?.dae?.armorEffect && ef.data.origin === origin);
-  if (!existingEffect) return [];
-  let armorEffectData = generateArmorEffect(itemData, origin, mergeObject(itemData.data.armor, updates.data.armor, { overwrite: true }));
-  //@ts-ignore _id
-  armorEffectData._id = existingEffect.id;
-  //@ts-ignore disabled
-  armorEffectData.disabled = effectDisabled(candidate.parent, armorEffectData, candidate.data);
-  return [armorEffectData];
-}
-
 export function preCreateItem(candidate, data, options, user) {
   if (!candidate.isOwned) return;
-  // create armor effects if required - this in in the preCreate hook so udpating the candidate is enough
-  if (calculateArmor) createArmorEffect(candidate, data);
   data.effects?.forEach(efData => {
     if (efData.transfer) {
       setProperty(efData, "flags.dae.transfer", true)
@@ -1395,80 +1292,6 @@ export function preCreateItem(candidate, data, options, user) {
     candidate.data.update({ "effects": data.effects });
   }
   return true;
-}
-
-// TODO remove this when turning off old armor calcs
-export function createArmorEffect(item, itemData) {
-  if (itemData.type !== "equipment") return true;
-  // armor created on actor, screae armor effect.
-  const origin = item.uuid; //`Actor.${actor.id}.Item.${itemData._id}`;
-  // const origin = actor.items.get(itemData._id).uuid;
-  itemData.effects = itemData.effects?.filter(efData => !efData.flags.dae?.armorEffect) || [];
-  if (calculateArmor) switch (itemData.data.armor?.type) {
-    case "natural":
-      //@ts-ignore
-      itemData.effects.push(generateArmorEffect(itemData, origin, itemData.data.armor));
-      break;
-    case "shield":
-    case "light":
-    case "medium":
-    case "heavy":
-      itemData.effects.push(generateArmorEffect(itemData, origin, itemData.data.armor));
-      break;
-    default:
-      break;
-  }
-  return true;
-}
-
-//TODO remove this when deleting old armor effects
-export function generateArmorEffect(itemData, origin, armorData) {
-  switch (armorData.type) {
-    case "shield":
-      //@ts-ignore
-      let ae = armorEffectFromFormula(`${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.ADD, itemData, origin);
-      ae.changes.forEach(c => c.priority = 7)
-      return ae;
-    case "natural":
-      //@ts-ignore
-      return armorEffectFromFormula(`@abilities.dex.mod + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
-    case "light":
-      //@ts-ignore
-      return armorEffectFromFormula(`{@abilities.dex.mod, ${armorData.dex || 99}}kl + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
-    case "medium":
-      //@ts-ignore
-      return armorEffectFromFormula(`{@abilities.dex.mod,${armorData.dex || 2}}kl + ${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
-    case "heavy":
-      //@ts-ignore
-      return armorEffectFromFormula(`${armorData.value}`, CONST.ACTIVE_EFFECT_MODES.OVERRIDE, itemData, origin);
-    default:
-      return null;
-      break;
-  }
-}
-
-// TODO remove this when deleting old armor effects
-function armorEffectFromFormula(formula, mode, itemData, origin) {
-  let label = `AC${itemData.data.armor.type === "shield" ? "+" : "="}${itemData.data.armor.value}`;
-  if ("light" === itemData.data.armor?.type) label += `+min(dex.mod, ${itemData.data.armor?.dex || "unlimited"})`;
-  if ("medium" === itemData.data.armor?.type) label += `+min(dex.mod, ${itemData.data.armor?.dex || "2"})`;
-  if ("heavy" === itemData.data.armor?.type) label += `+min(dex.mod, ${itemData.data.armor?.dex || "0"})`;
-
-  return {
-    label,
-    icon: itemData.img,
-    changes: [
-      {
-        key: "data.attributes.ac.value",
-        value: formula,
-        mode,
-        priority: 4
-      },
-    ],
-    transfer: true,
-    origin,
-    flags: { dae: { transfer: true, armorEffect: true } }
-  };
 }
 
 export function daeReadyActions() {
@@ -1540,9 +1363,7 @@ export function daeInitActions() {
     "data.bonuses.weapon.damage": { attacks: weaponAttacks, selector: "damage" },
     "data.bonuses.spell.damage": { attacks: spellAttacks, selector: "damage" }
   }
-  if (["dnd5e", "sw5e"].includes(game.system.id)) {
-    acAffectingArmorTypes = ["light", "medium", "heavy", "bonus", "natural", "shield"];
-  }
+
   ValidSpec.createValidMods();
 
   // We will call this in prepareData
@@ -1637,16 +1458,6 @@ export function daeSetupActions() {
 export function fetchParams() {
 
   requireItemTarget = game.settings.get("dae", "requireItemTarget");
-  calculateArmor = game.settings.get("dae", "calculateArmor");
-  applyBaseAC = game.settings.get("dae", "applyBaseAC");
-  if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.3.9") && applyBaseAC) {
-    game.settings.set("dae", "applyBaseAC", false);
-    applyBaseAC = false;
-  }
-  if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.3.9") && calculateArmor) {
-    game.settings.set("dae", "calculateArmor", false);
-    calculateArmor = false;
-  }
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
   confirmDelete = game.settings.get("dae", "confirmDelete")

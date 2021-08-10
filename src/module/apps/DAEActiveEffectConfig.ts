@@ -16,20 +16,29 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   traitList;
   languageList;
   conditionList;
-  toolProfList;
-  armorProfList;
-  weaponProfList;
+  static profInit;
+  static toolProfList;
+  get toolProfList() { return DAEActiveEffectConfig.toolProfList }
+  set toolProfList(list) { DAEActiveEffectConfig.toolProfList = list }
+
+  static armorProfList;
+  get armorProfList() { return DAEActiveEffectConfig.armorProfList }
+  set armorProfList(list) { DAEActiveEffectConfig.armorProfList = list }
+  static weaponProfList;
+  get weaponProfList() { return DAEActiveEffectConfig.weaponProfList }
+  set weaponProfList(list) { DAEActiveEffectConfig.weaponProfList = list }
+
   cubConditionList;
   ceEffectList;
   ConditionalVisibilityList;
   ConditionalVisibilityVisionList;
   validFields;
-  constructor(object={}, options={}) {
+  constructor(object = {}, options = {}) {
     super(object, options);
     this.tokenMagicEffects = {};
     //@ts-ignore
     if (game.modules.get("tokenmagic")?.active) {
-      game.settings.get("tokenmagic", "presets").forEach(preset=> {
+      game.settings.get("tokenmagic", "presets").forEach(preset => {
         this.tokenMagicEffects[preset.name] = preset.name;
       })
     } else this.tokenMagicEffects["invalid"] = "module not installed"
@@ -115,8 +124,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       game.dfreds.effects?.all.forEach(ceEffect => {
         this.ceEffectList[ceEffect.name] = ceEffect.name;
       })
-
     }
+
     const ConditionalVisibilityNames = ["invisible", "hidden", "obscured", "indarkness"];
     const ConditionalVisibilityVisionNames = ["blindsight", "devilssight", "seeinvisible", "tremorsense", "truesight"]
     if (conditionalVisibilityActive && false) {
@@ -131,11 +140,36 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
 
     this.validFields = ValidSpec.allSpecs
-    .filter(e => e._fieldSpec.includes(""))
-    .reduce((mods, em) => {
+      .filter(e => e._fieldSpec.includes(""))
+      .reduce((mods, em) => {
         mods[em._fieldSpec] = em._label;
         return mods;
-    }, {});
+      }, {});
+  }
+
+
+  static async setupProficiencies() {
+    if (game.system.id === "dnd5e") {
+      if (DAEActiveEffectConfig.profInit) return;
+      this.profInit = true;
+      const pack = game.packs.get(CONFIG.DND5E.sourcePacks.ITEMS);
+      const profs = [
+        { type: "tool", list: DAEActiveEffectConfig.toolProfList },
+        { type: "armor", list: DAEActiveEffectConfig.armorProfList },
+        { type: "weapon", list: DAEActiveEffectConfig.weaponProfList }
+      ];
+      for (let { type, list } of profs) {
+        let choices = CONFIG.DND5E[`${type}Proficiencies`];
+        const ids = CONFIG.DND5E[`${type}Ids`];
+        if (ids !== undefined) {
+          const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
+          for (const [key, id] of Object.entries(ids)) {
+            const item = await pack.getDocument(id);
+            list[key] = item.name;
+          }
+        }
+      }
+    }
   }
 
   /** @override */
@@ -147,7 +181,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       width: 900,
       height: "auto",
       resizable: true,
-      tabs: [{navSelector: ".tabs", contentSelector: "form", initial: "details"}]
+      tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }]
     });
   }
 
@@ -155,7 +189,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /** @override */
   get title() {
-    let suffix = this.object.parent.isOwned ? "(Owned Item) Experimental" :"";
+    let suffix = this.object.parent.isOwned ? "(Owned Item) Experimental" : "";
     return `${i18n("EFFECT.ConfigTitle")}: ${this.object.data.label}` + suffix;
   }
 
@@ -167,9 +201,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
   /* ----------------------------------------- */
   getOptionsForSpec(spec) {
-    if (spec === "data.traits.languages.value") 
+    if (spec === "data.traits.languages.value")
       return this.languageList;
-    if (spec === "data.traits.ci.value") 
+    if (spec === "data.traits.ci.value")
       return this.conditionList;
     if (spec === "data.traits.toolProf.value")
       return this.toolProfList;
@@ -194,32 +228,34 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
 
-/*
-    blindsight: false
-devilssight: false
-hidden: false
-indarkness: false
-invisible: false
-obscured: false
-seeinvisible: true
-tremorsense: false
-truesight: false
-*/
+    /*
+        blindsight: false
+    devilssight: false
+    hidden: false
+    indarkness: false
+    invisible: false
+    obscured: false
+    seeinvisible: true
+    tremorsense: false
+    truesight: false
+    */
     if (spec === "data.traits.size") return CONFIG.DND5E.actorSizes;
-    
-    return false;
-   }
 
-   /** @override */
-  getData(options) {
+    return false;
+  }
+
+  /** @override */
+  async getData(options) {
     const data = super.getData(options);
+    await DAEActiveEffectConfig.setupProficiencies();
+
     //@ts-ignore
     const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)
-    .reduce((obj, e) => {
-      //@ts-ignore
-      obj[e[1]] = game.i18n.localize("EFFECT.MODE_"+e[0]);
-      return obj;
-    }, {});
+      .reduce((obj, e) => {
+        //@ts-ignore
+        obj[e[1]] = game.i18n.localize("EFFECT.MODE_" + e[0]);
+        return obj;
+      }, {});
     //@ts-ignore
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
@@ -238,7 +274,7 @@ truesight: false
       if (change.key.startsWith("flags.midi-qol")) {
         //@ts-ignore
         change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
-      } 
+      }
       else if ([-1, undefined].includes(ValidSpec.allSpecsObj[change.key]?.forcedMode)) {
         change.modes = allModes;
       }
@@ -266,7 +302,7 @@ truesight: false
       data.effect.flags.dae.specialDuration = [data.effect.flags.dae.specialDuration]
     }
     data.sourceName = this.object.sourceName;
-    data.fieldsList =  this.fieldsList;
+    data.fieldsList = this.fieldsList;
     return data;
   }
 
@@ -274,8 +310,8 @@ truesight: false
     const target = event.target;
     // $(target.parentElement.parentElement.children[1]).find(".keylist").val(ValidSpec.allSpecs[target.selectedIndex].fieldSpec)
     $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(ValidSpec.allSpecs[target.selectedIndex].fieldSpec)
-    return this.submit({preventClose: true}).then(() => this.render());
-   }
+    return this.submit({ preventClose: true }).then(() => this.render());
+  }
   /* ----------------------------------------- */
 
   /** @override */
@@ -283,34 +319,34 @@ truesight: false
     super.activateListeners(html);
     html.find(".keylist").change(this._keySelected.bind(this))
     html.find(".awesomplete").on("awesomplete-selectcomplete", this._textSelected.bind(this));
-}
+  }
 
   /* ----------------------------------------- */
   _textSelected(event) {
-    return this.submit({preventClose: true}).then(() => this.render());
+    return this.submit({ preventClose: true }).then(() => this.render());
   }
 
-  
+
   /* ----------------------------------------- */
   _onEffectControl(event) {
     event.preventDefault();
     const button = event.currentTarget;
-    switch ( button.dataset.action ) {
+    switch (button.dataset.action) {
       case "add":
         this._addEffectChange(button);
-        return this.submit({preventClose: true}).then(() => this.render());
+        return this.submit({ preventClose: true }).then(() => this.render());
       case "delete":
         return confirmAction(confirmDelete, () => {
           button.closest(".effect-change").remove();
-          this.submit({preventClose: true}).then(() => this.render());
+          this.submit({ preventClose: true }).then(() => this.render());
         });
       case "add-specDur":
         this._addSpecDuration(button);
-        return this.submit({preventClose: true}).then(() => this.render());
+        return this.submit({ preventClose: true }).then(() => this.render());
       case "delete-specDur":
         return confirmAction(confirmDelete, () => {
           button.closest(".effect-special-duration").remove();
-          this.submit({preventClose: true}).then(() => this.render());
+          this.submit({ preventClose: true }).then(() => this.render());
         });
     }
   }
@@ -318,7 +354,7 @@ truesight: false
   _addSpecDuration(button) {
     const durations = button.closest(".tab").querySelector(".special-duration-list");
     const last = durations.lastElementChild;
-    const idx = last ? last.dataset.index+1 : 0;
+    const idx = last ? last.dataset.index + 1 : 0;
     const duration = $(` 
     <li class="effect-special-duration flexrow" data-index="${idx}">
     <div class="formgroup">
@@ -339,7 +375,7 @@ truesight: false
   _addEffectChange(button) {
     const changes = button.closest(".tab").querySelector(".changes-list");
     const last = changes.lastElementChild;
-    const idx = last ? last.dataset.index+1 : 0;
+    const idx = last ? last.dataset.index + 1 : 0;
     const change = $(`
     <li class="effect-change" data-index="${idx}">
         <input type="text" name="changes.${idx}.key" value=""/>
@@ -378,9 +414,9 @@ truesight: false
       let itemData = this.object.parent.data.toObject();
       itemData.effects.forEach(efData => {
         if (efData._id == this.object.id)
-          mergeObject(efData, formData, {overwrite:true, inplace: true})
+          mergeObject(efData, formData, { overwrite: true, inplace: true })
       })
-      return this.object.parent.actor.updateEmbeddedDocuments("Item", [itemData], {diff: true});
+      return this.object.parent.actor.updateEmbeddedDocuments("Item", [itemData], { diff: true });
     } else {
       await this.object.update(formData);
     }

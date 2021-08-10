@@ -21,7 +21,7 @@ export let requestGMAction = async (action: string, data: {}, debugLog: boolean 
     return await GMAction.processAction(action, game.user.id, duplicate(data));
   }
   //@ts-ignore
-  let intendedGM = game.users.entities.find(u => u.isGM && u.active);
+  let intendedGM = game.users.contents.find(u => u.isGM && u.active);
   //@ts-ignore
   // if (!game.user.isTrusted) return;
   if (!intendedGM) {
@@ -251,7 +251,8 @@ export async function createToken(userId: string, data: { targetSceneId: string,
   //@ts-ignore
   let scenes = game.scenes;
   let targetScene = scenes.get(data.targetSceneId);
-  return await targetScene.createEmbeddedEntity('Token', mergeObject(duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true }))
+  //@ts-ignore
+  return await targetScene.createEmbeddedDocuemnts('Token', [mergeObject(duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
 }
 
 /* TODO remove

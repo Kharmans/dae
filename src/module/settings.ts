@@ -61,26 +61,6 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "calculateArmor", {
-    name: game.i18n.localize("dae.calculateArmor.Name"),
-    hint: game.i18n.localize("dae.calculateArmor.Hint"),
-    scope: "world",
-    default: true,
-    config: true,
-    type: Boolean,
-    onChange: fetchParams
-  });
-
-  game.settings.register("dae", "applyBaseAC", {
-    name: game.i18n.localize("dae.applyBaseAC.Name"),
-    hint: game.i18n.localize("dae.applyBaseAC.Hint"),
-    scope: "world",
-    default: true,
-    config: true,
-    type: Boolean,
-    onChange: fetchParams
-  });
-
   game.settings.register("dae", "ArmorDisabled", {
     scope: "world",
     default: 0,

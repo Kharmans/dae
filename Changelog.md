@@ -1,8 +1,13 @@
+## 0.8.39
+* Update for effects creating proficiencies to pick up individual proficiencies.
+* Remvoed deprecated AC calculation code
+* Fix for ac.value effects being displayed for disabled effects.
+
 ## 0.8.38
 * Added ```DAE.cleanEffectOrigins()``` which will fix up item origins which include OwnedItem (which is deprecated). If you see lots of OwnedItem is deprecated messages, this is probably the cuase. Can be run multiple times, from the console or as a macro, needs to be run as a GM.
 
 ## 0.8.37
-* Update for new convenient effects release - requires 1.8.0.
+* Update for new convenient effects release - requires convenient effects 1.8.0.
 * Added option to disable DAE title bar buttons.
 
 ## 0.8.36 

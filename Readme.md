@@ -59,13 +59,17 @@ Expiry of effects requires additional modules to be installed.
 * Any/all of the modules can be installed and play nicely together. If times-up is installed it takes over the expiry of timed effects. 
 * When entering the start time on the DAE duration tab the value is interpreted as an offset from the current game time. So 0 means now, +60 means in 1 minutes time, -30 means 30 seconds ago
 
+* If you use the special durations listed below be aware that any temporary effect must have a time duration as well. If you don't specify one (in the item or the effect) it will be assumed to be 6 seconds, which means it will expire at the start of the next round. If you want to make sure the special duration will work (i.e. start of the actors next turn) put in a dummy duration that is certain to be long enough, i.e. 2 rounds.
+
 * [Requires midi-qol 0.3.35+ and does not depend on about-time/times-up] Effects support additional expiry options (available on the DAE effect duration screen) that can be chosen:
   * 1Attack: active effects last for one attack - requires workflow automation
   * 1Action: active effects last for one action - requires workflow automation 
   * 1Hit: active effects last until the next successful hit - requires workflow automation 
   * isAttacked: the effect lasts until the next attack against the target. Requires workflow automation.
   * isDamaged: the effect lasts until the target takes damage. Requires workflow automation.
+  * 1Save: the effect lasts until the target makes a save roll. Requires workflow automation.
 All of these effects automatically expire at the end of the comabt.
+  * There are lots of variations on the above to support different damage types/saves
 
 Requires times-up installed and active.
   * turnStart: effects last until the start of self/target's next turn (check combat tracker)  
