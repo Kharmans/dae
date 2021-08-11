@@ -1,4 +1,6 @@
 ## 0.8.40
+* Fix for broken migration script in 0.8.39
+
 ## 0.8.39
 * Update for effects creating proficiencies to pick up individual proficiencies.
 * Remvoed deprecated AC calculation code
