@@ -246,10 +246,9 @@ export function checkArmorDisabled() {
               icon: '<i class="fas fa-cross"></i>',
               label: "Disable DAE AC",
               callback: async () => {
-                if (game.settings.get("dae", "calculateArmor") || game.settings.get("dae", "applyBaseAC")) {
-                  await cleanArmorWorld();
-                }
+                await cleanArmorWorld();
                 await cleanDAEArmorWorld();
+                game.settings.set("dae", "ArmorDisabled", 1)
               }
           },
         },
