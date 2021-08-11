@@ -79,8 +79,6 @@ export async function removeAllItemsArmorEffects() {
 }
 
 export async function cleanArmorWorld() {
-  game.settings.set("dae", "applyBaseAC", false);
-  game.settings.set("dae", "calculateArmor", false);
   Promise.all([removeAllItemsArmorEffects(), removeAllActorArmorEffects(), removeAllTokenArmorEffects()]);
 }
 

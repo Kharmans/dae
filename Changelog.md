@@ -1,3 +1,4 @@
+## 0.8.40
 ## 0.8.39
 * Update for effects creating proficiencies to pick up individual proficiencies.
 * Remvoed deprecated AC calculation code

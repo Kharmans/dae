@@ -68,7 +68,7 @@ function _prepareArmorClassAttribution(wrapped, data) {
     for (let change of effect.data.changes) {
       if (change.key === "data.attributes.ac.value" && !effect.data.disabled) {
         attributions.push({
-          label: effect.data.label,
+          label: `${effect.data.label} (AE)`,
           mode: change.mode,
           value: change.value
         })
