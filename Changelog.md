@@ -1,3 +1,6 @@
+## 0.8.42 
+* Fix for wrong fetching to token uuid
+
 ## 0.8.41
 * Fix for broken migration script in 0.8.39
 

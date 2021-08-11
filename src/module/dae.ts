@@ -1009,19 +1009,26 @@ export async function daeMacro(action: string, actor, effectsData, lastArgOption
   warn("Dae macro ", action, actor, effectsData, lastArgOptions)
   for (let effectData of effectsData) {
     if (!effectData.changes) continue;
+    let tokenUuid;
+    if (actor.token) tokenUuid = actor.token.uuid;
+    else {
+      const selfTarget = getSelfTarget(actor);
+      if (selfTarget.document) tokenUuid = selfTarget.document.uuid;
+      else tokenUuid = selfTarget.uuid;
+    }
+    let lastArg = mergeObject(lastArgOptions, {
+      //@ts-ignore - undefined fields
+      effectId: effectData._id,
+      origin: effectData.origin,
+      efData: effectData,
+      actorId: actor.id,
+      actorUuid: actor.uuid,
+      tokenId: actor.token ? actor.token.id : getSelfTarget(actor)?.id,
+      tokenUuid,
+    }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
     for (let change of effectData.changes) {
       try {
         if (!["macro.execute", "macro.itemMacro"].includes(change.key)) continue;
-        let lastArg = mergeObject(lastArgOptions, {
-          //@ts-ignore - undefined fields
-          effectId: effectData._id,
-          origin: effectData.origin,
-          efData: effectData,
-          actorId: actor.id,
-          actorUuid: actor.uuid,
-          tokenId: actor.token ? actor.token.id : getSelfTarget(actor)?.id,
-          tokenUuid: actor.token ? actor.token.document.uuid : getSelfTarget(actor)?.document.uuid,
-        }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         //@ts-ignore 
         const theChange = await evalArgs({ itemData: null, effectData, context: daeRollData(actor), actor, change, doRolls: true })
         let args = [];
