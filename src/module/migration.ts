@@ -250,9 +250,6 @@ export function checkArmorDisabled() {
                   await cleanArmorWorld();
                 }
                 await cleanDAEArmorWorld();
-                await game.settings.set("dae", "ArmorDisabled", 1)
-                await game.settings.set("dae", "calculateArmor", false); 
-                await game.settings.set("dae", "applyBaseAC", false);
               }
           },
         },

@@ -1,3 +1,6 @@
+## 0.8.41
+* Fix for broken migration script in 0.8.39
+
 ## 0.8.40
 * Fix for broken migration script in 0.8.39
 
