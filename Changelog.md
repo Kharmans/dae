@@ -1,3 +1,7 @@
+## 0.8.43
+* Added in special durations for ability specific saving throw success/failure
+* Moved "removeConcentration" to midi-qol
+
 ## 0.8.42 
 * Fix for wrong fetching to token uuid
 

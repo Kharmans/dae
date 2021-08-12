@@ -752,41 +752,6 @@ async function addCVChange(actor, change, tokenDocuments, CV) {
   }
 }
 
-async function handleAddConcentration(actor, effect, tokens) {
-  let concentrationLabel = game.cub?.active ? game.settings.get("combat-utility-belt", "concentratorConditionName") : "Concentrating";
-  const isConcentration = effect.data.label === concentrationLabel;
-  if (!isConcentration) return false;
-}
-
-async function handleRemoveConcentration(effect, tokens) {
-  // TODO fix this to be localised
-  let actor = effect.parent;
-  let concentrationLabel = game.modules.get("combat-utility-belt")?.active ? game.settings.get("combat-utility-belt", "concentratorConditionName") : "Concentrating";
-  // Change this to 
-  let isConcentration = effect.data.label === concentrationLabel;
-  if (!isConcentration) return false;
-
-  // If concentration has expired and times-up installed - leave it to TU.
-  if (timesUpInstalled) {
-    const worldTime = game.time.worldTime
-    let expired = effect.data.duration?.seconds && (game.time.worldTime - effect.data.duration.startTime) >= effect.data.duration.seconds;
-    const duration = effect.duration;
-    expired = expired || (duration && duration.remaining <= 0 && duration.type === "turns");
-    if (expired) return true;
-  }
-  const concentrationData = actor.getFlag("midi-qol", "concentration-data");
-  if (!concentrationData) return false;
-  try {
-    await actor.unsetFlag("midi-qol", "concentration-data")
-    concentrationData.templates?.forEach(templateUuid => DAEfromUuid(templateUuid).delete());
-    requestGMAction(GMAction.actions.deleteEffects, { ignore: [effect.uuid], targets: concentrationData.targets, origin: concentrationData.uuid });
-
-  } catch (err) {
-    console.warn("dae | error deleteing concentration effects: ", err)
-  }
-  return true;
-}
-
 function _onCreateActiveEffect(...args) {
   let [effect, options, userId] = args;
   if (userId !== game.user.id) return true;
@@ -819,7 +784,6 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
   try {
     const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
-    const checkConcentration = (globalThis.MidiQOL?.configSettings()?.concentrationAutomation)
     const CV = conditionalVisibilityActive ? globalThis.ConditionalVisibility : null;
     const tokenMagic = globalThis.TokenMagic;
     if (token) {
@@ -836,7 +800,6 @@ async function _preCreateActiveEffect(wrapped, ...args) {
           }
         }
       }
-      if (checkConcentration) await handleAddConcentration(parent, this, [token]);
     }
     //TODO clean this up eventually
     daeMacro("on", parent, [this.data], {});
@@ -941,11 +904,7 @@ export function _onDeleteActiveEffect(...args) {
   if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return true;
   const actor = effect.parent;
   const token = actor.token ? actor.token : actor.getActiveTokens()[0];
-  const checkConcentration = globalThis.MidiQOL?.configSettings()?.concentrationAutomation;
-  if (checkConcentration) {
-    /// result = await wrapped(...args);
-    handleRemoveConcentration(effect, [token]);
-  }
+
   try {
     if (token && effect.data.changes) {
       for (let change of effect.data.changes) {
