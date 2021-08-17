@@ -23,11 +23,11 @@ After clean up you will need to check any actors with armor and look at the AC t
 
 You can run ```DAE.cleanArmorWorld()``` at any time, from the console or as a macro, in case you have actors which did not get cleaned the first time. Needs to be run as a GM.
 
-After 1.4.0 you can still use DAE to modify armor class.
+After dnd5e 1.4.0 you can still use DAE to modify armor class.
 ```data.atrributes.ac.bonus``` is the dnd5e supported field to modify AC and can be used without dae loaded. It is evaluated BEFORE prepareData is run so no derived fields can use used, i.e. no dex.mod, flags.anything and so on.
 ```data.attributes.ac.value``` requires DAE to be effective, without dae changes to ac.value will have no effect. Changes to ac.value are applied AFTER prepareData so can use any field. 
 
-### After updating to 1.4.2 my characters AC is wrong. dnd5e 1.4.2 **removed** the magical bonus equipment type and so anything that had a type of magical bonus will stop working. The quickest solution is to create an active effect on the item which sets the ac.bonus to the value that used to be in the magical bonus.
+### After updating to dnd5e 1.4.2 my characters AC is wrong. dnd5e 1.4.2 **removed** the magical bonus equipment type and so anything that had a type of magical bonus will stop working. The quickest solution is to create an active effect on the item which sets the ac.bonus to the value that used to be in the magical bonus.
 
 ## What does DAE do?
 First off you probably don't need DAE. The core foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and using DAE only if you run into a roadblock on what you want to do.
@@ -41,9 +41,9 @@ DAE does add some features to core Active Effects, so if the following features 
 1. Transfer effects (from an item) are enabled/disbled according to the following rule which overrides the default behaviour
   * If the item that the effect came from (transfer effect) and the item can't be equipped simply use the "disabled/suspended" setting. You can toggle from the effects tab on the item/character sheet.
   * Anything else follows the obvious dnd5e rule that transfer effects for an item apply if the item is equipped and attuned/does not require attunement. If you modify the enable/disable flag (suspended) on the actor effect, that will override the rule until the item is updated.
-2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value, core restricts you to numbers and strings.
+2. The ability to reference actor data in active effects data fields. i.e. @abilities.str.value, core restricts you to numbers and strings. This is not the whole story, if an active effect modifies a field that will be used in a roll (like a data.bonuses.mwak.attack) a string field, like @abilities.dex.mod, will get looked up when the roll is made.
 3. An extended set of fields you can modify, some of which are custom only fields to support drop down lists of possible value, like all of the traits, immunities some of which you cannot edit in core active effects.
-4. The ability to update derived fields, such as abilities.dex.mod. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
+4. The ability to update derived fields, such as abilities.dex.mod. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus). **dnd 1.5 is likely to make significant changes to how fields like dex.mod behave and may make that part of DAE redundant**
 5. The ability to perform arithmetic in field data definitions, like 
 ```
 ceil(@classes.rogue.levels/2)
