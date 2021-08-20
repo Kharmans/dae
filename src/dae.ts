@@ -89,6 +89,9 @@ Hooks.once('ready', async function () {
     daeSpecialDurations["isCheck"] = `${i18n("dae.isRollBase")} ${i18n("dae.isCheckDetail")}`;
     daeSpecialDurations["isSkill"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")}`;
     daeSpecialDurations["isMoved"] = i18n("dae.isMoved");
+    daeSpecialDurations["longRest"] = i18n("DND5E.LongRest");
+    daeSpecialDurations["shortRest"] = i18n("DND5E.ShortRest");
+    daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
     Object.keys(CONFIG.DND5E.abilities).forEach(abl => {
       daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}`;
       daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
@@ -101,6 +104,7 @@ Hooks.once('ready', async function () {
     Object.keys(CONFIG.DND5E.skills).forEach(skillId=> {
       daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId]}`;
     });
+
   }
 
   patchSpecialTraits();

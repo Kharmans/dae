@@ -764,9 +764,23 @@ function _onCreateActiveEffect(...args) {
     if (token && effect.data.changes) {
       for (let change of effect.data.changes) {
         if (cubActive && change.key === "macro.CUB") {
-          game.cub.addCondition(change.value, [token]);
+          setTimeout(() => {
+            game.cub.addCondition(change.value, [token]);
+          }, 250)
         }
-
+        if (ceActive && change.key === "macro.CE") {
+          if (game.dfreds.effectInterface) {
+            setTimeout(() => {
+              game.dfreds.effectInterface.addEffect(change.value, parent.uuid, effect.data.origin)
+            }, 250)
+          } else {
+            game.dfreds.effectHandler.addEffect({ effectName: change.value, parent, origin: effect.data.origin })
+          }
+        }
+        const tokenMagic = globalThis.TokenMagic;
+        if (tokenMagic && change.key === "macro.tokenMagic") setTimeout(async () => {
+          await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
+        }, 250)
       }
     }
   } catch (err) {
@@ -790,14 +804,6 @@ async function _preCreateActiveEffect(wrapped, ...args) {
       if (this.data.changes) {
         for (let change of this.data.changes) {
           if (CV && change.key) await addCVChange(parent, change, [token], CV); //TODO check disabled
-          if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
-          if (ceActive && change.key === "macro.CE") {
-            if (game.dfreds.effectInterface) {
-              await game.dfreds.effectInterface.addEffect(change.value, parent.uuid)//, this.data.origin)
-            } else {
-              game.dfreds.effectHandler.addEffect({effectName: change.value, parent, origin: this.data.origin})
-            }
-          }
         }
       }
     }
@@ -828,13 +834,27 @@ export function _onUpdateActiveEffect(...args) {
         for (let change of effect.data.changes) {
           if (cubActive && change.key === "macro.CUB") {
             // game.cub.removeCondition(change.value, [token], { warn: false });
-              game.cub.removeCondition(change.value, [token], { warn: false });
+            game.cub.removeCondition(change.value, [token], { warn: false });
+          }
+          if (ceActive && change.key === "macro.CE") {
+            if (game.dfreds.effectInterface) {
+              game.dfreds.effectInterface.removeEffect(change.value, parent.uuid)
+            } else {
+              game.dfreds.effectHandler.removeEffect(change.value, parent)
+            }
           }
         }
       } else {
         for (let change of effect.data.changes) {
           if (cubActive && change.key === "macro.CUB") {
             game.cub.addCondition(change.value, [token]);
+          }
+          if (ceActive && change.key === "macro.CE") {
+            if (game.dfreds.effectInterface) {
+              game.dfreds.effectInterface.addEffect(change.value, parent.uuid, effect.data.origin)
+            } else {
+              game.dfreds.effectHandler.addEffect({ effectName: change.value, actor: parent, origin: effect.data.origin })
+            }
           }
         }
       }
@@ -867,25 +887,11 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
         for (let change of this.data.changes) {
           if (CV) await removeCVChange(parent, change, [token], CV);
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
-          if (ceActive && change.key === "macro.CE") {
-            if (game.dfreds.effectInterface) {
-              await game.dfreds.effectInterface.removeEffect(change.value, token.actor.uuid)
-            } else {
-              game.dfreds.effectHandler.removeEffect(change.value, token.actor)
-            }
-          }
         }
       } else {
         for (let change of this.data.changes) {
           if (CV) await addCVChange(parent, change, [token], CV);
           if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
-          if (ceActive && change.key === "macro.CE") {
-            if (game.dfreds.effectInterface) {
-              await game.dfreds.effectInterface.addEffect(change.value, token.actor.uuid)//, this.data.origin)
-            } else {
-              game.dfreds.effectHandler.addEffect({effectName: change.value, actor: token.actor, origin: this.data.origin})
-            }
-          }
         }
       }
     }
@@ -910,6 +916,13 @@ export function _onDeleteActiveEffect(...args) {
       for (let change of effect.data.changes) {
         if (cubActive && change.key === "macro.CUB") {
           game.cub.removeCondition(change.value, [token], { warn: false });
+        }
+        if (ceActive && change.key === "macro.CE") {
+          if (game.dfreds.effectInterface) {
+            game.dfreds.effectInterface.removeEffect(change.value, token.actor.uuid)
+          } else {
+            game.dfreds.effectHandler.removeEffect(change.value, token.actor)
+          }
         }
       }
     }

@@ -252,7 +252,7 @@ export async function createToken(userId: string, data: { targetSceneId: string,
   let scenes = game.scenes;
   let targetScene = scenes.get(data.targetSceneId);
   //@ts-ignore
-  return await targetScene.createEmbeddedDocuemnts('Token', [mergeObject(duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
+  return await targetScene.createEmbeddedDocuments('Token', [mergeObject(duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
 }
 
 /* TODO remove

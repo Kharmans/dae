@@ -1,3 +1,8 @@
+## 0.8.44
+* Added data for special durations of Long Rest, Short Rest and New Day.
+* Some fiddling to try and reduce the incidence of race conditions resulting in cannot delete embedded effect.
+* Swapped text for 1 Spell/1 Action special durations that were the wrong way round
+
 ## 0.8.43
 * Added in special durations for ability specific saving throw success/failure
 * Moved "removeConcentration" to midi-qol
