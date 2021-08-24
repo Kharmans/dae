@@ -1,5 +1,8 @@
+### 0.8.46
+* Fix for "Cannot destructure property 'missing' of 'undefined' as it is undefined." error
+
 ## 0.8.45
-* Tidied up/improved special durartion text.
+* Tidied up/improved special duration text.
 * Fixed a bug where dae was causing midi-qol to hide the onUse macro field.
 * Fixed a bug in duration conversion => rounds.
 
