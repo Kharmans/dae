@@ -378,7 +378,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
         } catch (err) { // safeEval failed try a roll
           try {
             console.warn("dae | you are using dice expressions in a numeric field this will be disabled when foundry 0.9 is released")
-            console.warn(`Change is ${c.key}: ${c.value}`)
+            console.warn(`Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`)
             //@ts-ignore evaluate - TODO work out how to do this async
             c.value = new Roll(value).evaluate({ async: false }).total;
           } catch (err) {
@@ -1400,7 +1400,7 @@ function initActorSheetHook(app, html, data) {
 }
 
 function initItemSheetHook(app, html, data) {
-  if (!daeTitleBar) return false;
+  if (!daeTitleBar) return true;
   let title = game.i18n.localize('dae.ActiveEffectName');
   let openBtn = $(`<a class="open-item-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
   openBtn.click(ev => {
@@ -1409,6 +1409,7 @@ function initItemSheetHook(app, html, data) {
   html.closest('.app').find('.open-item-effect').remove();
   let titleElement = html.closest('.app').find('.window-title');
   openBtn.insertAfter(titleElement);
+  return true;
 }
 
 export function daeSetupActions() {

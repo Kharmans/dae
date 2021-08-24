@@ -71,18 +71,22 @@ Hooks.once('ready', async function () {
   if (game.modules.get("midi-qol")?.active) {
     daeSpecialDurations["1Action"] = i18n("dae.1Action");
     daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
-    daeSpecialDurations["1Attack"] = i18n("dae.1Attack");
-    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
+    //@ts-ignore
+    daeSpecialDurations["1Attack"] = game.i18n.format("dae.1Attack", {type: `${i18n("dae.spell")}/${i18n("dae.weapon")} ${i18n("dae.attack")}`});
+    daeSpecialDurations["1Hit"] = game.i18n.format("dae.1Hit", {type: `${i18n("dae.spell")}/${i18n("dae.weapon")}`});
+//    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
     daeSpecialDurations["1Reaction"] = i18n("dae.1Reaction")
     let attackTypes = ["mwak", "rwak", "msak", "rsak"];
     if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
     attackTypes.forEach(at => {
-      daeSpecialDurations[`1Attack:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${i18n("dae.1Attack")}`;
-      daeSpecialDurations[`1Hit:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${i18n("dae.1Hit")}`;
+      //@ts-ignore
+      daeSpecialDurations[`1Attack:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${game.i18n.format("dae.1Attack", {type: CONFIG.DND5E.itemActionTypes[at]})}`;
+      daeSpecialDurations[`1Hit:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${game.i18n.format("dae.1Hit", {type: CONFIG.DND5E.itemActionTypes[at]})}`;
     })
     daeSpecialDurations["DamageDealt"] = i18n("dae.DamageDealt");
     daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
     daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
+    daeSpecialDurations["isHit"] = i18n("dae.isHit");
     daeSpecialDurations["isSave"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}`;
     daeSpecialDurations["isSaveSuccess"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
     daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;

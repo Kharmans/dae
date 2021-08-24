@@ -108,8 +108,7 @@ export function patchGetInitiativeFormula() {
 
 // Allow limited recursion of the formula replace function for things like
 // bonuses.heal.damage in spell formulas.
-export function replaceFormulaData(wrapped, ...args) {
-  let [formula, data, {missing="", warn=false}={}] = args;
+export function replaceFormulaData(wrapped, formula, data, {missing, warn=false}) {
   let result = formula;
   const maxIterations = 3;
   if (typeof formula !== "string") return formula;
@@ -118,7 +117,7 @@ export function replaceFormulaData(wrapped, ...args) {
     try {
       result = wrapped(result, data, {missing, warn});
     } catch(err) {
-      console.error(err, ...args);
+      console.error(err, formula, data, missing, warn);
     }
   }
   return result;

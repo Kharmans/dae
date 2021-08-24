@@ -1,3 +1,8 @@
+## 0.8.45
+* Tidied up/improved special durartion text.
+* Fixed a bug where dae was causing midi-qol to hide the onUse macro field.
+* Fixed a bug in duration conversion => rounds.
+
 ## 0.8.44
 * Added data for special durations of Long Rest, Short Rest and New Day.
 * Some fiddling to try and reduce the incidence of race conditions resulting in cannot delete embedded effect.
