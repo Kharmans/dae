@@ -288,7 +288,7 @@ In addition to the standard ```@values``` the following are supported (only as m
 ```@damage``` The total damage rolled for the attack
 ```@token``` The id of the token that used the item
 ```@actor``` The actor.data for the actor that used the item.  
-```@FIELD`` The value of the FIELD within the actor that used the item, e.g. @abilities.str.mod.  
+```@FIELD``` The value of the FIELD within the actor that used the item, e.g. @abilities.str.mod.  
 ```@unique``` A randomly generated unique id.  
 ```##field``` The ## means the argument will not be evaluated using caster values, but will be replaced with @field when it is applied to the target.
 
