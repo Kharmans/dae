@@ -85,17 +85,19 @@ export async function cleanArmorWorld() {
 
 function findDAEItem(itemData, packs) {
   for (let pack of packs) {
-    let matchItem = pack.find(pd => pd.name === itemData.name && pd.type === itemData.type);
+    let matchItem = pack?.find(pd => pd.name === itemData.name && pd.type === itemData.type);
     if (matchItem) return matchItem;
   }
   return undefined;
 }
 
 var packsLoaded = false;
-var itemPack;
-var spellPack;
-var featsPack;
-var midiPack;
+var daeItemPack;
+var midiItemPack
+var daeSpellPack;
+var midiSpellPack
+var daeFeatsPack;
+var midiFeatsPack;
 var magicItemsPack;
 var dndSRDItemsPack;
 var dndSRDSpellsPack;
@@ -105,10 +107,15 @@ var dndSRDMonsterfeaturesPack;
 
 export async function loadPacks() {
   if (packsLoaded) return;
-  itemPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Items").getContent();
-  spellPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Spells").getContent();
-  featsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Feats").getContent();
-  midiPack =  await game.packs.get("Dynamic-Effects-SRD.DAE SRD Midi-collection").getContent();
+  daeItemPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Items").getContent();
+  midiItemPack = await game.packs.get("midi-srd.Midi SRD Items").getContent();
+
+  daeSpellPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Spells")?.getContent();
+  midiSpellPack = await game.packs.get("midi-srd.Midi SRD Spells").getContent();
+
+  daeFeatsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Feats").getContent();
+  midiFeatsPack = await game.packs.get("midi-srd.Midi SRD Feats").getContent();
+
   magicItemsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Magic Items").getContent();
   dndSRDItemsPack = await game.packs.get(`${game.system.id}.items`).getContent();
   dndSRDSpellsPack = await game.packs.get(`${game.system.id}.spells`).getContent();
@@ -143,8 +150,8 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
     switch(itemData.type) {
       case "feat":
         let srdFeats = (actor?.data?.type === "npc") ? dndSRDMonsterfeaturesPack : dndSRDClassfeaturesPack;
-        if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, featsPack, dndSRDclassesPack, srdFeats]);
-        else replaceData = findDAEItem(itemData, [midiPack, featsPack]);
+        if (includeSRD) replaceData = findDAEItem(itemData, [daeFeatsPack, midiFeatsPack, dndSRDclassesPack, srdFeats]);
+        else replaceData = findDAEItem(itemData, [midiFeatsPack, daeFeatsPack]);
         if (replaceData) console.warn("migrating", actor.name, replaceData.name, replaceData)
         if (replaceData) {
           setProperty(replaceData.data, "equipped", itemData.data.equipped)
@@ -156,8 +163,8 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
         else replaceItems.push(itemData.toObject())
         break;
       case "spell":
-        if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, spellPack, dndSRDSpellsPack]);
-        else replaceData = findDAEItem(itemData, [midiPack, spellPack]);
+        if (includeSRD) replaceData = findDAEItem(itemData, [daeSpellPack, midiSpellPack, dndSRDSpellsPack]);
+        else replaceData = findDAEItem(itemData, [midiSpellPack, daeSpellPack]);
         if (replaceData) console.warn("migrating ", actor.name, replaceData.name, replaceData)
         if (replaceData) {
           setProperty(replaceData.data, "prepared", itemData.data.prepared)
@@ -173,8 +180,8 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
       case "consumable":
       case "tool":
       case "backpack":
-        if (includeSRD) replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack, dndSRDItemsPack]);
-        else replaceData = findDAEItem(itemData, [midiPack, itemPack, magicItemsPack]);
+        if (includeSRD) replaceData = findDAEItem(itemData, [midiItemPack, daeItemPack, magicItemsPack, dndSRDItemsPack]);
+        else replaceData = findDAEItem(itemData, [midiItemPack, daeItemPack, magicItemsPack]);
         if (replaceData) console.warn("migrated", actor.name, replaceData.name, replaceData)
         if (replaceData) {
           setProperty(replaceData.data, "data.equipped", itemData.data.equipped)

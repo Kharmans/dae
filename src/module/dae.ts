@@ -314,8 +314,9 @@ function effectDisabled(actor, efData, itemData = null) {
 
   // transfer effects depend on the item to disable/enable (if there is one)
   if (efData.flags?.dae?.transfer || efData.transfer) {
-    if (!itemData && efData.origin) { // itemData not passed, see if we have the item
-      itemData = DAEfromUuid(efData.origin).document.data;
+    if (!itemData && (efData.origin ?? "").includes("Item.")) { // itemData not passed, see if we have the item
+      let itemId = efData.origin.split("Item.")[1];
+      itemData = actor.data._source.items.find(i=>i._id === itemId);
     }
     // Non eequip items
     let nonEquipItems = ["feat", "spell", "class"];
@@ -328,6 +329,7 @@ function effectDisabled(actor, efData, itemData = null) {
       // item is disabled if it is not equipped
       // OR item is equipped but attunment === requires attunement
       disabled = !itemData.data.equipped || itemData.data.attunement === CONFIG.DND5E.attunementTypes.REQUIRED;
+      efData.disabled = disabled;
     }
   }
   return disabled;
@@ -346,7 +348,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, effect) => {
-    // e.data.disabled = effectDisabled(this, e.data)
+    effect.data.disabled = effectDisabled(this, effect.data)
     if (effect.data.disabled) return changes;
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
@@ -1207,53 +1209,36 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
 
 // Update the actor active effects when editing an owned item
 // TODO change this to on update item
-function preUpdateItem(candidate, updates, options, user) {
+function updateItem(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
-  Hooks.once("updateItem", async () => {
-    if (updates.effects) { // item effects have changed - update transferred effects
-      const itemUuid = candidate.uuid;
-      // delete all actor effects for the given item
-      let deletions = [];
-      for (let aef of candidate.parent.effects) { // remove all transferred effects for the item
-        const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
-        if (isTransfer && (aef.data.origin === itemUuid)) deletions.push(aef.id);
-      };
-      // Now get all the itemm transfer effects
-      let additions = candidate.effects.filter(aef => {
-        const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
-        return isTransfer;
-      });
+  if (user !== game.user.id) return true;
+  if (updates.effects) { // item effects have changed - update transferred effects
+    const itemUuid = candidate.uuid;
+    // delete all actor effects for the given item
+    let deletions = [];
+    for (let aef of candidate.parent.effects) { // remove all transferred effects for the item
+      const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+      if (isTransfer && (aef.data.origin === itemUuid)) deletions.push(aef.id);
+    };
+    // Now get all the itemm transfer effects
+    let additions = candidate.effects.filter(aef => {
+      const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+      return isTransfer;
+    });
 
-      additions = additions.map(ef => ef.toJSON());
-      additions.forEach(efData => {
-        efData.origin = itemUuid;
-        efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
+    additions = additions.map(ef => ef.toJSON());
+    additions.forEach(efData => {
+      efData.origin = itemUuid;
+      efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
+    });
+    if (deletions.length > 0) {
+      candidate.parent.deleteEmbeddedDocuments("ActiveEffect", deletions).then(() => {
+        if (additions.length > 0) candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
       });
-      if (deletions.length > 0) {
-        await candidate.parent.deleteEmbeddedDocuments("ActiveEffect", deletions).then(() => {
-          if (additions.length > 0) candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
-        });
-      } else if (additions.length > 0) {
-        await candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
-      }
-    } else if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
-      // TODO look at evaulating this on the fly during prepare data
-      const existingEffectsData = candidate.parent.effects
-        ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
-        ?.map(ef => duplicate(ef.data));
-      if (existingEffectsData.length === 0) return;
-      let effectsChanged = false;
-      existingEffectsData.forEach(efData => {
-        const newDisabled = effectDisabled(candidate.parent, efData, candidate.data)
-        if (efData.disabled !== newDisabled) {
-          efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
-          effectsChanged = true;
-          efData = { "_id": efData._id, "disabled": newDisabled };
-        }
-      })
-      if (effectsChanged) await candidate.parent.updateEmbeddedDocuments("ActiveEffect", existingEffectsData);
+    } else if (additions.length > 0) {
+      candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
     }
-  });
+  }
   return true;
 }
 
@@ -1363,7 +1348,9 @@ export function daeInitActions() {
   Hooks.on("applyActiveEffect", daeCustomEffect);
   // If updating effects recreate actor effects for updated item.
   // Toggle equip active as well
-  Hooks.on("preUpdateItem", preUpdateItem);
+  // libWrapper.register("dae", "CONFIG.Item.documentClass.prototype._preUpdate", _preDeleteActiveEffect, "WRAPPER");
+
+  Hooks.on("updateItem", updateItem);
   Hooks.on("preCreateItem", preCreateItem)
 
 
@@ -1476,9 +1463,9 @@ export function DAEfromUuid(uuid) {
       doc = doc.getEmbeddedDocument(embeddedName, embeddedId);
       parts = parts.slice(2);
     }
-  } catch (err) {
-    console.error(`dae | could not fetch $(uuid) ${err}`)
-  } finally {
+  } /*catch (err) {
+    console.error(`dae | could not fetch ${uuid} ${err}`)
+  } */finally {
     return doc || null;
   }
 }

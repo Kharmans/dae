@@ -1,3 +1,8 @@
+### 0.8.47
+* Update for migrateActorDAESRD etc to use the new DAE SRD midi specific packs.
+* Change to handling equip/unequip for items. This means that for weapon/equipment/etc effects you cannot override the active/inactive status for transfer effects, you must equip/unequip. I've changed this because of interactions with some other modules and also it saves a db transaction on equip/unequip.
+* For feats/spells you can still activate/deactivate as before.
+
 ### 0.8.46
 * Fix for "Cannot destructure property 'missing' of 'undefined' as it is undefined." error
 
