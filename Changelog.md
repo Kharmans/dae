@@ -1,3 +1,7 @@
+## 0.8.48
+* Fix for ATL not triggering when items equipped/uneqipped.
+* Added skill.value CUSTOM, Adds the specified prociencny (1/2 prof, prof, expertise) to the exisiting proficiency for the skill. The resulting proficiency is constrained to (1/2 prof, prof, expertise) with proficient + 1/2 proficient => proficient.
+
 ### 0.8.47
 * Update for migrateActorDAESRD etc to use the new DAE SRD midi specific packs.
 * Change to handling equip/unequip for items. This means that for weapon/equipment/etc effects you cannot override the active/inactive status for transfer effects, you must equip/unequip. I've changed this because of interactions with some other modules and also it saves a db transaction on equip/unequip.

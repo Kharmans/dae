@@ -439,7 +439,16 @@ function daeCustomEffect(actor, change) {
     setProperty(actor.data, change.key, value);
     return true;
   }
-
+  if (change.key.startsWith("data.skills.") && change.key.endsWith(".value")) {
+    const currentProf = getProperty(actor.data, change.key) || 0;
+    const profValues = {"0.5": 0.5, "1": 1, "2": 2};
+    const upgrade = profValues[change.value]
+    if (upgrade === undefined) return;
+    let newProf = currentProf + upgrade;
+    if (newProf > 1 && newProf < 2) newProf = 1;
+    if (newProf > 2) newProf = 2;
+    return setProperty(actor.data, change.key, newProf);
+  }
   switch (change.key) {
     case "data.attributes.movement.hover":
       setProperty(actor.data, change.key, change.value ? true : false);
@@ -1206,7 +1215,22 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   }
 
 }
-
+function preUpdateItem(candidate, updates, options, user) {
+  /*
+  if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
+    // TODO look at evaulating this on the fly during prepare data
+    const existingEffects = candidate.parent.effects
+      ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
+    if (existingEffects.length === 0) return true;
+    existingEffects.forEach(ef => {
+      const newDisabled = effectDisabled(candidate.parent, ef.data, candidate.data);
+      ef.data.disabled = newDisabled;
+      Hooks.callAll("updateActiveEffect", ef, {data: {disabled: newDisabled}}, options, user);
+    });
+  }
+  */
+  return true;
+}
 // Update the actor active effects when editing an owned item
 // TODO change this to on update item
 function updateItem(candidate, updates, options, user) {
@@ -1239,6 +1263,18 @@ function updateItem(candidate, updates, options, user) {
       candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
     }
   }
+  if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
+    // TODO look at evaulating this on the fly during prepare data
+    const existingEffects = candidate.parent.effects
+      ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
+    if (existingEffects.length === 0) return true;
+    existingEffects.forEach(ef => {
+      const newDisabled = effectDisabled(candidate.parent, ef.data, candidate.data);
+      ef.data.disabled = newDisabled;
+      Hooks.callAll("updateActiveEffect", ef, {data: {disabled: newDisabled}}, options, user);
+    });
+  }
+
   return true;
 }
 
@@ -1351,7 +1387,9 @@ export function daeInitActions() {
   // libWrapper.register("dae", "CONFIG.Item.documentClass.prototype._preUpdate", _preDeleteActiveEffect, "WRAPPER");
 
   Hooks.on("updateItem", updateItem);
+  Hooks.on("preUpdateItem", preUpdateItem);
   Hooks.on("preCreateItem", preCreateItem)
+
 
 
   // macros are called on active effect creationg and deletion
