@@ -32,6 +32,9 @@ After dnd5e 1.4.0 you can still use DAE to modify armor class.
 ### dnd5e 1.5
 DND5e version 1.5 will have significant impact on DAE. The mechanism for applying bonuses in dnd5e for ability saves, checks and skills will be enhanced to include .bonus field on most of these modifiers. The .bonus field is evaluated when the item is rolled which means that the DAE processing to apply bonuses is no longer required, since the bonus will be looked up at the time the roll is made. After the release of dnd1.5 DAE will provide an automatic mapping for some fields (details to be determined, but will include ability.mod, ability.save and skills) and a deprecation warning. At a future stage the deprecation will change to a not supported. 
 
+**DND5E 1.5 changes**
+* New fields str.bonuses.check/str.bonuses.save which are string fields supporting expressions like 1d4 [currently do not support field lookups].
+
 ## What does DAE do?
 First off you probably don't need DAE. The core foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and using DAE only if you run into a roadblock on what you want to do.
 

@@ -74,6 +74,20 @@ export class ValidSpec {
     baseValues["data.attributes.ac.bonus"] = 0;
     baseValues["data.attributes.ac.base"] = 0;
     baseValues["data.attributes.ac.cover"] = 0;
+    if (isNewerVersion(game.system.data.version, "1.4.9")) {
+      baseValues["data.abilities.str.bonuses.check"] = "";
+      baseValues["data.abilities.dex.bonuses.check"] = "";
+      baseValues["data.abilities.int.bonuses.check"] = "";
+      baseValues["data.abilities.wis.bonuses.check"] = "";
+      baseValues["data.abilities.cha.bonuses.check"] = "";
+      baseValues["data.abilities.con.bonuses.save"] = "";
+      baseValues["data.abilities.str.bonuses.save"] = "";
+      baseValues["data.abilities.dex.bonuses.save"] = "";
+      baseValues["data.abilities.int.bonuses.save"] = "";
+      baseValues["data.abilities.wis.bonuses.save"] = "";
+      baseValues["data.abilities.cha.bonuses.save"] = "";
+      baseValues["data.abilities.con.bonuses.save"] = "";
+    }
 
     //@ts-ignore
     if (game.modules.get("gm-notes")?.active) {
@@ -819,7 +833,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
       }
     }
     //TODO clean this up eventually
-    daeMacro("on", parent, [this.data], {});
+    await daeMacro("on", parent, [this.data], {});
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {
@@ -967,7 +981,7 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
       }
     }
     // TODO clean this up eventually
-    daeMacro("off", actor, this.data, {});
+    await daeMacro("off", actor, this.data, {});
 
   } catch (err) {
     console.warn("dae | error deleting active effect ", err);
@@ -1290,6 +1304,7 @@ export function preCreateItem(candidate, data, options, user) {
   if (data.effects) {
     delete candidate.data.effects;
     candidate.data.update({ "effects": data.effects });
+    console.error("precreate item ", candidate.data.effects)
   }
   return true;
 }
@@ -1298,6 +1313,10 @@ export function daeReadyActions() {
   ValidSpec.localizeSpecs();
   // initSheetTab();
   //@ts-ignore
+  if (game.settings.get("dae", "disableEffects")) {
+    ui?.notifications?.warn("DAE effects disabled no DAE effect processing")
+    console.error("dae disabled")
+  }
   aboutTimeInstalled = game.modules.get("about-time")?.active;
   simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.active;
   timesUpInstalled = game.modules.get("times-up")?.active;
@@ -1364,8 +1383,13 @@ export function daeInitActions() {
     "data.bonuses.spell.damage": { attacks: spellAttacks, selector: "damage" }
   }
 
+  
   ValidSpec.createValidMods();
-
+  if (game.settings.get("dae", "disableEffects")) {
+    ui?.notifications?.warn("DAE effects disabled no DAE effect processing")
+    console.warn("DAE active effects disabled.")
+    return;
+  }
   // We will call this in prepareData
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
 
@@ -1461,7 +1485,6 @@ export function daeSetupActions() {
 }
 
 export function fetchParams() {
-
   requireItemTarget = game.settings.get("dae", "requireItemTarget");
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")

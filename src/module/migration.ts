@@ -107,42 +107,72 @@ var dndSRDMonsterfeaturesPack;
 
 export async function loadPacks() {
   if (packsLoaded) return;
-  daeItemPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Items").getContent();
-  midiItemPack = await game.packs.get("midi-srd.Midi SRD Items").getContent();
+  daeItemPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Items").getDocuments();
+  midiItemPack = await game.packs.get("midi-srd.Midi SRD Items").getDocuments();
 
-  daeSpellPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Spells")?.getContent();
-  midiSpellPack = await game.packs.get("midi-srd.Midi SRD Spells").getContent();
+  daeSpellPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Spells")?.getDocuments();
+  midiSpellPack = await game.packs.get("midi-srd.Midi SRD Spells").getDocuments();
 
-  daeFeatsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Feats").getContent();
-  midiFeatsPack = await game.packs.get("midi-srd.Midi SRD Feats").getContent();
+  daeFeatsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Feats").getDocuments();
+  midiFeatsPack = await game.packs.get("midi-srd.Midi SRD Feats").getDocuments();
 
-  magicItemsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Magic Items").getContent();
-  dndSRDItemsPack = await game.packs.get(`${game.system.id}.items`).getContent();
-  dndSRDSpellsPack = await game.packs.get(`${game.system.id}.spells`).getContent();
-  dndSRDclassesPack = await game.packs.get(`${game.system.id}.classes`).getContent();
-  dndSRDMonsterfeaturesPack = await game.packs.get(`${game.system.id}.monsterfeatures`)?.getContent();
-  dndSRDClassfeaturesPack = await game.packs.get(`${game.system.id}.classfeatures`)?.getContent();
+  magicItemsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Magic Items").getDocuments();
+  dndSRDItemsPack = await game.packs.get(`${game.system.id}.items`).getDocuments();
+  dndSRDSpellsPack = await game.packs.get(`${game.system.id}.spells`).getDocuments();
+  dndSRDclassesPack = await game.packs.get(`${game.system.id}.classes`).getDocuments();
+  dndSRDMonsterfeaturesPack = await game.packs.get(`${game.system.id}.monsterfeatures`)?.getDocuments();
+  dndSRDClassfeaturesPack = await game.packs.get(`${game.system.id}.classfeatures`)?.getDocuments();
   packsLoaded = true;
 }
 
 export async function migrateAllActorsDAESRD(includeSRD = false) {
-  game.actors.forEach(async a => {
+  if (!game.settings.get("dae", "disableEffects")) {
+    ui.notifications.error("Please set DAE disable all effect processing")
+    console.error("Please set DAE disable all effect processing")
+    return;
+  }
+  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
+    ui.notifications.warn("DAE SRD Module not active");
+    console.error("DAE SRD Module not active");
+    return;
+  }
+  for (let a of game.actors) {
     await migrateActorDAESRD(a, includeSRD);
-  });
+  };
 }
 
 export async function migrateAllNPCDAESRD(includeSRD = false) {
-  game.actors.filter(a=>a.data.type !== "character").forEach(async a => {
-    await migrateActorDAESRD(a, includeSRD);
-  });
-}
-export async function migrateActorDAESRD(actor, includeSRD = false) {
+  if (!game.settings.get("dae", "disableEffects")) {
+    ui.notifications.error("Please set DAE disable all effect processing")
+    console.error("Please set DAE disable all effect processing")
+    return;
+  }
   if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
     ui.notifications.warn("DAE SRD Module not active");
+    console.error("DAE SRD Module not active");
+    return;
+  }
+  for (let a of game.actors) {
+    //@ts-ignore
+    if (a.data.type !== "character") {
+      await migrateActorDAESRD(a, includeSRD);
+    };
+  }
+}
+
+export async function migrateActorDAESRD(actor, includeSRD = false) {
+  if (!game.settings.get("dae", "disableEffects")) {
+    ui.notifications.error("Please set DAE disable all effect processing")
+    console.error("Please set DAE disable all effect processing")
+    return;
+  }
+  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
+    ui.notifications.warn("DAE SRD Module not active");
+    console.error("DAE SRD Module not active");
     return;
   }
   if (!packsLoaded) await loadPacks();
-  const items = actor.data.items;
+  const items = actor.data._source.items;
   let replaceItems = [];
   let count = 0;
   items.forEach(itemData => {
@@ -160,7 +190,7 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
           replaceItems.push(replaceData.toObject());
           count++;
         }
-        else replaceItems.push(itemData.toObject())
+        else replaceItems.push(itemData)
         break;
       case "spell":
         if (includeSRD) replaceData = findDAEItem(itemData, [daeSpellPack, midiSpellPack, dndSRDSpellsPack]);
@@ -172,7 +202,7 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
           replaceItems.push(replaceData.toObject());
           count++;
         }
-        else replaceItems.push(itemData.toObject())
+        else replaceItems.push(itemData)
         break;
       case "equipment":
       case "weapon":
@@ -187,20 +217,24 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
           setProperty(replaceData.data, "data.equipped", itemData.data.equipped)
           setProperty(replaceData.data, "data.attunement", itemData.data.attunement)
           setProperty(replaceData.data.flags, "dae.migrated", true);
-          replaceItems.push(replaceData.data);
+          replaceItems.push(replaceData.toObject());
           count++;
         }
-        else replaceItems.push(itemData.toObject());
+        else replaceItems.push(itemData);
         break;
       default:
-        replaceItems.push(itemData.toObject())
+        replaceItems.push(itemData);
         break;
     }
   })
   let removeItems = actor.items.map(i=> i.id);
-  await actor.deleteEmbeddedDocuments("Item", [], { deleteAll: true });
   await actor.deleteEmbeddedDocuments("ActiveEffect", [], { deleteAll: true });
-  await actor.createEmbeddedDocuments("Item", replaceItems, { addFeatures: false, promptAddFeatures: false });
+  await actor.deleteEmbeddedDocuments("Item", [], { deleteAll: true });
+  // Adding all at once seems to create a problem.
+  // await actor.createEmbeddedDocuments("Item", replaceItems, { addFeatures: true, promptAddFeatures: false });
+  for (let item of replaceItems) {
+    await actor.createEmbeddedDocuments("Item", [item], { addFeatures: false, promptAddFeatures: false });
+  }
   console.warn(actor.name, "replaced ", count, " out of ", replaceItems.length,  " items from the DAE SRD");
 }
 
@@ -211,9 +245,9 @@ function removeDynamiceffects(actor) {
 export async function fixupDDBAC(allActors = false) {
   try {
     const itemName = "DDB AC";
-    const content = await game.packs.get("dae.premadeitems").getContent();
+    const content = await game.packs.get("dae.premadeitems").getDocuments();
     const item = content.find(i=> i.name === itemName);
-    game.actors.filter(a=>a.data.flags.ddbimporter && a.data.flags.ddbimporter.baseAC)
+    let items = game.actors.filter(a=>a.data.flags.ddbimporter && a.data.flags.ddbimporter.baseAC)
       .filter(a=> allActors || a.type === "character")
       .filter(a=> !a.items.getName(itemName))
       .forEach(a=> a.createEmbeddedDocuments("Item", [item.toObject()]))

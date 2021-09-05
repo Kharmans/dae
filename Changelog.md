@@ -1,3 +1,8 @@
+
+## 0.8.49
+* Slight change to active effect macro calling to try and reduce problem cases - macros which create items.
+*
+
 ## 0.8.48
 * Fix for ATL not triggering when items equipped/uneqipped.
 * Added skill.value CUSTOM, Adds the specified prociencny (1/2 prof, prof, expertise) to the exisiting proficiency for the skill. The resulting proficiency is constrained to (1/2 prof, prof, expertise) with proficient + 1/2 proficient => proficient.

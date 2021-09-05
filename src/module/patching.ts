@@ -133,7 +133,7 @@ function patchAbilitySave() {
   if (!d20Roll)
     return;
   //@ts-ignore
-  if (["dnd5e", "sw5e"].includes(game.system.id)) {
+  if (["dnd5e", "sw5e"].includes(game.system.id) && !isNewerVersion(game.system.data.version, "1.4.9")) {
     log(`Patching CONFIG.Actor.documentClass.prototype.rollAbilitySave (override=${useAbilitySave})`);
     if (!useAbilitySave) {
       if (abilitySavePatched) {
