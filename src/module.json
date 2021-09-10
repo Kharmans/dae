@@ -7,7 +7,7 @@
   "minimumCoreVersion": "0.8.4",
   "minimumSystemVersion": "1.4.0",
   "scripts": ["libs/tokenizer.min.js"],
-  "systems": ["dnd5e", "sw5e"],
+  "system": ["dnd5e", "sw5e"],
   "esmodules": [
     "dae.js", "module/patching.js"
   ],
