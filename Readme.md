@@ -483,8 +483,11 @@ After dnd5e 1.4.0 you can still use DAE to modify armor class.
 #### After updating to dnd5e 1.4.2 my characters AC is wrong. 
 dnd5e 1.4.2 **removed** the magical bonus equipment type and so anything that had a type of magical bonus will stop working. The quickest solution is to create an active effect on the item which sets the ac.bonus to the value that used to be in the magical bonus.
 
+### dnd5e 1.4.3
+As of dnd5e 1.4.3 toggling effects based on item equip/attuned is supported directly, so thsi functionality has been disabled in dae if you are on dnd5e 1.4.3 or above. Toggling an active effect will NOT toggle equiping the item.
+
 ### dnd5e 1.5
-DND5e version 1.5 will have significant impact on DAE. The mechanism for applying bonuses in dnd5e for ability saves, checks and skills will be enhanced to include .bonus field on most of these modifiers. The .bonus field is evaluated when the item is rolled which means that the DAE processing to apply bonuses is no longer required, since the bonus will be looked up at the time the roll is made. After the release of dnd1.5 DAE will provide an automatic mapping for some fields (details to be determined, but will include ability.mod, ability.save and skills) and a deprecation warning. At a future stage the deprecation will change to a not supported. 
+DND5e version 1.5 will have significant impact on DAE. The mechanism for applying bonuses in dnd5e for ability saves, checks and skills will be enhanced to include .bonus field on most of these modifiers. The .bonus field is evaluated when the item is rolled which means that the DAE processing to apply bonuses is no longer required, since the bonus will be looked up at the time the roll is made. After the release of dnd5e 1.5 DAE will provide an automatic mapping for some fields (details to be determined, but will include ability.mod, ability.save and skills) and a deprecation warning. At a future stage the deprecation will change to a not supported. 
 
 **DND5E 1.5 changes**
 * New fields str.bonuses.check/str.bonuses.save which are string fields supporting expressions like 1d4 or @abilities.dex.mod (@field lookups to be confirmed).

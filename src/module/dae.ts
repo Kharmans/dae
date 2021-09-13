@@ -323,27 +323,29 @@ function effectDisabled(actor, efData, itemData = null) {
   const ci = actor.data.data.traits?.ci?.value;
   const statusId = efData.flags?.core?.statusId;
   disabled = disabled || (ci && ci.includes(statusId));
-  /* TODO revist emabling/disabling according to condition immunities
-  */
+  if (isNewerVersion("1.4.3", game.system.data.version)) {
+    /* TODO revist emabling/disabling according to condition immunities
+    */
 
-  // transfer effects depend on the item to disable/enable (if there is one)
-  if (efData.flags?.dae?.transfer || efData.transfer) {
-    if (!itemData && (efData.origin ?? "").includes("Item.")) { // itemData not passed, see if we have the item
-      let itemId = efData.origin.split("Item.")[1];
-      itemData = actor.data._source.items.find(i=>i._id === itemId);
-    }
-    // Non eequip items
-    let nonEquipItems = ["feat", "spell", "class"];
-    if (game.system.id === "sw5e") {
-      nonEquipItems = ["archetype", "background", "class", "classfeature", "feat",
-        "fightingmastery", "fightingstyle", "lightsaberform", "power", "species"];
-    }
+    // transfer effects depend on the item to disable/enable (if there is one)
+    if (efData.flags?.dae?.transfer || efData.transfer) {
+      if (!itemData && (efData.origin ?? "").includes("Item.")) { // itemData not passed, see if we have the item
+        let itemId = efData.origin.split("Item.")[1];
+        itemData = actor.data._source.items.find(i => i._id === itemId);
+      }
+      // Non eequip items
+      let nonEquipItems = ["feat", "spell", "class"];
+      if (game.system.id === "sw5e") {
+        nonEquipItems = ["archetype", "background", "class", "classfeature", "feat",
+          "fightingmastery", "fightingstyle", "lightsaberform", "power", "species"];
+      }
 
-    if (itemData && !nonEquipItems.includes(itemData.type)) {
-      // item is disabled if it is not equipped
-      // OR item is equipped but attunment === requires attunement
-      disabled = !itemData.data.equipped || itemData.data.attunement === CONFIG.DND5E.attunementTypes.REQUIRED;
-      efData.disabled = disabled;
+      if (itemData && !nonEquipItems.includes(itemData.type)) {
+        // item is disabled if it is not equipped
+        // OR item is equipped but attunment === requires attunement
+        disabled = !itemData.data.equipped || itemData.data.attunement === CONFIG.DND5E.attunementTypes.REQUIRED;
+        efData.disabled = disabled;
+      }
     }
   }
   return disabled;
@@ -351,6 +353,9 @@ function effectDisabled(actor, efData, itemData = null) {
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
+  if (isNewerVersion(game.system.data.version, "1.4.2")) {
+    this.effects.forEach(e => e.determineSuppression())
+  }
   applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj, {}, false)
 }
 /*
@@ -362,8 +367,9 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, effect) => {
-    effect.data.disabled = effectDisabled(this, effect.data)
-    if (effect.data.disabled) return changes;
+    if (isNewerVersion("1.4.3", game.system.data.version))
+      effect.data.disabled = effectDisabled(this, effect.data)
+    if (effect.data.disabled) return changes; //effect.apply will filter suppressed
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
       .filter(c => { return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined) })
@@ -455,7 +461,7 @@ function daeCustomEffect(actor, change) {
   }
   if (change.key.startsWith("data.skills.") && change.key.endsWith(".value")) {
     const currentProf = getProperty(actor.data, change.key) || 0;
-    const profValues = {"0.5": 0.5, "1": 1, "2": 2};
+    const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
     const upgrade = profValues[change.value]
     if (upgrade === undefined) return;
     let newProf = currentProf + upgrade;
@@ -851,6 +857,16 @@ export function _onUpdateActiveEffect(...args) {
   try {
     const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
     if (changes.disabled === undefined) return true;
+    let item = DAEfromUuid(effect.data.origin);
+
+    if (isNewerVersion("1.4.3", game.system.data.version)) {
+      if (effect.data.flags?.dae?.transfer && item.data.data.equipped !== undefined) {
+        const newEquipped = !changes.disabled;
+        if (item.data.data.equipped !== undefined && item.data.data.equipped !== newEquipped) {
+          item.update({ data: { equipped: newEquipped } });
+        }
+      }
+    }
 
     // Just deal with equipped etc
     warn("add active effect actions", parent, changes)
@@ -908,7 +924,7 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
     // Just deal with equipped etc
     warn("add active effect actions", parent, changes)
     if (token) {
-      if (changes.disabled) {
+      if (changes.disabled || this.isSuppressed) {
         for (let change of this.data.changes) {
           if (CV) await removeCVChange(parent, change, [token], CV);
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
@@ -1230,21 +1246,9 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
 
 }
 function preUpdateItem(candidate, updates, options, user) {
-  /*
-  if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
-    // TODO look at evaulating this on the fly during prepare data
-    const existingEffects = candidate.parent.effects
-      ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
-    if (existingEffects.length === 0) return true;
-    existingEffects.forEach(ef => {
-      const newDisabled = effectDisabled(candidate.parent, ef.data, candidate.data);
-      ef.data.disabled = newDisabled;
-      Hooks.callAll("updateActiveEffect", ef, {data: {disabled: newDisabled}}, options, user);
-    });
-  }
-  */
   return true;
 }
+
 // Update the actor active effects when editing an owned item
 // TODO change this to on update item
 function updateItem(candidate, updates, options, user) {
@@ -1267,8 +1271,11 @@ function updateItem(candidate, updates, options, user) {
     additions = additions.map(ef => ef.toJSON());
     additions.forEach(efData => {
       efData.origin = itemUuid;
-      efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
+      if (isNewerVersion("1.4.3", game.system.data.version)) {
+        efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
+      }
     });
+
     if (deletions.length > 0) {
       candidate.parent.deleteEmbeddedDocuments("ActiveEffect", deletions).then(() => {
         if (additions.length > 0) candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
@@ -1277,18 +1284,19 @@ function updateItem(candidate, updates, options, user) {
       candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
     }
   }
-  if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
-    // TODO look at evaulating this on the fly during prepare data
-    const existingEffects = candidate.parent.effects
-      ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
-    if (existingEffects.length === 0) return true;
-    existingEffects.forEach(ef => {
-      const newDisabled = effectDisabled(candidate.parent, ef.data, candidate.data);
-      ef.data.disabled = newDisabled;
-      Hooks.callAll("updateActiveEffect", ef, {data: {disabled: newDisabled}}, options, user);
-    });
+  if (isNewerVersion("1.4.3", game.system.data.version)) {
+    // DND5e 1.4.3 does this automatically.
+    if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
+      const existingEffects = candidate.parent.effects
+        ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
+      if (existingEffects.length === 0) return true;
+      existingEffects.forEach(ef => {
+        const newDisabled = effectDisabled(candidate.parent, ef.data, candidate.data);
+        ef.data.disabled = newDisabled;
+        Hooks.callAll("updateActiveEffect", ef, { disabled: newDisabled }, options, user);
+      });
+    }
   }
-
   return true;
 }
 
@@ -1297,14 +1305,14 @@ export function preCreateItem(candidate, data, options, user) {
   data.effects?.forEach(efData => {
     if (efData.transfer) {
       setProperty(efData, "flags.dae.transfer", true)
-      efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
+      if (isNewerVersion("1.4.3", game.system.data.version))
+        efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
     }
   })
   //TODO check this.
   if (data.effects) {
     delete candidate.data.effects;
     candidate.data.update({ "effects": data.effects });
-    console.error("precreate item ", candidate.data.effects)
   }
   return true;
 }
@@ -1315,7 +1323,7 @@ export function daeReadyActions() {
   //@ts-ignore
   if (game.settings.get("dae", "disableEffects")) {
     ui?.notifications?.warn("DAE effects disabled no DAE effect processing")
-    console.error("dae disabled")
+    console.warn("dae disabled - no active effects")
   }
   aboutTimeInstalled = game.modules.get("about-time")?.active;
   simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.active;
@@ -1383,7 +1391,7 @@ export function daeInitActions() {
     "data.bonuses.spell.damage": { attacks: spellAttacks, selector: "damage" }
   }
 
-  
+
   ValidSpec.createValidMods();
   if (game.settings.get("dae", "disableEffects")) {
     ui?.notifications?.warn("DAE effects disabled no DAE effect processing")
@@ -1525,7 +1533,7 @@ export function DAEfromUuid(uuid) {
       parts = parts.slice(2);
     }
   } /*catch (err) {
-    console.error(`dae | could not fetch ${uuid} ${err}`)
+    error(`dae | could not fetch ${uuid} ${err}`)
   } */finally {
     return doc || null;
   }

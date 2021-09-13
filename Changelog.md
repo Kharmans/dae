@@ -1,7 +1,14 @@
 
+## 0.8.50
+* Since dnd5e 1.4.3 and later supports enabling/disabling transfer effects when items are equipped/unequipped this functionality is disalbed in DAE if the game system version is 1.4.3 or greate. The dnd5e core functionality is not identical to the dae functionality but it is at least as good and it makes no sense to have both the system and a module trying to handle the same thing.
+* Fix for double counting numeric global save bonuses.
+* Major overhaul to Readme.md - many thanks to @dianne
+
 ## 0.8.49
 * Slight change to active effect macro calling to try and reduce problem cases - macros which create items.
-*
+* Changes to DAESRD item replacement macros: (to fix significant item/effect duplication)
+  * requires you to set "DAE disable all effect processing" before running the macros. 
+  * Adds items one at a time, since adding all at once seemed to cause foundry problems with active effects additions.
 
 ## 0.8.48
 * Fix for ATL not triggering when items equipped/uneqipped.

@@ -10,7 +10,8 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
 
     // Construct parts
     const parts = ["@mod"];
-    const data = {mod: abl.save};
+    const data = this.getRollData();
+    data.mod = abl.save;
 
 /*
     // Include proficiency bonus
@@ -23,7 +24,8 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
 
     // Include a global actor ability save bonus
     const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
-    if ( bonuses.save ) {
+    //@ts-ignore
+    if ( bonuses.save && ! Number.isNumeric(bonuses.save)) {
       parts.push("@saveBonus");
       //@ts-ignore
       data.saveBonus = bonuses.save;
@@ -58,7 +60,7 @@ var dice;
 export function patchingInitSetup() {
   warn("system is ", game.system)
   dice = game[game.system.id].dice
-  if (!dice) console.error("Dice not defined! Many things won't work")
+  if (!dice) error("Dice not defined! Many things won't work")
   else d20Roll = dice?.d20Roll;
 }
 function _prepareArmorClassAttribution(wrapped, data) {
@@ -66,7 +68,7 @@ function _prepareArmorClassAttribution(wrapped, data) {
   if (!this.object.data.effects) return attributions;
   for (let effect of this.object.data.effects) {
     for (let change of effect.data.changes) {
-      if (change.key === "data.attributes.ac.value" && !effect.data.disabled) {
+      if (change.key === "data.attributes.ac.value" && !effect.data.disabled && !effect.isSuppressed) {
         attributions.push({
           label: `${effect.data.label} (dae)`,
           mode: change.mode,
@@ -117,7 +119,7 @@ export function replaceFormulaData(wrapped, formula, data, {missing, warn=false}
     try {
       result = wrapped(result, data, {missing, warn});
     } catch(err) {
-      console.error(err, formula, data, missing, warn);
+      error(err, formula, data, missing, warn);
     }
   }
   return result;

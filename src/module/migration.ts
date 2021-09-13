@@ -1,5 +1,5 @@
 
-import { debug, warn, log, i18n } from "../dae";
+import { debug, warn, log, i18n, error } from "../dae";
 import { ValidSpec } from "./dae";
 
 //@ts-ignore
@@ -128,12 +128,12 @@ export async function loadPacks() {
 export async function migrateAllActorsDAESRD(includeSRD = false) {
   if (!game.settings.get("dae", "disableEffects")) {
     ui.notifications.error("Please set DAE disable all effect processing")
-    console.error("Please set DAE disable all effect processing")
+    error("Please set DAE disable all effect processing")
     return;
   }
   if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
     ui.notifications.warn("DAE SRD Module not active");
-    console.error("DAE SRD Module not active");
+    error("DAE SRD Module not active");
     return;
   }
   for (let a of game.actors) {
@@ -144,12 +144,12 @@ export async function migrateAllActorsDAESRD(includeSRD = false) {
 export async function migrateAllNPCDAESRD(includeSRD = false) {
   if (!game.settings.get("dae", "disableEffects")) {
     ui.notifications.error("Please set DAE disable all effect processing")
-    console.error("Please set DAE disable all effect processing")
+    error("Please set DAE disable all effect processing")
     return;
   }
   if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
     ui.notifications.warn("DAE SRD Module not active");
-    console.error("DAE SRD Module not active");
+    error("DAE SRD Module not active");
     return;
   }
   for (let a of game.actors) {
@@ -163,12 +163,12 @@ export async function migrateAllNPCDAESRD(includeSRD = false) {
 export async function migrateActorDAESRD(actor, includeSRD = false) {
   if (!game.settings.get("dae", "disableEffects")) {
     ui.notifications.error("Please set DAE disable all effect processing")
-    console.error("Please set DAE disable all effect processing")
+    error("Please set DAE disable all effect processing")
     return;
   }
   if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
     ui.notifications.warn("DAE SRD Module not active");
-    console.error("DAE SRD Module not active");
+    error("DAE SRD Module not active");
     return;
   }
   if (!packsLoaded) await loadPacks();
@@ -252,7 +252,7 @@ export async function fixupDDBAC(allActors = false) {
       .filter(a=> !a.items.getName(itemName))
       .forEach(a=> a.createEmbeddedDocuments("Item", [item.toObject()]))
   } catch(err) {
-    console.error("dae | migration did not complete", err);
+    error("migration did not complete", err);
   }
 }
 
