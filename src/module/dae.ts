@@ -14,6 +14,8 @@ export var simpleCalendarInstalled = false;
 export var requireItemTarget = true;
 export var cubActive;
 export var ceActive;
+export var atlActive;
+export var handleEquip;
 export var furnaceActive;
 export var itemacroActive;
 export var conditionalVisibilityActive;
@@ -74,6 +76,17 @@ export class ValidSpec {
     baseValues["data.attributes.ac.bonus"] = 0;
     baseValues["data.attributes.ac.base"] = 0;
     baseValues["data.attributes.ac.cover"] = 0;
+    // XXX
+    baseValues["data.bonuses.All-Attacks"] = "";
+    baseValues["data.bonuses.weapon.attack"] = "";
+    baseValues["data.bonuses.spell.attack"]  = "";
+    baseValues["data.bonuses.All-Damage"] = "";
+    baseValues["data.bonuses.weapon.damage"] = "";
+    baseValues["data.bonuses.spell.damage"]  = "";
+    baseValues["data.bonuses.heal.damage"] = "";
+    baseValues["data.bonuses.heal.attack"] = "";
+    baseValues["data.bonuses.save.damage"] = "";
+    baseValues["data.bonuses.abil.damage"] = "";
     if (isNewerVersion(game.system.data.version, "1.4.9")) {
       baseValues["data.abilities.str.bonuses.check"] = "";
       baseValues["data.abilities.dex.bonuses.check"] = "";
@@ -124,12 +137,14 @@ export class ValidSpec {
         // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        /* XXX
         "data.bonuses.All-Attacks": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.weapon.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.spell.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.All-Damage": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.weapon.damage": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.bonuses.spell.damage": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        */
         "data.traits.languages.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.languages.value": ["", -1],
         "data.traits.languages.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
@@ -165,11 +180,12 @@ export class ValidSpec {
         "data.resources.legres.max": [0, -1],
         "data.spells.pact.level": [0, -1],
         // "flags.midi-qol.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+        /* XXX
         "data.bonuses.heal.damage": ["", -1],
         "data.bonuses.heal.attack": ["", -1],
         "data.bonuses.save.damage": ["", -1],
         "data.bonuses.abil.damage": ["", -1],
-
+        */
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
@@ -184,9 +200,11 @@ export class ValidSpec {
       specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.DamageBonusMacro`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.initiativeDisadv`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+      /* XXX
       ["check", "save", "skill"].forEach(id => {
         specials[`data.bonuses.abilities.${id}`] = ["", -1];
       });
+      */
 
       if (game.system.id === "sw5e") {
         specials["data.attributes.powerForceLightDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
@@ -194,13 +212,14 @@ export class ValidSpec {
         specials["data.attributes.powerForceUnivDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
         specials["data.attributes.powerTechDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
       }
+      /* XXX
       let attackTypes = ["mwak", "rwak", "msak", "rsak"];
       if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
       attackTypes.forEach(id => {
         specials[`data.bonuses.${id}.attack`] = ["", -1];
         specials[`data.bonuses.${id}.damage`] = ["", -1];
       })
-
+      */
       // move all the characteer flags to specials so that the can be custom effects only
       let charFlagKeys = (game.system.id === "dnd5e") ? Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
       charFlagKeys.forEach(key => {
@@ -321,9 +340,9 @@ export class ValidSpec {
 function effectDisabled(actor, efData, itemData = null) {
   let disabled = efData.disabled;
   const ci = actor.data.data.traits?.ci?.value;
-  const statusId = efData.flags?.core?.statusId;
-  disabled = disabled || (ci && ci.includes(statusId));
-  if (isNewerVersion("1.4.3", game.system.data.version)) {
+  const statusId = (efData.flags?.core?.statusId ?? "no effect").toLocaleLowerCase();
+  disabled = disabled || (ci && ci.find(c=> statusId.endsWith(c)));
+  if (handleEquip) {
     /* TODO revist emabling/disabling according to condition immunities
     */
 
@@ -353,7 +372,7 @@ function effectDisabled(actor, efData, itemData = null) {
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
-  if (isNewerVersion(game.system.data.version, "1.4.2")) {
+  if (isNewerVersion(game.system.data.version, "1.4.2") && !handleEquip) {
     this.effects.forEach(e => e.determineSuppression())
   }
   applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj, {}, false)
@@ -367,14 +386,17 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, effect) => {
-    if (isNewerVersion("1.4.3", game.system.data.version))
+    if (handleEquip) {
       effect.data.disabled = effectDisabled(this, effect.data)
+      effect.isSuppressed = false;
+    }
     if (effect.data.disabled) return changes; //effect.apply will filter suppressed
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
       .filter(c => { return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined) })
       .map(c => {
         c = duplicate(c);
+        if (c.key === "flags.midi-qol.OverTime") c.key = `flags.midi-qol.OverTime.${randomID()}`;
         c.effect = effect;
         c.priority = c.priority ?? (c.mode * 10);
         return c;
@@ -557,14 +579,14 @@ function daeCustomEffect(actor, change) {
       return true;
     case "data.bonuses.weapon.damage":
       value = attackDamageBonusEval(change.value, actor)
-      value = replaceAtFields(value, daeRollData(actor));
+      // value = replaceAtFields(value, daeRollData(actor));
       if (current)
         value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       weaponAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.spell.damage":
       value = attackDamageBonusEval(change.value, actor)
-      value = replaceAtFields(value, daeRollData(actor));
+      //value = replaceAtFields(value, daeRollData(actor));
       if (current)
         value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       spellAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
@@ -592,7 +614,7 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.power.techDC":
       // TODO: remove if fixed in core
       let result = attackDamageBonusEval(change.value, actor);
-      value = replaceAtFields(result, daeRollData(actor));
+      value = result; // replaceAtFields(result, daeRollData(actor));
       if (current)
         value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
       setProperty(actor.data, change.key, (current || "") + value);
@@ -859,7 +881,7 @@ export function _onUpdateActiveEffect(...args) {
     if (changes.disabled === undefined) return true;
     let item = DAEfromUuid(effect.data.origin);
 
-    if (isNewerVersion("1.4.3", game.system.data.version)) {
+    if (handleEquip && false) { // XXX
       if (effect.data.flags?.dae?.transfer && item.data.data.equipped !== undefined) {
         const newEquipped = !changes.disabled;
         if (item.data.data.equipped !== undefined && item.data.data.equipped !== newEquipped) {
@@ -939,6 +961,16 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
   } catch (err) {
     console.warn("dae | updating active effect error", err)
   } finally {
+    let item = DAEfromUuid(this.data.origin);
+    if (handleEquip) { //XXX
+      if (this.data.flags?.dae?.transfer && item.data.data.equipped !== undefined) {
+        const newEquipped = !changes.disabled;
+        if (item.data.data.equipped !== undefined && item.data.data.equipped !== newEquipped) {
+          item.update({ data: { equipped: newEquipped } });
+        }
+      }
+    }
+
     return wrapped(changes, options, user);
   }
 }
@@ -956,11 +988,15 @@ export function _onDeleteActiveEffect(...args) {
     if (token && effect.data.changes) {
       for (let change of effect.data.changes) {
         if (cubActive && change.key === "macro.CUB") {
-          game.cub.removeCondition(change.value, [token], { warn: false });
+          setTimeout(() => {
+          game.cub.removeCondition(change.value, [token], { warn: false })
+          }, 250);
         }
         if (ceActive && change.key === "macro.CE") {
           if (game.dfreds.effectInterface) {
+            setTimeout(() => {
             game.dfreds.effectInterface.removeEffect(change.value, token.actor.uuid)
+            }, 250);
           } else {
             game.dfreds.effectHandler.removeEffect(change.value, token.actor)
           }
@@ -1271,7 +1307,7 @@ function updateItem(candidate, updates, options, user) {
     additions = additions.map(ef => ef.toJSON());
     additions.forEach(efData => {
       efData.origin = itemUuid;
-      if (isNewerVersion("1.4.3", game.system.data.version)) {
+      if (handleEquip) {
         efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
       }
     });
@@ -1284,18 +1320,30 @@ function updateItem(candidate, updates, options, user) {
       candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
     }
   }
-  if (isNewerVersion("1.4.3", game.system.data.version)) {
-    // DND5e 1.4.3 does this automatically.
+  if (handleEquip) {
     if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
       const existingEffects = candidate.parent.effects
         ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
       if (existingEffects.length === 0) return true;
       existingEffects.forEach(ef => {
         const newDisabled = effectDisabled(candidate.parent, ef.data, candidate.data);
+        ef.isSuppressed = false;
         ef.data.disabled = newDisabled;
+        ef.data._source.disabled = newDisabled;
         Hooks.callAll("updateActiveEffect", ef, { disabled: newDisabled }, options, user);
       });
     }
+  } else if (atlActive) { // patch behaviour for ATL.
+    const existingEffects = candidate.parent.effects
+      ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
+    if (existingEffects.length === 0) return true;
+    existingEffects.forEach(ef => {
+      ef.determineSuppression()
+      const disabled = candidate.data.data.equipped === false || candidate.data.data.attunement === CONFIG.DND5E.attunementTypes.REQUIRED;
+      const newDisabled = disabled || ef.isSuppressed;
+      ef.data.disabled = newDisabled;
+      Hooks.callAll("updateActiveEffect", ef, { disabled: newDisabled }, options, user);
+    });
   }
   return true;
 }
@@ -1305,7 +1353,7 @@ export function preCreateItem(candidate, data, options, user) {
   data.effects?.forEach(efData => {
     if (efData.transfer) {
       setProperty(efData, "flags.dae.transfer", true)
-      if (isNewerVersion("1.4.3", game.system.data.version))
+      if (handleEquip)
         efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
     }
   })
@@ -1399,14 +1447,14 @@ export function daeInitActions() {
     return;
   }
   // We will call this in prepareData
+  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
+  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", getRollData, "WRAPPER");
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
 
-  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", getRollData, "WRAPPER");
 
   // TODO put this back when doing item effects.
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
-
-  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
+  // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
 
   if (game.system.id === "dnd5e")
     daeActionTypeKeys = Object.keys(CONFIG.DND5E.itemActionTypes)
@@ -1470,14 +1518,11 @@ function initItemSheetHook(app, html, data) {
 }
 
 export function daeSetupActions() {
-  //@ts-ignore
   cubActive = game.modules.get("combat-utility-belt")?.active;
-  //@ts-ignore
   ceActive = game.modules.get("dfreds-convenient-effects")?.active && isNewerVersion(game.modules.get("dfreds-convenient-effects").data.version, "1.6.2");
-  //@ts-ignore
   debug("Combat utility belt active ", cubActive, " and cub version is ", game.modules.get("combat-utility-belt")?.data.version)
 
-  //@ts-ignore
+  atlActive = game.modules.get("ATL")?.active;
   if (cubActive && !isNewerVersion(game.modules.get("combat-utility-belt")?.data.version, "1.1.2")) {
     ui.notifications.warn("Combat Utility Belt needs to be version 1.1.3 or later - conditions disabled");
     console.warn("Combat Utility Belt needs to be version 1.1.3 or later - conditions disabled");
@@ -1485,14 +1530,13 @@ export function daeSetupActions() {
   } else if (cubActive) {
     debug("dae | Combat Utility Belt active and conditions enabled");
   }
-  //@ts-ignore
   itemacroActive = game.modules.get("itemacro")?.active;
   furnaceActive = game.modules.get("furnace")?.active || game.modules.get("advanced-macros")?.active;
   conditionalVisibilityActive = game.modules.get("conditional-visibility")?.active;
   midiActive = game.modules.get("midi-qol")?.active;
 }
 
-export function fetchParams() {
+export function fetchParams(doUpdatePatches=true) {
   requireItemTarget = game.settings.get("dae", "requireItemTarget");
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
   useAbilitySave = game.settings.get("dae", "useAbilitySave")
@@ -1512,6 +1556,7 @@ export function fetchParams() {
   }
   expireRealTime = game.settings.get("dae", "expireRealTime");
   displayTraits = game.settings.get("dae", "displayTraits");
+  handleEquip = game.settings.get("dae", "handleEquip");
   updatePatches();
 }
 

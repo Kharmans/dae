@@ -1,8 +1,15 @@
 
+## 0.8.51
+* Turns out I don't like the dnd5e suppression mechanic. Added a new config option - handle equipped which overrides the supression mechanic in DND5E and uses the DAE one of enable/disable on equip/unequip and vice versa.
+* Short term patch for ATL equip/unequip
+* Support for midi-qol OverTime effects named/unnamed (avoids a bug when mixing named and unnamed overtime effects).
+* [POSSIBLY BREAKING] bonuses.anything no longer have values replaced by DAE - it is left for the actual roll to do that. This should fix a long standing issue with bonuses and derived values. Any problems ping me @tposney since it touches lots of possible areas.
+* An enhancement to active effects and condition immunities. If you have a condition immunity and a condition is applied with the same name (core/cub/convenient effects) the condition will be marked as disabled on the character.
+
 ## 0.8.50
 * Since dnd5e 1.4.3 and later supports enabling/disabling transfer effects when items are equipped/unequipped this functionality is disalbed in DAE if the game system version is 1.4.3 or greate. The dnd5e core functionality is not identical to the dae functionality but it is at least as good and it makes no sense to have both the system and a module trying to handle the same thing.
 * Fix for double counting numeric global save bonuses.
-* Major overhaul to Readme.md - many thanks to @dianne
+* Major overhaul to Readme.md - many thanks to @dianne#4667 (discord) @diannetea (gitlab)
 
 ## 0.8.49
 * Slight change to active effect macro calling to try and reduce problem cases - macros which create items.

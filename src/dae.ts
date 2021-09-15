@@ -38,6 +38,8 @@ Hooks.once('init', async function() {
 	debug('Init setup actions');
   daeInitActions();
   patchingInitSetup();
+  fetchParams(false);
+
 
 	// Assign custom classes and constants here
 	
