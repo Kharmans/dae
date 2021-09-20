@@ -236,6 +236,7 @@
     "dae.isAttacked": "피격: 캐릭터가 공격당하면 만료된다",
     "dae.isMoved": "이동: 토큰이 이동하면 만료된다.",
     "dae.isDamaged": "피해: 캐릭터가 피해를 입으면 만료된다",
+    "dae.isHit": "명중: 무기/주문이 피해를 주지 않더라도 캐릭터가 무기/주문 공격에 명중 당하면 만료된다.",
     "dae.isRollBase": "캐릭터가 굴림을 하는 경우 만료된다: ",
     "dae.isSaveDetail": "내성 굴림",
     "dae.isCheckDetail": "능력 판정",
@@ -257,6 +258,7 @@
     "dae.noDupDamageMacro.Name": "중복 피해 매크로 없음",
     "dae.noDupDamageMacro.Hint": "이 옵션을 선택하면 중복된 피해 매크로가 무시된다.",
     "dae.DisableEffects.Name": "모든 활성화 효과 처리 비활성화",
-    "dae.DisableEffects.Hint": "설정 시 캐릭터에게 활성화 효과가 적용되지 않는다. 활성화 효과에 의해 수정된 캐릭터 수치를 변경하려는 경우에 유용하다."
-
+    "dae.DisableEffects.Hint": "설정 시 캐릭터에게 활성화 효과가 적용되지 않는다. 활성화 효과에 의해 수정된 캐릭터 수치를 변경하려는 경우에 유용하다.",
+    "dae.HandleEquip.Name": "장비/장비 해제 아이템 활성화 효과 처리",
+    "dae.HandleEquip.Hint": "장비/장비 해제 처리 활성화시 효과를 활성화/비활성화하면 장비/장비 해제 상태가 전환된다. "
 }
