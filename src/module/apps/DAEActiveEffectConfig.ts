@@ -123,7 +123,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     this.statusEffectList = {};
     let efl = CONFIG.statusEffects
     .map(se => {
-      if (se.id.startsWith("combat-utility-belts.")) return {id: se.id, label:  `${se.label} (CUB)`};
+      if (se.id.startsWith("combat-utility-belt.")) return {id: se.id, label:  `${se.label} (CUB)`};
       if (se.id.startsWith("Convenient Effect:")) return {id: se.id, label: `${se.label} (CE)`};
       return {id: se.id, label: i18n(se.label)};
     })

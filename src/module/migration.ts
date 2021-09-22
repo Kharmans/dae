@@ -377,7 +377,6 @@ export async function cleanAllTokenEffectOrigins() {
         let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.data.origin.replace("OwnedItem", "Item") } });
         if (updates.length > 0) {
           await actor.updateEmbeddedDocuments("ActiveEffect", updates)
-          console.warn("Updates are ", actor.name, updates)
         }
       }
     }
