@@ -1,6 +1,6 @@
 
 import { debug, warn, log, i18n, error } from "../dae";
-import { ValidSpec } from "./dae";
+import { itemacroActive, ValidSpec } from "./dae";
 
 //@ts-ignore
 const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
@@ -33,15 +33,15 @@ export async function removeItemArmorEffects(items, name = "") {
 
 export async function removeActorEffectsArmorEffects(actor, name = "") {
   let promises = [];
-    let toDelete = [];
-    if (!actor.effects) return [];;
-    for (let effect of actor.effects) {
-      if (effect.data.flags?.dae?.armorEffect) toDelete.push(effect.id);
-    }
-    if (toDelete.length > 0) {
-      console.warn(`deleting ${name}: Actor effects ${actor.name}`, toDelete);
-      await actor.deleteEmbeddedDocuments("ActiveEffect", toDelete);
-    }
+  let toDelete = [];
+  if (!actor.effects) return [];;
+  for (let effect of actor.effects) {
+    if (effect.data.flags?.dae?.armorEffect) toDelete.push(effect.id);
+  }
+  if (toDelete.length > 0) {
+    console.warn(`deleting ${name}: Actor effects ${actor.name}`, toDelete);
+    await actor.deleteEmbeddedDocuments("ActiveEffect", toDelete);
+  }
 }
 
 export async function removeActorArmorEffects(actor) {
@@ -177,7 +177,7 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
   let count = 0;
   items.forEach(itemData => {
     let replaceData;
-    switch(itemData.type) {
+    switch (itemData.type) {
       case "feat":
         let srdFeats = (actor?.data?.type === "npc") ? dndSRDMonsterfeaturesPack : dndSRDClassfeaturesPack;
         if (includeSRD) replaceData = findDAEItem(itemData, [daeFeatsPack, midiFeatsPack, dndSRDclassesPack, srdFeats]);
@@ -227,7 +227,7 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
         break;
     }
   })
-  let removeItems = actor.items.map(i=> i.id);
+  let removeItems = actor.items.map(i => i.id);
   await actor.deleteEmbeddedDocuments("ActiveEffect", [], { deleteAll: true });
   await actor.deleteEmbeddedDocuments("Item", [], { deleteAll: true });
   // Adding all at once seems to create a problem.
@@ -235,23 +235,23 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
   for (let item of replaceItems) {
     await actor.createEmbeddedDocuments("Item", [item], { addFeatures: false, promptAddFeatures: false });
   }
-  console.warn(actor.name, "replaced ", count, " out of ", replaceItems.length,  " items from the DAE SRD");
+  console.warn(actor.name, "replaced ", count, " out of ", replaceItems.length, " items from the DAE SRD");
 }
 
 function removeDynamiceffects(actor) {
-  actor.update({"flags.-=dynamiceffects": null})
+  actor.update({ "flags.-=dynamiceffects": null })
 }
 
 export async function fixupDDBAC(allActors = false) {
   try {
     const itemName = "DDB AC";
     const content = await game.packs.get("dae.premadeitems").getDocuments();
-    const item = content.find(i=> i.name === itemName);
-    let items = game.actors.filter(a=>a.data.flags.ddbimporter && a.data.flags.ddbimporter.baseAC)
-      .filter(a=> allActors || a.type === "character")
-      .filter(a=> !a.items.getName(itemName))
-      .forEach(a=> a.createEmbeddedDocuments("Item", [item.toObject()]))
-  } catch(err) {
+    const item = content.find(i => i.name === itemName);
+    let items = game.actors.filter(a => a.data.flags.ddbimporter && a.data.flags.ddbimporter.baseAC)
+      .filter(a => allActors || a.type === "character")
+      .filter(a => !a.items.getName(itemName))
+      .forEach(a => a.createEmbeddedDocuments("Item", [item.toObject()]))
+  } catch (err) {
     error("migration did not complete", err);
   }
 }
@@ -263,38 +263,38 @@ export function checkLibWrapperVersion() {
       title: i18n("dae.confirm"),
       content: `<h2>DAE requires libWrapper version 1.8.0 or later</p>`,
       buttons: {
-          one: {
-              icon: '<i class="fas fa-cross"></i>',
-          },
+        one: {
+          icon: '<i class="fas fa-cross"></i>',
         },
-        default: "one"
-      });
+      },
+      default: "one"
+    });
     d.render(true);
   }
 }
 
 export function checkArmorDisabled() {
   if (
-    game.system.id === "dnd5e" 
-        && isNewerVersion(game.system.data.version, "1.3.9") 
-        && game.settings.get("dae", "ArmorDisabled") < 1) {
+    game.system.id === "dnd5e"
+    && isNewerVersion(game.system.data.version, "1.3.9")
+    && game.settings.get("dae", "ArmorDisabled") < 1) {
     let d = new Dialog({
       // localize this text
       title: i18n("dae.confirm"),
       content: `<h2>You have updated to DND 1.4.x</h2><p>DND 1.4.x auto calculates AC</p><p> Auto calculation in DAE will be disabled</p>`,
       buttons: {
-          one: {
-              icon: '<i class="fas fa-cross"></i>',
-              label: "Disable DAE AC",
-              callback: async () => {
-                await cleanArmorWorld();
-                await cleanDAEArmorWorld();
-                game.settings.set("dae", "ArmorDisabled", 1)
-              }
-          },
+        one: {
+          icon: '<i class="fas fa-cross"></i>',
+          label: "Disable DAE AC",
+          callback: async () => {
+            await cleanArmorWorld();
+            await cleanDAEArmorWorld();
+            game.settings.set("dae", "ArmorDisabled", 1)
+          }
         },
-        default: "one"
-      });
+      },
+      default: "one"
+    });
     d.render(true);
   }
 }
@@ -358,7 +358,7 @@ export async function cleanAllActorEffectOrigins() {
   for (let actor of game.actors.contents) {
     //@ts-ignore
     let ownedItemEffects = actor.effects.filter(ef => ef.data.origin?.includes("OwnedItem"));
-    let updates = ownedItemEffects.map(ef => {return {_id: ef.id, origin: ef.data.origin.replace("OwnedItem", "Item")}});
+    let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.data.origin.replace("OwnedItem", "Item") } });
     if (updates.length > 0) {
       await actor.updateEmbeddedDocuments("ActiveEffect", updates)
       console.warn("Updates are ", actor.name, updates)
@@ -374,7 +374,7 @@ export async function cleanAllTokenEffectOrigins() {
       if (!tokenDocument.isLinked && tokenDocument.actor) {
         const actor = tokenDocument.actor;
         let ownedItemEffects = actor.effects.filter(ef => ef.data.origin?.includes("OwnedItem"));
-        let updates = ownedItemEffects.map(ef => {return {_id: ef.id, origin: ef.data.origin.replace("OwnedItem", "Item")}});
+        let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.data.origin.replace("OwnedItem", "Item") } });
         if (updates.length > 0) {
           await actor.updateEmbeddedDocuments("ActiveEffect", updates)
           console.warn("Updates are ", actor.name, updates)
@@ -382,4 +382,57 @@ export async function cleanAllTokenEffectOrigins() {
       }
     }
   }
+}
+
+export async function tobMapper(iconsPath = "icons/TOB") {
+  const pack = game.packs.get("tome-of-beasts.beasts");
+  await pack.getContent();
+  let details = pack.contents.map(a => a.data._source);
+  let detailNames = duplicate(details).map(detail => {
+    let name = detail.name
+    .replace(/[_\-,'"]/g, "")
+    .replace(" of", "")
+    .replace(" the", "")
+    .replace(/\(.*\)/, "")
+    .replace(/\s\s*/g, " ")
+    .replace("Adult", "")
+    .replace("Chieftain", "Chieftan")
+    .toLocaleLowerCase();
+    name = name.split(" ");
+    detail.splitName = name;
+    return detail;
+  })
+  detailNames = detailNames.sort((a,b) => b.splitName.length - a.splitName.length)
+  let fields = details.map(a => { return { "name": a.name, "id": a._id, "tokenimg": a.token.img } });
+  let count = 0;
+  game.socket.emit("manageFiles", { action: "browseFiles", storage: "data", target: iconsPath }, {},
+    async (result) => {
+      for (let fileEntry of result.files) {
+        let fileNameParts = fileEntry.split("/");
+        const name = fileNameParts[fileNameParts.length - 1]
+          .replace(".png","")
+          .replace(/['",\-_,]/g, "")
+          .replace(/-/g, "")
+          .toLocaleLowerCase();
+        detailNames.filter(dtname => {
+          if (!dtname.splitName) return false;
+          for (let namePart of dtname.splitName) {
+            if (!name.includes(namePart)) return false
+          } 
+          dtname.token.img = fileEntry;
+          // dtname.img = fileEntry;
+          delete dtname.splitName;
+          // dtname.img = fileEntry;
+          count += 1;
+          return true;
+        })
+      }
+      console.log("Matched ", count, "out of", detailNames.length, detailNames)
+      console.log("Unmatched ", detailNames.filter(dt=>dt.splitName));
+      for (let actorData of detailNames) {
+        if (actorData.splitName) continue;
+        let actor = pack.get(actorData._id);
+        await actor.update(actorData);
+      }
+    });
 }

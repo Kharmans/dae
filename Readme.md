@@ -1,5 +1,15 @@
 If you have a problem please read the [Issues section](#Issues) before reporting a bug.
 
+## BREAKING
+**My lights do go off when I unequip an item** **I can't toggle an effect from Token HUD**
+As of DND5E 1.4.3 and/or foundry 0.9.2 unequipping an item makes it unavailable **EVEN** if it is active. DAE understands about unavailable effects and won't apply effects that are marked as unavailable.
+
+DAE makes no changes to active effects when equipping/unequipping, in 1.4.3 and/or foundry 0.9.2 (which it used to do) so that there is no confusion about who is toggling effects it is all foundry/DND5E.
+
+This will negatively impact ATL and Token HUD (at least) both of which used to rely on DAE sending out an updateEffect notification when items were equipped/unequipped. DND5E 1.4.3/foundry 0.9.2 do not notify of changes to item equipped satus via updateActiveEffect. 
+  * ATL currently ignores unavailable looking only at active/inactive - so toggling equipped to enable/disable lights won't work, you have to toggle the effect. 
+  * Token HUD toggles active/inactive when you choose an effec so if the item is equipped toggling will work, but if not equippd it won't change anything.
+
 [TOC]
 
 Dynamic Active Effects (DAE) is a replacement for Dynamic Effects (which will *NOT* work in 0.71+, and won't be ported).

@@ -30,6 +30,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   cubConditionList;
   ceEffectList;
+  statusEffectList;
   ConditionalVisibilityList;
   ConditionalVisibilityVisionList;
   validFields;
@@ -119,6 +120,18 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         this.cubConditionList[cubc.name] = cubc.name;
       })
     }
+    this.statusEffectList = {};
+    let efl = CONFIG.statusEffects
+    .map(se => {
+      if (se.id.startsWith("combat-utility-belts.")) return {id: se.id, label:  `${se.label} (CUB)`};
+      if (se.id.startsWith("Convenient Effect:")) return {id: se.id, label: `${se.label} (CE)`};
+      return {id: se.id, label: i18n(se.label)};
+    })
+    .sort((a,b) => a.label < b.label ? -1 : 1);
+    efl.forEach(se => {
+      this.statusEffectList[se.id] = se.label;
+    });
+  
     if (ceActive) {
       this.ceEffectList = {};
       game.dfreds.effects?.all.forEach(ceEffect => {
@@ -225,6 +238,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       return this.tokenMagicEffects;
     if (spec === "macro.CUB") return this.cubConditionList;
     if (spec === "macro.CE") return this.ceEffectList;
+    if (spec === "StatusEffect") return this.statusEffectList;
     if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
 

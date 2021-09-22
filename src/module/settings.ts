@@ -87,16 +87,6 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "handleEquip", {
-    name: "dae.HandleEquip.Name",
-    hint: "dae.HandleEquip.Hint",
-    scope: "world",
-    default: false,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
-
   game.settings.register("dae", "ZZDebug", {
     name: "dae.Debug.Name",
     hint: "dae.Debug.Hint",

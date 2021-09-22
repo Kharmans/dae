@@ -90,7 +90,7 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
   }
 
   if (!token) {
-    console.warn("dae| teleport: No Token");
+    console.warn("dae | teleport: No Token");
     return "No active token"
   }
 

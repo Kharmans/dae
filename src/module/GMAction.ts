@@ -1,5 +1,5 @@
 import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled } from "./dae";
-import { warn, debug, error, log } from "../dae";
+import { warn, debug, error, log, changesQueue } from "../dae";
 
 export class GMActionMessage {
   action: string;
@@ -304,6 +304,34 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       }
       if (activate) {
         let dupEffects = duplicate(actEffects);
+        // Replace any status effects with the status effect data.
+        let statusEffects = [];
+        dupEffects = dupEffects.filter(aeData => {
+          let changesToAdd = [];
+          let statusesToAdd = []
+          aeData.changes = aeData.changes.filter(change => {
+            if (change.key === "StatusEffect") {
+              const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
+              if (statusEffect) {
+                const addEffect = duplicate(statusEffect)
+                addEffect.origin = aeData.origin;
+                addEffect.durtion = aeData.duration;
+                statusesToAdd.push(addEffect);
+                changesToAdd = changesToAdd.concat(addEffect.changes)
+                return false;
+              }
+            }
+            return true;
+          });
+          if (aeData.changes.length > 0) { // There were some changes left over so just add the changes
+            aeData.changes = aeData.changes.concat(changesToAdd);
+            return true;
+          } else { // No other changes replace with the status effect.
+            statusEffects = statusEffects.concat(statusesToAdd);
+            return false;
+          }
+        })
+        dupEffects = dupEffects.concat(statusEffects);
         dupEffects.forEach(ae => {
           setProperty(ae, "flags.dae.token", tid);
           if (getProperty(ae, "flags.dae.stackable") === "count") {
@@ -354,34 +382,37 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           })
         })
         warn("gm action apply effect", token, actEffects)
-        let removeList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
 
-        //TODO remove this when timesup is in the wild.
-        if (!timesUpInstalled) { // do the kludgey old form removal
-          let doRemoveEffect = async (tokenUuid, removeEffect) => {
-            //@ts-ignore
-            const actor = window.DAE.DAEfromUuid(tokenUuid).actor;
-            let removeId = removeEffect._id;
-            if (removeId && actor.effects.get(removeId)) {
-              await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
+        setTimeout(async () => { //TODO consider revising this in 0.9
+          actor = DAEfromActorUuid(actor.uuid);
+          let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
+
+          //TODO remove this when timesup is in the wild.
+          if (!timesUpInstalled) { // do the kludgey old form removal
+            let doRemoveEffect = async (tokenUuid, removeEffect) => {
+              const actor = globalThis.DAE.DAEfromActorUuid(tokenUuid);
+              let removeId = removeEffect._id;
+              if (removeId && actor?.effects.get(removeId)) {
+                await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
+              }
             }
+
+            if (!Array.isArray(timedRemoveList)) timedRemoveList = [timedRemoveList];
+            timedRemoveList.forEach(ae => {
+              // need to do separately as they might have different durations
+              let duration = ae.data.duration?.seconds || 0;
+              if (!duration) {
+                duration = ((ae.data.duration.rounds ?? 0) + ((ae.data.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
+              }
+              warn("removing effect ", ae.data, " in ", duration, " seconds ")
+              if (duration && aboutTimeInstalled) {
+                game.Gametime.doIn({ seconds: duration }, doRemoveEffect, token.uuid, ae.data)
+              } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
+                setTimeout(doRemoveEffect, duration * 1000 || 6000, token.uuid, ae.data);
+              }
+            })
           }
-
-          if (!Array.isArray(removeList)) removeList = [removeList];
-          removeList.forEach(ae => {
-            // need to do separately as they might have different durations
-            let duration = ae.data.duration?.seconds || 0;
-            if (!duration) {
-              duration = ((ae.data.duration.rounds ?? 0) + ((ae.data.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
-            }
-            warn("removing effect ", ae.data, " in ", duration, " seconds ")
-            if (duration && aboutTimeInstalled) {
-              game.Gametime.doIn({ seconds: duration }, doRemoveEffect, token.uuid, ae.data)
-            } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
-              setTimeout(doRemoveEffect, duration * 1000 || 6000, token.uuid, ae.data);
-            }
-          })
-        }
+        }, removeList.length > 0 ? 500 * removeList.length : 1);
       }
     };
   };

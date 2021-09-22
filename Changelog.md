@@ -1,3 +1,10 @@
+### 0.8.52
+* [BREAKING] Looking at the coming changes in foundry 0.9.2 I've decided to remove the linking of item equipped and effect enabled.disabled in DAE and leave this entirely to foundry/dnd5e. This will cause ATL and Token HUD to misbehave. Further you cannot toggle an unavailable effect to active without equipping the item.
+  * ATL currently ignores unavailable looking only at active/inactive - so toggling equipped to enable/disable lights won't work, you have to toggle the effect. 
+  * Token HUD toggles active/inactive when you choose an effect so if the item is equipped toggling will work, but if not equippd it won't change anything.
+* Added new CUSTOM effect StatusEffect which allows you to choose any configured status effect (core/CUB/Convenient Effects). When applied the changes from the status effect are added to any other changes for the effect. If the status effect is the only change in the effect it is applied instead of the defined effect. So a spell which has a single effect - poisoned - will create the poisoned effect on the target and there will be no extra effect. This applies for core, cub and convenient effects. So spells which create a status on the target will now only create a single icon on the target, instead of two. This means you won't need to use macro.CE most of the time. Lastly since the changes are copied there is no extra apply confition step so this should dramatically reduce the "cannot find embedded entity errors" - reommended for most cases.
+* Fix for deleting items with passive effects which call an ItemMacro. This was causing a macro not found error since the item was deleted before the attempting to call the macro.
+* Tweaking of creating/deleting effects. Result is macro.execute/args[0]==="on" may executate AFTER midi-qol.RollComplete is sent.
 
 ## 0.8.51
 * Turns out I don't like the dnd5e suppression mechanic. Added a new config option - handle equipped which overrides the supression mechanic in DND5E and uses the DAE one of enable/disable on equip/unequip and vice versa.
