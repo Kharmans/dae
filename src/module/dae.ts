@@ -3,7 +3,6 @@ import { warn, error, debug, setDebugLevel, i18n, timelog } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { patchPrepareArmorClassAttribution, updatePatches } from "./patching";
-import { TextureLoader } from "pixi.js";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -189,7 +188,6 @@ export class ValidSpec {
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
-        // "CUB": ["", ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -342,7 +340,7 @@ function effectDisabled(actor, efData, itemData = null) {
   let disabled = efData.disabled;
   const ci = actor.data.data.traits?.ci?.value;
   const statusId = (efData.flags?.core?.statusId ?? "no effect").toLocaleLowerCase();
-  disabled = disabled || efData.isSuppressed || (ci && ci.find(c => statusId.endsWith(c)));
+  disabled = disabled || efData.isSuppressed || (ci.length && ci.find(c => statusId.endsWith(c)));
   // TODO need to match this up for cub/CE
   if (isNewerVersion("1.4.3", game.system.data.version) && !isNewerVersion(game.version, "9.200")) {
     // transfer effects depend on the item to disable/enable (if there is one)
@@ -386,7 +384,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       effect.data.disabled = effectDisabled(this, effect.data)
       effect.isSuppressed = false;
     } else effect.determineSuppression();
-    if (effect.data.disabled || effect.isSuppressed) return changes; //TODO check this for 0.9.2
+    if (effectDisabled(this, effect.data) || effect.isSuppressed) return changes; //TODO check this for 0.9.2
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
       .filter(c => { return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined) })
@@ -848,6 +846,10 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
   try {
     const effectData = await daeMacro("on", parent, this.data, {});
+    // TODO pending issue 5930 foundry this should disable effects that can't be blocked from creation
+    const ci = this.parent.data.data.traits?.ci?.value;
+    const statusId = (effectData.flags?.core?.statusId ?? "no effect").toLocaleLowerCase();
+    effectData.disabled = effectData.disabled || (ci.length && ci.find(c => statusId.endsWith(c)) !== undefined);
     this.data.update(effectData); // Allow for data added to the effect for item macros.
   } catch (err) {
     console.warn("dae | create effect error", err);
@@ -1408,7 +1410,6 @@ export function daeInitActions() {
   Hooks.on("createActiveEffect", _onCreateActiveEffect);
   Hooks.on("deleteActiveEffect", _onDeleteActiveEffect);
   Hooks.on("updateActiveEffect", _onUpdateActiveEffect);
-
 
   // Add the active effects title bar actions
   Hooks.on('renderActorSheet', initActorSheetHook);

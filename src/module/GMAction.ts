@@ -308,28 +308,32 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         let statusEffects = [];
         dupEffects = dupEffects.filter(aeData => {
           let changesToAdd = [];
-          let statusesToAdd = []
+          let statusesToAdd = [];
           aeData.changes = aeData.changes.filter(change => {
             if (change.key === "StatusEffect") {
               const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
               if (statusEffect) {
                 const addEffect = duplicate(statusEffect)
                 addEffect.origin = aeData.origin;
-                addEffect.durtion = aeData.duration;
+                addEffect.duration = aeData.duration;
                 statusesToAdd.push(addEffect);
-                changesToAdd = changesToAdd.concat(addEffect.changes)
+                // changesToAdd = changesToAdd.concat(addEffect.changes)
                 return false;
               }
             }
             return true;
           });
+          statusEffects = statusEffects.concat(statusesToAdd);
+          return statusesToAdd.length === 0 || aeData.changes.length > 0;
+          /*
           if (aeData.changes.length > 0) { // There were some changes left over so just add the changes
             aeData.changes = aeData.changes.concat(changesToAdd);
             return true;
           } else { // No other changes replace with the status effect.
             statusEffects = statusEffects.concat(statusesToAdd);
-            return false;
+            return statusesToAdd.length === 0;
           }
+          */
         })
         dupEffects = dupEffects.concat(statusEffects);
         dupEffects.forEach(ae => {
