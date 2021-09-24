@@ -1,7 +1,12 @@
+### 0.8.55
+* Fix for some actors having traits custom === null instead of "".
+* Some effect creation/deletion cleanup to be ready for 0.9
+
 ### 0.8.54
-* improved condition immunity behaviour. conditions to which you are immune (same name) will not have their effects applied whether active or inactive.
+* improved condition immunity behaviour. conditions to which you are immune (same name) will not have their effects applied.
 * Fix for status effects drop down list.
 * Fix for empty active effects not being applied to targets.
+
 
 ### 0.8.52
 * [BREAKING] Looking at the coming changes in foundry 0.9.2 I've decided to remove the linking of item equipped and effect enabled.disabled in DAE and leave this entirely to foundry/dnd5e. This will cause ATL and Token HUD to misbehave. Further you cannot toggle an unavailable effect to active without equipping the item.

@@ -513,7 +513,8 @@ function daeCustomEffect(actor, change) {
     case "data.traits.toolProf.custom":
     case "data.traits.armorProf.custom":
     case "data.traits.weaponProf.custom":
-      value = current.concat(current.length === 0 ? `${change.value}` : `; ${change.value}`);
+      value = current || "";
+      value = value.concat(value.length === 0 ? `${change.value}` : `; ${change.value}`);
       setProperty(actor.data, change.key, value)
       return true;
     case "data.traits.languages.all":
@@ -846,11 +847,6 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
   try {
     const effectData = await daeMacro("on", parent, this.data, {});
-    // TODO pending issue 5930 foundry this should disable effects that can't be blocked from creation
-    const ci = this.parent.data.data.traits?.ci?.value;
-    const statusId = (effectData.flags?.core?.statusId ?? "no effect").toLocaleLowerCase();
-    effectData.disabled = effectData.disabled || (ci.length && ci.find(c => statusId.endsWith(c)) !== undefined);
-    this.data.update(effectData); // Allow for data added to the effect for item macros.
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {

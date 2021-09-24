@@ -1,7 +1,7 @@
 If you have a problem please read the [Issues section](#Issues) before reporting a bug.
 
 ## BREAKING
-**My lights do go off when I unequip an item** **I can't toggle an effect from Token HUD**
+**My lights do not go off when I unequip an item** **I can't toggle an effect from Token HUD**
 As of DND5E 1.4.3 and/or foundry 0.9.2 unequipping an item makes it unavailable **EVEN** if it is active. DAE understands about unavailable effects and won't apply effects that are marked as unavailable.
 
 DAE makes no changes to active effects when equipping/unequipping, in 1.4.3 and/or foundry 0.9.2 (which it used to do) so that there is no confusion about who is toggling effects it is all foundry/DND5E.

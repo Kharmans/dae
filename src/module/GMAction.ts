@@ -336,7 +336,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           */
         })
         dupEffects = dupEffects.concat(statusEffects);
-        dupEffects.forEach(ae => {
+        for (let ae of dupEffects) {
           setProperty(ae, "flags.dae.token", tid);
           if (getProperty(ae, "flags.dae.stackable") === "count") {
             setProperty(ae, "flags.dae.stacks", currentStacks);
@@ -384,10 +384,10 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             }
             return change;
           })
-        })
+        }
         warn("gm action apply effect", token, actEffects)
 
-        setTimeout(async () => { //TODO consider revising this in 0.9
+//        setTimeout(async () => { //TODO consider revising this in 0.9
           actor = DAEfromActorUuid(actor.uuid);
           let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
 
@@ -416,7 +416,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               }
             })
           }
-        }, removeList.length > 0 ? 500 * removeList.length : 1);
+  //      }, removeList.length > 0 ? 500 * removeList.length : 1);
       }
     };
   };
