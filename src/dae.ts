@@ -64,6 +64,8 @@ Hooks.once('ready', async function () {
   if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {
     daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
     daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
+    daeSpecialDurations["turnStartSource"] = i18n("dae.turnStartSource");
+    daeSpecialDurations["turnEndSource"] = i18n("dae.turnEndSource");
     daeMacroRepeats= {
       "none": "",
       "startEveryTurn" : i18n("dae.startEveryTurn"),
@@ -102,7 +104,7 @@ Hooks.once('ready', async function () {
       daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}`;
       daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
       daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
-        daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isCheckDetail")}`;
+      daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isCheckDetail")}`;
     })
     Object.keys(CONFIG.DND5E.damageTypes).forEach(dt=> {
       daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${CONFIG.DND5E.damageTypes[dt]}`;

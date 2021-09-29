@@ -1,4 +1,4 @@
-import { useAbilitySave,  displayTraits, libWrapper } from "./dae";
+import { useAbilitySave, displayTraits, libWrapper } from "./dae";
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error, warn, } from "../dae";
@@ -6,52 +6,52 @@ import { debug, log, error, warn, } from "../dae";
 
 function rollAbilitySave(abilityId, options = { event, fastForward: null, advantage: null, disadvantage: null }) {
   const label = CONFIG.DND5E.abilities[abilityId];
-    const abl = this.data.data.abilities[abilityId];
+  const abl = this.data.data.abilities[abilityId];
 
-    // Construct parts
-    const parts = ["@mod"];
-    const data = this.getRollData();
-    data.mod = abl.save;
+  // Construct parts
+  const parts = ["@mod"];
+  const data = this.getRollData();
+  data.mod = abl.save;
 
-/*
-    // Include proficiency bonus
-    if ( abl.prof > 0 ) {
-      parts.push("@prof");
-      //@ts-ignore
-      data.prof = abl.prof;
-    }
-    */
-
-    // Include a global actor ability save bonus
-    const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
-    //@ts-ignore
-    if ( bonuses.save && ! Number.isNumeric(bonuses.save)) {
-      parts.push("@saveBonus");
-      //@ts-ignore
-      data.saveBonus = bonuses.save;
-    }
-
-    // Add provided extra roll parts now because they will get clobbered by mergeObject below
-      //@ts-ignore
-      if (options.parts?.length > 0) {
-      //@ts-ignore
-      parts.push(...options.parts);
-    }
-
-    // Roll and return
-      //@ts-ignore
-      const rollData = foundry.utils.mergeObject(options, {
-      parts: parts,
-      data: data,
-      title: game.i18n.format("DND5E.SavePromptTitle", {ability: label}),
-      halflingLucky: game.system.id === "dnd5e" ? this.getFlag("dnd5e", "halflingLucky") : undefined,
-      messageData: {
-      //@ts-ignore
-      speaker: options.speaker || ChatMessage.getSpeaker({actor: this}),
-        "flags.dnd5e.roll": {type: "save", abilityId }
+  /*
+      // Include proficiency bonus
+      if ( abl.prof > 0 ) {
+        parts.push("@prof");
+        //@ts-ignore
+        data.prof = abl.prof;
       }
-    });
-    return d20Roll(rollData);
+      */
+
+  // Include a global actor ability save bonus
+  const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
+  //@ts-ignore
+  if (bonuses.save && !Number.isNumeric(bonuses.save)) {
+    parts.push("@saveBonus");
+    //@ts-ignore
+    data.saveBonus = bonuses.save;
+  }
+
+  // Add provided extra roll parts now because they will get clobbered by mergeObject below
+  //@ts-ignore
+  if (options.parts?.length > 0) {
+    //@ts-ignore
+    parts.push(...options.parts);
+  }
+
+  // Roll and return
+  //@ts-ignore
+  const rollData = foundry.utils.mergeObject(options, {
+    parts: parts,
+    data: data,
+    title: game.i18n.format("DND5E.SavePromptTitle", { ability: label }),
+    halflingLucky: game.system.id === "dnd5e" ? this.getFlag("dnd5e", "halflingLucky") : undefined,
+    messageData: {
+      //@ts-ignore
+      speaker: options.speaker || ChatMessage.getSpeaker({ actor: this }),
+      "flags.dnd5e.roll": { type: "save", abilityId }
+    }
+  });
+  return d20Roll(rollData);
 }
 
 var d20Roll;
@@ -98,7 +98,7 @@ export function patchPrepareArmorClassAttribution() {
     } else if (game.system.id === "sw5e" && isNewerVersion(game.system.data.version, "1.4.0")) {
       // TODO come back and implement for sw5e when available.
     }
-    
+
   }
 }
 
@@ -106,19 +106,19 @@ export function patchGetInitiativeFormula() {
   warn("Patching Combatant getInitiativeFormula")
   //@ts-ignore Combatant
   Combatant.prototype._getInitiativeFormula = getInitiativeFormula;
-}  
+}
 
 // Allow limited recursion of the formula replace function for things like
 // bonuses.heal.damage in spell formulas.
-export function replaceFormulaData(wrapped, formula, data, {missing, warn=false}= {missing:undefined, warn: false}) {
+export function replaceFormulaData(wrapped, formula, data, { missing, warn = false } = { missing: undefined, warn: false }) {
   let result = formula;
   const maxIterations = 3;
   if (typeof formula !== "string") return formula;
   for (let i = 0; i < maxIterations; i++) {
     if (!result.includes("@")) break;
     try {
-      result = wrapped(result, data, {missing, warn});
-    } catch(err) {
+      result = wrapped(result, data, { missing, warn });
+    } catch (err) {
       error(err, formula, data, missing, warn);
     }
   }
@@ -303,7 +303,7 @@ async function _updateObject(event, formData) {
 
 export function getInitiativeFormula() {
   const actor = this.actor;
-  if ( !actor ) return "1d20";
+  if (!actor) return "1d20";
   const init = actor.data.data.attributes.init;
 
   // Construct initiative formula parts
@@ -320,11 +320,26 @@ export function getInitiativeFormula() {
   }
   if (game.system.id === "dnd5e" && actor.getFlag("dnd5e", "halflingLucky")) mods += "r1=1";
 
-  const parts = [`${nd}d20${mods}`, init.mod, (init.prof !== 0) ? init.prof : null, (init.bonus !== 0) ? init.bonus : null];
+  let parts;
+  if (isNewerVersion("1.5.0", game.system.data.version)) {
+    parts = [
+      `${nd}d20${mods}`, 
+      init.mod, 
+      (init.prof !== 0) ? init.prof : null, 
+      (init.bonus !== 0) ? init.bonus : null
+    ];
+  } else { 
+    parts = [
+      `${nd}d20${mods}`,
+      init.mod,
+      (init.prof.term !== "0") ? init.prof.term : null,
+      (init.bonus !== 0) ? init.bonus : null
+    ];
+  };
 
   // Optionally apply Dexterity tiebreaker
   const tiebreaker = game.settings.get(game.system.id, "initiativeDexTiebreaker");
-  if ( tiebreaker ) parts.push(actor.data.data.abilities.dex.value / 100);
+  if (tiebreaker) parts.push(actor.data.data.abilities.dex.value / 100);
   return parts.filter(p => p !== null).join(" + ");
 };
 
