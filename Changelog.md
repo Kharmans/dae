@@ -1,3 +1,7 @@
+### 0.8.56
+* dnd5e 1.5.0 initiative roll compatability fix.
+* added en.json fields for new times-up expiry options
+
 ### 0.8.55
 * Fix for some actors having traits custom === null instead of "".
 * Some effect creation/deletion cleanup to be ready for 0.9
