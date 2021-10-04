@@ -288,7 +288,8 @@ Macros are called when the effect is transferred to the character (with `args[0]
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------	|:-----------:	|----------------	|
 | `macro.execute`	|    CUSTOM	|	|
-| `macro.CE`	|    CUSTOM	| 	|
+| `StatusEffect` | CUSTOM | Applies/removes default/CE/CUB status effects/conditions. ** Strongly Preferred** |
+| `macro.CE`	|    CUSTOM	| Applies/removes CE Coditions	|
 | `macro.CUB`	|    CUSTOM	| Applies/removes CUB Conditions.	|
 | `macro.itemMacro`	|    CUSTOM	| 	|
 | `macro.tokenMagic`	|    CUSTOM	| Applies/removes the Token Magic affects.	|
