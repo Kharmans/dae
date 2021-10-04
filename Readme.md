@@ -14,7 +14,7 @@ This will negatively impact ATL and Token HUD (at least) both of which used to r
 
 Dynamic Active Effects (DAE) is a replacement for Dynamic Effects (which will *NOT* work in 0.71+, and won't be ported).
 
-Much of the functionality of Dynamic Effects is now included in the Foundry core active effects system. DAE augments the core functionality with some of the features from Dynamic Effects. 
+Much of the functionality of Dynamic Effects is now included in the Foundry core active effects system. DAE augments the core functionality with some additional features.. 
 
 Core active effects allow you to modify a base value (defined in template.json - most fields you can edit in the character sheet) and apply a fixed value or string to it. There are additional options in core that were not present in Dynamic Effects, see: [Calculations](#Calculations).
 
@@ -33,9 +33,7 @@ This module modifies how active effects behave over and above what is supported 
 
 DAE does add some features to core active effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.  
 1. A DAE editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but *not* addition/deletion.
-2. Transfer effects (from an item) are enabled/disabled according to the following rule which overrides the default behaviour
-    * If the item that the effect came from (transfer effect) and the item can't be equipped simply use the "disabled/suspended" setting. You can toggle from the effects tab on the item/character sheet.
-    * Anything else follows the obvious dnd5e rule that transfer effects for an item apply if the item is equipped and attuned/does not require attunement. For items that can be equipped you CANNOT override the enabled/disabled status for transfer effects (change in 0.8.47 of DAE). As of dnd5e 1.4.3, core dnd5e provides this functionality and it is disabled in dae if dnd5e 1.4.3 or later is installed.
+2. **Obsolete** as of DND5E 1.4.3 DND5E handles enabling/disabling effects for transfer effects and item equip/unequip.
 3. The ability to reference actor data in active effects data fields like `@abilities.str.value` where core restricts you to numbers and strings. If an active effect modifies a field that will be used in a roll like `data.bonuses.mwak.attack` (and soon to be .bonus fields - dnd1.5), a string field like `@abilities.dex.mod` will get looked up when the roll is made.
 4. The ability to update derived fields, such as `abilities.dex.mod`. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
     * Most/Some of these will be redundant after dnd1.5.
@@ -43,6 +41,7 @@ DAE does add some features to core active effects, so if the following features 
 6. Support for an API that allows non-transfer effects to be applied to a target token. In combination with Midi-QOL it allows you to have spells/weapons/features apply non-transfer effects to other tokens.
 7. An extended active effect editor that provides `CUSTOM` fields, a list of valid fields, a drop down list of options, drop down lists for restricted field values, and the ability to set the priority of an effect.
 8. The ability to call macros when active effects are applied to an actor.
+9. Several short hand CUSTOM effects to simplify giving all damage immunities and so on.
 
 ## Active Effect Expiry
 Expiry of effects requires additional [modules](#Module Integrations) to be installed. All of the modules play nicely together. If times-up is installed it takes over the expiry of timed effects.
@@ -71,6 +70,8 @@ Requires times-up installed and active:
   * turnEnd: effects last until the end of self/target's next turn (checks combat tracker)
   * If you want an effect on a target that expires at the start of the caster's next turn set the duration to 1 round
   * If you want an effect on a target that expires at the end of the caster's next turn set the duration to 1 round + 1 turn.  
+
+See also Midi-qol and OverTime effects which support some conditional expiry options in the actor is in combat.
 
 ## Editing Active Effects
 A preliminary edit function is supplied, which may change in the future.  
