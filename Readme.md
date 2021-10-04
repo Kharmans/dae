@@ -71,7 +71,7 @@ Requires times-up installed and active:
   * If you want an effect on a target that expires at the start of the caster's next turn set the duration to 1 round
   * If you want an effect on a target that expires at the end of the caster's next turn set the duration to 1 round + 1 turn.  
 
-See also Midi-qol and OverTime effects which support some conditional expiry options in the actor is in combat.
+See also Midi-qol and OverTime effects which support some conditional expiry options if the actor is in combat.
 
 ## Editing Active Effects
 A preliminary edit function is supplied, which may change in the future.  
@@ -102,13 +102,20 @@ Additionally, there is a priority that can be given to each change within an eff
   * `DOWNGRADE: 30`
   * `UPGRADE:   40`
   * `OVERRIDE:  50`  
-So if an actor has the following changes, `data.attributes.hp.max   ADD 10`, and `data.attributes.hp.max   OVERRIDE 20` then with default priorities hp.max will be 20, since overrides comes after ADD. If priorities are assigned `data.attributes.hp.max   ADD 10   Priority:100`, and `data.attributes.hp.max   OVERRIDE 20   Priority:10` hp.max will become 30.  
+So if an actor has the following changes, 
+`data.attributes.hp.max ADD 10`  
+`data.attributes.hp.max OVERRIDE 20`  
+then with default priorities hp.max will be 20, since overrides comes after ADD. If priorities are assigned `data.attributes.hp.max  ADD 10        Priority:100`
+`data.attributes.hp.max  OVERRIDE 20   Priority:10`  
+hp.max will become 30.  
 
 DAE allows you to use expressions as well as fixed values. So for example you could have the following
-  * `data.attributes.hp.max   ADD "@classes.paladin.levels * @abilities.con.mod"   Priority:100`, and `data.attributes.hp.max   OVERRIDE "10 + 5 + 6 + 10"   Priority:10` where hp.max will be set to `31 + con.mod * paladin levels`
+`data.attributes.hp.max ADD "@classes.paladin.levels * @abilities.con.mod"   Priority:100`  
+`data.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10`  
+hp.max will be set to `31 + con.mod * paladin levels`
 
 **Number** fields are fully evaluated during the applyEffects pass.   
-**String** fields are not evaluated at all. So setting `data.bonuses.mwak.attack   ADD "@data.abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `data.bonuses.mwak` is a string field.
+**String** fields are not evaluated at all. So setting `data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `data.bonuses.mwak` is a string field.
 * Recognizing what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. 
