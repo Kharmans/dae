@@ -109,10 +109,10 @@ then with default priorities hp.max will be 20, since overrides comes after ADD.
 `data.attributes.hp.max  OVERRIDE 20   Priority:10`  
 hp.max will become 30.  
 
-DAE allows you to use expressions as well as fixed values. So for example you could have the following
+DAE allows you to use expressions as well as fixed values. So for example you could have the following  
 `data.attributes.hp.max ADD "@classes.paladin.levels * @abilities.con.mod"   Priority:100`  
 `data.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10`  
-hp.max will be set to `31 + con.mod * paladin levels`
+hp.max will be set to `31 + con.mod * paladin levels`  
 
 **Number** fields are fully evaluated during the applyEffects pass.   
 **String** fields are not evaluated at all. So setting `data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `data.bonuses.mwak` is a string field.
