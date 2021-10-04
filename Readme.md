@@ -279,7 +279,9 @@ These fields accept 0 off, or 1 on.
 | `flags.dnd5e.initiativeDisadv`	| 	| Gives disadvantage on initiative rolls.	|
 | `flags.dae`	|   CUSTOM	| 	|
 | `flags.dnd5e.DamageBonusMacro`	| 	| 	|
-
+| `StatusEffect` | CUSTOM | Applies/removes default/CE/CUB status effects/conditions. **Strongly Preferred** |
+| `macro.CE`	|    CUSTOM	| Applies/removes CE Coditions - not really a macro.	|
+| `macro.CUB`	|    CUSTOM	| Applies/removes CUB Conditions	- not really a macro. |
 </details>
 <details><summary>Macro Fields</summary>
 <br>
@@ -287,10 +289,8 @@ Macros are called when the effect is transferred to the character (with `args[0]
 
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------	|:-----------:	|----------------	|
+|
 | `macro.execute`	|    CUSTOM	|	|
-| `StatusEffect` | CUSTOM | Applies/removes default/CE/CUB status effects/conditions. ** Strongly Preferred** |
-| `macro.CE`	|    CUSTOM	| Applies/removes CE Coditions	|
-| `macro.CUB`	|    CUSTOM	| Applies/removes CUB Conditions.	|
 | `macro.itemMacro`	|    CUSTOM	| 	|
 | `macro.tokenMagic`	|    CUSTOM	| Applies/removes the Token Magic affects.	|
 
@@ -377,7 +377,7 @@ The macro functions in dynamicitems have been replaced in DAE with the following
   ```
   new DAE.ActiveEffects(actor, {}).render(true)
   ```
-* Display a form with enabled/disabled passive and active effects for the selected token. 
+* Apply/remove item transfer effects to a set of targets
   ```
   DAE.doEffects(item, activate, targets, {whisper = false, spellLevel = 0, damageTotal = null})
   ```
@@ -452,13 +452,17 @@ Times-up also provides 2 macro repeat settings (turn start/turn end). If set for
 If the module is installed and active effects can update the actors gm-notes field. A useful place to track info that can't be applied to the character sheet.
 
 ### [Combat Utility Belt](https://github.com/death-save/combat-utility-belt)
-**as of 0.3.50 the integration with Combat Utility Belt has changed.**  
-You create an active effect that takes it's changes from CUB via the drop down list in the DAE Active Effects Screen. "new" is pre-selected but you choose various items from that list, including CUB conditions.
 
-CUB conditions are applied in 2 ways:  
-* If you select condition (CUB) from the drop down list DAE will copy the active effect from CUB into the actor/item. From then on it won't change, any changes you make in condition lab will NOT be reflected in actors who have the condition applied via DAE/Midi-QOL.
-* Using macro.CUB to apply a condition that is looked up from CUB when applied.
 
+CUB conditions are applied in 3 ways:  
+* StatusEffect, this will lookup the CUB conditon at the time of apllication and copy the data. This is the **strongly** preferred way to apply conditions
+* You create an active effect that takes it's changes from CUB via the drop down list in the DAE Active Effects Screen. "new" is pre-selected but you choose various items from that list, including CUB conditions.
+If you select condition (CUB) from the drop down list DAE will copy the active effect from CUB into the actor/item. From then on it won't change, any changes you make in condition lab will NOT be reflected in actors who have the condition applied via DAE/Midi-QOL.
+* Using macro.CUB to apply a condition that is looked up from CUB when applied. This should be considered deprecated.
+
+### [Convenient Effects](https://github.com/DFreds/dfreds-convenient-effects)
+
+Same application options as for CUB.
 
 ## Issues
 
