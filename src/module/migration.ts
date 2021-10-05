@@ -435,3 +435,15 @@ export async function tobMapper(iconsPath = "icons/TOB") {
       }
     });
 }
+
+export async function fixTransferEffects(actor) {
+  let items = actor.items.filter(i => i.effects.some(e=>e.data.transfer));
+  let transferEffects = actor.effects.filter(e=>(!e.isTmporary || e.data.flags.dae?.transfer) && e.data.origin.includes("Item.") );
+  console.error("Deleing effects", transferEffects)
+  await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e=>e.id));
+  const toCreate = items.map(i=>i.toObject())
+  console.error("Deleting items ", items.map(i=>i.id))
+  await actor.deleteEmbeddedDocuments("Item", items.map(i=>i.id));
+  console.error("Creating items ", toCreate)
+  await actor.createEmbeddedDocuments("Item", toCreate);
+}

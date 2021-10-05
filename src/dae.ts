@@ -5,7 +5,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
-import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
+import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -169,7 +169,8 @@ Hooks.once('setup', function() {
     createToken: createToken,
     fixupDDBAC: fixupDDBAC,
     cleanEffectOrigins: cleanEffectOrigins,
-    tobMapper: tobMapper
+    tobMapper: tobMapper,
+    fixTransferEffects: fixTransferEffects
   }
 });
 

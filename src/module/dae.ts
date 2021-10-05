@@ -1,5 +1,5 @@
 import { requestGMAction, GMAction, applyActiveEffects } from "./GMAction";
-import { warn, error, debug, setDebugLevel, i18n, timelog } from "../dae";
+import { warn, error, debug, setDebugLevel, i18n, timelog, changesQueue } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { patchPrepareArmorClassAttribution, updatePatches } from "./patching";
@@ -86,6 +86,7 @@ export class ValidSpec {
     baseValues["data.bonuses.heal.attack"] = "";
     baseValues["data.bonuses.save.damage"] = "";
     baseValues["data.bonuses.abil.damage"] = "";
+    /*
     if (isNewerVersion(game.system.data.version, "1.4.9")) {
       baseValues["data.abilities.str.bonuses.check"] = "";
       baseValues["data.abilities.dex.bonuses.check"] = "";
@@ -100,7 +101,7 @@ export class ValidSpec {
       baseValues["data.abilities.cha.bonuses.save"] = "";
       baseValues["data.abilities.con.bonuses.save"] = "";
     }
-
+*/
     //@ts-ignore
     if (game.modules.get("gm-notes")?.active) {
       baseValues["flags.gm-notes.notes"] = "";
@@ -366,6 +367,36 @@ function effectDisabled(actor, efData, itemData = null) {
   }
   return disabled;
 }
+function flagChangeKeys(actor, change) {
+  const strSave = change.key.match(/data.abilities.(\w\w\w).save/);
+  if (strSave) {
+    const abl = strSave[1];
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.save instead`)
+    // change.key = `data.abilities.${abl}.bonuses.save`;
+    return;
+  }
+  const checkBonus = change.key.match(/data.abilities.(\w\w\w).mod/);
+  if (checkBonus) {
+    const abl = checkBonus[1];
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.check instead`)
+    // change.key = `data.abilities.${abl}.bonuses.check`;
+    return;
+  }
+  const skillMod = change.key.match(/data.dkills.(\w\w\w).mod/);
+  if (skillMod) {
+    const abl = skillMod[1];
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.check instead`)
+    // change.key = `data.abilities.${abl}.bonuses.check`;
+    return;
+  }
+  const skillPassive = change.key.match(/data.dkills.(\w\w\w).passive/);
+  if (skillPassive) {
+    const abl = skillMod[1];
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.passive instead`)
+    // change.key = `data.abilities.${abl}.bonuses.check`;
+    return;
+  }
+}
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
@@ -387,9 +418,12 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
     if (effectDisabled(this, effect.data) || effect.isSuppressed) return changes; //TODO check this for 0.9.2
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
-      .filter(c => { return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined) })
+      .filter(c => {
+        return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined)
+      })
       .map(c => {
         c = duplicate(c);
+        flagChangeKeys(this, c);
         if (c.key === "flags.midi-qol.OverTime") c.key = `flags.midi-qol.OverTime.${randomID()}`;
         c.effect = effect;
         c.priority = c.priority ?? (c.mode * 10);
@@ -475,15 +509,17 @@ function daeCustomEffect(actor, change) {
     setProperty(actor.data, change.key, value);
     return true;
   }
-  if (change.key.startsWith("data.skills.") && change.key.endsWith(".value")) {
-    const currentProf = getProperty(actor.data, change.key) || 0;
-    const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
-    const upgrade = profValues[change.value]
-    if (upgrade === undefined) return;
-    let newProf = currentProf + upgrade;
-    if (newProf > 1 && newProf < 2) newProf = 1;
-    if (newProf > 2) newProf = 2;
-    return setProperty(actor.data, change.key, newProf);
+  if (isNewerVersion("1.5.0", game.system.data.version)) {
+    if (change.key.startsWith("data.skills.") && change.key.endsWith(".value")) {
+      const currentProf = getProperty(actor.data, change.key) || 0;
+      const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
+      const upgrade = profValues[change.value]
+      if (upgrade === undefined) return;
+      let newProf = currentProf + upgrade;
+      if (newProf > 1 && newProf < 2) newProf = 1;
+      if (newProf > 2) newProf = 2;
+      return setProperty(actor.data, change.key, newProf);
+    }
   }
   switch (change.key) {
     case "data.attributes.movement.hover":
@@ -649,12 +685,19 @@ function daeCustomEffect(actor, change) {
     case "data.attributes.powerForceDarkDC":
     case "data.attributes.powerForceUnivDC":
     case "data.attributes.powerTechDC":
-
       //@ts-ignore
-      value = Number.isNumeric(change.value) ? parseInt(change.value) : 0;
-      if (value) {
-        setProperty(actor.data, change.key, Number(current) + value);
+      if (Number.isNumeric(change.value)) {
+        value = parseInt(change.value);
+      } else {
+        try {
+          //@ts-ignore
+          value = (new Roll(change.value, daeRollData(actor))).evaluate({ async: false }).total;
+        } catch (err) { };
       }
+      if (value !== undefined) {
+        setProperty(actor.data, change.key, Number(current) + value);
+      } else return;
+
       // Spellcasting DC
       const ad = actor.data.data;
       const spellcastingAbility = ad.abilities[ad.attributes.spellcasting];
@@ -845,6 +888,27 @@ async function _preCreateActiveEffect(wrapped, ...args) {
 
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
+  let updates = {};
+  if (this.data.transfer) {
+    updates = { "flags.dae.transfer": true };
+  }
+  let changesChanged = false;
+  let newChanges = [];
+  for (let change of this.data.changes) {
+    if (change.key === "StatusEffect") {
+      const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
+      if (statusEffect) {
+        newChanges = newChanges.concat(statusEffect.changes);
+        updates["icon"] = statusEffect.icon;
+        updates["label"] = statusEffect.label;
+        changesChanged = true;
+      }
+    } else {
+      newChanges.push(change);
+    }
+    if (changesChanged) updates["changes"] = newChanges;
+    if (changesChanged || this.data.transfer) this.data.update(updates)
+  }
   try {
     const effectData = await daeMacro("on", parent, this.data, {});
   } catch (err) {
@@ -1279,7 +1343,6 @@ export function preCreateItem(candidate, data, options, user) {
   if (!candidate.isOwned) return;
   data.effects?.forEach(efData => {
     if (efData.transfer) {
-      setProperty(efData, "flags.dae.transfer", true)
       if (isNewerVersion("1.4.3", game.system.data.version) && !isNewerVersion(game.version, "9.200"))
         efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
     }

@@ -12,16 +12,12 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
   const parts = ["@mod"];
   const data = this.getRollData();
   data.mod = abl.save;
-
-  /*
-      // Include proficiency bonus
-      if ( abl.prof > 0 ) {
-        parts.push("@prof");
-        //@ts-ignore
-        data.prof = abl.prof;
-      }
-      */
-
+  // Include proficiency bonus
+  if (abl.prof > 0) {
+    parts.push("@prof");
+    //@ts-ignore
+    data.prof = abl.prof;
+  }
   // Include a global actor ability save bonus
   const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
   //@ts-ignore
@@ -134,7 +130,7 @@ var abilitySavePatched = false;
 function patchAbilitySave() {
   if (!d20Roll)
     return;
-  //@ts-ignore
+  //@ts-ignore for dnd5e don't do any patching of ability save
   if (["dnd5e", "sw5e"].includes(game.system.id) && !isNewerVersion(game.system.data.version, "1.4.9")) {
     log(`Patching CONFIG.Actor.documentClass.prototype.rollAbilitySave (override=${useAbilitySave})`);
     if (!useAbilitySave) {
@@ -323,12 +319,12 @@ export function getInitiativeFormula() {
   let parts;
   if (isNewerVersion("1.5.0", game.system.data.version)) {
     parts = [
-      `${nd}d20${mods}`, 
-      init.mod, 
-      (init.prof !== 0) ? init.prof : null, 
+      `${nd}d20${mods}`,
+      init.mod,
+      (init.prof !== 0) ? init.prof : null,
       (init.bonus !== 0) ? init.bonus : null
     ];
-  } else { 
+  } else {
     parts = [
       `${nd}d20${mods}`,
       init.mod,

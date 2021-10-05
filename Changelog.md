@@ -1,3 +1,37 @@
+
+* Getting ready for dnd5e 1.5. This release means some of the features of DAE are no longer required which is great.
+Most derived fields now have .bonuses values available; e.g.
+data.abilities.str.bonuses.save/.check. This field supercedes the DAE support of data.abilities.save.mod and data.abilities.check.mod, in much the same way data.attributes.ac.bonus means changes to data.attributes.ac.value are no longer required.
+
+values that have .bonuses available:
+  - abilities.str/dex/cha etc
+  - skills.acr/per/prc etc.
+  - attributes.ac
+These fields support the the use of @values when specifying the bonus - and this is a core dnd5e effect - dae is not required for this.
+Global bonuses have been enhanced to accept @fields for all bonues, instead of just the rwak/mwak/rsak/msak fields.
+
+Accordingly effect changes to the derived values for abilities, skills and ac are deprecated and will generate a warning in the console if used. A later version will make this a notification in game and subsequently they will be disabled entirely.
+
+ Mainly changes to prepare for dnd5e 1.5.0 - ALL are BREAKING CHANGES
+ * Disable dae replacement saving throw which uses ability.save rather than ability.mod since 1.5.0 includes separate check/save bonuses for abilities. This means that effects that modify abilities.str/dex/int.save will no longer have any effect when rolling saving throws. I have decided to disable this immediately since the new bonuses.save fields are an excellent alternative and I don't want DAE getting in the way of the new mechanic.
+
+
+ Effects to change
+ data.abilities.str/dex/cha.save -> data.abilities.str.bonuses.save
+ data.abilities.str/dex/cha.check -> data.abilities.str.bonuses.check
+
+### v0.9.1
+* Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
+
+### 0.8.57
+* StatusEffect is now supported for both transfer and non-transfer effects. With this change it is now the strongly preferred way to apply status conditions to targets.
+
+* data.abilities.str/wis/dex.dc now supports expressions. This was introduced to provide a very hacky solution to the problem of setting a fixed spell dc for a characteer. If you have a spellcasting ability of int then setting an active effect as 
+```
+data.abilities.int.dc CUSTOM 30 - @abilities.int.dc
+```
+will end up setting the int spell dc to 30 and the overall character spell dc to 30.
+
 ### 0.8.56
 * dnd5e 1.5.0 initiative roll compatability fix.
 * added en.json fields for new times-up expiry options

@@ -310,11 +310,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         data.durationString = endTime.date + " " + endTime.time;
       }
     }
-    if (!data.effect.flags.dae?.specialDuration)
+    if (!data.effect.flags.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       setProperty(data.effect.flags, "dae.specialDuration", []);
-    if (typeof data.effect.flags.dae?.specialDuration === "string") {
-      data.effect.flags.dae.specialDuration = [data.effect.flags.dae.specialDuration]
-    }
     data.sourceName = this.object.sourceName;
     data.fieldsList = this.fieldsList;
     return data;
@@ -408,7 +405,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!formData.changes) formData.changes = [];
     formData.changes = Object.values(formData.changes);
 
-    if (formData.flags?.dae?.specialDuration) {
+    if (formData.flags?.dae?.specialDuration && typeof formData.flags.dae.specialDuration !== "string") {
       const newSpecDur = []
       Object.values(formData.flags?.dae?.specialDuration).forEach(value => newSpecDur.push(value));
       formData.flags.dae.specialDuration = newSpecDur;
@@ -421,13 +418,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
       }
     } else if (this.object.parent.isOwned) formData.duration.startTime = null;
-
     setProperty(formData, "flags.dae.transfer", formData.transfer);
     //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
     if (this.object.parent.isOwned) { // we are editing an owned item
       let itemData = this.object.parent.data.toObject();
       itemData.effects.forEach(efData => {
-        if (efData._id == this.object.id)
+        if (efData._id === this.object.id)
           mergeObject(efData, formData, { overwrite: true, inplace: true })
       })
       return this.object.parent.actor.updateEmbeddedDocuments("Item", [itemData], { diff: true });

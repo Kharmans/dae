@@ -42,6 +42,7 @@ DAE does add some features to core active effects, so if the following features 
 7. An extended active effect editor that provides `CUSTOM` fields, a list of valid fields, a drop down list of options, drop down lists for restricted field values, and the ability to set the priority of an effect.
 8. The ability to call macros when active effects are applied to an actor.
 9. Several short hand CUSTOM effects to simplify giving all damage immunities and so on.
+10. DAE makes the actor flags available in actor.getRollData(), so you can dereferences @flags. in expressions
 
 ## Active Effect Expiry
 Expiry of effects requires additional [modules](#Module Integrations) to be installed. All of the modules play nicely together. If times-up is installed it takes over the expiry of timed effects.
