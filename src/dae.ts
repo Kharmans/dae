@@ -2,7 +2,7 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid} from "./module/dae";
+import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, useAbilitySave} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
 import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
@@ -182,6 +182,8 @@ Hooks.once("ready", () => {
   if (!["dnd5e", "sw5e"].includes(game.system.id)) return;
   checkLibWrapperVersion();
   checkArmorDisabled();
+  if (useAbilitySave && isNewerVersion(game.system.data.version, "1.4.9") && game.user.isGM)
+    ui.notifications.warn(`DAE | rollAbilitySave replacement is deprecated and will be removed from version ${game.system.id} 1.5.1`)
 })
 
 export function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {

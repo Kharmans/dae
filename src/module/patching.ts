@@ -127,7 +127,7 @@ function patchAbilitySave() {
   if (!d20Roll)
     return;
   //@ts-ignore for dnd5e don't do any patching of ability save
-  if (["dnd5e", "sw5e"].includes(game.system.id) && !isNewerVersion(game.system.data.version, "1.4.9")) {
+  if (["dnd5e", "sw5e"].includes(game.system.id) && !isNewerVersion(game.system.data.version, "1.5.1")) {
     log(`Patching CONFIG.Actor.documentClass.prototype.rollAbilitySave (override=${useAbilitySave})`);
     if (!useAbilitySave) {
       if (abilitySavePatched) {

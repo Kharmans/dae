@@ -1,28 +1,34 @@
 
-* Getting ready for dnd5e 1.5. This release means some of the features of DAE are no longer required which is great.
-Most derived fields now have .bonuses values available; e.g.
-data.abilities.str.bonuses.save/.check. This field supercedes the DAE support of data.abilities.save.mod and data.abilities.check.mod, in much the same way data.attributes.ac.bonus means changes to data.attributes.ac.value are no longer required.
-
-values that have .bonuses available:
-  - abilities.str/dex/cha etc
-  - skills.acr/per/prc etc.
-  - attributes.ac
-These fields support the the use of @values when specifying the bonus - and this is a core dnd5e effect - dae is not required for this.
-Global bonuses have been enhanced to accept @fields for all bonues, instead of just the rwak/mwak/rsak/msak fields.
-
-Accordingly effect changes to the derived values for abilities, skills and ac are deprecated and will generate a warning in the console if used. A later version will make this a notification in game and subsequently they will be disabled entirely.
-
- Mainly changes to prepare for dnd5e 1.5.0 - ALL are BREAKING CHANGES
- * Disable dae replacement saving throw which uses ability.save rather than ability.mod since 1.5.0 includes separate check/save bonuses for abilities. This means that effects that modify abilities.str/dex/int.save will no longer have any effect when rolling saving throws. I have decided to disable this immediately since the new bonuses.save fields are an excellent alternative and I don't want DAE getting in the way of the new mechanic.
-
-
- Effects to change
- data.abilities.str/dex/cha.save -> data.abilities.str.bonuses.save
- data.abilities.str/dex/cha.check -> data.abilities.str.bonuses.check
 
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.59
+* Getting ready for dnd5e 1.5. This dnd5e release means some of the features of DAE are no longer required which is great. Once you upgrade to dnd1.5e some features in DAE will change - most are not breaking (I hope).
+
+**Most derived fields now have .bonuses values available:**
+data.abilities.str.bonuses.save/.check. This field supercedes the DAE support of data.abilities.str.save and data.abilities.str.mod, in much the same way data.attributes.ac.bonus means changes to data.attributes.ac.value are no longer required.
+
+values that have .bonuses available:
+  - abilities.str/dex/cha etc, bonusess.check, bonuses.save
+  - skills.acr/per/prc etc. have a bonuses.check and bonuses.passive.
+  - attributes.ac.bonus
+These fields support the the use of @values and dice expressions when specifying the bonus - and this is a core dnd5e effect - dae is not required for this.
+
+Global bonuses have been enhanced to accept @fields for all bonues, instead of just the rwak/mwak/rsak/msak fields. As far as I am aware the new fields are supported in DAE immediately.
+
+Accordingly effect changes to the derived values for abilities, skills and ac are deprecated and will generate an error in the console if used, whilst still working. A later version will make this a notification in game and subsequently they will be disabled entirely.
+
+ Effects to change (they will eventually be removed from dae)
+ data.abilities.str/dex/cha.save -> data.abilities.str.bonuses.save
+ data.abilities.str/dex/cha.mod -> data.abilities.str.bonuses.check
+ skills.acr/per/prc/etc.bonus (use skills.prc.bonuses.check) and skills.rpc.passive (use skills.bonuses.passive instead).
+
+**BREAKING in 1.5.1 of dnd5e**
+ * Now that you can specify a save.bonus field for each ability you no longer need the DAE saving throw replacement roll. I will disable the dae replacement saving throw which uses ability.save rather than ability.mod. This will be disabled when dnd5e reaches 1.5.1.
+* **You should switch off this flag in DAE (and disable the DAE saving throw) as soon as practical since the new abilities.bonuses.save are not compatible with the DAE version.**
+* I have decided to disable this sooner, rather than later, since the new bonuses.save fields are a better alternative and I don't want DAE getting in the way of the new mechanic.
+ 
 ### 0.8.58
 * Add healing/temp hp as damage types for resistance/immunity/vulnerability.
 * Fix for some spurious token magic effect application.

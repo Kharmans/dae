@@ -331,7 +331,20 @@ export class ValidSpec {
         const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
         m._label = `Flags ${localizedString}`;
       }
-      if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
+      if (isNewerVersion(game.system.data.version, "1.4.9")) {
+        const saveBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).save/);
+        const checkBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).mod/);
+        const skillMod = m._fieldSpec.match(/data.skills.(\w\w\w).mod/);
+        const skillPassive = m._fieldSpec.match(/data.skills.(\w\w\w).passive/);
+        if (saveBonus) m._label = `${m._label} (Deprecated)`
+        else if (checkBonus) m._label = `${m._label} (Deprecated)`
+        else if (skillMod) m._label = `${m._label} (Deprecated)`
+        else if (skillPassive) m._label = `${m._label} (Deprecated)`
+        else if (m._fieldSpec === "data.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
+        else if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
+      } else {
+        if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
+      }
       return m
     });
   }
@@ -369,9 +382,9 @@ function effectDisabled(actor, efData, itemData = null) {
 }
 
 function flagChangeKeys(actor, change) {
-  const strSave = change.key.match(/data.abilities.(\w\w\w).save/);
-  if (strSave) {
-    const abl = strSave[1];
+  const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
+  if (saveBonus) {
+    const abl = saveBonus[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.save instead`)
     // change.key = `data.abilities.${abl}.bonuses.save`;
     return;
@@ -383,19 +396,33 @@ function flagChangeKeys(actor, change) {
     // change.key = `data.abilities.${abl}.bonuses.check`;
     return;
   }
-  const skillMod = change.key.match(/data.dkills.(\w\w\w).mod/);
+  const skillMod = change.key.match(/data.skills.(\w\w\w).mod/);
   if (skillMod) {
     const abl = skillMod[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.check instead`)
-    // change.key = `data.abilities.${abl}.bonuses.check`;
+    // change.key = `data.skills.${abl}.bonuses.check`;
     return;
   }
-  const skillPassive = change.key.match(/data.dkills.(\w\w\w).passive/);
+
+  /* TODO deprecate this when I get proficiency setup correctly = proficiency level
+  const skillValue = change.key.match(/data.skills.(\w\w\w).value/);
+  if (skillValue) {
+    const abl = skillValue[1];
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.check instead`)
+    return;
+  }
+  */
+
+  const skillPassive = change.key.match(/data.skills.(\w\w\w).passive/);
   if (skillPassive) {
     const abl = skillMod[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.passive instead`)
-    // change.key = `data.abilities.${abl}.bonuses.check`;
+    // change.key = `data.dkills.${abl}.bonuses.check`;
     return;
+  }
+  if (change.key === "data.attributes.ac.value") {
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.attributes.ac.bonus instead`)
+    // change.key = "data.attributes.ac.value";
   }
 }
 
@@ -424,7 +451,10 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       })
       .map(c => {
         c = duplicate(c);
-        flagChangeKeys(this, c);
+        if (isNewerVersion(game.system.data.version, "1.4.9")) {
+          flagChangeKeys(this, c);
+        }
+
         if (c.key === "flags.midi-qol.OverTime") c.key = `flags.midi-qol.OverTime.${randomID()}`;
         c.effect = effect;
         c.priority = c.priority ?? (c.mode * 10);
@@ -510,6 +540,7 @@ function daeCustomEffect(actor, change) {
     setProperty(actor.data, change.key, value);
     return true;
   }
+  // TODO work out what to do for 1.5
   if (isNewerVersion("1.5.0", game.system.data.version)) {
     if (change.key.startsWith("data.skills.") && change.key.endsWith(".value")) {
       const currentProf = getProperty(actor.data, change.key) || 0;
@@ -675,6 +706,8 @@ function daeCustomEffect(actor, change) {
         }
       })
       return true;
+
+    //TODO review this for 1.5
     case "data.abilities.str.dc":
     case "data.abilities.dex.dc":
     case "data.abilities.int.dc":

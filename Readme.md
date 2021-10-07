@@ -1,6 +1,32 @@
 If you have a problem please read the [Issues section](#Issues) before reporting a bug.
 
-## BREAKING
+## Getting ready for dnd5e 1.5.x 
+The dnd5e 1.5.x release of dnd5e means some of the features of DAE are no longer required which is great. Once you upgrade to dnd1.5.x some features in DAE will change - most are not breaking (I hope).
+
+**Most derived fields now have .bonuses values available:**
+data.abilities.str.bonuses.save/.check. This field supercedes the DAE support of data.abilities.str.save and data.abilities.str.mod, in much the same way data.attributes.ac.bonus means changes to data.attributes.ac.value are no longer required.
+
+values that have .bonuses available:
+  - abilities.str/dex/cha etc, bonusess.check, bonuses.save
+  - skills.acr/per/prc etc. have a bonuses.check and bonuses.passive.
+  - attributes.ac.bonus
+These fields support the the use of @values and dice expressions when specifying the bonus - and this is a core dnd5e effect - dae is not required for this.
+
+Global bonuses have been enhanced to accept @fields for all bonues, instead of just the rwak/mwak/rsak/msak fields. As far as I am aware the new fields are supported in DAE immediately.
+
+Accordingly effect changes to the derived values for abilities, skills and ac are deprecated and will generate an error in the console if used, whilst still working. A later version will make this a notification in game and subsequently they will be disabled entirely.
+
+ Effects to change (they will eventually be removed from dae)
+ data.abilities.str/dex/cha.save -> data.abilities.str.bonuses.save
+ data.abilities.str/dex/cha.mod -> data.abilities.str.bonuses.check
+ skills.acr/per/prc/etc.bonus (use skills.prc.bonuses.check) and skills.rpc.passive (use skills.bonuses.passive instead).
+
+**BREAKING in 1.5.1 of dnd5e**
+ * Now that you can specify a save.bonus field for each ability you no longer need the DAE saving throw replacement roll. I will disable the dae replacement saving throw which uses ability.save rather than ability.mod. This will be disabled when dnd5e reaches 1.5.1.
+* **You should switch off this flag in DAE (and disable the DAE saving throw) as soon as practical since the new abilities.bonuses.save are not compatible with the DAE version.**
+* I have decided to disable this sooner, rather than later, since the new bonuses.save fields are a better alternative and I don't want DAE getting in the way of the new mechanic.
+
+## BREAKING as of dnd5e 1.4.3
 **My lights do not go off when I unequip an item** **I can't toggle an effect from Token HUD**
 As of DND5E 1.4.3 and/or foundry 0.9.2 unequipping an item makes it unavailable **EVEN** if it is active. DAE understands about unavailable effects and won't apply effects that are marked as unavailable.
 
@@ -426,6 +452,28 @@ Your custom effects can create new fields on the actor as well (DAE does this fo
 * Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified value to the existing data.
 * Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
 
+### Characters imported from dnd beyond.
+Before running these functions you must disable all DAE effect processing in the DAE confiuration settings.
+
+There are functions to migrate actor owned items to Dynamic-Effects-SRD (DAE SRD/Midi SRD) items. The function will look through an actor and replace items that have analogues in the Dynamic-Effects-SRD (and optionally the DND5E SRD - which will effectively refresh the items with fresh onse from the DND SRD). This is useful for characters that have been imported with vtta-beyond/ddb-beond. Or any actors whose items could do with a refresh.
+```
+DAE.migrateActorDAESRD(actor, includeSRD)
+```
+actor is any actor, includeSRD is a boolean, if true will also use the DND5E compendia for migation.
+
+This is a dangerous feature and might have bugs - I managed to trash one test world with an earlier version - so MAKE A BACKUP OF YOUR ACTOR FIRST!!!!!.
+Example
+```
+DAE.migrateActorDAESRD(game.actors.getName("The name of the actor"), false)
+```
+There are 2 functions that loop through all actors in the game, and all NPCs in the game respectively. In case it did not sink if you run these functions BACK UP YOUR WORLD first. There is always a chance they will make changes that are wrong and irrevocable.
+```
+migrateAllActorsDAESRD(includeSRD:boolean)
+migrateAllNPCDAESRD(includeSRD: boolean)
+```
+
+These functions can be called from the developer console or by creating a macro which calls them.
+
 ### Initiative
 Changes to initiative are challenging due to the way it is calculated and rolled in the dnd5e system. Here is a quick guide to what you can do.
   * `init.value` is now set before prepareDerived data is run, so it appears on the character sheet (in the "mod" field and in the total), but cannot reference dex.mod etc.
@@ -514,4 +562,4 @@ As of dnd5e 1.4.3 toggling effects based on item equip/attuned is supported dire
 DND5e version 1.5 will have significant impact on DAE. The mechanism for applying bonuses in dnd5e for ability saves, checks and skills will be enhanced to include .bonus field on most of these modifiers. The .bonus field is evaluated when the item is rolled which means that the DAE processing to apply bonuses is no longer required, since the bonus will be looked up at the time the roll is made. After the release of dnd5e 1.5 DAE will provide an automatic mapping for some fields (details to be determined, but will include ability.mod, ability.save and skills) and a deprecation warning. At a future stage the deprecation will change to a not supported. 
 
 **DND5E 1.5 changes**
-* New fields str.bonuses.check/str.bonuses.save which are string fields supporting expressions like 1d4 or @abilities.dex.mod (@field lookups to be confirmed).
+* New fields str.bonuses.check/str.bonuses.save which are string fields supporting expressions like @abilities.dex.mod (@field lookups to be confirmed).
