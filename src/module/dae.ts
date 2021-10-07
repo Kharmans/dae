@@ -367,6 +367,7 @@ function effectDisabled(actor, efData, itemData = null) {
   }
   return disabled;
 }
+
 function flagChangeKeys(actor, change) {
   const strSave = change.key.match(/data.abilities.(\w\w\w).save/);
   if (strSave) {
@@ -870,7 +871,8 @@ function _onCreateActiveEffect(...args) {
           if (CV) await addCVChange(parent, change, [token], CV);
 
           const tokenMagic = globalThis.TokenMagic;
-          await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
+          if (tokenMagic && change.key === "macro.tokenMagic")
+            await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
         }
       } catch (err) {
         console.warn("dae | create effect error", err);

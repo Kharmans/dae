@@ -54,7 +54,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (game.system.id === "dnd5e") {
       this.fieldsList = this.fieldsList.join(", ");
       this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
-      Object.keys(CONFIG.DND5E.damageResistanceTypes).forEach(type => {
+      this.traitList = mergeObject(this.traitList, CONFIG.DND5E.healingTypes);
+      Object.keys(this.traitList).forEach(type => {
         this.traitList[`-${type}`] = `-${CONFIG.DND5E.damageResistanceTypes[type]}`;
       });
 

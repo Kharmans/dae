@@ -23,6 +23,11 @@ Accordingly effect changes to the derived values for abilities, skills and ac ar
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.58
+* Add healing/temp hp as damage types for resistance/immunity/vulnerability.
+* Fix for some spurious token magic effect application.
+* Fix for duplication of proficiency bonus when using dae saving throw patch.
+
 ### 0.8.57
 * StatusEffect is now supported for both transfer and non-transfer effects. With this change it is now the strongly preferred way to apply status conditions to targets.
 

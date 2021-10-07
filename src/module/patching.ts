@@ -12,12 +12,8 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
   const parts = ["@mod"];
   const data = this.getRollData();
   data.mod = abl.save;
-  // Include proficiency bonus
-  if (abl.prof > 0) {
-    parts.push("@prof");
-    //@ts-ignore
-    data.prof = abl.prof;
-  }
+  // Don't include proficiency bonus since it is already in abl.save.
+
   // Include a global actor ability save bonus
   const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
   //@ts-ignore
