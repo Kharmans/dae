@@ -389,19 +389,19 @@ export async function tobMapper(iconsPath = "icons/TOB") {
   let details = pack.contents.map(a => a.data._source);
   let detailNames = duplicate(details).map(detail => {
     let name = detail.name
-    .replace(/[_\-,'"]/g, "")
-    .replace(" of", "")
-    .replace(" the", "")
-    .replace(/\(.*\)/, "")
-    .replace(/\s\s*/g, " ")
-    .replace("Adult", "")
-    .replace("Chieftain", "Chieftan")
-    .toLocaleLowerCase();
+      .replace(/[_\-,'"]/g, "")
+      .replace(" of", "")
+      .replace(" the", "")
+      .replace(/\(.*\)/, "")
+      .replace(/\s\s*/g, " ")
+      .replace("Adult", "")
+      .replace("Chieftain", "Chieftan")
+      .toLocaleLowerCase();
     name = name.split(" ");
     detail.splitName = name;
     return detail;
   })
-  detailNames = detailNames.sort((a,b) => b.splitName.length - a.splitName.length)
+  detailNames = detailNames.sort((a, b) => b.splitName.length - a.splitName.length)
   let fields = details.map(a => { return { "name": a.name, "id": a._id, "tokenimg": a.token.img } });
   let count = 0;
   game.socket.emit("manageFiles", { action: "browseFiles", storage: "data", target: iconsPath }, {},
@@ -409,7 +409,7 @@ export async function tobMapper(iconsPath = "icons/TOB") {
       for (let fileEntry of result.files) {
         let fileNameParts = fileEntry.split("/");
         const name = fileNameParts[fileNameParts.length - 1]
-          .replace(".png","")
+          .replace(".png", "")
           .replace(/['",\-_,]/g, "")
           .replace(/-/g, "")
           .toLocaleLowerCase();
@@ -417,7 +417,7 @@ export async function tobMapper(iconsPath = "icons/TOB") {
           if (!dtname.splitName) return false;
           for (let namePart of dtname.splitName) {
             if (!name.includes(namePart)) return false
-          } 
+          }
           dtname.token.img = fileEntry;
           // dtname.img = fileEntry;
           delete dtname.splitName;
@@ -427,7 +427,7 @@ export async function tobMapper(iconsPath = "icons/TOB") {
         })
       }
       console.log("Matched ", count, "out of", detailNames.length, detailNames)
-      console.log("Unmatched ", detailNames.filter(dt=>dt.splitName));
+      console.log("Unmatched ", detailNames.filter(dt => dt.splitName));
       for (let actorData of detailNames) {
         if (actorData.splitName) continue;
         let actor = pack.get(actorData._id);
@@ -437,13 +437,137 @@ export async function tobMapper(iconsPath = "icons/TOB") {
 }
 
 export async function fixTransferEffects(actor) {
-  let items = actor.items.filter(i => i.effects.some(e=>e.data.transfer));
-  let transferEffects = actor.effects.filter(e=>(!e.isTmporary || e.data.flags.dae?.transfer) && e.data.origin.includes("Item.") );
+  let items = actor.items.filter(i => i.effects.some(e => e.data.transfer));
+  let transferEffects = actor.effects.filter(e => (!e.isTmporary || e.data.flags.dae?.transfer) && e.data.origin.includes("Item."));
   console.error("Deleing effects", transferEffects)
-  await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e=>e.id));
-  const toCreate = items.map(i=>i.toObject())
-  console.error("Deleting items ", items.map(i=>i.id))
-  await actor.deleteEmbeddedDocuments("Item", items.map(i=>i.id));
+  await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
+  const toCreate = items.map(i => i.toObject())
+  console.error("Deleting items ", items.map(i => i.id))
+  await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id));
   console.error("Creating items ", toCreate)
   await actor.createEmbeddedDocuments("Item", toCreate);
+}
+
+export async function fixDeprecatedChangesActor(actor) {
+  let changesMade = false;
+  if (actor.effects.size > 0) {
+    let effectsData = actor.data.effects.toObject();
+    for (let effectData of effectsData) {
+      for (let change of effectData.changes) {
+        const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
+        if (hasSaveBonus) {
+          console.log("actor ", actor.name, change.key)
+          change.key = change.key.replace(".save", ".bonuses.save");
+          if (!change.value.startsWith("+")) change.value = "+"+change.value;
+
+          changesMade = true;
+        }
+        const hasCheckBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".mod");
+        if (hasCheckBonus) {
+          console.log("actor ", actor.name, change.key)
+          change.key = change.key.replace(".mod", ".bonuses.check");
+          if (!change.value.startsWith("+")) change.value = "+"+change.value;
+          changesMade = true;
+        }
+        const hasSkillMod = change.key.startsWith("data.skills") && change.key.endsWith(".mod");
+        if (hasSkillMod) {
+          console.log("actor ", actor.name, change.key)
+          if (!change.value.startsWith("+")) change.value = "+"+change.value;
+          change.key = change.key.replace(".mod", ".bonuses.check");
+          changesMade = true;
+
+        }
+        const hasSkillPassive = change.key.startsWith("data.skills.") && change.key.endsWith(".passive") && !change.key.endsWith("bonuses.passive");
+        if (hasSkillPassive) {
+          console.log("actor ", actor.name, change.key)
+          change.key = change.key.replace(".passive", ".bonuses.passive");
+          if (!change.value.startsWith("+")) change.value = "+"+change.value;
+          changesMade = true;
+
+        }
+        if (change.key === "data.attributes.ac.value") {
+          // change.key = "data.attributes.ac.value";
+        }
+      }
+    }
+    if (changesMade) {
+      await actor.updateEmbeddedDocuments("ActiveEffect", effectsData)
+    }
+    //@ts-ignore
+    for (let item of actor.items) {
+      await fixDeprecatedChangesItem(item)
+    }
+  }
+}
+
+export async function fixDeprecatedChanges() {
+  for (let actor of game.actors) {
+    await fixDeprecatedChangesActor(actor);
+  }
+  for (let item of game.items) {
+    await fixDeprecatedChangesItem(item)
+  }
+  for (let scene of game.scenes) {
+    //@ts-ignore
+    for (let tokenDocument of scene.tokens) {
+      if (!tokenDocument.isLinked && tokenDocument.actor) {
+        const actor = tokenDocument.actor;
+        await fixDeprecatedChangesActor(actor);
+      }
+    }
+  }
+}
+
+export async function fixDeprecatedChangesItem(item) {
+  if (item.effects.size > 0) {
+    let effectsData = item.data.effects.toObject();
+
+    const actorstring = item.parent instanceof Actor ? `actor: ${item.parent.name}` : "";
+    let changesMade = false;
+    for (let effectData of effectsData) {
+      for (let change of effectData.changes) {
+        const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
+        if (hasSaveBonus) {
+          
+          console.log(`${actorstring} item `, item.name, change.key)
+          change.key = change.key.replace(".save", ".bonuses.save");
+          if (!change.value.startsWith("+")) change.value = "+"+change.value;
+          changesMade = true;
+        }
+        const hasCheckBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".mod");
+        if (hasCheckBonus) {
+          console.log(`${actorstring} item `, item.name, change.key)
+          change.key = change.key.replace(".mod", ".bonuses.check");
+          if (!change.value.startsWith("+")) change.value = "+"+change.value;
+          changesMade = true;
+        }
+        const hasSkillMod = change.key.startsWith("data.skills") && change.key.endsWith(".mod");
+        if (hasSkillMod) {
+          console.log(`${actorstring} item `, item.name, change.key)
+          change.key = change.key.replace(".mod", ".bonuses.check");
+          if (!change.value.startsWith("+")) change.value = "+"+change.value;
+          changesMade = true;
+
+        }
+        const hasSkillPassive = change.key.startsWith("data.skills.") && change.key.endsWith(".passive") && !change.key.endsWith("bonuses.passive");
+        if (hasSkillPassive) {
+          console.log(`${actorstring} item `, item.name, change.key)
+          change.key = change.key.replace(".passive", ".bonuses.passive");
+          if (!change.value.startsWith("+")) change.value = "+"+change.value;
+          changesMade = true;
+
+        }
+        if (change.key === "data.attributes.ac.value") {
+          // change.key = "data.attributes.ac.value";
+        }
+      }
+    }
+    if (changesMade) {
+      if (item.parent instanceof Actor) {
+        let itemData = item.data.toObject();
+        itemData.effects = effectsData
+        await item.parent.updateEmbeddedDocuments("Item", [itemData])
+      } else await item.updateEmbeddedDocuments("ActiveEffect", effectsData)
+    }
+  }
 }

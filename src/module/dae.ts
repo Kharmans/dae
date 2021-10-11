@@ -31,6 +31,7 @@ export var noDupDamageMacro;
 export var disableEffects;
 export var daeTitleBar;
 export var libWrapper;
+export var showDeprecation = true;
 
 let debugLog = true;
 
@@ -382,22 +383,27 @@ function effectDisabled(actor, efData, itemData = null) {
 }
 
 function flagChangeKeys(actor, change) {
+  if (!showDeprecation) return false;
+  const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
+  // const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
+  if (hasSaveBonus) {
   const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
-  if (saveBonus) {
-    const abl = saveBonus[1];
+  const abl = saveBonus[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.save instead`)
     // change.key = `data.abilities.${abl}.bonuses.save`;
     return;
   }
-  const checkBonus = change.key.match(/data.abilities.(\w\w\w).mod/);
-  if (checkBonus) {
-    const abl = checkBonus[1];
+  const hasCheckBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".mod");
+  if (hasCheckBonus) {
+    const checkBonus = change.key.match(/data.abilities.(\w\w\w).mod/);
+      const abl = checkBonus[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.check instead`)
     // change.key = `data.abilities.${abl}.bonuses.check`;
     return;
   }
-  const skillMod = change.key.match(/data.skills.(\w\w\w).mod/);
-  if (skillMod) {
+  const hasSkillMod = change.key.startsWith("data.skills") && change.key.endsWith(".mod");
+  if (hasSkillMod) {
+    const skillMod = change.key.match(/data.skills.(\w\w\w).mod/);
     const abl = skillMod[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.check instead`)
     // change.key = `data.skills.${abl}.bonuses.check`;
@@ -413,15 +419,16 @@ function flagChangeKeys(actor, change) {
   }
   */
 
-  const skillPassive = change.key.match(/data.skills.(\w\w\w).passive/);
-  if (skillPassive) {
-    const abl = skillMod[1];
+  const hasSkillPassive = change.key.startsWith("data.skills.") && !change.key.endsWith(".bonuses.passive") && change.key.endsWith(".passive");
+  if (hasSkillPassive) {
+    const skillPassive = change.key.match(/data.skills.(\w\w\w).passive/);
+    const abl = skillPassive[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.passive instead`)
     // change.key = `data.dkills.${abl}.bonuses.check`;
     return;
   }
   if (change.key === "data.attributes.ac.value") {
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.attributes.ac.bonus instead`)
+    console.warn(`dae | deprecated change key ${change.key} found in ${actor.name} use data.attributes.ac.bonus instead`)
     // change.key = "data.attributes.ac.value";
   }
 }
@@ -1579,6 +1586,7 @@ export function fetchParams(doUpdatePatches = true) {
   }
   expireRealTime = game.settings.get("dae", "expireRealTime");
   displayTraits = game.settings.get("dae", "displayTraits");
+  showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   updatePatches();
 }
 

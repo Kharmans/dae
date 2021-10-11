@@ -98,6 +98,17 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
+  
+  game.settings.register("dae", "showDeprecation", {
+    name: "dae.ShowDeprecation.Name",
+    hint: "dae.ShowDeprecation.Hint",
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  })
+
   game.settings.register("dae", "disableEffects", {
     name: "dae.DisableEffects.Name",
     hint: "dae.DisableEffects.Hint",
@@ -106,7 +117,6 @@ export const registerSettings = function () {
     type: Boolean,
     config: true,
     onChange: () => window.location.reload()
-
   })
 
 };

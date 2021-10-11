@@ -21,8 +21,16 @@ Accordingly effect changes to the derived values for abilities, skills and ac ar
  data.abilities.str/dex/cha.mod -> data.abilities.str.bonuses.check
  skills.acr/per/prc/etc.bonus (use skills.prc.bonuses.check) and skills.rpc.passive (use skills.bonuses.passive instead).
 
-**BREAKING in 1.5.1 of dnd5e**
- * Now that you can specify a save.bonus field for each ability you no longer need the DAE saving throw replacement roll. I will disable the dae replacement saving throw which uses ability.save rather than ability.mod. This will be disabled when dnd5e reaches 1.5.1.
+There are some cleanup functions to get rid of the deprecated fields in active effects for actors and items. Please backup your world first - I have run these over my worlds without problems, but there could be lurking bugs.
+async DAE.fixDeprecatedChangesActor(actor) - e.g. 
+```await DAE.fixDeprecatedChangesActor(game.actors.getName("fred"));```
+async fixDeprecatedChangesItem(item) - e.g. 
+```await DAE.fixDeprecatedChangesItem(game.items.getName("Fireball"))```
+async fixDeprecatedChanges() - fix all actors/tokens/items
+```await DAE.fixDeprecatedChanges()`
+
+**BREAKING in 1.5.x of dnd5e**
+ * Now that you can specify a save.bonus field for each ability you no longer need the DAE saving throw replacement roll. I will disable the dae replacement saving throw which uses ability.save rather than ability.mod. This will be disabled when dnd5e reaches 1.5.3.
 * **You should switch off this flag in DAE (and disable the DAE saving throw) as soon as practical since the new abilities.bonuses.save are not compatible with the DAE version.**
 * I have decided to disable this sooner, rather than later, since the new bonuses.save fields are a better alternative and I don't want DAE getting in the way of the new mechanic.
 

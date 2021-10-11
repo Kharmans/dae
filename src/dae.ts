@@ -5,7 +5,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, useAbilitySave} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
-import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
+import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixDeprecatedChanges, fixDeprecatedChangesActor, fixDeprecatedChangesItem, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -170,7 +170,10 @@ Hooks.once('setup', function() {
     fixupDDBAC: fixupDDBAC,
     cleanEffectOrigins: cleanEffectOrigins,
     tobMapper: tobMapper,
-    fixTransferEffects: fixTransferEffects
+    fixTransferEffects: fixTransferEffects,
+    fixDeprecatedChanges: fixDeprecatedChanges,
+    fixDeprecatedChangesActor: fixDeprecatedChangesActor,
+    fixDeprecatedChangesItem: fixDeprecatedChangesItem
   }
 });
 
@@ -183,7 +186,7 @@ Hooks.once("ready", () => {
   checkLibWrapperVersion();
   checkArmorDisabled();
   if (useAbilitySave && isNewerVersion(game.system.data.version, "1.4.9") && game.user.isGM)
-    ui.notifications.warn(`DAE | rollAbilitySave replacement is deprecated and will be removed from version ${game.system.id} 1.5.1`)
+    ui.notifications.warn(`DAE | rollAbilitySave replacement is deprecated and will be removed from version ${game.system.id} 1.5.3`)
 })
 
 export function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {
