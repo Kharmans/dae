@@ -3,6 +3,16 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.60
+* Added config setting to disable the warning messages about deprecated fields.
+* Some cleanup functions to get rid of the deprecated fields in active effects for actors and items. Please backup your world first - I have run these over my worlds without problems, but there could be lurking bugs.
+async DAE.fixDeprecatedChangesActor(actor) - e.g. 
+```await DAE.fixDeprecatedChangesActor(game.actors.getName("fred"));```
+async fixDeprecatedChangesItem(item) - e.g. 
+```await DAE.fixDeprecatedChangesItem(game.items.getName("Fireball"))```
+async fixDeprecatedChanges() - fix all actors/tokens/items
+```await DAE.fixDeprecatedChanges()```
+
 ### 0.8.59
 * Getting ready for dnd5e 1.5. This dnd5e release means some of the features of DAE are no longer required which is great. Once you upgrade to dnd1.5e some features in DAE will change - most are not breaking (I hope).
 
