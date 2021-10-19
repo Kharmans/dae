@@ -43,6 +43,7 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
       "flags.dnd5e.roll": { type: "save", abilityId }
     }
   });
+  if (game.system.id === "sw5e") setProperty(rollData, "flags.sw5e.roll", { type: "save", abilityId });
   return d20Roll(rollData);
 }
 

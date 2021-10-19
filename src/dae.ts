@@ -4,7 +4,7 @@ import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, useAbilitySave} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
-import { convertDuration, GMAction, GMActionMessage } from './module/GMAction';
+import { convertDuration, setupSocket } from './module/GMAction';
 import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixDeprecatedChanges, fixDeprecatedChangesActor, fixDeprecatedChangesItem, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
@@ -59,7 +59,6 @@ Hooks.once('ready', async function () {
   debug("ready setup actions")
   daeReadyActions();
   // setupDAEMacros();
-  GMAction.readyActions();
   daeSpecialDurations = {"None": ""};
   if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {
     daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
@@ -126,14 +125,11 @@ Hooks.once('setup', function() {
 	// Do anything after initialization but before
   // ready
   debug("setup actions")
-	GMAction.initActions();
 	daeSetupActions();
   patchingSetup();
 	//@ts-ignore
 	window.DAE = {
     ValidSpec,
-    GMActionMessage,
-    GMAction,
     doEffects,
     daeMacro: daeMacro,
     ActiveEffects: ActiveEffects,
@@ -175,6 +171,7 @@ Hooks.once('setup', function() {
     fixDeprecatedChangesActor: fixDeprecatedChangesActor,
     fixDeprecatedChangesItem: fixDeprecatedChangesItem
   }
+  setupSocket();
 });
 
 /* ------------------------------------ */
@@ -218,4 +215,3 @@ Hooks.once('libChangelogsReady', function() {
   const libch = libChangelogs;
 
 })
-

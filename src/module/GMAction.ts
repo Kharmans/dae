@@ -1,5 +1,6 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, itemacroActive } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
+import { checkLibWrapperVersion } from "./migration";
 
 export class GMActionMessage {
   action: string;
@@ -13,216 +14,116 @@ export class GMActionMessage {
     this.data = data;
   }
 }
-
-
-export let requestGMAction = async (action: string, data: {}, debugLog: boolean = false) => {
-  if (game.user.isGM) {
-    //@ts-ignore
-    return await GMAction.processAction(action, game.user.id, duplicate(data));
-  }
-  //@ts-ignore
-  let intendedGM = game.users.contents.find(u => u.isGM && u.active);
-  //@ts-ignore
-  // if (!game.user.isTrusted) return;
-  if (!intendedGM) {
-    ui.notifications.error(`${game.user.name} ${game.i18n.localize("dae.noGM")}`);
-    error("dae | No GM user connected - cannot do request ", action, data);
-    return;
-  }
-  //@ts-ignore
-  let message = new DAE.GMActionMessage(action, game.user.id, intendedGM.id, data);
-  debug("About to send message", message)
-  //@ts-ignore
-  game.socket.emit(DAE.GMAction._moduleSocket, message, resp => {
-    debug("message sent")
-  });
+export var socketlibSocket: any = undefined;
+export let setupSocket = () => {
+  socketlibSocket = globalThis.socketlib.registerModule("dae");
+  socketlibSocket.register("test", _testMessage);
+  socketlibSocket.register("setTokenVisibility", _setTokenVisibility);
+  socketlibSocket.register("setTileVisibility", _setTileVisibility);
+  socketlibSocket.register("blindToken", _blindToken);
+  socketlibSocket.register("restoreVision", _restoreVision);
+  socketlibSocket.register("recreateToken", _recreateToken);
+  socketlibSocket.register("createToken", _createToken);
+  socketlibSocket.register("deleteToken", _deleteToken);
+  socketlibSocket.register("renameToken", _renameToken);
+ //  socketlibSocket.register("moveToken", _moveToken); TODO find out if this is used anywhere
+  socketlibSocket.register("applyTokenMagic", _applyTokenMagic);
+  socketlibSocket.register("applyActiveEffects", _applyActiveEffects);
+  socketlibSocket.register("setTokenFlag", _setTokenFlag);
+  socketlibSocket.register("setFlag", _setFlag);
+  socketlibSocket.register("unsetFlag", _unsetFlag);
+  socketlibSocket.register("deleteEffects", _deleteEffects);
+  socketlibSocket.register("deleteUuid", _deleteUuid);
 }
 
-export class GMAction {
-  public static actions = {
-    test: "testMessage",
-    setTokenVisibility: "setTokenVisibility",
-    setTileVisibility: "setTileVisibility",
-    blindToken: "blindToken",
-    restoreVision: "restoreVision",
-    recreateToken: "recreateToken",
-    createToken: "createToken",
-    deleteToken: "deleteToken",
-    renameToken: "renameToken",
-    moveToken: "moveToken",
-    applyTokenMagic: "applyTokenMagic",
-    applyActiveEffects: "applyActiveEffects",
-    setTokenFlag: "setTokenFlag",
-    setFlag: "setFlag",
-    unsetFlag: "unsetFlag",
-    deleteEffects: "deleteEffects",
+async function _deleteUuid(data) {
+  const entity = await fromUuid(data.itemUuid);
+  if (entity && entity instanceof Item && !data.itemUuid.startsWith("Compendium") && !data.itemUuid.startsWith("Item")) { // only allow deletion of owned items
+    return await entity.delete();
   }
-
-  private static actionQueue = [];
-  private static processingActions = false;
-  private static _moduleSocket = "module.dae";
-
-  private static _setupSocket() {
-    //@ts-ignore
-    game.socket.on(this._moduleSocket, async (message: GMActionMessage) => {
-      if (game.user.id !== message.targetGM) return;
-      if (!game.user.isGM) return;
-      return this.processAction(message.action, message.sender, message.data)
-    });
+  if (entity && entity instanceof CONFIG.Token.documentClass && !data.itemUuid.startsWith("Compendium") && !data.itemUuid.startsWith("Item")) { // only allow deletion of owned items
+    return await entity.delete();
   }
+  return false;
+}
 
-  public static initActions() {
-  }
+function _testMessage(data) {
+  console.log("DyamicEffects | test message received", data);
+  return "Test message received and processed";
+}
+async function _setTokenVisibility(data) {
+  await DAEfromUuid(data.tokenUuid)?.update({ hidden: data.hidden })
+}
+ 
+async function _setTileVisibility(data) {
+  return await DAEfromUuid(data.tileUuid)?.update({ vlisible: data.hidden })
+}
+ 
+async function _applyActiveEffects(data) {
+  return await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration, data.itemCardId)
+}
+async function _recreateToken(data: {userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
+  await _createToken(data);
+  return await DAEfromUuid(data.tokenUuid)?.delete();
+}
 
-  public static setupActions() {
-  }
+async function _createToken(data: {userId: string, targetSceneId: string, tokenData: {}, x: number, y: number }) {
+  let scenes = game.scenes;
+  let targetScene = scenes.get(data.targetSceneId);
+  //@ts-ignore
+  return await targetScene.createEmbeddedDocuments('Token', [mergeObject(duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
+}
+  
+async function _deleteToken(data: {tokenUuid: string}) {
+  return await DAEfromUuid(data.tokenUuid)?.delete();
+}
 
-  public static readyActions() {
-    this._setupSocket();
-    requestGMAction("testMessage", game.user.name);
-  }
+async function _setTokenFlag(data: {flagName: string, flagValue: any, actorUuid: string}) {
+  const update = {};
+  update[`flags.dae.${data.flagName}`] = data.flagValue;
+  return await DAEfromUuid(data.actorUuid)?.update(update)
+}
 
-  static chatEffects = (userId: string, actorId: string, itemData, tokenList: string[], flavor: string, whisper: boolean) => {
-    let names = tokenList.filter(tid => canvas.tokens.get(tid)).map(tid => canvas.tokens.get(tid).name);
-    if (names.length > 0) {
-      let chatData = {
-        user: game.users.get(userId),
-        speaker: { actor: game.actors.get(actorId) },
-        content: `${flavor} (${itemData.name}): ${names}`,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER,
-        flags: {}
-      };
-      //@ts-ignore
-      if (whisper) chatData.whisper = ChatMessage.getWhisperRecipients("GM");
-      ChatMessage.create(chatData);
-    }
-  }
+async function _setFlag(data: {actorUuid: string|undefined, actorId: string | undefined, flagId: string, value: any}) {
+  if (!data.actorUuid) return await game.actors.get(data.actorId)?.setFlag("dae", data.flagId, data.value);
+  else return await DAEfromActorUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
+}
 
-  public static async processAction(action: string, userId: string, data: {}) {
-    this.processSingleAction(action, userId, data);
-  }
+async function _unsetFlag(data: {actorUuid: string, flagId: string}) {
+  return await DAEfromActorUuid(data.actorUuid)?.unsetFlag("dae", data.flagId)
+}
 
-  private static async processActionQueue() {
-    debug("Processing action queue")
-    this.processingActions = this.actionQueue.length > 0;
-    while (this.processingActions) {
-      debug("Processing Actions ", this.actionQueue.length)
-      let { action, userId, data } = this.actionQueue[0];
-      debug("Processing actions ", action, userId, data)
-      await this.processSingleAction(action, userId, data);
-      this.actionQueue = this.actionQueue.slice(1)
-      this.processingActions = this.actionQueue.length > 0;
-    }
-  }
+async function _blindToken(data: {tokenUuid: string}) {
+  return await DAEfromUuid(data.tokenUuid)?.update({ vision: false });
+}
+ 
+async function _restoreVision(data: {tokenUuid: string}) {
+  return await DAEfromUuid(data.tokenUuid)?.update({ vision: true })
+}
 
-  public static async processSingleAction(action: string, userId: string, data: {}) {
-    var actorUuid: string;
-    //@ts-ignore
-    let itemData = data.itemData;
-    //@ts-ignore
-    var tokenUuid = data.tokenUuid;
-    var targetList;
-    //@ts-ignore
-    var requester = userId;
-    //@ts-ignore
-    var actorUuid = data.actorUuid;
-    //@ts-ignore
-    var actorId = data.actorId;
-    var scene;
-    var actor;
-    var token;
-    var update = {};
-    switch (action) {
-      case "testMessage":
-        console.log("DyamicEffects | test message received", data);
-        return "Test message received and processed";
-        break;
-      case this.actions.setTokenVisibility:
-        //@ts-ignore
-        await DAEfromUuid(tokenUuid)?.update({ hidden: data.hidden })
-        break;
-      case this.actions.setTileVisibility:
-        //@ts-ignore
-        await DAEfromUuid(data.tileUuid)?.update({ vlisible: data.hidden })
-        break;
-      case this.actions.applyActiveEffects:
-        //@ts-ignore
-        await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration, data.itemCardId)
-        //@ts-ignore
-        // this.chatEffects(requester, actorId, itemData, [tokenId], game.i18n.localize("dae.applyingEffects"), data.whisper)
-        break;
-      case this.actions.recreateToken:
-        //@ts-ignore
-        await recreateToken(requester, data);
-        break;
-      case this.actions.createToken:
-        //@ts-ignore
-        await createToken(requester, data);
-        break;
-      case this.actions.deleteToken:
-        await DAEfromUuid(tokenUuid)?.delete();
-        break;
-      case this.actions.setTokenFlag:
-        //@ts-ignore
-        update[`flags.dae.${data.flagName}`] = data.flagValue;
-        await DAEfromUuid(actorUuid)?.update(update)
-        break;
-      case this.actions.setFlag:
-        if (!actorUuid) {
-          //@ts-ignore flagId, value
-          await game.actors.get(actorId)?.setFlag("dae", data.flagId, data.value)
-          break;
-        }
-        //@ts-ignore flagId, value
-        await DAEfromActorUuid(actorUuid)?.setFlag("dae", data.flagId, data.value)
-        break;
-      case this.actions.unsetFlag:
-        //@ts-ignore
-        await DAEfromActorUuid(actorUuid)?.unsetFlag("dae", data.flagId)
-        break;
-        break;
-      case this.actions.blindToken:
-        await DAEfromUuid(tokenUuid)?.update({ vision: false })
-        break;
-      case this.actions.restoreVision:
-        DAEfromUuid(tokenUuid)?.update({ vision: true })
-        break;
-      case this.actions.renameToken:
-        //@ts-ignore
-        canvas.tokens.placeables.find(t => t.id === data.tokenData._id).update({ "name": data.newName })
-        break;
-      case this.actions.applyTokenMagic:
-        let token = DAEfromUuid(tokenUuid);
-        //@ts-ignore
-        let tokenMagic = window.TokenMagic;
-        if (tokenMagic && token) {
-          //@ts-ignore
-          await tokenMagic.addFilters(token, data.effectId);
-        }
-        break;
-      case this.actions.deleteEffects:
-        //@ts-ignore
-        await deleteEffects(data.targets, data.origin, data.ignore)
-        break;
-
-
-      default:
-        console.warn("dae invalid message received", action, data)
-    }
+async function _renameToken(data: {tokenData: any, newName: string}) { // TODO update this for uuids
+  return await canvas.tokens.placeables.find(t => t.id === data.tokenData._id).update({ "name": data.newName })
+}
+    
+async function _applyTokenMagic(data: {tokenUuid: string, effectId: string}) {
+  let token = DAEfromUuid(data.tokenUuid);
+  let tokenMagic = globalThis.TokenMagic;
+  if (tokenMagic && token) {
+    return await tokenMagic.addFilters(token, data.effectId);
   }
 }
 
-let deleteEffects = async (targets, origin: string, ignore: string[] = []) => {
-  for (let idData of targets) {
+async function _deleteEffects(data: {targets: any[], origin: string, ignore: string[]}) {
+  for (let idData of data.targets) {
     let actor = idData.tokenUuid ? DAEfromActorUuid(idData.tokenUuid) : idData.actorUuid ? DAEfromUuid(idData.actorUuid) : undefined;
     if (actor.actor) actor = actor.actor;
     if (!actor) {
       error("could not find actor for ", idData);
     }
-    const effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === origin && !ignore.includes(ef.uuid));
+    const effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === origin && !data.ignore.includes(ef.uuid));
     if (effectsToDelete?.length > 0) {
       try {
-        await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
+        return await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
       } catch (err) {
         warn("delete effects failed ", err)
         // TODO can get thrown since more than one thing tries to delete an effect
@@ -230,61 +131,7 @@ let deleteEffects = async (targets, origin: string, ignore: string[] = []) => {
     }
   }
 }
-// delete a token from the specified scene and recreate it on the target scene.
-let recreateToken = async (userId: string, data: { startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) => {
-  createToken(userId, data);
-  //@ts-ignore
-  DAEfromUuid(data.tokenUuid)?.delete();
-  return;
-}
 
-// delete a token from the specified scene and recreate it on the target scene.
-let deleteToken = async (userId: string, data: { startSceneId: string, tokenData: {}, x: number, y: number }) => {
-  //@ts-ignore
-  let scenes = game.scenes;
-  let startScene = scenes.get(data.startSceneId);
-  //@ts-ignore
-  await startScene.deleteEmbeddedDocuments("Token", data.tokenData._id);
-}
-
-export async function createToken(userId: string, data: { targetSceneId: string, tokenData: {}, x: number, y: number }) {
-  //@ts-ignore
-  let scenes = game.scenes;
-  let targetScene = scenes.get(data.targetSceneId);
-  //@ts-ignore
-  return await targetScene.createEmbeddedDocuments('Token', [mergeObject(duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
-}
-
-/* TODO remove
-//Set the hidden status for a token.
-let setTokenVisibility = async(userId: string, data: {targetSceneId: string, tokenId: string, hidden: boolean}) => {
-  if (!data.targetSceneId || !data.tokenId) return;
-  let scene = game.scenes.get(data.targetSceneId);
-  //@ts-ignore
-  await scene.updateEmbeddedDocuments("Token", {"_id": data.tokenId, "hidden": data.hidden})
-  return "token visibility complete"
-}
-
-
-// Set the hidden status for a tile
-let setTileVisibility = async(userId: string, data: {targetSceneId: string, tileId: string, hidden: boolean}) => {
-  if (!data.targetSceneId || !data.tileId) return;
-  let scene = game.scenes.get(data.targetSceneId);
-  //@ts-ignore
-  return await scene.updateEmbeddedDocuments("Tile", {"_id": data.tileId, "hidden": data.hidden})
-}
-
-let applyTokenMagic = async (tokenId: string, effectId: string, duration: number) => {
-  let token = canvas.tokens.get(tokenId);
-  //@ts-ignore
-  let tokenMagic = window.TokenMagic;
-  if (tokenMagic && token) {
-    tokenMagic.addFilters(token, effectId);
-  } else {
-    console.log(`dae | Something went wrong with finding effect ${effectId} or the duration ${duration}`)
-  }
-}
-*/
 export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   for (let tid of tokenList) {
@@ -341,6 +188,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               } else if (typeof change.value === "string") {
                 const context = { "target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };
                 change.value = replaceAtFields(duplicate(change.value), context);
+                change.value = change.value.replace("##", "@");
               } else {
                 change.value = duplicate(change.value).map(f => {
                   if (f === "@itemCardId") return itemCardId;
@@ -443,8 +291,6 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
         } else {
           return { type: "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };
         }
-
-
       //      default: return {type: combat ? "none" : "seconds", seconds: CONFIG.time.roundTime, rounds: 0, turns: 1};
     }
   }

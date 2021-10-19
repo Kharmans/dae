@@ -3,6 +3,13 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.61
+* **BREAKING** DAE now requires socketlib as a dependency. This means that DAE.GMAction is no longer available, if that causes any problems please DM me and I'll see what can be done.
+* @fields can include "-" in the field name for passing as arguments in active effects.
+* Added flags.dae.deleteOrigin, which if present as a change in an active effect will, when the effect is deleted from the actor, attempt to delete the item pointed to by the effect's origin. The change value does not matter. Only delete owned items of an actor (any actor) will be deleted, and wont delete World Items or Compendium Items, can be useful for one shot items that you want to remain until the effect they created expires.
+* Added flags.dae.deleteUuid whose value is an ownedItem uuid or token uuid, when the effect is removed the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.
+* Updated ja.json - thanks @Brother Sharp
+
 ### 0.8.60
 * Added config setting to disable the warning messages about deprecated fields.
 * Some cleanup functions to get rid of the deprecated fields in active effects for actors and items. Please backup your world first - I have run these over my worlds without problems, but there could be lurking bugs.

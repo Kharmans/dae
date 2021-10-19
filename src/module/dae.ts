@@ -1,4 +1,4 @@
-import { requestGMAction, GMAction, applyActiveEffects } from "./GMAction";
+import { applyActiveEffects, socketlibSocket } from "./GMAction";
 import { warn, error, debug, setDebugLevel, i18n, timelog, changesQueue } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
@@ -87,22 +87,7 @@ export class ValidSpec {
     baseValues["data.bonuses.heal.attack"] = "";
     baseValues["data.bonuses.save.damage"] = "";
     baseValues["data.bonuses.abil.damage"] = "";
-    /*
-    if (isNewerVersion(game.system.data.version, "1.4.9")) {
-      baseValues["data.abilities.str.bonuses.check"] = "";
-      baseValues["data.abilities.dex.bonuses.check"] = "";
-      baseValues["data.abilities.int.bonuses.check"] = "";
-      baseValues["data.abilities.wis.bonuses.check"] = "";
-      baseValues["data.abilities.cha.bonuses.check"] = "";
-      baseValues["data.abilities.con.bonuses.save"] = "";
-      baseValues["data.abilities.str.bonuses.save"] = "";
-      baseValues["data.abilities.dex.bonuses.save"] = "";
-      baseValues["data.abilities.int.bonuses.save"] = "";
-      baseValues["data.abilities.wis.bonuses.save"] = "";
-      baseValues["data.abilities.cha.bonuses.save"] = "";
-      baseValues["data.abilities.con.bonuses.save"] = "";
-    }
-*/
+    baseValues["items"] = "";
     //@ts-ignore
     if (game.modules.get("gm-notes")?.active) {
       baseValues["flags.gm-notes.notes"] = "";
@@ -180,13 +165,6 @@ export class ValidSpec {
         "data.resources.legact.max": [0, -1],
         "data.resources.legres.max": [0, -1],
         "data.spells.pact.level": [0, -1],
-        // "flags.midi-qol.forceCritical": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        /* XXX
-        "data.bonuses.heal.damage": ["", -1],
-        "data.bonuses.heal.attack": ["", -1],
-        "data.bonuses.save.damage": ["", -1],
-        "data.bonuses.abil.damage": ["", -1],
-        */
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
@@ -201,26 +179,13 @@ export class ValidSpec {
       specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.DamageBonusMacro`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials[`flags.${game.system.id}.initiativeDisadv`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-      /* XXX
-      ["check", "save", "skill"].forEach(id => {
-        specials[`data.bonuses.abilities.${id}`] = ["", -1];
-      });
-      */
-
       if (game.system.id === "sw5e") {
         specials["data.attributes.powerForceLightDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
         specials["data.attributes.powerForceDarkDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
         specials["data.attributes.powerForceUnivDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
         specials["data.attributes.powerTechDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
       }
-      /* XXX
-      let attackTypes = ["mwak", "rwak", "msak", "rsak"];
-      if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
-      attackTypes.forEach(id => {
-        specials[`data.bonuses.${id}.attack`] = ["", -1];
-        specials[`data.bonuses.${id}.damage`] = ["", -1];
-      })
-      */
+
       // move all the characteer flags to specials so that the can be custom effects only
       let charFlagKeys = (game.system.id === "dnd5e") ? Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
       charFlagKeys.forEach(key => {
@@ -387,8 +352,8 @@ function flagChangeKeys(actor, change) {
   const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
   // const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
   if (hasSaveBonus) {
-  const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
-  const abl = saveBonus[1];
+    const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
+    const abl = saveBonus[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.save instead`)
     // change.key = `data.abilities.${abl}.bonuses.save`;
     return;
@@ -396,7 +361,7 @@ function flagChangeKeys(actor, change) {
   const hasCheckBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".mod");
   if (hasCheckBonus) {
     const checkBonus = change.key.match(/data.abilities.(\w\w\w).mod/);
-      const abl = checkBonus[1];
+    const abl = checkBonus[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.check instead`)
     // change.key = `data.abilities.${abl}.bonuses.check`;
     return;
@@ -409,27 +374,13 @@ function flagChangeKeys(actor, change) {
     // change.key = `data.skills.${abl}.bonuses.check`;
     return;
   }
-
-  /* TODO deprecate this when I get proficiency setup correctly = proficiency level
-  const skillValue = change.key.match(/data.skills.(\w\w\w).value/);
-  if (skillValue) {
-    const abl = skillValue[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.check instead`)
-    return;
-  }
-  */
-
   const hasSkillPassive = change.key.startsWith("data.skills.") && !change.key.endsWith(".bonuses.passive") && change.key.endsWith(".passive");
   if (hasSkillPassive) {
     const skillPassive = change.key.match(/data.skills.(\w\w\w).passive/);
     const abl = skillPassive[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.passive instead`)
-    // change.key = `data.dkills.${abl}.bonuses.check`;
+    // change.key = `data.dkills.${abl}.bonuses.passive`;
     return;
-  }
-  if (change.key === "data.attributes.ac.value") {
-    console.warn(`dae | deprecated change key ${change.key} found in ${actor.name} use data.attributes.ac.bonus instead`)
-    // change.key = "data.attributes.ac.value";
   }
 }
 
@@ -481,7 +432,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
       if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value)
-        let value = replaceAtFields(c.value, daeRollData(this), { blankValue: 0, maxIterations: 3 });
+        let value = replaceAtFields(c.value, this.getRollData(), { blankValue: 0, maxIterations: 3 });
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
           //@ts-ignore - this will throw an error if there are roll expressions
           c.value = Roll.safeEval(value)
@@ -534,6 +485,7 @@ function daeCustomEffect(actor, change) {
   const current = getProperty(actor.data, change.key);
   var validValues;
   var value;
+  if (typeof change?.key !== "string") return true;
   const damageBonusMacroFlag = `flags.${game.system.id}.DamageBonusMacro`;
   if (change.key === damageBonusMacroFlag) {
     let current = getProperty(actor.data, change.key);
@@ -547,19 +499,39 @@ function daeCustomEffect(actor, change) {
     setProperty(actor.data, change.key, value);
     return true;
   }
-  // TODO work out what to do for 1.5
-  if (isNewerVersion("1.5.0", game.system.data.version)) {
-    if (change.key.startsWith("data.skills.") && change.key.endsWith(".value")) {
-      const currentProf = getProperty(actor.data, change.key) || 0;
-      const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
-      const upgrade = profValues[change.value]
-      if (upgrade === undefined) return;
-      let newProf = currentProf + upgrade;
-      if (newProf > 1 && newProf < 2) newProf = 1;
-      if (newProf > 2) newProf = 2;
-      return setProperty(actor.data, change.key, newProf);
-    }
+
+  if (change.key.startsWith("data.skills.") && change.key.endsWith(".value")) {
+    const currentProf = getProperty(actor.data, change.key) || 0;
+    const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
+    const upgrade = profValues[change.value]
+    if (upgrade === undefined) return;
+    let newProf = currentProf + upgrade;
+    if (newProf > 1 && newProf < 2) newProf = 1;
+    if (newProf > 2) newProf = 2;
+    return setProperty(actor.data, change.key, newProf);
   }
+
+  /*
+  if (change.key.startsWith("items.")) {
+    let originalKey = duplicate(change.key);
+    const fields = change.key.split("."); // items.data.contents.index......
+    const index = fields[2];
+    const itemKey = fields.slice(3).join(".")
+    const item = actor.data.items.contents[index];
+    let value = getProperty(item, itemKey);
+    if (value === undefined) value = change.value;
+    else if (value instanceof Array) {
+      const newEntry = eval(change.value)
+      value = value.concat([newEntry]);
+    } else if (typeof value === "string") value = `${value} + ${change.value}`;
+    //@ts-ignore
+    else if (typeof value === "boolean") value = Roll.safeEval(change.value);
+    //@ts-ignore
+    else value = Roll.safeEval(value + change.value);
+    setProperty(item, itemKey, value)
+    return true;
+  }
+  */
   switch (change.key) {
     case "data.attributes.movement.hover":
       setProperty(actor.data, change.key, change.value ? true : false);
@@ -649,14 +621,14 @@ function daeCustomEffect(actor, change) {
       return true;
     case "data.bonuses.weapon.damage":
       value = attackDamageBonusEval(change.value, actor)
-      // value = replaceAtFields(value, daeRollData(actor));
+      // value = replaceAtFields(value, actor.getRollData());
       if (current)
         value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       weaponAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.spell.damage":
       value = attackDamageBonusEval(change.value, actor)
-      //value = replaceAtFields(value, daeRollData(actor));
+      //value = replaceAtFields(value, actor.getRollData());
       if (current)
         value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       spellAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
@@ -684,7 +656,7 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.power.techDC":
       // TODO: remove if fixed in core
       let result = attackDamageBonusEval(change.value, actor);
-      value = result; // replaceAtFields(result, daeRollData(actor));
+      value = result; // replaceAtFields(result, dactor.getRollData()));
       if (current)
         value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
       setProperty(actor.data, change.key, (current || "") + value);
@@ -732,7 +704,7 @@ function daeCustomEffect(actor, change) {
       } else {
         try {
           //@ts-ignore
-          value = (new Roll(change.value, daeRollData(actor))).evaluate({ async: false }).total;
+          value = (new Roll(change.value, actor.getRollData())).evaluate({ async: false }).total;
         } catch (err) { };
       }
       if (value !== undefined) {
@@ -756,7 +728,7 @@ function daeCustomEffect(actor, change) {
       let list = change.value.split(" ");
       const flagName = list[0];
       let formula = list.splice(1).join(" ")
-      const rollData = daeRollData(actor);
+      const rollData = actor.getRollData();
       const flagValue = getProperty(rollData.flags, `dae.${flagName}`) || 0;
       // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
       setProperty(rollData, `flags.dae.${flagName}`, flagValue);
@@ -771,7 +743,8 @@ export function replaceAtFields(value, context, options: { blankValue: string | 
   if (typeof value !== "string") return value;
   let count = 0;
   if (!value.includes("@")) return value;
-  let re = /@[\w\.]+/g
+  // let re = /@(\w|\.|\-)+/g
+  let re = /@(\w|\.|(\-(?=([A-Za-z-_]))))+/g
   let result = duplicate(value);
   result = result.replace("@item.level", "@itemLevel") // fix for outdated item.level
   // Remove @data references allow a little bit of recursive lookup
@@ -792,7 +765,7 @@ function attackDamageBonusEval(bonusString, actor) {
     // const special = bonusString.match(/\(([\s\S]+)\)\s+d([0-9]*)\)([\s\S]+)/);
     if (special && special.length >= 3) {
       try {
-        return new Roll(special[1].replace(/ /g, ""), daeRollData(actor)).roll().total + "d" + special[2] + (special[3] ?? "");
+        return new Roll(special[1].replace(/ /g, ""), actor.getRollData()).roll().total + "d" + special[2] + (special[3] ?? "");
       }
       catch (err) {
         console?.warn(`DAE eval error for: ${special[1].replace(/ /g, "")} in actor ${actor.name}`, err);
@@ -1053,6 +1026,7 @@ export function _onDeleteActiveEffect(...args) {
 
   let changesLoop = async () => {
     try {
+      let itemToDeleteUuid;
       if (token && effect.data.changes) {
         for (let change of effect.data.changes) {
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
@@ -1067,8 +1041,13 @@ export function _onDeleteActiveEffect(...args) {
           if (cubActive && change.key === "macro.CUB") {
             await game.cub.removeCondition(change.value, [token], { warn: false })
           }
+          if (change.key === "flags.dae.deleteUuid" && change.value) {
+            socketlibSocket.executeAsGM("deleteUuid", { itemUuid: change.value })
+          }
+          if (change.key === "flags.dae.deleteOrigin") itemToDeleteUuid = effect.data.origin;
         }
         await daeMacro("off", actor, effect.data, {});
+        if (itemToDeleteUuid) socketlibSocket.executeAsGM("deleteUuid", { itemUuid: itemToDeleteUuid })
       }
     } catch (err) {
       console.warn("dae | error deleting active effect ", err);
@@ -1118,7 +1097,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     try {
       if (!["macro.execute", "macro.itemMacro"].includes(change.key)) continue;
       //@ts-ignore 
-      const theChange = await evalArgs({ itemData: null, effectData, context: daeRollData(actor), actor, change, doRolls: true })
+      const theChange = await evalArgs({ itemData: null, effectData, context: actor.getRollData(), actor, change, doRolls: true })
       let args = [];
       if (typeof theChange.value === "string") {
         tokenizer.tokenize(theChange.value, (token) => args.push(token));
@@ -1158,12 +1137,6 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   return effectData;
 }
 
-function daeRollData(actor) {
-  let rollData = actor.getRollData();
-  if (!rollData.flags) rollData.flags = actor.data.flags;
-  return rollData;
-}
-
 export async function evalArgs({ effectData = null, itemData = null, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null }) {
   // change so that this is item.data, rather than item.
   if (itemData) {
@@ -1195,11 +1168,6 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     itemId: itemId
   }, context, { overwrite: false });
 
-  // TODO work out item uuid
-  if (contextToUse.flags) {
-    contextToUse.flags.midiqol = contextToUse.flags["midi-qol"];
-    returnChange.value = returnChange.value.replace("@flags.midi-qol", "@flags.midiqol");
-  }
   returnChange.value = replaceAtFields(returnChange.value, contextToUse, { blankValue: 0, maxIterations: 2 }); // limit to a couple of lookups - since @token -> @token
   returnChange.value = returnChange.value.replace("##", "@");
   switch (change.key) {
@@ -1275,7 +1243,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   if (!targets) return;
   let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false))
   if (appliedEffects.length === 0) return;
-  const rollData = daeRollData(this.actor); //TODO if not caster eval move to evalArgs call
+  const rollData = this.actor.getRollData(); //TODO if not caster eval move to evalArgs call
   // appliedEffects.map(activeEffectData => {
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     for (let [changeIndex, change] of activeEffectData.changes.entries()) {
@@ -1319,7 +1287,9 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   );
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
   if (unOwnedTargets.length > 0)
-    requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
+  // requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
+
   if (ownedTargets.length > 0) {
     const result = await applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
   }
@@ -1420,18 +1390,17 @@ export var tokenizer;
 
 function daeApply(wrapped, actor, change) {
   //TODO revisit this for item changes, requires setProperty(map, "index", value) to work.
-  if (change.key?.startsWith("items") && false) {
-    let originalKey = duplicate(change.key);
+  if (change.key?.startsWith("items")) {
     const fields = change.key.split(".");
     const name = fields[1];
     let indices;
-    if (daeActionTypeKeys.includes(name)) {
+    if (false || daeActionTypeKeys.includes(name)) { //TODO multiple changes are a problem
       const items = actor.items.contents.map((item, index) => item.data.data.actionType === name ? index : -1)
       indices = items.filter(index => index !== -1)
     } else {
-      indices = [actor.items.contents.findIndex(i => i.name === name)];
+      indices = [actor.data.items.contents.findIndex(i => i.name === name)];
     }
-    if (indices.length > 0) {
+    if (indices.length > 0) { // Only works for a single effect because of overrides
       for (let index of indices) {
         fields[1] = `contents.${index}.data`;
         if (fields[1] !== -1) {
@@ -1439,7 +1408,7 @@ function daeApply(wrapped, actor, change) {
           var rval = wrapped(actor, change)
         }
       }
-      change.key = originalKey;
+      // change.key = originalKey;
       return rval;
     }
   }
@@ -1479,6 +1448,7 @@ export function daeInitActions() {
   }
   // We will call this in prepareData
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
+  // Add flags to roll data so they can be referenced in effects
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", getRollData, "WRAPPER");
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
 

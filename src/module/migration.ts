@@ -558,7 +558,7 @@ export async function fixDeprecatedChangesItem(item) {
 
         }
         if (change.key === "data.attributes.ac.value") {
-          // change.key = "data.attributes.ac.value";
+          // change.key = "data.attributes.ac.bonus";
         }
       }
     }
