@@ -368,25 +368,28 @@ In addition to the standard `@values` the following are supported (only as macro
 `@unique` A randomly generated unique id.  
 `##field` The `##` means the argument will not be evaluated using caster values, but will be replaced with `@field` when it is applied to the target.  
 
-An additional argument (in addition to those specified in the `macro.execute` definition) is `lastArgs`, which includes a lot of information for executing the macro. You ccan access lastArg via
-```let lastArg = args[args.length-1]```. lastArg will always include, at least,
-  effectId - the id of the effect being triggered  
-  origin:  
+### lastArg
+IN some circumstances (when macros are called with args[0] === "off or args[0] === "each") the standard actor and token variables will **not** be initailised. So inside the macro you can't do actor.anything. To access the actor/token in a way that will always work there is an additional argument (in addition to those specified in the `macro.execute` definition) **lastArg**, which includes a lot of information for executing the macro. You ccan access lastArg via
+```let lastArg = args[args.length-1]```. lastArg will always include, at least,  
+* effectId - the id of the effect being triggered  
+*  origin:  
     the origin of the effect being triggered (use this with ```await fromUuid(lastArg.origin)``` - usually an item.  
-  efData - the effect data of the effect being triggered.  
-  actorId - the id of the actor on whom the effect exists.  
-  actorUuid - the uuid of the actor fetch it with  
+* efData - the effect data of the effect being triggered.  
+* actorId - the id of the actor on whom the effect exists. 
+* actorUuid - the uuid of the actor fetch it with  
 ```
   let tokenOrActor = await fromUuid(lastArg.actorUuid);
   let actor = tokenOrActor.actor ? tokenOrActor.actor : tokenOrActor
 ```  
-  tokenId - the id of the token on whom the effect exists, fetch via ```canvas.scene.tokens.get(lastArg)```.tokenId)  
-  tokenUuid - the uuid of the token on whom the effect exists, feth via ```await fromUuid(lastArg.tokenuuid)  ```
-Generally prefer to use the uuids when fetching an actor/token since it will alway work and avoid problems.
-For example, if the `macro.execute` definition is `macro.execute CUSTOM "My macro" 5 @abilities.str.mod` then, when the effect is transferred to the target token the macro will be called with `args = ["on", <strength mod of the actor that used the item>, <actor.data of the target token>]`  
-When the effect is deleted from the target actor (either by expiry or explicit deletion) the macro will be called again with `args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>]`  
+* tokenId - the id of the token on whom the effect exists, fetch via ```canvas.scene.tokens.get(lastArg)```.tokenId)  
+* tokenUuid - the uuid of the token on whom the effect exists, feth via ```await fromUuid(lastArg.tokenuuid)  ```  
 
-#### Macros and transfer effect
+Generally prefer to use the uuids when fetching an actor/token since it will alway work and avoid problems.  
+
+For example, if the `macro.execute` definition is `macro.execute CUSTOM "My macro" 5 @abilities.str.mod` then, when the effect is transferred to the target token the macro will be called with `args = ["on", <strength mod of the actor that used the item>, <actor.data of the target token>, lastArg]`  
+When the effect is deleted from the target actor (either by expiry or explicit deletion) the macro will be called again with `args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>, lastArg]`  
+
+## Macros and transfer effect
 The above discussion applies to non-transfer effects. Transfer effects are applied when the item is equipped by a character.
 
 **macro.itemMacro "macro_name" args**  
@@ -425,7 +428,7 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
   ```
 Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
 
-### Macro Functions 
+## Macro Functions 
 Because dropping an item onto a character transfers the active effects to the actor many of the activation functions have been scrapped.
 
 The macro functions in dynamicitems have been replaced in DAE with the following (and you will need to modify any macros you have created):
