@@ -368,8 +368,21 @@ In addition to the standard `@values` the following are supported (only as macro
 `@unique` A randomly generated unique id.  
 `##field` The `##` means the argument will not be evaluated using caster values, but will be replaced with `@field` when it is applied to the target.  
 
-An additional argument (in addition to those specified in the `macro.execute` definition) is `lastArgs`, which includes a lot of information for executing the macro.
-
+An additional argument (in addition to those specified in the `macro.execute` definition) is `lastArgs`, which includes a lot of information for executing the macro. You ccan access lastArg via
+```let lastArg = args[args.length-1]```. lastArg will always include, at least,
+  effectId - the id of the effect being triggered  
+  origin:  
+    the origin of the effect being triggered (use this with ```await fromUuid(lastArg.origin)``` - usually an item.  
+  efData - the effect data of the effect being triggered.  
+  actorId - the id of the actor on whom the effect exists.  
+  actorUuid - the uuid of the actor fetch it with  
+```
+  let tokenOrActor = await fromUuid(lastArg.actorUuid);
+  let actor = tokenOrActor.actor ? tokenOrActor.actor : tokenOrActor
+```  
+  tokenId - the id of the token on whom the effect exists, fetch via ```canvas.scene.tokens.get(lastArg)```.tokenId)  
+  tokenUuid - the uuid of the token on whom the effect exists, feth via ```await fromUuid(lastArg.tokenuuid)  ```
+Generally prefer to use the uuids when fetching an actor/token since it will alway work and avoid problems.
 For example, if the `macro.execute` definition is `macro.execute CUSTOM "My macro" 5 @abilities.str.mod` then, when the effect is transferred to the target token the macro will be called with `args = ["on", <strength mod of the actor that used the item>, <actor.data of the target token>]`  
 When the effect is deleted from the target actor (either by expiry or explicit deletion) the macro will be called again with `args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>]`  
 
