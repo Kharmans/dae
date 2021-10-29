@@ -51,11 +51,6 @@
       "path": "lang/ko.json"
     },
     {
-      "lang": "cn",
-      "name": "中文",
-      "path": "lang/cn.json"
-    },
-    {
       "lang": "pt-BR",
       "name": "Português (Brasil)",
       "path": "lang/pt-BR.json"
