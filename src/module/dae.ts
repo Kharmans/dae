@@ -76,7 +76,6 @@ export class ValidSpec {
     baseValues["data.attributes.ac.bonus"] = 0;
     baseValues["data.attributes.ac.base"] = 0;
     baseValues["data.attributes.ac.cover"] = 0;
-    // XXX
     baseValues["data.bonuses.All-Attacks"] = "";
     baseValues["data.bonuses.weapon.attack"] = "";
     baseValues["data.bonuses.spell.attack"] = "";
@@ -87,7 +86,7 @@ export class ValidSpec {
     baseValues["data.bonuses.heal.attack"] = "";
     baseValues["data.bonuses.save.damage"] = "";
     baseValues["data.bonuses.abil.damage"] = "";
-    baseValues["items"] = "";
+    // baseValues["items"] = ""; // TODO one day work this out.
     //@ts-ignore
     if (game.modules.get("gm-notes")?.active) {
       baseValues["flags.gm-notes.notes"] = "";
@@ -123,14 +122,6 @@ export class ValidSpec {
         // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        /* XXX
-        "data.bonuses.All-Attacks": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.bonuses.weapon.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.bonuses.spell.attack": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.bonuses.All-Damage": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.bonuses.weapon.damage": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.bonuses.spell.damage": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        */
         "data.traits.languages.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.languages.value": ["", -1],
         "data.traits.languages.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
@@ -173,6 +164,12 @@ export class ValidSpec {
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      if (game.modules.get("ATL")?.active) {
+        for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]){
+          specials[`ATL.${label}`] = [0, -1];
+        }
+        specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      }
       // TODO reactivate when cond vis is 0.8.6 ready
       // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -200,14 +197,8 @@ export class ValidSpec {
         else baseValues[theKey] = false;
       });
 
-      // delete baseValues["data.attributes.init.value"];
-      // patch for missing fields
-
-      // needs to be int and in base values since it is used in prepare derived data 
-      // to calc ability spell dcs
       //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
       baseValues["data.bonuses.spell.dc"] = 0;
-      baseValues["data.spells.pact.override"] = 0;
       Object.keys(baseValues).forEach(key => {
         // can't modify all spell details.
         if (key.includes("data.spells")) {
@@ -279,9 +270,9 @@ export class ValidSpec {
         }
       });
     }
-    this.allSpecs.sort((a, b) => { return a._fieldSpec < b._fieldSpec ? -1 : 1 });
-    this.baseSpecs.sort((a, b) => { return a._fieldSpec < b._fieldSpec ? -1 : 1 });
-    this.derivedSpecs.sort((a, b) => { return a._fieldSpec < b._fieldSpec ? -1 : 1 });
+    this.allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+    this.baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+    this.derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
     this.allSpecs.forEach(ms => this.allSpecsObj[ms._fieldSpec] = ms);
     this.baseSpecs.forEach(ms => this.baseSpecsObj[ms._fieldSpec] = ms);
     this.derivedSpecs.forEach(ms => this.derivedSpecsObj[ms._fieldSpec] = ms);
@@ -382,6 +373,15 @@ function flagChangeKeys(actor, change) {
     // change.key = `data.dkills.${abl}.bonuses.passive`;
     return;
   }
+
+  const hasSkillBonus = change.key.startsWith("flags.skill-customization-5e");
+  if (hasSkillBonus) {
+    const skillPassive = change.key.match(/lags.skill-customization-5e.(\w\w\w).skill-bonus/);
+    const abl = skillPassive[1];
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.skills.${abl}.bonuses.check instead`)
+    // change.key = `data.dkills.${abl}.bonuses.passive`;
+    return;
+  }
 }
 
 // this function replaces applyActiveEffects in Actor
@@ -405,7 +405,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
       .filter(c => {
-        return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined)
+        return !completedSpecs[c.key] && (allowAllSpecs || specList[c.key] !== undefined) && !c.key.startsWith("ATL.")
       })
       .map(c => {
         c = duplicate(c);

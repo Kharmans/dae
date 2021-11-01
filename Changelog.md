@@ -3,6 +3,10 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.62
+* Added ATL. fields, including ATL.preset - processing ATL effects is handled by the ATL module - DAE just sets up the data for it.
+* Added all flags.midi-qol to drop down list so that you can see all the supported flags.midi-qol fields.
+
 ### 0.8.61
 * **BREAKING** DAE now requires socketlib as a dependency. This means that DAE.GMAction is no longer available, if that causes any problems please DM me and I'll see what can be done.
 * @fields can include "-" in the field name for passing as arguments in active effects.

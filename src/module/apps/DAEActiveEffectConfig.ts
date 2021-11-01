@@ -1,4 +1,4 @@
-import { ValidSpec, aboutTimeInstalled, confirmDelete, midiActive, cubActive, conditionalVisibilityActive, ceActive } from "../dae";
+import { ValidSpec, aboutTimeInstalled, confirmDelete, midiActive, cubActive, conditionalVisibilityActive, ceActive, atlActive } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 
 export var otherFields = [];
@@ -33,6 +33,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   statusEffectList;
   ConditionalVisibilityList;
   ConditionalVisibilityVisionList;
+  ATLPresets;
   validFields;
   constructor(object = {}, options = {}) {
     super(object, options);
@@ -83,7 +84,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       Object.keys(CONFIG.DND5E.weaponProficiencies).forEach(type => {
         this.weaponProfList[`-${type}`] = `-${CONFIG.DND5E.weaponProficiencies[type]}`;
       });
-    } else {
+    } else if (game.system.id === "sw5e") {
       this.fieldsList = this.fieldsList.join(", ");
       this.traitList = duplicate(CONFIG.SW5E.damageResistanceTypes);
       Object.keys(CONFIG.SW5E.damageResistanceTypes).forEach(type => {
@@ -153,12 +154,20 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       })
     }
 
+    if (atlActive) {
+      this.ATLPresets = {};
+      game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets[preset.name] = preset.name);
+    }
+    this.validFields = {"__": ""}
     this.validFields = ValidSpec.allSpecs
       .filter(e => e._fieldSpec.includes(""))
       .reduce((mods, em) => {
         mods[em._fieldSpec] = em._label;
         return mods;
-      }, {});
+      }, this.validFields);
+    for (let field of otherFields) {
+        this.validFields[field] = field;
+    }
   }
 
 
@@ -242,6 +251,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec === "StatusEffect") return this.statusEffectList;
     if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
+    if (spec === "ATL.preset") return this.ATLPresets;
 
     /*
         blindsight: false
@@ -321,7 +331,15 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   _keySelected(event) {
     const target = event.target;
     // $(target.parentElement.parentElement.children[1]).find(".keylist").val(ValidSpec.allSpecs[target.selectedIndex].fieldSpec)
-    $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(ValidSpec.allSpecs[target.selectedIndex].fieldSpec)
+    if (target.selectedIndex === 0) return; // Account for dummy element 0
+    $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(target.value)
+/*
+    if (!ValidSpec.allSpecs[selected]) { // otherfields
+      $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(selected)
+    } else {
+      $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(ValidSpec.allSpecs[target.selectedIndex-1].fieldSpec)
+    }
+    */
     return this.submit({ preventClose: true }).then(() => this.render());
   }
   /* ----------------------------------------- */
