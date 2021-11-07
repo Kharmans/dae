@@ -903,10 +903,9 @@ async function _preCreateActiveEffect(wrapped, ...args) {
 
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
+
   let updates = {};
-  if (this.data.transfer) {
-    updates = { "flags.dae.transfer": true };
-  }
+  updates = {"flags.dae.transfer": this.data.transfer}
   let changesChanged = false;
   let newChanges = [];
   for (let change of this.data.changes) {
@@ -922,14 +921,15 @@ async function _preCreateActiveEffect(wrapped, ...args) {
       newChanges.push(change);
     }
     if (changesChanged) updates["changes"] = newChanges;
-    if (changesChanged || this.data.transfer) this.data.update(updates)
+    this.data.update(updates)
   }
   try {
     const effectData = await daeMacro("on", parent, this.data, {});
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {
-    return wrapped(...args)
+    let result = wrapped(...args)
+    return result;
   }
 }
 
