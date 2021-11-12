@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, itemacroActive } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, itemacroActive, tokenizer } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
 import { checkLibWrapperVersion } from "./migration";
 
@@ -78,10 +78,10 @@ async function _deleteToken(data: {tokenUuid: string}) {
   return await DAEfromUuid(data.tokenUuid)?.delete();
 }
 
-async function _setTokenFlag(data: {flagName: string, flagValue: any, actorUuid: string}) {
+async function _setTokenFlag(data: {flagName: string, flagValue: any, tokenUuid: string}) {
   const update = {};
   update[`flags.dae.${data.flagName}`] = data.flagValue;
-  return await DAEfromUuid(data.actorUuid)?.update(update)
+  return await DAEfromUuid(data.tokenUuid)?.update(update)
 }
 
 async function _setFlag(data: {actorUuid: string|undefined, actorId: string | undefined, flagId: string, value: any}) {

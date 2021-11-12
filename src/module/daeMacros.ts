@@ -1,5 +1,6 @@
 import { socketlibSocket } from "./GMAction";
 import { warn, error, debug } from "../dae";
+import { DAEfromActorUuid, DAEfromUuid } from "./dae";
 
 export let applyActive = (itemName: string, activate: boolean = true, itemType: string = "") => {
  
@@ -134,27 +135,40 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
   return await targetScene.view();
 }
 
-export async function setTokenVisibility(tokenId: any, visible: boolean) {
-  if (typeof tokenId !== "string") tokenId = tokenId.id;
-  return socketlibSocket.executeAsGM("setTokenVisibility", { targetSceneId: canvas.scene.id, tokenId, hidden: !visible });
+export async function setTokenVisibility(tokenId: string | Token, visible: boolean) {
+  let tokenUuid: string;
+  if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
+  else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
+  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
+  return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
   // return requestGMAction(GMAction.actions.setTokenVisibility, { targetSceneId: canvas.scene.id, tokenId, hidden: !visible })
 }
 
-export async function setTileVisibility(tileId: any, visible: boolean) {
-  if (typeof tileId !== "string") tileId = tileId.id;
+export async function setTileVisibility(tileId: Tile | string, visible: boolean) {
+    let tileUuid: string;
+  if (typeof tileId !== "string") tileUuid = tileId.uuid;
+  else {
+    tileUuid = `Scene.${canvas.scene.id}.Tile.${tileId}`;
+  }
   return socketlibSocket.executeAsGM("setTileVisibility", { targetSceneId: canvas.scene.id, tileId, hidden: !visible });
   // return requestGMAction(GMAction.actions.setTileVisibility, { targetSceneId: canvas.scene.id, tileId, hidden: !visible })
 }
 
-export async function blindToken(tokenId: any) {
-  if (typeof tokenId !== "string") tokenId = tokenId.id;
-  return socketlibSocket.executeAsGM("blindToken", { tokenId: tokenId, sceneId: canvas.scene.id });
+export async function blindToken(tokenId: Token | string) {
+  let tokenUuid: string;
+  if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
+  else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
+  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
+  return socketlibSocket.executeAsGM("blindToken", { tokenUuid });
   // return requestGMAction(GMAction.actions.blindToken, { tokenId: tokenId, sceneId: canvas.scene.id })
 }
 
-export async function restoreVision(tokenId: any) {
-  if (typeof tokenId !== "string") tokenId = tokenId.id;
-  return socketlibSocket.executeAsGM("restoreVision", { tokenId: tokenId, sceneId: canvas.scene.id });
+export async function restoreVision(tokenId: Token | string) {
+  let tokenUuid: string;
+  if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
+  else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
+  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
+  return socketlibSocket.executeAsGM("restoreVision", { tokenUuid });
   // return requestGMAction(GMAction.actions.restoreVision, { tokenId: tokenId, sceneId: canvas.scene.id })
 }
 
@@ -172,8 +186,10 @@ export async function deleteActiveEffect(actorUuid: string, origin: string, igno
 }
 
 export async function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {
-  const tokenId = (typeof token === "string") ? token : token.id;
-  return socketlibSocket.executeAsGM("setTokenFlag", { tokenId: tokenId, sceneId: canvas.scene.id, flagName, flagValue });
+  let theToken: Token;
+  if (typeof token === "string") theToken = DAEfromUuid(token);
+  else theToken = token;
+  return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: theToken.uuid, flagName, flagValue });
   // return requestGMAction(GMAction.actions.setTokenFlag, { tokenId: tokenId, sceneId: canvas.scene.id, flagName, flagValue })
 }
 
@@ -183,6 +199,10 @@ export function getFlag(actor: Actor | Token | string, flagId: string) {
   if (typeof actor === "string") { // assume tstring === tokenId
     theActor = canvas.tokens.get(actor)?.actor;
     if (!theActor) theActor = game.actors.get(actor); // if not a token maybe an actor
+    if (!theActor) {
+      const entity = DAEfromUuid(actor);
+      theActor = entity.actor ?? entity;
+    }
   } else {
     if (actor instanceof Actor)
       theActor = actor;
@@ -213,7 +233,6 @@ export async function unsetFlag(tactor: Actor | Token | string, flagId) {
     socketlibSocket.executeAsGM("unsetFlag", { actorId: tactor, flagId});
     // return requestGMAction(GMAction.actions.unsetFlag, { actorId: tactor, flagId})
   }
-
   let actor: Actor;
   if (tactor instanceof Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;

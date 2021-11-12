@@ -537,12 +537,13 @@ If the module is installed and active effects can update the actors gm-notes fie
 
 ### [Combat Utility Belt](https://github.com/death-save/combat-utility-belt)
 
-
 CUB conditions are applied in 3 ways:  
-* StatusEffect, this will lookup the CUB conditon at the time of apllication and copy the data. This is the **strongly** preferred way to apply conditions
+* StatusEffect, this will lookup the CUB conditon at the time of apllication and copy the data. This is the **strongly** preferred way to apply conditions.
 * You create an active effect that takes it's changes from CUB via the drop down list in the DAE Active Effects Screen. "new" is pre-selected but you choose various items from that list, including CUB conditions.
 If you select condition (CUB) from the drop down list DAE will copy the active effect from CUB into the actor/item. From then on it won't change, any changes you make in condition lab will NOT be reflected in actors who have the condition applied via DAE/Midi-QOL.
 * Using macro.CUB to apply a condition that is looked up from CUB when applied. This should be considered deprecated.
+
+Combat Utility Belt has it's own effects editor that does not support the DAE extras. However, it can create most effects you can create in the DAE editor, but not special durations/expiry options.
 
 ### [Convenient Effects](https://github.com/DFreds/dfreds-convenient-effects)
 

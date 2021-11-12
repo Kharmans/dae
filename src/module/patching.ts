@@ -76,15 +76,6 @@ function _prepareArmorClassAttribution(wrapped, data) {
 export function patchPrepareArmorClassAttribution() {
   if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.4.0")) {
     if (!isNewerVersion("1.8.0", game.modules.get("lib-wrapper").data.version)) {
-      /* TODO put this back when I find out how to do this. Maybe not required.
-    for(let chartype of Object.keys(CONFIG.Actor.sheetClasses)) {
-      for (let sheet of Object.keys(CONFIG.Actor.sheetClasses[chartype])) {
-        if (CONFIG.Actor.sheetClasses[chartype][sheet].cls.prototype._prepareArmorClassAttribution) {
-          libWrapper.register("dae", `CONFIG.Actor.sheetClasses.${chartype}["${sheet}"].cls.prototype._prepareArmorClassAttribution`, _prepareArmorClassAttribution, "WRAPPER");
-        }
-      }
-    }
-    */
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['dnd5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
