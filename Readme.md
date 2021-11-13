@@ -9,7 +9,8 @@ data.abilities.str.bonuses.save/.check. This field supercedes the DAE support of
 values that have .bonuses available:
   - abilities.str/dex/cha etc, bonusess.check, bonuses.save
   - skills.acr/per/prc etc. have a bonuses.check and bonuses.passive.
-  - attributes.ac.bonus
+  - attributes.ac.bonus **ac.bonus is special** it will not accept derived fields (i.e. abilities.dex.mod and so on - dnd5e limitation).
+
 These fields support the the use of @values and dice expressions when specifying the bonus - and this is a core dnd5e effect - dae is not required for this.
 
 Global bonuses have been enhanced to accept @fields for all bonues, instead of just the rwak/mwak/rsak/msak fields. As far as I am aware the new fields are supported in DAE immediately.
@@ -155,8 +156,13 @@ hp.max will be set to `31 + con.mod * paladin levels`
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. 
 
-<details><summary>The current list of derived fields for dnd5e</summary>
+#### Supported fields
+**Pretty much @data.abilities.anything is supported.**
+
+<details><summary>The current list of derived fields for dnd5e - click to expand</summary>
 <br>
+
+
 Fields that have a mode specified below means that ONLY that mode is supported for the effect (and the editor will set the mode when the change is saved)
 <br><br>
 <details><summary>data.attributes</summary>
@@ -165,6 +171,8 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 |-----	|:-----------:	|-----	|
 | `data.attributes.ac.bonus`            	|            	| This is applied before prepared data so CANNOT include derived fields.	|
 | `data.attributes.ac.value`	|            	| This is applied after prepare data so can include derived fields like dex.mod and so on.	|
+| `data.attributes.ac.calc`	|	| Accepts any of the predefined calculation types or custom 	|
+| `data.attributes.ac.formula`	|	|  if the calc type is custom let's you specifiy your own AC calc formula 	|
 | `data.attributes.death.failure`          	|            	| 	|
 | `data.attributes.death.success`          	|            	| 	|
 | `data.attributes.encumbrance.max`          	|            	| 	|
@@ -188,10 +196,8 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 | `data.attributes.senses.units`          	|            	| 	|
 | `data.attributes.spellcasting`          	|            	| 	|
 | `data.attributes.ac.base`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-| `data.attributes.ac.calc`	|	| [- Deprecated as of dnd5e 1.4.x -] 	|
 | `data.attributes.ac.cover`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
 | `data.attributes.ac.flat`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-| `data.attributes.ac.formula`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
 | `data.attributes.ac.min`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
 
 </details>
@@ -332,7 +338,6 @@ Macros are called when the effect is transferred to the character (with `args[0]
 
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------	|:-----------:	|----------------	|
-|
 | `macro.execute`	|    CUSTOM	|	|
 | `macro.itemMacro`	|    CUSTOM	| 	|
 | `macro.tokenMagic`	|    CUSTOM	| Applies/removes the Token Magic affects.	|
