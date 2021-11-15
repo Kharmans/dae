@@ -344,9 +344,14 @@ Macros are called when the effect is transferred to the character (with `args[0]
 
 </details>
 <details><summary>Special flags.dae...</summary>
-* flags.dae.deleteOrigin, which if present as a change in an active effect will, when the effect is deleted from the actor, attempt to delete the item pointed to by the effect's origin. The change value does not matter. Only delete owned items of an actor (any actor) will be deleted, and wont delete World Items or Compendium Items, can be useful for one shot items that you want to remain until the effect they created expires.
-* flags.dae.deleteUuid whose value is an ownedItem uuid or token uuid, when the effect is removed the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.
-* Updated ja.json - thanks @Brother Sharp
+<ul>
+<li>
+flags.dae.deleteOrigin, which if present as a change in an active effect will, when the effect is deleted from the actor, attempt to delete the item pointed to by the effect's origin. The change value does not matter. Only delete owned items of an actor (any actor) will be deleted, and wont delete World Items or Compendium Items, can be useful for one shot items that you want to remain until the effect they created expires.
+</li>
+<li>
+flags.dae.deleteUuid whose value is an ownedItem uuid or token uuid, when the effect is removed the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.
+</li>
+</ul>
 </details>
 </details>
 
