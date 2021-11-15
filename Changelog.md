@@ -3,6 +3,14 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.65
+* Support for evaluate once expressions in dae effects.
+  For example:
+  `data.attributes.ac.value UPGRADE [[1d20+@abilities.dex.mod+5]]`
+  When the effect is applied to the actor the expression inside `[[]]` will be evaluated as a roll and the value in the applied change will be replaced with the result of the roll, all the normal substituions will be appliied (and the @ and ## fields are supported).
+* new cofniguration setting, show results of inline rolls, (per client setting so GM and players can have different settings). If set the result of the inline roll will be sent to chat.
+* For this implementation the `[[expr]]` must be the ONLY expression in the change value, so `[[1d6]]d6`` won't work - yet.
+
 ### 0.8.64
 * Fixes for various DAE.functions which I inadvertantly broke when migrating to libsocket.
 

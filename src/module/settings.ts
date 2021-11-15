@@ -55,7 +55,7 @@ export const registerSettings = function () {
     name: game.i18n.localize("dae.useAbilitySave.Name"),
     hint: game.i18n.localize("dae.useAbilitySave.Hint"),
     scope: "world",
-    default: true,
+    default: false,
     config: true,
     type: Boolean,
     onChange: fetchParams
@@ -65,7 +65,17 @@ export const registerSettings = function () {
     scope: "world",
     default: 0,
     config: false,
-    type: Number,
+    type: Number
+  });
+
+  game.settings.register("dae", "showInline", {
+    scope: "client",
+    name: game.i18n.localize("dae.ShowInline.Name"),
+    hint: game.i18n.localize("dae.ShowInline.Hint"),
+    default: false,
+    config: true,
+    type: Boolean,
+    onChange: fetchParams
   });
 
   game.settings.register("dae", "confirmDelete", {

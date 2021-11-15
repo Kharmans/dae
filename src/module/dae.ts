@@ -32,6 +32,7 @@ export var disableEffects;
 export var daeTitleBar;
 export var libWrapper;
 export var showDeprecation = true;
+export var showInline = false;
 
 let debugLog = true;
 
@@ -110,7 +111,7 @@ export class ValidSpec {
         "data.attributes.hp.min": [0, -1],
         // This does not work look at CONFIG.Comabt.initiative.formula
         "data.attributes.init.total": [0, -1],
-        "data.attributes.init.mod": [0, -1],
+        // "data.attributes.init.mod": [0, -1],
         "data.attributes.hd": [0, -1],
         "data.abilities.str.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.abilities.dex.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
@@ -165,7 +166,7 @@ export class ValidSpec {
       specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       if (game.modules.get("ATL")?.active) {
-        for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]){
+        for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
           specials[`ATL.${label}`] = [0, -1];
         }
         specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -214,6 +215,7 @@ export class ValidSpec {
       })
       delete baseValues["data.attributes.init.total"];
       delete baseValues["data.attributes.init.mod"];
+      delete baseValues["data.attributes.init.bonus"]
       delete baseValues["flags"];
     }
 
@@ -905,10 +907,11 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
 
   let updates = {};
-  updates = {"flags.dae.transfer": this.data.transfer}
+  updates = { "flags.dae.transfer": this.data.transfer }
   let changesChanged = false;
   let newChanges = [];
   for (let change of this.data.changes) {
+    let inline = typeof change.value === "string" && change.value.startsWith("[[");
     if (change.key === "StatusEffect") {
       const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
       if (statusEffect) {
@@ -917,12 +920,19 @@ async function _preCreateActiveEffect(wrapped, ...args) {
         updates["label"] = statusEffect.label;
         changesChanged = true;
       }
-    } else {
-      newChanges.push(change);
-    }
-    if (changesChanged) updates["changes"] = newChanges;
-    this.data.update(updates)
+    } else if (inline) {
+      const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
+      inline = change.value.matchAll(rgx).next();
+      if (inline.value) {
+        changesChanged = true;
+        const newChange = duplicate(change);
+        newChange.value = await evaInline(inline.value[2], this.parent, this);
+        newChanges.push(newChange);
+      } else newChanges.push(change);
+    } else newChanges.push(change);
   }
+  if (changesChanged) updates["changes"] = newChanges;
+  this.data.update(updates);
   try {
     const effectData = await daeMacro("on", parent, this.data, {});
   } catch (err) {
@@ -930,6 +940,19 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   } finally {
     let result = wrapped(...args)
     return result;
+  }
+}
+
+async function evaInline(expression: string, actor: Actor, effect) {
+  try {
+    const roll = await (new Roll(expression, actor?.getRollData())).roll();
+    if (showInline) {
+      roll.toMessage({speaker: ChatMessage.getSpeaker({actor}), flavor: `${effect.data.label} ${expression}`, chatMessage: true})
+    }
+    return `${roll.total}`;
+  } catch (err) {
+    console.warn(`dae | evaluate args error: rolling ${expression} failed`);
+    return "0";
   }
 }
 
@@ -1009,6 +1032,13 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) {
     return wrapped(changes, options, user);
+  }
+  for (let change of changes.changes ?? []) {
+    const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
+    const inline = change.value.matchAll(rgx).next();
+    if (inline.value) {
+      change.value = await evaInline(inline.value[2], this.parent, this);
+    }
   }
   return wrapped(changes, options, user);
 }
@@ -1170,23 +1200,25 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
 
   returnChange.value = replaceAtFields(returnChange.value, contextToUse, { blankValue: 0, maxIterations: 2 }); // limit to a couple of lookups - since @token -> @token
   returnChange.value = returnChange.value.replace("##", "@");
-  switch (change.key) {
-    case "macro.itemMacro":
-    case "macro.execute": // for macros we want to tokeniz the arguments
-      break;
-    case "macro.CUB":
-    case "macro.ConditionalVisibility":
-    case "macro.ConditionalVisibilityVision":
-    case "macro.tokenMagic":
-      break;
-    default:
-      if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
-        //@ts-ignore evaluate - probably need to make this a saveEval
-        returnChange.value = new Roll(returnChange.value, context).evaluate({ async: false }).total;
-      };
-      break;
-  };
-  debug("evalargs: change is ", returnChange);
+  if (typeof returnChange.value === "string" && !returnChange.value.includes("[[")) {
+    switch (change.key) {
+      case "macro.itemMacro":
+      case "macro.execute": // for macros we want to tokenize the arguments
+        break;
+      case "macro.CUB":
+      case "macro.ConditionalVisibility":
+      case "macro.ConditionalVisibilityVision":
+      case "macro.tokenMagic":
+        break;
+      default:
+        if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
+          //@ts-ignore evaluate - probably need to make this a saveEval
+          returnChange.value = new Roll(returnChange.value, context).evaluate({ async: false }).total;
+        };
+        break;
+    };
+    debug("evalargs: change is ", returnChange);
+  }
   return returnChange;
 }
 
@@ -1477,7 +1509,7 @@ export function daeInitActions() {
   CONFIG.ActiveEffect.documentClass
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "WRAPPER");
-  // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "WRAPPER");
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "WRAPPER");
   Hooks.on("createActiveEffect", _onCreateActiveEffect);
   Hooks.on("deleteActiveEffect", _onDeleteActiveEffect);
   Hooks.on("updateActiveEffect", _onUpdateActiveEffect);
@@ -1557,6 +1589,7 @@ export function fetchParams(doUpdatePatches = true) {
   expireRealTime = game.settings.get("dae", "expireRealTime");
   displayTraits = game.settings.get("dae", "displayTraits");
   showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
+  showInline = game.settings.get("dae", "showInline") ?? false;
   updatePatches();
 }
 

@@ -26,7 +26,7 @@ export let setupSocket = () => {
   socketlibSocket.register("createToken", _createToken);
   socketlibSocket.register("deleteToken", _deleteToken);
   socketlibSocket.register("renameToken", _renameToken);
- //  socketlibSocket.register("moveToken", _moveToken); TODO find out if this is used anywhere
+  //  socketlibSocket.register("moveToken", _moveToken); TODO find out if this is used anywhere
   socketlibSocket.register("applyTokenMagic", _applyTokenMagic);
   socketlibSocket.register("applyActiveEffects", _applyActiveEffects);
   socketlibSocket.register("setTokenFlag", _setTokenFlag);
@@ -54,58 +54,58 @@ function _testMessage(data) {
 async function _setTokenVisibility(data) {
   await DAEfromUuid(data.tokenUuid)?.update({ hidden: data.hidden })
 }
- 
+
 async function _setTileVisibility(data) {
   return await DAEfromUuid(data.tileUuid)?.update({ vlisible: data.hidden })
 }
- 
+
 async function _applyActiveEffects(data) {
   return await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration, data.itemCardId)
 }
-async function _recreateToken(data: {userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
+async function _recreateToken(data: { userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
   await _createToken(data);
   return await DAEfromUuid(data.tokenUuid)?.delete();
 }
 
-async function _createToken(data: {userId: string, targetSceneId: string, tokenData: {}, x: number, y: number }) {
+async function _createToken(data: { userId: string, targetSceneId: string, tokenData: {}, x: number, y: number }) {
   let scenes = game.scenes;
   let targetScene = scenes.get(data.targetSceneId);
   //@ts-ignore
   return await targetScene.createEmbeddedDocuments('Token', [mergeObject(duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
 }
-  
-async function _deleteToken(data: {tokenUuid: string}) {
+
+async function _deleteToken(data: { tokenUuid: string }) {
   return await DAEfromUuid(data.tokenUuid)?.delete();
 }
 
-async function _setTokenFlag(data: {flagName: string, flagValue: any, tokenUuid: string}) {
+async function _setTokenFlag(data: { flagName: string, flagValue: any, tokenUuid: string }) {
   const update = {};
   update[`flags.dae.${data.flagName}`] = data.flagValue;
   return await DAEfromUuid(data.tokenUuid)?.update(update)
 }
 
-async function _setFlag(data: {actorUuid: string|undefined, actorId: string | undefined, flagId: string, value: any}) {
+async function _setFlag(data: { actorUuid: string | undefined, actorId: string | undefined, flagId: string, value: any }) {
   if (!data.actorUuid) return await game.actors.get(data.actorId)?.setFlag("dae", data.flagId, data.value);
   else return await DAEfromActorUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
 }
 
-async function _unsetFlag(data: {actorUuid: string, flagId: string}) {
+async function _unsetFlag(data: { actorUuid: string, flagId: string }) {
   return await DAEfromActorUuid(data.actorUuid)?.unsetFlag("dae", data.flagId)
 }
 
-async function _blindToken(data: {tokenUuid: string}) {
+async function _blindToken(data: { tokenUuid: string }) {
   return await DAEfromUuid(data.tokenUuid)?.update({ vision: false });
 }
- 
-async function _restoreVision(data: {tokenUuid: string}) {
+
+async function _restoreVision(data: { tokenUuid: string }) {
   return await DAEfromUuid(data.tokenUuid)?.update({ vision: true })
 }
 
-async function _renameToken(data: {tokenData: any, newName: string}) { // TODO update this for uuids
+async function _renameToken(data: { tokenData: any, newName: string }) { // TODO update this for uuids
   return await canvas.tokens.placeables.find(t => t.id === data.tokenData._id).update({ "name": data.newName })
 }
-    
-async function _applyTokenMagic(data: {tokenUuid: string, effectId: string}) {
+
+async function _applyTokenMagic(data: { tokenUuid: string, effectId: string }) {
   let token = DAEfromUuid(data.tokenUuid);
   let tokenMagic = globalThis.TokenMagic;
   if (tokenMagic && token) {
@@ -113,7 +113,7 @@ async function _applyTokenMagic(data: {tokenUuid: string, effectId: string}) {
   }
 }
 
-async function _deleteEffects(data: {targets: any[], origin: string, ignore: string[]}) {
+async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[] }) {
   for (let idData of data.targets) {
     let actor = idData.tokenUuid ? DAEfromActorUuid(idData.tokenUuid) : idData.actorUuid ? DAEfromUuid(idData.actorUuid) : undefined;
     if (actor.actor) actor = actor.actor;
@@ -183,7 +183,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           setProperty(ae.flags, "dae.transfer", false);
 
           ae.changes.map(change => {
-            if (["macro.execute", "macro.itemMacro"].includes(change.key)) {
+            if (["macro.execute", "macro.itemMacro", "roll"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
                 const context = { "target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };
@@ -200,10 +200,8 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             }
             return change;
           })
-        }
-        warn("gm action apply effect", token, actEffects)
 
-//        setTimeout(async () => { //TODO consider revising this in 0.9
+          //        setTimeout(async () => { //TODO consider revising this in 0.9
           actor = DAEfromActorUuid(actor.uuid);
           let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
 
@@ -232,10 +230,11 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               }
             })
           }
-  //      }, removeList.length > 0 ? 500 * removeList.length : 1);
-      }
+          //      }, removeList.length > 0 ? 500 * removeList.length : 1);
+        }
+      };
     };
-  };
+  }
 }
 
 export function convertDuration(itemDuration: { units: string, value: number }, inCombat) {
