@@ -349,7 +349,7 @@ Macros are called when the effect is transferred to the character (with `args[0]
 flags.dae.deleteOrigin, which if present as a change in an active effect, will when the effect is deleted from the actor, attempt to delete the item pointed to by the effect's origin. The change value does not matter. Only owned items of an actor (any actor) will be deleted, and wont delete World Items or Compendium Items, can be useful for one shot items that you want to remain until the effect they created expires.
 </li>
 <li>
-flags.dae.deleteUuid whose value is an ownedItem uuid or token uuid, when the effect is removed the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.
+flags.dae.deleteUuid whose value is an ownedItem uuid or token uuid, when the effect is removed the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.  
 </li>
 </ul>
 </details>
@@ -363,7 +363,7 @@ Since the macro attaches to the target actor the macro can schedule itself to be
 Using macros with arguments requires that you have the Furnace module installed and advanced macros enabled. That is the only setting you will want to enable.  
 Furnace is now deprecated, the module Advanced Macros is a direct replacement and DAE will work with it if installed and active.
 
-```
+```js
 macro.execute "macro_name" args
 ```
 This will call the macro "macro_name" with `args[0] = "on"` and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with `args[0] = "off"` when the active effect is deleted from the target actor.  
@@ -392,12 +392,12 @@ IN some circumstances (when macros are called with args[0] === "off or args[0] =
 * efData - the effect data of the effect being triggered.  
 * actorId - the id of the actor on whom the effect exists. 
 * actorUuid - the uuid of the actor fetch it with  
-```
+```js
   let tokenOrActor = await fromUuid(lastArg.actorUuid);
   let actor = tokenOrActor.actor ? tokenOrActor.actor : tokenOrActor
 ```  
-* tokenId - the id of the token on whom the effect exists, fetch via ```canvas.scene.tokens.get(lastArg)```.tokenId)  
-* tokenUuid - the uuid of the token on whom the effect exists, feth via ```await fromUuid(lastArg.tokenuuid)  ```  
+* tokenId - the id of the token on whom the effect exists, fetch via ```js canvas.scene.tokens.get(lastArg).tokenId) ```
+* tokenUuid - the uuid of the token on whom the effect exists, feth via ```js await fromUuid(lastArg.tokenuuid)  ```  
 
 Generally prefer to use the uuids when fetching an actor/token since it will alway work and avoid problems.  
 
@@ -442,6 +442,21 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
 
   ```
 Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
+
+### flags.dae.deleteUuid
+Here's an example, which summons a token, via warpgate and creates an effect to delete it on spell expiry/loss of concentration.
+```js
+    const summoned = await warpgate.spawn("Flaming Sphere", {embedded: updates}, {}, {});
+    if (summoned.length !== 1) return;
+    const summonedUuid = `Scene.${canvas.scene.id}.Token.${summoned[0]}`;
+    await caster.createEmbeddedDocuments("ActiveEffect", [{
+        "changes":  [{"key":"flags.dae.deleteUuid","mode":5,"value": summonedUuid,"priority":"30"}],
+        "label": "Flaming Sphere Summon",
+        "duration": {seconds: 60, rounds: 10},
+        "origin": args[0].itemUuid,
+        "icon": "icons/magic/fire/orb-vortex.webp",
+    }]);
+```
 
 ## Macro Functions 
 Because dropping an item onto a character transfers the active effects to the actor many of the activation functions have been scrapped.
