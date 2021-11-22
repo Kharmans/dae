@@ -169,7 +169,8 @@ Hooks.once('setup', function() {
     fixTransferEffects: fixTransferEffects,
     fixDeprecatedChanges: fixDeprecatedChanges,
     fixDeprecatedChangesActor: fixDeprecatedChangesActor,
-    fixDeprecatedChangesItem: fixDeprecatedChangesItem
+    fixDeprecatedChangesItem: fixDeprecatedChangesItem,
+    daeSpecialDurations: () => {return daeSpecialDurations}
   }
   setupSocket();
 });

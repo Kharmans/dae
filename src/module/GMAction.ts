@@ -201,8 +201,10 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             return change;
           })
 
-          //        setTimeout(async () => { //TODO consider revising this in 0.9
-          actor = DAEfromActorUuid(actor.uuid);
+        }
+        //        setTimeout(async () => { //TODO consider revising this in 0.9
+        actor = DAEfromActorUuid(actor.uuid);
+        if (dupEffects.length > 0) {
           let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
 
           //TODO remove this when timesup is in the wild.
@@ -230,8 +232,8 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               }
             })
           }
-          //      }, removeList.length > 0 ? 500 * removeList.length : 1);
         }
+        //      }, removeList.length > 0 ? 500 * removeList.length : 1);
       };
     };
   }

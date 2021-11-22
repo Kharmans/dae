@@ -938,7 +938,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {
-    let result = wrapped(...args)
+    let result = wrapped(...args);
     return result;
   }
 }
@@ -1046,7 +1046,6 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
 export function _onDeleteActiveEffect(...args) {
   let [effect, option, userId] = args;
   if (game.user.id !== userId) return true;
-
   //@ts-ignore documentClass
   if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return true;
   const actor = effect.parent;
@@ -1273,7 +1272,7 @@ export async function doEffects(item, activate, targets = undefined,
 // request is passed to a GM client if the token is not owned
 export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId }) {
   if (!targets) return;
-  let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false))
+  let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false));
   if (appliedEffects.length === 0) return;
   const rollData = this.actor.getRollData(); //TODO if not caster eval move to evalArgs call
   // appliedEffects.map(activeEffectData => {
@@ -1327,6 +1326,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   }
 
 }
+
 function preUpdateItem(candidate, updates, options, user) {
   return true;
 }
