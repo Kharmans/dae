@@ -440,7 +440,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
           c.value = Roll.safeEval(value)
         } catch (err) { // safeEval failed try a roll
           try {
-            console.warn("dae | you are using dice expressions in a numeric field this will be disabled when foundry 0.9 is released")
+            console.warn("dae | you are using dice expressions in a numeric field this will be disabled after foundry 9.x is released")
             console.warn(`Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`)
             //@ts-ignore evaluate - TODO work out how to do this async
             c.value = new Roll(value).evaluate({ async: false }).total;

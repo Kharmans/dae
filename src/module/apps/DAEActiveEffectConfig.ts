@@ -284,7 +284,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     //@ts-ignore
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
-    data.stackableOptions = i18n("dae.stackableOptions");
+    const translations = game.i18n.translations
+    data.stackableOptions = game.i18n.translations["dae"].stackableOptions;
 
     if (this.object.parent) {
       //@ts-ignore documentClass

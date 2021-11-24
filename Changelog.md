@@ -2,6 +2,7 @@
 
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
+* Fix for stacking options not displaying in 0.9 dev 2.
 
 ### 0.8.66 
 * Fix for a bad bug that would apply effects multiple times if there was more than one effect on an item.
