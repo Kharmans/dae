@@ -1055,7 +1055,7 @@ export function _onDeleteActiveEffect(...args) {
 
   let changesLoop = async () => {
     try {
-      let itemToDeleteUuid;
+      let entityToDelete;
       if (token && effect.data.changes) {
         for (let change of effect.data.changes) {
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
@@ -1071,12 +1071,12 @@ export function _onDeleteActiveEffect(...args) {
             await game.cub.removeCondition(change.value, [token], { warn: false })
           }
           if (change.key === "flags.dae.deleteUuid" && change.value) {
-            socketlibSocket.executeAsGM("deleteUuid", { itemUuid: change.value })
+            socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
           }
-          if (change.key === "flags.dae.deleteOrigin") itemToDeleteUuid = effect.data.origin;
+          if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.data.origin;
         }
         await daeMacro("off", actor, effect.data, {});
-        if (itemToDeleteUuid) socketlibSocket.executeAsGM("deleteUuid", { itemUuid: itemToDeleteUuid })
+        if (entityToDelete) socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
       }
     } catch (err) {
       console.warn("dae | error deleting active effect ", err);

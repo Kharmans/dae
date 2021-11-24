@@ -36,14 +36,16 @@ export let setupSocket = () => {
   socketlibSocket.register("deleteUuid", _deleteUuid);
 }
 
-async function _deleteUuid(data) {
-  const entity = await fromUuid(data.itemUuid);
-  if (entity && entity instanceof Item && !data.itemUuid.startsWith("Compendium") && !data.itemUuid.startsWith("Item")) { // only allow deletion of owned items
+async function _deleteUuid(data: {uuid: string}) {
+  const entity = await fromUuid(data.uuid);
+  if (entity && entity instanceof Item && !data.uuid.startsWith("Compendium") && !data.uuid.startsWith("Item")) { // only allow deletion of owned items
     return await entity.delete();
   }
-  if (entity && entity instanceof CONFIG.Token.documentClass && !data.itemUuid.startsWith("Compendium") && !data.itemUuid.startsWith("Item")) { // only allow deletion of owned items
+  if (entity && entity instanceof CONFIG.Token.documentClass && !data.uuid.startsWith("Compendium") && !data.uuid.startsWith("Item")) { // only allow deletion of owned items
     return await entity.delete();
   }
+  if (entity && entity instanceof CONFIG.ActiveEffect.documentClass) return await entity.delete();
+  
   return false;
 }
 
@@ -130,6 +132,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
       };
     }
   }
+  if (globalThis.Sequencer) globalThis.Sequencer.EffectManager.endEffects({origin})
 }
 
 export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null) {
