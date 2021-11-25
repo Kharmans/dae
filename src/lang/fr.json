@@ -202,5 +202,6 @@
     "dae.jackOfAllTrades": "Jack of all Trades",
     "dae.observantFeat": "Observant Feat",
     "dae.reliableTalent": "Reliable Talent",
-    "dae.remarkableAthlete": "Remarkable Athlete"
+    "dae.remarkableAthlete": "Remarkable Athlete",
+    "dae.stackableOptions": {"none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1"},
 }

@@ -285,8 +285,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
     const translations = game.i18n.translations
-    data.stackableOptions = game.i18n.translations["dae"].stackableOptions;
-
+    data.stackableOptions = game.i18n.translations["dae"].stackableOptions ?? {"none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1"};
+    
     if (this.object.parent) {
       //@ts-ignore documentClass
       data.isItem = this.object.parent instanceof CONFIG.Item.documentClass;

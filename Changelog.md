@@ -1,7 +1,8 @@
-
-
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
+
+## 0.8.69
+Fix for editor not launchin in french language environments.
 
 ## 0.8.68
 * updated flags.dae.deleteUuid to allow you to pass the uuid of an active effect.
