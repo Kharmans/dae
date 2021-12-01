@@ -945,6 +945,8 @@ async function _preCreateActiveEffect(wrapped, ...args) {
 
 async function evaInline(expression: string, actor: Actor, effect) {
   try {
+    //@ts-ignore
+    expression = expression.replaceAll("@data.", "@");
     const roll = await (new Roll(expression, actor?.getRollData())).roll();
     if (showInline) {
       roll.toMessage({speaker: ChatMessage.getSpeaker({actor}), flavor: `${effect.data.label} ${expression}`, chatMessage: true})
