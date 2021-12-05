@@ -122,7 +122,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
     if (!actor) {
       error("could not find actor for ", idData);
     }
-    const effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === origin && !data.ignore.includes(ef.uuid));
+    const effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === data.origin && !data.ignore.includes(ef.uuid));
     if (effectsToDelete?.length > 0) {
       try {
         return await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
@@ -132,7 +132,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
       };
     }
   }
-  if (globalThis.Sequencer) globalThis.Sequencer.EffectManager.endEffects({origin})
+  if (globalThis.Sequencer) globalThis.Sequencer.EffectManager.endEffects({origin: data.origin})
 }
 
 export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null) {
@@ -140,7 +140,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
   for (let tid of tokenList) {
     const token = DAEfromUuid(tid) || canvas.tokens.get(tid);
     let actor = token.actor ? token.actor : token; // assume if we did not get a token it is an actor
-    if (token) {
+    if (actor) {
       // Remove any existing effects that are not stackable or transfer from the same origin
       let actEffects = activeEffects;
       const origins = actEffects.map(aeData => aeData.origin);
@@ -205,8 +205,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           })
 
         }
-        //        setTimeout(async () => { //TODO consider revising this in 0.9
-        actor = DAEfromActorUuid(actor.uuid);
+        // actor = DAEfromActorUuid(actor.uuid);
         if (dupEffects.length > 0) {
           let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
 
@@ -236,7 +235,6 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             })
           }
         }
-        //      }, removeList.length > 0 ? 500 * removeList.length : 1);
       };
     };
   }

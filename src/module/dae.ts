@@ -111,7 +111,7 @@ export class ValidSpec {
         "data.attributes.hp.min": [0, -1],
         // This does not work look at CONFIG.Comabt.initiative.formula
         "data.attributes.init.total": [0, -1],
-        // "data.attributes.init.mod": [0, -1],
+        "data.attributes.init.bonus": [0, -1],
         "data.attributes.hd": [0, -1],
         "data.abilities.str.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.abilities.dex.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
@@ -1265,7 +1265,7 @@ export async function getMacro({ change, name }, itemData, effectData) {
  */
 export async function doEffects(item, activate, targets = undefined,
   { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false }) {
-  return applyNonTransferEffects.bind(item)(activate, targets, { whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
+  return await applyNonTransferEffects.bind(item)(activate, targets, { whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
 }
 
 // Apply non-transfer effects to targets.

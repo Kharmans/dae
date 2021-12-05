@@ -26,5 +26,8 @@
     "node-sass": "^4.14.1",
     "typescript": "^3.9.7",
     "yargs": "^15.4.1"
+  },
+  "dependencies": {
+    "gulp-cli": "^2.3.0"
   }
 }

@@ -530,10 +530,14 @@ These functions can be called from the developer console or by creating a macro 
 
 ### Initiative
 Changes to initiative are challenging due to the way it is calculated and rolled in the dnd5e system. Here is a quick guide to what you can do.
-  * `init.value` is now set before prepareDerived data is run, so it appears on the character sheet (in the "mod" field and in the total), but cannot reference dex.mod etc.
+  * `init.value` is now set before prepareDerived data is run, so it appears on the character sheet (in the "mod" field and in the total) and effects initiative rolls, but cannot reference dex.mod etc.
   * `init.bonus` is set after prepareDerivedData so will not show up on the character sheet but CAN reference fields like dex.mod
   * `init.total` can be updated and will show up on the character sheet but will NOT be included in rolls.
-  
+  So if you want to add @abilities.wis.mod to initiative AND have it show up on the character sheet, you need two changes:  
+  ```abilities.init.bonus ADD @abilities.wis.mod```
+  AND
+  ```abilities.init.total ADD @abilities.wis.mod```
+
 ## Sample Items/Macros 
   There is a compendium of items that have been setup to work with DAE. All active effects work best if both Midi-QOL and about-time/times-up are installed and active, but will still function without them.
 
