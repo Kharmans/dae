@@ -55,6 +55,14 @@
     </div>
     {{/if}}
 
+    <div class="form-group">
+      <label>{{ localize "dae.forceToHud.Name" }}</label>
+      <div class="form-fields">
+        <input type="text" name="flags.core.statusId" value="{{ effect.flags.core.statusId }}" />
+      </div>
+    </div>
+    {{ localize "dae.forceToHud.Hint" }}
+
     {{#if isItem}}
     <div class="form-group">
       <label>{{localize "dae.Stackable"}}</label>
@@ -65,7 +73,6 @@
       </div>
     </div>
     {{/if}}
-
    
   </section>
 

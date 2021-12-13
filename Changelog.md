@@ -1,6 +1,10 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+## 0.8.72
+* Added "force token display" option for effects, which if not empty will force display of the item icon on the character token when the effect is active (can be used with passive effects).
+* Updated ja.json
+
 ## 0.8.71
 * Fix for DAE.deleteActiveEffect not working.
 * Update ko.json
