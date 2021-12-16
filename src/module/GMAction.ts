@@ -186,7 +186,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           setProperty(ae.flags, "dae.transfer", false);
 
           ae.changes.map(change => {
-            if (["macro.execute", "macro.itemMacro", "roll"].includes(change.key)) {
+            if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
                 const context = { "target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };

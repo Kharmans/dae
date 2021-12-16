@@ -3,6 +3,7 @@ import { warn, error, debug, setDebugLevel, i18n, timelog, changesQueue } from "
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { patchPrepareArmorClassAttribution, updatePatches } from "./patching";
+import { macroActorUpdate } from "./daeMacros";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 let templates = {};
@@ -123,6 +124,7 @@ export class ValidSpec {
         // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "macro.actorUpdate": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.languages.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.languages.value": ["", -1],
         "data.traits.languages.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
@@ -1126,7 +1128,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
   for (let change of effectData.changes) {
     try {
-      if (!["macro.execute", "macro.itemMacro"].includes(change.key)) continue;
+      if (!["macro.execute", "macro.itemMacro", "macro.actorUpdate"].includes(change.key)) continue;
       //@ts-ignore 
       const theChange = await evalArgs({ itemData: null, effectData, context: actor.getRollData(), actor, change, doRolls: true })
       let args = [];
@@ -1160,6 +1162,8 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           //@ts-ignore
           result = macro.execute({ actor });
         }
+      } else if (theChange.key === "macro.actorUpdate") {
+        result = await macroActorUpdate(action, ...args, lastArg);
       }
     } catch (err) {
       console.warn(err);
@@ -1205,6 +1209,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     switch (change.key) {
       case "macro.itemMacro":
       case "macro.execute": // for macros we want to tokenize the arguments
+      case "macro.actorUpdate":
         break;
       case "macro.CUB":
       case "macro.ConditionalVisibility":
@@ -1258,6 +1263,8 @@ export async function getMacro({ change, name }, itemData, effectData) {
       // TODO see if this should change.
       flags: { "dnd5e.itemMacro": true }
     }, { displaySheet: false, temporary: true });
+  } else if (change.key === "actorUpdate") {
+    console.error("Should not be trying to lookup the macro for actorUpdate")
   }
 }
 /*
@@ -1281,7 +1288,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     for (let [changeIndex, change] of activeEffectData.changes.entries()) {
       //activeEffectData.changes.map(async change => {
-      let doRolls = (["macro.execute", "macro.itemMacro"].includes(change.key));
+      let doRolls = (["macro.execute", "macro.itemMacro", "macro.actorUpdate"].includes(change.key));
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       let newChange = await evalArgs({ itemData: this.data, effectData: activeEffectData, context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper })

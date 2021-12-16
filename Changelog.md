@@ -1,6 +1,21 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+## 0.8.73
+* Fix for localisation on stackable effects in non-english games.
+* Convenience active effect action added: macro.actorUpdate.
+  - There are quite a lot of cases where you want to update some value on an actor's (like temphp) and maybe undo the change when the effect expires. Normally active effects can't effectively handle things like updates to hp, temphp etc since an active effect on the field "locks it", which means you'd have to write macros for those effects. This is just a shorthand way to avoid doing a macro.
+  - macro.actorUpdate allows you to update a field on the actor and (optionally) have the update undone when the effect expires, however it does not lock the field value, rather it does an actor.update with the change. This let's you write a variety of effects without having to create macros for them.
+  Syntax:
+  macro.updateActor CUSTOM actorUuid type expression targetField undo
+    actorUuid: string, e.g. @actorUuid (the casters uuid) or @targetUuid (the target's uuid)
+    type: number, boolean, string
+    expression: a roll expression, string, or boolean e.g. "@attributes.dex.mod * 2 + 10" (**must** to be in "" marks), the expression can start with one of +-*/ and will treated as a (oldvalue + value) etc.
+    targetField: "string", e.g. data.attrbutes.hp.temp
+    optional undo: boolean true/false, default true. If true the original value will be reinstated when the effect if removed.
+  - If you're already writing macros to handle these sorts of changes there is no need to change, this feature is really just a canned update actor macro. 
+  - If you have lot's of changes then you are **much** better doing it in a macro since macro.actorUpdate creates a database transaction for each field updated.
+
 ## 0.8.72
 * Added "force token display" option for effects, which if not empty will force display of the item icon on the character token when the effect is active (can be used with passive effects).
 * Updated ja.json

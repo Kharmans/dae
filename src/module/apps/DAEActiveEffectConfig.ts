@@ -269,6 +269,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     return false;
   }
 
+  
   /** @override */
   async getData(options) {
     const data = super.getData(options);
@@ -284,8 +285,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     //@ts-ignore
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
-    const translations = game.i18n.translations
-    data.stackableOptions = game.i18n.translations["dae"].stackableOptions ?? {"none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1"};
+    const translations = geti18nTranslations();
+    data.stackableOptions = translations.stackableOptions ?? {"none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1"};
     
     if (this.object.parent) {
       //@ts-ignore documentClass
@@ -451,4 +452,11 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       await this.object.update(formData);
     }
   }
+}
+
+export function geti18nTranslations() {
+  let translations = game.i18n.translations["dae"];
+  //@ts-ignore _fallback not accessible
+  if (!translations) translations = game.i18n._fallback["dae"];
+  return translations ?? {};
 }

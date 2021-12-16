@@ -3,7 +3,7 @@ import { warn, error, debug } from "../dae";
 import { DAEfromActorUuid, DAEfromUuid } from "./dae";
 
 export let applyActive = (itemName: string, activate: boolean = true, itemType: string = "") => {
- 
+
 }
 
 export let activateItem = () => {
@@ -22,7 +22,7 @@ let tokenScene = (tokenName, sceneName) => {
     for (let scene of game.scenes) {
       //@ts-ignore
       let found = scene.tokens.getName(tokenName);
-      if (found) return {scene, found}
+      if (found) return { scene, found }
     }
   } else {
     //@ts-ignore
@@ -35,11 +35,11 @@ let tokenScene = (tokenName, sceneName) => {
       }
     }
   }
-  return {scene: null, tokenDocument: null};
+  return { scene: null, tokenDocument: null };
 }
 
 export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
-  let {scene, found} = tokenScene(targetTokenName, targetSceneName);
+  let { scene, found } = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
     warn("Dynmaiceffects | moveToken: Token not found");
     return ("Token not found")
@@ -49,13 +49,14 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
     return `Token ${targetTokenName} not found`;
   }
   socketlibSocket.executeAsGM("recreateToken",
-    { userId: game.user.id,
+    {
+      userId: game.user.id,
       startSceneId: canvas.scene.id,
       tokenUuid: token.uuid,
-       targetSceneId: scene.id, tokenData: token.data,
-       x: found.data.x + xGridOffset * canvas.scene.data.grid,
-       y: found.data.y + yGridOffset * canvas.scene.data.grid
-  });
+      targetSceneId: scene.id, tokenData: token.data,
+      x: found.data.x + xGridOffset * canvas.scene.data.grid,
+      y: found.data.y + yGridOffset * canvas.scene.data.grid
+    });
   /*
   return await requestGMAction(GMAction.actions.recreateToken,
     { userId: game.user.id,
@@ -68,13 +69,13 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
   */
 }
 
-export let renameToken = async(token: Token, newName: string) => {
+export let renameToken = async (token: Token, newName: string) => {
   // requestGMAction(GMAction.actions.renameToken, { userId: game.user.id, startSceneId: canvas.scene.id,  tokenData: token.data, newName});
-  socketlibSocket.executeAsGM("renameToken", { userId: game.user.id, startSceneId: canvas.scene.id,  tokenData: token.data, newName});
+  socketlibSocket.executeAsGM("renameToken", { userId: game.user.id, startSceneId: canvas.scene.id, tokenData: token.data, newName });
 }
 
 export let teleportToToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
-  let {scene, found}  = tokenScene(targetTokenName, targetSceneName);
+  let { scene, found } = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
     error("dae| teleportToToken: Token not found");
     return ("Token not found")
@@ -87,10 +88,10 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
   return teleport(token, scene, found.data.x + xGridOffset * canvas.scene.data.grid, found.data.y + yGridOffset * canvas.scene.data.grid)
 }
 
-export async function createToken (tokenData, x, y) {
+export async function createToken(tokenData, x, y) {
   let targetSceneId = canvas.scene.id;
   // requestGMAction(GMAction.actions.createToken, {userId: game.user.id, targetSceneId, tokenData, x, y})
-  return socketlibSocket.execuateAsGM("createToken", {userId: game.user.id, targetSceneId, tokenData, x, y})
+  return socketlibSocket.execuateAsGM("createToken", { userId: game.user.id, targetSceneId, tokenData, x, y })
 }
 
 export let teleport = async (token: Token, targetScene, xpos, ypos) => {
@@ -124,7 +125,7 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
     // await requestGMAction(GMAction.actions.createToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     // canvas.pan({ x: xpos, y: ypos });
 
-    await socketlibSocket.executeAsGM("deleteToken", { userId: game.user.id, tokenUuid: token.uuid})
+    await socketlibSocket.executeAsGM("deleteToken", { userId: game.user.id, tokenUuid: token.uuid })
     // await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, tokenUuid: token.uuid});
   })
 
@@ -145,7 +146,7 @@ export async function setTokenVisibility(tokenId: string | Token, visible: boole
 }
 
 export async function setTileVisibility(tileId: Tile | string, visible: boolean) {
-    let tileUuid: string;
+  let tileUuid: string;
   if (typeof tileId !== "string") tileUuid = tileId.uuid;
   else {
     tileUuid = `Scene.${canvas.scene.id}.Tile.${tileId}`;
@@ -177,11 +178,11 @@ export let macroReadySetup = () => {
 }
 
 export function getTokenFlag(token: Token, flagName: string) {
-    return getProperty(token, `data.flags.dae.${flagName}`);
+  return getProperty(token, `data.flags.dae.${flagName}`);
 }
 
 export async function deleteActiveEffect(actorUuid: string, origin: string, ignore: string[] = []) {
-  return socketlibSocket.executeAsGM("deleteEffects", {targets: [{actorUuid}], origin, ignore});
+  return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ actorUuid }], origin, ignore });
   // requestGMAction(GMAction.actions.deleteEffects, {targets: [{actorUuid}], origin, ignore});
 }
 
@@ -194,7 +195,7 @@ export async function setTokenFlag(token: Token | string, flagName: string, flag
 }
 
 export function getFlag(actor: Actor | Token | string, flagId: string) {
-  let theActor : Actor;
+  let theActor: Actor;
   if (!actor) return error(`dae.getFlag: actor not defined`);
   if (typeof actor === "string") { // assume tstring === tokenId
     theActor = canvas.tokens.get(actor)?.actor;
@@ -216,27 +217,87 @@ export function getFlag(actor: Actor | Token | string, flagId: string) {
 
 export async function setFlag(tactor: Actor | Token | string, flagId: string, value: any) {
   if (typeof tactor === "string") {
-    return socketlibSocket.executeAsGM("setFlag", { actorId: tactor, flagId, value});
+    return socketlibSocket.executeAsGM("setFlag", { actorId: tactor, flagId, value });
     // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
   let actor: Actor;
   if (tactor instanceof Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`);
-  return socketlibSocket.executeAsGM("setFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId, value});
+  return socketlibSocket.executeAsGM("setFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId, value });
   // return requestGMAction(GMAction.actions.setFlag, { actorId: actor.id, actorUuid: actor.uuid, flagId, value})
 }
 
 export async function unsetFlag(tactor: Actor | Token | string, flagId) {
 
   if (typeof tactor === "string") {
-    socketlibSocket.executeAsGM("unsetFlag", { actorId: tactor, flagId});
+    socketlibSocket.executeAsGM("unsetFlag", { actorId: tactor, flagId });
     // return requestGMAction(GMAction.actions.unsetFlag, { actorId: tactor, flagId})
   }
   let actor: Actor;
   if (tactor instanceof Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`)
-  return socketlibSocket.executeAsGM("unsetFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId});
+  return socketlibSocket.executeAsGM("unsetFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId });
   // return requestGMAction(GMAction.actions.unsetFlag, { actorId: actor.id, actorUuid: actor.uuid, flagId})
+}
+
+export async function macroActorUpdate(...args) {
+  let [onOff, actorUuid, type, value, targetField, undo] = args;
+
+  const lastArg =  args[args.length -1];
+  console.error("Last arg ", lastArg)
+  if (!(actorUuid && type && value && targetField)) {
+    console.warn("dae | invalid arguments passed ", ...args)
+    console.warn(`dae | macro.actorUpdate expects the following arguments:
+      actorUuid: string
+      type: "number", "boolean", "string"
+      expression: a roll expression, optionally starting with +-/*
+      targetField: "string", e.g. data.attrbutes.hp.value
+      undo: boolean (optional)
+    `);
+    return;
+  }
+
+  let tactor: any = await fromUuid(actorUuid);
+  let actor;
+  actor = tactor.actor ? tactor.actor : tactor;
+  // const fieldDef = `flags.dae.save.${targetField}`;
+  const fieldDef = `flags.dae.actorUpdate.${targetField}`;
+  if (args[0] === "on") {
+    if (!game.user.isGM) {
+      console.warn(`dae | macro.actorUpdate user ${game.user.name} is updating ${actor.name} ${targetField}`);
+    }
+    const oldValue = getProperty(actor.data, targetField);
+    switch (type) {
+      case "boolean": value = JSON.parse(value) ? true : false;
+      case "number": 
+        value=value.trim();
+        const op = value[0];
+        if (["+","-","*","/"].includes(op) )
+          value = (await new Roll(`${oldValue}${value}`, actor.getRollData()).roll()).total;
+        else
+          value = (await new Roll(value, actor.getRollData()).roll()).total; 
+        break;
+      default: // assume a string
+    }
+    const update = {};
+    update[fieldDef] = oldValue;
+    update[targetField] = value;
+    await actor.update(update);
+  } else if (args[0] === "off") {
+    if (typeof undo === "string") undo = JSON.parse(undo);
+    if (undo === undefined || undo) {
+      const restoreValue = getProperty(actor.data, fieldDef)
+      const update = {};
+      let nullField = fieldDef.split(".");
+      nullField[nullField.length - 1] = "-=" + nullField[nullField.length - 1];
+      const nulledField = nullField.join(".");
+      update[nulledField] = null;
+      update[targetField] = restoreValue;
+      await actor.update(update);
+      if (tactor.actor) { // TODO need to do something special for tokens
+      }
+    }
+  }
 }
