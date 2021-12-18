@@ -828,6 +828,7 @@ function prepareData(wrapped) {
 
 async function preparePassiveSkills() {
   const skills = this.data.data.skills;
+  if (!skills) return;
   for (let skillId of Object.keys(skills)) {
     const skill = this.data.data.skills[skillId];
     const abilityId = skill.ability;
