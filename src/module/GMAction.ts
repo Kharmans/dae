@@ -117,8 +117,8 @@ async function _applyTokenMagic(data: { tokenUuid: string, effectId: string }) {
 
 async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[] }) {
   for (let idData of data.targets) {
-    let actor = idData.tokenUuid ? DAEfromActorUuid(idData.tokenUuid) : idData.actorUuid ? DAEfromUuid(idData.actorUuid) : undefined;
-    if (actor.actor) actor = actor.actor;
+    const entity = DAEfromUuid(idData.uuid);
+    const actor = entity.actor ? entity.actor : entity;
     if (!actor) {
       error("could not find actor for ", idData);
     }

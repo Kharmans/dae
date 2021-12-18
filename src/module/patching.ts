@@ -1,9 +1,10 @@
-import { useAbilitySave, displayTraits, libWrapper } from "./dae";
+import { displayTraits, libWrapper } from "./dae";
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error, warn, } from "../dae";
 
 
+/* removed in 0.8.74
 function rollAbilitySave(abilityId, options = { event, fastForward: null, advantage: null, disadvantage: null }) {
   const label = CONFIG.DND5E.abilities[abilityId];
   const abl = this.data.data.abilities[abilityId];
@@ -46,7 +47,7 @@ function rollAbilitySave(abilityId, options = { event, fastForward: null, advant
   if (game.system.id === "sw5e") setProperty(rollData, "flags.sw5e.roll", { type: "save", abilityId });
   return d20Roll(rollData);
 }
-
+*/
 var d20Roll;
 var dice;
 
@@ -56,6 +57,7 @@ export function patchingInitSetup() {
   if (!dice) error("Dice not defined! Many things won't work")
   else d20Roll = dice?.d20Roll;
 }
+
 function _prepareArmorClassAttribution(wrapped, data) {
   const attributions = wrapped(data);
   if (!this.object.data.effects) return attributions;
@@ -109,13 +111,16 @@ export function replaceFormulaData(wrapped, formula, data, { missing, warn = fal
   return result;
 }
 export function updatePatches() {
-  patchAbilitySave();
+  // patchAbilitySave(); removed in 0.8.74
   patchSpecialTraits();
 };
 
 var abilitySavePatched = false;
 
+/*
 function patchAbilitySave() {
+  return;
+ deactivated as of 0.8.74
   if (!d20Roll)
     return;
   //@ts-ignore for dnd5e don't do any patching of ability save
@@ -133,9 +138,9 @@ function patchAbilitySave() {
     abilitySavePatched = useAbilitySave;
   }
 };
-
+*/
 export function patchingSetup() {
-  patchAbilitySave();
+  // patchAbilitySave(); removed in 0.8.74
   log("Patching Roll.replaceFormulaData");
   libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
 };

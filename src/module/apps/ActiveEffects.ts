@@ -2,8 +2,6 @@
 import { ValidSpec, cubActive, confirmDelete, aboutTimeInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
-import { filters } from "pixi.js";
-import { fixTransferEffects } from "../migration";
 
 export class ActiveEffects extends FormApplication {
   static filters = new Set().add("summary");

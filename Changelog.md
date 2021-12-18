@@ -1,6 +1,26 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+## 0.8.74 
+* Fix for dnd5e editor duplicating .custom fields on edit.
+* Fix so that advantage/disadvantage on ability checks gives +5/-5 to passive skills.
+* Move evaluation of attributes.movement.fly/etc to after prepareDerivedData so effects can reference derived fields, dex.mod etc.
+* Modification to marco.actorUpdate:
+  - fields are a space separated list of
+    actorUuid: string, e.g. @actorUuid (the casters uuid) or @targetUuid (the target's uuid)
+    type: number, boolean, string (it's important to match these to the type of the target field)
+    expression: a roll expression, string, or boolean e.g. "@attributes.dex.mod * 2 + 10" (**must** be in "" marks), the expression can start with one of +-*/ and will treated as a (actor current value + value) etc.
+    targetField: "string", e.g. data.attrbutes.hp.temp
+    optional undo action values:
+     missing/true/restore -> restore original value of target field on expriy
+     remove -> subtract the change made to the current value of the field on expiry, i.e. undo the change allowing for changes from other sources.
+     +-*/value -> add/subtract etc value to the current value of the target field
+     value -> set the target field to the value on expiry. The "value" can be a roll expression, which should be enclosed in quotes. The string "undefined" will set the target field to undefined on expriy, useful for some traits etc.
+
+* **Breaking** removed abilitysave patch/config option, which is no longer needed, and means changing abilities.str/dex/etc.save will not affect saving throw rolls - use abilities.str/dex/etc.bonuses.save instead.
+* Deprecation warnings on deprecated fiels abilities.xxx.save/.mod can no longer be disabled. The error is harmless, but meant to get your attention. A subsequent version will actually throw an error and fail on these fields. 
+
+
 ## 0.8.73
 * Fix for localisation on stackable effects in non-english games.
 * Convenience active effect action added: macro.actorUpdate.

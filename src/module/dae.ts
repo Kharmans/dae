@@ -21,7 +21,7 @@ export var itemacroActive;
 export var conditionalVisibilityActive;
 export var midiActive;
 export var debugEnabled;
-export var useAbilitySave;
+// export var useAbilitySave;
 export var activeConditions;
 export var confirmDelete;
 export var ehnanceStatusEffects;
@@ -32,7 +32,7 @@ export var noDupDamageMacro;
 export var disableEffects;
 export var daeTitleBar;
 export var libWrapper;
-export var showDeprecation = true;
+// export var showDeprecation = true;
 export var showInline = false;
 
 let debugLog = true;
@@ -164,6 +164,10 @@ export class ValidSpec {
         "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
       };
 
+      // change movement effects to be after prepareDerivedData
+      for (let key of Object.keys(CONFIG.DND5E.movementTypes)) {
+        specials[`data.attributes.movement.${key}`] = [0,-1];
+      }
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -343,12 +347,12 @@ function effectDisabled(actor, efData, itemData = null) {
 }
 
 function flagChangeKeys(actor, change) {
-  if (!showDeprecation) return false;
+  // if (!showDeprecation) return false; - removed as of 0.8.74
   const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
   // const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
   if (hasSaveBonus) {
     const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
-    const abl = saveBonus[1];
+    const abl = saveBonus[1]; 
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.save instead`)
     // change.key = `data.abilities.${abl}.bonuses.save`;
     return;
@@ -564,8 +568,10 @@ function daeCustomEffect(actor, change) {
     case "data.traits.toolProf.custom":
     case "data.traits.armorProf.custom":
     case "data.traits.weaponProf.custom":
-      value = current || "";
-      value = value.concat(value.length === 0 ? `${change.value}` : `; ${change.value}`);
+      value = (current ?? "").length > 0 ? current.trim().split(";").map(s=>s.trim()) : [];
+      const setValue = new Set(value);
+      setValue.add(change.value);
+      value = Array.from(setValue).join("; ");
       setProperty(actor.data, change.key, value)
       return true;
     case "data.traits.languages.all":
@@ -816,7 +822,51 @@ function prepareData(wrapped) {
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj, ValidSpec.baseSpecsObj, true);
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.data.items)
+  preparePassiveSkills.bind(this)()
   debug("prepare data: after passes", this.data);
+}
+
+async function preparePassiveSkills() {
+  const skills = this.data.data.skills;
+  for (let skillId of Object.keys(skills)) {
+    const skill = this.data.data.skills[skillId];
+    const abilityId = skill.ability;
+    const advdisadv = procAdvantageSkill(this, abilityId, skillId);
+    skill.passive = skill.passive + 5 * advdisadv;
+
+  }
+}
+
+function procAdvantageSkill(actor, abilityId, skillId): number {
+  const midiFlags = actor.data.flags["midi-qol"] ?? {};
+  const advantage = midiFlags.advantage ?? {};
+  const disadvantage = midiFlags.disadvantage ?? {};
+  let withAdvantage = advantage.all ?? false;
+  let withDisadvantage = disadvantage.all ?? false;
+  
+  if (advantage.ability) {
+    withAdvantage = withAdvantage || advantage.ability.all || advantage.ability.check?.all;
+  }
+  if (advantage.ability?.check) {
+    withAdvantage = withAdvantage || advantage.ability.check[abilityId];
+  }
+  if (advantage.skill) {
+    withAdvantage = withAdvantage || advantage.skill.all || advantage.skill[skillId];
+  }
+
+
+  if (disadvantage.ability) {
+    withDisadvantage = withDisadvantage || disadvantage.all || disadvantage.ability.all || disadvantage.ability.check?.all;
+  }
+  if (disadvantage.ability?.check) {
+    withDisadvantage = withDisadvantage || disadvantage.ability.check[abilityId];
+  }
+  if (disadvantage.skill) {
+    withDisadvantage = withDisadvantage || disadvantage.skill.all || disadvantage.skill[skillId];
+  }
+  if ((withAdvantage && withDisadvantage) || (!withAdvantage && !withDisadvantage)) return 0;
+  else if (withAdvantage) return 1;
+  else return -1;
 }
 
 async function addTokenMagicChange(actor, change, tokens, tokenMagic) {
@@ -1580,7 +1630,7 @@ export function daeSetupActions() {
 export function fetchParams(doUpdatePatches = true) {
   requireItemTarget = game.settings.get("dae", "requireItemTarget");
   debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
-  useAbilitySave = game.settings.get("dae", "useAbilitySave")
+  // useAbilitySave = game.settings.get("dae", "useAbilitySave") disabled as of 0.8.74
   confirmDelete = game.settings.get("dae", "confirmDelete")
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
   disableEffects = game.settings.get("dae", "disableEffects");
@@ -1597,7 +1647,7 @@ export function fetchParams(doUpdatePatches = true) {
   }
   expireRealTime = game.settings.get("dae", "expireRealTime");
   displayTraits = game.settings.get("dae", "displayTraits");
-  showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
+  // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   showInline = game.settings.get("dae", "showInline") ?? false;
   updatePatches();
 }

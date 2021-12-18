@@ -142,7 +142,6 @@ export async function setTokenVisibility(tokenId: string | Token, visible: boole
   else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
   else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
   return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
-  // return requestGMAction(GMAction.actions.setTokenVisibility, { targetSceneId: canvas.scene.id, tokenId, hidden: !visible })
 }
 
 export async function setTileVisibility(tileId: Tile | string, visible: boolean) {
@@ -152,7 +151,6 @@ export async function setTileVisibility(tileId: Tile | string, visible: boolean)
     tileUuid = `Scene.${canvas.scene.id}.Tile.${tileId}`;
   }
   return socketlibSocket.executeAsGM("setTileVisibility", { targetSceneId: canvas.scene.id, tileId, hidden: !visible });
-  // return requestGMAction(GMAction.actions.setTileVisibility, { targetSceneId: canvas.scene.id, tileId, hidden: !visible })
 }
 
 export async function blindToken(tokenId: Token | string) {
@@ -161,7 +159,6 @@ export async function blindToken(tokenId: Token | string) {
   else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
   else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
   return socketlibSocket.executeAsGM("blindToken", { tokenUuid });
-  // return requestGMAction(GMAction.actions.blindToken, { tokenId: tokenId, sceneId: canvas.scene.id })
 }
 
 export async function restoreVision(tokenId: Token | string) {
@@ -170,7 +167,6 @@ export async function restoreVision(tokenId: Token | string) {
   else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
   else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
   return socketlibSocket.executeAsGM("restoreVision", { tokenUuid });
-  // return requestGMAction(GMAction.actions.restoreVision, { tokenId: tokenId, sceneId: canvas.scene.id })
 }
 
 export let macroReadySetup = () => {
@@ -181,9 +177,8 @@ export function getTokenFlag(token: Token, flagName: string) {
   return getProperty(token, `data.flags.dae.${flagName}`);
 }
 
-export async function deleteActiveEffect(actorUuid: string, origin: string, ignore: string[] = []) {
-  return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ actorUuid }], origin, ignore });
-  // requestGMAction(GMAction.actions.deleteEffects, {targets: [{actorUuid}], origin, ignore});
+export async function deleteActiveEffect(uuid: string, origin: string, ignore: string[] = []) {
+  return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore });
 }
 
 export async function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {
@@ -191,7 +186,6 @@ export async function setTokenFlag(token: Token | string, flagName: string, flag
   if (typeof token === "string") theToken = DAEfromUuid(token);
   else theToken = token;
   return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: theToken.uuid, flagName, flagValue });
-  // return requestGMAction(GMAction.actions.setTokenFlag, { tokenId: tokenId, sceneId: canvas.scene.id, flagName, flagValue })
 }
 
 export function getFlag(actor: Actor | Token | string, flagId: string) {
@@ -254,7 +248,11 @@ export async function macroActorUpdate(...args) {
       type: "number", "boolean", "string"
       expression: a roll expression, optionally starting with +-/*
       targetField: "string", e.g. data.attrbutes.hp.value
-      undo: boolean (optional)
+      undo: 
+          blank/true/restore: set the target field back to what it was before the effect was applied
+          false: don't change the target field when removing the effect
+          remove: remove the numeric effect of the change to the target field
+          "+-*/"newValue add/subtract/multiply/divide the value of the field with the newValue
     `);
     return;
   }
@@ -264,31 +262,52 @@ export async function macroActorUpdate(...args) {
   actor = tactor.actor ? tactor.actor : tactor;
   // const fieldDef = `flags.dae.save.${targetField}`;
   const fieldDef = `flags.dae.actorUpdate.${targetField}`;
+  const actorValue = getProperty(actor.data, targetField);
+
   if (args[0] === "on") {
     if (!game.user.isGM) {
       console.warn(`dae | macro.actorUpdate user ${game.user.name} is updating ${actor.name} ${targetField}`);
     }
-    const oldValue = getProperty(actor.data, targetField);
     switch (type) {
       case "boolean": value = JSON.parse(value) ? true : false;
       case "number": 
         value=value.trim();
         const op = value[0];
         if (["+","-","*","/"].includes(op) )
-          value = (await new Roll(`${oldValue}${value}`, actor.getRollData()).roll()).total;
+          value = (await new Roll(`${actorValue}${value}`, actor.getRollData()).roll()).total;
         else
           value = (await new Roll(value, actor.getRollData()).roll()).total; 
         break;
       default: // assume a string
     }
     const update = {};
-    update[fieldDef] = oldValue;
+    update[fieldDef] = {oldValue: actorValue, updateValue: value};
     update[targetField] = value;
     await actor.update(update);
   } else if (args[0] === "off") {
-    if (typeof undo === "string") undo = JSON.parse(undo);
-    if (undo === undefined || undo) {
-      const restoreValue = getProperty(actor.data, fieldDef)
+    const {oldValue = undefined, updateValue} = getProperty(actor.data, fieldDef);
+    let restoreValue;
+    if (undo === undefined) undo = true;
+    if (typeof undo === "string") {
+      undo = undo.trim();
+    } 
+    if (typeof undo === "string" && undo === "restore") {
+      undo = true;
+    }
+    if (typeof undo === "string" && undo === "remove") {
+      restoreValue = Math.max(0, actorValue - (updateValue - oldValue))
+    } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
+        restoreValue = (await new Roll(`${actorValue}${undo}`, actor.getRollData()).roll()).total;
+    } else if (typeof undo === "string" && type === "number") {
+      restoreValue = (await new Roll(`${undo}`, actor.getRollData()).roll()).total;
+    } else if (undo === "undefined") {
+      restoreValue = undefined;
+    } else if (typeof undo === "string") {
+      restoreValue = JSON.parse(undo);
+    }
+    if (undo === true) restoreValue = oldValue;
+
+    if (undo !== false) {
       const update = {};
       let nullField = fieldDef.split(".");
       nullField[nullField.length - 1] = "-=" + nullField[nullField.length - 1];

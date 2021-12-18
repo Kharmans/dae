@@ -51,6 +51,7 @@ export const registerSettings = function () {
     hint: game.i18n.localize("dae.displayTraits.Hint"),
   });
 
+  /*
   game.settings.register("dae", "useAbilitySave", {
     name: game.i18n.localize("dae.useAbilitySave.Name"),
     hint: game.i18n.localize("dae.useAbilitySave.Hint"),
@@ -60,6 +61,7 @@ export const registerSettings = function () {
     type: Boolean,
     onChange: fetchParams
   });
+  */
 
   game.settings.register("dae", "ArmorDisabled", {
     scope: "world",
@@ -108,7 +110,7 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
-  
+  /* remove option to disable deprecation warnings
   game.settings.register("dae", "showDeprecation", {
     name: "dae.ShowDeprecation.Name",
     hint: "dae.ShowDeprecation.Hint",
@@ -118,7 +120,7 @@ export const registerSettings = function () {
     config: true,
     onChange: fetchParams
   })
-
+*/
   game.settings.register("dae", "disableEffects", {
     name: "dae.DisableEffects.Name",
     hint: "dae.DisableEffects.Hint",
