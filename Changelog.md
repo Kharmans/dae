@@ -12,10 +12,10 @@
     expression: a roll expression, string, or boolean e.g. "@attributes.dex.mod * 2 + 10" (**must** be in "" marks), the expression can start with one of +-*/ and will treated as a (actor current value + value) etc.
     targetField: "string", e.g. data.attrbutes.hp.temp
     optional undo action values:
-     missing/true/restore -> restore original value of target field on expriy
+     missing/true/restore -> restore original value of target field on expiry
      remove -> subtract the change made to the current value of the field on expiry, i.e. undo the change allowing for changes from other sources.
      +-*/value -> add/subtract etc value to the current value of the target field
-     value -> set the target field to the value on expiry. The "value" can be a roll expression, which should be enclosed in quotes. The string "undefined" will set the target field to undefined on expriy, useful for some traits etc.
+     value -> set the target field to the value on expiry. The "value" can be a roll expression, which should be enclosed in quotes. The string "undefined" will set the target field to undefined on expiry, useful for some traits etc.
 
 * **Breaking** removed abilitysave patch/config option, which is no longer needed, and means changing abilities.str/dex/etc.save will not affect saving throw rolls - use abilities.str/dex/etc.bonuses.save instead.
 * Deprecation warnings on deprecated fiels abilities.xxx.save/.mod can no longer be disabled. The error is harmless, but meant to get your attention. A subsequent version will actually throw an error and fail on these fields. 
