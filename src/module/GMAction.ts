@@ -139,6 +139,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   for (let tid of tokenList) {
     const token = DAEfromUuid(tid) || canvas.tokens.get(tid);
+    const tokenUuid = token.document ? token.document.uuid : token.uuid;
     let actor = token.actor ? token.actor : token; // assume if we did not get a token it is an actor
     if (actor) {
       // Remove any existing effects that are not stackable or transfer from the same origin
@@ -189,13 +190,13 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
-                const context = { "target": token.id, "targetUuid": token.uuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };
+                const context = { "target": token.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };
                 change.value = replaceAtFields(duplicate(change.value), context);
                 change.value = change.value.replace("##", "@");
               } else {
                 change.value = duplicate(change.value).map(f => {
                   if (f === "@itemCardId") return itemCardId;
-                  if (f === "@target") return token.uuid;
+                  if (f === "@target") return tokenUuid;
                   // if (typeof f === "string" && f.startsWith("@@")) return;
                   return f;
                 })
@@ -205,7 +206,6 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           })
 
         }
-        // actor = DAEfromActorUuid(actor.uuid);
         if (dupEffects.length > 0) {
           let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
 
@@ -228,9 +228,9 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               }
               warn("removing effect ", ae.data, " in ", duration, " seconds ")
               if (duration && aboutTimeInstalled) {
-                game.Gametime.doIn({ seconds: duration }, doRemoveEffect, token.uuid, ae.data)
+                game.Gametime.doIn({ seconds: duration }, doRemoveEffect, tokenUuid, ae.data)
               } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
-                setTimeout(doRemoveEffect, duration * 1000 || 6000, token.uuid, ae.data);
+                setTimeout(doRemoveEffect, duration * 1000 || 6000, tokenUuid, ae.data);
               }
             })
           }

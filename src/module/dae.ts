@@ -1374,7 +1374,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   //@ts-ignore
   let unOwnedTargets = targetList.filter(t => !t.isOwner).map(
     //@ts-ignore
-    t => typeof t === "string" ? t : (t.uuid === "Token.") ? t.actor.uuid : t.uuid
+    t => typeof t === "string" ? t : t.document ? t.document.uuid  : t.uuid
   );
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
   if (unOwnedTargets.length > 0)

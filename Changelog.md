@@ -1,5 +1,13 @@
-### v0.9.1
+## v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
+
+## 0.8.76
+* Turns out there are valid use cases for changing ability.str.mod etc. So will not be removed, but the warning applies that they can only be numeric values.
+* Moved initiative patching from dae -> midi-qol
+* Fix for problem when applying non-transfer effects as a non-GM to unowned tokens in v9.
+
+## 0.8.75
+* support for flags.dnd5e.initiativeAdv/flags.dnd5e.initiativeDisadv moved to midi-qol.
 
 ## 0.8.74 
 * Fix for dnd5e editor duplicating .custom fields on edit.

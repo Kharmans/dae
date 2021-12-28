@@ -7,7 +7,7 @@ import { daeReadyActions} from "./module/dae";
 import { convertDuration, setupSocket } from './module/GMAction';
 import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixDeprecatedChanges, fixDeprecatedChangesActor, fixDeprecatedChangesItem, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
-import { patchingSetup, patchingInitSetup, patchSpecialTraits, patchGetInitiativeFormula } from './module/patching';
+import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken } from './module/daeMacros';
 
@@ -115,7 +115,6 @@ Hooks.once('ready', async function () {
   }
 
   patchSpecialTraits();
-  patchGetInitiativeFormula();
 })
 /* ------------------------------------ */
 /* Setup module							*/

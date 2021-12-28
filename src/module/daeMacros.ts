@@ -139,24 +139,24 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
 export async function setTokenVisibility(tokenId: string | Token, visible: boolean) {
   let tokenUuid: string;
   if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
-  else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
+  else if (tokenId.startsWith("Scene")) tokenUuid = tokenId;
   else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
   return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
 }
 
 export async function setTileVisibility(tileId: Tile | string, visible: boolean) {
-  let tileUuid: string;
+  let tileUuid: Tile | string = tileId;
   if (typeof tileId !== "string") tileUuid = tileId.uuid;
-  else {
+  else if (!tileId.startsWith("Scene.")) {
     tileUuid = `Scene.${canvas.scene.id}.Tile.${tileId}`;
   }
-  return socketlibSocket.executeAsGM("setTileVisibility", { targetSceneId: canvas.scene.id, tileId, hidden: !visible });
+  return socketlibSocket.executeAsGM("setTileVisibility", { tileUuid, hidden: !visible });
 }
 
 export async function blindToken(tokenId: Token | string) {
   let tokenUuid: string;
   if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
-  else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
+  else if (tokenId.startsWith("Scene")) tokenUuid = tokenId;
   else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
   return socketlibSocket.executeAsGM("blindToken", { tokenUuid });
 }
@@ -164,7 +164,7 @@ export async function blindToken(tokenId: Token | string) {
 export async function restoreVision(tokenId: Token | string) {
   let tokenUuid: string;
   if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
-  else if (tokenId.startsWith("Token")) tokenUuid = tokenId;
+  else if (tokenId.startsWith("Scene")) tokenUuid = tokenId;
   else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
   return socketlibSocket.executeAsGM("restoreVision", { tokenUuid });
 }
@@ -182,30 +182,36 @@ export async function deleteActiveEffect(uuid: string, origin: string, ignore: s
 }
 
 export async function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {
-  let theToken: Token;
-  if (typeof token === "string") theToken = DAEfromUuid(token);
-  else theToken = token;
-  return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: theToken.uuid, flagName, flagValue });
+  let tokenUuid: string;
+  if (typeof token === "string") {
+    if (token.startsWith("Scene.")) tokenUuid = token;
+    else tokenUuid = canvas.scene.tokens.get(token)?.uuid;
+  } 
+  //@ts-ignore document
+  else if (token.document) tokenUuid = token.document.uuid;
+  else tokenUuid = token.uuid;
+  return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
 }
 
-export function getFlag(actor: Actor | Token | string, flagId: string) {
+export function getFlag(entity: Actor | Token | string, flagId: string) {
   let theActor: Actor;
-  if (!actor) return error(`dae.getFlag: actor not defined`);
-  if (typeof actor === "string") { // assume tstring === tokenId
-    theActor = canvas.tokens.get(actor)?.actor;
-    if (!theActor) theActor = game.actors.get(actor); // if not a token maybe an actor
+  if (!entity) return error(`dae.getFlag: actor not defined`);
+  if (typeof entity === "string") { 
+    // assume string === tokenId
+    theActor = canvas.tokens.get(entity)?.actor;
+    if (!theActor) theActor = game.actors.get(entity); // if not a token maybe an actor
     if (!theActor) {
-      const entity = DAEfromUuid(actor);
-      theActor = entity.actor ?? entity;
+      const actor = DAEfromUuid(entity);
+      theActor = actor.actor ?? actor;
     }
   } else {
-    if (actor instanceof Actor)
-      theActor = actor;
+    if (entity instanceof Actor)
+      theActor = entity;
     else
-      theActor = actor.actor;
+      theActor = entity.actor;
   }
   if (!theActor) return error(`dae.getFlag: actor not defined`)
-  warn("dae get flag ", actor, theActor, getProperty(theActor.data, `flags.dae.${flagId}`))
+  warn("dae get flag ", entity, theActor, getProperty(theActor.data, `flags.dae.${flagId}`))
   return getProperty(theActor.data, `flags.dae.${flagId}`)
 }
 

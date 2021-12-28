@@ -88,12 +88,6 @@ export function patchPrepareArmorClassAttribution() {
   }
 }
 
-export function patchGetInitiativeFormula() {
-  warn("Patching Combatant getInitiativeFormula")
-  //@ts-ignore Combatant
-  Combatant.prototype._getInitiativeFormula = getInitiativeFormula;
-}
-
 // Allow limited recursion of the formula replace function for things like
 // bonuses.heal.damage in spell formulas.
 export function replaceFormulaData(wrapped, formula, data, { missing, warn = false } = { missing: undefined, warn: false }) {
@@ -289,46 +283,3 @@ async function _updateObject(event, formData) {
   // Diff the data against any applied overrides and apply
   await actor.update(diffObject(actor.overrides || {}, updateData), { diff: false });
 }
-
-export function getInitiativeFormula() {
-  const actor = this.actor;
-  if (!actor) return "1d20";
-  const init = actor.data.data.attributes.init;
-
-  // Construct initiative formula parts
-  let nd = 1;
-  let mods = "";
-  const adv = actor.getFlag(game.system.id, "initiativeAdv");
-  const disadv = actor.getFlag(game.system.id, "initiativeDisadv");
-  if (adv && !disadv) {
-    nd = 2;
-    mods = "kh";
-  } else if (disadv && !adv) {
-    nd = 2;
-    mods = "kl";
-  }
-  if (game.system.id === "dnd5e" && actor.getFlag("dnd5e", "halflingLucky")) mods += "r1=1";
-
-  let parts;
-  if (isNewerVersion("1.5.0", game.system.data.version)) {
-    parts = [
-      `${nd}d20${mods}`,
-      init.mod,
-      (init.prof !== 0) ? init.prof : null,
-      (init.bonus !== 0) ? init.bonus : null
-    ];
-  } else {
-    parts = [
-      `${nd}d20${mods}`,
-      init.mod,
-      (init.prof.term !== "0") ? init.prof.term : null,
-      (init.bonus !== 0) ? init.bonus : null
-    ];
-  };
-
-  // Optionally apply Dexterity tiebreaker
-  const tiebreaker = game.settings.get(game.system.id, "initiativeDexTiebreaker");
-  if (tiebreaker) parts.push(actor.data.data.abilities.dex.value / 100);
-  return parts.filter(p => p !== null).join(" + ");
-};
-
