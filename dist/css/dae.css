@@ -17,7 +17,7 @@
 
 .dnd5e.sheet.item .dae-effect-list .effect .effect-name {
   cursor: pointer;
-  min-width: 220
+  min-width: 220px;
 }
 
 .dnd5e.sheet.item .dae-effect-list .effect .effect-name h4 {
@@ -62,14 +62,14 @@
   flex: 0 0 120px;
   border-left: 1px solid #c9c7b8;
   border-right: 1px solid #c9c7b8;
-  min-width: 120;
+  min-width: 120px;
 }
 .dnd5e.sheet.item .dae-effect-list .effect-value-value
 {
   flex: 0 0 240px;
   border-left: 1px solid #c9c7b8;
   border-right: 1px solid #c9c7b8;
-  min-width: 120;
+  min-width: 120px;
 }
 .dnd5e.sheet.item .dae-effect-list .effect-list {
   list-style: none;
