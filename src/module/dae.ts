@@ -178,7 +178,7 @@ export class ValidSpec {
             specials[`ATL.${label}`] = [0, -1];
           }
         } else {
-          for (let label of ["light.dim", "libht.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
+          for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
             specials[`ATL.${label}`] = [0, -1];
           }
         }
