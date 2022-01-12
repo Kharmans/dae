@@ -166,14 +166,21 @@ export class ValidSpec {
 
       // change movement effects to be after prepareDerivedData
       for (let key of Object.keys(CONFIG.DND5E.movementTypes)) {
-        specials[`data.attributes.movement.${key}`] = [0,-1];
+        specials[`data.attributes.movement.${key}`] = [0, -1];
       }
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       if (game.modules.get("ATL")?.active) {
-        for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
-          specials[`ATL.${label}`] = [0, -1];
+        // support new version of ATL
+        if (isNewerVersion("0.3.04", game.modules.get("ATL").data.version)) {
+          for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
+            specials[`ATL.${label}`] = [0, -1];
+          }
+        } else {
+          for (let label of ["light.dim", "libht.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
+            specials[`ATL.${label}`] = [0, -1];
+          }
         }
         specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       }
@@ -352,7 +359,7 @@ function flagChangeKeys(actor, change) {
   // const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
   if (hasSaveBonus) {
     const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
-    const abl = saveBonus[1]; 
+    const abl = saveBonus[1];
     console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use data.abilities.${abl}.bonuses.save instead`)
     // change.key = `data.abilities.${abl}.bonuses.save`;
     return;
@@ -568,7 +575,7 @@ function daeCustomEffect(actor, change) {
     case "data.traits.toolProf.custom":
     case "data.traits.armorProf.custom":
     case "data.traits.weaponProf.custom":
-      value = (current ?? "").length > 0 ? current.trim().split(";").map(s=>s.trim()) : [];
+      value = (current ?? "").length > 0 ? current.trim().split(";").map(s => s.trim()) : [];
       const setValue = new Set(value);
       setValue.add(change.value);
       value = Array.from(setValue).join("; ");
@@ -844,7 +851,7 @@ function procAdvantageSkill(actor, abilityId, skillId): number {
   const disadvantage = midiFlags.disadvantage ?? {};
   let withAdvantage = advantage.all ?? false;
   let withDisadvantage = disadvantage.all ?? false;
-  
+
   if (advantage.ability) {
     withAdvantage = withAdvantage || advantage.ability.all || advantage.ability.check?.all;
   }
@@ -1002,7 +1009,7 @@ async function evaInline(expression: string, actor: Actor, effect) {
     expression = expression.replaceAll("@data.", "@");
     const roll = await (new Roll(expression, actor?.getRollData())).roll();
     if (showInline) {
-      roll.toMessage({speaker: ChatMessage.getSpeaker({actor}), flavor: `${effect.data.label} ${expression}`, chatMessage: true})
+      roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effect.data.label} ${expression}`, chatMessage: true })
     }
     return `${roll.total}`;
   } catch (err) {
@@ -1255,7 +1262,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   }, context, { overwrite: false });
 
   returnChange.value = replaceAtFields(returnChange.value, contextToUse, { blankValue: 0, maxIterations: 2 }); // limit to a couple of lookups - since @token -> @token
-  returnChange.value = returnChange.value.replace("##", "@");
+  returnChange.value = returnChange.value.replaceAll("##", "@");
   if (typeof returnChange.value === "string" && !returnChange.value.includes("[[")) {
     switch (change.key) {
       case "macro.itemMacro":
@@ -1374,7 +1381,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   //@ts-ignore
   let unOwnedTargets = targetList.filter(t => !t.isOwner).map(
     //@ts-ignore
-    t => typeof t === "string" ? t : t.document ? t.document.uuid  : t.uuid
+    t => typeof t === "string" ? t : t.document ? t.document.uuid : t.uuid
   );
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
   if (unOwnedTargets.length > 0)
