@@ -331,6 +331,8 @@ These fields accept 0 off, or 1 on.
 | `StatusEffect` | CUSTOM | Applies/removes default/CE/CUB status effects/conditions. **Strongly Preferred** |
 | `macro.CE`	|    CUSTOM	| Applies/removes CE Coditions - not really a macro.	|
 | `macro.CUB`	|    CUSTOM	| Applies/removes CUB Conditions	- not really a macro. |
+| `flags.core.statusId` |   CUSTOME | Display effect icon on token hud when active |
+
 </details>
 <details><summary>Macro Fields</summary>
 <br>
