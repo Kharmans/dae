@@ -686,21 +686,20 @@ function daeCustomEffect(actor, change) {
         change.value = change.value.trim();
         if (["+", "-", "/", "*"].includes(change.value[0])) {
           op = change.value[0];
-          change.value = change.value.slice(1);
         }
       }
-      value = Number(change.value);
-      Object.keys(movement).forEach(key => {
-        if (typeof movement[key] === "number") {
-          switch (op) {
-            case "+": movement[key] += value; break;
-            case "-": movement[key] = Math.max(0, movement[key] - value); break;
-            case "/": movement[key] = Math.floor(movement[key] / value); break;
-            case "*": movement[key] *= value; break;
-            default: movement[key] = value; break;
-          }
+      for (let key of Object.keys(movement)) {
+        if (key === "units") continue;
+        let valueString = change.value;
+        if (op !== "") valueString = `${movement[key]} ${change.value}`;
+        try {
+          //@ts-ignore
+          let result = (new Roll(valueString, actor.getRollData())).evaluate({ async: false }).total
+          movement[key] = result;
+        } catch (err) {
+          console.warn(`dae | Error evaluating custom movement.all = ${valueString}`, err)
         }
-      })
+      };
       return true;
 
     //TODO review this for 1.5
@@ -936,10 +935,12 @@ function _onCreateActiveEffect(...args) {
           }
 
           if (ceActive && change.key === "macro.CE") {
-            if (game.dfreds.effectInterface) {
-              await game.dfreds.effectInterface.addEffect(change.value, parent.uuid, effect.data.origin)
+            if (isNewerVersion("2.0.0", game.modules.get("dfreds-convenient-effects")?.data.version)) {
+              //@ts-ignore
+              await game.dfreds.effectInterface?.addEffect(change.value, parent.uuid, effect.data.origin);
             } else {
-              await game.dfreds.effectHandler.addEffect({ effectName: change.value, parent, origin: effect.data.origin })
+              //@ts-ignore
+              await game.dfreds.effectInterface?.addEffect({ effectName: change.value, uuid: parent.uuid, origin: effect.data.origin });
             }
           }
           const CV = globalThis.ConditionalVisibility;
@@ -1052,15 +1053,14 @@ export function _onUpdateActiveEffect(...args) {
               await game.cub.removeCondition(change.value, [token], { warn: false });
             }
             if (ceActive && change.key === "macro.CE") {
-              if (game.dfreds.effectInterface) {
+              if (isNewerVersion("2.0.0", game.modules.get("dfreds-convenient-effects")?.data.version)) {
                 await game.dfreds.effectInterface.removeEffect(change.value, parent.uuid)
               } else {
-                await game.dfreds.effectHandler.removeEffect(change.value, parent)
+                await game.dfreds.effectInterface.removeEffect({ effectName: change.value, uuid: parent.uuid })
               }
             }
             if (CV) await removeCVChange(parent, change, [token], CV);
             if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
-
           }
         } else {
           for (let change of effect.data.changes) {
@@ -1068,14 +1068,14 @@ export function _onUpdateActiveEffect(...args) {
               await game.cub.addCondition(change.value, [token]);
             }
             if (ceActive && change.key === "macro.CE") {
-              if (game.dfreds.effectInterface) {
+              if (isNewerVersion("2.0.0", game.modules.get("dfreds-convenient-effects")?.data.version)) {
                 await game.dfreds.effectInterface.addEffect(change.value, parent.uuid, effect.data.origin)
               } else {
-                await game.dfreds.effectHandler.addEffect({ effectName: change.value, actor: parent, origin: effect.data.origin })
+                await game.dfreds.effectInterface.addEffect({effectName: change.value, uuid: parent.uuid, origin: effect.data.origin})
               }
-              if (CV) await addCVChange(parent, change, [token], CV);
-              if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
             }
+            if (CV) await addCVChange(parent, change, [token], CV);
+            if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
           }
         }
       }
@@ -1123,10 +1123,10 @@ export function _onDeleteActiveEffect(...args) {
           if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
           if (CV) await removeCVChange(actor, change, [token], CV);
           if (ceActive && change.key === "macro.CE") {
-            if (game.dfreds.effectInterface) {
+            if (isNewerVersion("2.0.0", game.modules.get("dfreds-convenient-effects")?.data.version)) {
               await game.dfreds.effectInterface.removeEffect(change.value, token.actor.uuid)
             } else {
-              await game.dfreds.effectHandler.removeEffect(change.value, token.actor)
+              await game.dfreds.effectInterface.removeEffect({effectName: change.value, uuid: token.actor.uuid})
             }
           }
           if (cubActive && change.key === "macro.CUB") {
@@ -1329,17 +1329,18 @@ export async function getMacro({ change, name }, itemData, effectData) {
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
 export async function doEffects(item, activate, targets = undefined,
-  { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false }) {
-  return await applyNonTransferEffects.bind(item)(activate, targets, { whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
+  { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, effectsToApply = [] }) {
+  return await applyNonTransferEffects.bind(item)(activate, targets, { effectsToApply, whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
 }
 
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client if the token is not owned
-export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId }) {
+export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [] }) {
   if (!targets) return;
   let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false));
+  if (effectsToApply.length > 0) appliedEffects = appliedEffects.filter(ae => effectsToApply.includes(ae.id))
   if (appliedEffects.length === 0) return;
   const rollData = this.actor.getRollData(); //TODO if not caster eval move to evalArgs call
   // appliedEffects.map(activeEffectData => {

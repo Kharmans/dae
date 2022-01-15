@@ -177,8 +177,8 @@ export function getTokenFlag(token: Token, flagName: string) {
   return getProperty(token, `data.flags.dae.${flagName}`);
 }
 
-export async function deleteActiveEffect(uuid: string, origin: string, ignore: string[] = []) {
-  return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore });
+export async function deleteActiveEffect(uuid: string, origin: string, ignore: string[] = [], deleteEffects: string[] = []) {
+  return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore, deleteEffects });
 }
 
 export async function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {

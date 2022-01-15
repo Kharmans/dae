@@ -1,6 +1,12 @@
 ## v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.79
+* Added optional effectsToApply: string[] to doEffects and applyNonTransferEffects which specifies an array of effect ids to apply to the target, those that are not in the array will not be applied. If the list is empty or omitted all effects will be applied.
+* Added optional parameter to deleteEffects: string[] to DAE.deleteEffect and _deleteEffects, which specify an array of activeEfect.ids which must match (if deleteEffects is present) for the effect to be deleted.
+* Changes to support latest version (2.0.1) of Convenient Effects.
+* Allow roll expressions for movement.all
+
 ### 0.8.78
 * Fix for typo in ATL light.bright
 

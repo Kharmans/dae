@@ -115,14 +115,15 @@ async function _applyTokenMagic(data: { tokenUuid: string, effectId: string }) {
   }
 }
 
-async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[] }) {
+async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[] }) {
   for (let idData of data.targets) {
     const entity = DAEfromUuid(idData.uuid);
     const actor = entity.actor ? entity.actor : entity;
     if (!actor) {
       error("could not find actor for ", idData);
     }
-    const effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === data.origin && !data.ignore.includes(ef.uuid));
+    let effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === data.origin && !data.ignore?.includes(ef.uuid));
+    if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete.filter(ae => data.deleteEffects.includes(ae.id))
     if (effectsToDelete?.length > 0) {
       try {
         return await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
