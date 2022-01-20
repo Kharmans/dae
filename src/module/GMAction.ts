@@ -1,6 +1,6 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, itemacroActive, tokenizer } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, itemacroActive, tokenizer, statusCounterActive } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
-import { checkLibWrapperVersion } from "./migration";
+import { checkLibWrapperVersion, removeActorEffectsArmorEffects } from "./migration";
 
 export class GMActionMessage {
   action: string;
@@ -36,7 +36,7 @@ export let setupSocket = () => {
   socketlibSocket.register("deleteUuid", _deleteUuid);
 }
 
-async function _deleteUuid(data: {uuid: string}) {
+async function _deleteUuid(data: { uuid: string }) {
   const entity = await fromUuid(data.uuid);
   if (entity && entity instanceof Item && !data.uuid.startsWith("Compendium") && !data.uuid.startsWith("Item")) { // only allow deletion of owned items
     return await entity.delete();
@@ -45,7 +45,7 @@ async function _deleteUuid(data: {uuid: string}) {
     return await entity.delete();
   }
   if (entity && entity instanceof CONFIG.ActiveEffect.documentClass) return await entity.delete();
-  
+
   return false;
 }
 
@@ -62,7 +62,7 @@ async function _setTileVisibility(data) {
 }
 
 async function _applyActiveEffects(data) {
-  return await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration, data.itemCardId)
+  return await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration, data.itemCardId, data.removeMatchLabel)
 }
 async function _recreateToken(data: { userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
   await _createToken(data);
@@ -133,65 +133,77 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
       };
     }
   }
-  if (globalThis.Sequencer) globalThis.Sequencer.EffectManager.endEffects({origin: data.origin})
+  if (globalThis.Sequencer) globalThis.Sequencer.EffectManager.endEffects({ origin: data.origin })
 }
 
-export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null) {
+export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   for (let tid of tokenList) {
-    const token = DAEfromUuid(tid) || canvas.tokens.get(tid);
-    const tokenUuid = token.document ? token.document.uuid : token.uuid;
-    let actor = token.actor ? token.actor : token; // assume if we did not get a token it is an actor
+    const tokenOrDocument = DAEfromUuid(tid) || canvas.tokens.get(tid);
+    const tokenUuid = tokenOrDocument.document ? tokenOrDocument.document.uuid : tokenOrDocument.uuid;
+    let actor = tokenOrDocument.actor ? tokenOrDocument.actor : tokenOrDocument; // assume if we did not get a token it is an actor
+    const token = tokenOrDocument.object ? tokenOrDocument.object : tokenOrDocument;
+
     if (actor) {
       // Remove any existing effects that are not stackable or transfer from the same origin
-      let actEffects = activeEffects;
-      const origins = actEffects.map(aeData => aeData.origin);
-      // find existing active effect that have same origin as one of our new effects            
       let currentStacks = 1;
-      let removeList = actor.effects.filter(ae => origins.includes(ae.data.origin) && getProperty(ae.data, "flags.dae.transfer") === false && getProperty(ae.data, "flags.dae.stackable") !== "multi");
+
+      const origins = activeEffects.map(aeData => ({ origin: aeData.origin, label: aeData.label }));
+      //const origins = actEffects.map(aeData => aeData.origin);
+
+      // find existing active effect that have same origin as one of our new effects 
+      let removeList = actor.effects.filter(ae => {
+        let notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
+        return origins.find(o => o.origin === ae.data.origin
+          && (!removeMatchLabel || (new RegExp(`^${o.label}( \\([0-9]+\\))?$`)).test(ae.data.label)))
+          && getProperty(ae.data, "flags.dae.transfer") === false
+          && notMulti;
+      });
+
       if (removeList.length > 0) {
         currentStacks = removeList.filter(ae => getProperty(ae.data, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae.data, "flags.dae.stacks") ?? 1), 1)
         removeList = removeList.map(ae => ae.data._id);
-        const result = await actor.deleteEmbeddedDocuments("ActiveEffect", removeList);
+        await actor.deleteEmbeddedDocuments("ActiveEffect", removeList);
       }
+
       if (activate) {
-        let dupEffects = duplicate(actEffects);
-        for (let ae of dupEffects) {
-          setProperty(ae, "flags.dae.token", tid);
-          if (getProperty(ae, "flags.dae.stackable") === "count") {
-            setProperty(ae, "flags.dae.stacks", currentStacks);
-            ae.label = `${ae.label} (${getProperty(ae, "flags.dae.stacks")})`;
+        let dupEffects = duplicate(activeEffects);
+        for (let aeData of dupEffects) {
+          setProperty(aeData, "flags.dae.token", tid);
+          if (getProperty(aeData, "flags.dae.stackable") === "count") {
+            setProperty(aeData, "flags.dae.stacks", currentStacks);
+            aeData.label = `${aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
           }
           // convert item duration to seconds/rounds/turns according to combat
-          if (ae.duration.seconds) {
-            ae.duration.startTime = game.time.worldTime;
-          } else if (ae.duration.rounds || ae.duration.turns) {
-            ae.duration.startRound = game.combat?.round;
-            ae.duration.startTurn = game.combat?.turn;
+          if (aeData.duration.seconds) {
+            aeData.duration.startTime = game.time.worldTime;
+          } else if (aeData.duration.rounds || aeData.duration.turns) {
+            aeData.duration.startRound = game.combat?.round;
+            aeData.duration.startTurn = game.combat?.turn;
           } else { // no specific duration on effect use spell duration
             //@ts-ignore
             const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token.id));
             const convertedDuration = convertDuration(itemDuration, inCombat);
             debug("converted duration ", convertedDuration, inCombat, itemDuration)
             if (convertedDuration.type === "seconds") {
-              ae.duration.seconds = convertedDuration.seconds;
-              ae.duration.startTime = game.time.worldTime;
+              aeData.duration.seconds = convertedDuration.seconds;
+              aeData.duration.startTime = game.time.worldTime;
             } else if (convertedDuration.type === "turns") {
-              ae.duration.rounds = convertedDuration.rounds;
-              ae.duration.turns = convertedDuration.turns;
-              ae.duration.startRound = game.combat?.round;
-              ae.duration.startTurn = game.combat?.turn;
+              aeData.duration.rounds = convertedDuration.rounds;
+              aeData.duration.turns = convertedDuration.turns;
+              aeData.duration.startRound = game.combat?.round;
+              aeData.duration.startTurn = game.combat?.turn;
             }
           }
-          warn("Apply active effects ", ae, itemCardId)
+          warn("Apply active effects ", aeData, itemCardId)
 
-          setProperty(ae.flags, "dae.transfer", false);
+          setProperty(aeData.flags, "dae.transfer", false);
 
-          ae.changes.map(change => {
+          aeData.changes.map(change => {
             if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
-                const context = { "target": token.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };
+                const context = { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };
                 change.value = replaceAtFields(duplicate(change.value), context);
                 change.value = change.value.replace("##", "@");
               } else {
@@ -205,10 +217,19 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             }
             return change;
           })
-
         }
+
         if (dupEffects.length > 0) {
           let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
+          if (globalThis.EffectCounter) {
+            for (let effectData of dupEffects) {
+              let flags = effectData.flags
+              if (flags?.dae?.stackable === "count" && flags?.dae?.stacks) {
+                const counter = globalThis.EffectCounter.findCounter(token, effectData.icon)
+                counter.setValue(flags.dae.stacks);
+              }
+            }
+          }
 
           //TODO remove this when timesup is in the wild.
           if (!timesUpInstalled) { // do the kludgey old form removal
@@ -287,8 +308,7 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
       default:
         let interval = {}
         interval[itemDuration.units] = itemDuration.value;
-        //@ts-ignore
-        const durationSeconds = window.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - game.time.worldTime;
+        const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - game.time.worldTime;
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };
         } else {

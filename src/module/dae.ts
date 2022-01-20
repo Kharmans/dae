@@ -20,6 +20,7 @@ export var furnaceActive;
 export var itemacroActive;
 export var conditionalVisibilityActive;
 export var midiActive;
+export var statusCounterActive;
 export var debugEnabled;
 // export var useAbilitySave;
 export var activeConditions;
@@ -825,6 +826,8 @@ function prepareData(wrapped) {
   debug("prepare data: before passes", this.name, this.data._source);
   this.overrides = {};
   wrapped();
+  const hasHeavy = this.items.find(i=>i.data.data.equipped && i.type === "equipment" && i.data.data.armor.type === "heavy");
+  setProperty(this.data, "flags.midi-qol.disadvantage.skill.ste", hasHeavy);
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj, ValidSpec.baseSpecsObj, true);
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.data.items)
@@ -980,6 +983,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
         updates["icon"] = statusEffect.icon;
         updates["label"] = statusEffect.label;
         changesChanged = true;
+        updates["flags.core.statusId"] = statusEffect.id;
       }
     } else if (inline) {
       const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
@@ -1329,30 +1333,27 @@ export async function getMacro({ change, name }, itemData, effectData) {
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
 export async function doEffects(item, activate, targets = undefined,
-  { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, effectsToApply = [] }) {
-  return await applyNonTransferEffects.bind(item)(activate, targets, { effectsToApply, whisper, spellLevel, damageTotal, itemCardId, critical, fumble })
+  { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, effectsToApply = [], removeMatchLabel = false }) {
+  return await applyNonTransferEffects.bind(item)(activate, targets, { effectsToApply, whisper, spellLevel, damageTotal, itemCardId, critical, fumble, removeMatchLabel })
 }
 
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client if the token is not owned
-export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [] }) {
+export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [], removeMatchLabel = false }) {
   if (!targets) return;
   let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false));
-  if (effectsToApply.length > 0) appliedEffects = appliedEffects.filter(ae => effectsToApply.includes(ae.id))
+  if (effectsToApply.length > 0) appliedEffects = appliedEffects.filter(aeData => effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = this.actor.getRollData(); //TODO if not caster eval move to evalArgs call
-  // appliedEffects.map(activeEffectData => {
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     for (let [changeIndex, change] of activeEffectData.changes.entries()) {
-      //activeEffectData.changes.map(async change => {
       let doRolls = (["macro.execute", "macro.itemMacro", "macro.actorUpdate"].includes(change.key));
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       let newChange = await evalArgs({ itemData: this.data, effectData: activeEffectData, context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper })
       activeEffectData.changes[changeIndex] = newChange;
-
     };
     activeEffectData.origin = this.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
@@ -1386,13 +1387,12 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   );
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
   if (unOwnedTargets.length > 0)
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId, removeMatchLabel })
   // requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
 
   if (ownedTargets.length > 0) {
-    const result = await applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId)
+    const result = await applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId, removeMatchLabel)
   }
-
 }
 
 function preUpdateItem(candidate, updates, options, user) {
@@ -1634,6 +1634,8 @@ export function daeSetupActions() {
   furnaceActive = game.modules.get("furnace")?.active || game.modules.get("advanced-macros")?.active;
   conditionalVisibilityActive = game.modules.get("conditional-visibility")?.active;
   midiActive = game.modules.get("midi-qol")?.active;
+  statusCounterActive = game.modules.get("statuscounter")?.active;
+
 }
 
 export function fetchParams(doUpdatePatches = true) {

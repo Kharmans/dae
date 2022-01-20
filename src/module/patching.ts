@@ -84,7 +84,6 @@ export function patchPrepareArmorClassAttribution() {
     } else if (game.system.id === "sw5e" && isNewerVersion(game.system.data.version, "1.4.0")) {
       // TODO come back and implement for sw5e when available.
     }
-
   }
 }
 
@@ -104,35 +103,12 @@ export function replaceFormulaData(wrapped, formula, data, { missing, warn = fal
   }
   return result;
 }
+
 export function updatePatches() {
   // patchAbilitySave(); removed in 0.8.74
   patchSpecialTraits();
 };
 
-var abilitySavePatched = false;
-
-/*
-function patchAbilitySave() {
-  return;
- deactivated as of 0.8.74
-  if (!d20Roll)
-    return;
-  //@ts-ignore for dnd5e don't do any patching of ability save
-  if (["dnd5e", "sw5e"].includes(game.system.id) && !isNewerVersion(game.system.data.version, "1.5.1")) {
-    log(`Patching CONFIG.Actor.documentClass.prototype.rollAbilitySave (override=${useAbilitySave})`);
-    if (!useAbilitySave) {
-      if (abilitySavePatched) {
-        libWrapper.unregister("dae", "CONFIG.Actor.documentClass.prototype.rollAbilitySave");
-      }
-    } else {
-      if (!abilitySavePatched) {
-        libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.rollAbilitySave", rollAbilitySave, "OVERRIDE");
-      }
-    }
-    abilitySavePatched = useAbilitySave;
-  }
-};
-*/
 export function patchingSetup() {
   // patchAbilitySave(); removed in 0.8.74
   log("Patching Roll.replaceFormulaData");

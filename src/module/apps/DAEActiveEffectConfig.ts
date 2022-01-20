@@ -124,16 +124,16 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
     this.statusEffectList = {};
     let efl = CONFIG.statusEffects
-    .map(se => {
-      if (se.id.startsWith("combat-utility-belt.")) return {id: se.id, label:  `${se.label} (CUB)`};
-      if (se.id.startsWith("Convenient Effect:")) return {id: se.id, label: `${se.label} (CE)`};
-      return {id: se.id, label: i18n(se.label)};
-    })
-    .sort((a,b) => a.label < b.label ? -1 : 1);
+      .map(se => {
+        if (se.id.startsWith("combat-utility-belt.")) return { id: se.id, label: `${se.label} (CUB)` };
+        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.label} (CE)` };
+        return { id: se.id, label: i18n(se.label) };
+      })
+      .sort((a, b) => a.label < b.label ? -1 : 1);
     efl.forEach(se => {
       this.statusEffectList[se.id] = se.label;
     });
-  
+
     if (ceActive) {
       this.ceEffectList = {};
       game.dfreds.effects?.all.forEach(ceEffect => {
@@ -158,7 +158,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       this.ATLPresets = {};
       game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets[preset.name] = preset.name);
     }
-    this.validFields = {"__": ""}
+    this.validFields = { "__": "" }
     this.validFields = ValidSpec.allSpecs
       .filter(e => e._fieldSpec.includes(""))
       .reduce((mods, em) => {
@@ -166,7 +166,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         return mods;
       }, this.validFields);
     for (let field of otherFields) {
-        this.validFields[field] = field;
+      this.validFields[field] = field;
     }
   }
 
@@ -269,7 +269,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     return false;
   }
 
-  
+
   /** @override */
   async getData(options) {
     const data = super.getData(options);
@@ -286,8 +286,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
     const translations = geti18nTranslations();
-    data.stackableOptions = translations.stackableOptions ?? {"none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1"};
-    
+    data.stackableOptions = translations.stackableOptions ?? { "none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1" };
+
     if (this.object.parent) {
       //@ts-ignore documentClass
       data.isItem = this.object.parent instanceof CONFIG.Item.documentClass;
@@ -313,14 +313,14 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       change.options = this.getOptionsForSpec(change.key);
       if (!change.priority) change.priority = change.mode * 10;
     });
-    if (aboutTimeInstalled && data.effect.duration?.startTime) {
-      //@ts-ignore
-      const Gametime = window.Gametime;
-      let startTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime).shortDate();
-      data.startTimeString = (startTime.date + " " + startTime.time) || "";
+
+    const Gametime = globalThis.SimpleCalendar?.api;
+    if (Gametime && data.effect.duration?.startTime) {
+      const dateTime = Gametime.formatDateTime(Gametime.timestampToDate(data.effect.duration.startTime));
+      data.startTimeString = dateTime.date + " " + dateTime.time;
       if (data.effect.duration.seconds) {
-        const endTime = Gametime.DT.createFromSeconds(data.effect.duration.startTime + data.effect.duration.seconds).shortDate();
-        data.durationString = endTime.date + " " + endTime.time;
+        const duration = Gametime.formatDateTime(Gametime.timestampToDate(data.effect.duration.startTime + data.effect.duration.seconds));
+        data.durationString = dateTime.date + " " + dateTime.time;
       }
     }
     if (!data.effect.flags.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
@@ -335,13 +335,13 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     // $(target.parentElement.parentElement.children[1]).find(".keylist").val(ValidSpec.allSpecs[target.selectedIndex].fieldSpec)
     if (target.selectedIndex === 0) return; // Account for dummy element 0
     $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(target.value)
-/*
-    if (!ValidSpec.allSpecs[selected]) { // otherfields
-      $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(selected)
-    } else {
-      $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(ValidSpec.allSpecs[target.selectedIndex-1].fieldSpec)
-    }
-    */
+    /*
+        if (!ValidSpec.allSpecs[selected]) { // otherfields
+          $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(selected)
+        } else {
+          $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(ValidSpec.allSpecs[target.selectedIndex-1].fieldSpec)
+        }
+        */
     return this.submit({ preventClose: true }).then(() => this.render());
   }
   /* ----------------------------------------- */
