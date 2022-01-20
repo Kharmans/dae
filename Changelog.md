@@ -3,8 +3,8 @@
 
 ### 0.8.80
 * Additional parameter to doEffects removeMatchLabels: boolean, only existing effects whose label matches one of the effects being applied will be removed before reapplication.
-* Automatically set stealth disadvatnage for heavy armor.
-* If status icont counters is active, stackable effects will display the stack count on the icon for the effect. For this to work the icon used in an effect can only appear once on the token.
+* Automatically set stealth disadvantage for heavy armor.
+* If status icon counters is active, stackable effects will display the stack count on the icon for the effect. For this to work the icon used in an effect can only appear once on the token.
 
 ### 0.8.79
 * Added optional effectsToApply: string[] to doEffects and applyNonTransferEffects which specifies an array of effect ids to apply to the target, those that are not in the array will not be applied. If the list is empty or omitted all effects will be applied.
