@@ -304,21 +304,17 @@ export class ValidSpec {
         const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
         m._label = `Flags ${localizedString}`;
       }
-      if (isNewerVersion(game.system.data.version, "1.4.9")) {
-        const saveBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).save/);
-        const checkBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).mod/);
-        const skillMod = m._fieldSpec.match(/data.skills.(\w\w\w).mod/);
-        const skillPassive = m._fieldSpec.match(/data.skills.(\w\w\w).passive/);
-        if (saveBonus) m._label = `${m._label} (Deprecated)`
-        else if (checkBonus) m._label = `${m._label} (Deprecated)`
-        else if (skillMod) m._label = `${m._label} (Deprecated)`
-        else if (skillPassive) m._label = `${m._label} (Deprecated)`
-        else if (m._fieldSpec === "data.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
-        else if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
-      } else {
-        if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
-      }
-      return m
+      const saveBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).save/);
+      const checkBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).mod/);
+      const skillMod = m._fieldSpec.match(/data.skills.(\w\w\w).mod/);
+      const skillPassive = m._fieldSpec.match(/data.skills.(\w\w\w).passive/);
+      if (saveBonus) m._label = `${m._label} (Deprecated)`
+      else if (checkBonus) m._label = `${m._label} (Deprecated)`
+      else if (skillMod) m._label = `${m._label} (Deprecated)`
+      else if (skillPassive) m._label = `${m._label} (Deprecated)`
+      else if (m._fieldSpec === "data.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
+      else if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
+      return m;
     });
   }
 }
@@ -328,36 +324,11 @@ function effectDisabled(actor, efData, itemData = null) {
   const ci = actor.data.data.traits?.ci?.value;
   const statusId = (efData.flags?.core?.statusId ?? "no effect").toLocaleLowerCase();
   disabled = disabled || efData.isSuppressed || (ci.length && ci.find(c => statusId.endsWith(c)));
-  // TODO need to match this up for cub/CE
-  if (isNewerVersion("1.4.3", game.system.data.version) && !isNewerVersion(game.version, "9.200")) {
-    // transfer effects depend on the item to disable/enable (if there is one)
-    if (efData.flags?.dae?.transfer || efData.transfer) {
-      if (!itemData && (efData.origin ?? "").includes("Item.")) { // itemData not passed, see if we have the item
-        let itemId = efData.origin.split("Item.")[1];
-        itemData = actor.data._source.items.find(i => i._id === itemId);
-      }
-      // Non eequip items
-      let nonEquipItems = ["feat", "spell", "class"];
-      if (game.system.id === "sw5e") {
-        nonEquipItems = ["archetype", "background", "class", "classfeature", "feat",
-          "fightingmastery", "fightingstyle", "lightsaberform", "power", "species"];
-      }
-
-      if (itemData && !nonEquipItems.includes(itemData.type)) {
-        // item is disabled if it is not equipped
-        // OR item is equipped but attunment === requires attunement
-        disabled = !itemData.data.equipped || itemData.data.attunement === CONFIG.DND5E.attunementTypes.REQUIRED;
-        efData.disabled = disabled;
-      }
-    }
-  }
   return disabled;
 }
 
 function flagChangeKeys(actor, change) {
-  // if (!showDeprecation) return false; - removed as of 0.8.74
   const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
-  // const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
   if (hasSaveBonus) {
     const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
     const abl = saveBonus[1];
@@ -413,10 +384,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, effect) => {
-    if (isNewerVersion("1.4.3", game.system.data.version) && !isNewerVersion(game.version, "9.200")) {
-      effect.data.disabled = effectDisabled(this, effect.data)
-      effect.isSuppressed = false;
-    } else effect.determineSuppression();
+    effect.determineSuppression();
     if (effectDisabled(this, effect.data) || effect.isSuppressed) return changes; //TODO check this for 0.9.2
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
@@ -425,9 +393,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       })
       .map(c => {
         c = duplicate(c);
-        if (isNewerVersion(game.system.data.version, "1.4.9")) {
-          flagChangeKeys(this, c);
-        }
+        flagChangeKeys(this, c);
 
         if (c.key === "flags.midi-qol.OverTime") c.key = `flags.midi-qol.OverTime.${randomID()}`;
         c.effect = effect;
@@ -451,13 +417,13 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
         let value = replaceAtFields(c.value, this.getRollData(), { blankValue: 0, maxIterations: 3 });
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
           //@ts-ignore - this will throw an error if there are roll expressions
-          c.value = Roll.safeEval(value)
+          c.value = `${Roll.safeEval(value)}`;
         } catch (err) { // safeEval failed try a roll
           try {
             console.warn("dae | you are using dice expressions in a numeric field this will be disabled after foundry 9.x is released")
             console.warn(`Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`)
             //@ts-ignore evaluate - TODO work out how to do this async
-            c.value = new Roll(value).evaluate({ async: false }).total;
+            c.value = `${new Roll(value).evaluate({ async: false }).total}`;
           } catch (err) {
             console.warn("change value calculation failed for", this, c);
             console.warn(err)
@@ -692,11 +658,15 @@ function daeCustomEffect(actor, change) {
       for (let key of Object.keys(movement)) {
         if (key === "units") continue;
         let valueString = change.value;
-        if (op !== "") valueString = `${movement[key]} ${change.value}`;
+        if (op !== "") {
+          //@ts-ignore isNumeric
+          if (!Number.isNumeric(movement[key])) continue;
+          valueString = `${movement[key]} ${change.value}`;
+        }
         try {
           //@ts-ignore
           let result = (new Roll(valueString, actor.getRollData())).evaluate({ async: false }).total
-          movement[key] = result;
+          movement[key] = Math.max(0, result);
         } catch (err) {
           console.warn(`dae | Error evaluating custom movement.all = ${valueString}`, err)
         }
@@ -826,7 +796,8 @@ function prepareData(wrapped) {
   debug("prepare data: before passes", this.name, this.data._source);
   this.overrides = {};
   wrapped();
-  const hasHeavy = this.items.find(i=>i.data.data.equipped && i.type === "equipment" && i.data.data.armor.type === "heavy");
+  const hasHeavy = this.items.find(i => i.data.data.equipped && i.data.data.stealth) !== undefined;
+  const disAdvSte = hasHeavy || getProperty(this.data, "flags.midi-qol.disadvantage.skill.ste")
   setProperty(this.data, "flags.midi-qol.disadvantage.skill.ste", hasHeavy);
   applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj, ValidSpec.baseSpecsObj, true);
   //TODO find another way to tdo this
@@ -1034,15 +1005,6 @@ export function _onUpdateActiveEffect(...args) {
     try {
       const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
       if (changes.disabled !== undefined) {
-        if (isNewerVersion("1.4.3", game.system.data.version) && !isNewerVersion(game.version, "9.200")) { // XXX
-          let item = DAEfromUuid(effect.data.origin);
-          if (effect.data.flags?.dae?.transfer && item.data.data.equipped !== undefined) {
-            const newEquipped = !changes.disabled;
-            if (item.data.data.equipped !== undefined && item.data.data.equipped !== newEquipped) {
-              item.update({ data: { equipped: newEquipped } });
-            }
-          }
-        }
       }
 
       // Just deal with equipped etc
@@ -1075,7 +1037,7 @@ export function _onUpdateActiveEffect(...args) {
               if (isNewerVersion("2.0.0", game.modules.get("dfreds-convenient-effects")?.data.version)) {
                 await game.dfreds.effectInterface.addEffect(change.value, parent.uuid, effect.data.origin)
               } else {
-                await game.dfreds.effectInterface.addEffect({effectName: change.value, uuid: parent.uuid, origin: effect.data.origin})
+                await game.dfreds.effectInterface.addEffect({ effectName: change.value, uuid: parent.uuid, origin: effect.data.origin })
               }
             }
             if (CV) await addCVChange(parent, change, [token], CV);
@@ -1130,7 +1092,7 @@ export function _onDeleteActiveEffect(...args) {
             if (isNewerVersion("2.0.0", game.modules.get("dfreds-convenient-effects")?.data.version)) {
               await game.dfreds.effectInterface.removeEffect(change.value, token.actor.uuid)
             } else {
-              await game.dfreds.effectInterface.removeEffect({effectName: change.value, uuid: token.actor.uuid})
+              await game.dfreds.effectInterface.removeEffect({ effectName: change.value, uuid: token.actor.uuid })
             }
           }
           if (cubActive && change.key === "macro.CUB") {
@@ -1421,9 +1383,6 @@ function updateItem(candidate, updates, options, user) {
     additions = additions.map(ef => ef.toJSON());
     additions.forEach(efData => {
       efData.origin = itemUuid;
-      if (isNewerVersion("1.4.3", game.system.data.version) && !isNewerVersion(game.version, "9.200")) {
-        efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
-      }
     });
 
     if (deletions.length > 0) {
@@ -1434,31 +1393,11 @@ function updateItem(candidate, updates, options, user) {
       candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
     }
   }
-  if (isNewerVersion("1.4.3", game.system.data.version) && !isNewerVersion(game.version, "9.200")) {
-    if (updates.data?.attunement !== undefined || updates.data?.attuned !== undefined || updates.data?.equipped !== undefined) {
-      const existingEffects = candidate.parent.effects
-        ?.filter(ef => ef.data.flags?.dae?.transfer && ef.data.origin === candidate.uuid)
-      if (existingEffects.length === 0) return true;
-      existingEffects.forEach(ef => {
-        const newDisabled = effectDisabled(candidate.parent, ef.data, candidate.data);
-        ef.isSuppressed = false;
-        ef.data.disabled = newDisabled;
-        ef.data._source.disabled = newDisabled;
-        Hooks.callAll("updateActiveEffect", ef, { disabled: newDisabled }, options, user);
-      });
-    }
-  }
   return true;
 }
 
 export function preCreateItem(candidate, data, options, user) {
   if (!candidate.isOwned) return;
-  data.effects?.forEach(efData => {
-    if (efData.transfer) {
-      if (isNewerVersion("1.4.3", game.system.data.version) && !isNewerVersion(game.version, "9.200"))
-        efData.disabled = effectDisabled(candidate.parent, efData, candidate.data);
-    }
-  })
   if (data.effects) {
     delete candidate.data.effects;
     candidate.data.update({ "effects": data.effects });

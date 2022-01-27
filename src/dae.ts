@@ -182,11 +182,6 @@ Hooks.once("ready", () => {
   if (!["dnd5e", "sw5e"].includes(game.system.id)) return;
   checkLibWrapperVersion();
   checkArmorDisabled();
-  /* removed as of 0.8.74
-  if (useAbilitySave && isNewerVersion(game.system.data.version, "1.4.9") && game.user.isGM)
-    ui.notifications.warn(`DAE | rollAbilitySave replacement is deprecated and will be removed from version ${game.system.id} 1.5.3`)
- */
-
 })
 
 export function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {

@@ -1,6 +1,13 @@
 ## v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.81
+* For movement.all operators (+-/*) will only be applied if the existing movement is non-zero.  
+  So for example movement.all CUSTOM +5 will only increase existing movement, not add 5 to those that are 0.
+* Fix for stealth disadvantage and heavy armor. DAE now respects the imposes stealth disadvantage field set in the item data, rather than looking at the armor type.
+* Fix for generally broken DAE in 9.245
+* **BREAKING** Requires DND5e v1.5.0 or later
+  
 ### 0.8.80
 * Additional parameter to doEffects removeMatchLabels: boolean, only existing effects whose label matches one of the effects being applied will be removed before reapplication.
 * Automatically set stealth disadvantage for heavy armor.

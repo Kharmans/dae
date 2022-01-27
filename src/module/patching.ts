@@ -76,13 +76,15 @@ function _prepareArmorClassAttribution(wrapped, data) {
 }
 
 export function patchPrepareArmorClassAttribution() {
-  if (game.system.id === "dnd5e" && isNewerVersion(game.system.data.version, "1.4.0")) {
+  if (game.system.id === "dnd5e") {
     if (!isNewerVersion("1.8.0", game.modules.get("lib-wrapper").data.version)) {
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['dnd5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-    } else if (game.system.id === "sw5e" && isNewerVersion(game.system.data.version, "1.4.0")) {
-      // TODO come back and implement for sw5e when available.
+    } else if (game.system.id === "sw5e") {
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['sw5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['sw5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['sw5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
     }
   }
 }
@@ -120,8 +122,7 @@ var specialTraitsPatched = false;
 // Patch for actor-flags app to display settings including active effects
 export function patchSpecialTraits() {
   //@ts-ignore
-  if ("dnd5e" === game.system.id && isNewerVersion(game.system.data.version, "1.1.0") ||
-    "sw5e" === game.system.id) {
+  if ("dnd5e" === game.system.id  || "sw5e" === game.system.id) {
     log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject (override=${displayTraits})`);
     log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags (override=${displayTraits})`);
     log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses (override=${displayTraits})`);
