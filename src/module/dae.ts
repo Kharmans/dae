@@ -1,5 +1,5 @@
 import { applyActiveEffects, socketlibSocket } from "./GMAction";
-import { warn, error, debug, setDebugLevel, i18n, timelog, changesQueue } from "../dae";
+import { warn, error, debug, setDebugLevel, i18n, timelog, changesQueue, daeSpecialDurations } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { patchPrepareArmorClassAttribution, updatePatches } from "./patching";
@@ -415,6 +415,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value)
         let value = replaceAtFields(c.value, this.getRollData(), { blankValue: 0, maxIterations: 3 });
+
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
           //@ts-ignore - this will throw an error if there are roll expressions
           c.value = `${Roll.safeEval(value)}`;
@@ -431,7 +432,13 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
         }
       }
     }
-
+    const currentValue = getProperty(this.data, c.key);
+    if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number" && typeof currentValue !== "number")  {
+      //@ts-ignore coerce the value to a number
+      const guess = Number.fromString(currentValue || "0");
+      if (!Number.isNaN(guess)) setProperty(this.data, c.key, guess);
+      else setProperty(this.data, c.key, 0);
+    }
     const result = c.effect.apply(this, c);
     if (result !== null) overrides[c.key] = result;
   }
@@ -660,15 +667,15 @@ function daeCustomEffect(actor, change) {
         let valueString = change.value;
         if (op !== "") {
           //@ts-ignore isNumeric
-          if (!Number.isNumeric(movement[key])) continue;
+          if (!movement[key]) continue;
           valueString = `${movement[key]} ${change.value}`;
         }
         try {
           //@ts-ignore
           let result = (new Roll(valueString, actor.getRollData())).evaluate({ async: false }).total
-          movement[key] = Math.max(0, result);
+          movement[key] = Math.floor(Math.max(0, result) + 0.5);
         } catch (err) {
-          console.warn(`dae | Error evaluating custom movement.all = ${valueString}`, err)
+          console.warn(`dae | Error evaluating custom movement.all = ${valueString}`, key, err)
         }
       };
       return true;
@@ -941,8 +948,25 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
 
-  let updates = {};
-  updates = { "flags.dae.transfer": this.data.transfer }
+  let updates = { "flags.dae.transfer": this.data.transfer };
+  if (this.data.flags?.dae?.durationExpression) {
+    let sourceActor = parent;
+    if (!this.data.transfer) {
+      const thing = await fromUuid(this.data.origin);
+      //@ts-ignore
+      if (thing?.actor) sourceActor = thing.actor;
+    }
+    //@ts-ignore roll(argument)
+    const theDuration = await new Roll(`${this.data.flags.dae.durationExpression}`, sourceActor.getRollData()).roll({async: true});
+    //@ts-ignore turnData.actor
+    const inCombat = game.combat?.turns.some(turnData =>  turnData.actor?.uuid === parent.uuid);
+    console.error(" some data ", this.data.origin, parent);
+
+    if (inCombat) {
+      updates["duration.rounds"] = Math.floor(theDuration.total / CONFIG.time.roundTime + 0.5);
+      updates["duration.seconds"] = null;
+    } else updates["duration.seconds"] = theDuration.total;
+  }
   let changesChanged = false;
   let newChanges = [];
   for (let change of this.data.changes) {

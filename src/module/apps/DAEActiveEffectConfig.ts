@@ -323,6 +323,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         data.durationString = dateTime.date + " " + dateTime.time;
       }
     }
+    data.effect.flags.dae.durationExpression = this.object.data.flags?.dae?.durationExpression;
     if (!data.effect.flags.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       setProperty(data.effect.flags, "dae.specialDuration", []);
     data.sourceName = this.object.sourceName;
@@ -431,7 +432,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       Object.values(formData.flags?.dae?.specialDuration).forEach(value => newSpecDur.push(value));
       formData.flags.dae.specialDuration = newSpecDur;
     } else setProperty(formData, "flags.dae.specialDuration", []);
-    //@ts-ignore
+
     //@ts-ignore isNumeric
     if (Number.isNumeric(formData.duration.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
       let startTime = parseInt(formData.duration.startTime);

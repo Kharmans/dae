@@ -84,6 +84,15 @@
         <input type="number" name="duration.seconds" value="{{ effect.duration.seconds }}" />
       </div>
     </div>
+
+    {{#if isItem}}
+    <div class="form-group">
+      <label>{{ localize "dae.DurationExpression" }}</label>
+      <div class="form-fields">
+        <input type="text" name="flags.dae.durationExpression" value="{{ effect.flags.dae.durationExpression }}" />
+      </div>
+    </div>
+    {{/if}}
     {{#if startTimeString}}
     <div>
       {{ startTimeString }}

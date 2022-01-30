@@ -1,6 +1,17 @@
 ## v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.82
+* Fix for movement.all and latest foundry, which sets empty movement to 0.
+* Fix for latest foundry (9.245) that seems to **break active effects on numeric fields which are null**, like hp.max for example.
+* Added a duration expression to active effects (passive item effects or item applied, but not hand edited effects). This can be any roll expression and the value returned by the roll expression is interpreted as seconds. If the recipient of the effect is in combat the duration will be converted to rounds.
+  - If the effect is passive (created when an item is added to the character) the source data for the effect will be the actor that received the item.
+  - If the item is applied because an item was used the source data for the expresion will be the actor that used the item.
+  - Example if a character with dex 18 adds an item with a passive effect whose duration expression is @abilities.dex.value * 6 the effect will last for 108 seconds or 18 rounds. The ## notation for deferring evaluation is **not** supported.
+  - If an actor with dex 14 applied an effect (via using an item) to the same actor the expression would evaluatte to 84 seconds or 14 rounds.
+* Removed some items from premdade items compenidum (AC calc effects) and cleaned up some icon references.
+* Updated prismatic spray (requires midi-qol).
+
 ### 0.8.81
 * For movement.all operators (+-/*) will only be applied if the existing movement is non-zero.  
   So for example movement.all CUSTOM +5 will only increase existing movement, not add 5 to those that are 0.

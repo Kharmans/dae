@@ -176,6 +176,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           }
           // convert item duration to seconds/rounds/turns according to combat
           if (aeData.duration.seconds) {
+            //@ts-ignore
             aeData.duration.startTime = game.time.worldTime;
           } else if (aeData.duration.rounds || aeData.duration.turns) {
             aeData.duration.startRound = game.combat?.round;
