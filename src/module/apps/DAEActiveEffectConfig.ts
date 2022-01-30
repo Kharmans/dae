@@ -323,7 +323,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         data.durationString = dateTime.date + " " + dateTime.time;
       }
     }
-    data.effect.flags.dae.durationExpression = this.object.data.flags?.dae?.durationExpression;
+    setProperty(data.effect, "flags.dae.durationExpression", this.object.data.flags?.dae?.durationExpression);
     if (!data.effect.flags.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       setProperty(data.effect.flags, "dae.specialDuration", []);
     data.sourceName = this.object.sourceName;

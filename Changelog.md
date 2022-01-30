@@ -1,6 +1,9 @@
 ## v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.8.83
+* Fix for durationEpxression not defined and unable to open effect editor.
+
 ### 0.8.82
 * Fix for movement.all and latest foundry, which sets empty movement to 0.
 * Fix for latest foundry (9.245) that seems to **break active effects on numeric fields which are null**, like hp.max for example.
