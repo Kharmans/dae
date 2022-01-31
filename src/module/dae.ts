@@ -906,7 +906,8 @@ function _onCreateActiveEffect(...args) {
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return true;
   const actor = parent;
-  const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
+  const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens(); 
+  const token = tokens[0];
   if (token && effect.data.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
       try {
@@ -929,7 +930,7 @@ function _onCreateActiveEffect(...args) {
 
           const tokenMagic = globalThis.TokenMagic;
           if (tokenMagic && change.key === "macro.tokenMagic")
-            await addTokenMagicChange(parent, change, [token], tokenMagic); //TODO check disabled
+            await addTokenMagicChange(parent, change, tokens, tokenMagic); //TODO check disabled
         }
       } catch (err) {
         console.warn("dae | create effect error", err);
@@ -1027,7 +1028,8 @@ export function _onUpdateActiveEffect(...args) {
 
   let changeLoop = async () => {
     try {
-      const token = parent.isToken ? parent.token.object : parent.getActiveTokens()[0];
+      const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens();
+      const token = tokens[0];
       if (changes.disabled !== undefined) {
       }
 
@@ -1050,7 +1052,7 @@ export function _onUpdateActiveEffect(...args) {
               }
             }
             if (CV) await removeCVChange(parent, change, [token], CV);
-            if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, [token], tokenMagic);
+            if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, tokens, tokenMagic);
           }
         } else {
           for (let change of effect.data.changes) {
@@ -1065,7 +1067,7 @@ export function _onUpdateActiveEffect(...args) {
               }
             }
             if (CV) await addCVChange(parent, change, [token], CV);
-            if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, [token], tokenMagic);
+            if (tokenMagic && change.key === "macro.tokenMagic") await addTokenMagicChange(parent, change, tokens, tokenMagic);
           }
         }
       }
@@ -1101,7 +1103,8 @@ export function _onDeleteActiveEffect(...args) {
   //@ts-ignore documentClass
   if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return true;
   const actor = effect.parent;
-  const token = actor.token ? actor.token : actor.getActiveTokens()[0];
+  const tokens = actor.token ? [actor.token] : actor.getActiveTokens();
+  const token = tokens[0];
   const tokenMagic = globalThis.TokenMagic;
   const CV = globalThis.ConditionalVisibility;
 
@@ -1110,7 +1113,7 @@ export function _onDeleteActiveEffect(...args) {
       let entityToDelete;
       if (token && effect.data.changes) {
         for (let change of effect.data.changes) {
-          if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, [token], tokenMagic)
+          if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens, tokenMagic)
           if (CV) await removeCVChange(actor, change, [token], CV);
           if (ceActive && change.key === "macro.CE") {
             if (isNewerVersion("2.0.0", game.modules.get("dfreds-convenient-effects")?.data.version)) {
