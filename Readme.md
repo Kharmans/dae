@@ -156,6 +156,11 @@ hp.max will be set to `31 + con.mod * paladin levels`
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. 
 
+### Other modules
+
+**Drop Effects on Items**
+This modules adds the ability to drop effects from an item to an actor or world item. My testing suggests it is compatible with DAE. Recommended.
+
 #### Supported fields
 **Pretty much @data.abilities.anything is supported.**
 
