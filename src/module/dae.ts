@@ -435,7 +435,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
     const currentValue = getProperty(this.data, c.key);
     if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number" && typeof currentValue !== "number")  {
       //@ts-ignore coerce the value to a number
-      const guess = Number.fromString ? Number.fromString(currentValue || "0") : Number(currentValue);
+      const guess = Number.fromString ? Number.fromString(currentValue || "0") : Number(currentValue) || "0";
       if (!Number.isNaN(guess)) setProperty(this.data, c.key, guess);
       else setProperty(this.data, c.key, 0);
     }

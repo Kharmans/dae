@@ -1,9 +1,10 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
-### 0.9.84
+### 0.8.84
 * Fix for macro.tokenMagic effects on linked actors with multiple tokens on the scene
 * Tested **Drop Effects on Items** and it seems to work fine with DAE. This is very useful functionality and I reccomend it if using DAE, which means I won't seek to develop this myself.
+* Fix for breakage in daeApplyEffects if foundry version is not 0.9.245
 
 ### 0.8.83
 * Fix for durationEpxression not defined and unable to open effect editor.
