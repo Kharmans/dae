@@ -67,7 +67,7 @@ If you've come here because someone said you should use the module, here's a lit
 This module modifies how active effects behave over and above what is supported in core. An active effect allows you to modify values on an actor (e.g. Strength). You can create effects directly on an actor or create them on an item and have them transfer to the actor when the item is added to the actor.
 
 DAE does add some features to core active effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.  
-1. A DAE editor button is added to the title bar for Actors and Items. Owned items allow modification of existing effects but *not* addition/deletion.
+1. Editing of owned item effects is fully supported.
 2. **Obsolete** as of DND5E 1.4.3 DND5E handles enabling/disabling effects for transfer effects and item equip/unequip.
 3. The ability to reference actor data in active effects data fields like `@abilities.str.value` where core restricts you to numbers and strings. If an active effect modifies a field that will be used in a roll like `data.bonuses.mwak.attack` (and soon to be .bonus fields - dnd1.5), a string field like `@abilities.dex.mod` will get looked up when the roll is made.
 4. The ability to update derived fields, such as `abilities.dex.mod`. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
@@ -159,7 +159,7 @@ DAE defines a game system specific set of "derived" values, which are calculated
 ### Other modules
 
 **Drop Effects on Items**
-This modules adds the ability to drop effects from an item to an actor or world item. My testing suggests it is compatible with DAE. Recommended.
+This modules adds the ability to drop effects from an item to an actor or world item. My testing suggests it is compatible with DAE. Highly recommended.
 
 #### Supported fields
 **Pretty much @data.abilities.anything is supported.**
@@ -514,6 +514,7 @@ Your custom effects can create new fields on the actor as well (DAE does this fo
 * Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
 
 ### Characters imported from dnd beyond.
+**This section is wildly out of date and very likely completely wrong**
 Before running these functions you must disable all DAE effect processing in the DAE confiuration settings.
 
 There are functions to migrate actor owned items to Dynamic-Effects-SRD (DAE SRD/Midi SRD) items. The function will look through an actor and replace items that have analogues in the Dynamic-Effects-SRD (and optionally the DND5E SRD - which will effectively refresh the items with fresh onse from the DND SRD). This is useful for characters that have been imported with vtta-beyond/ddb-beond. Or any actors whose items could do with a refresh.
@@ -554,6 +555,9 @@ Changes to initiative are challenging due to the way it is calculated and rolled
 
 ### Dependencies
 DAE **requires** libwrapper and socketlib to be istalled.
+
+### [Drop Effects on Items](https://foundryvtt.com/packages/drop-effects-on-items)
+Strongly recommended.
 
 ### [Midi-QOL](https://gitlab.com/tposney/midi-qol)
 When rolling an item (weapon, spell, feature, tool, consumable) using Midi-QOL, non-transfer active effects are applied to the targeted tokens. If the definition of the item indicates that it is self then effects are applied to self. So, a bless spell when cast will apply the active effects to the targeted tokens. 
@@ -598,10 +602,11 @@ When filing an issue **PLEASE PLEASE PLEASE** include at least the following:
 * Foundry Version
 * DAE version (latest version does not mean anything to me)
 * Other modules you are using and their version, especially things like, Midi-QOL and Better Rolls. And if you routinely use more than 10 modules, please make sure you can reproduce the problem with only a few modules loaded. The problem might be a module interaction. I don't have time to investigate the combination of a 100 modules and their interactions with DAE so it has to be narrowed down.
+* If you are using **midi-qol** please export your midi-qol settings from the misc tab and include the json file as an attachment to the bug report.
 * Try and give a more complete description than X stopped working.
 
 ### I get lots of OwnedItem is deprecated when I open a character sheet.
-This is not a problem of the character sheet, but rather of the change in item Uuids in 0.8.x.
+This is not a problem of the character sheet, but probably a change in item Uuids in 0.8.x.
 DAE/Midi-QOL store a reference to the item that created an active effect in the active effect and the created effect will have Actor.id.OwnedItem.id instead of the required Actor.id.Item.id.
 
 There is a script `DAE.cleanEffectOrigins()` which will fix up item origins which include OwnedItem on all actors and tokens in the game. It can be run multiple times either from the console or as a macro.
@@ -609,6 +614,8 @@ There is a script `DAE.cleanEffectOrigins()` which will fix up item origins whic
 Needs to be run as a GM.
 
 ### My armor class is not calculating correctly
+DAE no longer calculates AC, that is now a dnd5e function. If you have migrated recently from a version below 1.4.0 you will have to go through a migration process.
+
 If you have not updated to dnd 1.4.x do so now. The 1.4.x release stream for dnd5e takes over the AC calculation so do the update and then see if you have a problem still.
 
 DAE will run a migration script the first time that you start your world after moving to 1.4 which should remove all DAE related AC features from you actors. If you see any active effects that were generated by DAE after running the script just delete them.
@@ -625,10 +632,10 @@ After dnd5e 1.4.0 you can still use DAE to modify armor class.
 dnd5e 1.4.2 **removed** the magical bonus equipment type and so anything that had a type of magical bonus will stop working. The quickest solution is to create an active effect on the item which sets the ac.bonus to the value that used to be in the magical bonus.
 
 ### dnd5e 1.4.3
-As of dnd5e 1.4.3 toggling effects based on item equip/attuned is supported directly, so thsi functionality has been disabled in dae if you are on dnd5e 1.4.3 or above. Toggling an active effect will NOT toggle equiping the item.
+As of dnd5e 1.4.3 toggling effects based on item equip/attuned is supported directly, so this functionality has been disabled in dae if you are on dnd5e 1.4.3 or above. Toggling an active effect will NOT toggle equiping the item.
 
 ### dnd5e 1.5
 DND5e version 1.5 will have significant impact on DAE. The mechanism for applying bonuses in dnd5e for ability saves, checks and skills will be enhanced to include .bonus field on most of these modifiers. The .bonus field is evaluated when the item is rolled which means that the DAE processing to apply bonuses is no longer required, since the bonus will be looked up at the time the roll is made. After the release of dnd5e 1.5 DAE will provide an automatic mapping for some fields (details to be determined, but will include ability.mod, ability.save and skills) and a deprecation warning. At a future stage the deprecation will change to a not supported. 
 
 **DND5E 1.5 changes**
-* New fields str.bonuses.check/str.bonuses.save which are string fields supporting expressions like @abilities.dex.mod (@field lookups to be confirmed).
+* New fields str.bonuses.check/str.bonuses.save which are string fields supporting expressions like @abilities.dex.mod.

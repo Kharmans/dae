@@ -2,7 +2,7 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid} from "./module/dae";
+import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, legacyOwnedItemEdit} from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, setupSocket } from './module/GMAction';
 import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixDeprecatedChanges, fixDeprecatedChangesActor, fixDeprecatedChangesItem, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
@@ -10,6 +10,8 @@ import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken } from './module/daeMacros';
+import { EditOwnedItemEffects } from './module/editItemEffects/edit-owned-item-effects';
+import { EditOwnedItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = {"none": 0, "warn": 1, "debug": 2, "all": 3}[debugText] || 0;
@@ -50,6 +52,11 @@ Hooks.once('init', async function() {
   changesQueue = new window.Semaphore(1);
 });
 
+Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
+  if (!legacyOwnedItemEdit)
+  registerPackageDebugFlag(EditOwnedItemEffects.MODULE_NAME);
+});
+
 export let daeSpecialDurations;
 export let  daeMacroRepeats;
 Hooks.once('ready', async function () {
@@ -58,6 +65,7 @@ Hooks.once('ready', async function () {
 
   debug("ready setup actions")
   daeReadyActions();
+  if (!legacyOwnedItemEdit) EditOwnedItemEffectsItemSheet.init();
   // setupDAEMacros();
   daeSpecialDurations = {"None": ""};
   if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {

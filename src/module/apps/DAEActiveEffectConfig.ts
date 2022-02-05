@@ -1,4 +1,4 @@
-import { ValidSpec, aboutTimeInstalled, confirmDelete, midiActive, cubActive, conditionalVisibilityActive, ceActive, atlActive } from "../dae";
+import { ValidSpec, aboutTimeInstalled, confirmDelete, midiActive, cubActive, conditionalVisibilityActive, ceActive, atlActive, legacyOwnedItemEdit } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 
 export var otherFields = [];
@@ -70,20 +70,26 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         this.conditionList[`-${type}`] = `-${CONFIG.DND5E.conditionTypes[type]}`;
       });
 
-      this.toolProfList = duplicate(CONFIG.DND5E.toolProficiencies);
-      Object.keys(CONFIG.DND5E.toolProficiencies).forEach(type => {
-        this.toolProfList[`-${type}`] = `-${CONFIG.DND5E.toolProficiencies[type]}`;
-      });
+      if (DAEActiveEffectConfig.profInit) {
+        this.toolProfList = DAEActiveEffectConfig.toolProfList;
+        this.armorProfList = DAEActiveEffectConfig.armorProfList;
+        this.weaponProfList = DAEActiveEffectConfig.weaponProfList;
+      } else {
+        this.toolProfList = duplicate(CONFIG.DND5E.toolProficiencies);
+        Object.keys(CONFIG.DND5E.toolProficiencies).forEach(type => {
+          this.toolProfList[`-${type}`] = `-${CONFIG.DND5E.toolProficiencies[type]}`;
+        });
 
-      this.armorProfList = duplicate(CONFIG.DND5E.armorProficiencies);
-      Object.keys(CONFIG.DND5E.armorProficiencies).forEach(type => {
-        this.armorProfList[`-${type}`] = `-${CONFIG.DND5E.armorProficiencies[type]}`;
-      });
+        this.armorProfList = duplicate(CONFIG.DND5E.armorProficiencies);
+        Object.keys(CONFIG.DND5E.armorProficiencies).forEach(type => {
+          this.armorProfList[`-${type}`] = `-${CONFIG.DND5E.armorProficiencies[type]}`;
+        });
 
-      this.weaponProfList = duplicate(CONFIG.DND5E.weaponProficiencies);
-      Object.keys(CONFIG.DND5E.weaponProficiencies).forEach(type => {
-        this.weaponProfList[`-${type}`] = `-${CONFIG.DND5E.weaponProficiencies[type]}`;
-      });
+        this.weaponProfList = duplicate(CONFIG.DND5E.weaponProficiencies);
+        Object.keys(CONFIG.DND5E.weaponProficiencies).forEach(type => {
+          this.weaponProfList[`-${type}`] = `-${CONFIG.DND5E.weaponProficiencies[type]}`;
+        });
+      }
     } else if (game.system.id === "sw5e") {
       this.fieldsList = this.fieldsList.join(", ");
       this.traitList = duplicate(CONFIG.SW5E.damageResistanceTypes);
@@ -100,21 +106,26 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       Object.keys(CONFIG.SW5E.conditionTypes).forEach(type => {
         this.conditionList[`-${type}`] = `-${CONFIG.SW5E.conditionTypes[type]}`;
       });
+      if (DAEActiveEffectConfig.profInit) {
+        this.toolProfList = DAEActiveEffectConfig.toolProfList;
+        this.armorProfList = DAEActiveEffectConfig.armorProfList;
+        this.weaponProfList = DAEActiveEffectConfig.weaponProfList;
+      } else {
+        this.toolProfList = duplicate(CONFIG.SW5E.toolProficiencies);
+        Object.keys(CONFIG.SW5E.toolProficiencies).forEach(type => {
+          this.toolProfList[`-${type}`] = `-${CONFIG.SW5E.toolProficiencies[type]}`;
+        });
 
-      this.toolProfList = duplicate(CONFIG.SW5E.toolProficiencies);
-      Object.keys(CONFIG.SW5E.toolProficiencies).forEach(type => {
-        this.toolProfList[`-${type}`] = `-${CONFIG.SW5E.toolProficiencies[type]}`;
-      });
+        this.armorProfList = duplicate(CONFIG.SW5E.armorProficiencies);
+        Object.keys(CONFIG.SW5E.armorProficiencies).forEach(type => {
+          this.armorProfList[`-${type}`] = `-${CONFIG.SW5E.armorProficiencies[type]}`;
+        });
 
-      this.armorProfList = duplicate(CONFIG.SW5E.armorProficiencies);
-      Object.keys(CONFIG.SW5E.armorProficiencies).forEach(type => {
-        this.armorProfList[`-${type}`] = `-${CONFIG.SW5E.armorProficiencies[type]}`;
-      });
-
-      this.weaponProfList = duplicate(CONFIG.SW5E.weaponProficiencies);
-      Object.keys(CONFIG.SW5E.weaponProficiencies).forEach(type => {
-        this.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
-      });
+        this.weaponProfList = duplicate(CONFIG.SW5E.weaponProficiencies);
+        Object.keys(CONFIG.SW5E.weaponProficiencies).forEach(type => {
+          this.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
+        });
+      }
     }
     if (cubActive) {
       this.cubConditionList = {}
@@ -170,27 +181,30 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
   }
 
-
   static async setupProficiencies() {
     if (game.system.id === "dnd5e") {
-      if (DAEActiveEffectConfig.profInit) return;
-      this.profInit = true;
-      const pack = game.packs.get(CONFIG.DND5E.sourcePacks.ITEMS);
-      const profs = [
-        { type: "tool", list: DAEActiveEffectConfig.toolProfList },
-        { type: "armor", list: DAEActiveEffectConfig.armorProfList },
-        { type: "weapon", list: DAEActiveEffectConfig.weaponProfList }
-      ];
-      for (let { type, list } of profs) {
-        let choices = CONFIG.DND5E[`${type}Proficiencies`];
-        const ids = CONFIG.DND5E[`${type}Ids`];
-        if (ids !== undefined) {
-          const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
-          for (const [key, id] of Object.entries(ids)) {
-            const item = await pack.getDocument(id);
-            list[key] = item.name;
+      try {
+        const pack = game.packs.get(CONFIG.DND5E.sourcePacks.ITEMS);
+        const profs = [
+          { type: "tool", list: DAEActiveEffectConfig.toolProfList },
+          { type: "armor", list: DAEActiveEffectConfig.armorProfList },
+          { type: "weapon", list: DAEActiveEffectConfig.weaponProfList }
+        ];
+        for (let { type, list } of profs) {
+          let choices = CONFIG.DND5E[`${type}Proficiencies`];
+          const ids = CONFIG.DND5E[`${type}Ids`];
+          if (ids !== undefined) {
+            const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
+            for (const [key, id] of Object.entries(ids)) {
+              const item = await pack.getDocument(id);
+              list[key] = item.name;
+            }
           }
         }
+        this.profInit = true;
+
+      } catch (err) {
+        this.profInit = false;
       }
     }
   }
@@ -440,9 +454,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
       }
     } else if (this.object.parent.isOwned) formData.duration.startTime = null;
-    setProperty(formData, "flags.dae.transfer", formData.transfer);
+    // CHECKTHIS setProperty(formData, "flags.dae.transfer", formData.transfer);
     //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
-    if (this.object.parent.isOwned) { // we are editing an owned item
+
+    if (this.object.parent.isOwned && legacyOwnedItemEdit) { // we are editing an owned item
       let itemData = this.object.parent.data.toObject();
       itemData.effects.forEach(efData => {
         if (efData._id === this.object.id)
@@ -452,6 +467,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     } else {
       await this.object.update(formData);
     }
+    // TODO replace the whole if/else with  await this.object.update(formData);
+
+
   }
 }
 

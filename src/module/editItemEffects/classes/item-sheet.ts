@@ -1,5 +1,5 @@
-import { EditOwnedItemEffects } from '../edit-owned-item-effects';
-import { EditOwnedItemEffectsActiveEffect } from './owned-item-effect';
+import { EditOwnedItemEffects } from '../edit-owned-item-effects.js';
+import { EditOwnedItemEffectsActiveEffect } from './owned-item-effect.js';
 
 /**
  * Handles all the logic related to Item Sheet

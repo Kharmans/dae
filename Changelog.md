@@ -1,6 +1,18 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.9.01
+* Fix for longstanding bug with armor/weapon/tool proficiencies that would populate with too short a list (i.e. only the categories).
+* Changes to effects on owned items - these can now be edited just like those on world items, including adding effects to owned items.
+  - I've shamelessly stolen code from @calego (with permission) that enables full editing of owned item effects and included it in DAE. With DAE enabled you can edit effects on owned items as if there were being edited on world items. This works with both the DAE edit app or the core edit app.
+  - All kudos to @calego but all bug reports to me. There could be some so be a little bit wary.
+  - In case there are any show stopper issues, you can revert to the old DAE effect editor.behaviour by enabling legacy ownd item edit in the DAE config settings. Toggling this settings forces a reload.
+  - As a bonus feature there is now a transfer to actor button on passive effects that lets you reapply the passive effect. Useful if the passive effect was removed from the actor by mistake.
+  - I've done some testing and can confirm that the module **Drop effects on items** also from @calego works with DAE. So with that installed you can drag effects from items/actors to actors/items. So far I've only done limited testing but have not found any issues of substance. Installing this module is **higly recommended**.
+  - **Breaking** You can now edit item effects by clicking the edit button without worrying about if it is an owned item or not. Hence the item DAE button (in the title bar) is no longer required and I will be removing it in 0.9.0. **This means that you will lose the ability to have active effects on class features so migrate those effects to a non class feature before it is too late!**
+
+  Known Issues. None so far, but there are certain to be some. Please include detailed information in error reports. Feature X does not work is useless to me in trying to find out what is going on.
+
 ### 0.8.84
 * Fix for macro.tokenMagic effects on linked actors with multiple tokens on the scene
 * Tested **Drop Effects on Items** and it seems to work fine with DAE. This is very useful functionality and I reccomend it if using DAE, which means I won't seek to develop this myself.

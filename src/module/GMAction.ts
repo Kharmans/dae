@@ -156,7 +156,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         let notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
         return origins.find(o => o.origin === ae.data.origin
           && (!removeMatchLabel || (new RegExp(`^${o.label}( \\([0-9]+\\))?$`)).test(ae.data.label)))
-          && getProperty(ae.data, "flags.dae.transfer") === false
+          // CHECKTHIS && getProperty(ae.data, "flags.dae.transfer") === false
           && notMulti;
       });
 
@@ -198,7 +198,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           }
           warn("Apply active effects ", aeData, itemCardId)
 
-          setProperty(aeData.flags, "dae.transfer", false);
+          // CHECKTHIS setProperty(aeData.flags, "dae.transfer", false);
 
           aeData.changes.map(change => {
             if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {

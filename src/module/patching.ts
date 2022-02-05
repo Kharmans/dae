@@ -2,52 +2,10 @@ import { displayTraits, libWrapper } from "./dae";
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error, warn, } from "../dae";
+import { checkLibWrapperVersion } from "./migration";
 
 
-/* removed in 0.8.74
-function rollAbilitySave(abilityId, options = { event, fastForward: null, advantage: null, disadvantage: null }) {
-  const label = CONFIG.DND5E.abilities[abilityId];
-  const abl = this.data.data.abilities[abilityId];
 
-  // Construct parts
-  const parts = ["@mod"];
-  const data = this.getRollData();
-  data.mod = abl.save;
-  // Don't include proficiency bonus since it is already in abl.save.
-
-  // Include a global actor ability save bonus
-  const bonuses = getProperty(this.data.data, "bonuses.abilities") || {};
-  //@ts-ignore
-  if (bonuses.save && !Number.isNumeric(bonuses.save)) {
-    parts.push("@saveBonus");
-    //@ts-ignore
-    data.saveBonus = bonuses.save;
-  }
-
-  // Add provided extra roll parts now because they will get clobbered by mergeObject below
-  //@ts-ignore
-  if (options.parts?.length > 0) {
-    //@ts-ignore
-    parts.push(...options.parts);
-  }
-
-  // Roll and return
-  //@ts-ignore
-  const rollData = foundry.utils.mergeObject(options, {
-    parts: parts,
-    data: data,
-    title: game.i18n.format("DND5E.SavePromptTitle", { ability: label }),
-    halflingLucky: game.system.id === "dnd5e" ? this.getFlag("dnd5e", "halflingLucky") : undefined,
-    messageData: {
-      //@ts-ignore
-      speaker: options.speaker || ChatMessage.getSpeaker({ actor: this }),
-      "flags.dnd5e.roll": { type: "save", abilityId }
-    }
-  });
-  if (game.system.id === "sw5e") setProperty(rollData, "flags.sw5e.roll", { type: "save", abilityId });
-  return d20Roll(rollData);
-}
-*/
 var d20Roll;
 var dice;
 
@@ -115,7 +73,14 @@ export function patchingSetup() {
   // patchAbilitySave(); removed in 0.8.74
   log("Patching Roll.replaceFormulaData");
   libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isTemporary", isTemporary, "MIXED")
 };
+
+export function isTemporary(wrapped) {
+  //@ts-ignore
+  // CHECKTHIS if (this.parent instanceof CONFIG.Actor.documentClass && this.data.flags?.dae?.transfer) return false;
+  return wrapped();
+}
 
 var specialTraitsPatched = false;
 

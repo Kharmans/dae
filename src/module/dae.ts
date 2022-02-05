@@ -33,6 +33,8 @@ export var noDupDamageMacro;
 export var disableEffects;
 export var daeTitleBar;
 export var libWrapper;
+export var legacyOwnedItemEdit;
+
 // export var showDeprecation = true;
 export var showInline = false;
 
@@ -949,7 +951,8 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
 
-  let updates = { "flags.dae.transfer": this.data.transfer };
+  // CHECKTHIS let updates = { "flags.dae.transfer": this.data.transfer };
+  let updates = {};
   if (this.data.flags?.dae?.durationExpression) {
     let sourceActor = parent;
     if (!this.data.transfer) {
@@ -1539,8 +1542,6 @@ export function daeInitActions() {
 
 
 
-  // macros are called on active effect creationg and deletion
-  CONFIG.ActiveEffect.documentClass
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "WRAPPER");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "WRAPPER");
@@ -1550,6 +1551,7 @@ export function daeInitActions() {
 
   // Add the active effects title bar actions
   Hooks.on('renderActorSheet', initActorSheetHook);
+  // disabled since not needed with full active effect edting.
   Hooks.on('renderItemSheet', initItemSheetHook);
 
   //@ts-ignore
@@ -1611,7 +1613,8 @@ export function fetchParams(doUpdatePatches = true) {
   confirmDelete = game.settings.get("dae", "confirmDelete")
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
   disableEffects = game.settings.get("dae", "disableEffects");
-  daeTitleBar = game.settings.get("dae", "DAETitleBar")
+  daeTitleBar = game.settings.get("dae", "DAETitleBar");
+  legacyOwnedItemEdit = game.settings.get("dae", "DAELegacyEdit");
   /* TODO decide what to do about enhancing status effects or not
   ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");
   procStatusEffects(ehnanceStatusEffects);

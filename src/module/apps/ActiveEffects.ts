@@ -187,7 +187,7 @@ activateListeners(html) {
     if (this.object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     let effect = this.object.effects.get(effect_id);
-    new DAEActiveEffectConfig(effect).render(true);
+    new CONFIG.ActiveEffect.sheetClass(effect).render(true);
   })
   html.find('.effect-add').click(async ev => {
     let effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();

@@ -1,11 +1,11 @@
 import { EditOwnedItemEffectsItemSheet } from "./classes/item-sheet";
 
 export class EditOwnedItemEffects {
-  static MODULE_NAME = "edit-owned-item-effects";
+  static MODULE_NAME = "midi-qol-edit-item-wffects";
   static MODULE_TITLE = "Edit Owned Item Effects";
 
   static log(...args) {
-    if (game.modules.get('_dev-mode')?.api?.getPackageDebugValue(this.MODULE_NAME)) {
+    if (game.modules.get('_dev-mode')?.api?.getPackageDebugValue("midi-qol")) {
       console.log(this.MODULE_TITLE, '|', ...args);
     }
   }
