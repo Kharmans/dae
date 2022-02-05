@@ -9,7 +9,7 @@
   - In case there are any show stopper issues, you can revert to the old DAE effect editor.behaviour by enabling legacy ownd item edit in the DAE config settings. Toggling this settings forces a reload.
   - As a bonus feature there is now a transfer to actor button on passive effects that lets you reapply the passive effect. Useful if the passive effect was removed from the actor by mistake.
   - I've done some testing and can confirm that the module **Drop effects on items** also from @calego works with DAE. So with that installed you can drag effects from items/actors to actors/items. So far I've only done limited testing but have not found any issues of substance. Installing this module is **higly recommended**.
-  - **Breaking** You can now edit item effects by clicking the edit button without worrying about if it is an owned item or not. Hence the item DAE button (in the title bar) is no longer required and I will be removing it in 0.9.x. **This means that you will lose the ability to have active effects on class features so migrate those effects to a non class feature before it is too late!**
+  - **Breaking** You can now edit item effects by clicking the edit button without worrying about if it is an owned item or not. Hence the item DAE button (in the title bar) is no longer required and I will be removing it in 0.9.x. **This means that you will lose the ability to have active effects on class items so migrate those effects to a non class item before it is too late!**
 
   Known Issues. None so far, but there are certain to be some. Please include detailed information in error reports. Feature X does not work is useless to me in trying to find out what is going on.
 
