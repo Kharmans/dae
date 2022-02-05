@@ -1,0 +1,6 @@
+{
+  "edit-owned-item-effects": {
+    "not-reflected": "Item Effect Saved. These changes will not be reflected in the originally transferred Effect.",
+    "not-transferred": "Item Effect Saved. Setting an owned item's effect to Transfer will not automatically transfer the Effect."
+  }
+}
