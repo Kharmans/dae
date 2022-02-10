@@ -34,6 +34,17 @@ export var disableEffects;
 export var daeTitleBar;
 export var libWrapper;
 export var legacyOwnedItemEdit;
+export var allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate"];
+export var macroDestination = {
+  "macro.execute": "mixed",
+  "macro.execute.local": "local",
+  "macro.execute.GM": "GM",
+  "macro.itemMacro": "mixed",
+  "macro.itemMacro.local": "local",
+  "macro.itemMacro.GM": "GM",
+  "macro.actorUpdate": "local"
+};
+
 
 // export var showDeprecation = true;
 export var showInline = false;
@@ -103,6 +114,8 @@ export class ValidSpec {
       })
     }
 
+
+
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     if (["dnd5e", "sw5e"].includes(game.system.id)) {
@@ -126,7 +139,11 @@ export class ValidSpec {
         "data.attributes.encumbrance.max": [0, -1],
         // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "macro.execute.local": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "macro.execute.GM": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "macro.itemMacro.local": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+        "macro.itemMacro.GM": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "macro.actorUpdate": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.languages.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
         "data.traits.languages.value": ["", -1],
@@ -164,7 +181,9 @@ export class ValidSpec {
         "data.spells.pact.level": [0, -1],
         "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
         "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM]
+        "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM],
+        "data.attributes.ac.EC": [0, -1],
+        "data.attributes.ac.AR": [0, -1]
       };
 
       // change movement effects to be after prepareDerivedData
@@ -213,6 +232,8 @@ export class ValidSpec {
         }
         else baseValues[theKey] = false;
       });
+      if (game.modules.get("tidy5e-sheet").active)
+        specials["data.details.maxPreparedSpells"] = [0, -1];
 
       //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
       baseValues["data.bonuses.spell.dc"] = 0;
@@ -416,7 +437,11 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
       if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value)
-        let value = replaceAtFields(c.value, this.getRollData(), { blankValue: 0, maxIterations: 3 });
+        // let value = replaceAtFields(c.value, this.getRollData(), { blankValue: 0, maxIterations: 3 });
+        const rollData = this.getRollData();
+        rollData.stackCount = c.effect.data.flags?.dae?.stacks ?? c.effect.data.flags?.dae?.statuscounter?.counter.value ?? 1;
+        //@ts-ignore
+        let value = Roll.replaceFormulaData(c.value, rollData, { missing: 0, warn: false });
 
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
           //@ts-ignore - this will throw an error if there are roll expressions
@@ -435,7 +460,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       }
     }
     const currentValue = getProperty(this.data, c.key);
-    if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number" && typeof currentValue !== "number")  {
+    if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number" && typeof currentValue !== "number") {
       //@ts-ignore coerce the value to a number
       const guess = Number.fromString ? Number.fromString(currentValue || "0") : Number(currentValue) || "0";
       if (!Number.isNaN(guess)) setProperty(this.data, c.key, guess);
@@ -614,14 +639,12 @@ function daeCustomEffect(actor, change) {
       return true;
     case "data.bonuses.weapon.damage":
       value = attackDamageBonusEval(change.value, actor)
-      // value = replaceAtFields(value, actor.getRollData());
       if (current)
         value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       weaponAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
       return true;
     case "data.bonuses.spell.damage":
       value = attackDamageBonusEval(change.value, actor)
-      //value = replaceAtFields(value, actor.getRollData());
       if (current)
         value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
       spellAttacks.forEach(atType => actor.data.data.bonuses[atType].damage += value);
@@ -649,7 +672,7 @@ function daeCustomEffect(actor, change) {
     case "data.bonuses.power.techDC":
       // TODO: remove if fixed in core
       let result = attackDamageBonusEval(change.value, actor);
-      value = result; // replaceAtFields(result, dactor.getRollData()));
+      value = result;
       if (current)
         value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
       setProperty(actor.data, change.key, (current || "") + value);
@@ -735,7 +758,7 @@ function daeCustomEffect(actor, change) {
   }
 }
 
-export function replaceAtFields(value, context, options: { blankValue: string | number, maxIterations: number } = { blankValue: "", maxIterations: 4 }) {
+export function replaceAtFields(value, context, options: { blankValue: any | number, maxIterations: number } = { blankValue: "", maxIterations: 4 }) {
   if (typeof value !== "string") return value;
   let count = 0;
   if (!value.includes("@")) return value;
@@ -908,7 +931,7 @@ function _onCreateActiveEffect(...args) {
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return true;
   const actor = parent;
-  const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens(); 
+  const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens();
   const token = tokens[0];
   if (token && effect.data.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
@@ -950,9 +973,10 @@ async function _preCreateActiveEffect(wrapped, ...args) {
 
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
-
-  // CHECKTHIS let updates = { "flags.dae.transfer": this.data.transfer };
   let updates = {};
+  if (this.data.origin = parent.uuid)
+    updates = { "flags.dae.transfer": this.data.transfer };
+  // let updates = {};
   if (this.data.flags?.dae?.durationExpression) {
     let sourceActor = parent;
     if (!this.data.transfer) {
@@ -961,10 +985,9 @@ async function _preCreateActiveEffect(wrapped, ...args) {
       if (thing?.actor) sourceActor = thing.actor;
     }
     //@ts-ignore roll(argument)
-    const theDuration = await new Roll(`${this.data.flags.dae.durationExpression}`, sourceActor.getRollData()).roll({async: true});
+    const theDuration = await new Roll(`${this.data.flags.dae.durationExpression}`, sourceActor.getRollData()).roll({ async: true });
     //@ts-ignore turnData.actor
-    const inCombat = game.combat?.turns.some(turnData =>  turnData.actor?.uuid === parent.uuid);
-    console.error(" some data ", this.data.origin, parent);
+    const inCombat = game.combat?.turns.some(turnData => turnData.actor?.uuid === parent.uuid);
 
     if (inCombat) {
       updates["duration.rounds"] = Math.floor(theDuration.total / CONFIG.time.roundTime + 0.5);
@@ -1182,9 +1205,11 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
   for (let change of effectData.changes) {
     try {
-      if (!["macro.execute", "macro.itemMacro", "macro.actorUpdate"].includes(change.key)) continue;
+      if (!allMacroEffects.includes(change.key)) continue;
       //@ts-ignore 
-      const theChange = await evalArgs({ itemData: null, effectData, context: actor.getRollData(), actor, change, doRolls: true })
+      const context = actor.getRollData();
+      context.stackCount = effectData.flags?.dae?.stacks ?? effectData.flags?.dae?.statuscounter?.counter.value ?? 1;
+      const theChange = await evalArgs({ itemData: null, effectData, context, actor, change, doRolls: true })
       let args = [];
       if (typeof theChange.value === "string") {
         tokenizer.tokenize(theChange.value, (token) => args.push(token));
@@ -1193,7 +1218,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           return arg;
         })
       } else args = change.value;
-      if (theChange.key === "macro.execute" || theChange.key.includes("macro.itemMacro")) {
+      if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro")) {
         const macro = await getMacro({ change, name: args[0] }, null, effectData);
         if (!macro) {
           //TODO localize this
@@ -1205,7 +1230,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         }
         // insert item data
         if (furnaceActive) {
-          if (theChange.key === "macro.execute")
+          if (theChange.key.includes("macro.execute"))
             //@ts-ignore
             result = await macro.execute(action, ...args.slice(1), lastArg)
           else
@@ -1257,12 +1282,18 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     itemId: itemId
   }, context, { overwrite: false });
 
-  returnChange.value = replaceAtFields(returnChange.value, contextToUse, { blankValue: 0, maxIterations: 2 }); // limit to a couple of lookups - since @token -> @token
+  // returnChange.value = replaceAtFields(returnChange.value, contextToUse, { blankValue: 0, maxIterations: 2 }); // limit to a couple of lookups - since @token -> @token
+  //@ts-ignore replaceFormulaData
+  returnChange.value = Roll.replaceFormulaData(returnChange.value, contextToUse, { missing: 0, warn: false });
   returnChange.value = returnChange.value.replaceAll("##", "@");
   if (typeof returnChange.value === "string" && !returnChange.value.includes("[[")) {
     switch (change.key) {
       case "macro.itemMacro":
-      case "macro.execute": // for macros we want to tokenize the arguments
+      case "macro.itemMacro.local":
+      case "macro.itemMacro.GM":
+      case "macro.execute":
+      case "macro.execute.local":
+      case "macro.execute.GM":
       case "macro.actorUpdate":
         break;
       case "macro.CUB":
@@ -1283,7 +1314,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
 }
 
 export async function getMacro({ change, name }, itemData, effectData) {
-  if (change.key === "macro.execute") {
+  if (change.key.includes("macro.execute")) {
     // the first argument conatins the macro name
     return game.macros.getName(name);
   } else if (change.key.startsWith("macro.itemMacro")) {
@@ -1335,15 +1366,22 @@ export async function doEffects(item, activate, targets = undefined,
 // request is passed to a GM client if the token is not owned
 export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [], removeMatchLabel = false }) {
   if (!targets) return;
+  let macroLocation = "mixed";
   let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false));
   if (effectsToApply.length > 0) appliedEffects = appliedEffects.filter(aeData => effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = this.actor.getRollData(); //TODO if not caster eval move to evalArgs call
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     for (let [changeIndex, change] of activeEffectData.changes.entries()) {
-      let doRolls = (["macro.execute", "macro.itemMacro", "macro.actorUpdate"].includes(change.key));
+      const doRolls = allMacroEffects.includes(change.key);
+      if (doRolls) {
+        if (macroDestination[change.key] === "local" && macroLocation !== "GM") {
+          macroLocation = "local"
+        } else if (macroDestination[change.key] === "GM") macroLocation = "GM";
+      }
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
+      rollData.stackCount = activeEffectData.flags?.dae?.stacks ?? activeEffectData.flags?.dae?.statuscounter?.counter.value ?? 1;
       let newChange = await evalArgs({ itemData: this.data, effectData: activeEffectData, context: rollData, actor: this.actor, change, spellLevel, damageTotal, doRolls, critical, fumble, itemCardId, whisper })
       activeEffectData.changes[changeIndex] = newChange;
     };
@@ -1358,7 +1396,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   const stringTokens = targetList.filter(t => typeof t === "string");
   if (stringTokens.length) console.warn("String tokens in apply non transfer are ", stringTokens);
   //@ts-ignore
-  let ownedTargets = targetList.filter(t => t.isOwner).map(
+  let localTargets = targetList.filter(macroLocation === "local" || (t => t.isOwner && macroLocation === "mixed")).map(
     //@ts-ignore
     t => {
       if (typeof t === "string") return t;
@@ -1373,17 +1411,17 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
     }
   );
   //@ts-ignore
-  let unOwnedTargets = targetList.filter(t => !t.isOwner).map(
+  let gmTargets = targetList.filter((t => !t.isOwner && macroLocation === "mixed") || macroLocation === "GM").map(
     //@ts-ignore
-    t => typeof t === "string" ? t : t.document ? t.document.uuid : t.uuid
+    t => typeof t === "string" ? t : (t.document?.uuid ?? t.uuid)
   );
-  debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, ownedTargets, unOwnedTargets)
-  if (unOwnedTargets.length > 0)
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId, removeMatchLabel })
-  // requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: unOwnedTargets, itemDuration: this.data.data.duration, itemCardId })
+  debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, localTargets, gmTargets)
+  if (gmTargets.length > 0)
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, targets: gmTargets, itemDuration: this.data.data.duration, itemCardId, removeMatchLabel })
+  // requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: gmTargets, itemDuration: this.data.data.duration, itemCardId })
 
-  if (ownedTargets.length > 0) {
-    const result = await applyActiveEffects(activate, ownedTargets, appliedEffects, this.data.data.duration, itemCardId, removeMatchLabel)
+  if (localTargets.length > 0) {
+    const result = await applyActiveEffects(activate, localTargets, appliedEffects, this.data.data.duration, itemCardId, removeMatchLabel)
   }
 }
 
@@ -1406,7 +1444,7 @@ function updateItem(candidate, updates, options, user) {
     };
     // Now get all the itemm transfer effects
     let additions = candidate.effects.filter(aef => {
-      const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+      const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === true;
       return isTransfer;
     });
 

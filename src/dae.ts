@@ -10,7 +10,6 @@ import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup, patchSpecialTraits } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken } from './module/daeMacros';
-import { EditOwnedItemEffects } from './module/editItemEffects/edit-owned-item-effects';
 import { EditOwnedItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
 
 export let setDebugLevel = (debugText: string) => {
@@ -30,11 +29,11 @@ export let i18n = key => {
 };
 export let daeAlternateStatus;
 export let changesQueue;
+
 /* ------------------------------------ */
 /* Initialize module					*/
 /* ------------------------------------ */
 Hooks.once('init', async function() {
-
 	// Register custom module settings
   registerSettings();
 	debug('Init setup actions');
@@ -50,11 +49,6 @@ Hooks.once('init', async function() {
 
   //@ts-ignore Semaphore
   changesQueue = new window.Semaphore(1);
-});
-
-Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
-  if (!legacyOwnedItemEdit)
-  registerPackageDebugFlag(EditOwnedItemEffects.MODULE_NAME);
 });
 
 export let daeSpecialDurations;

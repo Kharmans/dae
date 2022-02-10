@@ -6,6 +6,10 @@ export let applyActive = (itemName: string, activate: boolean = true, itemType: 
 
 }
 
+function getTokenUuid(token: Token) {
+  //@ts-ignore
+  return token.document?.uuid ?? token.uuid;
+}
 export let activateItem = () => {
   //@ts-ignore cant do anything if there are no targets
   const speaker = ChatMessage.getSpeaker();
@@ -52,7 +56,7 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
     {
       userId: game.user.id,
       startSceneId: canvas.scene.id,
-      tokenUuid: token.uuid,
+      tokenUuid: getTokenUuid(token),
       targetSceneId: scene.id, tokenData: token.data,
       x: found.data.x + xGridOffset * canvas.scene.data.grid,
       y: found.data.y + yGridOffset * canvas.scene.data.grid
@@ -61,7 +65,7 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
   return await requestGMAction(GMAction.actions.recreateToken,
     { userId: game.user.id,
       startSceneId: canvas.scene.id,
-      tokenUuid: token.uuid,
+      tokenUuid: getTokenUuid(token),
        targetSceneId: scene.id, tokenData: token.data,
        x: found.data.x + xGridOffset * canvas.scene.data.grid,
        y: found.data.y + yGridOffset * canvas.scene.data.grid
@@ -85,7 +89,7 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
     return `Token ${targetTokenName} not found`;
   }
   //@ts-ignore target.scene.data.grid
-  return teleport(token, scene, found.data.x + xGridOffset * canvas.scene.data.grid, found.data.y + yGridOffset * canvas.scene.data.grid)
+  return await teleport(token, scene, found.data.x + xGridOffset * canvas.scene.data.grid, found.data.y + yGridOffset * canvas.scene.data.grid)
 }
 
 export async function createToken(tokenData, x, y) {
@@ -113,20 +117,21 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
     //@ts-ignore
     CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
     let sourceSceneId = canvas.scene.id;
-    socketlibSocket.executeAsGM("recreateToken", { userId: game.user.id, tokenUuid: token.uuid, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
-    //requestGMAction(GMAction.actions.recreateToken, { userId: game.user.id, tokenUuid: token.uuid, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
+    //@ts-ignore
+    await socketlibSocket.executeAsGM("recreateToken", { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data.toObject(), x: xpos, y: ypos });
+    //requestGMAction(GMAction.actions.recreateToken, { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     canvas.pan({ x: xpos, y: ypos });
     return true;
   }
   // deletes and recreates the token
   var sourceSceneId = canvas.scene.id;
   Hooks.once("canvasReady", async () => {
-    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
+    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data.toObjct(), x: xpos, y: ypos });
     // await requestGMAction(GMAction.actions.createToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     // canvas.pan({ x: xpos, y: ypos });
 
-    await socketlibSocket.executeAsGM("deleteToken", { userId: game.user.id, tokenUuid: token.uuid })
-    // await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, tokenUuid: token.uuid});
+    await socketlibSocket.executeAsGM("deleteToken", { userId: game.user.id, tokenUuid: getTokenUuid(token) })
+    // await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, tokenUuid: getTokenUuid(token)});
   })
 
   // Need to stop animation since we are going to delete the token and if that happens before the animation completes we get an error
@@ -189,7 +194,7 @@ export async function setTokenFlag(token: Token | string, flagName: string, flag
   } 
   //@ts-ignore document
   else if (token.document) tokenUuid = token.document.uuid;
-  else tokenUuid = token.uuid;
+  else tokenUuid = getTokenUuid(token);
   return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
 }
 
@@ -246,7 +251,6 @@ export async function macroActorUpdate(...args) {
   let [onOff, actorUuid, type, value, targetField, undo] = args;
 
   const lastArg =  args[args.length -1];
-  console.error("Last arg ", lastArg)
   if (!(actorUuid && type && value && targetField)) {
     console.warn("dae | invalid arguments passed ", ...args)
     console.warn(`dae | macro.actorUpdate expects the following arguments:
@@ -269,7 +273,8 @@ export async function macroActorUpdate(...args) {
   // const fieldDef = `flags.dae.save.${targetField}`;
   const fieldDef = `flags.dae.actorUpdate.${targetField}`;
   const actorValue = getProperty(actor.data, targetField);
-
+  const rollContext = actor.getRollData();
+  rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? lastArg.efData.flags?.dae?.statuscounter?.counter.value ?? 1;
   if (args[0] === "on") {
     if (!game.user.isGM) {
       console.warn(`dae | macro.actorUpdate user ${game.user.name} is updating ${actor.name} ${targetField}`);
@@ -280,9 +285,9 @@ export async function macroActorUpdate(...args) {
         value=value.trim();
         const op = value[0];
         if (["+","-","*","/"].includes(op) )
-          value = (await new Roll(`${actorValue}${value}`, actor.getRollData()).roll()).total;
+          value = (await new Roll(`${actorValue}${value}`, rollContext).roll()).total;
         else
-          value = (await new Roll(value, actor.getRollData()).roll()).total; 
+          value = (await new Roll(value, rollContext).roll()).total; 
         break;
       default: // assume a string
     }
@@ -303,9 +308,9 @@ export async function macroActorUpdate(...args) {
     if (typeof undo === "string" && undo === "remove") {
       restoreValue = Math.max(0, actorValue - (updateValue - oldValue))
     } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
-        restoreValue = (await new Roll(`${actorValue}${undo}`, actor.getRollData()).roll()).total;
+      restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
     } else if (typeof undo === "string" && type === "number") {
-      restoreValue = (await new Roll(`${undo}`, actor.getRollData()).roll()).total;
+      restoreValue = (await new Roll(`${undo}`, rollContext).roll()).total;
     } else if (undo === "undefined") {
       restoreValue = undefined;
     } else if (typeof undo === "string") {

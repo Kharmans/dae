@@ -150,6 +150,12 @@ DAE allows you to use expressions as well as fixed values. So for example you co
 `data.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10`  
 hp.max will be set to `31 + con.mod * paladin levels`  
 
+**Roll once expressions**
+```
+  data.attributes.ac.value UPGRADE [[1d20+@abilities.dex.mod+5]]
+```
+When the effect is applied to the actor the expression inside `[[]]` will be evaluated as a roll and the resulting value will replace the change value, all the normal substituions will be appliied (and the @ and ## fields are supported).
+
 **Number** fields are fully evaluated during the applyEffects pass.   
 **String** fields are not evaluated at all. So setting `data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `data.bonuses.mwak` is a string field.
 * Recognizing what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
@@ -372,8 +378,9 @@ Furnace is now deprecated, the module Advanced Macros is a direct replacement an
 
 ```js
 macro.execute "macro_name" args
+macro.ItemMacro args
 ```
-This will call the macro "macro_name" with `args[0] = "on"` and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with `args[0] = "off"` when the active effect is deleted from the target actor.  
+This will call the macro "macro_name" (or the ItemMacro for the item with the effect) with `args[0] = "on"` and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with `args[0] = "off"` when the active effect is deleted from the target actor.  
 
 In addition to the standard `@values` the following are supported (only as macro arguments):
 
@@ -422,6 +429,26 @@ If you are using `macro.itemMacro` please make sure you disable the Item Macro c
 * "override default macro execution"  IF this is enabled the hotbar hooks will directly call the item macro and won't work as expected for DAE/Midi-QOL.
 
 The setting is per player so each player needs to change the setting to disabled.  
+
+**macro.actorUpdate args**
+There are quite a lot of cases where you want to update some value on an actor's (like temphp) and maybe undo the change when the effect expires. Normally active effects can't effectively handle things like updates to hp, temphp etc since an active effect on the field "locks it", which means you'd have to write macros for those effects to do an actor.update(). This is just a shorthand way to avoid writing a macro.
+  
+macro.actorUpdate allows you to update a field on the actor and (optionally) have the update undone when the effect expires, however it does not lock the field value, rather it does an actor.update with the change. This let's you write a variety of effects without having to create macros for them.
+  Syntax:
+  ```
+  macro.updateActor CUSTOM actorUuid type expression targetField undo
+  ```
+
+* **actorUuid**: string, e.g. @actorUuid (the casters uuid) or @targetUuid (the target's uuid)
+* **type**: number, boolean, string (it's important to match these to the type of the target field)
+* **expression**: a roll expression, string, or boolean e.g. "@attributes.dex.mod * 2 + 10" (**must** be in "" marks), the expression can start with one of +-*/ and will treated as a (actor current value + value) etc.
+* **targetField**: "string", e.g. data.attrbutes.hp.temp
+*optional undo action** values:
+  - missing/true/restore -> restore original value of target field on expiry
+  - remove -> subtract the change made to the current value of the field on expiry, i.e. undo the change allowing for changes from other sources.
+  - **+-*/value** add/subtract etc value to the current value of the target field
+  - **value** set the target field to the value on expiry. 
+  - The "value" can be a roll expression, which should be enclosed in quotes. The string "undefined" will set the target field to undefined on expiry, useful for some traits etc.
 
 **macro.tokenMagic "filterName"**  
 Will apply the specified Token Magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.

@@ -1,4 +1,4 @@
-import { EditOwnedItemEffects } from '../edit-owned-item-effects.js'
+import { debug } from '../../../dae.js';
 
 /**
  * Handles all the logic related to the Active Effect itself
@@ -9,12 +9,12 @@ import { EditOwnedItemEffects } from '../edit-owned-item-effects.js'
  */
 export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.documentClass {
   constructor(effect, owner) {
-    EditOwnedItemEffects.log('Attempting instanciation of Owned Item Effect', effect);
+    debug('Attempting instanciation of Owned Item Effect', effect);
 
     // manually set the parent
     super(effect, { parent: owner });
 
-    EditOwnedItemEffects.log('Instanciated Owned Item Effect', this);
+    debug('Instanciated Owned Item Effect', this);
   }
 
   /**
@@ -23,7 +23,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
   async create(context) {
     const dataToCreate = this.toJSON();
 
-    EditOwnedItemEffects.log('Attempting create on Owned Item Effect', context, dataToCreate);
+    debug('Attempting create on Owned Item Effect', context, dataToCreate);
 
     try {
       await this._preCreate(dataToCreate, context, game.userId);
@@ -31,9 +31,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
       console.error(error);
     }
 
-    EditOwnedItemEffects.log('Updating Parent', {
-      effect: dataToCreate,
-    });
+    debug('Updating Parent', {effect: dataToCreate});
 
     this.parent.update({
       effects: [dataToCreate]
@@ -50,7 +48,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
    * Fake delete this effect by instead updating the parent embedded Item document's array of effects.
    */
   async delete(context) {
-    EditOwnedItemEffects.log('Attempting delete on Owned Item Effect', context);
+    debug('Attempting delete on Owned Item Effect', context);
 
     try {
       await this._preDelete(context, game.user);
@@ -62,7 +60,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
 
     const newParentEffects = this.parent.effects.filter(effect => effect.id !== effectIdToDelete);
 
-    EditOwnedItemEffects.log('Updating Parent', {
+    debug('Updating Parent', {
       effectIdToDelete,
       newParentEffects,
     });
@@ -82,11 +80,11 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
    * Fake Update this Effect Document by instead updating the parent embedded Item document's array of effects.
    */
   async update(data: any = {}, context = {}) {
-    EditOwnedItemEffects.log('Attempting update on Owned Item Effect', data, context);
+    debug('Attempting update on Owned Item Effect', data, context);
 
     const embeddedItem = this.parent;
     if (!(embeddedItem instanceof Item) && (embeddedItem.parent instanceof Actor)) {
-      EditOwnedItemEffects.log('Attempted to update a non owned item effect with the owned Item effect update method', data, context);
+      debug('Attempted to update a non owned item effect with the owned Item effect update method', data, context);
       return;
     }
 
@@ -114,7 +112,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
       console.error(e);
     }
 
-    EditOwnedItemEffects.log('Attempting update on Owned Item Effect', newEffects);
+    debug('Attempting update on Owned Item Effect', newEffects);
     
     try {
       await embeddedItem.update({
@@ -133,15 +131,19 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     this.data.update(diff);
     this.sheet.render();
 
+    /* This should also work in dae
     if (this.data.transfer) {
       //@ts-ignore
-      ui.notifications.notify(game.i18n.localize(`${EditOwnedItemEffects.MODULE_NAME}.not-reflected`));
+      ui.notifications.notify(game.i18n.localize(`dae.not-reflected`));
     }
+    */
 
+    /* This shoukd work in dae
     if (!this.data.transfer && data.transfer) {
       //@ts-ignore
-      ui.notifications.notify(game.i18n.localize(`${EditOwnedItemEffects.MODULE_NAME}.not-transferred`));
+      ui.notifications.notify(game.i18n.localize(`dae.not-transferred`));
     }
+    */
   }
 
   /**
@@ -151,14 +153,11 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     const actor = this.parent?.parent;
 
     if (!actor || !(actor instanceof Actor)) {
-      EditOwnedItemEffects.log('Attempted to Transfer an effect on an unowned item.');
+      debug('Attempted to Transfer an effect on an unowned item.');
       return;
     }
 
-    EditOwnedItemEffects.log('Attempting to Transfer an effect to an Actor', {
-      effectUuid: this.uuid,
-      actor
-    });
+    debug('Attempting to Transfer an effect to an Actor', {effectUuid: this.uuid, actor });
 
     return CONFIG.ActiveEffect.documentClass.create({
       ...this.toJSON(),

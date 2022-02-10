@@ -454,8 +454,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
       }
     } else if (this.object.parent.isOwned) formData.duration.startTime = null;
-    // CHECKTHIS setProperty(formData, "flags.dae.transfer", formData.transfer);
-    //setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
+    setProperty(formData, "flags.dae.transfer", formData.transfer);
+    setProperty(formData, "flags.dae", {stackable: formData.flags.dae.stackable});
 
     if (this.object.parent.isOwned && legacyOwnedItemEdit) { // we are editing an owned item
       let itemData = this.object.parent.data.toObject();

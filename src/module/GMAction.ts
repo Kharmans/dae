@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, itemacroActive, tokenizer, statusCounterActive } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, itemacroActive, tokenizer, statusCounterActive, allMacroEffects } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
 import { checkLibWrapperVersion, removeActorEffectsArmorEffects } from "./migration";
 
@@ -66,7 +66,8 @@ async function _applyActiveEffects(data) {
 }
 async function _recreateToken(data: { userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
   await _createToken(data);
-  return await DAEfromUuid(data.tokenUuid)?.delete();
+  const token = await DAEfromUuid(data.tokenUuid);
+  return token?.delete();
 }
 
 async function _createToken(data: { userId: string, targetSceneId: string, tokenData: {}, x: number, y: number }) {
@@ -151,12 +152,13 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       const origins = activeEffects.map(aeData => ({ origin: aeData.origin, label: aeData.label }));
       //const origins = actEffects.map(aeData => aeData.origin);
 
+      // TODO: update exsiting count stacks rather than removing and adding.
       // find existing active effect that have same origin as one of our new effects 
       let removeList = actor.effects.filter(ae => {
         let notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
         return origins.find(o => o.origin === ae.data.origin
           && (!removeMatchLabel || (new RegExp(`^${o.label}( \\([0-9]+\\))?$`)).test(ae.data.label)))
-          // CHECKTHIS && getProperty(ae.data, "flags.dae.transfer") === false
+          && getProperty(ae.data, "flags.dae.transfer") === false
           && notMulti;
       });
 
@@ -201,17 +203,21 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           // CHECKTHIS setProperty(aeData.flags, "dae.transfer", false);
 
           aeData.changes.map(change => {
-            if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
+            if (allMacroEffects.includes(change.key)) {
+
+            // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
-                const context = { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData" };
-                change.value = replaceAtFields(duplicate(change.value), context);
+                const context = { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData", "stackCount": "@stackCount" };
+                // change.value = replaceAtFields(duplicate(change.value), context);
+                //@ts-ignore replaceFormulaData
+                change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false });
                 change.value = change.value.replace("##", "@");
               } else {
                 change.value = duplicate(change.value).map(f => {
                   if (f === "@itemCardId") return itemCardId;
-                  if (f === "@target") return tokenUuid;
-                  // if (typeof f === "string" && f.startsWith("@@")) return;
+                  if (f === "@target") return tokenOrDocument.id;
+                  if (f === "@targetUuid") return tokenUuid;
                   return f;
                 })
               }

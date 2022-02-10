@@ -1,4 +1,4 @@
-import { EditOwnedItemEffects } from '../edit-owned-item-effects.js';
+import { debug, warn } from '../../../dae.js';
 import { EditOwnedItemEffectsActiveEffect } from './owned-item-effect.js';
 
 /**
@@ -50,7 +50,7 @@ export class EditOwnedItemEffectsItemSheet {
       EditOwnedItemEffectsActiveEffect.onManageOwnedItemActiveEffect(ev, app.item);
     })
 
-    EditOwnedItemEffects.log('binding dragdrop');
+    debug('binding dragdrop');
 
     //@ts-ignore 0 vs 1 argument
     const dragDrop = new DragDrop({
@@ -80,24 +80,15 @@ export class EditOwnedItemEffectsItemSheet {
     try {
       dropData = JSON.parse(event.dataTransfer.getData('text/plain'));
 
-      EditOwnedItemEffects.log('DragDrop drop', {
-        event,
-        dropData,
-      });
+      debug('DragDrop drop', event, dropData);
     } catch (err) {
-      EditOwnedItemEffects.log('DragDrop drop', {
-        err,
-      });
-
+      warn('DragDrop drop', err);
       return false;
     }
 
     if (dropData.type !== 'ActiveEffect') return false;
 
-    EditOwnedItemEffects.log('DragDrop drop starting:', {
-      effectParent,
-      dropData,
-    });
+    debug('DragDrop drop starting:', effectParent, dropData)
 
     return EditOwnedItemEffectsActiveEffect.create(
       {
