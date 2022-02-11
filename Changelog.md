@@ -1,19 +1,21 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.9.03
+* Fix for broken special duration.
+
 ### 0.9.02
-* Added @stackCount for stackable effects which can be used in active effect evaluation. Since you amost always want to refer to the stackCount on the target, for non-passive effectts remember to use ##stackCount so it will evaluate on the target not the caster/attacker.
+* Added @stackCount for stackable effects which can be used in active effect evaluation. Since you almost always want to refer to the stackCount on the target, for non-passive effects remember to use ##stackCount so it will evaluate on the target not the caster/attacker.
 * Changed internal calculations to use Roll.replaceFormulaData to be consistent with roll expressions. I've not found any case that cause problems, but if you do let me know (effects that no longer work, macros that get wrong arguments).
 * Allow active effects to modify data.attributes.ac.EC and data.attributes.ac.AR (for challenge mode armor).
 * Allow active effects to modify maxPreparedSpells (a tidysheet derived fields).
 * Fix for DAE.teleportToToken (and others) which broke with v9.xxx
-* Removed the toast messages for transfer effects applid to an owned item. It seems that they are correclty appied to the actor so the message has been disabld. If you see any oddities when dropping an effect onto an item let me know.
-* **Only relevat to macro writers running into some odd edge casses**. New optioms for macro.execute and macro.ItemMacro, you can append .local or .GM (so macro.execute.GM) to force the executiom of an effect locally or on the GM client. Without the .local/.GM macros will executed according to the ownership of the target token, if owned locally otherwise on a GM client.
+* Removed the toast messages for transfer effects applied to an owned item. It seems that they are correclty appied to the actor so the message has been disabled. If you see any oddities when dropping an effect onto an item let me know.
+* **Only relevat to macro writers running into some odd edge cases**. New options for macro.execute and macro.ItemMacro, you can append .local or .GM (so macro.execute.GM) to force the execution of an effect locally or on the GM client. Without the .local/.GM macros will executed according to the ownership of the target token, if owned locally otherwise on a GM client.
   - if an item has multiple changes .GM has precedence over .local which has precedence of no specifier.
   - if any of the effects have .GM the macro will always run on a GM client.
   - if any of the effects have .local (but none have .GM) effects will be run on the local client.
   - Otherwise effects will run locally if the rolling player owns the token and on the GM otherwise,
-
 
 ### 0.9.01
 * Fix for longstanding bug with armor/weapon/tool proficiencies that would populate with too short a list (i.e. only the categories).
