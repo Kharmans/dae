@@ -232,7 +232,7 @@ export class ValidSpec {
         }
         else baseValues[theKey] = false;
       });
-      if (game.modules.get("tidy5e-sheet").active)
+      if (game.modules.get("tidy5e-sheet")?.active)
         specials["data.details.maxPreparedSpells"] = [0, -1];
 
       //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong

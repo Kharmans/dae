@@ -1,6 +1,9 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.9.04
+* Fix for broken effect list if tidysheets5e not installled.
+
 ### 0.9.03
 * Fix for broken special duration.
 
