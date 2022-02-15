@@ -162,11 +162,6 @@ When the effect is applied to the actor the expression inside `[[]]` will be eva
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. 
 
-### Other modules
-
-**Drop Effects on Items**
-This modules adds the ability to drop effects from an item to an actor or world item. My testing suggests it is compatible with DAE. Highly recommended.
-
 #### Supported fields
 **Pretty much @data.abilities.anything is supported.**
 
@@ -596,6 +591,8 @@ If you have a feat "sneak attack" then rolling the feat will apply the non-trans
 ### [about-time](https://gitlab.com/tposney/about-time)
 If the underlying spell, weapon, feat, consumable etc has a duration then the active effects for that item will be applied to the targeted tokens (or self if the item is specified as self) and after the duration specified in the item the effects will be removed. So a bless spell with a duration of 1 minute will apply the active effect bonuses for 1 minute of gametime. A potion of giant strength will apply the new strength for the duration specified in the potion consumable. There are a few sample items in the premade compendium to get you started.
 
+Times-up is the preferred module for effect expriy.
+
 ### [times-up](https://gitlab.com/tposney/times-up)
 Times-up is the preferred way to expire effects, since as well as time based expiration it support duration in rounds/turns.
 
@@ -620,6 +617,15 @@ Combat Utility Belt has it's own effects editor that does not support the DAE ex
 ### [Convenient Effects](https://github.com/DFreds/dfreds-convenient-effects)
 
 Same application options as for CUB.
+
+
+### Other modules
+
+**Drop Effects on Items**
+This modules adds the ability to drop effects from an item to an actor or world item. My testing suggests it is compatible with DAE. Highly recommended (almost a dependency).
+
+**5e-sheet resources plus**
+If enabled dae will add target fields for additional resource fields up to "tenth". data.resources.fourth.max, data.resources.fourth.label etc.
 
 ## Issues
 

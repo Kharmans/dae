@@ -200,15 +200,21 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           }
           warn("Apply active effects ", aeData, itemCardId)
 
-          // CHECKTHIS setProperty(aeData.flags, "dae.transfer", false);
-
+          setProperty(aeData.flags, "dae.transfer", false);
+          let source: any | undefined = await fromUuid(aeData.origin);
+          let context = actor.getRollData();
+          //@ts-ignore
+          if (false && source instanceof CONFIG.Item.documentClass) {
+            context = source?.getRollData();
+          }
+          // context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData", "stackCount": "@stackCount" });
+          context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount" });
           aeData.changes.map(change => {
             if (allMacroEffects.includes(change.key)) {
 
             // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
-                const context = { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData", "stackCount": "@stackCount" };
                 // change.value = replaceAtFields(duplicate(change.value), context);
                 //@ts-ignore replaceFormulaData
                 change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false });

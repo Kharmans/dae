@@ -1,0 +1,81 @@
+{
+  "name": "dae",
+  "title": "Dynamic effects using Active Effects",
+  "description": "replacement for dynamic effects",
+  "version": "0.9.04",
+  "compatibleCoreVersion": "9",
+  "minimumCoreVersion": "0.8.4",
+  "minimumSystemVersion": "1.5.0",
+  "scripts": ["libs/tokenizer.min.js"],
+  "system": ["dnd5e", "sw5e"],
+  "esmodules": [
+    "dae.js", "module/patching.js"
+  ],
+  "dependencies" : [ 
+    { "name": "lib-wrapper", "type": "module" },
+    { "name": "socketlib", "type": "module" }
+],
+  "styles": ["css/dae.css", "css/awesomplete.css"],
+  "packs": [
+    {
+      "name": "premadeitems",
+      "label": "Premade Items",
+      "path": "./packs/premadeitems.db",
+      "module": "world",
+      "entity": "Item",
+      "lang": ["en", "de"]
+    },
+    {
+      "name": "sample-macros",
+      "label": "Sample macros",
+      "path": "./packs/sample-macros.db",
+      "module": "world",
+      "entity": "Macro",
+      "lang": ["en", "de"]
+    }
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    },
+    {
+      "lang": "ja",
+      "name": " 日本語",
+      "path": "lang/ja.json"
+    },
+    {
+      "lang": "ko",
+      "name": "Korean",
+      "path": "lang/ko.json"
+    },
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "lang/pt-BR.json"
+    },
+    {
+      "lang": "fr",
+      "name": "Français",
+      "path": "lang/fr.json"
+    },
+    {
+      "lang": "it",
+      "name": "Italian",
+      "path": "lang/it.json"
+    },
+    {
+      "lang": "pl",
+      "name": "Polski",
+      "path": "lang/pl.json"
+    }
+  ],
+  "socket": true,
+  "url": "https://gitlab.com/tposney/dae",
+  "author": "tposney",
+  "bugs": "https://gitlab.com/tposney/dae/-/issues",
+  "allowBugReporter": true,
+  "manifest": "https://gitlab.com/tposney/dae/raw/master/package/module0904.json",
+  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.9.04.zip"
+}

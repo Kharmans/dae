@@ -32,6 +32,7 @@ export var displayTraits;
 export var noDupDamageMacro;
 export var disableEffects;
 export var daeTitleBar;
+export var daeNoTitleText;
 export var libWrapper;
 export var legacyOwnedItemEdit;
 export var allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate"];
@@ -185,6 +186,13 @@ export class ValidSpec {
         "data.attributes.ac.EC": [0, -1],
         "data.attributes.ac.AR": [0, -1]
       };
+
+      if (game.modules.get("resourcesplus")?.active) {
+        for (let res of ["fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]) {
+          specials[`data.resources.${res}.max`] =  [0, -1];
+          specials[`data.resources.${res}.label`] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+        }
+      }
 
       // change movement effects to be after prepareDerivedData
       for (let key of Object.keys(CONFIG.DND5E.movementTypes)) {
@@ -417,7 +425,13 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       .map(c => {
         c = duplicate(c);
         flagChangeKeys(this, c);
-
+        if (c.key.startsWith("flags.midi-qol.optional")) { // patch for optional effects
+          const parts = c.key.split(".");
+          if (["save", "check", "skill", "damage", "attack"].includes( parts[parts.length - 1])) {
+            console.error(`dae/midi-qol | deprecation error ${c.key} should be ${c.key}.all on actor ${this.name}`)
+            c.key = `${c.key}.all`;
+          }
+        }
         if (c.key === "flags.midi-qol.OverTime") c.key = `flags.midi-qol.OverTime.${randomID()}`;
         c.effect = effect;
         c.priority = c.priority ?? (c.mode * 10);
@@ -433,14 +447,19 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       console.warn("dae | @data.key is deprecated, use @key instead", c.value)
       c.value = c.value.replace(/@data./g, "@");
     }
+    const stackCount = c.effect.data.flags?.dae?.stacks ?? c.effect.data.flags?.dae?.statuscounter?.counter.value ?? 1;
+    
+    //@ts-ignore
+    if (typeof specList[c.key]?.sampleValue !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
+      c.value = c.value.replace("@stackCount", stackCount)
     //@ts-ignore
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
       if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value)
-        // let value = replaceAtFields(c.value, this.getRollData(), { blankValue: 0, maxIterations: 3 });
         const rollData = this.getRollData();
-        rollData.stackCount = c.effect.data.flags?.dae?.stacks ?? c.effect.data.flags?.dae?.statuscounter?.counter.value ?? 1;
-        //@ts-ignore
+        rollData.stackCount = stackCount;
+        c.value = c.value.replace("@item.level", "@itemLevel");
+        //@ts-ignore replaceFormulaData
         let value = Roll.replaceFormulaData(c.value, rollData, { missing: 0, warn: false });
 
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
@@ -765,7 +784,7 @@ export function replaceAtFields(value, context, options: { blankValue: any | num
   // let re = /@(\w|\.|\-)+/g
   let re = /@(\w|\.|(\-(?=([A-Za-z-_]))))+/g
   let result = duplicate(value);
-  result = result.replace("@item.level", "@itemLevel") // fix for outdated item.level
+  result = result.replace("@item.level", "@itemLevel") ;// fix for outdated item.level
   // Remove @data references allow a little bit of recursive lookup
   do {
     count += 1;
@@ -1203,18 +1222,23 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     tokenId: actor.token ? actor.token.id : getSelfTarget(actor)?.id,
     tokenUuid,
   }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
+  let source = await fromUuid(effectData.origin);
+  let context = actor.getRollData();
+  //@ts-ignore
+  if (source instanceof CONFIG.Item.documentClass) {
+    context.item = source.data.data;
+  }
+
   for (let change of effectData.changes) {
     try {
       if (!allMacroEffects.includes(change.key)) continue;
-      //@ts-ignore 
-      const context = actor.getRollData();
       context.stackCount = effectData.flags?.dae?.stacks ?? effectData.flags?.dae?.statuscounter?.counter.value ?? 1;
       const theChange = await evalArgs({ itemData: null, effectData, context, actor, change, doRolls: true })
       let args = [];
       if (typeof theChange.value === "string") {
         tokenizer.tokenize(theChange.value, (token) => args.push(token));
         args = args.map(arg => {
-          if (["@item", "@itemData"].includes(arg)) return effectData.flags.dae.itemData;
+          if (["@itemData"].includes(arg)) return effectData.flags.dae.itemData;
           return arg;
         })
       } else args = change.value;
@@ -1267,7 +1291,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     target: "@target",
     targetUuid: "@targetUuid",
     itemData: "@itemData",
-    item: "@item",
+    // item: "@item",
     spellLevel: spellLevel,
     itemLevel: spellLevel,
     damage: damageTotal,
@@ -1283,6 +1307,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   }, context, { overwrite: false });
 
   // returnChange.value = replaceAtFields(returnChange.value, contextToUse, { blankValue: 0, maxIterations: 2 }); // limit to a couple of lookups - since @token -> @token
+  returnChange.value = returnChange.value.replace("@item.level", "@itemLevel") 
   //@ts-ignore replaceFormulaData
   returnChange.value = Roll.replaceFormulaData(returnChange.value, contextToUse, { missing: 0, warn: false });
   returnChange.value = returnChange.value.replaceAll("##", "@");
@@ -1370,7 +1395,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false));
   if (effectsToApply.length > 0) appliedEffects = appliedEffects.filter(aeData => effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
-  const rollData = this.actor.getRollData(); //TODO if not caster eval move to evalArgs call
+  const rollData = this.getRollData(); //TODO if not caster eval move to evalArgs call
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     for (let [changeIndex, change] of activeEffectData.changes.entries()) {
       const doRolls = allMacroEffects.includes(change.key);
@@ -1600,8 +1625,9 @@ export function daeInitActions() {
 
 function initActorSheetHook(app, html, data) {
   if (!daeTitleBar) return;
-  let title = game.i18n.localize('dae.ActiveEffectName');
-  let openBtn = $(`<a class="open-actor-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
+  const title = game.i18n.localize('dae.ActiveEffectName')
+  let titleText = daeNoTitleText ? "" :  title;
+  let openBtn = $(`<a class="open-actor-effect" title="${title}"><i class="fas fa-wrench"></i>${titleText}</a>`);
   openBtn.click(ev => {
     new ActiveEffects(app.document, {}).render(true);
   });
@@ -1612,8 +1638,9 @@ function initActorSheetHook(app, html, data) {
 
 function initItemSheetHook(app, html, data) {
   if (!daeTitleBar) return true;
-  let title = game.i18n.localize('dae.ActiveEffectName');
-  let openBtn = $(`<a class="open-item-effect" title="${title}"><i class="fas fa-clipboard"></i>${title}</a>`);
+  const title = game.i18n.localize('dae.ActiveEffectName')
+  let titleText = daeNoTitleText ? "" :  title;
+  let openBtn = $(`<a class="open-item-effect" title="${title}"><i class="fas fa-wrench"></i>${titleText}</a>`);
   openBtn.click(ev => {
     new ActiveEffects(app.document, {}).render(true);
   });
@@ -1652,6 +1679,7 @@ export function fetchParams(doUpdatePatches = true) {
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
   disableEffects = game.settings.get("dae", "disableEffects");
   daeTitleBar = game.settings.get("dae", "DAETitleBar");
+  daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
   legacyOwnedItemEdit = game.settings.get("dae", "DAELegacyEdit");
   /* TODO decide what to do about enhancing status effects or not
   ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");

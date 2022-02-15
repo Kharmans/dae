@@ -1,7 +1,7 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { ValidSpec, cubActive, confirmDelete, aboutTimeInstalled } from "../dae"
+import { ValidSpec, confirmDelete, aboutTimeInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
-import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
+import { EditOwnedItemEffectsActiveEffect } from "../editItemEffects/classes/owned-item-effect";
 
 export class ActiveEffects extends FormApplication {
   static filters = new Set().add("summary");
@@ -11,6 +11,7 @@ export class ActiveEffects extends FormApplication {
   effectHookIdc = null;
   effectHookIdd = null;
   effectHookIdt = null;
+  effectHookIda = null;
   timeHookId = null;
   combatHookId = null;
   effect;
@@ -158,19 +159,6 @@ activateListeners(html) {
   const filterLists = html.find(".filter-list");
   filterLists.each(this._initializeFilterItemList.bind(this));
   filterLists.on("click", ".filter-item", this._onToggleFilter.bind(this));
-/*
-  html.find('.change-delete').click(async ev => {
-    let effect_id = $(ev.currentTarget).parents(".dae-change-list").attr("effect-id");
-    let change_id = $(ev.currentTarget).parents(".dae-change-list").attr("change-id");
-    var effect;
-    // li.slideUp(200);
-    effect = duplicate(this.object.data.effects.find(ef=>ef._id === effect_id));
-    effect.changes.splice(parseInt(change_id),1);
-    confirmAction(confirmDelete, () => {
-        this.object.updateEmbeddedEntity("ActiveEffect", effect).then(() => this.render());
-      });
-  });
-*/
   
   html.find('.refresh').click(async ev => {
     return this.submit({preventClose: true}).then(() => this.render());
@@ -179,15 +167,26 @@ activateListeners(html) {
   // Delete Effect
   html.find('.effect-delete').click(async ev => {
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    confirmAction(confirmDelete, () => {
-      this.object.deleteEmbeddedDocuments("ActiveEffect", [effect_id]).then(() => this.render());
-    })
+    //@ts-ignore
+    if (this.object instanceof CONFIG.Actor.documentClass) {
+      confirmAction(confirmDelete, () => {
+        this.object.deleteEmbeddedDocuments("ActiveEffect", [effect_id]);
+      })
+    } else {
+      let effect = this.object.effects.get(effect_id);
+      effect =  new EditOwnedItemEffectsActiveEffect(effect.data, effect.parent);
+      confirmAction(confirmDelete, () => {
+        effect.delete({});
+      })
+    }
   });
   html.find('.effect-edit').click(async ev => {
     if (this.object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
     const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     let effect = this.object.effects.get(effect_id);
-    new CONFIG.ActiveEffect.sheetClass(effect).render(true);
+    
+    const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.data, effect.parent);
+    return ownedItemEffect.sheet.render(true);
   })
   html.find('.effect-add').click(async ev => {
     let effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
@@ -208,17 +207,24 @@ activateListeners(html) {
       AEDATA["flags.core.statusId"] = id;
     }
     //@ts-ignore
-    const created = await this.object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
-    if (!created || created.legnth === 0) return;
-    const effectId = created[0].id;
-    let effect = this.object.effects.get(effectId)
-    new DAEActiveEffectConfig(effect).render(true);
-    this.render();
+    if (this.object instanceof CONFIG.Actor.documentClass) {
+      this.object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
+    } else {
+      let parent = this.object;
+      //@ts-ignore
+      const created = new EditOwnedItemEffectsActiveEffect(duplicate(AEDATA), this.object);
+      //@ts-ignore
+      created.create();
+    }
   })
 
-  // this.hookId = Hooks.on("updateActor", () => this.render(true))
-  function efhandler(type, object) {
-    if (this.object.id === object.id) {
+  function efhandler(type, effect, data, options, user) {
+    if (this.object.id === effect.parent.id) {
+      setTimeout(() => this.render(), 0)
+    }
+  };
+  function itmHandler(item, data, options, user) {
+    if (this.object.id === item.id) {
       setTimeout(() => this.render(), 0)
     }
   };
@@ -227,10 +233,14 @@ activateListeners(html) {
     if (Array.from(this.object.effects).some(ef=>ef.isTemporary))
       setTimeout(() => this.render(), 0)
   }
-  function tkHandler(scene, tokenData, update) {
-    if (tokenData.actorId !== this.object.id) return;
-    if (!update.actorData?.effects) return;
+  function tkHandler(token, update, options, user) {
+    if (token.actor.id !== this.object.id) return;
     setTimeout(() => this.render(), 0);
+  }
+
+  function actHandler(actor, updates, options, user) {
+    if (actor.id !== this.object.id) return;
+    setTimeout(() => this.render(), 0)
   }
   
   if (!this.effectHookIdu)
@@ -239,17 +249,16 @@ activateListeners(html) {
     this.effectHookIdc = Hooks.on("createActiveEffect", efhandler.bind(this, "create"));
   if (!this.effectHookIdd)
     this.effectHookIdd = Hooks.on("deleteActiveEffect", efhandler.bind(this, "delete"));
+    if (!this.itemHookId)
+    this.itemHookId = Hooks.on("updateItem", itmHandler.bind(this))
   if (!this.effectHookIdt)
     this.effectHookIdt = Hooks.on("updateToken", tkHandler.bind(this));
-
-  if (!this.itemHookId)
-    this.itemHookId = Hooks.on("updateOwnedItem", efhandler.bind(this, "owneditem"))
+  if (!this.effectHookIda)
+    this.effectHookIda = Hooks.on("updateActor", actHandler.bind(this));
   if (!this.timeHookId) 
     this.timeHookId = Hooks.on("updateWorldTime", tmHandler.bind(this))
   if(!this.combatHookId) 
     this.combatHookId = Hooks.on("updateCombat", tmHandler.bind(this));
-
-
 }
 async close() {
   Hooks.off("updateActiveEffect", this.effectHookIdu);
@@ -257,8 +266,8 @@ async close() {
   Hooks.off("deleteActiveEffect", this.effectHookIdd);
   Hooks.off("updateWorldTime", this.timeHookId);
   Hooks.off("updateToken", this.effectHookIdt);
-
-  Hooks.off("updateOwnedItem", this.itemHookId);
+  Hooks.off("updateActor", this.effectHookIda);
+  Hooks.off("updateItem", this.itemHookId);
   Hooks.off("updateCombat", this.combatHookId);
   return super.close()
   }

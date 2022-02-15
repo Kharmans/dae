@@ -61,18 +61,6 @@ export const registerSettings = function () {
     hint: game.i18n.localize("dae.displayTraits.Hint"),
   });
 
-  /*
-  game.settings.register("dae", "useAbilitySave", {
-    name: game.i18n.localize("dae.useAbilitySave.Name"),
-    hint: game.i18n.localize("dae.useAbilitySave.Hint"),
-    scope: "world",
-    default: false,
-    config: true,
-    type: Boolean,
-    onChange: fetchParams
-  });
-  */
-
   game.settings.register("dae", "ArmorDisabled", {
     scope: "world",
     default: 0,
@@ -104,6 +92,16 @@ export const registerSettings = function () {
     hint: game.i18n.localize("dae.DAETitleBar.Hint"),
     scope: "world",
     default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
+  game.settings.register("dae", "DAENoTitleText", {
+    name: game.i18n.localize("dae.DAENoTitleText.Name"),
+    hint: game.i18n.localize("dae.DAENoTitleText.Hint"),
+    scope: "world",
+    default: false,
     type: Boolean,
     config: true,
     onChange: fetchParams

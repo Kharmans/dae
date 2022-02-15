@@ -65,7 +65,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
       newParentEffects,
     });
 
-    this.parent.update({
+    await this.parent.update({
       effects: newParentEffects
     }, {...context, recursive: false});
     

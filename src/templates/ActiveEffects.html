@@ -19,7 +19,6 @@
           <div class="effect-mode">{{localize "dae.EffectMode"}}</div>
           <div class="effect-value">{{localize "dae.EffectValue"}}</div>
           {{#if canEdit}}
-          {{#unless isOwned}}
           <div class="effect-controls">
             <div class="newEffect">
               <select name="newEffect" data-dtype="String">
@@ -29,7 +28,6 @@
 
             <a class="effect-add" title={{localize dae.add}}><i class="fas fa-plus"></i></a>
           </div>
-          {{/unless}}
           {{/if}}
         </li>
 
@@ -57,9 +55,7 @@
 
           <div class="effect-controls dae-effect-list">
             <a class="effect-edit" title={{localize dae.edit}}><i class="fas fa-edit"></i></a>
-            {{#unless ../isOwned }}
             <a class="effect-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
-            {{/unless}}
           </div>
         </li>
         {{#each effect.changes as |change cid|}}
