@@ -9,11 +9,10 @@ import { debug } from '../../../dae.js';
  */
 export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.documentClass {
   constructor(effect, owner) {
-    debug('Attempting instanciation of Owned Item Effect', effect);
+    debug('Attempting instanciation of Owned Item Effect', effect, owner);
 
     // manually set the parent
     super(effect, { parent: owner });
-
     debug('Instanciated Owned Item Effect', this);
   }
 
@@ -31,12 +30,18 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
       console.error(error);
     }
 
-    debug('Updating Parent', {effect: dataToCreate});
+    debug('Updating Parent', this.parent, this.toJSON(), {effect: dataToCreate});
 
-    this.parent.update({
+    if (this.parent.actor?.isToken) {
+      const effects  = [dataToCreate].concat(this.parent.effects._source);
+      await this.parent.update({
+        effects
+      }, context);
+      } else {
+    await this.parent.update({
       effects: [dataToCreate]
     }, context);
-    
+  }
     try {
       await this._onCreate(dataToCreate, {...context, renderSheet: false}, game.userId);
     } catch (e) {

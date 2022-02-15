@@ -272,10 +272,15 @@ export async function macroActorUpdate(...args) {
   actor = tactor.actor ? tactor.actor : tactor;
   // const fieldDef = `flags.dae.save.${targetField}`;
   const fieldDef = `flags.dae.actorUpdate.${targetField}`;
-  const actorValue = getProperty(actor.data, targetField);
+  let actorValue = getProperty(actor.data, targetField);
+  if (args[0] === "each") {
+    // for subsequent executions we have to recover the origianl actor value from the saved value.
+    const fieldValue = getProperty(actor.data, fieldDef);
+    actorValue = fieldValue.actorValue;
+  }
   const rollContext = actor.getRollData();
   rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? lastArg.efData.flags?.dae?.statuscounter?.counter.value ?? 1;
-  if (args[0] === "on") {
+  if (["on", "each"].includes(args[0])) {
     if (!game.user.isGM) {
       console.warn(`dae | macro.actorUpdate user ${game.user.name} is updating ${actor.name} ${targetField}`);
     }
