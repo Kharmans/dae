@@ -1,6 +1,9 @@
 ### v0.9.1
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.9.06
+* Fix for macro.execute processing introduced in 0.9.05
+
 ### 0.9.05
 * Cleaned up the DAE item/actor effects editor. You can now create/delete effects on owned items. Updates to reflect actor/item changes cleaned up and synched with the actor/item effects tab.
 * Changed the DAE title bar icon to the wrench instead of the clipboard. Added option to only display the wrench icon in the title bar.
@@ -10,7 +13,7 @@
   - I've not seen any edge cases but if your macro suddenly fails to find arguments, that could be it. Please let me know. 
   - Macro arguments can now reference @item.whatever as the item used for the attack/cast is now available.
   - Remember that @fields are evaluated against the item user and item, ##fields are evaulated against the target actor (##item is not supported).
-  
+
 ### 0.9.04
 * Fix for broken effect list if tidysheets5e not installled.
 

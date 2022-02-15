@@ -1421,7 +1421,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   const stringTokens = targetList.filter(t => typeof t === "string");
   if (stringTokens.length) console.warn("String tokens in apply non transfer are ", stringTokens);
   //@ts-ignore
-  let localTargets = targetList.filter(macroLocation === "local" || (t => t.isOwner && macroLocation === "mixed")).map(
+  let localTargets = targetList.filter(t=> macroLocation === "local" || (t.isOwner && macroLocation === "mixed")).map(
     //@ts-ignore
     t => {
       if (typeof t === "string") return t;
