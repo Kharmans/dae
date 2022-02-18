@@ -2,7 +2,7 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, legacyOwnedItemEdit} from "./module/dae";
+import { daeSetupActions, doEffects, daeInitActions, ValidSpec, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid } from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, setupSocket } from './module/GMAction';
 import { checkArmorDisabled, checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixDeprecatedChanges, fixDeprecatedChangesActor, fixDeprecatedChangesItem, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
@@ -59,7 +59,7 @@ Hooks.once('ready', async function () {
 
   debug("ready setup actions")
   daeReadyActions();
-  if (!legacyOwnedItemEdit) EditOwnedItemEffectsItemSheet.init();
+  EditOwnedItemEffectsItemSheet.init();
   // setupDAEMacros();
   daeSpecialDurations = {"None": ""};
   if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {

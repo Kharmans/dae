@@ -31,16 +31,6 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "DAELegacyEdit", {
-    name: "Use legacy owned item edit",
-    hint: "If set DAE will use it's legacy item editing. Changing will force a reload",
-    scope: "world",
-    default: false,
-    type: Boolean,
-    config: true,
-    onChange: () => window.location.reload()
-  });
-
   game.settings.register("dae", "expireRealTime", {
     name: "dae.expireRealTime.Name",
     hint: "dae.expireRealTime.Hint",

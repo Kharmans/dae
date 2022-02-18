@@ -1,6 +1,11 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.9.08
+* Fix for throwing errors for effects wihtout an origin set.
+* Removed dependency on aboutTime for display effect duration.
+* Fix for typo when in choosing location for macros to run (thanks @Elwin).
+
 ### 0.9.07
 * Fix for adding effects to items owned by unlinked tokens.
 * Added support for macro repeat start/turn end in macro.actorUpdate so that the updates can be applied each turn, e.g. heroism. You can couple with an overtime effect to have the maro.updateActor run until a save is failed (removal of the overtime change will remove all cchanges in the same effect).

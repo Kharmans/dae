@@ -1,5 +1,5 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { ValidSpec, confirmDelete, aboutTimeInstalled } from "../dae"
+import { ValidSpec, confirmDelete, simpleCalendarInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { EditOwnedItemEffectsActiveEffect } from "../editItemEffects/classes/owned-item-effect";
 
@@ -47,11 +47,11 @@ getData() {
   let actives = this.object.effects.map(ae=> {
     let newAe = duplicate(ae.data);
     newAe.duration = duplicate(ae.duration);
-    if (aboutTimeInstalled && newAe.duration?.type === "seconds") {
+    if (simpleCalendarInstalled && newAe.duration?.type === "seconds") {
       //TODO change these to a simple calendar function after release
       //TODO change this to window.Gametime.ElapsedTime.timeString permanently
       //@ts-ignore
-      newAe.duration.label = window.Gametime.DTM.timeString(ae.duration.remaining)
+      newAe.duration.label = window.Gametime.ElapsedTime.timeString(ae.duration.remaining)
     } else if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }

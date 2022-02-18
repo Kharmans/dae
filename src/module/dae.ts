@@ -34,7 +34,6 @@ export var disableEffects;
 export var daeTitleBar;
 export var daeNoTitleText;
 export var libWrapper;
-export var legacyOwnedItemEdit;
 export var allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate"];
 export var macroDestination = {
   "macro.execute": "mixed",
@@ -1222,7 +1221,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     tokenId: actor.token ? actor.token.id : getSelfTarget(actor)?.id,
     tokenUuid,
   }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
-  let source = await fromUuid(effectData.origin);
+  let source = effectData.origin? await fromUuid(effectData.origin) : undefined;
   let context = actor.getRollData();
   //@ts-ignore
   if (source instanceof CONFIG.Item.documentClass) {
@@ -1436,7 +1435,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
     }
   );
   //@ts-ignore
-  let gmTargets = targetList.filter((t => !t.isOwner && macroLocation === "mixed") || macroLocation === "GM").map(
+  let gmTargets = targetList.filter(t => (!t.isOwner && macroLocation === "mixed") || macroLocation === "GM").map(
     //@ts-ignore
     t => typeof t === "string" ? t : (t.document?.uuid ?? t.uuid)
   );
@@ -1680,7 +1679,6 @@ export function fetchParams(doUpdatePatches = true) {
   disableEffects = game.settings.get("dae", "disableEffects");
   daeTitleBar = game.settings.get("dae", "DAETitleBar");
   daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
-  legacyOwnedItemEdit = game.settings.get("dae", "DAELegacyEdit");
   /* TODO decide what to do about enhancing status effects or not
   ehnanceStatusEffects = game.settings.get("dae", "ehnanceStatusEffects");
   procStatusEffects(ehnanceStatusEffects);

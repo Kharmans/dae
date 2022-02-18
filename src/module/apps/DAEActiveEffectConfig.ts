@@ -1,4 +1,4 @@
-import { ValidSpec, aboutTimeInstalled, confirmDelete, midiActive, cubActive, conditionalVisibilityActive, ceActive, atlActive, legacyOwnedItemEdit } from "../dae";
+import { ValidSpec, confirmDelete, cubActive, conditionalVisibilityActive, ceActive, atlActive } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 
 export var otherFields = [];
@@ -443,20 +443,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       }
     } else if (this.object.parent.isOwned) formData.duration.startTime = null;
     setProperty(formData, "flags.dae.transfer", formData.transfer);
-
-    if (this.object.parent.isOwned && legacyOwnedItemEdit) { // we are editing an owned item
-      let itemData = this.object.parent.data.toObject();
-      itemData.effects.forEach(efData => {
-        if (efData._id === this.object.id)
-          mergeObject(efData, formData, { overwrite: true, inplace: true })
-      })
-      return this.object.parent.actor.updateEmbeddedDocuments("Item", [itemData], { diff: true });
-    } else {
-      await this.object.update(formData);
-    }
-    // TODO replace the whole if/else with  await this.object.update(formData);
-
-
+    await this.object.update(formData);
   }
 }
 
