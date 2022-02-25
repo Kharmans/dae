@@ -1,6 +1,9 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.9.09
+* Fix for @item arguments to macros being broken.
+
 ### 0.9.08
 * Fix for throwing errors for effects wihtout an origin set.
 * Removed dependency on aboutTime for display effect duration.

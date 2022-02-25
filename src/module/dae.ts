@@ -462,8 +462,8 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
         let value = Roll.replaceFormulaData(c.value, rollData, { missing: 0, warn: false });
 
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
-          //@ts-ignore - this will throw an error if there are roll expressions
-          c.value = `${Roll.safeEval(value)}`;
+            //@ts-ignore - this will throw an error if there are roll expressions
+            c.value = `${Roll.safeEval(value)}`;
         } catch (err) { // safeEval failed try a roll
           try {
             console.warn("dae | you are using dice expressions in a numeric field this will be disabled after foundry 9.x is released")
@@ -954,6 +954,8 @@ function _onCreateActiveEffect(...args) {
   if (token && effect.data.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
       try {
+        const effectData = await daeMacro("on", parent, effect.data, {});
+
         for (let change of effect.data.changes) {
           if (cubActive && change.key === "macro.CUB") {
             await game.cub.addCondition(change.value, [token]);
@@ -975,6 +977,7 @@ function _onCreateActiveEffect(...args) {
           if (tokenMagic && change.key === "macro.tokenMagic")
             await addTokenMagicChange(parent, change, tokens, tokenMagic); //TODO check disabled
         }
+
       } catch (err) {
         console.warn("dae | create effect error", err);
       } finally {
@@ -988,58 +991,56 @@ function _onCreateActiveEffect(...args) {
 
 async function _preCreateActiveEffect(wrapped, ...args) {
   const parent = this.parent;
-
-  //@ts-ignore documentClass TODO
-  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
-  let updates = {};
-  if (this.data.origin = parent.uuid)
-    updates = { "flags.dae.transfer": this.data.transfer };
-  // let updates = {};
-  if (this.data.flags?.dae?.durationExpression) {
-    let sourceActor = parent;
-    if (!this.data.transfer) {
-      const thing = await fromUuid(this.data.origin);
-      //@ts-ignore
-      if (thing?.actor) sourceActor = thing.actor;
-    }
-    //@ts-ignore roll(argument)
-    const theDuration = await new Roll(`${this.data.flags.dae.durationExpression}`, sourceActor.getRollData()).roll({ async: true });
-    //@ts-ignore turnData.actor
-    const inCombat = game.combat?.turns.some(turnData => turnData.actor?.uuid === parent.uuid);
-
-    if (inCombat) {
-      updates["duration.rounds"] = Math.floor(theDuration.total / CONFIG.time.roundTime + 0.5);
-      updates["duration.seconds"] = null;
-    } else updates["duration.seconds"] = theDuration.total;
-  }
-  let changesChanged = false;
-  let newChanges = [];
-  for (let change of this.data.changes) {
-    let inline = typeof change.value === "string" && change.value.startsWith("[[");
-    if (change.key === "StatusEffect") {
-      const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
-      if (statusEffect) {
-        newChanges = newChanges.concat(statusEffect.changes);
-        updates["icon"] = statusEffect.icon;
-        updates["label"] = statusEffect.label;
-        changesChanged = true;
-        updates["flags.core.statusId"] = statusEffect.id;
-      }
-    } else if (inline) {
-      const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
-      inline = change.value.matchAll(rgx).next();
-      if (inline.value) {
-        changesChanged = true;
-        const newChange = duplicate(change);
-        newChange.value = await evaInline(inline.value[2], this.parent, this);
-        newChanges.push(newChange);
-      } else newChanges.push(change);
-    } else newChanges.push(change);
-  }
-  if (changesChanged) updates["changes"] = newChanges;
-  this.data.update(updates);
   try {
-    const effectData = await daeMacro("on", parent, this.data, {});
+    //@ts-ignore documentClass TODO
+    if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
+    let updates = {};
+    if (this.data.origin = parent.uuid)
+      updates = { "flags.dae.transfer": this.data.transfer };
+    // let updates = {};
+    if (this.data.flags?.dae?.durationExpression) {
+      let sourceActor = parent;
+      if (!this.data.transfer) {
+        const thing = await fromUuid(this.data.origin);
+        //@ts-ignore
+        if (thing?.actor) sourceActor = thing.actor;
+      }
+      //@ts-ignore roll(argument)
+      const theDuration = await new Roll(`${this.data.flags.dae.durationExpression}`, sourceActor.getRollData()).roll({ async: true });
+      //@ts-ignore turnData.actor
+      const inCombat = game.combat?.turns.some(turnData => turnData.actor?.uuid === parent.uuid);
+
+      if (inCombat) {
+        updates["duration.rounds"] = Math.floor(theDuration.total / CONFIG.time.roundTime + 0.5);
+        updates["duration.seconds"] = null;
+      } else updates["duration.seconds"] = theDuration.total;
+    }
+    let changesChanged = false;
+    let newChanges = [];
+    for (let change of this.data.changes) {
+      let inline = typeof change.value === "string" && change.value.startsWith("[[");
+      if (change.key === "StatusEffect") {
+        const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
+        if (statusEffect) {
+          newChanges = newChanges.concat(statusEffect.changes);
+          updates["icon"] = statusEffect.icon;
+          updates["label"] = statusEffect.label;
+          changesChanged = true;
+          updates["flags.core.statusId"] = statusEffect.id;
+        }
+      } else if (inline) {
+        const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
+        inline = change.value.matchAll(rgx).next();
+        if (inline.value) {
+          changesChanged = true;
+          const newChange = duplicate(change);
+          newChange.value = await evaInline(inline.value[2], this.parent, this);
+          newChanges.push(newChange);
+        } else newChanges.push(change);
+      } else newChanges.push(change);
+    }
+    if (changesChanged) updates["changes"] = newChanges;
+    this.data.update(updates);
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {
@@ -1238,7 +1239,9 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         tokenizer.tokenize(theChange.value, (token) => args.push(token));
         args = args.map(arg => {
           if (["@itemData"].includes(arg)) return effectData.flags.dae.itemData;
+          if (["@item"].includes(arg)) return effectData.flags.dae.itemData;
           return arg;
+
         })
       } else args = change.value;
       if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro")) {
@@ -1251,14 +1254,19 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
             continue;
           }
         }
+
         // insert item data
         if (furnaceActive) {
+
+          let data = {action, lastArg, args: undefined, macroData: {change, name: args[0], effectData}};
           if (theChange.key.includes("macro.execute"))
+            data.args = args.slice[1]
             //@ts-ignore
-            result = await macro.execute(action, ...args.slice(1), lastArg)
           else
+            data.args = args;
             //@ts-ignore
-            result = await macro.execute(action, ...args, lastArg)
+          result = await macro.execute(data.action, ...data.args, lastArg)
+          // result = await socketlibSocket.executeAsGM("executeMacro", data)
         } else {
           console.warn("Furnace not active - so no macro arguments supported");
           //@ts-ignore
@@ -1281,6 +1289,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     setProperty(effectData.flags, "dae.itemData", itemData);
   }
   let itemId = getProperty(effectData.flags, "dae.itemData._id");
+
   if (typeof change.value !== 'string')
     return change; // nothing to do
   const returnChange = duplicate(change);
@@ -1290,6 +1299,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     target: "@target",
     targetUuid: "@targetUuid",
     itemData: "@itemData",
+    item: "@item",
     // item: "@item",
     spellLevel: spellLevel,
     itemLevel: spellLevel,
@@ -1304,6 +1314,8 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     change: JSON.stringify(change.toJSON),
     itemId: itemId
   }, context, { overwrite: false });
+  contextToUse["item"] = "@item";
+  contextToUse["itemData"] = "@itemData";
 
   // returnChange.value = replaceAtFields(returnChange.value, contextToUse, { blankValue: 0, maxIterations: 2 }); // limit to a couple of lookups - since @token -> @token
   returnChange.value = returnChange.value.replace("@item.level", "@itemLevel") 

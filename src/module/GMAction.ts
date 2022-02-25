@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, allMacroEffects } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, allMacroEffects, getMacro } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
 
 export class GMActionMessage {
@@ -33,6 +33,14 @@ export let setupSocket = () => {
   socketlibSocket.register("unsetFlag", _unsetFlag);
   socketlibSocket.register("deleteEffects", _deleteEffects);
   socketlibSocket.register("deleteUuid", _deleteUuid);
+  socketlibSocket.register("executeMacro", _executeMacro);
+}
+
+async function _executeMacro(data: {action, args, lastArg, macroData: {change, name, effectData}}) {
+  const macro = await getMacro({ change: data.macroData.change, name: data.macroData.name}, null, data.macroData.effectData);
+  //@ts-ignore
+  const result = await macro.execute(data.action, ...data.args, data.lastArg)
+  return result;
 }
 
 async function _deleteUuid(data: { uuid: string }) {
@@ -207,7 +215,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             context = source?.getRollData();
           }
           // context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData", "stackCount": "@stackCount" });
-          context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount" });
+          context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
           aeData.changes.map(change => {
             if (allMacroEffects.includes(change.key)) {
 
