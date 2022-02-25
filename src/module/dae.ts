@@ -997,7 +997,6 @@ async function _preCreateActiveEffect(wrapped, ...args) {
     let updates = {};
     if (this.data.origin = parent.uuid)
       updates = { "flags.dae.transfer": this.data.transfer };
-    // let updates = {};
     if (this.data.flags?.dae?.durationExpression) {
       let sourceActor = parent;
       if (!this.data.transfer) {
@@ -1008,7 +1007,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
       //@ts-ignore roll(argument)
       const theDuration = await new Roll(`${this.data.flags.dae.durationExpression}`, sourceActor.getRollData()).roll({ async: true });
       //@ts-ignore turnData.actor
-      const inCombat = game.combat?.turns.some(turnData => turnData.actor?.uuid === parent.uuid);
+      const inCombat = game.combat?.turns?.some(turnData => turnData.actor?.uuid === parent.uuid);
 
       if (inCombat) {
         updates["duration.rounds"] = Math.floor(theDuration.total / CONFIG.time.roundTime + 0.5);
