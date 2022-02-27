@@ -951,6 +951,7 @@ function _onCreateActiveEffect(...args) {
   const actor = parent;
   const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens();
   const token = tokens[0];
+  effect.determineSuppression();
   if (token && effect.data.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
       try {
@@ -1142,7 +1143,7 @@ export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
 }
 
 export function _onDeleteActiveEffect(...args) {
-  let [effect, option, userId] = args;
+  let [effect, options, userId] = args;
   if (game.user.id !== userId) return true;
   //@ts-ignore documentClass
   if (!(effect.parent instanceof CONFIG.Actor.documentClass)) return true;
@@ -1174,7 +1175,8 @@ export function _onDeleteActiveEffect(...args) {
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.data.origin;
         }
-        await daeMacro("off", actor, effect.data, {});
+        const timesup = options ? options["times-up"] : undefined;
+        await daeMacro("off", actor, effect.data, {"times-up": timesup});
         if (entityToDelete) socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
       }
     } catch (err) {
@@ -1257,14 +1259,14 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         // insert item data
         if (furnaceActive) {
 
-          let data = {action, lastArg, args: undefined, macroData: {change, name: args[0], effectData}};
+          let data = {action, lastArg, args: [], macroData: {change, name: args[0], effectData}};
           if (theChange.key.includes("macro.execute"))
-            data.args = args.slice[1]
+            data.args = args.slice(1);
             //@ts-ignore
           else
             data.args = args;
             //@ts-ignore
-          result = await macro.execute(data.action, ...data.args, lastArg)
+          result = await macro.execute(data.action, ...data.args, data.lastArg)
           // result = await socketlibSocket.executeAsGM("executeMacro", data)
         } else {
           console.warn("Furnace not active - so no macro arguments supported");
