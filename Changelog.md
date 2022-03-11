@@ -1,6 +1,15 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.9.11
+* Fix for automated animations permanent effects not deleted on manual effect deletion.
+* Fix for dnd5e error when computing suppression on unlinked tokens.
+* With foundry 0.9.251 the ability to pass numeric fields as changes is restored. DAE will auto detect the foundry version and some oddities in effect application when the target field can be undefined/null will go away.
+* Created per actor type effects list. When creating actor effects you'll see a constrained list of fields based on the system template.json. You can still type in whatever field you want, but the auto complete/drop down list will be reduced. **There is a high chance this will cause unexpected bugs so don't update 5 minutes before game time.**
+* Fix for armor attribution not displaying correctly.
+* Added zeroHP special duration (requires midi-qol 0.9.30)
+* Reinstated marking effects as disabled/enabled on item equip/unequip to allow **macro effects to be enabled/disabled on item equip/unequip. MAYBE BREAKING for some macro authors**.
+
 ### 0.9.10
 * Fix for macro.execute bug introduced in 0.9.09
 * Fix for newly created effects not having suppression set correctly.

@@ -34,6 +34,7 @@ export var disableEffects;
 export var daeTitleBar;
 export var daeNoTitleText;
 export var libWrapper;
+export var needStringNumericValues;
 export var allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate"];
 export var macroDestination = {
   "macro.execute": "mixed",
@@ -52,12 +53,8 @@ export var showInline = false;
 let debugLog = true;
 
 export class ValidSpec {
-  static allSpecs: ValidSpec[] = [];
-  static allSpecsObj: {} = {};
-  public static baseSpecs: ValidSpec[] = [];
-  public static derivedSpecsObj: {} = {};
-  public static baseSpecsObj: {} = {};
-  public static derivedSpecs: ValidSpec[] = [];
+//  static specs: {allSpecs: ValidSpec[], allSpecsObj: {}, baseSpecs: ValidSpec[], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: ValidSpec[]}; 
+  static specs: {};
 
   _fieldSpec: string;
   get fieldSpec(): string { return this._fieldSpec };
@@ -82,270 +79,306 @@ export class ValidSpec {
     this._forcedMode = forcedMode;
   }
 
-  static createValidMods(characterSpec: {} = game.system.model.Actor.character) {
-    _characterSpec["data"] = duplicate(characterSpec);
-    let baseValues = flattenObject(_characterSpec);
-    // data.attributes.prof/data.details.level and data.attributes.hd are all calced in prepareBaseData
-    baseValues["data.attributes.prof"] = [0];
-    baseValues["data.details.level"] = [0];
-    baseValues["data.attributes.hd"] = 0;
-    baseValues["data.attributes.ac.bonus"] = 0;
-    baseValues["data.attributes.ac.base"] = 0;
-    baseValues["data.attributes.ac.cover"] = 0;
-    baseValues["data.bonuses.All-Attacks"] = "";
-    baseValues["data.bonuses.weapon.attack"] = "";
-    baseValues["data.bonuses.spell.attack"] = "";
-    baseValues["data.bonuses.All-Damage"] = "";
-    baseValues["data.bonuses.weapon.damage"] = "";
-    baseValues["data.bonuses.spell.damage"] = "";
-    baseValues["data.bonuses.heal.damage"] = "";
-    baseValues["data.bonuses.heal.attack"] = "";
-    baseValues["data.bonuses.save.damage"] = "";
-    baseValues["data.bonuses.abil.damage"] = "";
-    // baseValues["items"] = ""; // TODO one day work this out.
-    //@ts-ignore
-    if (game.modules.get("gm-notes")?.active) {
-      baseValues["flags.gm-notes.notes"] = "";
-    }
+  static createValidMods() {
+    this.specs = {};
+    for (let specKey of Object.keys(game.system.model.Actor)) {
+      this.specs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
+      _characterSpec["data"] = duplicate(game.system.model.Actor[specKey]);
+      let baseValues = flattenObject(_characterSpec);
+      baseValues["data.attributes.prof"] = 0;
+      baseValues["data.details.level"] = 0;
+      baseValues["data.attributes.ac.bonus"] = 0;
+      baseValues["data.attributes.ac.base"] = 0;
+      baseValues["data.attributes.ac.cover"] = 0;
+      if (_characterSpec.data.bonuses) {
+        // data.attributes.prof/data.details.level and data.attributes.hd are all calced in prepareBaseData
+        baseValues["data.bonuses.All-Attacks"] = "";
+        baseValues["data.bonuses.weapon.attack"] = "";
+        baseValues["data.bonuses.spell.attack"] = "";
+        baseValues["data.bonuses.All-Damage"] = "";
+        baseValues["data.bonuses.weapon.damage"] = "";
+        baseValues["data.bonuses.spell.damage"] = "";
+        // These are for item action types - works by accident.
+        baseValues["data.bonuses.heal.damage"] = "";
+        baseValues["data.bonuses.heal.attack"] = "";
+        baseValues["data.bonuses.save.damage"] = "";
+        baseValues["data.bonuses.check.damage"] = "";
+        baseValues["data.bonuses.abil.damage"] = "";
+        baseValues["data.bonuses.other.damage"] = "";
+        baseValues["data.bonuses.util.damage"] = "";
+      }
+      // baseValues["items"] = ""; // TODO one day work this out.
+      //@ts-ignore
+      if (game.modules.get("gm-notes")?.active) {
+        baseValues["flags.gm-notes.notes"] = "";
+      }
 
-    if (game.modules.get("skill-customization-5e")?.active && game.system.id === "dnd5e") {
-      Object.keys(CONFIG.DND5E.skills).forEach(skl => {
-        baseValues[`flags.skill-customization-5e.${skl}.skill-bonus`] = "";
-      })
-    }
+      if (game.modules.get("skill-customization-5e")?.active && game.system.id === "dnd5e") {
+        Object.keys(CONFIG.DND5E.skills).forEach(skl => {
+          baseValues[`flags.skill-customization-5e.${skl}.skill-bonus`] = "";
+        })
+      }
 
-
-
-    //@ts-ignore
-    const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-    if (["dnd5e", "sw5e"].includes(game.system.id)) {
-      var specials = {
-        //@ts-ignore - come back to this
-        "data.attributes.ac.value": [0, -1],
-        "data.attributes.ac.min": [0, -1],
-        "data.attributes.hp.max": [0, -1],
-        "data.attributes.hp.tempmax": [0, -1],
-        "data.attributes.hp.min": [0, -1],
-        // This does not work look at CONFIG.Comabt.initiative.formula
-        "data.attributes.init.total": [0, -1],
-        "data.attributes.init.bonus": [0, -1],
-        "data.attributes.hd": [0, -1],
-        "data.abilities.str.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.abilities.dex.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.abilities.int.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.abilities.wis.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.abilities.cha.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.abilities.con.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.attributes.encumbrance.max": [0, -1],
-        // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "macro.execute.local": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "macro.execute.GM": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "macro.itemMacro.local": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "macro.itemMacro.GM": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "macro.actorUpdate": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.languages.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.languages.value": ["", -1],
-        "data.traits.languages.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.di.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.di.value": ["", -1],
-        "data.traits.di.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.dr.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.dr.value": ["", -1],
-        "data.traits.dr.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.dv.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.dv.value": ["", -1],
-        "data.traits.dv.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.ci.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.ci.value": ["", -1],
-        "data.traits.ci.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.toolProf.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.toolProf.value": ["", -1],
-        "data.traits.toolProf.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.armorProf.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.armorProf.value": ["", -1],
-        "data.traits.armorProf.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.weaponProf.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.weaponProf.value": ["", -1],
-        "data.traits.weaponProf.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.traits.size": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
-        "data.resources.primary.max": [0, -1],
-        "data.resources.primary.label": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
-        "data.resources.secondary.max": [0, -1],
-        "data.resources.secondary.label": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
-        "data.resources.tertiary.max": [0, -1],
-        "data.resources.tertiary.label": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
-        "data.resources.legact.max": [0, -1],
-        "data.resources.legres.max": [0, -1],
-        "data.spells.pact.level": [0, -1],
-        "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM],
-        "data.attributes.ac.EC": [0, -1],
-        "data.attributes.ac.AR": [0, -1]
-      };
-
-      if (game.modules.get("resourcesplus")?.active) {
-        for (let res of ["fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]) {
-          specials[`data.resources.${res}.max`] =  [0, -1];
-          specials[`data.resources.${res}.label`] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+      //@ts-ignore
+      const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
+      if (["dnd5e", "sw5e"].includes(game.system.id)) {
+        var specials = {
+          //@ts-ignore - come back to this
+          "data.attributes.ac.value": [0, -1],
+          "data.attributes.ac.min": [0, -1],
+          "data.attributes.hp.max": [0, -1],
+          "data.attributes.hp.tempmax": [0, -1],
+          "data.attributes.hp.min": [0, -1],
+          // This does not work look at CONFIG.Comabt.initiative.formula
+          "data.attributes.init.total": [0, -1],
+          "data.attributes.init.bonus": [0, -1],
+          "data.abilities.str.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.abilities.dex.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.abilities.int.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.abilities.wis.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.abilities.cha.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.abilities.con.dc": [0, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.attributes.encumbrance.max": [0, -1],
+          // "skills.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+          "macro.execute": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "macro.execute.local": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "macro.execute.GM": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "macro.itemMacro": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "macro.itemMacro.local": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "macro.itemMacro.GM": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "macro.actorUpdate": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.di.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.di.value": ["", -1],
+          "data.traits.di.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.dr.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.dr.value": ["", -1],
+          "data.traits.dr.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.dv.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.dv.value": ["", -1],
+          "data.traits.dv.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.ci.all": [false, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.ci.value": ["", -1],
+          "data.traits.ci.custom": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.traits.size": ["", ACTIVE_EFFECT_MODES.OVERRIDE],
+          "data.spells.pact.level": [0, -1],
+          "flags.dae": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.attributes.movement.all": ["", ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.attributes.movement.hover": [0, ACTIVE_EFFECT_MODES.CUSTOM],
+          "data.attributes.ac.EC": [0, -1],
+          "data.attributes.ac.AR": [0, -1]
+        };
+        if (_characterSpec.data.attributes.hd) specials["data.attributes.hd"] = [0, -1];
+        if (_characterSpec.data.weaponProf) {
+          specials["data.traits.weaponProf.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.weaponProf.value"] = ["", -1];
+          specials["data.traits.weaponProf.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
         }
-      }
-
-      // change movement effects to be after prepareDerivedData
-      for (let key of Object.keys(CONFIG.DND5E.movementTypes)) {
-        specials[`data.attributes.movement.${key}`] = [0, -1];
-      }
-      specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      if (game.modules.get("ATL")?.active) {
-        // support new version of ATL
-        if (isNewerVersion("0.3.04", game.modules.get("ATL").data.version)) {
-          for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
-            specials[`ATL.${label}`] = [0, -1];
-          }
-        } else {
-          for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
-            specials[`ATL.${label}`] = [0, -1];
+        if (_characterSpec.data.languages) {
+          specials["data.traits.languages.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.languages.value"] = ["", -1];
+          specials["data.traits.languages.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        }
+        if (_characterSpec.data.traits.armorProf) {
+          specials["data.traits.armorProf.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.armorProf.value"] = ["", -1];
+          specials["data.traits.armorProf.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        }
+        if (_characterSpec.data.traits.toolProf) {
+          specials["data.traits.toolProf.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.toolProf.value"] = ["", -1];
+          specials["data.traits.toolProf.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        }
+        if (_characterSpec.data.resources) {
+          specials["data.resources.primary.max"] = [0, -1];
+          specials["data.resources.primary.label"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+          specials["data.resources.secondary.max"] = [0, -1];
+          specials["data.resources.secondary.label"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+          specials["data.resources.tertiary.max"] = [0, -1];
+          specials["data.resources.tertiary.label"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+          specials["data.resources.legact.max"] = [0, -1];
+          specials["data.resources.legres.max"] = [0, -1];
+          if (game.modules.get("resourcesplus")?.active) {
+            for (let res of ["fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]) {
+              specials[`data.resources.${res}.max`] = [0, -1];
+              specials[`data.resources.${res}.label`] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+            }
           }
         }
-        specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      }
-      // TODO reactivate when cond vis is 0.8.6 ready
-      // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-      specials[`flags.${game.system.id}.DamageBonusMacro`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials[`flags.${game.system.id}.initiativeDisadv`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-      if (game.system.id === "sw5e") {
-        specials["data.attributes.powerForceLightDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-        specials["data.attributes.powerForceDarkDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-        specials["data.attributes.powerForceUnivDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-        specials["data.attributes.powerTechDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+
+        // change movement effects to be after prepareDerivedData
+        for (let key of Object.keys(CONFIG.DND5E.movementTypes)) {
+          specials[`data.attributes.movement.${key}`] = [0, -1];
+        }
+        specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        if (game.modules.get("ATL")?.active) {
+          // support new version of ATL
+          if (isNewerVersion("0.3.04", game.modules.get("ATL").data.version)) {
+            for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
+              specials[`ATL.${label}`] = [0, -1];
+            }
+          } else {
+            for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
+              specials[`ATL.${label}`] = [0, -1];
+            }
+          }
+          specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        }
+        // TODO reactivate when cond vis is 0.8.6 ready
+        // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+        specials[`flags.${game.system.id}.DamageBonusMacro`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        specials[`flags.${game.system.id}.initiativeDisadv`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+        if (game.system.id === "sw5e") {
+          specials["data.attributes.powerForceLightDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.attributes.powerForceDarkDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.attributes.powerForceUnivDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.attributes.powerTechDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+        }
+
+        // move all the characteer flags to specials so that the can be custom effects only
+        let charFlagKeys = (game.system.id === "dnd5e") ? Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
+        charFlagKeys.forEach(key => {
+          let theKey = `flags.${game.system.id}.${key}`;
+          if ([`flags.${game.system.id}.weaponCriticalThreshold`,
+          `flags.${game.system.id}.powerCriticalThreshold`,
+          `flags.${game.system.id}.meleeCriticalDamageDice`,
+          `flags.${game.system.id}.spellCriticalThreshold`].includes(theKey)) {
+            specials[theKey] = [0, -1];
+            delete baseValues[theKey];
+          }
+          else baseValues[theKey] = false;
+        });
+        if (game.modules.get("tidy5e-sheet")?.active)
+          specials["data.details.maxPreparedSpells"] = [0, -1];
+
+        //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
+        if (_characterSpec.data.bonuses) baseValues["data.bonuses.spell.dc"] = 0;
+        Object.keys(baseValues).forEach(key => {
+          // can't modify many spell details.
+          if (key.includes("data.spells")) {
+            delete baseValues[key];
+          }
+          if (key.includes("data.spells") && key.includes("override")) {
+            baseValues[key] = 0;
+          }
+        });
+
+        Object.keys(specials).forEach(key => {
+          delete baseValues[key]
+        })
+        delete baseValues["data.attributes.init.total"];
+        delete baseValues["data.attributes.init.mod"];
+        delete baseValues["data.attributes.init.bonus"]
+        delete baseValues["flags"];
       }
 
-      // move all the characteer flags to specials so that the can be custom effects only
-      let charFlagKeys = (game.system.id === "dnd5e") ? Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
-      charFlagKeys.forEach(key => {
-        let theKey = `flags.${game.system.id}.${key}`;
-        if ([`flags.${game.system.id}.weaponCriticalThreshold`,
-        `flags.${game.system.id}.powerCriticalThreshold`,
-        `flags.${game.system.id}.meleeCriticalDamageDice`,
-        `flags.${game.system.id}.spellCriticalThreshold`].includes(theKey)) {
-          specials[theKey] = [0, -1];
-          delete baseValues[theKey];
+      // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
+      this.specs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
+        let validSpec = new ValidSpec(spec, baseValues[spec], -1);
+        if (spec.includes("data.skills") && spec.includes("ability")) {
+          validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
         }
-        else baseValues[theKey] = false;
+        if (spec.includes("data.bonuses.abilities")) {
+          validSpec.forcedMode = -1;
+        }
+        if (spec.includes(`flags.${game.system.id}`))
+          validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
+
+        this.specs[specKey].baseSpecsObj[spec] = validSpec;
+        return validSpec;
       });
-      if (game.modules.get("tidy5e-sheet")?.active)
-        specials["data.details.maxPreparedSpells"] = [0, -1];
-
-      //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
-      baseValues["data.bonuses.spell.dc"] = 0;
-      Object.keys(baseValues).forEach(key => {
-        // can't modify all spell details.
-        if (key.includes("data.spells")) {
-          delete baseValues[key];
-        }
-        if (key.includes("data.spells") && key.includes("override")) {
-          baseValues[key] = 0;
-        }
-      });
-
-      Object.keys(specials).forEach(key => {
-        delete baseValues[key]
-      })
-      delete baseValues["data.attributes.init.total"];
-      delete baseValues["data.attributes.init.mod"];
-      delete baseValues["data.attributes.init.bonus"]
-      delete baseValues["flags"];
-    }
-
-    // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
-    this.baseSpecs = Object.keys(baseValues).map(spec => {
-      let validSpec = new ValidSpec(spec, baseValues[spec], -1);
-      if (spec.includes("data.skills") && spec.includes("ability")) {
-        validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
+      //@ts-ignore
+      if (game.modules.get("tokenmagic")?.active) {
+        specials["macro.tokenMagic"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       }
-      if (spec.includes("data.bonuses.abilities")) {
-        validSpec.forcedMode = -1;
+
+      // Do the system specific part
+      if (["dnd5e", "sw5e"].includes(game.system.id)) {
+        // 1. abilities add mod and save to each;
+        if (_characterSpec.data.abilities) Object.keys(_characterSpec.data.abilities).forEach(ablKey => {
+          let abl = _characterSpec.data.abilities[ablKey];
+          this.specs[specKey].derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.mod`, 0))
+          this.specs[specKey].derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.save`, 0))
+          this.specs[specKey].derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.min`, 0))
+        })
+        // adjust specs for bonuses - these are strings, @fields are looked up but dice are not rolled.
+
+        // Skills add mod, passive and bonus fields
+        if (_characterSpec.data.skills) Object.keys(_characterSpec.data.skills).forEach(sklKey => {
+          let skl = _characterSpec.data.skills[sklKey];
+          this.specs[specKey].derivedSpecs.push(new ValidSpec(`data.skills.${sklKey}.mod`, 0))
+          this.specs[specKey].derivedSpecs.push(new ValidSpec(`data.skills.${sklKey}.passive`, 0))
+        })
+
+        Object.entries(specials).forEach(special => {
+          let validSpec = new ValidSpec(special[0], special[1][0], special[1][1]);
+          this.specs[specKey].derivedSpecs.push(validSpec);
+        })
       }
-      if (spec.includes(`flags.${game.system.id}`))
-        validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
-
-      this.baseSpecsObj[spec] = validSpec;
-      return validSpec;
-    });
-    //@ts-ignore
-    if (game.modules.get("tokenmagic")?.active) {
-      specials["macro.tokenMagic"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      this.specs[specKey].allSpecs = this.specs[specKey].baseSpecs.concat(this.specs[specKey].derivedSpecs);
+      if (["dnd5e", "sw5e"].includes(game.system.id)) {
+        // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
+        // and initiative bonus depends on advantage on initiative
+        this.specs[specKey].allSpecs.forEach(m => {
+          if (["attributes.hp", "attributes.ac"].includes(m._fieldSpec)) {
+            m._sampleValue = 0;
+          }
+        });
+      }
+      this.specs[specKey].allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+      this.specs[specKey].baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+      this.specs[specKey].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+      this.specs[specKey].allSpecs.forEach(ms => this.specs[specKey].allSpecsObj[ms._fieldSpec] = ms);
+      this.specs[specKey].baseSpecs.forEach(ms => this.specs[specKey].baseSpecsObj[ms._fieldSpec] = ms);
+      this.specs[specKey].derivedSpecs.forEach(ms => this.specs[specKey].derivedSpecsObj[ms._fieldSpec] = ms);
     }
-
-    // Do the system specific part
-    if (["dnd5e", "sw5e"].includes(game.system.id)) {
-      // 1. abilities add mod and save to each;
-      Object.keys(_characterSpec.data.abilities).forEach(ablKey => {
-        let abl = _characterSpec.data.abilities[ablKey];
-        this.derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.mod`, 0))
-        this.derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.save`, 0))
-        this.derivedSpecs.push(new ValidSpec(`data.abilities.${ablKey}.min`, 0))
-      })
-      // adjust specs for bonuses - these are strings, @fields are looked up but dice are not rolled.
-
-      // Skills add mod, passive and bonus fields
-      Object.keys(_characterSpec.data.skills).forEach(sklKey => {
-        let skl = _characterSpec.data.skills[sklKey];
-        this.derivedSpecs.push(new ValidSpec(`data.skills.${sklKey}.mod`, 0))
-        this.derivedSpecs.push(new ValidSpec(`data.skills.${sklKey}.passive`, 0))
-      })
-
-      Object.entries(specials).forEach(special => {
-        let validSpec = new ValidSpec(special[0], special[1][0], special[1][1]);
-        this.derivedSpecs.push(validSpec);
-      })
+    let allSpecsObj = {};
+    let baseSpecsObj = {}
+    let derivedSpecsObj = {};
+    for (let specKey of Object.keys(game.system.model.Actor)) {
+      Object.keys(this.specs[specKey].allSpecsObj).forEach(key => allSpecsObj[key] = this.specs[specKey].allSpecsObj[key]);
+      Object.keys(this.specs[specKey].baseSpecsObj).forEach(key => baseSpecsObj[key] = this.specs[specKey].baseSpecsObj[key]);
+      Object.keys(this.specs[specKey].derivedSpecsObj).forEach(key => derivedSpecsObj[key] = this.specs[specKey].derivedSpecsObj[key]);
     }
-    this.allSpecs = this.baseSpecs.concat(this.derivedSpecs);
-    if (["dnd5e", "sw5e"].includes(game.system.id)) {
-      // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
-      // and initiative bonus depends on advantage on initiative
-      this.allSpecs.forEach(m => {
-        if (["attributes.hp", "attributes.ac"].includes(m._fieldSpec)) {
-          m._sampleValue = 0;
-        }
-      });
-    }
-    this.allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-    this.baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-    this.derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-    this.allSpecs.forEach(ms => this.allSpecsObj[ms._fieldSpec] = ms);
-    this.baseSpecs.forEach(ms => this.baseSpecsObj[ms._fieldSpec] = ms);
-    this.derivedSpecs.forEach(ms => this.derivedSpecsObj[ms._fieldSpec] = ms);
+    this.specs["union"] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
+    this.specs["union"].allSpecsObj = allSpecsObj
+    this.specs["union"].baseSpecsObj = baseSpecsObj;
+    this.specs["union"].derivedSpecsObj = derivedSpecsObj;
+    this.specs["union"].allSpecs = Object.keys(this.specs["union"].allSpecsObj).map(k => this.specs["union"].allSpecsObj[k])
+    this.specs["union"].baseSpecs = Object.keys(this.specs["union"].baseSpecsObj).map(k => this.specs["union"].baseSpecsObj[k])
+    this.specs["union"].derivedSpecs = Object.keys(this.specs["union"].derivedSpecsObj).map(k => this.specs["union"].derivedSpecsObj[k])
+    this.specs["union"].allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+    this.specs["union"].baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+    this.specs["union"].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
   }
 
   static localizeSpecs() {
-    const fieldStart = `flags.${game.system.id}.`;
-    this.allSpecs = this.allSpecs.map(m => {
-      m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`)).join(" ");
-      if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
-        const fieldId = m.fieldSpec.replace(fieldStart, "");
-        const characterFlags = (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags : CONFIG.SW5E.characterFlags;
-        const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
-        m._label = `Flags ${localizedString}`;
-      }
-      const saveBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).save/);
-      const checkBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).mod/);
-      const skillMod = m._fieldSpec.match(/data.skills.(\w\w\w).mod/);
-      const skillPassive = m._fieldSpec.match(/data.skills.(\w\w\w).passive/);
-      if (saveBonus) m._label = `${m._label} (Deprecated)`
-      else if (checkBonus) m._label = `${m._label} (Deprecated)`
-      else if (skillMod) m._label = `${m._label} (Deprecated)`
-      else if (skillPassive) m._label = `${m._label} (Deprecated)`
-      else if (m._fieldSpec === "data.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
-      else if (this.derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
-      return m;
-    });
+    for (let specKey of Object.keys(game.system.model.Actor)) {
+      const fieldStart = `flags.${game.system.id}.`;
+      this.specs[specKey].allSpecs = this.specs[specKey].allSpecs.map(m => {
+        m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`)).join(" ");
+        if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
+          const fieldId = m.fieldSpec.replace(fieldStart, "");
+          const characterFlags = (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags : CONFIG.SW5E.characterFlags;
+          const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
+          m._label = `Flags ${localizedString}`;
+        }
+        const saveBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).save/);
+        const checkBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).mod/);
+        const skillMod = m._fieldSpec.match(/data.skills.(\w\w\w).mod/);
+        const skillPassive = m._fieldSpec.match(/data.skills.(\w\w\w).passive/);
+        if (saveBonus) m._label = `${m._label} (Deprecated)`
+        else if (checkBonus) m._label = `${m._label} (Deprecated)`
+        else if (skillMod) m._label = `${m._label} (Deprecated)`
+        else if (skillPassive) m._label = `${m._label} (Deprecated)`
+        else if (m._fieldSpec === "data.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
+        else if (this.specs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
+        return m;
+      });
+    }
   }
 }
 
@@ -403,7 +436,7 @@ function flagChangeKeys(actor, change) {
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
-  applyDaeEffects.bind(this)(ValidSpec.baseSpecsObj, {}, false)
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false)
 }
 /*
  * Replace default appplyAffects to do value lookups
@@ -462,8 +495,13 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
         let value = Roll.replaceFormulaData(c.value, rollData, { missing: 0, warn: false });
 
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
+          if (needStringNumericValues) {
             //@ts-ignore - this will throw an error if there are roll expressions
             c.value = `${Roll.safeEval(value)}`;
+          } else {
+            //@ts-ignore
+            c.value = Roll.safeEval(value);
+          }
         } catch (err) { // safeEval failed try a roll
           try {
             console.warn("dae | you are using dice expressions in a numeric field this will be disabled after foundry 9.x is released")
@@ -478,7 +516,7 @@ function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean) {
       }
     }
     const currentValue = getProperty(this.data, c.key);
-    if (typeof ValidSpec.allSpecsObj[c.key]?.sampleValue === "number" && typeof currentValue !== "number") {
+    if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.sampleValue === "number" && typeof currentValue !== "number") {
       //@ts-ignore coerce the value to a number
       const guess = Number.fromString ? Number.fromString(currentValue || "0") : Number(currentValue) || "0";
       if (!Number.isNaN(guess)) setProperty(this.data, c.key, guess);
@@ -849,7 +887,7 @@ function prepareData(wrapped) {
   const hasHeavy = this.items.find(i => i.data.data.equipped && i.data.data.stealth) !== undefined;
   const disAdvSte = hasHeavy || getProperty(this.data, "flags.midi-qol.disadvantage.skill.ste")
   setProperty(this.data, "flags.midi-qol.disadvantage.skill.ste", hasHeavy);
-  applyDaeEffects.bind(this)(ValidSpec.derivedSpecsObj, ValidSpec.baseSpecsObj, true);
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true);
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.data.items)
   preparePassiveSkills.bind(this)()
@@ -1070,20 +1108,19 @@ export function _onUpdateActiveEffect(...args) {
   const parent = effect.parent;
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return true;
-
   let changeLoop = async () => {
     try {
+      const item = await fromUuid(effect.data.origin);
       const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens();
       const token = tokens[0];
-      if (changes.disabled !== undefined) {
-      }
-
+      effect.determineSuppression();
       // Just deal with equipped etc
       warn("add active effect actions", parent, changes)
       if (token && effect.data.changes) {
         const CV = globalThis.ConditionalVisibility;
         const tokenMagic = globalThis.TokenMagic;
-        if (changes.disabled) {
+        if (changes.disabled === true) {
+          await daeMacro("off", parent, effect.data, {});
           for (let change of effect.data.changes) {
             if (cubActive && change.key === "macro.CUB") {
               // game.cub.removeCondition(change.value, [token], { warn: false });
@@ -1098,8 +1135,10 @@ export function _onUpdateActiveEffect(...args) {
             }
             if (CV) await removeCVChange(parent, change, [token], CV);
             if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(parent, change, tokens, tokenMagic);
+
           }
-        } else {
+        } else if (changes.disabled === false && !effect.isSuppressed) {
+          await daeMacro("on", parent, effect.data, {});
           for (let change of effect.data.changes) {
             if (cubActive && change.key === "macro.CUB") {
               await game.cub.addCondition(change.value, [token]);
@@ -1126,20 +1165,20 @@ export function _onUpdateActiveEffect(...args) {
   return true;
 }
 
-export async function _preUpdateActiveEffect(wrapped, changes, options, user) {
+export async function _preUpdateActiveEffect(wrapped, updates, options, user) {
   const parent = this.parent;
   //@ts-ignore documentClass TODO
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) {
-    return wrapped(changes, options, user);
+    return wrapped(updates, options, user);
   }
-  for (let change of changes.changes ?? []) {
+  for (let change of updates.changes ?? []) {
     const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
     const inline = change.value.matchAll(rgx).next();
     if (inline.value) {
       change.value = await evaInline(inline.value[2], this.parent, this);
     }
   }
-  return wrapped(changes, options, user);
+  return wrapped(updates, options, user);
 }
 
 export function _onDeleteActiveEffect(...args) {
@@ -1175,10 +1214,12 @@ export function _onDeleteActiveEffect(...args) {
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.data.origin;
         }
-        const timesup = options ? options["times-up"] : undefined;
-        await daeMacro("off", actor, effect.data, {"times-up": timesup});
+        // const timesup = options ? options["times-up"] : undefined;
+        await daeMacro("off", actor, effect.data, options);
         if (entityToDelete) socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
       }
+      if (globalThis.Sequencer) globalThis.Sequencer.EffectManager.endEffects({ origin: effect.data.origin })
+
     } catch (err) {
       console.warn("dae | error deleting active effect ", err);
     }
@@ -1339,7 +1380,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
       case "macro.tokenMagic":
         break;
       default:
-        if (doRolls && typeof ValidSpec.allSpecsObj[change.key]?.sampleValue === "number") {
+        if (doRolls && typeof ValidSpec.specs[actor.type].allSpecsObj[change.key]?.sampleValue === "number") {
           //@ts-ignore evaluate - probably need to make this a saveEval
           returnChange.value = new Roll(returnChange.value, context).evaluate({ async: false }).total;
         };
@@ -1497,10 +1538,30 @@ function updateItem(candidate, updates, options, user) {
     } else if (additions.length > 0) {
       candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
     }
+  } else if (updates.data?.attunement !== undefined || updates.data?.equipped !== undefined) { // item effects have changed - update transferred effects
+    toggleDisabledEffect(candidate, updates);
   }
+
   return true;
 }
 
+function toggleDisabledEffect(item, updates: any) {
+  const equipped = updates.data?.equipped ?? item.data.data?.equipped;
+  const attuned = (updates.data?.attunement ?? item.data.data?.attunement) !== 1; // CONFIG>DND5E.attunementTypes.REQUIRED
+  
+  const disabled = !equipped || !attuned;
+  let updateEffectsData = [];
+  let wasChanged = false;
+  for (let aef of item.parent.effects) { // remove all transferred effects for the item
+    const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+    if (isTransfer && aef.data.origin === item.uuid) {
+      wasChanged = true;
+      aef.data.disabled = disabled;
+    }
+    updateEffectsData.push(aef.data);
+  };
+  if (wasChanged) item.parent.updateEmbeddedDocuments("ActiveEffect", updateEffectsData)
+}
 export function preCreateItem(candidate, data, options, user) {
   if (!candidate.isOwned) return;
   if (data.effects) {
@@ -1568,6 +1629,8 @@ function getRollData(wrapped) {
 }
 
 export function daeInitActions() {
+  needStringNumericValues = isNewerVersion("9.250", game.version);
+
   libWrapper = globalThis.libWrapper;
   // Setup attack types and expansion change mappings
   spellAttacks = ["msak", "rsak"]
@@ -1621,6 +1684,7 @@ export function daeInitActions() {
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "WRAPPER");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "WRAPPER");
   Hooks.on("createActiveEffect", _onCreateActiveEffect);
+
   Hooks.on("deleteActiveEffect", _onDeleteActiveEffect);
   Hooks.on("updateActiveEffect", _onUpdateActiveEffect);
 
@@ -1680,7 +1744,6 @@ export function daeSetupActions() {
   conditionalVisibilityActive = game.modules.get("conditional-visibility")?.active;
   midiActive = game.modules.get("midi-qol")?.active;
   statusCounterActive = game.modules.get("statuscounter")?.active;
-
 }
 
 export function fetchParams(doUpdatePatches = true) {

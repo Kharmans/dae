@@ -1,4 +1,4 @@
-import { displayTraits, libWrapper } from "./dae";
+import { DAEfromUuid, displayTraits, libWrapper } from "./dae";
 //@ts-ignore
 // import {d20Roll} from "../../../systems/dnd5e/module/dice.js";
 import { debug, log, error, warn, } from "../dae";
@@ -21,7 +21,8 @@ function _prepareArmorClassAttribution(wrapped, data) {
   if (!this.object.data.effects) return attributions;
   for (let effect of this.object.data.effects) {
     for (let change of effect.data.changes) {
-      if (change.key === "data.attributes.ac.value" && !effect.data.disabled && !effect.isSuppressed) {
+      //@ts-ignore .isNumeric - core does not look at ac.value or non-numeric ac.bonus
+      if ((change.key === "data.attributes.ac.value" || change.key === "data.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.data.disabled && !effect.isSuppressed) {
         attributions.push({
           label: `${effect.data.label} (dae)`,
           mode: change.mode,
@@ -35,15 +36,13 @@ function _prepareArmorClassAttribution(wrapped, data) {
 
 export function patchPrepareArmorClassAttribution() {
   if (game.system.id === "dnd5e") {
-    if (!isNewerVersion("1.8.0", game.modules.get("lib-wrapper").data.version)) {
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['dnd5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-    } else if (game.system.id === "sw5e") {
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['sw5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['sw5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['sw5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-    }
+    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['dnd5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+  } else if (game.system.id === "sw5e") {
+    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['sw5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['sw5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['sw5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
   }
 }
 

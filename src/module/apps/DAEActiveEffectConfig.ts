@@ -45,13 +45,18 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       })
     } else this.tokenMagicEffects["invalid"] = "module not installed"
 
-    this.fieldsList = Object.keys(ValidSpec.allSpecsObj);
+    let validSpecsToUse = ValidSpec.specs["union"];
+    //@ts-ignore documentClass
+    if (this.object.parent instanceof CONFIG.Actor.documentClass) {
+      validSpecsToUse = ValidSpec.specs[this.object.parent.type]
+    }
+    this.fieldsList = Object.keys(validSpecsToUse.allSpecsObj);
     this.fieldsList = this.fieldsList.concat(otherFields)
     //@ts-ignore
     // if (window.MidiQOL?.midiFlags)  this.fieldsList = this.fieldsList.concat(window.MidiQOL.midiFlags);
     this.fieldsList.sort();
     //@ts-ignore
-    log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL?.midiFlags?.length || 0} come from midi-qol and ${ValidSpec.allSpecs.length} from dae`);
+    log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL?.midiFlags?.length || 0} come from midi-qol and ${validSpecsToUse.allSpecs.length} from dae`);
     if (game.system.id === "dnd5e") {
       this.fieldsList = this.fieldsList.join(", ");
       this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
@@ -170,7 +175,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets[preset.name] = preset.name);
     }
     this.validFields = { "__": "" }
-    this.validFields = ValidSpec.allSpecs
+    this.validFields = validSpecsToUse.allSpecs
       .filter(e => e._fieldSpec.includes(""))
       .reduce((mods, em) => {
         mods[em._fieldSpec] = em._label;
@@ -275,6 +280,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   async getData(options) {
     const data = super.getData(options);
+    let validSpecsToUse = ValidSpec.specs["union"]; // TODO this needs to be thought about
     await DAEActiveEffectConfig.setupProficiencies();
 
     //@ts-ignore
@@ -296,6 +302,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       //@ts-ignore documentClass
       data.isActor = this.object.parent instanceof CONFIG.Actor.documentClass;
     }
+    if (data.isItem) validSpecsToUse = ValidSpec.specs["union"]; // TODO think about what it means to edit an item effect
+    if (data.isActor) validSpecsToUse = ValidSpec.specs[this.object.parent.type]; 
     data.validFields = this.validFields;
     data.submitText = "EFFECT.Submit";
     //@ts-ignore
@@ -304,12 +312,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         //@ts-ignore
         change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
       }
-      else if ([-1, undefined].includes(ValidSpec.allSpecsObj[change.key]?.forcedMode)) {
+      else if ([-1, undefined].includes(validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
         change.modes = allModes;
       }
       else {
         const mode = {};
-        mode[ValidSpec.allSpecsObj[change.key]?.forcedMode] = allModes[ValidSpec.allSpecsObj[change.key]?.forcedMode];
+        mode[validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
         change.modes = mode;
       }
       change.options = this.getOptionsForSpec(change.key);

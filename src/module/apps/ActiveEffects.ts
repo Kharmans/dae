@@ -27,6 +27,7 @@ export class ActiveEffects extends FormApplication {
     options.submitOnClose = true;
     options.height = 400;
     options.width = 600;
+    options.resizable = true;
     return options;
 }
 get id() {
@@ -68,7 +69,11 @@ getData() {
       return newAe;
     }
     newAe.changes.map(change=> {
-      change.label=ValidSpec.allSpecsObj[change.key]?.label || change.key; 
+      //@ts-ignore documentClass
+      if (this.object instanceof CONFIG.Item.documentClass) 
+        change.label=ValidSpec.specs["union"].allSpecsObj[change.key]?.label || change.key; 
+      else
+        change.label=ValidSpec.specs[this.object.type].allSpecsObj[change.key]?.label || change.key; 
       if (typeof change.value === "string" && change.value.length > 40) {
         change.value = change.value.substring(0, 30) + " ... ";
       } else if (Array.isArray(change.value)) {
@@ -114,7 +119,7 @@ getData() {
     isOwned: this.object.isOwned,
     flags: this.object.data.flags,
     modes: modeKeys,
-    validSpecs: ValidSpec.allSpecsObj,
+    validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[this.object.type],
     //@ts-ignore
     // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
     canEdit: true,
