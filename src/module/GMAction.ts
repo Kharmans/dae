@@ -141,7 +141,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
       };
     }
   }
-  if (globalThis.Sequencer) globalThis.Sequencer.EffectManager.endEffects({ origin: data.origin })
+  if (globalThis.Sequencer && data.origin) globalThis.Sequencer.EffectManager.endEffects({ origin: data.origin })
 }
 
 export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false) {

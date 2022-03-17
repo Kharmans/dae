@@ -274,6 +274,17 @@ export class ValidSpec {
         delete baseValues["data.attributes.init.bonus"]
         delete baseValues["flags"];
       }
+      if (["sw5e"].includes(game.system.id)) {
+          specials["data.traits.sdi.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.sdi.value"] = ["", -1];
+          specials["data.traits.sdi.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.sdr.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.sdr.value"] = ["", -1];
+          specials["data.traits.sdr.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.sdv.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+          specials["data.traits.sdv.value"] = ["", -1];
+          specials["data.traits.sdv.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      }
 
       // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
       this.specs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
@@ -611,6 +622,9 @@ function daeCustomEffect(actor, change) {
     case "data.traits.di.all":
     case "data.traits.dr.all":
     case "data.traits.dv.all":
+    case "data.traits.sdi.all":
+    case "data.traits.sdr.all":
+    case "data.traits.sdv.all":
       const key = change.key.replace(".all", ".value")
       if (game.system.id === "dnd5e")
         setProperty(actor.data, key, Object.keys(CONFIG.DND5E.damageResistanceTypes))
@@ -620,6 +634,9 @@ function daeCustomEffect(actor, change) {
     case "data.traits.di.value":
     case "data.traits.dr.value":
     case "data.traits.dv.value":
+    case "data.traits.sdi.value":
+    case "data.traits.sdr.value":
+    case "data.traits.sdv.value":
       if (game.system.id === "dnd5e")
         return doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.damageResistanceTypes));
       else
@@ -627,6 +644,9 @@ function daeCustomEffect(actor, change) {
     case "data.traits.di.custom":
     case "data.traits.dr.custom":
     case "data.traits.dv.custom":
+    case "data.traits.sdi.custom":
+    case "data.traits.sdr.custom":
+    case "data.traits.sdv.custom":
     case "data.traits.ci.custom":
     case "data.traits.languages.custom":
     case "data.traits.toolProf.custom":
@@ -885,12 +905,11 @@ function prepareData(wrapped) {
   this.overrides = {};
   wrapped();
   const hasHeavy = this.items.find(i => i.data.data.equipped && i.data.data.stealth) !== undefined;
-  const disAdvSte = hasHeavy || getProperty(this.data, "flags.midi-qol.disadvantage.skill.ste")
-  setProperty(this.data, "flags.midi-qol.disadvantage.skill.ste", hasHeavy);
+  if (hasHeavy) setProperty(this.data, "flags.midi-qol.disadvantage.skill.ste", true);
   applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true);
+  preparePassiveSkills.bind(this)();
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.data.items)
-  preparePassiveSkills.bind(this)()
   debug("prepare data: after passes", this.data);
 }
 
@@ -902,7 +921,6 @@ async function preparePassiveSkills() {
     const abilityId = skill.ability;
     const advdisadv = procAdvantageSkill(this, abilityId, skillId);
     skill.passive = skill.passive + 5 * advdisadv;
-
   }
 }
 
@@ -1214,11 +1232,16 @@ export function _onDeleteActiveEffect(...args) {
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.data.origin;
         }
-        // const timesup = options ? options["times-up"] : undefined;
         await daeMacro("off", actor, effect.data, options);
         if (entityToDelete) socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
       }
-      if (globalThis.Sequencer) globalThis.Sequencer.EffectManager.endEffects({ origin: effect.data.origin })
+      if (globalThis.Sequencer && effect.data.origin) {
+        let origin: any = await fromUuid(effect.data.origin);
+        // Remove the associated animation if the origin points to the actor or if the items parent is the effects parent
+        // Covers the spirit guardian case where all the aura's point back to the source item.
+        if (origin === effect.parent || origin?.parent === effect.parent)
+          globalThis.Sequencer.EffectManager.endEffects({ origin: effect.data.origin })
+      }
 
     } catch (err) {
       console.warn("dae | error deleting active effect ", err);
