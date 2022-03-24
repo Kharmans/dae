@@ -277,7 +277,7 @@ function _onCreateActiveEffect(...args) {
   const actor = parent;
   const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens();
   const token = tokens[0];
-  effect.dtermineSuppression && effect.determineSuppression();
+  effect.determineSuppression && effect.determineSuppression();
   if (token && effect.data.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
       try {
@@ -402,7 +402,7 @@ export function _onUpdateActiveEffect(...args) {
       // const item = await fromUuid(effect.data.origin);
       const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens();
       const token = tokens[0];
-      if (effect.determinSuppression) effect.determineSuppression();
+      if (effect.determineSuppression) effect.determineSuppression();
       // Just deal with equipped etc
       warn("add active effect actions", parent, changes)
       if (token && effect.data.changes) {
