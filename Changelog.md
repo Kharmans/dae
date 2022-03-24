@@ -1,6 +1,17 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.01
+* **Majorly** potential breaking. Do not update just before game time, there are almost certain to be bugs. I have provided an archived release of 0.9.12 which you can access from the module page.
+  - DAE is now system agnostic. Don't get too excited, without specific system support the features available are limited and on the systems I've tested 2 out of 3 have serious problems without customisation. However, the tweaking to get DAE to work with a system is not too bad. Any system developers out there who want to work with me to develop DAE for you system let me know.
+  - dnd5e specific code is isolated to DAESytemdnd5e.js and DAE will auto detect and configure for dnd5e and sw5e.
+  - sytem writers can add DAE support via a single class to specify extra fields that can be modified, a custom effect application method, prepareData override method and a few other bits and pieces.
+* Inline roll expression [[1d10+20]] will remain evaluated at the time the effect is applied. Deferred inline expressions [[/r 1d10+2d20]] will be applied without rolling, i.e. as a text string to the target field.
+* Removed completely out of date sample macros compendium.
+* Put back @data filtering for non-transfer effect application.
+* Support @item. fields in effect values/arguments, which always refer to the item used by the actor.
+* Support for midi-qol toggleEffect item option. (Extra toggle effect optional parameter in doEffects)
+
 ### 0.9.12
 * Added "sdi", "sdr", "sdv" types for sw5e.
 * Fix for removing too many sequencer effects when conditions removed.

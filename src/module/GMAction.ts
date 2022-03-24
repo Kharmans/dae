@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, replaceAtFields, simpleCalendarInstalled, allMacroEffects, getMacro } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
 
 export class GMActionMessage {
@@ -69,7 +69,7 @@ async function _setTileVisibility(data) {
 }
 
 async function _applyActiveEffects(data) {
-  return await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration, data.itemCardId, data.removeMatchLabel)
+  return await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration, data.itemCardId, data.removeMatchLabel, data.toggleEffect)
 }
 async function _recreateToken(data: { userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
   await _createToken(data);
@@ -144,7 +144,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   if (globalThis.Sequencer && data.origin) globalThis.Sequencer.EffectManager.endEffects({ origin: data.origin })
 }
 
-export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false) {
+export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   for (let tid of tokenList) {
     const tokenOrDocument = DAEfromUuid(tid) || canvas.tokens.get(tid);
@@ -174,7 +174,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         removeList = removeList.map(ae => ae.data._id);
         await actor.deleteEmbeddedDocuments("ActiveEffect", removeList);
       }
-
+      if (toggleEffect && removeList.length > 0) activate = false;;
       if (activate) {
         let dupEffects = duplicate(activeEffects);
         for (let aeData of dupEffects) {
@@ -222,7 +222,6 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
-                // change.value = replaceAtFields(duplicate(change.value), context);
                 //@ts-ignore replaceFormulaData
                 change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false });
                 change.value = change.value.replace("##", "@");

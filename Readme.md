@@ -20,7 +20,7 @@ Accordingly effect changes to the derived values for abilities, skills and ac ar
  Effects to change (they will eventually be removed from dae)
  data.abilities.str/dex/cha.save -> data.abilities.str.bonuses.save
  data.abilities.str/dex/cha.mod -> data.abilities.str.bonuses.check
- skills.acr/per/prc/etc.bonus (use skills.prc.bonuses.check) and skills.rpc.passive (use skills.bonuses.passive instead).
+ skills.acr/per/prc/etc.bonus (use skills.prc.bonuses.check) and skills.prc.passive (use skills.bonuses.passive instead).
 
 There are some cleanup functions to get rid of the deprecated fields in active effects for actors and items. Please backup your world first - I have run these over my worlds without problems, but there could be lurking bugs.
 async DAE.fixDeprecatedChangesActor(actor) - e.g. 
@@ -157,12 +157,12 @@ hp.max will be set to `31 + con.mod * paladin levels`
 When the effect is applied to the actor the expression inside `[[]]` will be evaluated as a roll and the resulting value will replace the change value, all the normal substituions will be appliied (and the @ and ## fields are supported).
 
 **Number** fields are fully evaluated during the applyEffects pass.   
-**String** fields are not evaluated at all. So setting `data.bonuses.mwak.attack ADD "@data.abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `data.bonuses.mwak` is a string field.
+**String** fields are not evaluated at all. So setting `data.bonuses.mwak.attack ADD "@abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `data.bonuses.mwak` is a string field.
 * Recognizing what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. 
 
-#### Supported fields
+#### Supported fields for dnd5e
 **Pretty much @data.abilities.anything is supported.**
 
 <details><summary>The current list of derived fields for dnd5e - click to expand</summary>
@@ -410,8 +410,8 @@ IN some circumstances (when macros are called with args[0] === "off or args[0] =
 
 Generally prefer to use the uuids when fetching an actor/token since it will alway work and avoid problems.  
 
-For example, if the `macro.execute` definition is `macro.execute CUSTOM "My macro" 5 @abilities.str.mod` then, when the effect is transferred to the target token the macro will be called with `args = ["on", <strength mod of the actor that used the item>, <actor.data of the target token>, lastArg]`  
-When the effect is deleted from the target actor (either by expiry or explicit deletion) the macro will be called again with `args = ["off", <strength mod of the actor that used the item>, <actor.data of the target token>, lastArg]`  
+For example, if the `macro.execute` definition is `macro.execute CUSTOM "My macro" 5 @abilities.str.mod` then, when the effect is transferred to the target token the macro will be called with `args = ["on", <strength mod of the actor that used the item> lastArg]`  
+When the effect is deleted from the target actor (either by expiry or explicit deletion) the macro will be called again with `args = ["off", <strength mod of the actor that used the item>, lastArg]`  
 
 ## Macros and transfer effect
 The above discussion applies to non-transfer effects. Transfer effects are applied when the item is equipped by a character.
@@ -419,7 +419,7 @@ The above discussion applies to non-transfer effects. Transfer effects are appli
 **macro.itemMacro "macro_name" args**  
 The same as `macro.execute`, but the item is inspected to find the item macro stored there. You can create item macros with the [Item Macro](https://github.com/Kekilla0/Item-Macro) module.
 
-If you are using `macro.itemMacro` please make sure you disable the Item Macro config settings:
+If you are using `macro.itemMacro` please make sure you disable the Item Macro module config settings:
 * "character sheet hook" else when you use the item the macro will get called bypassing Midi-QOL/DAE completely and none of the arguments will get populated.
 * "override default macro execution"  IF this is enabled the hotbar hooks will directly call the item macro and won't work as expected for DAE/Midi-QOL.
 
@@ -438,7 +438,7 @@ macro.actorUpdate allows you to update a field on the actor and (optionally) hav
 * **type**: number, boolean, string (it's important to match these to the type of the target field)
 * **expression**: a roll expression, string, or boolean e.g. "@attributes.dex.mod * 2 + 10" (**must** be in "" marks), the expression can start with one of +-*/ and will treated as a (actor current value + value) etc.
 * **targetField**: "string", e.g. data.attrbutes.hp.temp
-*optional undo action** values:
+* **optional undo action** values:
   - missing/true/restore -> restore original value of target field on expiry
   - remove -> subtract the change made to the current value of the field on expiry, i.e. undo the change allowing for changes from other sources.
   - **+-*/value** add/subtract etc value to the current value of the target field

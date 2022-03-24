@@ -1,6 +1,6 @@
 
 import { debug, warn, log, i18n, error } from "../dae";
-import { itemacroActive, ValidSpec } from "./dae";
+import { itemacroActive } from "./dae";
 
 //@ts-ignore
 const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
@@ -273,31 +273,6 @@ export function checkLibWrapperVersion() {
   }
 }
 
-export function checkArmorDisabled() {
-  if (
-    game.system.id === "dnd5e"
-    && isNewerVersion(game.system.data.version, "1.3.9")
-    && game.settings.get("dae", "ArmorDisabled") < 1) {
-    let d = new Dialog({
-      // localize this text
-      title: i18n("dae.confirm"),
-      content: `<h2>You have updated to DND 1.4.x</h2><p>DND 1.4.x auto calculates AC</p><p> Auto calculation in DAE will be disabled</p>`,
-      buttons: {
-        one: {
-          icon: '<i class="fas fa-cross"></i>',
-          label: "Disable DAE AC",
-          callback: async () => {
-            await cleanArmorWorld();
-            await cleanDAEArmorWorld();
-            game.settings.set("dae", "ArmorDisabled", 1)
-          }
-        },
-      },
-      default: "one"
-    });
-    d.render(true);
-  }
-}
 
 export async function cleanDAEArmorWorld() {
   await removeAllActorArmorItems();

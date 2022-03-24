@@ -1,5 +1,6 @@
-import { ValidSpec, confirmDelete, cubActive, conditionalVisibilityActive, ceActive, atlActive } from "../dae";
+import { confirmDelete, cubActive, conditionalVisibilityActive, ceActive, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
+import { ValidSpec } from "../Systems/DAESystem";
 
 export var otherFields = [];
 
@@ -13,21 +14,6 @@ export function addAutoFields(fields: string[]) {
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
   fieldsList;
-  traitList;
-  languageList;
-  conditionList;
-  static profInit;
-  static toolProfList;
-  get toolProfList() { return DAEActiveEffectConfig.toolProfList }
-  set toolProfList(list) { DAEActiveEffectConfig.toolProfList = list }
-
-  static armorProfList;
-  get armorProfList() { return DAEActiveEffectConfig.armorProfList }
-  set armorProfList(list) { DAEActiveEffectConfig.armorProfList = list }
-  static weaponProfList;
-  get weaponProfList() { return DAEActiveEffectConfig.weaponProfList }
-  set weaponProfList(list) { DAEActiveEffectConfig.weaponProfList = list }
-
   cubConditionList;
   ceEffectList;
   statusEffectList;
@@ -57,81 +43,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     this.fieldsList.sort();
     //@ts-ignore
     log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL?.midiFlags?.length || 0} come from midi-qol and ${validSpecsToUse.allSpecs.length} from dae`);
-    if (game.system.id === "dnd5e") {
-      this.fieldsList = this.fieldsList.join(", ");
-      this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
-      this.traitList = mergeObject(this.traitList, CONFIG.DND5E.healingTypes);
-      Object.keys(this.traitList).forEach(type => {
-        this.traitList[`-${type}`] = `-${CONFIG.DND5E.damageResistanceTypes[type]}`;
-      });
+    this.fieldsList = this.fieldsList.join(", ");
 
-      this.languageList = duplicate(CONFIG.DND5E.languages);
-      Object.keys(CONFIG.DND5E.languages).forEach(type => {
-        this.languageList[`-${type}`] = `-${CONFIG.DND5E.languages[type]}`;
-      });
-
-      this.conditionList = duplicate(CONFIG.DND5E.conditionTypes);
-      Object.keys(CONFIG.DND5E.conditionTypes).forEach(type => {
-        this.conditionList[`-${type}`] = `-${CONFIG.DND5E.conditionTypes[type]}`;
-      });
-
-      if (DAEActiveEffectConfig.profInit) {
-        this.toolProfList = DAEActiveEffectConfig.toolProfList;
-        this.armorProfList = DAEActiveEffectConfig.armorProfList;
-        this.weaponProfList = DAEActiveEffectConfig.weaponProfList;
-      } else {
-        this.toolProfList = duplicate(CONFIG.DND5E.toolProficiencies);
-        Object.keys(CONFIG.DND5E.toolProficiencies).forEach(type => {
-          this.toolProfList[`-${type}`] = `-${CONFIG.DND5E.toolProficiencies[type]}`;
-        });
-
-        this.armorProfList = duplicate(CONFIG.DND5E.armorProficiencies);
-        Object.keys(CONFIG.DND5E.armorProficiencies).forEach(type => {
-          this.armorProfList[`-${type}`] = `-${CONFIG.DND5E.armorProficiencies[type]}`;
-        });
-
-        this.weaponProfList = duplicate(CONFIG.DND5E.weaponProficiencies);
-        Object.keys(CONFIG.DND5E.weaponProficiencies).forEach(type => {
-          this.weaponProfList[`-${type}`] = `-${CONFIG.DND5E.weaponProficiencies[type]}`;
-        });
-      }
-    } else if (game.system.id === "sw5e") {
-      this.fieldsList = this.fieldsList.join(", ");
-      this.traitList = duplicate(CONFIG.SW5E.damageResistanceTypes);
-      Object.keys(CONFIG.SW5E.damageResistanceTypes).forEach(type => {
-        this.traitList[`-${type}`] = `-${CONFIG.SW5E.damageResistanceTypes[type]}`;
-      });
-
-      this.languageList = duplicate(CONFIG.SW5E.languages);
-      Object.keys(CONFIG.SW5E.languages).forEach(type => {
-        this.languageList[`-${type}`] = `-${CONFIG.SW5E.languages[type]}`;
-      });
-
-      this.conditionList = duplicate(CONFIG.SW5E.conditionTypes);
-      Object.keys(CONFIG.SW5E.conditionTypes).forEach(type => {
-        this.conditionList[`-${type}`] = `-${CONFIG.SW5E.conditionTypes[type]}`;
-      });
-      if (DAEActiveEffectConfig.profInit) {
-        this.toolProfList = DAEActiveEffectConfig.toolProfList;
-        this.armorProfList = DAEActiveEffectConfig.armorProfList;
-        this.weaponProfList = DAEActiveEffectConfig.weaponProfList;
-      } else {
-        this.toolProfList = duplicate(CONFIG.SW5E.toolProficiencies);
-        Object.keys(CONFIG.SW5E.toolProficiencies).forEach(type => {
-          this.toolProfList[`-${type}`] = `-${CONFIG.SW5E.toolProficiencies[type]}`;
-        });
-
-        this.armorProfList = duplicate(CONFIG.SW5E.armorProficiencies);
-        Object.keys(CONFIG.SW5E.armorProficiencies).forEach(type => {
-          this.armorProfList[`-${type}`] = `-${CONFIG.SW5E.armorProficiencies[type]}`;
-        });
-
-        this.weaponProfList = duplicate(CONFIG.SW5E.weaponProficiencies);
-        Object.keys(CONFIG.SW5E.weaponProficiencies).forEach(type => {
-          this.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
-        });
-      }
-    }
+    daeSystemClass.configureLists(this)
+   
     if (cubActive) {
       this.cubConditionList = {}
       game.cub.conditions?.forEach(cubc => {
@@ -140,6 +55,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
     this.statusEffectList = {};
     let efl = CONFIG.statusEffects
+      .filter(se => se.id)
       .map(se => {
         if (se.id.startsWith("combat-utility-belt.")) return { id: se.id, label: `${se.label} (CUB)` };
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.label} (CE)` };
@@ -186,34 +102,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
   }
 
-  static async setupProficiencies() {
-    if (game.system.id === "dnd5e") {
-      try {
-        const pack = game.packs.get(CONFIG.DND5E.sourcePacks.ITEMS);
-        const profs = [
-          { type: "tool", list: DAEActiveEffectConfig.toolProfList },
-          { type: "armor", list: DAEActiveEffectConfig.armorProfList },
-          { type: "weapon", list: DAEActiveEffectConfig.weaponProfList }
-        ];
-        for (let { type, list } of profs) {
-          let choices = CONFIG.DND5E[`${type}Proficiencies`];
-          const ids = CONFIG.DND5E[`${type}Ids`];
-          if (ids !== undefined) {
-            const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
-            for (const [key, id] of Object.entries(ids)) {
-              const item = await pack.getDocument(id);
-              list[key] = item.name;
-            }
-          }
-        }
-        this.profInit = true;
-
-      } catch (err) {
-        this.profInit = false;
-      }
-    }
-  }
-
+ 
   /** @override */
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
@@ -243,26 +132,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
   /* ----------------------------------------- */
   getOptionsForSpec(spec) {
-    if (spec === "data.traits.languages.value")
-      return this.languageList;
-    if (spec === "data.traits.ci.value")
-      return this.conditionList;
-    if (spec === "data.traits.toolProf.value")
-      return this.toolProfList;
-    if (spec === "data.traits.armorProf.value")
-      return this.armorProfList;
-    if (spec === "data.traits.weaponProf.value")
-      return this.weaponProfList;
-    if (["data.traits.di.value", "data.traits.dr.value", "data.traits.dv.value"].includes(spec))
-      return this.traitList;
-    if (spec.includes("data.skills") && spec.includes("value"))
-      return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
-    if (spec.includes("data.skills") && spec.includes("ability")) {
-      if (game.system.id === "dnd5e")
-        return CONFIG.DND5E.abilities;
-      else
-        return CONFIG.SW5E.abilities;
-    }
     if (spec.includes("tokenMagic"))
       return this.tokenMagicEffects;
     if (spec === "macro.CUB") return this.cubConditionList;
@@ -271,9 +140,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
     if (spec === "ATL.preset") return this.ATLPresets;
-    if (spec === "data.traits.size") return CONFIG.DND5E.actorSizes;
 
-    return false;
+    return daeSystemClass.getOptionsForSpec(spec);
   }
 
 
@@ -281,7 +149,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   async getData(options) {
     const data = super.getData(options);
     let validSpecsToUse = ValidSpec.specs["union"]; // TODO this needs to be thought about
-    await DAEActiveEffectConfig.setupProficiencies();
+    await daeSystemClass.editConfig();
 
     //@ts-ignore
     const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)

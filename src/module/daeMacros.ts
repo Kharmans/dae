@@ -287,9 +287,12 @@ export async function macroActorUpdate(...args) {
     switch (type) {
       case "boolean": value = JSON.parse(value) ? true : false;
       case "number": 
-        value=value.trim();
-        const op = value[0];
-        if (["+","-","*","/"].includes(op) )
+      let op = " ";
+        if (typeof value === "string") {
+          value=value.trim();
+          op = value[0];
+        }
+        if (["+","-","*","/"].includes(op))
           value = (await new Roll(`${actorValue}${value}`, rollContext).roll()).total;
         else
           value = (await new Roll(value, rollContext).roll()).total; 

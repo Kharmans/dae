@@ -2,19 +2,17 @@
   "name": "dae",
   "title": "Dynamic effects using Active Effects",
   "description": "replacement for dynamic effects",
-  "version": "0.9.12",
+  "version": "0.10.01",
   "compatibleCoreVersion": "9",
-  "minimumCoreVersion": "0.8.4",
-  "minimumSystemVersion": "1.5.0",
+  "minimumCoreVersion": "9",
   "scripts": ["libs/tokenizer.min.js"],
-  "system": ["dnd5e", "sw5e"],
   "esmodules": [
     "dae.js", "module/patching.js"
   ],
   "dependencies" : [ 
     { "name": "lib-wrapper", "type": "module" },
     { "name": "socketlib", "type": "module" }
-],
+  ],
   "styles": ["css/dae.css", "css/awesomplete.css"],
   "packs": [
     {
@@ -23,14 +21,6 @@
       "path": "./packs/premadeitems.db",
       "module": "world",
       "entity": "Item",
-      "lang": ["en", "de"]
-    },
-    {
-      "name": "sample-macros",
-      "label": "Sample macros",
-      "path": "./packs/sample-macros.db",
-      "module": "world",
-      "entity": "Macro",
       "lang": ["en", "de"]
     }
   ],
@@ -77,5 +67,5 @@
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
   "allowBugReporter": true,
   "manifest": "https://gitlab.com/tposney/dae/raw/master/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.9.12.zip"
+  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.10.01.zip"
 }

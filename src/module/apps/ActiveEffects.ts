@@ -1,7 +1,8 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { ValidSpec, confirmDelete, simpleCalendarInstalled } from "../dae"
+import { confirmDelete, simpleCalendarInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { EditOwnedItemEffectsActiveEffect } from "../editItemEffects/classes/owned-item-effect";
+import { ValidSpec } from "../Systems/DAESystem";
 
 export class ActiveEffects extends FormApplication {
   static filters = new Set().add("summary");
@@ -103,7 +104,7 @@ getData() {
   });
 
   let efl = CONFIG.statusEffects
-  .map(se => {return {"id": se.id, "label": se.id.startsWith("combat-utility-belt.") ? `${se.label} (CUB)` : i18n(se.label)}})
+  .map(se => {return {"id": se.id, "label": se.id?.startsWith("combat-utility-belt.") ? `${se.label} (CUB)` : i18n(se.label)}})
   .sort((a,b) => a.label < b.label ? -1 : 1);
   this.effectList = {"new": "new"}
   efl.forEach(se => {
