@@ -1,6 +1,6 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, fetchParams, libWrapper, noDupDamageMacro } from "../dae";
+import { applyDaeEffects, DAEfromUuid, fetchParams, libWrapper, noDupDamageMacro } from "../dae";
 import { cleanArmorWorld, cleanDAEArmorWorld } from "../migration";
 import { applyBaseActiveEffects, ValidSpec } from "./DAESystem";
 
@@ -10,6 +10,7 @@ var d20Roll;
 var dice;
 // @ts-ignore
 const CONFIG: any = globalThis.CONFIG;
+
 export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   traitList;
   languageList;
@@ -213,6 +214,19 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     })
   }
 
+  static modifyValidSpec(spec, validSpec: ValidSpec) : ValidSpec {
+    //@ts-ignore
+    const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
+    // TODO move this into a system specfic bit of code.
+    if (spec.includes("data.skills") && spec.includes("ability")) {
+      validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
+    }
+
+    if (spec.includes("data.bonuses.abilities")) {
+      validSpec.forcedMode = -1;
+    }
+    return validSpec;
+  }
   // Any actions to be called on init Hook 
   public static initActions() {
     warn("system is ", game.system)
@@ -235,7 +249,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", getRollData, "WRAPPER");
     // Overide prepareData so it can add the extra pass
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
-
+    // Fix for dnd5e broken determine suppression
+    // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "OVERRIDE");
+    
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
   }
@@ -995,5 +1011,17 @@ function checkArmorDisabled() {
     d.render(true);
   }
 }
+
+function determineSuppression() {
+  this.isSuppressed = false;
+  if ( this.data.disabled || (this.parent.documentName !== "Actor") ) return;
+  if (!this.data.origin) return;
+  const originParts = this.data.origin.split(".");
+  if (originParts[originParts.length - 2] !== "Item") return;
+  const item = this.parent.items.get(originParts[originParts.length - 1]);
+  if ( !item ) return;
+  this.isSuppressed = item.areEffectsSuppressed;
+}
+
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 setProperty(globalThis.daeSystems, "dnd5e", DAESystemDND5E);

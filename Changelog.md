@@ -1,6 +1,9 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.03
+* Added support for modifying DAE behaviour without having to add another DAESystem, via some hooks called when DAESystem is loaded. Useful for systems released as modules rather than systems - typically variants of a base system.
+
 ### 0.10.02
 * Fix for a couple of typos - thanks @Elwin
 

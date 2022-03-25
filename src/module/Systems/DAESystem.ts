@@ -44,6 +44,7 @@ export class ValidSpec {
       _characterSpec["data"] = duplicate(game.system.model.Actor[specKey]);
       let baseValues = flattenObject(_characterSpec);
       daeSystemClass.modifyBaseValues(specKey, baseValues, _characterSpec);
+      Hooks.callAll("dae.modifyBaseValues", specKey, baseValues, _characterSpec);
 
       // baseValues["items"] = ""; // TODO one day work this out.
       if (game.modules.get("gm-notes")?.active) {
@@ -56,6 +57,7 @@ export class ValidSpec {
       specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       daeSystemClass.modifySpecials(specKey, specials, _characterSpec);
+      Hooks.callAll("dae.modifySpecials", specKey, specials, _characterSpec)
       if (game.modules.get("ATL")?.active) {
         // support new version of ATL
         if (isNewerVersion("0.3.04", game.modules.get("ATL").data.version)) {
@@ -80,15 +82,10 @@ export class ValidSpec {
       // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
       this.specs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
         let validSpec = new ValidSpec(spec, baseValues[spec], -1);
-        if (spec.includes("data.skills") && spec.includes("ability")) {
-          validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
-        }
-        if (spec.includes("data.bonuses.abilities")) {
-          validSpec.forcedMode = -1;
-        }
+
         if (spec.includes(`flags.${game.system.id}`))
           validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
-
+        validSpec = daeSystemClass.modifyValidSpec(spec, validSpec); // System specific modifations
         this.specs[specKey].baseSpecsObj[spec] = validSpec;
         return validSpec;
       });
@@ -97,6 +94,7 @@ export class ValidSpec {
         specials["macro.tokenMagic"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       }
       daeSystemClass.modifyDerivedSpecs(specKey, this.specs[specKey].derivedSpecs, _characterSpec)
+      Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.specs[specKey].derivdSpecs, _characterSpec);
       Object.entries(specials).forEach(special => {
         let validSpec = new ValidSpec(special[0], special[1][0], special[1][1]);
         this.specs[specKey].derivedSpecs.push(validSpec);
@@ -140,6 +138,9 @@ export class ValidSpec {
     this.specs["union"].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
   }
 
+  static modifyValidSpec(spec, validSpec: ValidSpec) : ValidSpec {
+    return validSpec;
+  }
   static localizeSpecs() {
     for (let specKey of Object.keys(game.system.model.Actor)) {
       const fieldStart = `flags.${game.system.id}.`;

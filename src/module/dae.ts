@@ -131,7 +131,7 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
       }));
   }, []);
   changes.sort((a, b) => a.priority - b.priority);
-  if (changes.length > 0) debug("Applying change ", this.name, changes)
+  if (changes.length > 0) debug("Applying effect ", this.name, changes)
   // Apply all changes
   for (let c of changes) {
     //TODO remove @data sometime
@@ -360,7 +360,8 @@ async function _preCreateActiveEffect(wrapped, ...args) {
         if (inline.value) {
           changesChanged = true;
           const newChange = duplicate(change);
-          newChange.value = await evaInline(inline.value[2], this.parent, this);
+          if (inline.value[1] === undefined) newChange.value = await evalInline(inline.value[2], this.parent, this);
+          else newChange.value = inline.value[2];
           newChanges.push(newChange);
         } else newChanges.push(change);
       } else newChanges.push(change);
@@ -375,7 +376,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
   }
 }
 
-async function evaInline(expression: string, actor: Actor, effect) {
+async function evalInline(expression: string, actor: Actor, effect) {
   try {
     //@ts-ignore
     expression = expression.replaceAll("@data.", "@");
@@ -464,8 +465,10 @@ export async function _preUpdateActiveEffect(wrapped, updates, options, user) {
   for (let change of updates.changes ?? []) {
     const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
     const inline = change.value.matchAll(rgx).next();
-    if (inline.value && inline.value[1] === undefined) {
-      change.value = await evaInline(inline.value[2], this.parent, this);
+    if (inline.value) {
+      if (inline.value[1] === undefined)
+        change.value = await evalInline(inline.value[2], this.parent, this);
+      else change.value = inline.value[2];
     }
   }
   return wrapped(updates, options, user);
@@ -902,11 +905,12 @@ export function daeInitActions() {
   // Default systtem class is setup, this oeverrides with system specific calss
   const dnd5esystem = DAESystemDND5E; // force reference so they are installed?
   const sw5eSystem = DAESystemSW5E;
-  if (getProperty(globalThis.daeSystems, game.system.id))
-    setProperty(globalThis, "CONFIG.DAE.systemClass", getProperty(globalThis.daeSystems, game.system.id));
   libWrapper = globalThis.libWrapper;
-  //@ts-ignore
-  daeSystemClass = globalThis.CONFIG.DAE.systemClass;
+  if (getProperty(globalThis.daeSystems, game.system.id))
+    daeSystemClass = getProperty(globalThis.daeSystems, game.system.id);
+  else 
+    //@ts-ignore
+    daeSystemClass = globalThis.CONFIG.DAE.systemClass;
   daeSystemClass.initActions();
   daeSystemClass.initSystemData();
   
@@ -1050,7 +1054,6 @@ export function DAEfromActorUuid(uuid) {
   if (doc instanceof CONFIG.Token.documentClass) doc = doc.actor;
   return doc || null;
 }
-
 
 // Allow limited recursion of the formula replace function for things like
 // bonuses.heal.damage in spell formulas.
