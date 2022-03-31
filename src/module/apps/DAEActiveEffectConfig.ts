@@ -1,4 +1,4 @@
-import { confirmDelete, cubActive, conditionalVisibilityActive, ceActive, atlActive, daeSystemClass } from "../dae";
+import { confirmDelete, cubActive, ceActive, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
 
@@ -26,7 +26,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     this.tokenMagicEffects = {};
     //@ts-ignore
     if (game.modules.get("tokenmagic")?.active) {
-      game.settings.get("tokenmagic", "presets").forEach(preset => {
+      globalThis.TokenMagic.getPresets().forEach(preset => {
         this.tokenMagicEffects[preset.name] = preset.name;
       })
     } else this.tokenMagicEffects["invalid"] = "module not installed"
@@ -73,19 +73,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       })
     }
 
-    const ConditionalVisibilityNames = ["invisible", "hidden", "obscured", "indarkness"];
-    const ConditionalVisibilityVisionNames = ["blindsight", "devilssight", "seeinvisible", "tremorsense", "truesight"]
-    if (conditionalVisibilityActive && false) {
-      this.ConditionalVisibilityList = {};
-      ConditionalVisibilityNames.forEach(cvc => {
-        this.ConditionalVisibilityList[cvc] = i18n(`CONVIS.${cvc}`);
-      })
-      this.ConditionalVisibilityVisionList = {};
-      ConditionalVisibilityVisionNames.forEach(cvc => {
-        this.ConditionalVisibilityVisionList[cvc] = i18n(`CONVIS.${cvc}`);
-      })
-    }
-
     if (atlActive) {
       this.ATLPresets = {};
       game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets[preset.name] = preset.name);
@@ -101,7 +88,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       this.validFields[field] = field;
     }
   }
-
  
   /** @override */
   static get defaultOptions() {

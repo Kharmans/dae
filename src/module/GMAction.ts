@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro, actionQueue } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
 
 export class GMActionMessage {
@@ -26,7 +26,8 @@ export let setupSocket = () => {
   socketlibSocket.register("deleteToken", _deleteToken);
   socketlibSocket.register("renameToken", _renameToken);
   //  socketlibSocket.register("moveToken", _moveToken); TODO find out if this is used anywhere
-  socketlibSocket.register("applyTokenMagic", _applyTokenMagic);
+  socketlibSocket.register("applyTokenMagic", _addTokenMagic);
+  socketlibSocket.register("removeTokenMagic", _removeTokenMagic);
   socketlibSocket.register("applyActiveEffects", _applyActiveEffects);
   socketlibSocket.register("setTokenFlag", _setTokenFlag);
   socketlibSocket.register("setFlag", _setFlag);
@@ -115,11 +116,24 @@ async function _renameToken(data: { tokenData: any, newName: string }) { // TODO
   return await canvas.tokens.placeables.find(t => t.id === data.tokenData._id).update({ "name": data.newName })
 }
 
-async function _applyTokenMagic(data: { tokenUuid: string, effectId: string }) {
-  let token = DAEfromUuid(data.tokenUuid);
+async function _addTokenMagic(data: { tokenUuid: string, effectId: string }) {
+  // console.error("remove gma", data.tokenUuid, data.effectId);
+  let token = DAEfromUuid(data.tokenUuid)?.object;
   let tokenMagic = globalThis.TokenMagic;
   if (tokenMagic && token) {
     return await tokenMagic.addFilters(token, data.effectId);
+    console.error("gmaction add token magic", token.name, data.effectId)
+    // return await actionQueue.add(tokenMagic.addFilters, token, data.effectId)
+  }
+}
+async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) {
+  // console.error("remove gma", data.tokenUuid, data.effectId);
+  let token = DAEfromUuid(data.tokenUuid)?.object;
+  let tokenMagic = globalThis.TokenMagic;
+  if (tokenMagic && token) {
+    return await tokenMagic.deleteFilters(token, data.effectId);
+    console.error("gmaction remove token magic", token.name, data.effectId)
+    // return await actionQueue.add(tokenMagic.deleteFilters, token, data.effectId)
   }
 }
 

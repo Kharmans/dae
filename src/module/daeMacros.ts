@@ -26,7 +26,10 @@ let tokenScene = (tokenName, sceneName) => {
     for (let scene of game.scenes) {
       //@ts-ignore
       let found = scene.tokens.getName(tokenName);
-      if (found) return { scene, found }
+      if (found) return { scene, found };
+      //@ts-ignore
+      found = scene.tokens.get(tokenName);
+      if (found) return { scene, found };
     }
   } else {
     //@ts-ignore
@@ -34,6 +37,11 @@ let tokenScene = (tokenName, sceneName) => {
     if (scene) {
       //@ts-ignore
       let found = scene.tokens.getName(tokenName)
+      if (found) {
+        return { scene, found };
+      }
+      //@ts-ignore
+      found = scene.tokens.get(tokenName)
       if (found) {
         return { scene, found };
       }
@@ -78,6 +86,12 @@ export let renameToken = async (token: Token, newName: string) => {
   socketlibSocket.executeAsGM("renameToken", { userId: game.user.id, startSceneId: canvas.scene.id, tokenData: token.data, newName });
 }
 
+export async function teleportToken(token: Token, scene: Scene | string, position: {x:number, y: number}) {
+  let theScene: Scene;
+  if (typeof scene === "string") theScene = canvas.scenes.get(scene);
+  else theScene = scene;
+  return teleport(token, theScene, position.x, position.y)
+}
 export let teleportToToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
   let { scene, found } = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
@@ -98,9 +112,9 @@ export async function createToken(tokenData, x, y) {
   return socketlibSocket.execuateAsGM("createToken", { userId: game.user.id, targetSceneId, tokenData, x, y })
 }
 
-export let teleport = async (token: Token, targetScene, xpos, ypos) => {
+export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
   let x = Number(xpos);
-  let y = parseInt(ypos);
+  let y = Number(ypos);
 
   if (isNaN(x) || isNaN(y)) {
     error("dae| teleport: Invalid co-ords", xpos, ypos);
@@ -137,7 +151,7 @@ export let teleport = async (token: Token, targetScene, xpos, ypos) => {
   // Need to stop animation since we are going to delete the token and if that happens before the animation completes we get an error
   //@ts-ignore
   CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
-
+  //@ts-ignore
   return await targetScene.view();
 }
 
@@ -221,12 +235,15 @@ export function getFlag(entity: Actor | Token | string, flagId: string) {
 }
 
 export async function setFlag(tactor: Actor | Token | string, flagId: string, value: any) {
-  if (typeof tactor === "string") {
+  if (typeof tactor === "string" && (tactor.startsWith("Scene") || tactor.startsWith("Actor"))) {
+    return socketlibSocket.executeAsGM("setFlag", { actorUuid: tactor, flagId, value });
+  } if (typeof tactor === "string") {
     return socketlibSocket.executeAsGM("setFlag", { actorId: tactor, flagId, value });
     // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
   let actor: Actor;
-  if (tactor instanceof Token) actor = tactor.actor;
+  //@ts-ignore
+  if (tactor.actor) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`);
   return socketlibSocket.executeAsGM("setFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId, value });
@@ -234,13 +251,15 @@ export async function setFlag(tactor: Actor | Token | string, flagId: string, va
 }
 
 export async function unsetFlag(tactor: Actor | Token | string, flagId) {
-
-  if (typeof tactor === "string") {
-    socketlibSocket.executeAsGM("unsetFlag", { actorId: tactor, flagId });
-    // return requestGMAction(GMAction.actions.unsetFlag, { actorId: tactor, flagId})
+  if (typeof tactor === "string" && (tactor.startsWith("Scene") || tactor.startsWith("Actor"))) {
+    return socketlibSocket.executeAsGM("unsetFlag", { actorUuid: tactor, flagId });
+  } if (typeof tactor === "string") {
+    return socketlibSocket.executeAsGM("unsetFlag", { actorId: tactor, flagId });
+    // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
   let actor: Actor;
-  if (tactor instanceof Token) actor = tactor.actor;
+  //@ts-ignore
+  if (tactor.actor) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`)
   return socketlibSocket.executeAsGM("unsetFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId });

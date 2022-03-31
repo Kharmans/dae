@@ -1,6 +1,14 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.04
+* Changed support for Conditional Visibility. Support now requires Convenient Effects. All CV effects are available via marco.CE. If you toggle the CV effects to be status effects, you can apply them via statusEffect CUSTOM Condition (CV) (CE) as needed.
+* Added DAE.teleportToken(token: Token, scene: Scene, {x:number, y: number});
+* Teleport to token will accept a target token id as well as a name.
+* DAESetFlag et all will now accept an actorUuid as well as an Id.
+* Added a semaphore on add/remove cub effects, convenient effects, token effects and macro.executes, to enforce serialised execution, which should clear up some of the effects not being removed problems. It is likely to make things a little slower.
+* Fix for incorrectly showing templates in Token Magic drop down of effects to apply.
+
 ### 0.10.03
 * Added support for modifying DAE behaviour without having to add another DAESystem, via some hooks called when DAESystem is loaded. Useful for systems released as modules rather than systems - typically variants of a base system.
 
