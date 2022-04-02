@@ -184,7 +184,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // move all the characteer flags to specials so that the can be custom effects only
     let charFlagKeys = Object.keys(CONFIG.DND5E?.characterFlags ?? {});
     charFlagKeys.forEach(key => {
-      let theKey = `flags.dnd5e}.${key}`;
+      let theKey = `flags.dnd5e.${key}`;
       if ([`flags.dnd5e.weaponCriticalThreshold`,
       `flags.dnd5e.powerCriticalThreshold`,
       `flags.${game.system.id}.meleeCriticalDamageDice`,

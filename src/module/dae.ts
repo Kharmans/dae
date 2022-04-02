@@ -143,6 +143,7 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
     //@ts-ignore
     if (typeof specList[c.key]?.sampleValue !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
       c.value = c.value.replace("@stackCount", stackCount)
+
     //@ts-ignore
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
       if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
@@ -152,7 +153,6 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
         c.value = c.value.replace("@item.level", "@itemLevel");
         //@ts-ignore replaceFormulaData
         let value = Roll.replaceFormulaData(c.value, rollData, { missing: 0, warn: false });
-
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
           if (needStringNumericValues) {
             //@ts-ignore - this will throw an error if there are roll expressions

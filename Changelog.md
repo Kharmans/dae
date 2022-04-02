@@ -1,6 +1,9 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.05
+* fix for flags.dnd5e.meleeCriticalThreshold and others introduced in 0.10.1
+
 ### 0.10.04
 * Changed support for Conditional Visibility. Support now requires Convenient Effects. All CV effects are available via marco.CE. If you toggle the CV effects to be status effects, you can apply them via statusEffect CUSTOM Condition (CV) (CE) as needed.
 * Added DAE.teleportToken(token: Token, scene: Scene, {x:number, y: number});
