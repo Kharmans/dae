@@ -2,7 +2,7 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, doEffects, daeInitActions, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, daeSystemClass } from "./module/dae";
+import { daeSetupActions, doEffects, daeInitActions, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, daeSystemClass, actionQueue } from "./module/dae";
 import { daeReadyActions} from "./module/dae";
 import { convertDuration, setupSocket } from './module/GMAction';
 import { checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixDeprecatedChanges, fixDeprecatedChangesActor, fixDeprecatedChangesItem, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
@@ -129,6 +129,8 @@ Hooks.once('setup', function() {
     tobMapper: tobMapper,
     unsetFlag: unsetFlag,
     ValidSpec,
+    actionQueue: actionQueue
+    
   }
   setupSocket();
 });
