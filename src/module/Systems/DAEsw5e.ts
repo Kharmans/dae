@@ -1,4 +1,5 @@
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
+import { daeSystemClass } from "../dae";
 import { DAESystemDND5E } from "./DAEdnd5e";
 import { DAESystem, ValidSpec } from "./DAESystem";
 
@@ -52,39 +53,68 @@ export class DAESystemSW5E extends DAESystemDND5E {
     });
   }
 
+  public static async editConfig() {
+    if (game.system.id === "sw5e") {
+      try {
+        const armorPack = game.packs.get("sw5e.armor");
+        let pack;
+        const profs = [
+          { type: "tool", list: this.toolProfList },
+          { type: "armor", list: this.armorProfList },
+          { type: "weapon", list: this.weaponProfList }
+        ];
+        for (let { type, list } of profs) {
+          let choices = CONFIG.SW5E[`${type}Proficiencies`];
+          const ids = CONFIG.SW5E[`${type}Ids`];
+          if (ids !== undefined) {
+            const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
+            for (const [key, id] of Object.entries(ids)) {
+              const item = await fromUuid(`Compendium.${id}`)
+              list[key] = item.name;
+            }
+          }
+        }
+        this.profInit = true;
+
+      } catch (err) {
+        console.error(err)
+        this.profInit = false;
+      }
+    }
+  }
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
-    super.traitList = duplicate(CONFIG.SW5E.damageResistanceTypes);
+    daeSystemClass.traitList = duplicate(CONFIG.SW5E.damageResistanceTypes);
     Object.keys(CONFIG.SW5E.damageResistanceTypes).forEach(type => {
-      super.traitList[`-${type}`] = `-${CONFIG.SW5E.damageResistanceTypes[type]}`;
+      daeSystemClass.traitList[`-${type}`] = `-${CONFIG.SW5E.damageResistanceTypes[type]}`;
     });
 
-    super.languageList = duplicate(CONFIG.SW5E.languages);
+    daeSystemClass.languageList = duplicate(CONFIG.SW5E.languages);
     Object.keys(CONFIG.SW5E.languages).forEach(type => {
-      super.languageList[`-${type}`] = `-${CONFIG.SW5E.languages[type]}`;
+      daeSystemClass.languageList[`-${type}`] = `-${CONFIG.SW5E.languages[type]}`;
     });
 
-    super.conditionList = duplicate(CONFIG.SW5E.conditionTypes);
+    daeSystemClass.conditionList = duplicate(CONFIG.SW5E.conditionTypes);
     Object.keys(CONFIG.SW5E.conditionTypes).forEach(type => {
-      super.conditionList[`-${type}`] = `-${CONFIG.SW5E.conditionTypes[type]}`;
+      daeSystemClass.conditionList[`-${type}`] = `-${CONFIG.SW5E.conditionTypes[type]}`;
     });
-    if (super.profInit) {
-      super.toolProfList = super.toolProfList;
-      super.armorProfList = super.armorProfList;
-      super.weaponProfList = super.weaponProfList;
+    if (daeSystemClass.profInit) {
+      daeSystemClass.toolProfList = daeSystemClass.toolProfList;
+      daeSystemClass.armorProfList = daeSystemClass.armorProfList;
+      daeSystemClass.weaponProfList = daeSystemClass.weaponProfList;
     } else {
-      super.toolProfList = duplicate(CONFIG.SW5E.toolProficiencies);
+      daeSystemClass.toolProfList = duplicate(CONFIG.SW5E.toolProficiencies);
       Object.keys(CONFIG.SW5E.toolProficiencies).forEach(type => {
-        super.toolProfList[`-${type}`] = `-${CONFIG.SW5E.toolProficiencies[type]}`;
+        daeSystemClass.toolProfList[`-${type}`] = `-${CONFIG.SW5E.toolProficiencies[type]}`;
       });
 
-      super.armorProfList = duplicate(CONFIG.SW5E.armorProficiencies);
+      daeSystemClass.armorProfList = duplicate(CONFIG.SW5E.armorProficiencies);
       Object.keys(CONFIG.SW5E.armorProficiencies).forEach(type => {
-        super.armorProfList[`-${type}`] = `-${CONFIG.SW5E.armorProficiencies[type]}`;
+        daeSystemClass.armorProfList[`-${type}`] = `-${CONFIG.SW5E.armorProficiencies[type]}`;
       });
 
-      super.weaponProfList = duplicate(CONFIG.SW5E.weaponProficiencies);
+      daeSystemClass.weaponProfList = duplicate(CONFIG.SW5E.weaponProficiencies);
       Object.keys(CONFIG.SW5E.weaponProficiencies).forEach(type => {
-        super.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
+        daeSystemClass.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
       });
     }
   }
@@ -96,8 +126,8 @@ export class DAESystemSW5E extends DAESystemDND5E {
   }
   public static initSystemData() {
     super.initSystemData();
-    super.daeActionTypeKeys = super.ActionTypeKeys.concat(Object.keys(CONFIG.SW5E.itemActionTypes));
-    super.spellAttacks = super.spellAttacks.concat(["mpak", "rpak"])
+    daeSystemClass.daeActionTypeKeys = daeSystemClass.daeActionTypeKeys.concat(Object.keys(CONFIG.SW5E.itemActionTypes));
+    daeSystemClass.spellAttacks = daeSystemClass.spellAttacks.concat(["mpak", "rpak"])
   }
 
   public static initActions() {
@@ -108,3 +138,4 @@ export class DAESystemSW5E extends DAESystemDND5E {
 }
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);
+

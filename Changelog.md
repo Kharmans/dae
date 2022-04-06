@@ -1,8 +1,13 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.07
+* Fix for vehicles AC effects definitions
+* Some fixes for sw5e initialisation.
+  - Fixed erros on startup.
+  - Process weapon/armor/tool proficiencies correctly for edit list.
+
 ### 0.10.06
-* Fix for concentration advantage/disadvantage not cancelling out.
 * Fix for macro.CUB not adding conditions correctly.
 * Fix for macro.CE not adding conditions corretcly.
 * Fix for macro.execute not working correctly.

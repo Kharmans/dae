@@ -1,6 +1,6 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, DAEfromUuid, fetchParams, libWrapper, noDupDamageMacro } from "../dae";
+import { applyDaeEffects, DAEfromUuid, daeSystemClass, fetchParams, libWrapper, noDupDamageMacro } from "../dae";
 import { cleanArmorWorld, cleanDAEArmorWorld } from "../migration";
 import { applyBaseActiveEffects, ValidSpec } from "./DAESystem";
 
@@ -85,19 +85,30 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-    specials["data.attributes.ac.value"] = [0, -1];
-    specials["data.attributes.ac.min"] = [0, -1];
+    if (actorType === "vehicle") {
+      specials["data.attributes.ac.motionless"] = [0, -1];
+      specials["data.attributes.ac.flat"] = [0, -1];
+    } else {
+      specials["data.attributes.ac.value"] = [0, -1];
+      specials["data.attributes.ac.min"] = [0, -1];
+    }
     specials["data.attributes.hp.max"] = [0, -1];
     specials["data.attributes.hp.tempmax"] = [0, -1];
     specials["data.attributes.hp.min"] = [0, -1];
     specials["data.attributes.init.total"] = [0, -1];
     specials["data.attributes.init.bonus"] = [0, -1];
+    for (let abl of Object.keys(CONFIG.DND5E.abilities)) {
+      specials["data.abilities.${abl}.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+
+    }
+    /*
     specials["data.abilities.str.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.abilities.dex.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.abilities.int.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.abilities.wis.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.abilities.cha.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.abilities.con.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+    */
     specials["data.attributes.encumbrance.max"] = [0, -1];
     specials["data.traits.di.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.traits.di.value"] = ["", -1];
@@ -184,9 +195,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // move all the characteer flags to specials so that the can be custom effects only
     let charFlagKeys = Object.keys(CONFIG.DND5E?.characterFlags ?? {});
     charFlagKeys.forEach(key => {
-      let theKey = `flags.dnd5e.${key}`;
-      if ([`flags.dnd5e.weaponCriticalThreshold`,
-      `flags.dnd5e.powerCriticalThreshold`,
+      let theKey = `flags.${game.system.id}.${key}`;
+      if ([`flags.${game.system.id}.weaponCriticalThreshold`,
+      `flags.${game.system.id}.powerCriticalThreshold`,
       `flags.${game.system.id}.meleeCriticalDamageDice`,
       `flags.${game.system.id}.spellCriticalThreshold`].includes(theKey)) {
         specials[theKey] = [0, -1];
@@ -324,7 +335,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       "data.bonuses.weapon.damage": { attacks: this.weaponAttacks, selector: "damage" },
       "data.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage" }
     };
-    this.daeActionTypeKeys = Object.keys(CONFIG.DND5E.itemActionTypes);
+    daeSystemClass.daeActionTypeKeys = Object.keys(CONFIG.DND5E.itemActionTypes);
   }
 
   public static effectDisabled(actor, efData, itemData = null) {
