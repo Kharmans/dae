@@ -177,8 +177,12 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       // find existing active effect that have same origin as one of our new effects 
       let removeList = actor.effects.filter(ae => {
         let notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
-        return origins.find(o => o.origin === ae.data.origin
-          && (!removeMatchLabel || (new RegExp(`^${o.label}( \\([0-9]+\\))?$`)).test(ae.data.label)))
+        return origins.find(o => {
+              const escapedLabel = o.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+              return o.origin === ae.data.origin
+              && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.data.label))
+          })
           && getProperty(ae.data, "flags.dae.transfer") === false
           && notMulti;
       });
