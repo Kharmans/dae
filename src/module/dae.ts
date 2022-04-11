@@ -295,7 +295,7 @@ function _onCreateActiveEffect(...args) {
           const tokenMagic = globalThis.TokenMagic;
           if (tokenMagic && change.key === "macro.tokenMagic")
             addTokenMagicChange(parent, change, tokens); //TODO check disabled
-          if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro"))
+          if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))
             actionQueue.add(daeMacro, "on", parent, effect.data, {});
         }
 
@@ -495,7 +495,7 @@ export function _onDeleteActiveEffect(...args) {
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.data.origin;
             // await daeMacro("off", actor, effect.data, options);
-          if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro"))
+          if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))
             actionQueue.add(daeMacro, "off", actor, effect.data, options);
         }
 
