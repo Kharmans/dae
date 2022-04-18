@@ -278,12 +278,12 @@ function _onCreateActiveEffect(...args) {
   const tokens = parent.isToken ? [parent.token.object] : parent.getActiveTokens();
   const token = tokens[0];
   effect.determineSuppression && effect.determineSuppression();
-  if (token && effect.data.changes && !effect.disabled && !effect.isSuppressed) {
+  if (effect.data.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
       try {
         // const effectData =  await daeMacro("on", parent, effect.data, {});
         for (let change of effect.data.changes) {
-          if (cubActive && change.key === "macro.CUB") {
+          if (cubActive && change.key === "macro.CUB" && token) {
             addCubChange(change.value, [token])
             // await game.cub.addCondition(change.value, [token]);
           }
@@ -293,7 +293,7 @@ function _onCreateActiveEffect(...args) {
             // await game.dfreds.effectInterface?.addEffect({ effectName: change.value, uuid: parent.uuid, origin: effect.data.origin });
           }
           const tokenMagic = globalThis.TokenMagic;
-          if (tokenMagic && change.key === "macro.tokenMagic")
+          if (tokenMagic && change.key === "macro.tokenMagic" && token)
             addTokenMagicChange(parent, change, tokens); //TODO check disabled
           if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))
             actionQueue.add(daeMacro, "on", parent, effect.data, {});
@@ -400,12 +400,12 @@ export function _onUpdateActiveEffect(...args) {
       if (effect.determineSuppression) effect.determineSuppression();
       // Just deal with equipped etc
       warn("add active effect actions", parent, changes)
-      if (token && effect.data.changes) {
+      if (effect.data.changes) {
         const tokenMagic = globalThis.TokenMagic;
         if (changes.disabled === true) {
           // await daeMacro("off", parent, effect.data, {});
           for (let change of effect.data.changes) {
-            if (cubActive && change.key === "macro.CUB") {
+            if (token && cubActive && change.key === "macro.CUB") {
               // game.cub.removeCondition(change.value, [token], { warn: false });
               removeCubChange(change.value, [token], { warn: false });
             }
@@ -413,7 +413,7 @@ export function _onUpdateActiveEffect(...args) {
               removeConvenientEffectsChange(change.value, parent.uuid, undefined);
               // await game.dfreds.effectInterface.removeEffect({ effectName: change.value, uuid: parent.uuid })
             }
-            if (tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(parent, change, tokens);
+            if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(parent, change, tokens);
             if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro"))
               actionQueue.add(daeMacro, "off", parent, effect.data, {});
 
@@ -423,7 +423,7 @@ export function _onUpdateActiveEffect(...args) {
           for (let change of effect.data.changes) {
             if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro"))
               actionQueue.add(daeMacro, "on", parent, effect.data, {});
-            if (cubActive && change.key === "macro.CUB") {
+            if (token && cubActive && change.key === "macro.CUB") {
               addCubChange(change.value, [token])
               // await game.cub.addCondition(change.value, [token]);
             }
@@ -431,7 +431,7 @@ export function _onUpdateActiveEffect(...args) {
               addConvenientEffectsChange(change.value, parent.uuid, undefined);
               // await game.dfreds.effectInterface.addEffect({ effectName: change.value, uuid: parent.uuid, origin: effect.data.origin })
             }
-            if (tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(parent, change, tokens);
+            if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(parent, change, tokens);
           }
         }
       }
@@ -479,14 +479,14 @@ export function _onDeleteActiveEffect(...args) {
   let changesLoop = async () => {
     try {
       let entityToDelete;
-      if (token && effect.data.changes) {
+      if (effect.data.changes) {
         for (let change of effect.data.changes) {
-          if (tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
+          if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
           if (ceActive && change.key === "macro.CE") {
-              removeConvenientEffectsChange(change.value, token.actor.uuid, undefined);
+              removeConvenientEffectsChange(change.value, effect.parent.uuid, undefined);
               // await game.dfreds.effectInterface.removeEffect({ effectName: change.value, uuid: token.actor.uuid })
           }
-          if (cubActive && change.key === "macro.CUB") {
+          if (token && cubActive && change.key === "macro.CUB") {
             removeCubChange(change.value, [token]);
             // await game.cub.removeCondition(change.value, [token], { warn: false })
           }
@@ -572,7 +572,6 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           if (["@itemData"].includes(arg)) return effectData.flags.dae.itemData;
           if (["@item"].includes(arg)) return effectData.flags.dae.itemData;
           return arg;
-
         })
       } else args = change.value;
       if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro")) {
@@ -580,8 +579,8 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         if (!macro) {
           //TODO localize this
           if (action !== "off") {
-            ui.notifications.warn(`macro.execute/macro.itemMacro | No macro ${theChange.value[0]} found`)
-            error(`macro.execute/macro.itemMacro | No macro ${theChange.value[0]} found`);
+            ui.notifications.warn(`macro.execute/macro.itemMacro | No macro ${args[0]} found`)
+            error(`macro.execute/macro.itemMacro | No macro ${args[0]} found`);
             continue;
           }
         }
@@ -630,9 +629,6 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     token: ChatMessage.getSpeaker({ actor }).token,
     target: "@target",
     targetUuid: "@targetUuid",
-    itemData: "@itemData",
-    //item: "@item",
-    // item: "@item",
     spellLevel: spellLevel,
     itemLevel: spellLevel,
     damage: damageTotal,
@@ -648,6 +644,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
   }, context, { overwrite: false });
   //contextToUse["item"] = "@item";
   contextToUse["itemData"] = "@itemData";
+  contextToUse["item"] = "@itemData";
 
   returnChange.value = returnChange.value.replace("@item.level", "@itemLevel") 
   returnChange.value = returnChange.value.replace(/@data./g, "@");

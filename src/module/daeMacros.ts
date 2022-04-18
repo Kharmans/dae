@@ -311,10 +311,13 @@ export async function macroActorUpdate(...args) {
           value=value.trim();
           op = value[0];
         }
+        value = value.replace(/\*\*(.*)\*\*/g, "@$1");
         if (["+","-","*","/"].includes(op))
-          value = (await new Roll(`${actorValue}${value}`, rollContext).roll()).total;
+          //@ts-ignore
+          value = (await new Roll(`${actorValue}${value}`, rollContext).roll({async: true})).total;
         else
-          value = (await new Roll(value, rollContext).roll()).total; 
+          //@ts-ignore
+          value = (await new Roll(value, rollContext).roll({async: true})).total; 
         break;
       default: // assume a string
     }
@@ -335,9 +338,12 @@ export async function macroActorUpdate(...args) {
     if (typeof undo === "string" && undo === "remove") {
       restoreValue = Math.max(0, actorValue - (updateValue - oldValue))
     } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
+      undo = undo.replace(/\*\*(.*)\*\*/g, "@$1");
       restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
     } else if (typeof undo === "string" && type === "number") {
-      restoreValue = (await new Roll(`${undo}`, rollContext).roll()).total;
+      undo = undo.replace(/\*\*(.*)\*\*/g, "@$1");
+      //@ts-ignore
+      restoreValue = (await new Roll(`${undo}`, rollContext).roll({aysnc: true})).total;
     } else if (undo === "undefined") {
       restoreValue = undefined;
     } else if (typeof undo === "string") {

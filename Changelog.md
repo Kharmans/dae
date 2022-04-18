@@ -1,13 +1,19 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.09
+* Fix for @item.fields not working, preferred usage is @itemData.
+* Fix for macro.actorUpdate to support leaving field references unchanged when applied, use ``**attributes.hp.value**``, which will be converte to @attributes.hp.value on application.
+* Fix for error message when no macro is found.
+* A slight improvement to the behaviour when no token for the actor is on the canvas, macro.execute and macro.ce will still function, only macro.CUB and macro.tokenMagic will fail to execute.
+
 ### 0.10.08
 * Fix for macro.actorUpdate not being called correctly.
 
 ### 0.10.07
 * Fix for vehicles AC effects definitions
 * Some fixes for sw5e initialisation.
-  - Fixed erros on startup.
+  - Fixed errors on startup.
   - Process weapon/armor/tool proficiencies correctly for edit list.
 
 ### 0.10.06

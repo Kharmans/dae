@@ -109,9 +109,14 @@ Requires times-up installed and active:
 
 See also Midi-qol and OverTime effects which support some conditional expiry options if the actor is in combat.
 
+## Stackable effects.
+Active effects can be marked as stackable, either apply multiple times or stack with a count.
+
+You can refer to ##/@stackCount for stackable effects which can be used in active effect evaluation. Since you almost always want to refer to the stackCount on the target, for non-passive effects remember to use ##stackCount so it will evaluate on the target not the caster/attacker and for passive effects @stackCount.
+
 ## Editing Active Effects
 A preliminary edit function is supplied, which may change in the future.  
-Active effects for Actors and Items can be edited. Owned Item active effects cannot be edited.
+Active effects for Actors and Items can be edited.
 
 ### Actor Active Effects
 On the title bar of the character sheet is a button for "DAE" that will display a form showing all of the active effects on the actor (transfer and non-transfer). You can change the actor effects to your heart's content - HOWEVER changing the effects on the owned item will overwrite the corresponding active effects on the actor. You are free to create active effects on the actor that are not linked to any item.
@@ -534,6 +539,7 @@ Your custom effects can create new fields on the actor as well (DAE does this fo
 * Ability Saving Throw bonuses. The supplied DND5E system does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
 * Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified value to the existing data.
 * Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
+* Conditional expressions (a ? b : c) used to work, but a change in the foundry roll parser means they no longer work.
 
 ### Characters imported from dnd beyond.
 **This section is wildly out of date and very likely completely wrong**
