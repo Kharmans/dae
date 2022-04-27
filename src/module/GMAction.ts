@@ -66,7 +66,7 @@ async function _setTokenVisibility(data) {
 }
 
 async function _setTileVisibility(data) {
-  return await DAEfromUuid(data.tileUuid)?.update({ vlisible: data.hidden })
+  return await DAEfromUuid(data.tileUuid)?.update({ visible: data.hidden })
 }
 
 async function _applyActiveEffects(data) {

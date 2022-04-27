@@ -138,14 +138,12 @@ export class ValidSpec {
     this.specs["union"].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
   }
 
-  static modifyValidSpec(spec, validSpec: ValidSpec) : ValidSpec {
-    return validSpec;
-  }
   static localizeSpecs() {
     for (let specKey of Object.keys(game.system.model.Actor)) {
       const fieldStart = `flags.${game.system.id}.`;
       this.specs[specKey].allSpecs = this.specs[specKey].allSpecs.map(m => {
-        m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`)).join(" ");
+        //@ts-ignore replaceAll
+        m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`).replaceAll("dae.", "")).join(" ");
         if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
           const fieldId = m.fieldSpec.replace(fieldStart, "");
           const characterFlags = 
@@ -212,6 +210,10 @@ export class DAESystem {
 
   public static effectDisabled(actor, efData, itemData = null) {
     return efData.disabled;
+  }
+
+  public static modifyValidSpec(spec, validSpec: ValidSpec) : ValidSpec {
+    return validSpec;
   }
 
   public static doCustomValue(actor, current, change, validValues) {

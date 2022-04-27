@@ -2,10 +2,15 @@
   "name": "dae",
   "title": "Dynamic effects using Active Effects",
   "description": "replacement for dynamic effects",
-  "version": "0.10.09",
+  "version": "0.10.10",
   "compatibleCoreVersion": "9",
   "minimumCoreVersion": "9",
   "scripts": ["libs/tokenizer.min.js"],
+  "flags": {
+    "compatible": ["dnd5e", "sw5e"],
+    "incompatible": ["pf2e"],
+    "partial": []
+  },
   "esmodules": [
     "dae.js", "module/patching.js"
   ],

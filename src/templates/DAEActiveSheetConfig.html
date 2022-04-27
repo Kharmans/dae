@@ -202,11 +202,19 @@
             </select>
           </div>
         </div>
+        {{#if change.modes}}
         <div class="mode" style="width:80px">
           <select name="changes.{{i}}.mode" data-dtype="Number" style="width:80px">
             {{selectOptions change.modes selected=change.mode}}
           </select>
         </div>
+        {{else}}
+        <div class="mode" style="width:80px">
+          <select name="changes.{{i}}.mode" data-dtype="Number" style="width:80px">
+            {{selectOptions ../modes selected=change.mode}}
+          </select>
+        </div>
+        {{/if}}
         {{#if change.options}}
         <div class="value">
           <select name="changes.{{i}}.value" data-dtype="String">

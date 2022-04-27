@@ -144,6 +144,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         obj[e[1]] = game.i18n.localize("EFFECT.MODE_" + e[0]);
         return obj;
       }, {});
+      data.modes = allModes;
     //@ts-ignore
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;

@@ -1,6 +1,13 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.10
+* Fix for ``**fields**`` 
+* Warning for system compatibility
+* Fix for load errors on non dnd5e systems.
+* Fix for setTileVisibility error.
+* Fix for actorUpdate effects with multiple ``@fields``
+
 ### 0.10.09
 * Fix for @item.fields not working, preferred usage is @itemData.
 * Fix for macro.actorUpdate to support leaving field references unchanged when applied, use ``**attributes.hp.value**``, which will be converte to @attributes.hp.value on application.

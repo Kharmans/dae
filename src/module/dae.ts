@@ -53,7 +53,8 @@ export var showInline = false;
 let debugLog = true;
 
 
-function flagChangeKeys(actor, change) {
+function flagChangeKeys(actor, change) { // this id dnd5e only and should be moved
+  if (!(["dnd5e", "sw5e"].includes(game.system.id))) return;
   const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
   if (hasSaveBonus) {
     const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
@@ -250,14 +251,14 @@ async function removeTokenMagicChange(actor, change, tokens) {
   }
 }
 
-function removeConvenientEffectsChange(effectName: string, uuid: string, origin) {
+function removeConvenientEffectsChange(effectName: string, uuid: string, origin, metaData: {} = {}) {
   const ceInterface = game?.dfreds?.effectInterface;
-  if (ceInterface) actionQueue.add(ceInterface.removeEffect.bind(ceInterface), {effectName, uuid, origin})
+  if (ceInterface) actionQueue.add(ceInterface.removeEffect.bind(ceInterface), {effectName, uuid, origin, metaData})
 }
 
-function addConvenientEffectsChange(effectName: string, uuid: string, origin) {
+function addConvenientEffectsChange(effectName: string, uuid: string, origin, metaData: {} = {}) {
   const ceInterface = game?.dfreds?.effectInterface;
-  actionQueue.add(ceInterface.addEffect.bind(ceInterface), {effectName, uuid, origin})
+  actionQueue.add(ceInterface.addEffect.bind(ceInterface), {effectName, uuid, origin, metaData})
 }
 function addCubChange(conditionName, tokens: [Token], options = {}) {
   const cubInterface = game?.cub;
@@ -266,6 +267,28 @@ function addCubChange(conditionName, tokens: [Token], options = {}) {
 function removeCubChange(conditionName, tokens: [Token], options = {}) {
   const cubInterface = game?.cub;
   if (cubInterface) actionQueue.add(cubInterface.removeCondition, conditionName, tokens, options);
+}
+
+function prepareLastArgData(effectData, actor: Actor, lastArgOptions: {} = {}) {
+  if (!effectData.changes) return effectData;
+  let tokenUuid;
+  if (actor.token) tokenUuid = actor.token.uuid;
+  else {
+    const selfTarget = getSelfTarget(actor);
+    if (selfTarget.document) tokenUuid = selfTarget.document.uuid;
+    else tokenUuid = selfTarget.uuid;
+  }
+  let lastArg = mergeObject(lastArgOptions, {
+    //@ts-ignore - undefined fields
+    effectId: effectData._id,
+    origin: effectData.origin,
+    efData: effectData,
+    actorId: actor.id,
+    actorUuid: actor.uuid,
+    tokenId: actor.token ? actor.token.id : getSelfTarget(actor)?.id,
+    tokenUuid,
+  }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
+  return lastArg;
 }
 
 function _onCreateActiveEffect(...args) {
@@ -288,7 +311,8 @@ function _onCreateActiveEffect(...args) {
             // await game.cub.addCondition(change.value, [token]);
           }
           if (ceActive && change.key === "macro.CE") {
-            addConvenientEffectsChange(change.value, parent.uuid, effect.data.origin);
+            const lastArg = prepareLastArgData(effect.data, actor)
+            addConvenientEffectsChange(change.value, actor.uuid, effect.data.origin, lastArg);
             //@ts-ignore
             // await game.dfreds.effectInterface?.addEffect({ effectName: change.value, uuid: parent.uuid, origin: effect.data.origin });
           }
@@ -410,7 +434,8 @@ export function _onUpdateActiveEffect(...args) {
               removeCubChange(change.value, [token], { warn: false });
             }
             if (ceActive && change.key === "macro.CE") {
-              removeConvenientEffectsChange(change.value, parent.uuid, undefined);
+              const lastArg = prepareLastArgData(effect.data, parent);
+              removeConvenientEffectsChange(change.value, parent.uuid, undefined, lastArg);
               // await game.dfreds.effectInterface.removeEffect({ effectName: change.value, uuid: parent.uuid })
             }
             if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(parent, change, tokens);
@@ -428,7 +453,8 @@ export function _onUpdateActiveEffect(...args) {
               // await game.cub.addCondition(change.value, [token]);
             }
             if (ceActive && change.key === "macro.CE") {
-              addConvenientEffectsChange(change.value, parent.uuid, undefined);
+              const lastArg = prepareLastArgData(effect.data, parent)
+              addConvenientEffectsChange(change.value, parent.uuid, undefined, lastArg);
               // await game.dfreds.effectInterface.addEffect({ effectName: change.value, uuid: parent.uuid, origin: effect.data.origin })
             }
             if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(parent, change, tokens);
@@ -483,7 +509,8 @@ export function _onDeleteActiveEffect(...args) {
         for (let change of effect.data.changes) {
           if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
           if (ceActive && change.key === "macro.CE") {
-              removeConvenientEffectsChange(change.value, effect.parent.uuid, undefined);
+            const lastArg = prepareLastArgData(effect.data, actor)
+              removeConvenientEffectsChange(change.value, actor.uuid, undefined, lastArg);
               // await game.dfreds.effectInterface.removeEffect({ effectName: change.value, uuid: token.actor.uuid })
           }
           if (token && cubActive && change.key === "macro.CUB") {
@@ -793,7 +820,6 @@ function preUpdateItem(candidate, updates, options, user) {
 }
 
 // Update the actor active effects when editing an owned item
-// TODO change this to on update item
 function updateItem(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;

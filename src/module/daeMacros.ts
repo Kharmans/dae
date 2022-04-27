@@ -163,12 +163,20 @@ export async function setTokenVisibility(tokenId: string | Token, visible: boole
   return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
 }
 
-export async function setTileVisibility(tileId: Tile | string, visible: boolean) {
-  let tileUuid: Tile | string = tileId;
-  if (typeof tileId !== "string") tileUuid = tileId.uuid;
-  else if (!tileId.startsWith("Scene.")) {
-    tileUuid = `Scene.${canvas.scene.id}.Tile.${tileId}`;
+export async function setTileVisibility(tileOrId: Tile | string, visible: boolean) {
+  let tileUuid: string;
+  let tile: Tile;
+  if (typeof tileOrId !== "string") {
+    tileUuid = tileOrId.uuid;
+    tile = tileOrId
+  } else {
+    if (!(tileOrId.startsWith("Scene."))) {
+      tileUuid = `Scene.${canvas.scene.id}.Tile.${tileOrId}`;
+    } else tileUuid = tileOrId;
+    //@ts-ignore
+    tile = await fromUuid(tileUuid)
   }
+  let hidden = typeof visible === "boolean" ? !visible : !tile.data.hidden;
   return socketlibSocket.executeAsGM("setTileVisibility", { tileUuid, hidden: !visible });
 }
 
@@ -311,7 +319,7 @@ export async function macroActorUpdate(...args) {
           value=value.trim();
           op = value[0];
         }
-        value = value.replace(/\*\*(.*)\*\*/g, "@$1");
+        value = value.replace(/(\*\*(.+?)\*\*)/g, "@$2");
         if (["+","-","*","/"].includes(op))
           //@ts-ignore
           value = (await new Roll(`${actorValue}${value}`, rollContext).roll({async: true})).total;
