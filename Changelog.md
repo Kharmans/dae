@@ -1,6 +1,18 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.11
+* Fix for dnd1.6.0 class advancement being **very slow** (due to DAE recreating active effects on changed items). 
+* Tweaks to system compatibility settings.
+  - DAE currently ships with dnd5e/sw5e marked as compatible and will load for those systems. 
+  - If the system matches the DAE incompatible list (durrently pf2e) DAE will not load.
+  - I will update the compatible/incompatible list as requested.
+  - If the system.json specifies flags: {daeCompatible: true} DAE will load.
+  - If the system.json specifies flags: {daeComapatible: false} DAE will not load.
+  - If the dae config setting DaeUntestedSystems is false only systems marked as compatible will allow DAE to load.
+  - If the dae config setting DaeUntestedSystems is true DAE will load for systems not marked as incompatible.
+So if you want to experiment just enable the DAE setting for untested systems and see what happens.
+
 ### 0.10.10
 * Fix for ``**fields**`` 
 * Warning for system compatibility

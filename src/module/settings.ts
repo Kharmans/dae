@@ -87,6 +87,16 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
+  game.settings.register("dae", "DAEUntestedSystems", {
+    name: game.i18n.localize("dae.DAEUntestedSystems.Name"),
+    hint: game.i18n.localize("dae.DAEUntestedSystems.Hint"),
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
   game.settings.register("dae", "ZZDebug", {
     name: "dae.Debug.Name",
     hint: "dae.Debug.Hint",

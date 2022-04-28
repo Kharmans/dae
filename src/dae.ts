@@ -33,47 +33,46 @@ export let i18n = key => {
 export let daeAlternateStatus;
 export let changesQueue;
 export var gameSystemCompatible = "maybe"; // no, yes, partial, maybe
+export var daeUntestedSystems: boolean;
 
 /* ------------------------------------ */
 /* Initialize module					*/
 /* ------------------------------------ */
 Hooks.once('init', async function () {
-  const daeFlags = game.modules.get("dae").data.flags;
+  debug('Init setup actions');
 
-  if (daeFlags.compatible?.includes(game.system.id)) gameSystemCompatible = "yes";
-  else if (daeFlags.incompatible?.includes(game.system.id)) gameSystemCompatible = "no";
-  else if (daeFlags.partial?.includes(game.system.id)) gameSystemCompatible = "parital";
+  const daeFlags = game.modules.get("dae").data.flags;
+  const systemDaeFlag = game.system.data.flags?.daeCompatible;
+
+  if (daeFlags.compatible?.includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
+  else if (daeFlags.incompatible?.includes(game.system.id) || systemDaeFlag === false) gameSystemCompatible = "no";
 
   if (gameSystemCompatible === "no") {
     console.error(`DAE is not compatible with ${game.system.data.title} module disabled`)
   } else {
-    if (gameSystemCompatible !== "yes") console.warn(`DAE compatibility with ${game.system.data.title} ${gameSystemCompatible}`)
-    // Register custom module settings
     registerSettings();
-    debug('Init setup actions');
-    daeInitActions();
-    patchingInitSetup();
-    fetchParams(false);
+    daeUntestedSystems = game.settings.get("dae", "DAEUntestedSystems")
+    if (gameSystemCompatible === "yes" || daeUntestedSystems) {
+      if (gameSystemCompatible === "maybe") console.warn(`DAE compatibility warning for ${game.system.data.title} is not tested with DAE`);
+      daeInitActions();
+      patchingInitSetup();
+      fetchParams(false);
 
+      // Preload Handlebars templates
+      await preloadTemplates();
 
-    // Assign custom classes and constants here
-
-    // Preload Handlebars templates
-    await preloadTemplates();
-
-    //@ts-ignore Semaphore
-    changesQueue = new window.Semaphore(1);
+      //@ts-ignore Semaphore
+      changesQueue = new window.Semaphore(1);
+    }
   };
 });
 
 export var daeSpecialDurations;
 export var daeMacroRepeats;
 Hooks.once('ready', async function () {
-  if (gameSystemCompatible !== "no") {
+  if (gameSystemCompatible !== "no" && (gameSystemCompatible === "yes" || daeUntestedSystems)) {
     if ("maybe" === gameSystemCompatible) {
       if (game.user.isGM) ui.notifications.warn(`DAE is has not been tested with ${game.system.data.title}. Disable DAE if there are problems`);
-    } else if ("partial" === gameSystemCompatible) {
-      if (game.user.isGM) ui.notifications.warn(`DAE is partially compatible with ${game.system.data.title}. Disable DAE if there are problems`);
     }
     checkLibWrapperVersion();
     fetchParams();
@@ -93,7 +92,9 @@ Hooks.once('ready', async function () {
     daeReadyActions();
     EditOwnedItemEffectsItemSheet.init();
     // setupDAEMacros();
-  } else {
+  } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
+    ui.notifications.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);
+   } else {
     ui.notifications.error(`DAE is not compatible with ${game.system.id} - module disabled`);
   }
 })
@@ -101,7 +102,9 @@ Hooks.once('ready', async function () {
 /* Setup module							*/
 /* ------------------------------------ */
 Hooks.once('setup', function () {
-  if (gameSystemCompatible !== "no") {
+  if (gameSystemCompatible === "no" || (gameSystemCompatible === "maybe" && !daeUntestedSystems)) {
+    ui.notifications.warn(`DAE disabled for ${game.system.data.name} - to enable choose Allow Untested Systems from the DAE settings`)
+  } else {
     // Do anything after initialization but before
     // ready
     debug("setup actions")

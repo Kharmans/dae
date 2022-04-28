@@ -820,15 +820,20 @@ function preUpdateItem(candidate, updates, options, user) {
 }
 
 // Update the actor active effects when editing an owned item
-function updateItem(candidate, updates, options, user) {
+function updateItemEffects(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;
+  if (options.isAdvancement) {
+    console.warn(`Dae | Skipping effect recreation for class advancement ${candidate.parent?.name ?? ""} item ${candidate.name}`)
+    return;
+  }
   if (updates.effects) { // item effects have changed - update transferred effects
+    //@ts-ignore
     const itemUuid = candidate.uuid;
     // delete all actor effects for the given item
     let deletions = [];
     for (let aef of candidate.parent.effects) { // remove all transferred effects for the item
-      const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
+      const isTransfer = aef.data.flags?.dae?.transfer;
       if (isTransfer && (aef.data.origin === itemUuid)) deletions.push(aef.id);
     };
     // Now get all the itemm transfer effects
@@ -855,7 +860,7 @@ function updateItem(candidate, updates, options, user) {
 
 
 export function preCreateItem(candidate, data, options, user) {
-  if (!candidate.isOwned) return;
+  if (!candidate.isOwned) return true;
   if (data.effects) {
     delete candidate.data.effects;
     candidate.data.update({ "effects": data.effects });
@@ -939,7 +944,7 @@ export function daeInitActions() {
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
 
   // If updating item effects recreate actor effects for updated item.
-  Hooks.on("updateItem", updateItem);
+  Hooks.on("updateItem", updateItemEffects);
   Hooks.on("preUpdateItem", preUpdateItem);
   Hooks.on("preCreateItem", preCreateItem)
 
