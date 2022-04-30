@@ -337,6 +337,7 @@ export async function macroActorUpdate(...args) {
     const {oldValue = undefined, updateValue} = getProperty(actor.data, fieldDef);
     let restoreValue;
     if (undo === undefined) undo = true;
+    if (typeof undo === "string") undo = undo.replace(/(\*\*(.+?)\*\*)/g, "@$2");
     if (typeof undo === "string") {
       undo = undo.trim();
     } 
@@ -346,10 +347,8 @@ export async function macroActorUpdate(...args) {
     if (typeof undo === "string" && undo === "remove") {
       restoreValue = Math.max(0, actorValue - (updateValue - oldValue))
     } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
-      undo = undo.replace(/\*\*(.*)\*\*/g, "@$1");
       restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
     } else if (typeof undo === "string" && type === "number") {
-      undo = undo.replace(/\*\*(.*)\*\*/g, "@$1");
       //@ts-ignore
       restoreValue = (await new Roll(`${undo}`, rollContext).roll({aysnc: true})).total;
     } else if (undo === "undefined") {
