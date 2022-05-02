@@ -31,7 +31,7 @@ export class EditOwnedItemEffectsItemSheet {
     html.find(".effect-control").unbind('click');
 
     // remove the 'activate' button on the effect list as it's confusing
-    html.find('[data-action="toggle"]').remove();
+    html.find('.effect-control[data-action="toggle"]').remove();
 
     // add 'transfer' button to the AEs which should be transferrable
     app.item.effects.filter(effect => effect.data.transfer).forEach(effect => {
