@@ -108,8 +108,7 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, effect) => {
-    if (effect.determineSuppression) effect.determineSuppression();
-    if (daeSystemClass.effectDisabled(this, effect.data) || effect.isSuppressed) return changes; //TODO check this for 0.9.2
+    if (daeSystemClass.effectDisabled(this, effect)) return changes;
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
       .filter(c => {
@@ -164,7 +163,7 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
           }
         } catch (err) { // safeEval failed try a roll
           try {
-            console.warn("dae | you are using dice expressions in a numeric field this will be disabled after foundry 9.x is released")
+            console.warn("dae | you are using dice expressions in a numeric field this will be disabled eventually")
             console.warn(`Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`)
             //@ts-ignore evaluate - TODO work out how to do this async
             c.value = `${new Roll(value).evaluate({ async: false }).total}`;
@@ -366,9 +365,9 @@ async function _preCreateActiveEffect(wrapped, ...args) {
       if (change.key === "StatusEffect") {
         const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
         if (statusEffect) {
-          newChanges = newChanges.concat(statusEffect.changes);
+          newChanges = statusEffect.changes ? newChanges.concat(statusEffect.changes) : newChanges;
           updates["icon"] = statusEffect.icon;
-          updates["label"] = statusEffect.label;
+          updates["label"] = i18n(statusEffect.label);
           changesChanged = true;
           updates["flags.core.statusId"] = statusEffect.id;
         }
@@ -808,7 +807,6 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0)
     await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, targets: gmTargets, itemDuration: this.data.data.duration, itemCardId, removeMatchLabel, toggleEffect })
-  // requestGMAction(GMAction.actions.applyActiveEffects, { activate, activeEffects: appliedEffects, targets: gmTargets, itemDuration: this.data.data.duration, itemCardId })
 
   if (localTargets.length > 0) {
     const result = await applyActiveEffects(activate, localTargets, appliedEffects, this.data.data.duration, itemCardId, removeMatchLabel, toggleEffect)

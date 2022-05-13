@@ -337,6 +337,8 @@
     "dae.lightAnimation": "照明のアニメーション",
     "dae.lightAlpha": "照明の濃度",
     "dae.lightAngle": "照射角",
+    "dae.DAEUntestedSystems.Name": "未検証のゲームシステムでもDAEを有効化する",
+    "dae.DAEUntestedSystems.Hint": "互換性が認めらないゲームシステムであっても、強制的にDAEを使用可能にします。通常、DAEは検証済のシステムでなければ読み込まれません（要再読込）。"
 
     "dae.preset": "プリセット",
     "dae.appearance": "外見",

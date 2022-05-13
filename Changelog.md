@@ -1,6 +1,13 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.13
+* deal with null/undefined actor values when doing numeric operations in macro.actorUpdate
+* fix typo in DAE.teleport().
+* **Breaking** DAE will treat any effect whose label matches a condition (as in conditiion immunity) as a condition and mark the effect disabled if the actor has immunity to that condition (i.e. unavailable). The conditon will still be present but none of the changes present will be applied.
+* Fix for broken initiative advantage and disadvantage flags.
+* Updated ja.json thanks @Brother Sharp
+
 ### 0.10.12
 * Fix for **fields** in macro.actorUpdates
 

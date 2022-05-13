@@ -69,20 +69,9 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
       x: found.data.x + xGridOffset * canvas.scene.data.grid,
       y: found.data.y + yGridOffset * canvas.scene.data.grid
     });
-  /*
-  return await requestGMAction(GMAction.actions.recreateToken,
-    { userId: game.user.id,
-      startSceneId: canvas.scene.id,
-      tokenUuid: getTokenUuid(token),
-       targetSceneId: scene.id, tokenData: token.data,
-       x: found.data.x + xGridOffset * canvas.scene.data.grid,
-       y: found.data.y + yGridOffset * canvas.scene.data.grid
-  });
-  */
 }
 
 export let renameToken = async (token: Token, newName: string) => {
-  // requestGMAction(GMAction.actions.renameToken, { userId: game.user.id, startSceneId: canvas.scene.id,  tokenData: token.data, newName});
   socketlibSocket.executeAsGM("renameToken", { userId: game.user.id, startSceneId: canvas.scene.id, tokenData: token.data, newName });
 }
 
@@ -140,7 +129,7 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
   // deletes and recreates the token
   var sourceSceneId = canvas.scene.id;
   Hooks.once("canvasReady", async () => {
-    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data.toObjct(), x: xpos, y: ypos });
+    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data.toObject(), x: xpos, y: ypos });
     // await requestGMAction(GMAction.actions.createToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     // canvas.pan({ x: xpos, y: ypos });
 
@@ -320,7 +309,8 @@ export async function macroActorUpdate(...args) {
           op = value[0];
         }
         value = value.replace(/(\*\*(.+?)\*\*)/g, "@$2");
-        if (["+","-","*","/"].includes(op))
+        //@ts-ignore isNumeric
+        if (["+","-","*","/"].includes(op) && Number.isNumeric(actorValue))
           //@ts-ignore
           value = (await new Roll(`${actorValue}${value}`, rollContext).roll({async: true})).total;
         else

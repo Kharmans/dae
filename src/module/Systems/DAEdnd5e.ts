@@ -79,7 +79,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues["data.attributes.init.bonus"]
     delete baseValues["flags"];
   }
-  
+
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
     super.modifySpecials(actorType, specials, characterSpec);
 
@@ -99,16 +99,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["data.attributes.init.bonus"] = [0, -1];
     for (let abl of Object.keys(CONFIG.DND5E.abilities)) {
       specials["data.abilities.${abl}.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-
     }
-    /*
-    specials["data.abilities.str.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.abilities.dex.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.abilities.int.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.abilities.wis.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.abilities.cha.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.abilities.con.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    */
     specials["data.attributes.encumbrance.max"] = [0, -1];
     specials["data.traits.di.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.traits.di.value"] = ["", -1];
@@ -160,7 +151,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["data.resources.tertiary.label"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
       specials["data.resources.legact.max"] = [0, -1];
       specials["data.resources.legres.max"] = [0, -1];
-      
+
       if (game.modules.get("resourcesplus")?.active) {
         for (let res of ["fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]) {
           specials[`data.resources.${res}.max`] = [0, -1];
@@ -225,7 +216,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     })
   }
 
-  static modifyValidSpec(spec, validSpec: ValidSpec) : ValidSpec {
+  static modifyValidSpec(spec, validSpec: ValidSpec): ValidSpec {
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     // TODO move this into a system specfic bit of code.
@@ -260,9 +251,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", getRollData, "WRAPPER");
     // Overide prepareData so it can add the extra pass
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
-    // Fix for dnd5e broken determine suppression
-    // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "OVERRIDE");
-    
+    // Fix for dnd5e broken determine suppression (does not work for unlinked actors) + support condition immunity
+    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "OVERRIDE");
+
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
   }
@@ -277,6 +268,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       patchSpecialTraits();
     });
     patchSpecialTraits();
+
     if (game.modules.get("midi-qol")?.active) {
       daeSpecialDurations["1Action"] = i18n("dae.1Action");
       daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
@@ -338,13 +330,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     daeSystemClass.daeActionTypeKeys = Object.keys(CONFIG.DND5E.itemActionTypes);
   }
 
-  public static effectDisabled(actor, efData, itemData = null) {
-    let disabled = efData.disabled;
-    const ci = actor.data.data.traits?.ci?.value;
-    const statusId = (efData.flags?.core?.statusId ?? "no effect").toLocaleLowerCase();
-    disabled = disabled || efData.isSuppressed || (ci.length && ci.find(c => statusId.endsWith(c)));
+  public static effectDisabled(actor, effect, itemData = null) {
+    effect.determineSuppression();
+    const disabled = effect.data.disabled || effect.isSuppressed;
     return disabled;
   }
+
   // For DAE Editor
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
     this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
@@ -473,7 +464,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return true;
     }
     if (change.key.includes(`flags.${game.system.id}`)) {
-      const value = ["1", "true"].includes(change.value);
+      //@ts-ignore safeEval
+      const value = new Boolean(Roll.safeEval(change.value)); // ["1", "true", 1, true].includes(change.value);
       setProperty(actor.data, change.key, value);
       return true;
     }
@@ -522,9 +514,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "data.traits.sdv.all":
         const key = change.key.replace(".all", ".value")
         if (game.system.id === "dnd5e")
-          setProperty(actor.data, key, Object.keys(CONFIG.DND5E.damageResistanceTypes))
+          setProperty(actor.data, key, Object.keys(CONFIG.DND5E.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
         else
-          setProperty(actor.data, key, Object.keys(CONFIG.SW5E.damageResistanceTypes))
+          setProperty(actor.data, key, Object.keys(CONFIG.DND5E.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
         return true;
       case "data.traits.di.value":
       case "data.traits.dr.value":
@@ -813,7 +805,7 @@ function _prepareArmorClassAttribution(wrapped, data) {
   return attributions;
 }
 
- function patchPrepareArmorClassAttribution() {
+function patchPrepareArmorClassAttribution() {
   if (game.system.id === "dnd5e") {
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
@@ -829,7 +821,7 @@ function _prepareArmorClassAttribution(wrapped, data) {
 function patchSpecialTraits() {
   displayTraits = game.settings.get("dae", "displayTraits");
   //@ts-ignore
-  if ("dnd5e" === game.system.id  || "sw5e" === game.system.id) {
+  if ("dnd5e" === game.system.id || "sw5e" === game.system.id) {
     log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject (override=${displayTraits})`);
     log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags (override=${displayTraits})`);
     log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses (override=${displayTraits})`);
@@ -1025,13 +1017,21 @@ function checkArmorDisabled() {
 
 function determineSuppression() {
   this.isSuppressed = false;
-  if ( this.data.disabled || (this.parent.documentName !== "Actor") ) return;
-  if (!this.data.origin) return;
-  const originParts = this.data.origin.split(".");
-  if (originParts[originParts.length - 2] !== "Item") return;
-  const item = this.parent.items.get(originParts[originParts.length - 1]);
-  if ( !item ) return;
-  this.isSuppressed = item.areEffectsSuppressed;
+  if (this.data.disabled || (this.parent.documentName !== "Actor")) return;
+  if (this.data.origin) {
+    const originParts = this.data.origin.split(".");
+    if (originParts[originParts.length - 2] === "Item") {
+      const item = this.parent.items.get(originParts[originParts.length - 1]);
+      if (item)
+        this.isSuppressed = item.areEffectsSuppressed;
+    }
+  }
+  if (this.parent) {
+    const ci = this.parent.data.data.traits?.ci?.value;
+    const statusId = (this.data.label ?? "no effect").toLocaleLowerCase();
+    const ciSuppressed = (ci?.length && ci.some(c => statusId == c));
+    this.data.disabled = ciSuppressed;
+  }
 }
 
 if (!globalThis.daeSystems) globalThis.daeSystems = {};

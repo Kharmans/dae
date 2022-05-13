@@ -179,7 +179,6 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         let notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
         return origins.find(o => {
               const escapedLabel = o.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
               return o.origin === ae.data.origin
               && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.data.label))
           })
@@ -232,7 +231,6 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           if (false && source instanceof CONFIG.Item.documentClass) {
             context = source?.getRollData();
           }
-          // context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "item": "@item", "itemData": "@itemData", "stackCount": "@stackCount" });
           context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
           aeData.changes.map(change => {
             if (allMacroEffects.includes(change.key)) {
@@ -258,15 +256,17 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
 
         if (dupEffects.length > 0) {
           let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
+          setTimeout( () => {
           if (globalThis.EffectCounter) {
             for (let effectData of dupEffects) {
-              let flags = effectData.flags
+              let flags = effectData.flags;
               if (flags?.dae?.stackable === "count" && flags?.dae?.stacks) {
-                const counter = globalThis.EffectCounter.findCounter(token, effectData.icon)
+                const counter = globalThis.EffectCounter.findCounter(token, effectData.icon);
                 counter.setValue(flags.dae.stacks);
               }
             }
           }
+        }, 1000);
 
           //TODO remove this when timesup is in the wild.
           if (!timesUpInstalled) { // do the kludgey old form removal
