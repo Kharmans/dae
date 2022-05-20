@@ -259,6 +259,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   public static setupActions(): void {
   }
+  
   public static readyActions(): void {
     // checkArmorDisabled();
     // Modify armor attribution for DAE specific cases
@@ -353,7 +354,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     Object.keys(CONFIG.DND5E.conditionTypes).forEach(type => {
       this.conditionList[`-${type}`] = `-${CONFIG.DND5E.conditionTypes[type]}`;
     });
-
     if (this.profInit) {
       this.toolProfList = this.toolProfList;
       this.armorProfList = this.armorProfList;

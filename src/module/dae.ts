@@ -378,7 +378,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
           changesChanged = true;
           const newChange = duplicate(change);
           if (inline.value[1] === undefined) newChange.value = await evalInline(inline.value[2], this.parent, this);
-          else newChange.value = inline.value[2];
+          else newChange.value = change.value;
           newChanges.push(newChange);
         } else newChanges.push(change);
       } else newChanges.push(change);
@@ -483,7 +483,7 @@ export async function _preUpdateActiveEffect(wrapped, updates, options, user) {
     if (inline.value) {
       if (inline.value[1] === undefined)
         change.value = await evalInline(inline.value[2], this.parent, this);
-      else change.value = inline.value[2];
+      // else change.value = inline.value[2];
     }
   }
   return wrapped(updates, options, user);
