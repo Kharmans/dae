@@ -1,8 +1,16 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.15
+* Don't attempt to apply CUB conditions if enhanced conditions is disabled.
+* Possibly **breaking**. I have rewritten the calls to macro.execute so that if advanced macros is not installed execution will still happen (I hope) correctly. Execute as GM macros are **NOT** supported without advanced macros. I would appreciate macro writers test with advanced macros disabled and report any problems.
+* Fix for non string active effect changes values (must be a programatically created effect) throwing an error.
+* Enhanced [[expr]] inline macros so that "[[@item.level]]d6 + 3d6 + [[1d6]]" will evaluate to "1d6 + 3d6 + 4" for a first level spell and a d6 roll of 4. This allows various effects that would otherwise break the dnd5e roll parser.
+* Corrected pt-BR.json
+
 ### 0.10.14
 * Fix for advantage reminders inline rolls being "eaten" by DAE.
+
 ### 0.10.13
 * deal with null/undefined actor values when doing numeric operations in macro.actorUpdate
 * fix typo in DAE.teleport().
