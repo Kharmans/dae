@@ -634,7 +634,6 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           data.args = args;
         // insert item data
         if (furnaceActive) {
-          //@ts-ignore
           result = await macro.execute(data.action, ...data.args, data.lastArg)
           // result = await socketlibSocket.executeAsGM("executeMacro", data)
         } else { // support macro calling without furnace.
@@ -642,10 +641,11 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           const character = game.user?.character;
           let args: any[] = [data.action];
           args = args.concat(data.args).concat(data.lastArg);
-          const body = `return (async () => {${macro.data.command}})()`;
+          const body = `return (async () => {
+            ${macro.data.command}
+          })()`;
           const fn = Function("{speaker, actor, token, character, args}={}", body);
-          // const returnValue = fn.call(this, { speaker, actor, selfTarget, character, args });
-          // return returnValue;
+
           return fn.call(this, { speaker, actor, token: selfTarget, character, args });
         }
       } else if (theChange.key === "macro.actorUpdate") {
