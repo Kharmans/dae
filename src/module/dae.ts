@@ -480,7 +480,7 @@ export async function _preUpdateActiveEffect(wrapped, updates, options, user) {
   }
   try {
     const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
-    for (let change of updates.changes) {
+    for (let change of updates.changes ?? []) {
       let inline = typeof change.value === "string" && change.value.includes("[[");
       if (inline) {
         const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
@@ -495,7 +495,7 @@ export async function _preUpdateActiveEffect(wrapped, updates, options, user) {
       };
     }
   } catch (err) {
-    console.warn(`dae | update active effect Actor ${parent.name}, Effect ${this.data.label} ${updates}`, err);
+    console.warn(`dae | update active effect Actor ${parent.name}, Effect ${this.data.label}`, updates, err);
   } finally {
     return wrapped(updates, options, user);
   }

@@ -1,6 +1,12 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.17
+* Fix for warning thrown when updating an active effect.
+
+### 0.10.16
+* Packaging fix
+
 ### 0.10.15
 * Don't attempt to apply CUB conditions if enhanced conditions is disabled.
 * Possibly **breaking**. I have rewritten the calls to macro.execute so that if advanced macros is not installed execution will still happen (I hope) correctly. Execute as GM macros are **NOT** supported without advanced macros. I would appreciate macro writers test with advanced macros disabled and report any problems.
