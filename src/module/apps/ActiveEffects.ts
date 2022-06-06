@@ -50,10 +50,8 @@ getData() {
     let newAe = duplicate(ae.data);
     newAe.duration = duplicate(ae.duration);
     if (simpleCalendarInstalled && newAe.duration?.type === "seconds") {
-      //TODO change these to a simple calendar function after release
-      //TODO change this to window.Gametime.ElapsedTime.timeString permanently
-      //@ts-ignore
-      newAe.duration.label = window.Gametime.ElapsedTime.timeString(ae.duration.remaining)
+      const simpleCalendar = globalThis.SimpleCalendar?.api;
+      simpleCalendar.formatDateTime(simpleCalendar.timestampToDate(ae.duration.remaining)).time
     } else if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }

@@ -179,13 +179,13 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       if (!change.priority) change.priority = change.mode * 10;
     });
 
-    const Gametime = globalThis.SimpleCalendar?.api;
-    if (Gametime && data.effect.duration?.startTime) {
-      const dateTime = Gametime.formatDateTime(Gametime.timestampToDate(data.effect.duration.startTime));
+    const simpleCalendar = globalThis.SimpleCalendar?.api;
+    if (simpleCalendar && data.effect.duration?.startTime) {
+      const dateTime = simpleCalendar.formatDateTime(simpleCalendar.timestampToDate(data.effect.duration.startTime));
       data.startTimeString = dateTime.date + " " + dateTime.time;
       if (data.effect.duration.seconds) {
-        const duration = Gametime.formatDateTime(Gametime.timestampToDate(data.effect.duration.startTime + data.effect.duration.seconds));
-        data.durationString = dateTime.date + " " + dateTime.time;
+        const duration = simpleCalendar.formatDateTime(simpleCalendar.timestampToDate(data.effect.duration.startTime + data.effect.duration.seconds));
+        data.durationString = duration.date + " " + duration.time;
       }
     }
     setProperty(data.effect, "flags.dae.durationExpression", this.object.data.flags?.dae?.durationExpression);
