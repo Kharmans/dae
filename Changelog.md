@@ -3,6 +3,7 @@
 
 ### 0.10.18
 * Remove dependency on About-time, now uses simple calendar for date/time calculations.
+
 ### 0.10.17
 * Fix for warning thrown when updating an active effect.
 
