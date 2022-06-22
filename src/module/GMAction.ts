@@ -122,8 +122,6 @@ async function _addTokenMagic(data: { tokenUuid: string, effectId: string }) {
   let tokenMagic = globalThis.TokenMagic;
   if (tokenMagic && token) {
     return await tokenMagic.addFilters(token, data.effectId);
-    console.error("gmaction add token magic", token.name, data.effectId)
-    // return await actionQueue.add(tokenMagic.addFilters, token, data.effectId)
   }
 }
 async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) {
@@ -132,8 +130,6 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   let tokenMagic = globalThis.TokenMagic;
   if (tokenMagic && token) {
     return await tokenMagic.deleteFilters(token, data.effectId);
-    console.error("gmaction remove token magic", token.name, data.effectId)
-    // return await actionQueue.add(tokenMagic.deleteFilters, token, data.effectId)
   }
 }
 
@@ -176,8 +172,11 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       // TODO: update exsiting count stacks rather than removing and adding.
       // find existing active effect that have same origin as one of our new effects 
       let removeList = actor.effects.filter(ae => {
-        let notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
-        return origins.find(o => {
+        const notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
+        const noStackByName = getProperty(ae.data, "flags.dae.stackable") === "noneName";
+        if (noStackByName) 
+          return origins.find(o => o.label === ae.data.label)
+        else return origins.find(o => {
               const escapedLabel = o.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
               return o.origin === ae.data.origin
               && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.data.label))

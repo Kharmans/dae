@@ -2,9 +2,14 @@
   "name": "dae",
   "title": "Dynamic effects using Active Effects",
   "description": "replacement for dynamic effects",
-  "version": "0.10.18",
-  "compatibleCoreVersion": "9",
+  "version": "0.10.19",
   "minimumCoreVersion": "9",
+  "compatibleCoreVersion": "9",
+  "compatibility": {
+    "minimum": 9,
+    "verified": 9,
+    "maximum": 9
+  },
   "scripts": ["libs/tokenizer.min.js"],
   "flags": {
     "compatible": ["dnd5e", "sw5e"],
@@ -25,7 +30,7 @@
       "label": "Premade Items",
       "path": "./packs/premadeitems.db",
       "module": "world",
-      "entity": "Item",
+      "type": "Item",
       "lang": ["en", "de"]
     }
   ],
@@ -68,9 +73,9 @@
   ],
   "socket": true,
   "url": "https://gitlab.com/tposney/dae",
-  "author": "tposney",
+  "authors": [{"name": "tposney"}],
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
   "allowBugReporter": true,
   "manifest": "https://gitlab.com/tposney/dae/raw/master/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.10.18.zip"
+  "download": "https://gitlab.com/tposney/dae/raw/master/package/dae-v0.10.19.zip"
 }

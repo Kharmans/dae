@@ -651,7 +651,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         }
         for (let key of Object.keys(movement)) {
-          if (key === "units") continue;
+          if (["units", "hover"].includes(key)) continue;
           let valueString = change.value;
           if (op !== "") {
             //@ts-ignore isNumeric
@@ -1030,7 +1030,7 @@ function determineSuppression() {
     const ci = this.parent.data.data.traits?.ci?.value;
     const statusId = (this.data.label ?? "no effect").toLocaleLowerCase();
     const ciSuppressed = (ci?.length && ci.some(c => statusId == c));
-    this.data.disabled = ciSuppressed;
+    this.data.disabled = Boolean(ciSuppressed);
   }
 }
 

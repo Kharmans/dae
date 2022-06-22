@@ -333,14 +333,28 @@ function _onCreateActiveEffect(...args) {
   return true;
 }
 
+function preCreateActiveEffectHook(candidate, data, options, user) {
+  const actor: any = candidate.parent;
+  // TODO remove the isToken check if and when core does not break for this
+  //@ts-ignore
+  if (!(actor instanceof CONFIG.Actor.documentClass) || actor.isToken) return true;
+  if (getProperty(candidate.data, "flags.dae.stackable") !== "noneName") return true;
+  if (actor.effects.contents.some(ef => ef.data.label === candidate.data.label)) {
+    return false;
+  }
+  return true;
+}
+
 async function _preCreateActiveEffect(wrapped, ...args) {
   const parent = this.parent;
   try {
     //@ts-ignore documentClass TODO
     if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
+
     let updates = {};
     if (this.data.origin === parent.uuid)
       updates = { "flags.dae.transfer": this.data.transfer };
+
     if (this.data.flags?.dae?.durationExpression) {
       let sourceActor = parent;
       if (!this.data.transfer) {
@@ -478,6 +492,7 @@ export async function _preUpdateActiveEffect(wrapped, updates, options, user) {
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) {
     return wrapped(updates, options, user);
   }
+
   try {
     const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
     for (let change of updates.changes ?? []) {
@@ -964,7 +979,9 @@ export function daeInitActions() {
   // If updating item effects recreate actor effects for updated item.
   Hooks.on("updateItem", updateItemEffects);
   Hooks.on("preUpdateItem", preUpdateItem);
-  Hooks.on("preCreateItem", preCreateItem)
+  Hooks.on("preCreateItem", preCreateItem);
+  Hooks.on("preCreateActiveEffect", preCreateActiveEffectHook)
+
 
 
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER");
