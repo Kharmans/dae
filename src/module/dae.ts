@@ -384,7 +384,10 @@ async function _preCreateActiveEffect(wrapped, ...args) {
           updates["label"] = i18n(statusEffect.label);
           changesChanged = true;
           updates["flags.core.statusId"] = statusEffect.id;
+          if (statusEffect.flags?.isConvenient) updates["flags.isConvenient"] = true;
         }
+      } else if (change.key === "StatusEffectLabel") {
+          updates["label"] = change.value;
       } else if (inline) {
         const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
         const newChange = duplicate(change);

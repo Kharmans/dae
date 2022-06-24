@@ -56,6 +56,7 @@ export class ValidSpec {
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["StatusEffectLabel"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       daeSystemClass.modifySpecials(specKey, specials, _characterSpec);
       Hooks.callAll("dae.modifySpecials", specKey, specials, _characterSpec)
       if (game.modules.get("ATL")?.active) {

@@ -1,6 +1,10 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.20
+* Fix for CE status effects not being treated as status effects (if you click on the effect in the token HUD it would duplicate the effect).
+* Support for StatusEffectLabel to force set the label of an applied StatusEffect.
+
 ### 0.10.19
 * Added stackable option - don't stack, check by name, to support the RAW when dae is applying effects.
 * Fix for movement.all failing for hover.
