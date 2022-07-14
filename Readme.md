@@ -410,7 +410,7 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
   </li>
   <li>
   If a macro is specified then whenver the target actor is udpated the maccro will be called with lastArg set appropriately. <br>
-<details>
+
 | Attribute | Value	| Details	|
 |----------------------	|:-----------:	|--------------------------------------------	|
 | effectId: | null | |
@@ -429,7 +429,7 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
 | targetActor | | the actor referenced in targetTokenUuid |
 | targetToken | the token referenced in targetTokenUuid | 
 | originItem | | the item that caused the flags.dae.onUpdateTarget/Source to be created. |
-</details>
+
   </li>
   <li>
   This makes effects like hunters mark simpler, since you just link the actors and have a bonus damage macro that checks the onUpdate effects for the actor. There is a new sample Hunter's Mark (in the midi sample items compendium) that uses these features to make hunter's mark simpler.
