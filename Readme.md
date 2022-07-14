@@ -409,23 +409,23 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
   If no macro is specified just the linkage between source and target will recorded on the target (source) actor. This allows you to examine the linkage in other macros, e.g. hunter's mark or similar in a damage bonus macro.
   </li>
   <li>
-  If a macro is specified then whenver the target actor is udpated the maccro will be called with lastArg set appropriately. 
-        effectId: null,<br>
-        origin: onUpdate.origin - the uuid of the origin (item or actor)<br>
-        efData: null,<br>
-        actorId: targetActor.id, - the id of the target actor in the onUpdate data<br>
-        actorUuid: targetActor.uuid, - the uuid of the target actor in the onUpdate dat<br>
-        tokenId: null,<br>
-        tokenUuid: null,<br>
-        actor: this - the actor referenced in the actor.update that triggered the macro<br>
-        updates, - the updates to the actor (you can change these to change the update applied to the actor)<br>
-        options, - options passed to the update<br>
-        user, - the user that triggered the update<br>
-        sourceActor, - the actor referenced in sourceActorUuid<br>
-        sourceToken, - the token referenced in sourceTokenUuid<br>
-        targetActor, - the actor referenced in targetTokenUuid<br>
-        targetToken - the token referenced in targetTokenUuid<br>
-        originItem - the item that caused the flags.dae.onUpdateTarget/Source to be created.<br>
+  If a macro is specified then whenver the target actor is udpated the maccro will be called with lastArg set appropriately. <br>
+&#x09;effectId: null,<br>
+&#x09;origin: onUpdate.origin - the uuid of the origin (item or actor)<br>
+&#x09;efData: null,<br>
+&#x09;actorId: targetActor.id, - the id of the target actor in the onUpdate data<br>
+&#x09;actorUuid: targetActor.uuid, - the uuid of the target actor in the onUpdate dat<br>
+&#x09;tokenId: null,<br>
+&#x09;tokenUuid: null,<br>
+&#x09;actor: this - the actor referenced in the actor.update that triggered the macro<br>
+&#x09;updates, - the updates to the actor (you can change these to change the update applied to the actor)<br>
+&#x09;options, - options passed to the update<br>
+&#x09;user, - the user that triggered the update<br>
+&#x09;sourceActor, - the actor referenced in sourceActorUuid<br>
+&#x09;sourceToken, - the token referenced in sourceTokenUuid<br>
+&#x09;targetActor, - the actor referenced in targetTokenUuid<br>
+&#x09;targetToken - the token referenced in targetTokenUuid<br>
+&#x09;originItem - the item that caused the flags.dae.onUpdateTarget/Source to be created.<br>
   </li>
   <li>
   This makes effects like hunters mark simpler, since you just link the actors and have a bonus damage macro that checks the onUpdate effects for the actor. There is a new sample Hunter's Mark (in the midi sample items compendium) that uses these features to make hunter's mark simpler.
