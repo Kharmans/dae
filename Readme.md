@@ -305,8 +305,9 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 | `data.bonuses.save.damage`          	|            	| 	|
 | `data.bonuses.spell.dc` 	|     ANY 	| Always numeric, so any dice expression will be evaluated once when prepareData is called and **NOT** on each spell cast.<br>You cannot do lookups of derived fields for spell.dc calculations. 	|
 | `data.spells.pact.level`	|	|	|
-| `data.spells.pact.override`	|	| `spellslots.value` and `spellslots.max` are not able to be modified with DAE.	|
+| `data.spells.pact.override`	|	| `spellslots.value` is not able to be modified with DAE.	|
 | `data.spells.spell[1-9].override`	|	| e.g. `data.spells.spell3.override`	|
+| `data.spells.spell[1-9].max`	|	| e.g. `data.spells.spell3.max`	|
 
 </details>
 <details><summary>Special Traits Flags</summary>
@@ -338,6 +339,8 @@ These fields accept 0 off, or 1 on.
 | `flags.dnd5e.initiativeAdv`	| 	| Gives advantage on initiative rolls.	|
 | `flags.dnd5e.initiativeDisadv`	| 	| Gives disadvantage on initiative rolls.	|
 | `flags.dae`	|   CUSTOM	| 	|
+| `flags.dae.onUpdateTarget` | CUSTOM | See below |
+| `flags.dae.onUpdateSource` | CUSTOM | See below |
 | `flags.dnd5e.DamageBonusMacro`	| 	| 	|
 | `StatusEffect` | CUSTOM | Applies/removes default/CE/CUB status effects/conditions. **Strongly Preferred** |
 | `macro.CE`	|    CUSTOM	| Applies/removes CE Coditions - not really a macro.	|
@@ -363,6 +366,49 @@ flags.dae.deleteOrigin, which if present as a change in an active effect, will w
 </li>
 <li>
 When an active effecr with a change flags.dae.deleteUuid is deleted, and whose change.value is an owned uuid, token uuid or ActiveEffect uuid, the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems/ActiveEffects are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.  
+</li>
+<li>
+ "flags.dae.onUpdateTarget" and "flags.dae.onUpdateSource" with the change value being "Label, macroReferece, updateFilter, arguments". macroReference, updateFilter and arguments are all optional. This effect does 2 things:
+  - Creates a flag on the target actor (onUpdateTarget) or the sourceActor (onUpdateSource) that recordds the origin item, the targetToken and the initiating actor's token (sourceToken) and actor (sourceActor) on the target (flags.dae.onUpdateTarget) or the source actor (flags.dae.onUpdateSource). Note that onUpdateSource is different to other active effects in that it is ALWAYS created on the actor using the item/creating the effect and NOT on the target.
+  - allows you specify a macro that will be called whenever the target token/actor filter field is updated. The filter field does not need to reference a single value, data.abilities will call the macro when any ability is update.
+  - For example ``flags.dae.onUpdateTarget CUSTOM Arcane Link, ItemMacro,data.attributes.hp.value, 1,2,3 `` will add an entry to actor.data.flags.dae.onUpdateTarget (an array of such entries) on the target actor with:
+  args: []
+  filter: 'data.attributes.hp.value', this is used to check that the update contains an update to the specified filter fields, you could use data.attributes.hp for any hp update.
+  flagName: 'Warding Bond'
+  macroName: 'ItemMacro'
+  origin: 'Actor.DMTSWfQs8whM5FtE.Item.fR2J4Ulo0GftObGd'
+  sourceActorUuid: 'Actor.DMTSWfQs8whM5FtE'
+  sourceTokenUuid: 'Scene.XRSav5mOrp1iEC7S.Token.n3mchcs4aaeokawb'
+  targetTokenUuid: 'Scene.XRSav5mOrp1iEC7S.Token.jg2mxFc21dO1q7Qi'
+  Essentailly this allows you to 'link' two actors and if you specifiy a macro to call,react to changes on either/both to manage shared state.
+  - To react to changes on both you need two changes in the effect
+    ``flags.dae.onUpdateTarget CUSTOM Actor Link, ItemMacro`` and
+    ``flags.dae.onUpdateSource CUSTOM Actor Link, ItemMacro``
+    which will create one effect on the target actor and one on the source actor. ItemMacro refers to the item that caused the effect to be created.
+  - If no macro is specified just the linkage between source and target will recorded on the target (source) actor. This allows you to examine the linkage in other macros, e.g. hunter's mark or similar in a damage bonus macro.
+  - If a macro is specified then whenver the target actor is udpated the maccro will be called with lastArg set appropriately. 
+  ``
+        effectId: null,
+        origin: onUpdate.origin - the uuid of the origin (item or actor)
+        efData: null,
+        actorId: targetActor.id, - the id of the target actor in the onUpdate data
+        actorUuid: targetActor.uuid, - the uuid of the target actor in the onUpdate dat
+        tokenId: null,
+        tokenUuid: null,
+        actor: this - the actor referenced in the actor.update that triggered the macro
+        updates, - the updates to the actor (you can change these to change the update applied to the actor)
+        options, - options passed to the update
+        user, - the user that triggered the update
+        sourceActor, - the actor referenced in sourceActorUuid
+        sourceToken, - the token referenced in sourceTokenUuid
+        targetActor, - the actor referenced in targetTokenUuid
+        targetToken - the token referenced in targetTokenUuid
+        originItem - the item that caused the flags.dae.onUpdateTarget/Source to be created.
+    ``
+  - This makes effects like hunters mark simpler, since you just link the actors and have a bonus damage macro that checks the onUpdate effects for the actor. There is a new sample Hunter's Mark (in the midi sample items compendium) that uses these features to make hunter's mark simpler.
+  - Midi-qol sample items contains an implementation of warding bond, that does damage to the caster when the target takes damage.
+  - You can now implement things like sharing damage betwen two actors, by having the macro (which runs on the preUpdateActor call) modify the damage being applied and apply damame. See the sample item (in the Midi Sample Items compendium) Simple Warding Bond.
+  - Simple Warding Bond creates effects on both the target and the Simple Warding Bond actor and shares damage taken between the two actors. Note that your macro must do something to stop the "ping pong" updates of each actor being updated and triggering another call to the macro. You can do this by specifiying actor.update(updages, {onUpdateCalled: true}), which will halt the call chain.
 </li>
 </ul>
 </details>
