@@ -410,8 +410,8 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
   </li>
   <li>
   If a macro is specified then whenver the target actor is udpated the maccro will be called with lastArg set appropriately. <br>
-&#x09;effectId: null,<br>
-&#x09;origin: onUpdate.origin - the uuid of the origin (item or actor)<br>
+| effectId: | null | |
+| origin: | onUpdate.origin | the uuid of the origin (item or actor) |
 &#x09;efData: null,<br>
 &#x09;actorId: targetActor.id, - the id of the target actor in the onUpdate data<br>
 &#x09;actorUuid: targetActor.uuid, - the uuid of the target actor in the onUpdate dat<br>
