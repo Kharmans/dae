@@ -73,7 +73,19 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         baseValues[key] = 0;
       }
     });
-
+    baseValues["data.traits.di.all"] = false;
+    baseValues["data.traits.di.value"] = "";
+    baseValues["data.traits.di.custom"] = "";
+    baseValues["data.traits.dr.all"] = false;
+    baseValues["data.traits.dr.value"] = "";
+    baseValues["data.traits.dr.custom"] = "";
+    baseValues["data.traits.dv.all"] = false;
+    baseValues["data.traits.dv.value"] = "";
+    baseValues["data.traits.dv.custom"] = "";
+    baseValues["data.traits.ci.all"] = false;
+    baseValues["data.traits.ci.value"] = "";
+    baseValues["data.traits.ci.custom"] = "";
+    baseValues["data.traits.size"] = "";
     delete baseValues["data.attributes.init.total"];
     delete baseValues["data.attributes.init.mod"];
     delete baseValues["data.attributes.init.bonus"]
@@ -101,6 +113,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["data.abilities.${abl}.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     }
     specials["data.attributes.encumbrance.max"] = [0, -1];
+    /*
     specials["data.traits.di.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.traits.di.value"] = ["", -1];
     specials["data.traits.di.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -114,8 +127,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["data.traits.ci.value"] = ["", -1];
     specials["data.traits.ci.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.traits.size"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+    */
     specials["data.spells.pact.level"] = [0, -1];
     specials["flags.dae"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+
     specials["data.attributes.movement.all"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.attributes.movement.hover"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["data.attributes.ac.EC"] = [0, -1];
@@ -158,6 +173,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           specials[`data.resources.${res}.label`] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
         }
       }
+      if (characterSpec.data.spells) {
+        for (let spellSpec of Object.keys(characterSpec.data.spells))
+        specials[`data.spells.${spellSpec}.max`] = [0, -1];
+      }
+  
       /*/
       if (game.modules.get("resourcesplus")?.active) {
         const maxResources = Math.min(game.settings.get("resourcesplus", "globalLimit"), game.settings.get("resourcesplus", "localLimit"));
@@ -375,6 +395,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       });
     }
   }
+  
   public static getOptionsForSpec(spec) {
     if (spec === "data.traits.languages.value")
       return this.languageList;
@@ -451,6 +472,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
    * languages
    */
   public static daeCustomEffect(actor, change) {
+    if (!super.daeCustomEffect(actor, change)) return;
     const current = getProperty(actor.data, change.key);
     var validValues;
     var value;

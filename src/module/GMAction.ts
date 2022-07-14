@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro, actionQueue } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro, actionQueue, tokenForActor } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
 
 export class GMActionMessage {
@@ -156,13 +156,14 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
 
 export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
+
   for (let tid of tokenList) {
     const tokenOrDocument = DAEfromUuid(tid) || canvas.tokens.get(tid);
-    const tokenUuid = tokenOrDocument.document ? tokenOrDocument.document.uuid : tokenOrDocument.uuid;
-    let actor = tokenOrDocument.actor ? tokenOrDocument.actor : tokenOrDocument; // assume if we did not get a token it is an actor
-    const token = tokenOrDocument.object ? tokenOrDocument.object : tokenOrDocument;
+    const tokenUuid = tokenOrDocument.uuid ?? tokenOrDocument.document.uuid;
+    let targetActor = tokenOrDocument.actor ?? tokenOrDocument; // assume if we did not get a token it is an actor
+    const token = tokenOrDocument.object ?? tokenOrDocument;
 
-    if (actor) {
+    if (targetActor) {
       // Remove any existing effects that are not stackable or transfer from the same origin
       let currentStacks = 1;
 
@@ -171,7 +172,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
 
       // TODO: update exsiting count stacks rather than removing and adding.
       // find existing active effect that have same origin as one of our new effects 
-      let removeList = actor.effects.filter(ae => {
+      let removeList = targetActor.effects.filter(ae => {
         const notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
         const noStackByName = getProperty(ae.data, "flags.dae.stackable") === "noneName";
         if (noStackByName) 
@@ -188,11 +189,11 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       if (removeList.length > 0) {
         currentStacks = removeList.filter(ae => getProperty(ae.data, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae.data, "flags.dae.stacks") ?? 1), 1)
         removeList = removeList.map(ae => ae.data._id);
-        await actor.deleteEmbeddedDocuments("ActiveEffect", removeList);
+        await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList);
       }
       if (toggleEffect && removeList.length > 0) activate = false;;
       if (activate) {
-        let dupEffects = duplicate(activeEffects);
+        let dupEffects = duplicate(activeEffects); // .filter(aeData => !aeData.selfTarget));
         for (let aeData of dupEffects) {
           setProperty(aeData, "flags.dae.token", tid);
           if (getProperty(aeData, "flags.dae.stackable") === "count") {
@@ -225,14 +226,30 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
 
           setProperty(aeData.flags, "dae.transfer", false);
           let source: any | undefined = await fromUuid(aeData.origin);
-          let context = actor.getRollData();
+          let context = targetActor.getRollData();
           //@ts-ignore
           if (false && source instanceof CONFIG.Item.documentClass) {
             context = source?.getRollData();
           }
           context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
-          aeData.changes.map(change => {
-            if (allMacroEffects.includes(change.key)) {
+          aeData.changes = aeData.changes.map(change => {
+            if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
+              const originItem = DAEfromUuid(aeData.origin);
+              const sourceActor = originItem?.actor;
+              if (change.key === "flags.dae.onUpdateTarget") {
+                // for onUpdateTarget effects, put the source actor, the target uuid, the origin and the original change.value
+                //@ts-ignore
+                change.value = `${aeData.origin}, ${token.document.uuid}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${sourceActor.uuid}, ${change.value}`;
+              } else if (change.key === "flags.dae.onUpdateSource") {
+                //@ts-ignore
+                change.value = `${aeData.origin}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${token.document.uuid}, ${sourceActor.uuid}, ${change.value}`;
+                const newEffectData = duplicate(aeData);
+                newEffectData.changes = [duplicate(change)];
+                newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
+                sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData])
+                // createSourceActorLink(change, aeData, tokenUuid, change.value);
+                return undefined;
+              }
 
             // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
               if (typeof change.value === "number") {
@@ -248,13 +265,16 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
                   return f;
                 })
               }
+            } else {
+              //@ts-ignore replaceFormulaData
+              //change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false})
             }
             return change;
-          })
+          }).filter(change => change !== undefined);
         }
 
         if (dupEffects.length > 0) {
-          let timedRemoveList = await actor.createEmbeddedDocuments("ActiveEffect", dupEffects);
+          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects);
           setTimeout( () => {
           if (globalThis.EffectCounter) {
             for (let effectData of dupEffects) {

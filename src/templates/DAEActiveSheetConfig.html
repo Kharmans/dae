@@ -50,9 +50,19 @@
 
     {{#if isItem}}
     <div class="form-group">
-      <label>{{ localize "dae.Transfer" }}</label>
+      <label>{{ localize "dae.transfer.Name" }}</label>
       <input type="checkbox" name="transfer" {{ checked effect.transfer }} />
     </div>
+    {{ localize "dae.transfer.Hint" }}
+
+    {{#if false}}
+    <div class="form-group">
+      <label>{{ localize "dae.selfTransfer.Name" }}</label>
+      <input type="checkbox" name="selfTarget" {{ checked effect.selfTarget }} />
+    </div>
+    {{ localize "dae.selfTarget.Hint" }}
+    {{/if}}
+
     {{/if}}
 
     <div class="form-group">

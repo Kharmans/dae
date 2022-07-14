@@ -1,6 +1,7 @@
 import { fetchParams } from "./dae";
 
 export const registerSettings = function () {
+
   game.settings.register("dae", "requireItemTarget", {
     name: game.i18n.localize("dae.requireItemTarget.Name"),
     hint: game.i18n.localize("dae.requireItemTarget.Hint"),

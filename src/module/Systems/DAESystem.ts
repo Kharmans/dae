@@ -1,6 +1,6 @@
-import { debug, i18n } from "../../dae";
+import { debug, error, i18n } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, daeSystemClass, libWrapper } from "../dae";
+import { applyDaeEffects, DAEfromActorUuid, daeSystemClass, libWrapper } from "../dae";
 
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 
@@ -75,7 +75,10 @@ export class ValidSpec {
       // TODO reactivate when cond vis is 0.8.6 ready
       // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["flags.dae.onUpdateTarget"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["flags.dae.onUpdateSource"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
 
+      
       Object.keys(specials).forEach(key => {
         delete baseValues[key]
       })
@@ -250,6 +253,24 @@ export class DAESystem {
   }
 
   public static daeCustomEffect(actor, change): boolean {
+    if (change.key === "flags.dae.onUpdateTarget" && change.value.includes(",")) {
+      const values = change.value.split(",").map(str => str.trim());
+      if (values.length < 5) {
+        error("custom effect flags.dae.onUpdateTarget details incomplete", values);
+        return;
+      }
+      const origin = values[0];
+      const targetTokenUuid = values[1];
+      const sourceTokenUuid = values[2];
+      const sourceActorUuid = values[3];
+      const flagName = values[4];
+      const macroName = ["none",""].includes(values[5] ?? "") ? "" : values[5];
+      const filter = ["none", ""].includes(values[6] ?? "") ? "data" : values[6];;
+      const args = values.slice(7);
+      let flagValue = getProperty(actor.data, "flags.dae.onUpdateTarget") ?? [];
+      flagValue.push({flagName, macroName, origin, sourceTokenUuid, args, targetTokenUuid, filter, sourceActorUuid})
+      setProperty(actor.data, "flags.dae.onUpdateTarget", flagValue);
+    }
     return true;
   }
 

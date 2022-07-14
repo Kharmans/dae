@@ -339,8 +339,8 @@ These fields accept 0 off, or 1 on.
 | `flags.dnd5e.initiativeAdv`	| 	| Gives advantage on initiative rolls.	|
 | `flags.dnd5e.initiativeDisadv`	| 	| Gives disadvantage on initiative rolls.	|
 | `flags.dae`	|   CUSTOM	| 	|
-| `flags.dae.onUpdateTarget` | CUSTOM | See below |
-| `flags.dae.onUpdateSource` | CUSTOM | See below |
+| `flags.dae.onUpdateTarget` | CUSTOM |  See below (special flags.dae) |
+| `flags.dae.onUpdateSource` | CUSTOM | See below (special flags.dae) |
 | `flags.dnd5e.DamageBonusMacro`	| 	| 	|
 | `StatusEffect` | CUSTOM | Applies/removes default/CE/CUB status effects/conditions. **Strongly Preferred** |
 | `macro.CE`	|    CUSTOM	| Applies/removes CE Coditions - not really a macro.	|
@@ -427,7 +427,7 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
 | sourceActor | | the actor referenced in sourceActorUuid |
 | sourceToken | | the token referenced in sourceTokenUuid |
 | targetActor | | the actor referenced in targetTokenUuid |
-| targetToken | the token referenced in targetTokenUuid | 
+| targetToken | | the token referenced in targetTokenUuid | 
 | originItem | | the item that caused the flags.dae.onUpdateTarget/Source to be created. |
 
   </li>

@@ -21,6 +21,9 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
    */
   async create(context) {
     const dataToCreate = this.toJSON();
+    dataToCreate.transfer = false;
+    this.data.transfer = false;
+    console.error("Data to create is ", dataToCreate, this)
 
     debug('Attempting create on Owned Item Effect', context, dataToCreate);
 
