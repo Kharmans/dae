@@ -375,18 +375,31 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
   </li>
   <li>allows you specify a macro that will be called whenever the target token/actor filter field is updated. The filter field does not need to reference a single value, data.abilities will call the macro when any ability is update.
   </li>
+  <li>
   For example ``flags.dae.onUpdateTarget CUSTOM Arcane Link, ItemMacro,data.attributes.hp.value, 1,2,3 `` will add an entry to actor.data.flags.dae.onUpdateTarget (an array of such entries) on the target actor with:
-  args: []<br>
-  filter: 'data.attributes.hp.value', this is used to check that the update contains an update to the specified filter fields, you could use data.attributes.hp for any hp update. <br>
-  flagName: 'Warding Bond'<br>
-  macroName: 'ItemMacro'<br>
-  origin: 'Actor.DMTSWfQs8whM5FtE.Item.fR2J4Ulo0GftObGd'<br>
-  sourceActorUuid: 'Actor.DMTSWfQs8whM5FtE'<br>
-  sourceTokenUuid: 'Scene.XRSav5mOrp1iEC7S.Token.n3mchcs4aaeokawb'<br>
-  targetTokenUuid: 'Scene.XRSav5mOrp1iEC7S.Token.jg2mxFc21dO1q7Qi'<br>
+  <ul>
+  <li>args: []<br>
+  </li><li>
+  filter: 'data.attributes.hp.value', this is used to check that the update contains an update to the specified filter fields, you could use data.attributes.hp for any hp update.
+  </li><li>
+  flagName: 'Warding Bond'
+  </li><li>
+  macroName: 'ItemMacro'
+  </li><li>
+  origin: 'Actor.DMTSWfQs8whM5FtE.Item.fR2J4Ulo0GftObGd'
+  </li><li>
+  sourceActorUuid: 'Actor.DMTSWfQs8whM5FtE'
+  </li><li>
+  sourceTokenUuid: 'Scene.XRSav5mOrp1iEC7S.Token.n3mchcs4aaeokawb'
+  </li><li>
+  targetTokenUuid: 'Scene.XRSav5mOrp1iEC7S.Token.jg2mxFc21dO1q7Qi'
+  </li><li>
   Essentailly this allows you to 'link' two actors and if you specifiy a macro to call,react to changes on either/both to manage shared state.
   </li>
+  </ul>
   </li>
+  </li>
+  <li>
   To react to changes on both you need two changes in the effect <br>
     ``flags.dae.onUpdateTarget CUSTOM Actor Link, ItemMacro`` and <br>
     ``flags.dae.onUpdateSource CUSTOM Actor Link, ItemMacro``<br>
