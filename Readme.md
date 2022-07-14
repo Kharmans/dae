@@ -410,25 +410,25 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
   </li>
   <li>
   If a macro is specified then whenver the target actor is udpated the maccro will be called with lastArg set appropriately. <br>
-
-| Attribute | Sample value	| Details	|
-|----------------------	|:-----------:	|----------------	|
+<details>
+| Attribute | Value	| Details	|
+|----------------------	|:-----------:	|--------------------------------------------	|
 | effectId: | null | |
-| origin: | onUpdate.origin | the uuid of the origin (item or actor) |
-&#x09;efData: null,<br>
-&#x09;actorId: targetActor.id, - the id of the target actor in the onUpdate data<br>
-&#x09;actorUuid: targetActor.uuid, - the uuid of the target actor in the onUpdate dat<br>
-&#x09;tokenId: null,<br>
-&#x09;tokenUuid: null,<br>
-&#x09;actor: this - the actor referenced in the actor.update that triggered the macro<br>
-&#x09;updates, - the updates to the actor (you can change these to change the update applied to the actor)<br>
-&#x09;options, - options passed to the update<br>
-&#x09;user, - the user that triggered the update<br>
-&#x09;sourceActor, - the actor referenced in sourceActorUuid<br>
-&#x09;sourceToken, - the token referenced in sourceTokenUuid<br>
-&#x09;targetActor, - the actor referenced in targetTokenUuid<br>
-&#x09;targetToken - the token referenced in targetTokenUuid<br>
-&#x09;originItem - the item that caused the flags.dae.onUpdateTarget/Source to be created.<br>
+| origin | onUpdate.origin | the uuid of the origin (item or actor) |
+| efData | null | |
+| actorId | targetActor.id | the id of the target actor in the onUpdate data |
+| actorUuid | targetActor.uuid | the uuid of the target actor in the onUpdate data |
+| tokenId | null | |
+| tokenUuid | null | |
+| actor | this | the actor referenced in the actor.update that triggered the macro |
+| updates | | the updates to the actor (you can change these to change the update applied to the actor) |
+| options | | options passed to the update |
+| user | |  the user that triggered the update |
+| sourceActor | | the actor referenced in sourceActorUuid |
+| sourceToken | | the token referenced in sourceTokenUuid |
+| targetActor | | the actor referenced in targetTokenUuid |
+| targetToken | the token referenced in targetTokenUuid | 
+| originItem | | the item that caused the flags.dae.onUpdateTarget/Source to be created. |
 </details>
   </li>
   <li>
