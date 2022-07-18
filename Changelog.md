@@ -1,6 +1,10 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.23
+* Some improvement to onUpdateTarget to instantiate originItem from effect flags if the item was a consumabl that was deleted through consumption.
+* Fix for it.json and editing active effects
+
 ### 0.10.22
 * Fix for applying macros multiple times if more than one present in an active effect.
 * Fix for inadvertent breaking of editing item effects because of change to en.json in languages other than english.

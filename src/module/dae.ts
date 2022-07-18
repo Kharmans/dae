@@ -951,8 +951,13 @@ export async function preUpdateActor(wrapped, updates, options, user) {
       const targetActor = targetTokenDocument?.actor;
       const targetToken = targetTokenDocument?.object;
 
-      const originItem = (originObject instanceof Item) ? originObject : undefined;
-
+      let originItem = (originObject instanceof Item) ? originObject : undefined;
+      if (!originItem) {
+        const theEffect = targetActor.effects.find(ef => ef.data.origin === onUpdate.origin);
+          const itemData = getProperty(theEffect.data, "flags.dae.itemData");
+          //@ts-ignore
+          if (itemData) originItem = new CONFIG.Item.documentClass(itemData, { parent: targetActor });
+      }
       let lastArg = {
         effectId: null,
         origin: onUpdate.origin,

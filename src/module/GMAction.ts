@@ -239,10 +239,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
               if (!originItem && aeData.flags?.dae?.itemData) { // could not find the item reconstruct it.
                 const originActorUuid = aeData.origin.replace(/.Item.*/,"");
                 sourceActor = DAEfromActorUuid(originActorUuid);
-                //@ts-ignore dcoumentClass
-                originItem = new CONFIG.Item.documentClass(aeData.flags.dae.itemData, { parent: sourceActor });
               } else {
-                originItem = undefined;
                 const originActorUuid = aeData.origin.replace(/.Item.*/,"");
                 sourceActor = DAEfromActorUuid(originActorUuid);
               }

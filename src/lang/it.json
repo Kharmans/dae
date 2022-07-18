@@ -221,7 +221,6 @@
     "dae.useAbilitySave.Hint": "L'impostazione predefinita di DND5e utilizza solo il modificatore di caratteristica, abilitare questa opzione significa che i salvataggi a rotazione utilizzeranno il campo di TS e possono essere modificati tramite DAE",
     "dae.Debug.Name": "Quantità di debug da mostrare",
     "dae.Debug.Hint": "Visualizza più debug sulla console in base all'impostazione none < warning < debug < all",
-    "dae.Transfer": "Trasferisci Effetto all'Attore se Equp.i",
     "dae.summaryFilter": "Riepilogo degli effetti",
     "dae.enabledFilter": "Effetti Abilitati",
     "dae.temporaryFilter": "Effetti Temporali",
