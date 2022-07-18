@@ -1,8 +1,15 @@
 ### foundry v9 fix
 * Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
 
+### 0.10.22
+* Fix for applying macros multiple times if more than one present in an active effect.
+* Fix for inadvertent breaking of editing item effects because of change to en.json in languages other than english.
+* Fix for incorrect pt-br.json
+* Support for midi handled special duration isInitiative to enable effects to expire when initiative is rolled.
+
+
 ### 0.10.21
-* Cleaned up active effect creation on owned items. Default is now NOT a transfer effect, changing effect types should correclty remove the effect from the actor, and toggling transfer/not transfer for item effects should be correclty relfected on actor effects.
+* Cleaned up active effect creation on owned items. Default is now NOT a transfer effect, changing effect types should correctly remove the effect from the actor, and toggling transfer/not transfer for item effects should be correctly reflected on actor effects.
 * Fixed inability to reference item data in DAE effects. Note passive/transfer effects cannot reference item data. (The effect is applied by core foundry and the DAE argument valuation is not performed).
   - effects which simply create a string on the actor (like all of the bonus fields) will pass the value unchanged.
 * **BREAKING** Support for @item in non-transfer active effects when rolled with an item. @item refers to item.getRollData().item, so references like @item.formula will work.
@@ -10,6 +17,7 @@
 * added now working @data.spells.spell1.max etc. to change max spell slots available.
 * Experimental. Added "flags.dae.onUpdateTarget" and "flags.dae.onUpdateSource" with the change value being "Label,macroReferece,other args". This effect records a flag on the target actor (onUpdateTarget) or the sourceActor (onUpdateSource) that recordds the origin item, the targetActor and the initiating actor (sourceActor) on the target (flags.dae.onUpdateTarget) or the source actor (flags.dae.onUpdateSource). If a macro is specified the macro will be called whenever the targetActor is updated.
 See the DAE Readme.md for more information. This feature is intended to make marking targets and sharing state (i.e. shared damage) simpler, e.g. Hunter's Mark and Warding Bond both included in midi-qol sample items compendium (v0.9.63).
+* Updated ja.json. Thanks @Brother Sharp#6921
 
 ### 0.10.20
 * Fix for CE status effects not being treated as status effects (if you click on the effect in the token HUD it would duplicate the effect).

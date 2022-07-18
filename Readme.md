@@ -432,21 +432,20 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
 
   </li>
   <li>
-  This makes effects like hunters mark simpler, since you just link the actors and have a bonus damage macro that checks the onUpdate effects for the actor. There is a new sample Hunter's Mark (in the midi sample items compendium) that uses these features to make hunter's mark simpler.
+  This makes effects like hunters mark simpler, since you just link the actors and have a bonus damage macro that checks the onUpdate effects for the actor. There is a new sample Hunter's Mark (in the midi sample items compendium) that uses these features to implement hunter's mark.
   </li>
   <li>
-  Midi-qol sample items contains an implementation of warding bond, that does damage to the caster when the target takes damage.
+  Midi-qol sample items contains an implementation of warding bond, that does damage to the caster when the target takes damage. It does not check range to target.
   </li>
   <li>
-  You can now implement things like sharing damage betwen two actors, by having the macro (which runs on the preUpdateActor call) modify the damage being applied and apply damame. See the sample item (in the Midi Sample Items compendium) Simple Warding Bond.
+  You can now implement things like sharing damage betwen two actors, by having the macro (which runs on the preUpdateActor call) modify the damage being applied and apply damame. See the sample item (in the Midi Sample Items compendium) Simple Warding Bond/Warding Bond.
   </li>
   <li>
-  Simple Warding Bond creates effects on both the target and the Simple Warding Bond actor and shares damage taken between the two actors. Note that your macro must do something to stop the "ping pong" updates of each actor being updated and triggering another call to the macro. You can do this by specifiying actor.update(updages, {onUpdateCalled: true}), which will halt the call chain.
+  Simple Warding Bond creates effects on both the target and the Simple Warding Bond actor and an item macro that shares damage taken between the two actors. Note that your macro must do something to stop the "ping pong" updates of each actor being updated and triggering another call to the macro. You can do this by specifiying actor.update(updates, {onUpdateCalled: true}), which will halt the call chain.
   </li>
   </ul>
 </li>
 </ul>
-</details>
 </details>
 
 ## Macros

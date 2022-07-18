@@ -315,6 +315,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
       daeSpecialDurations["isCheck"] = `${i18n("dae.isRollBase")} ${i18n("dae.isCheckDetail")}`;
       daeSpecialDurations["isSkill"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")}`;
+      daeSpecialDurations["isInitiative"] = `${i18n("dae.isRollBase")} ${i18n("dae.isInitiativeDetail")}`;
+
       daeSpecialDurations["isMoved"] = i18n("dae.isMoved");
       daeSpecialDurations["longRest"] = i18n("DND5E.LongRest");
       daeSpecialDurations["shortRest"] = i18n("DND5E.ShortRest");

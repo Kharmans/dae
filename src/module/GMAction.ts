@@ -234,8 +234,18 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
           aeData.changes = aeData.changes.map(change => {
             if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
-              const originItem = DAEfromUuid(aeData.origin);
-              const sourceActor = originItem?.actor;
+              let originItem = DAEfromUuid(aeData.origin);
+              let sourceActor = originItem?.actor;
+              if (!originItem && aeData.flags?.dae?.itemData) { // could not find the item reconstruct it.
+                const originActorUuid = aeData.origin.replace(/.Item.*/,"");
+                sourceActor = DAEfromActorUuid(originActorUuid);
+                //@ts-ignore dcoumentClass
+                originItem = new CONFIG.Item.documentClass(aeData.flags.dae.itemData, { parent: sourceActor });
+              } else {
+                originItem = undefined;
+                const originActorUuid = aeData.origin.replace(/.Item.*/,"");
+                sourceActor = DAEfromActorUuid(originActorUuid);
+              }
               if (change.key === "flags.dae.onUpdateTarget") {
                 // for onUpdateTarget effects, put the source actor, the target uuid, the origin and the original change.value
                 //@ts-ignore

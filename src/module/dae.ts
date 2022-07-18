@@ -319,9 +319,9 @@ function _onCreateActiveEffect(...args) {
           const tokenMagic = globalThis.TokenMagic;
           if (tokenMagic && change.key === "macro.tokenMagic" && token)
             addTokenMagicChange(parent, change, tokens); //TODO check disabled
-          if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))
-            actionQueue.add(daeMacro, "on", parent, effect.data, {});
         }
+        if (effect.data.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+          actionQueue.add(daeMacro, "on", parent, effect.data, {});
 
       } catch (err) {
         console.warn("dae | create effect error", err);
@@ -470,38 +470,32 @@ export function _onUpdateActiveEffect(...args) {
       if (effect.data.changes) {
         const tokenMagic = globalThis.TokenMagic;
         if (changes.disabled === true) {
-          // await daeMacro("off", parent, effect.data, {});
           for (let change of effect.data.changes) {
             if (token && cubActive && change.key === "macro.CUB") {
-              // game.cub.removeCondition(change.value, [token], { warn: false });
               removeCubChange(change.value, [token], { warn: false });
             }
             if (ceActive && change.key === "macro.CE") {
               const lastArg = prepareLastArgData(effect.data, parent);
               removeConvenientEffectsChange(change.value, parent.uuid, undefined, lastArg);
-              // await game.dfreds.effectInterface.removeEffect({ effectName: change.value, uuid: parent.uuid })
             }
             if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(parent, change, tokens);
-            if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro"))
-              actionQueue.add(daeMacro, "off", parent, effect.data, {});
           }
-        } else if (changes.disabled === false && !effect.isSuppressed) {
-          // await daeMacro("on", parent, effect.data, {});
-          for (let change of effect.data.changes) {
-            if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro"))
-              actionQueue.add(daeMacro, "on", parent, effect.data, {});
+          if (effect.data.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+            actionQueue.add(daeMacro, "off", parent, effect.data, {});
 
+        } else if (changes.disabled === false && !effect.isSuppressed) {
+          for (let change of effect.data.changes) {
             if (token && cubActive && change.key === "macro.CUB") {
               addCubChange(change.value, [token])
-              // await game.cub.addCondition(change.value, [token]);
             }
             if (ceActive && change.key === "macro.CE") {
               const lastArg = prepareLastArgData(effect.data, parent)
               addConvenientEffectsChange(change.value, parent.uuid, undefined, lastArg);
-              // await game.dfreds.effectInterface.addEffect({ effectName: change.value, uuid: parent.uuid, origin: effect.data.origin })
             }
             if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(parent, change, tokens);
           }
+          if (effect.data.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+            actionQueue.add(daeMacro, "on", parent, effect.data, {});
         }
       }
     } catch (err) {
@@ -566,29 +560,31 @@ export function _onDeleteActiveEffect(...args) {
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect.data, actor)
             removeConvenientEffectsChange(change.value, actor.uuid, undefined, lastArg);
-            // await game.dfreds.effectInterface.removeEffect({ effectName: change.value, uuid: token.actor.uuid })
           }
           if (token && cubActive && change.key === "macro.CUB") {
             removeCubChange(change.value, [token]);
-            // await game.cub.removeCondition(change.value, [token], { warn: false })
           }
           if (change.key === "flags.dae.deleteUuid" && change.value) {
             socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.data.origin;
-          // await daeMacro("off", actor, effect.data, options);
-          if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))
-            actionQueue.add(daeMacro, "off", actor, effect.data, options);
+
         }
+        if (effect.data.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+          actionQueue.add(daeMacro, "off", actor, effect.data, options);
 
         if (entityToDelete) socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
       }
-      if (globalThis.Sequencer && effect.data.origin) {
+      if (effect.data.origin) {
         let origin: any = await fromUuid(effect.data.origin);
         // Remove the associated animation if the origin points to the actor or if the items parent is the effects parent
         // Covers the spirit guardian case where all the aura's point back to the source item.
-        if (origin === effect.parent || origin?.parent === effect.parent)
-          globalThis.Sequencer.EffectManager.endEffects({ origin: effect.data.origin })
+        if (globalThis.Sequencer && (origin === effect.parent || origin?.parent === effect.parent))
+          globalThis.Sequencer.EffectManager.endEffects({ origin: effect.data.origin });
+        if (canvas?.scene && (origin === effect.parent || origin?.parent === effect.parent)) {
+          const removeTiles = canvas.scene.tiles.filter(tile => tile.data.flags?.autoanimations?.origin === effect.data.origin).map(tile=>tile.id);
+          // if (removeTiles.length > 0) await canvas.Scene.deleteEmbeddedDocuments("Tile", removeTiles);
+        }
       }
 
     } catch (err) {
