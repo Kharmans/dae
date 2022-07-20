@@ -1,5 +1,7 @@
-### foundry v9 fix
-* Actors that are imported into foundry, or are duplicated, that have transfer effects (passive) will have the link between the effect and the item broken, which means that toggling equip/unequip will not work on the imported/duplicated actor. DAE.fixTransferEffects(actor) will restore item links.
+### 0.10.24
+* **BREAKING** onUpdateTarget macro calls will now have args[0] set to "onUpdateTarget".
+* As ra eminder it is strongly recommended that you create onUpdateTarget effects with an update filter which is as precise as you can make it, this will significantly improve performance.
+* Support for a new dae effect flag, Self Target (on the effect details tab for effects owned by an item). doEffects now accepts an additional optional argument selfTaget, true means only apply selfTarget effects and false only apply non-selfTarget effects. See midi-qol changelog for details of how to use.
 
 ### 0.10.23
 * Some improvement to onUpdateTarget to instantiate originItem from effect flags if the item was a consumabl that was deleted through consumption.

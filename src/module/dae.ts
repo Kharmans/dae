@@ -340,7 +340,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
 
   //@ts-ignore
   if (!(actor instanceof CONFIG.Actor.documentClass) || actor.isToken) return true;
-  if (data.transfer) candidate.data.update({ "flags.dae.transfer": true });
+  candidate.data.update({ "flags.dae.transfer": data.transfer });
   if (getProperty(candidate.data, "flags.dae.stackable") === undefined) candidate.data.update({ "flags.dae.stackable": "multi" });
   const stackable = getProperty(candidate.data, "flags.dae.stackable");
   if (getProperty(candidate.data, "flags.dae.transfer") && ["noneName", "none"].includes(stackable)) {
@@ -817,18 +817,21 @@ export async function getMacro({ change, name }, itemData, effectData) {
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
 export async function doEffects(item, activate, targets = undefined,
-  { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, effectsToApply = [], removeMatchLabel = false, toggleEffect = false }) {
-  return await applyNonTransferEffects.bind(item)(activate, targets, { effectsToApply, whisper, spellLevel, damageTotal, itemCardId, critical, fumble, removeMatchLabel, toggleEffect })
+  { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, effectsToApply = [], removeMatchLabel = false, toggleEffect = false, selfEffects = false }) {
+  return await applyNonTransferEffects.bind(item)(activate, targets, { effectsToApply, whisper, spellLevel, damageTotal, itemCardId, critical, fumble, removeMatchLabel, toggleEffect, selfEffects })
 }
 
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client if the token is not owned
-export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [], removeMatchLabel = false, toggleEffect = false }) {
+export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [], removeMatchLabel = false, toggleEffect = false, selfEffects = false }) {
   if (!targets) return;
   let macroLocation = "mixed";
-  let appliedEffects = duplicate(this.data.effects.filter(ae => ae.data.transfer === false));
+  let appliedEffects = duplicate(this.data.effects.filter(
+    ae => ae.data.transfer !== true
+    && (!selfEffects || getProperty(ae.data, "flags.dae.selfTarget")))
+  );
   if (effectsToApply.length > 0) appliedEffects = appliedEffects.filter(aeData => effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = this.getRollData(); //TODO if not caster eval move to evalArgs call
@@ -959,6 +962,7 @@ export async function preUpdateActor(wrapped, updates, options, user) {
           if (itemData) originItem = new CONFIG.Item.documentClass(itemData, { parent: targetActor });
       }
       let lastArg = {
+        tag: "onUpdateTarget",
         effectId: null,
         origin: onUpdate.origin,
         efData: null,
@@ -1000,8 +1004,8 @@ export async function preUpdateActor(wrapped, updates, options, user) {
       }
       try {
         const speaker = ChatMessage.getSpeaker({ actor: this });
-        const args = duplicate(onUpdate.args);
-        args.push(lastArg)
+        const args: any[] = ["onUpdateActor"].concat(onUpdate.args);
+        args.push(lastArg);
         const character = undefined; // game.user?.character;
         const body = `return ( async () => {
     ${macroText}

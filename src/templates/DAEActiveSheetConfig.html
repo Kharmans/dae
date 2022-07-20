@@ -55,13 +55,12 @@
     </div>
     {{ localize "dae.transfer.Hint" }}
 
-    {{#if false}}
+    
     <div class="form-group">
-      <label>{{ localize "dae.selfTransfer.Name" }}</label>
-      <input type="checkbox" name="selfTarget" {{ checked effect.selfTarget }} />
+      <label>{{ localize "dae.SelfTarget.Name" }}</label>
+      <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
     </div>
-    {{ localize "dae.selfTarget.Hint" }}
-    {{/if}}
+    {{ localize "dae.SelfTarget.Hint" }}
 
     {{/if}}
 
