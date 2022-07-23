@@ -26,19 +26,19 @@ export class DAESystemSW5E extends DAESystemDND5E {
     super.modifySpecials(actorType, specials, characterSpec);
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-    specials["data.traits.sdi.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.traits.sdi.value"] = ["", -1];
-    specials["data.traits.sdi.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.traits.sdr.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.traits.sdr.value"] = ["", -1];
-    specials["data.traits.sdr.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.traits.sdv.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.traits.sdv.value"] = ["", -1];
-    specials["data.traits.sdv.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.attributes.powerForceLightDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.attributes.powerForceDarkDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.attributes.powerForceUnivDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["data.attributes.powerTechDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.sdi.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.sdi.value"] = ["", -1];
+    specials["system.traits.sdi.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.sdr.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.sdr.value"] = ["", -1];
+    specials["system.traits.sdr.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.sdv.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.sdv.value"] = ["", -1];
+    specials["system.traits.sdv.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.attributes.powerForceLightDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.attributes.powerForceDarkDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.attributes.powerForceUnivDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.attributes.powerTechDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
 
     // move all the characteer flags to specials so that the can be custom effects only
     let charFlagKeys = Object.keys(CONFIG.SW5E.characterFlags);
@@ -120,7 +120,7 @@ export class DAESystemSW5E extends DAESystemDND5E {
   }
 
   public static getOptionsForSpec(spec: string): {} {
-    if (spec.includes("data.skills") && spec.includes("ability")) 
+    if (spec.includes("system.skills") && spec.includes("ability")) 
         return CONFIG.SW5E.abilities;
     return super.getOptionsForSpec(spec);
   }

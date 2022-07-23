@@ -41,7 +41,7 @@ export class ValidSpec {
 
     for (let specKey of Object.keys(game.system.model.Actor)) {
       this.specs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
-      _characterSpec["data"] = duplicate(game.system.model.Actor[specKey]);
+      _characterSpec["system"] = duplicate(game.system.model.Actor[specKey]);
       let baseValues = flattenObject(_characterSpec);
       daeSystemClass.modifyBaseValues(specKey, baseValues, _characterSpec);
       Hooks.callAll("dae.modifyBaseValues", specKey, baseValues, _characterSpec);
@@ -61,7 +61,7 @@ export class ValidSpec {
       Hooks.callAll("dae.modifySpecials", specKey, specials, _characterSpec)
       if (game.modules.get("ATL")?.active) {
         // support new version of ATL
-        if (isNewerVersion("0.3.04", game.modules.get("ATL").data.version)) {
+        if (isNewerVersion("0.3.04", game.modules.get("ATL").version)) {
           for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
             specials[`ATL.${label}`] = [0, -1];
           }
@@ -157,15 +157,15 @@ export class ValidSpec {
           const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
           m._label = `Flags ${localizedString}`;
         }
-        const saveBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).save/);
-        const checkBonus = m._fieldSpec.match(/data.abilities.(\w\w\w).mod/);
-        const skillMod = m._fieldSpec.match(/data.skills.(\w\w\w).mod/);
-        const skillPassive = m._fieldSpec.match(/data.skills.(\w\w\w).passive/);
+        const saveBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).save/);
+        const checkBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).mod/);
+        const skillMod = m._fieldSpec.match(/system.skills.(\w\w\w).mod/);
+        const skillPassive = m._fieldSpec.match(/system.skills.(\w\w\w).passive/);
         if (saveBonus) m._label = `${m._label} (Deprecated)`
         else if (checkBonus) m._label = `${m._label} (Deprecated)`
         else if (skillMod) m._label = `${m._label} (Deprecated)`
         else if (skillPassive) m._label = `${m._label} (Deprecated)`
-        else if (m._fieldSpec === "data.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
+        else if (m._fieldSpec === "system.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
         else if (this.specs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
         return m;
       });
@@ -181,7 +181,7 @@ export class DAESystem {
   static daeActionTypeKeys: string[];
 
   /**
-   * accepts a string field specificaiton, e.g. data.traits.languages.value. Used extensively in ConfigPanel.ts
+   * accepts a string field specificaiton, e.g. system.traits.languages.value. Used extensively in ConfigPanel.ts
    * return an object or false.
    * Keys are valid options for the field specificaiton and the value is the user facing text for that option 
    * e.g. {common: "Common"}
@@ -212,8 +212,8 @@ export class DAESystem {
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
   }
 
-  public static effectDisabled(actor, efData, itemData = null) {
-    return efData.disabled;
+  public static effectDisabled(actor, effect, itemData = null) {
+    return effect.disabled;
   }
 
   public static modifyValidSpec(spec, validSpec: ValidSpec) : ValidSpec {
@@ -223,7 +223,7 @@ export class DAESystem {
   public static doCustomValue(actor, current, change, validValues) {
     if ((current || []).includes(change.value)) return true;
     if (!validValues.includes(change.value)) return true;
-    setProperty(actor.data, change.key, current.concat([change.value]))
+    setProperty(actor, change.key, current.concat([change.value]))
     return true;
   }
 
@@ -235,11 +235,11 @@ export class DAESystem {
       if (!validValues.includes(checkValue)) return true;
       const returnValue = duplicate(current);
       returnValue.splice(currentIndex, 1)
-      setProperty(actor.data, change.key, returnValue);
+      setProperty(actor, change.key, returnValue);
     } else {
       if ((current ?? []).includes(change.value)) return true;
       if (!validValues.includes(change.value)) return true;
-      setProperty(actor.data, change.key, current.concat([change.value]))
+      setProperty(actor, change.key, current.concat([change.value]))
     }
     return true;
   }
@@ -265,11 +265,11 @@ export class DAESystem {
       const sourceActorUuid = values[3];
       const flagName = values[4];
       const macroName = ["none",""].includes(values[5] ?? "") ? "" : values[5];
-      const filter = ["none", ""].includes(values[6] ?? "") ? "data" : values[6];;
+      const filter = ["none", ""].includes(values[6] ?? "") ? "system" : values[6];;
       const args = values.slice(7);
       let flagValue = getProperty(actor.data, "flags.dae.onUpdateTarget") ?? [];
       flagValue.push({flagName, macroName, origin, sourceTokenUuid, args, targetTokenUuid, filter, sourceActorUuid})
-      setProperty(actor.data, "flags.dae.onUpdateTarget", flagValue);
+      setProperty(actor, "flags.dae.onUpdateTarget", flagValue);
     }
     return true;
   }
@@ -301,14 +301,14 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
-  debug("prepare data: before passes", this.name, this.data._source);
+  debug("prepare data: before passes", this.name, this._source);
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
   applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true);
   //TODO find another way to tdo this
-  // this._prepareOwnedItems(this.data.items)
-  debug("prepare data: after passes", this.data);
+  // this._prepareOwnedItems(this.items)
+  debug("prepare data: after passes", this);
 }
 
 // this function replaces applyActiveEffects in Actor

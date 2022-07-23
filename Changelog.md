@@ -1,3 +1,11 @@
+### 10.0.1
+* pre release of DAE for foundry v10.
+* This is **NOT** suitable for gameplay and has **NOT** been extensively tested.
+* There are bound to be many bugs and am delighted to have them logged on the gitlab so long as they reference that they are v10 bugs.
+**Known Bugs**: 
+  - There seems to be a foundry (or dae) problem where updating unlinked token actors fails.
+  - None of the macro.tokenMagic, CUB support, Convenient Effects support or ItemMacro support has been tested and there are sure to be issues there.
+
 ### 0.10.24
 * **BREAKING** onUpdateTarget macro calls will now have args[0] set to "onUpdateTarget".
 * As ra eminder it is strongly recommended that you create onUpdateTarget effects with an update filter which is as precise as you can make it, this will significantly improve performance.

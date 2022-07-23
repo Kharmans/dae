@@ -66,8 +66,8 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
       startSceneId: canvas.scene.id,
       tokenUuid: getTokenUuid(token),
       targetSceneId: scene.id, tokenData: token.data,
-      x: found.data.x + xGridOffset * canvas.scene.data.grid,
-      y: found.data.y + yGridOffset * canvas.scene.data.grid
+      x: found.x + xGridOffset * canvas.scene.grid,
+      y: found.y + yGridOffset * canvas.scene.grid
     });
 }
 
@@ -91,8 +91,8 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
     error("dae| teleportToToken: Target Not found");
     return `Token ${targetTokenName} not found`;
   }
-  //@ts-ignore target.scene.data.grid
-  return await teleport(token, scene, found.data.x + xGridOffset * canvas.scene.data.grid, found.data.y + yGridOffset * canvas.scene.data.grid)
+  //@ts-ignore target.scene.grid
+  return await teleport(token, scene, found.x + xGridOffset * canvas.scene.grid, found.y + yGridOffset * canvas.scene.grid)
 }
 
 export async function createToken(tokenData, x, y) {
@@ -121,7 +121,7 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
     CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
     let sourceSceneId = canvas.scene.id;
     //@ts-ignore
-    await socketlibSocket.executeAsGM("recreateToken", { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data.toObject(), x: xpos, y: ypos });
+    await socketlibSocket.executeAsGM("recreateToken", { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(), x: xpos, y: ypos });
     //requestGMAction(GMAction.actions.recreateToken, { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     canvas.pan({ x: xpos, y: ypos });
     return true;
@@ -129,7 +129,8 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
   // deletes and recreates the token
   var sourceSceneId = canvas.scene.id;
   Hooks.once("canvasReady", async () => {
-    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data.toObject(), x: xpos, y: ypos });
+    //@ts-ignore v10 token.document
+    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(), x: xpos, y: ypos });
     // await requestGMAction(GMAction.actions.createToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
     // canvas.pan({ x: xpos, y: ypos });
 
@@ -165,7 +166,7 @@ export async function setTileVisibility(tileOrId: Tile | string, visible: boolea
     //@ts-ignore
     tile = await fromUuid(tileUuid)
   }
-  let hidden = typeof visible === "boolean" ? !visible : !tile.data.hidden;
+  let hidden = typeof visible === "boolean" ? !visible : !tile.document.hidden;
   return socketlibSocket.executeAsGM("setTileVisibility", { tileUuid, hidden: !visible });
 }
 
@@ -189,8 +190,9 @@ export let macroReadySetup = () => {
 
 }
 
-export function getTokenFlag(token: Token, flagName: string) {
-  return getProperty(token, `data.flags.dae.${flagName}`);
+export function getTokenFlag(token: Token | any /* TokenDocument*/, flagName: string) {
+  const tokenDocument = token.document ? token.document: token;
+  return getProperty(token.document, `flags.dae.${flagName}`);
 }
 
 export async function deleteActiveEffect(uuid: string, origin: string, ignore: string[] = [], deleteEffects: string[] = []) {
@@ -204,7 +206,6 @@ export async function setTokenFlag(token: Token | string, flagName: string, flag
     else tokenUuid = canvas.scene.tokens.get(token)?.uuid;
   } 
   //@ts-ignore document
-  else if (token.document) tokenUuid = token.document.uuid;
   else tokenUuid = getTokenUuid(token);
   return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
 }
@@ -273,7 +274,7 @@ export async function macroActorUpdate(...args) {
       actorUuid: string
       type: "number", "boolean", "string"
       expression: a roll expression, optionally starting with +-/*
-      targetField: "string", e.g. data.attrbutes.hp.value
+      targetField: "string", e.g. system.attrbutes.hp.value
       undo: 
           blank/true/restore: set the target field back to what it was before the effect was applied
           false: don't change the target field when removing the effect

@@ -64,7 +64,8 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
 
     const effectIdToDelete = this.id;
 
-    const newParentEffects = this.parent.effects.filter(effect => effect.id !== effectIdToDelete);
+    let newParentEffects = this.parent.effects.filter(effect => effect.id !== effectIdToDelete);
+    newParentEffects = newParentEffects.map(ef => ef.toObject());
 
     debug('Updating Parent', {
       effectIdToDelete,
@@ -110,7 +111,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
       context
     );
 
-    const diff = diffObject(this.data._source, expandObject(data));
+    const diff = diffObject(this._source, expandObject(data));
 
     try {
       await this._preUpdate(diff, context, game.userId);
@@ -127,6 +128,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     } catch (e) {
       console.error(e);
     }
+    this.updateSource(diff);
     
     try {
       await this._onUpdate(diff, context, game.userId);
@@ -134,22 +136,9 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
       console.error(e);
     }
 
-    this.data.update(diff);
     this.sheet.render();
 
-    /* This should also work in dae
-    if (this.data.transfer) {
-      //@ts-ignore
-      ui.notifications.notify(game.i18n.localize(`dae.not-reflected`));
-    }
-    */
-
-    /* This shoukd work in dae
-    if (!this.data.transfer && data.transfer) {
-      //@ts-ignore
-      ui.notifications.notify(game.i18n.localize(`dae.not-transferred`));
-    }
-    */
+  
   }
 
   /**
@@ -181,31 +170,31 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
       return undefined;
     }
 
-    if (!!item?.data.data.duration?.value) {
+    if (!!item?.system.duration?.value) {
 
       let duration: any = {};
 
-      switch (item.data.data.duration.units) {
+      switch (item.system.duration.units) {
         case 'hour':
-          duration.seconds = item.data.data.duration?.value * 60 * 60;
+          duration.seconds = item.system.duration?.value * 60 * 60;
           break;
         case 'minute':
-          duration.seconds = item.data.data.duration?.value * 60;
+          duration.seconds = item.system.duration?.value * 60;
           break;
         case 'day':
-          duration.seconds = item.data.data.duration?.value * 60 * 60 * 24;
+          duration.seconds = item.system.duration?.value * 60 * 60 * 24;
           break;
         case 'month':
-          duration.seconds = item.data.data.duration?.value * 60 * 60 * 24 * 28;
+          duration.seconds = item.system.duration?.value * 60 * 60 * 24 * 28;
           break;
         case 'year':
-          duration.seconds = item.data.data.duration?.value * 60 * 60 * 24 * 365;
+          duration.seconds = item.system.duration?.value * 60 * 60 * 24 * 365;
           break;
         case 'turn':
-          duration.turns = item.data.data.duration?.value;
+          duration.turns = item.system.duration?.value;
           break;
         case 'round':
-          duration.rounds = item.data.data.duration?.value;
+          duration.rounds = item.system.duration?.value;
           break;
         default:
           duration.rounds = 1;
@@ -232,8 +221,8 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     const effect = li.dataset.effectId ? owner.effects.get(li.dataset.effectId) : null;
 
     const initialEffectFromItem = {
-      label: owner.data.name,
-      icon: owner.data.img,
+      label: owner.name,
+      icon: owner.img,
       origin: owner.uuid,
       duration: this.getDurationFromItem(owner, li.dataset.effectType === "passive"),
       disabled: li.dataset.effectType === "inactive"

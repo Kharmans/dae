@@ -107,7 +107,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   get title() {
     let suffix = this.object.parent.isOwned ? "(Owned Item) Experimental" : "";
-    return `${i18n("EFFECT.ConfigTitle")}: ${this.object.data.label}` + suffix;
+    return `${i18n("EFFECT.ConfigTitle")}: ${this.object.label}` + suffix;
   }
 
   get id() {
@@ -188,7 +188,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         data.durationString = duration.date + " " + duration.time;
       }
     }
-    setProperty(data.effect, "flags.dae.durationExpression", this.object.data.flags?.dae?.durationExpression);
+    setProperty(data.effect, "flags.dae.durationExpression", this.object.flags?.dae?.durationExpression);
     if (!data.effect.flags.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       setProperty(data.effect.flags, "dae.specialDuration", []);
     data.sourceName = this.object.sourceName;

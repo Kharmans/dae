@@ -140,7 +140,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
     if (!actor) {
       error("could not find actor for ", idData);
     }
-    let effectsToDelete = actor?.effects?.filter(ef => ef.data.origin === data.origin && !data.ignore?.includes(ef.uuid));
+    let effectsToDelete = actor?.effects?.filter(ef => ef.origin === data.origin && !data.ignore?.includes(ef.uuid));
     if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete.filter(ae => data.deleteEffects.includes(ae.id))
     if (effectsToDelete?.length > 0) {
       try {
@@ -173,22 +173,22 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
       // TODO: update exsiting count stacks rather than removing and adding.
       // find existing active effect that have same origin as one of our new effects 
       let removeList = targetActor.effects.filter(ae => {
-        const notMulti = getProperty(ae.data, "flags.dae.stackable") !== "multi";
-        const noStackByName = getProperty(ae.data, "flags.dae.stackable") === "noneName";
+        const notMulti = getProperty(ae, "flags.dae.stackable") !== "multi";
+        const noStackByName = getProperty(ae, "flags.dae.stackable") === "noneName";
         if (noStackByName) 
-          return origins.find(o => o.label === ae.data.label)
+          return origins.find(o => o.label === ae.label)
         else return origins.find(o => {
               const escapedLabel = o.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              return o.origin === ae.data.origin
-              && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.data.label))
+              return o.origin === ae.origin
+              && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.label))
           })
-          && getProperty(ae.data, "flags.dae.transfer") === false
+          && getProperty(ae, "flags.dae.transfer") === false
           && notMulti;
       });
 
       if (removeList.length > 0) {
-        currentStacks = removeList.filter(ae => getProperty(ae.data, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae.data, "flags.dae.stacks") ?? 1), 1)
-        removeList = removeList.map(ae => ae.data._id);
+        currentStacks = removeList.filter(ae => getProperty(ae, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae, "flags.dae.stacks") ?? 1), 1)
+        removeList = removeList.map(ae => ae._id);
         await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList);
       }
       if (toggleEffect && removeList.length > 0) activate = false;;
@@ -307,15 +307,15 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
             if (!Array.isArray(timedRemoveList)) timedRemoveList = [timedRemoveList];
             timedRemoveList.forEach(ae => {
               // need to do separately as they might have different durations
-              let duration = ae.data.duration?.seconds || 0;
+              let duration = ae.duration?.seconds || 0;
               if (!duration) {
-                duration = ((ae.data.duration.rounds ?? 0) + ((ae.data.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
+                duration = ((ae.duration.rounds ?? 0) + ((ae.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
               }
-              warn("removing effect ", ae.data, " in ", duration, " seconds ")
-              if (duration && aboutTimeInstalled) {
-                game.Gametime.doIn({ seconds: duration }, doRemoveEffect, tokenUuid, ae.data)
+              warn("removing effect ", ae.toObject, " in ", duration, " seconds ")
+              if (duration && aboutTimeInstalled) { // TODO check this v10
+                game.Gametime.doIn({ seconds: duration }, doRemoveEffect, tokenUuid, ae.toObject())
               } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
-                setTimeout(doRemoveEffect, duration * 1000 || 6000, tokenUuid, ae.data);
+                setTimeout(doRemoveEffect, duration * 1000 || 6000, tokenUuid, ae.toObject());
               }
             })
           }

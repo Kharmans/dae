@@ -34,7 +34,7 @@ export class EditOwnedItemEffectsItemSheet {
     html.find('.effect-control[data-action="toggle"]').remove();
 
     // add 'transfer' button to the AEs which should be transferrable
-    app.item.effects.filter(effect => effect.data.transfer).forEach(effect => {
+    app.item.effects.filter(effect => effect.transfer).forEach(effect => {
       const id = effect.id;
 
       const newButton = `<a class="effect-control" data-action="transfer" title="${game.i18n.localize('EFFECT.Transfer')}">

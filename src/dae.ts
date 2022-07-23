@@ -5,7 +5,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, daeSystemClass, actionQueue } from "./module/dae";
 import { daeReadyActions } from "./module/dae";
 import { convertDuration, setupSocket } from './module/GMAction';
-import { checkLibWrapperVersion, cleanArmorWorld, cleanEffectOrigins, fixDeprecatedChanges, fixDeprecatedChangesActor, fixDeprecatedChangesItem, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorArmorEffects, removeActorEffectsArmorEffects, removeAllActorArmorEffects, removeAllItemsArmorEffects, removeAllTokenArmorEffects, removeItemArmorEffects, tobMapper } from './module/migration';
+import { checkLibWrapperVersion, cleanEffectOrigins, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, tobMapper } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -41,19 +41,19 @@ export var daeUntestedSystems: boolean;
 Hooks.once('init', async function () {
   debug('Init setup actions');
 
-  const daeFlags = game.modules.get("dae").data.flags;
-  const systemDaeFlag = game.system.data.flags?.daeCompatible;
+  const daeFlags = game.modules.get("dae").flags;
+  const systemDaeFlag = game.system.flags?.daeCompatible;
 
   if (daeFlags.compatible?.includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
   else if (daeFlags.incompatible?.includes(game.system.id) || systemDaeFlag === false) gameSystemCompatible = "no";
 
   if (gameSystemCompatible === "no") {
-    console.error(`DAE is not compatible with ${game.system.data.title} module disabled`)
+    console.error(`DAE is not compatible with ${game.system.title} module disabled`)
   } else {
     registerSettings();
     daeUntestedSystems = game.settings.get("dae", "DAEUntestedSystems")
     if (gameSystemCompatible === "yes" || daeUntestedSystems) {
-      if (gameSystemCompatible === "maybe") console.warn(`DAE compatibility warning for ${game.system.data.title} is not tested with DAE`);
+      if (gameSystemCompatible === "maybe") console.warn(`DAE compatibility warning for ${game.system.title} is not tested with DAE`);
       daeInitActions();
       patchingInitSetup();
       fetchParams(false);
@@ -72,13 +72,13 @@ export var daeMacroRepeats;
 Hooks.once('ready', async function () {
   if (gameSystemCompatible !== "no" && (gameSystemCompatible === "yes" || daeUntestedSystems)) {
     if ("maybe" === gameSystemCompatible) {
-      if (game.user.isGM) ui.notifications.warn(`DAE is has not been tested with ${game.system.data.title}. Disable DAE if there are problems`);
+      if (game.user.isGM) ui.notifications.warn(`DAE is has not been tested with ${game.system.title}. Disable DAE if there are problems`);
     }
     checkLibWrapperVersion();
     fetchParams();
     debug("ready setup actions")
     daeSpecialDurations = { "None": "" };
-    if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").data.version, "0.0.9")) {
+    if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").version, "0.0.9")) {
       daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
       daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
       daeSpecialDurations["turnStartSource"] = i18n("dae.turnStartSource");
@@ -103,7 +103,7 @@ Hooks.once('ready', async function () {
 /* ------------------------------------ */
 Hooks.once('setup', function () {
   if (gameSystemCompatible === "no" || (gameSystemCompatible === "maybe" && !daeUntestedSystems)) {
-    ui.notifications.warn(`DAE disabled for ${game.system.data.name} - to enable choose Allow Untested Systems from the DAE settings`)
+    ui.notifications.warn(`DAE disabled for ${game.system.name} - to enable choose Allow Untested Systems from the DAE settings`)
   } else {
     // Do anything after initialization but before
     // ready
@@ -115,7 +115,6 @@ Hooks.once('setup', function () {
       ActiveEffects: ActiveEffects,
       addAutoFields: addAutoFields,
       blindToken: blindToken,
-      cleanArmorWorld: cleanArmorWorld,
       cleanEffectOrigins: cleanEffectOrigins,
       confirmAction,
       convertDuration,
@@ -127,9 +126,6 @@ Hooks.once('setup', function () {
       daeSpecialDurations: () => { return daeSpecialDurations },
       deleteActiveEffect: deleteActiveEffect,
       doEffects,
-      fixDeprecatedChanges: fixDeprecatedChanges,
-      fixDeprecatedChangesActor: fixDeprecatedChangesActor,
-      fixDeprecatedChangesItem: fixDeprecatedChangesItem,
       fixTransferEffects: fixTransferEffects,
       fixupDDBAC: fixupDDBAC,
       getFlag: getFlag,
@@ -138,12 +134,6 @@ Hooks.once('setup', function () {
       migrateAllActorsDAESRD: migrateAllActorsDAESRD,
       migrateAllNPCDAESRD: migrateAllNPCDAESRD,
       moveToken: moveToken,
-      removeActorArmorEffects: removeActorArmorEffects,
-      removeActorEffectsArmorEffects: removeActorEffectsArmorEffects,
-      removeAllActorArmorEffects: removeAllActorArmorEffects,
-      removeAllItemsArmorEffects: removeAllItemsArmorEffects,
-      removeAllTokenArmorEffects: removeAllTokenArmorEffects,
-      removeItemArmorEffects: removeItemArmorEffects,
       renameToken: renameToken,
       restoreVision: restoreVision,
       setFlag: setFlag,
@@ -186,9 +176,3 @@ export function confirmAction(toCheck: boolean, confirmFunction, title = i18n("d
     d.render(true);
   } else return confirmFunction();
 }
-
-Hooks.once('libChangelogsReady', function () {
-  //@ts-ignore
-  const libch = libChangelogs;
-
-})

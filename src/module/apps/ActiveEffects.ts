@@ -47,7 +47,7 @@ getData() {
   const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
   const modeKeys = Object.keys(EFFECTMODES);
   let actives = this.object.effects.map(ae=> {
-    let newAe = duplicate(ae.data);
+    let newAe = duplicate(ae);
     newAe.duration = duplicate(ae.duration);
     if (simpleCalendarInstalled && newAe.duration?.type === "seconds") {
       const simpleCalendar = globalThis.SimpleCalendar?.api;
@@ -55,8 +55,8 @@ getData() {
     } else if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }
-    let specialDuration = getProperty(ae.data.flags, "dae.specialDuration") || [daeSpecialDurations["None"]];
-    if (typeof specialDuration === "string") specialDuration = [ae.data.flags.dae.specialDuration]
+    let specialDuration = getProperty(ae.flags, "dae.specialDuration") || [daeSpecialDurations["None"]];
+    if (typeof specialDuration === "string") specialDuration = [ae.flags.dae.specialDuration]
     newAe.duration.label += ", " + `[${specialDuration.map(dur => daeSpecialDurations[dur])}]`;
     newAe.isTemporary  = true;
     newAe.isTemporary = ae.isTemporary ;
@@ -116,7 +116,7 @@ getData() {
     isGM: game.user.isGM,
     isItem,
     isOwned: this.object.isOwned,
-    flags: this.object.data.flags,
+    flags: this.object.flags,
     modes: modeKeys,
     validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[this.object.type],
     //@ts-ignore
@@ -170,15 +170,15 @@ activateListeners(html) {
   
   // Delete Effect
   html.find('.effect-delete').click(async ev => {
-    const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
+    const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     //@ts-ignore
     if (this.object instanceof CONFIG.Actor.documentClass) {
       confirmAction(confirmDelete, () => {
-        this.object.deleteEmbeddedDocuments("ActiveEffect", [effect_id]);
+        this.object.deleteEmbeddedDocuments("ActiveEffect", [effectid]);
       })
     } else {
-      let effect = this.object.effects.get(effect_id);
-      effect =  new EditOwnedItemEffectsActiveEffect(effect.data, effect.parent);
+      let effect = this.object.effects.get(effectid);
+      effect =  new EditOwnedItemEffectsActiveEffect(effect, effect.parent);
       confirmAction(confirmDelete, () => {
         effect.delete({});
       })
@@ -186,10 +186,10 @@ activateListeners(html) {
   });
   html.find('.effect-edit').click(async ev => {
     if (this.object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
-    const effect_id = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    let effect = this.object.effects.get(effect_id);
+    const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
+    let effect = this.object.effects.get(effectid);
     
-    const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.data, effect.parent);
+    const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect, effect.parent);
     return ownedItemEffect.sheet.render(true);
   })
   html.find('.effect-add').click(async ev => {
