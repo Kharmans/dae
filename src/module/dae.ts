@@ -582,8 +582,8 @@ export function _onDeleteActiveEffect(...args) {
         if (globalThis.Sequencer && (origin === effect.parent || origin?.parent === effect.parent))
           globalThis.Sequencer.EffectManager.endEffects({ origin: effect.data.origin });
         if (canvas?.scene && (origin === effect.parent || origin?.parent === effect.parent)) {
-          const removeTiles = canvas.scene.tiles.filter(tile => tile.data.flags?.autoanimations?.origin === effect.data.origin).map(tile=>tile.id);
-          // if (removeTiles.length > 0) await canvas.Scene.deleteEmbeddedDocuments("Tile", removeTiles);
+          const removeTiles = canvas?.scene?.tiles.filter(tile => tile.data.flags?.autoanimations?.origin === effect.data.origin).map(tile => tile.id);
+          // if (removeTiles.length > 0) await canvas?.scene?.deleteEmbeddedDocuments("Tile", removeTiles);
         }
       }
 
@@ -716,7 +716,7 @@ export async function evalArgs({ effectData = null, itemData = null, context, ac
     return change; // nothing to do
   const returnChange = duplicate(change);
   let contextToUse = mergeObject({
-    scene: canvas.scene.id,
+    scene: canvas?.scene?.id,
     token: ChatMessage.getSpeaker({ actor }).token,
     target: "@target",
     targetUuid: "@targetUuid",
@@ -828,10 +828,10 @@ export async function doEffects(item, activate, targets = undefined,
 export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [], removeMatchLabel = false, toggleEffect = false, selfEffects = false }) {
   if (!targets) return;
   let macroLocation = "mixed";
-  let appliedEffects = duplicate(this.data.effects.filter(
-    ae => ae.data.transfer !== true
-    && (!selfEffects || getProperty(ae.data, "flags.dae.selfTarget")))
-  );
+  let appliedEffects = duplicate(this.data.effects.filter(ae =>
+    ae.data.transfer !== true
+    && ((selfEffects ?? false) === (getProperty(ae.data, "flags.dae.selfTarget") ?? false))
+  ));
   if (effectsToApply.length > 0) appliedEffects = appliedEffects.filter(aeData => effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = this.getRollData(); //TODO if not caster eval move to evalArgs call
@@ -957,9 +957,9 @@ export async function preUpdateActor(wrapped, updates, options, user) {
       let originItem = (originObject instanceof Item) ? originObject : undefined;
       if (!originItem) {
         const theEffect = targetActor.effects.find(ef => ef.data.origin === onUpdate.origin);
-          const itemData = getProperty(theEffect.data, "flags.dae.itemData");
-          //@ts-ignore
-          if (itemData) originItem = new CONFIG.Item.documentClass(itemData, { parent: targetActor });
+        const itemData = getProperty(theEffect.data, "flags.dae.itemData");
+        //@ts-ignore
+        if (itemData) originItem = new CONFIG.Item.documentClass(itemData, { parent: targetActor });
       }
       let lastArg = {
         tag: "onUpdateTarget",
@@ -1252,7 +1252,7 @@ export function replaceFormulaData(wrapped, formula, data, { missing, warn = fal
 
 export function tokenForActor(actor): Token | undefined {
   const tokens = actor.getActiveTokens();
-  if ( !tokens.length ) return undefined;
+  if (!tokens.length) return undefined;
   const controlled = tokens.filter(t => t._controlled);
   return controlled.length ? controlled.shift() : tokens.shift();
 }

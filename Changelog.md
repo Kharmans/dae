@@ -1,3 +1,7 @@
+### 0.10.25
+* Fix for selfTarget effects being inaccurately applied - thanks @Elwin
+* Fix for weapon/
+
 ### 0.10.24
 * **BREAKING** onUpdateTarget macro calls will now have args[0] set to "onUpdateTarget".
 * As ra eminder it is strongly recommended that you create onUpdateTarget effects with an update filter which is as precise as you can make it, this will significantly improve performance.

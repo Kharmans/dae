@@ -436,7 +436,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
-              const item = await pack.getDocument(id);
+              const item = game.dnd5e.applications.ProficiencySelector.getBaseItem(id, { indexOnly: true})
+              // const item = await pack.getDocument(id);
               list[key] = item.name;
             }
           }
@@ -444,6 +445,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         this.profInit = true;
 
       } catch (err) {
+        console.warn("dae | Could not load weapon/armor/tool proficiencies", err);
         this.profInit = false;
       }
     }

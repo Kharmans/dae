@@ -56,20 +56,20 @@ export class DAESystemSW5E extends DAESystemDND5E {
   public static async editConfig() {
     if (game.system.id === "sw5e") {
       try {
-        const armorPack = game.packs.get("sw5e.armor");
-        let pack;
+        const pack = game.packs.get(CONFIG.DND5E.sourcePacks.ITEMS);
         const profs = [
           { type: "tool", list: this.toolProfList },
           { type: "armor", list: this.armorProfList },
           { type: "weapon", list: this.weaponProfList }
         ];
         for (let { type, list } of profs) {
-          let choices = CONFIG.SW5E[`${type}Proficiencies`];
-          const ids = CONFIG.SW5E[`${type}Ids`];
+          let choices = CONFIG.DND5E[`${type}Proficiencies`];
+          const ids = CONFIG.DND5E[`${type}Ids`];
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
-              const item = await fromUuid(`Compendium.${id}`)
+              const item = game.dnd5e.applications.ProficiencySelector.getBaseItem(id, { indexOnly: true})
+              // const item = await pack.getDocument(id);
               list[key] = item.name;
             }
           }
@@ -77,7 +77,7 @@ export class DAESystemSW5E extends DAESystemDND5E {
         this.profInit = true;
 
       } catch (err) {
-        console.error(err)
+        console.warn("dae | Could not load weapon/armor/tool proficiencies", err);
         this.profInit = false;
       }
     }
