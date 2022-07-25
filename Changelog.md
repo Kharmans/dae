@@ -1,6 +1,6 @@
 ### 0.10.25
 * Fix for selfTarget effects being inaccurately applied - thanks @Elwin
-* Fix for weapon/
+* Fix for weapon/tool/armor profs to support homebrew.
 
 ### 0.10.24
 * **BREAKING** onUpdateTarget macro calls will now have args[0] set to "onUpdateTarget".
