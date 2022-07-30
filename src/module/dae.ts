@@ -410,7 +410,12 @@ async function _preCreateActiveEffect(wrapped, ...args) {
           updates["label"] = i18n(statusEffect.label);
           changesChanged = true;
           updates["flags.core.statusId"] = statusEffect.id;
-          if (statusEffect.flags?.isConvenient) updates["flags.isConvenient"] = true;
+          if (statusEffect.flags) {
+            updates["flags.combat-utility-belt"] = statusEffect.flags["combat-utility-belt"];
+            updates["flags.isConvenient"] = statusEffect.flags?.isConvenient;
+            updates["flags.convenientDescription"] = statusEffect.flags?.convenientDescription;
+            updates["flags.isCustomConvenient"] = statusEffect.flags?.isCustomConvenient;
+          }
         }
       } else if (change.key === "StatusEffectLabel") {
         updates["label"] = change.value;

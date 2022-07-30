@@ -1,3 +1,7 @@
+### 0.10.26
+* Fix for so statusEffects for CUB/CE. A status effect should behave exactly as the relevant CUB/CE conditions. Specifically fixing an issue that CUB conditions applied via status effects were not recognised as CUB conditions.
+  - It remains the case that any special feature of CE conditions that are not active effects won't be applied via a statusEffect. These are mostly spell effects which you should not be applying via a statusEffect any way.
+
 ### 0.10.25
 * Fix for selfTarget effects being inaccurately applied - thanks @Elwin
 * Fix for weapon/tool/armor profs to support homebrew.
