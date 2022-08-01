@@ -435,7 +435,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
-              const item = await pack.getDocument(id);
+              const item = globalThis.dnd5e.applications.ProficiencySelector.getBaseItem(id, { indexOnly: true})
+              // const item = await pack.getDocument(id);
               list[key] = item.name;
             }
           }
@@ -773,7 +774,7 @@ function prepareData(wrapped) {
   applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true);
   preparePassiveSkills.bind(this)();
   //TODO find another way to tdo this
-  // this._prepareOwnedItems(this.data.items)
+  // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
 }
 
@@ -845,20 +846,20 @@ function patchSpecialTraits() {
   displayTraits = game.settings.get("dae", "displayTraits");
   //@ts-ignore
   if ("dnd5e" === game.system.id || "sw5e" === game.system.id) {
-    log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject (override=${displayTraits})`);
-    log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags (override=${displayTraits})`);
-    log(`Patching game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses (override=${displayTraits})`);
+    log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._updateObject (override=${displayTraits})`);
+    log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getFlags (override=${displayTraits})`);
+    log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getBonuses (override=${displayTraits})`);
     if (!displayTraits) {
       if (specialTraitsPatched) {
-        libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject`);
-        libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags`);
-        libWrapper.unregister("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses`);
+        libWrapper.unregister("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._updateObject`);
+        libWrapper.unregister("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getFlags`);
+        libWrapper.unregister("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getBonuses`);
       }
     } else {
       if (!specialTraitsPatched) {
-        libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._updateObject`, _updateObject, "OVERRIDE");
-        libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getFlags`, _getFlags[game.system.id], "OVERRIDE");
-        libWrapper.register("dae", `game.${game.system.id}.applications.ActorSheetFlags.prototype._getBonuses`, _getBonuses[game.system.id], "OVERRIDE");
+        libWrapper.register("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._updateObject`, _updateObject, "OVERRIDE");
+        libWrapper.register("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getFlags`, _getFlags[game.system.id], "OVERRIDE");
+        libWrapper.register("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getBonuses`, _getBonuses[game.system.id], "OVERRIDE");
       }
     }
     specialTraitsPatched = displayTraits;

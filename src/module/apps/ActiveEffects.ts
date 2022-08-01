@@ -51,6 +51,7 @@ getData() {
     newAe.duration = duplicate(ae.duration);
     if (simpleCalendarInstalled && newAe.duration?.type === "seconds") {
       const simpleCalendar = globalThis.SimpleCalendar?.api;
+      ae._prepareDuration(); // TODO remove this if v10 change made
       simpleCalendar.formatDateTime(simpleCalendar.timestampToDate(ae.duration.remaining)).time
     } else if (newAe.duration.label) {
       newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");

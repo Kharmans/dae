@@ -123,8 +123,6 @@
   "dae.enabled": "Włączono",
   "dae.disabled": "Wyłączono",
   "dae.tool_proficiency": "Biegłopść w Narzędziach",
-  "dae.requireItemTarget.Name": "Nieprzenoszalne efekty wymagają celu dla przedmiotu (dnd5e)",
-  "dae.requireItemTarget.Hint": "nieprzenoszalne efekty mogą zostać zaaplikowane tylko jeśli przedmiot określa cel.",
   "dae.notTargetItem": "Ten przedmiot nie posiada sprecyzowanych celów",
   "dae.ConsumeCharge.Name": "Zużyj Ładunuek Przy Aktywacji Efektu Pasywnego",
   "dae.ConsumeCharge.Hint": "Podczas aktywacji efektu pasywnego z użyciem togglePassiveEffect albo wiadomości czatu, aktywuj wyłącznie kiedy przedmiot posiada dostępne ładunki i zużyj jego ładunek",

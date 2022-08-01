@@ -123,8 +123,6 @@
     "dae.enabled": "사용",
     "dae.disabled ": "사용 안 함",
     "dae.tool_proficiency": "도구 숙련",
-    "dae.requireItemTarget.Name": "아이템 대상 요구시 효과 활성화 (dnd5e)",
-    "dae.requireItemTarget.Hint": "아이템이 대상이나 스스로를 명시하는 경우에만 활성 효과를 적용한다.",
     "dae.notTargetItem": "이 아이템에 지정된 대상이 없습니다.",
     "dae.ConsumeCharge.Name": "패시브 활성화시 차지 소모",
     "dae.ConsumeCharge.Hint": "패시브 효과 토글이나 채팅 카드를 통해 패시브 효과를 활성화할 때, 차지가 존재하는 아이템이 잔여 차지가 있을 경우에만 활성화된다.",

@@ -2,16 +2,6 @@ import { fetchParams } from "./dae";
 
 export const registerSettings = function () {
 
-  game.settings.register("dae", "requireItemTarget", {
-    name: game.i18n.localize("dae.requireItemTarget.Name"),
-    hint: game.i18n.localize("dae.requireItemTarget.Hint"),
-    scope: "world",
-    default: true,
-    config: true,
-    type: Boolean,
-    onChange: fetchParams
-  });
-  
   game.settings.register("dae", "useDAESheet", {
     scope: "world",
     default: true,
@@ -40,13 +30,6 @@ export const registerSettings = function () {
     type: Boolean,
     config: true,
     onChange: fetchParams
-  });
-
-  game.settings.register("dae", "ArmorDisabled", {
-    scope: "world",
-    default: 0,
-    config: false,
-    type: Number
   });
 
   game.settings.register("dae", "showInline", {

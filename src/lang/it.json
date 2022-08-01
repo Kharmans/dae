@@ -123,8 +123,6 @@
     "dae.enabled": "Abilitato",
     "dae.disabled": "Disabilitato",
     "dae.tool_proficiency": "Competenza Strumenti",
-    "dae.requireItemTarget.Name": "Gli effetti non trasferibili richiedono il bersaglio (dnd5e)",
-    "dae.requireItemTarget.Hint": "Gli effetti non-trasferibili possono essere applicati ai bersagli solo se l'oggetto specifica i bersagli o se stesso",
     "dae.notTargetItem": "Questo oggetto non ha bersagli specificati",
     "dae.ConsumeCharge.Name": "Consuma la Carica all'Attivazione Passiva",
     "dae.ConsumeCharge.Hint": "Quando si attiva un effetto passivo tramite l'attivazione/disattivazione dell'Effetto passivo o mediante la scheda di stato della chat, attivare solo se l'oggetto possiede deile cariche e consuma una carica.",

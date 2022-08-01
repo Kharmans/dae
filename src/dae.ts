@@ -40,6 +40,10 @@ export var daeUntestedSystems: boolean;
 /* ------------------------------------ */
 Hooks.once('init', async function () {
   debug('Init setup actions');
+  CONFIG.compatibility.excludePatterns.push(new RegExp("/modules/itemacro/"));
+  CONFIG.compatibility.excludePatterns.push(new RegExp("/modules/socketlib/"));
+  CONFIG.compatibility.excludePatterns.push(new RegExp("/modules/libWrapper/"));
+
 
   const daeFlags = game.modules.get("dae").flags;
   const systemDaeFlag = game.system.flags?.daeCompatible;

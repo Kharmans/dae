@@ -123,8 +123,6 @@
     "dae.enable": "Habilitado",
     "dae.disable": "Desabilitado",    
     "dae.tool_proficiency": "Proficiência com Ferramenta",
-    "dae.requireItemTarget.Name": "Efeitos sem transferência requerem um item alvo (dnd5e)",
-    "dae.requireItemTarget.Hint": "Quando habilitado efeitos sem transferência só podem ser aplicados à alvos se o item especificar alvos ou ele mesmo.",
     "dae.notTargetItem": "Este item não tem alvos especificados",
     "dae.ConsumeCharge.Name": "Consome Carga em Ativação Passiva",
     "dae.ConsumeCharge.Hint": "Quando ativando um efeito passivo via togglePassiveEffect ou Cartão de status do bate-papo somente ativará se o item possuir cargas e consumir uma",

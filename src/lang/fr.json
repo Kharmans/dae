@@ -123,8 +123,6 @@
 	"dae.enabled": "Activer",
 	"dae.disabled": "Désactivé",
 	"dae.tool_proficiency": "Maîtrise d'outil",
-	"dae.requireItemTarget.Name": "Effets actifs sur cible d'item",
-	"dae.requireItemTarget.Hint": "Les effets actifs ne sont appliqués qu'aux cibles spécifiées par l'item (DnD5e).",
 	"dae.notTargetItem": "Cet objet/sort n'a pas de cible",
 	"dae.ConsumeCharge.Name": "L'activation consomme une charge",
 	"dae.ConsumeCharge.Hint": "les effets passifs activés via  un déclencheur ou un bouton de chat ne s'activent que si une charge est disponible et la consomment",

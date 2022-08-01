@@ -267,7 +267,7 @@ export class DAESystem {
       const macroName = ["none",""].includes(values[5] ?? "") ? "" : values[5];
       const filter = ["none", ""].includes(values[6] ?? "") ? "system" : values[6];;
       const args = values.slice(7);
-      let flagValue = getProperty(actor.data, "flags.dae.onUpdateTarget") ?? [];
+      let flagValue = getProperty(actor, "flags.dae.onUpdateTarget") ?? [];
       flagValue.push({flagName, macroName, origin, sourceTokenUuid, args, targetTokenUuid, filter, sourceActorUuid})
       setProperty(actor, "flags.dae.onUpdateTarget", flagValue);
     }

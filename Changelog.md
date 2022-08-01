@@ -1,3 +1,9 @@
+### 10.0.2
+* Fix for overriding actor sheet flags editor
+* Fix for effect.duration.remaining not updating.
+* Fix for so statusEffect Restrained (CUB) (etc) will behave as is CUB has applied the condition.
+* remove require item targets setting as it does not do anything.
+
 ### 10.0.1
 * pre release of DAE for foundry v10.
 * This is **NOT** suitable for gameplay and has **NOT** been extensively tested.
