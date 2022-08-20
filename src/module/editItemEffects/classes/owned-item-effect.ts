@@ -123,7 +123,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     try {
       await embeddedItem.update({
         effects: newEffects
-      })
+      });
     } catch (e) {
       console.error(e);
     }
@@ -135,7 +135,8 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     }
 
     this.data.update(diff);
-    this.sheet.render();
+    this.sheet?.getData();
+    this.sheet?.render();
 
     /* This should also work in dae
     if (this.data.transfer) {

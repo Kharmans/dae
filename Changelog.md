@@ -1,3 +1,9 @@
+### 0.10.27
+* added support for templates via flags.dae.deleteUuid
+* Fixed a bug when editing effects on owned items where the drop downs would not populate when an effect was edited. Possibly fixes other odities with editing effects on owned items.
+* Fix for onUpdateTarget not triggering on, for example, data.attributes.hp.value = 0.
+* Instantaneous durations are converted to 1 second/1 round.
+
 ### 0.10.26
 * Fix for so statusEffects for CUB/CE. A status effect should behave exactly as the relevant CUB/CE conditions. Specifically fixing an issue that CUB conditions applied via status effects were not recognised as CUB conditions.
   - It remains the case that any special feature of CE conditions that are not active effects won't be applied via a statusEffect. These are mostly spell effects which you should not be applying via a statusEffect any way.

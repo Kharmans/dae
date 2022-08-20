@@ -298,11 +298,11 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------------	|:----------:	|-------- 	|
 | `data.bonuses.All-Attacks`	|    CUSTOM	| The specified string field will be appended to `bonuses.mwak.attack`, `bonuses.rwak.attack`, `bonuses.msak.attack`, `bonuses.rsak.attack`	|
-| `data.bonuses.All-Damage`	|    CUSTOM	| The specified string field will be appended to ?	|
-| `data.bonuses.abil.damage`          	|            	| 	|
-| `data.bonuses.TYPE.attack`          	|    CUSTOM  	| 	|
-| `data.bonuses.TYPE.damage`          	|            	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon 	|
-| `data.bonuses.save.damage`          	|            	| 	|
+| `data.bonuses.All-Damage`	|    CUSTOM	| The specified string field will be appended to each of rwak/mwak/rsak/msak	|
+| `data.bonuses.abil.damage`          	|   CUSTOM   	| The specified string will appended to the damage roll for action type ability check	|
+| `data.bonuses.TYPE.attack`          	|   CUSTOM  	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon	|
+| `data.bonuses.TYPE.damage`          	|   CUSTOM  	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon 	|
+| `data.bonuses.save.damage`          	|            	| The specified string will appended to the damage roll for action type saving throw	|
 | `data.bonuses.spell.dc` 	|     ANY 	| Always numeric, so any dice expression will be evaluated once when prepareData is called and **NOT** on each spell cast.<br>You cannot do lookups of derived fields for spell.dc calculations. 	|
 | `data.spells.pact.level`	|	|	|
 | `data.spells.pact.override`	|	| `spellslots.value` is not able to be modified with DAE.	|

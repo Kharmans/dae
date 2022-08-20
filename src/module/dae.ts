@@ -949,7 +949,7 @@ export async function preUpdateActor(wrapped, updates, options, user) {
   try {
     for (let onUpdate of (getProperty(this.data, "flags.dae.onUpdateTarget") ?? [])) {
       if (onUpdate.macroName.length === 0) continue;
-      if (!getProperty(updates, onUpdate.filter)) continue;
+      if (getProperty(updates, onUpdate.filter) === undefined) continue;
       if (options.onUpdateCalled) return;
       const originObject: any = DAEfromUuid(onUpdate.origin);
       const sourceTokenDocument = DAEfromUuid(onUpdate.sourceTokenUuid)
