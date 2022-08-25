@@ -1,8 +1,18 @@
+### 0.10.28
+* Support for dnd5e-custom-skills module and setting .value for the skill.
+* Fix for rapid equip/unequip not functioning as expected.
+* Effects that are marked as suppressed (attunement required or not equipped) will disable/enable all macro.XXX effects (CE/CUB/tokenMagic/execute/ItemMacro) when suppressed/unsuppressed.
+* Updated ja.json thanks @Brother Sharp
+
 ### 0.10.27
 * added support for templates via flags.dae.deleteUuid
 * Fixed a bug when editing effects on owned items where the drop downs would not populate when an effect was edited. Possibly fixes other odities with editing effects on owned items.
 * Fix for onUpdateTarget not triggering on, for example, data.attributes.hp.value = 0.
-* Instantaneous durations are converted to 1 second/1 round.
+* Instantaneous durations are converted to 1 second/1 turn.
+* Enhanced treatment of system.abilities.src/dex/etc.bonuses.save/check. Mode custom will now correctly handle the need for a "+" sign, so no ugly double plusses on the roll display.
+* Support for dnd5e-custom-skills module and setting .value for the skill
+* Fix for rapid equip/unequip nto functioning as expected.
+* Effects that are marked as suppressed (attunement required or not equipped) will disable/enable all macro.XXX effects (CE/CUB/tokenMagic/execute/ItemMacro) when suppressed/unsuppressed.
 
 ### 0.10.26
 * Fix for so statusEffects for CUB/CE. A status effect should behave exactly as the relevant CUB/CE conditions. Specifically fixing an issue that CUB conditions applied via status effects were not recognised as CUB conditions.

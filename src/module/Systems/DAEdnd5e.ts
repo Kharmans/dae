@@ -1,8 +1,8 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, DAEfromUuid, daeSystemClass, fetchParams, libWrapper, noDupDamageMacro } from "../dae";
+import { actionQueue, addConvenientEffectsChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, fetchParams, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCubChange, removeTokenMagicChange } from "../dae";
 import { cleanArmorWorld, cleanDAEArmorWorld } from "../migration";
-import { applyBaseActiveEffects, ValidSpec } from "./DAESystem";
+import { applyBaseActiveEffects, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
 var specialTraitsPatched = false;
@@ -175,9 +175,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
       if (characterSpec.data.spells) {
         for (let spellSpec of Object.keys(characterSpec.data.spells))
-        specials[`data.spells.${spellSpec}.max`] = [0, -1];
+          specials[`data.spells.${spellSpec}.max`] = [0, -1];
       }
-  
+
       /*/
       if (game.modules.get("resourcesplus")?.active) {
         const maxResources = Math.min(game.settings.get("resourcesplus", "globalLimit"), game.settings.get("resourcesplus", "localLimit"));
@@ -251,8 +251,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   // Any actions to be called on init Hook 
   public static initActions() {
-    warn("system is ", game.system)
-    dice = game[game.system.id].dice
+    warn("system is ", game.system);
+    if (game.modules.get("dnd5e-custom-skills")?.active) {
+      wildcardEffects.push(/data\.skills\..*\.value/);
+      wildcardEffects.push(/data\.abilities\..*\.bonuses/)
+    }
+    dice = game[game.system.id].dice;
     if (!dice) error("Dice not defined! Many things won't work")
     else d20Roll = dice?.d20Roll;
     game.settings.register("dae", "displayTraits", {
@@ -276,10 +280,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
+
+    Hooks.on("preUpdateItem", preUpdateItemHook);
   }
   public static setupActions(): void {
   }
-  
+
   public static readyActions(): void {
     // checkArmorDisabled();
     // Modify armor attribution for DAE specific cases
@@ -334,7 +340,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId]}`;
       });
     }
-    Hooks.on("updateItem", updateItem); // deal with disabling effects for unequipped items
+    // Rely on suppression Hooks.on("updateItem", updateItem); // deal with disabling effects for unequipped items
   }
 
   public static initSystemData() {
@@ -397,7 +403,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       });
     }
   }
-  
+
   public static getOptionsForSpec(spec) {
     if (spec === "data.traits.languages.value")
       return this.languageList;
@@ -436,7 +442,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
-              const item = game.dnd5e.applications.ProficiencySelector.getBaseItem(id, { indexOnly: true})
+              const item = game.dnd5e.applications.ProficiencySelector.getBaseItem(id, { indexOnly: true })
               // const item = await pack.getDocument(id);
               list[key] = item.name;
             }
@@ -505,6 +511,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       if (newProf > 1 && newProf < 2) newProf = 1;
       if (newProf > 2) newProf = 2;
       return setProperty(actor.data, change.key, newProf);
+    }
+
+    if (change.key.startsWith("data.abilities") && (change.key.endsWith("bonuses.save") || change.key.endsWith("bonuses.check"))) {
+      value = change.value;
+      if (!current) return setProperty(actor.data, change.key, value)
+      value = current + ((change.value.startsWith("+") || change.value.startsWith("-")) ? change.value : "+" + change.value);
+      return setProperty(actor.data, change.key, value)
     }
 
     /*
@@ -773,8 +786,9 @@ function prepareData(wrapped) {
   wrapped();
   const hasHeavy = this.items.find(i => i.data.data.equipped && i.data.data.stealth) !== undefined;
   if (hasHeavy) setProperty(this.data, "flags.midi-qol.disadvantage.skill.ste", true);
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true);
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, []);
   preparePassiveSkills.bind(this)();
+  this._prepareSkills
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.data.items)
   debug("prepare data: after passes", this.data);
@@ -1006,7 +1020,7 @@ async function toggleDisabledEffect(item, updates: any) {
   let wasChanged = false;
   for (let aef of item.parent.effects) { // remove all transferred effects for the item
     const isTransfer = aef.data.flags?.dae?.transfer || aef.data.transfer === undefined;
-    if (isTransfer && aef.data.origin === item.uuid) {
+    if (isTransfer && aef.data.origin === item.uuid && aef.data.disabled !== disabled) {
       wasChanged = true;
       aef.data.disabled = disabled;
     }
@@ -1057,6 +1071,63 @@ function determineSuppression() {
     const statusId = (this.data.label ?? "no effect").toLocaleLowerCase();
     const ciSuppressed = (ci?.length && ci.some(c => statusId == c));
     this.data.disabled = Boolean(ciSuppressed);
+  }
+}
+
+function preUpdateItemHook(candidate, updates, options, user) {
+  if (!candidate.isOwned) return true;
+  const actor = candidate.parent;
+  if (!(actor instanceof Actor)) return true;
+  if (updates.data?.equipped === undefined && !updates.data?.attunement === undefined) return true;
+  try {
+
+    const wasSuppressed = candidate.areEffectsSuppressed;
+    candidate.data.data.equipped = updates.data?.equipped ?? candidate.data.data.equipped;
+    candidate.data.data.attunement = updates.data?.attunement ?? candidate.data.data.attunement;
+    const isSuppressed = candidate.areEffectsSuppressed;
+    if (wasSuppressed === isSuppressed) return true;
+
+    // Toggle macro.XX effects
+    const tokens = actor.getActiveTokens();
+    const token = tokens[0];
+    for (let effect of candidate.effects) {
+      if (!effect.data.flags.dae.transfer || effect.data.origin !== candidate.uuid) continue;
+      for (let change of effect.data.changes) {
+        if (isSuppressed) {
+          switch (change.key) {
+            case "macro.CE":
+              const lastArg = prepareLastArgData(effect.data, actor);
+              removeConvenientEffectsChange(change.value, actor.uuid, effect.data.origin, lastArg);
+              break;
+            case "macro.CUB":
+              removeCubChange(change.value, [token])
+              break;
+            case "macro.tokenMagic":
+              removeTokenMagicChange(actor, change, tokens);
+              break;
+            default:
+          }
+        } else {
+          switch (change.key) {
+            case "macro.CE":
+              const lastArg = prepareLastArgData(effect.data, actor);
+              addConvenientEffectsChange(change.value, actor.uuid, effect.data.origin, lastArg);
+              break;
+            case "macro.CUB":
+              addCubChange(change.value, [token]);
+              break;
+            case "macro.tokenMagic":
+              addTokenMagicChange(actor, change, tokens);
+            default:
+          }
+
+        }
+      }
+      if (effect.data.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+        actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect.data, actor.getRollData());
+    }
+  } finally {
+    return true;
   }
 }
 
