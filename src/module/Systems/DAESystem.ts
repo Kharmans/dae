@@ -2,6 +2,7 @@ import { debug, error, i18n } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
 import { applyDaeEffects, DAEfromActorUuid, daeSystemClass, libWrapper } from "../dae";
 
+export let wildcardEffects = [];
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 
 export class ValidSpec {
@@ -305,7 +306,7 @@ function prepareData(wrapped) {
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true);
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, []);
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
@@ -313,7 +314,7 @@ function prepareData(wrapped) {
 
 // this function replaces applyActiveEffects in Actor
 export function applyBaseActiveEffects() {
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false)
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects)
 }
 
 setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);

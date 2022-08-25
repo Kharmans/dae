@@ -1,12 +1,13 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, DAEfromUuid, daeSystemClass, fetchParams, libWrapper, noDupDamageMacro } from "../dae";
-import { applyBaseActiveEffects, ValidSpec } from "./DAESystem";
+import { actionQueue, addConvenientEffectsChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, fetchParams, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCubChange, removeTokenMagicChange } from "../dae";
+import { applyBaseActiveEffects, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
 var specialTraitsPatched = false;
 var d20Roll;
 var dice;
+
 // @ts-ignore
 const CONFIG: any = globalThis.CONFIG;
 
@@ -55,6 +56,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
       else baseValues[theKey] = false;
     });
+    // Need to add spellSniper by hand
+    baseValues[`flags.${game.system.id}.spellSniper`] = false;
     if (game.modules.get("skill-customization-5e")?.active && game.system.id === "dnd5e") {
       Object.keys(CONFIG.DND5E.skills).forEach(skl => {
         baseValues[`flags.skill-customization-5e.${skl}.skill-bonus`] = "";
@@ -251,6 +254,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   // Any actions to be called on init Hook 
   public static initActions() {
     warn("system is ", game.system)
+    if(game.modules.get("dnd5e-custom-skills")?.active) {
+      wildcardEffects.push(/system\.skills\..*\.value/);
+      wildcardEffects.push(/system\.abilities\..*\.bonuses/)
+    }
     dice = game[game.system.id].dice
     if (!dice) error("Dice not defined! Many things won't work")
     else d20Roll = dice?.d20Roll;
@@ -275,6 +282,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
+
+    // done here as it references some .system data
+    Hooks.on("preUpdateItem", preUpdateItemHook);
+
   }
   public static setupActions(): void {
   }
@@ -333,7 +344,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId]}`;
       });
     }
-    Hooks.on("updateItem", updateItem); // deal with disabling effects for unequipped items
+    // Rely on suppression Hooks.on("updateItem", updateItem); // deal with disabling effects for unequipped items
   }
 
   public static initSystemData() {
@@ -473,9 +484,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
    * damage resistance/immunity/vulnerabilities
    * languages
    */
-  public static daeCustomEffect(actor, change) {
+  public static daeCustomEffect(actor, change, current, delta, changes) {
     if (!super.daeCustomEffect(actor, change)) return;
-    const current = getProperty(actor, change.key);
+    // const current = getProperty(actor, change.key);
     var validValues;
     var value;
     if (typeof change?.key !== "string") return true;
@@ -489,7 +500,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
     if (change.key.includes(`flags.${game.system.id}`)) {
       //@ts-ignore safeEval
-      const value = new Boolean(Roll.safeEval(change.value)); // ["1", "true", 1, true].includes(change.value);
+      const value = new Boolean(Roll.safeEval(change.value)).valueOf(); // ["1", "true", 1, true].includes(change.value);
       setProperty(actor, change.key, value);
       return true;
     }
@@ -505,6 +516,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return setProperty(actor, change.key, newProf);
     }
 
+    if (change.key.startsWith("system.abilities") && (change.key.endsWith("bonuses.save") || change.key.endsWith("bonuses.check"))) {
+      value = change.value;
+      if (!current) return setProperty(actor.data, change.key, value)
+      value = current + ((change.value.startsWith("+") || change.value.startsWith("-")) ? change.value : "+" + change.value);
+      return setProperty(actor.data, change.key, value)
+    }
     /*
     if (change.key.startsWith("items.")) {
       let originalKey = duplicate(change.key);
@@ -771,7 +788,7 @@ function prepareData(wrapped) {
   wrapped();
   const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
   if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true);
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, []);
   preparePassiveSkills.bind(this)();
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.items)
@@ -958,16 +975,15 @@ function _getBonusessw5e() {
 async function _updateObject(event, formData) {
   const actor = this.object;
   let updateData = expandObject(formData);
+  const src = actor.toObject();
 
   // Unset any flags which are "false"
-  let unset = false;
   const flags = updateData.flags[game.system.id];
   for (let [k, v] of Object.entries(flags)) {
     //@ts-ignore
     if ([undefined, null, "", false, 0].includes(v)) {
       delete flags[k];
-      if (hasProperty(actor.flags, `${game.system.id}.${k}`)) {
-        unset = true;
+      if (hasProperty(src.flags, `${game.system.id}.${k}`)) {
         flags[`-=${k}`] = null;
       }
     }
@@ -1029,6 +1045,63 @@ function determineSuppression() {
     const statusId = (this.label ?? "no effect").toLocaleLowerCase();
     const ciSuppressed = (ci?.length && ci.some(c => statusId == c));
     this.disabled = Boolean(ciSuppressed);
+  }
+}
+
+function preUpdateItemHook(candidate, updates, options, user) {
+  if (!candidate.isOwned) return true;
+  const actor = candidate.parent;
+  if (!(actor instanceof Actor)) return true;
+  if (updates.data?.equipped === undefined && !updates.data?.attunement === undefined) return true;
+  try {
+
+    const wasSuppressed = candidate.areEffectsSuppressed;
+    candidate.data.data.equipped = updates.system?.equipped ?? candidate.system.equipped;
+    candidate.data.data.attunement = updates.system?.attunement ?? candidate.system.attunement;
+    const isSuppressed = candidate.areEffectsSuppressed;
+    if (wasSuppressed === isSuppressed) return true;
+
+    // Toggle macro.XX effects
+    const tokens = actor.getActiveTokens();
+    const token = tokens[0];
+    for (let effect of candidate.effects) {
+      if (!effect.flags.dae.transfer || effect.origin !== candidate.uuid) continue;
+      for (let change of effect.changes) {
+        if (isSuppressed) {
+          switch (change.key) {
+            case "macro.CE":
+              const lastArg = prepareLastArgData(effect, actor);
+              removeConvenientEffectsChange(change.value, actor.uuid, effect.origin, lastArg);
+              break;
+            case "macro.CUB":
+              removeCubChange(change.value, [token])
+              break;
+            case "macro.tokenMagic":
+              removeTokenMagicChange(actor, change, tokens);
+              break;
+            default:
+          }
+        } else {
+          switch (change.key) {
+            case "macro.CE":
+              const lastArg = prepareLastArgData(effect, actor);
+              addConvenientEffectsChange(change.value, actor.uuid, effect.origin, lastArg);
+              break;
+            case "macro.CUB":
+              addCubChange(change.value, [token]);
+              break;
+            case "macro.tokenMagic":
+              addTokenMagicChange(actor, change, tokens);
+            default:
+          }
+
+        }
+      }
+      if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+        actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect, actor.getRollData());
+    }
+  } finally {
+    return true;
   }
 }
 

@@ -179,7 +179,7 @@ activateListeners(html) {
       })
     } else {
       let effect = this.object.effects.get(effectid);
-      effect =  new EditOwnedItemEffectsActiveEffect(effect, effect.parent);
+      effect =  new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
       confirmAction(confirmDelete, () => {
         effect.delete({});
       })
@@ -190,7 +190,7 @@ activateListeners(html) {
     const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     let effect = this.object.effects.get(effectid);
     
-    const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect, effect.parent);
+    const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
     return ownedItemEffect.sheet.render(true);
   })
   html.find('.effect-add').click(async ev => {

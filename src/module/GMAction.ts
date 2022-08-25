@@ -45,15 +45,14 @@ async function _executeMacro(data: {action, args, lastArg, macroData: {change, n
 }
 
 async function _deleteUuid(data: { uuid: string }) {
-  const entity = await fromUuid(data.uuid);
-  if (entity && entity instanceof Item && !data.uuid.startsWith("Compendium") && !data.uuid.startsWith("Item")) { // only allow deletion of owned items
-    return await entity.delete();
-  }
-  if (entity && entity instanceof CONFIG.Token.documentClass && !data.uuid.startsWith("Compendium") && !data.uuid.startsWith("Item")) { // only allow deletion of owned items
-    return await entity.delete();
-  }
-  if (entity && entity instanceof CONFIG.ActiveEffect.documentClass) return await entity.delete();
-
+  // don't allow deletion of compendium entries or world Items
+  if (data.uuid.startsWith("Compendium") || data.uuid.startsWith("Item")) return false;
+  const entity = DAEfromUuid(data.uuid);
+  if (!entity) return false;
+  if (entity instanceof Item) return await entity.delete();
+  if (entity instanceof CONFIG.Token.documentClass) return await entity.delete();
+  if (entity instanceof CONFIG.ActiveEffect.documentClass) return await entity.delete();
+  if (entity instanceof CONFIG.MeasuredTemplate.documentClass) return await entity.delete();
   return false;
 }
 
@@ -368,6 +367,7 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
       case "round":
       case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0 }
       case "second": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0 };
+      case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
       default:
         let interval = {}
         interval[itemDuration.units] = itemDuration.value;

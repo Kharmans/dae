@@ -8,11 +8,11 @@ import { debug } from '../../../dae.js';
  * THIS IS UNSTABLE, BRITTLE, AND NOT MADE FOR USE BEYOND THIS MODULE'S USE CASE
  */
 export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.documentClass {
-  constructor(effect, owner) {
-    debug('Attempting instanciation of Owned Item Effect', effect, owner);
-
+  constructor(effectData, owner) {
+    debug('Attempting instanciation of Owned Item Effect', effectData, owner);
+    
     // manually set the parent
-    super(effect, { parent: owner });
+    super(effectData, {parent: owner});
     debug('Instanciated Owned Item Effect', this);
   }
 
@@ -22,7 +22,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
   async create(context) {
     const dataToCreate = this.toJSON();
     dataToCreate.transfer = false;
-    this.data.transfer = false;
+    this.transfer = false;
     debug('Attempting create on Owned Item Effect', context, dataToCreate);
 
     try {
@@ -136,6 +136,8 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
       console.error(e);
     }
 
+    this.updateSource(diff);
+    this.sheet.getData();
     this.sheet.render();
 
   

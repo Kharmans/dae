@@ -191,8 +191,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     setProperty(data.effect, "flags.dae.durationExpression", this.object.flags?.dae?.durationExpression);
     if (!data.effect.flags.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       setProperty(data.effect.flags, "dae.specialDuration", []);
-    data.sourceName = this.object.sourceName;
+    data.sourceName = await this.object.sourceName;
     data.fieldsList = this.fieldsList;
+    if (game.modules.get("dfreds-convenient-effects")?.active && !getProperty(this.object, "flags.convenientDescription")) {
+      setProperty(this.object, "flags.convenientDescription", "test");
+      setProperty(data.effect, "flags.convenientDescription", "test");
+    }
     return data;
   }
 

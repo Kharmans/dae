@@ -368,7 +368,7 @@ flags.dae.deleteOrigin, which if present as a change in an active effect, will w
 When an active effecr with a change flags.dae.deleteUuid is deleted, and whose change.value is an owned uuid, token uuid or ActiveEffect uuid, the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems/ActiveEffects are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.  
 </li>
 <li>
- "flags.dae.onUpdateTarget" and "flags.dae.onUpdateSource" with the change value being "Label, macroReferece, updateFilter, arguments". macroReference, updateFilter and arguments are all optional. This effect does 2 things:
+ "flags.dae.onUpdateTarget" and "flags.dae.onUpdateSource" with the change value being "Label, macroReference, updateFilter, arguments". macroReference, updateFilter and arguments are all optional. This effect does 2 things:
  <ul>
  <li>
   Creates a flag on the target actor (onUpdateTarget) or the sourceActor (onUpdateSource) that recordds the origin item, the targetToken and the initiating actor's token (sourceToken) and actor (sourceActor) on the target (flags.dae.onUpdateTarget) or the source actor (flags.dae.onUpdateSource). Note that onUpdateSource is different to other active effects in that it is ALWAYS created on the actor using the item/creating the effect and NOT on the target.

@@ -1,3 +1,16 @@
+### 10.0.3
+* added support for templates via flags.dae.deleteUuid
+* Fixed a bug when editing effects on owned items where the drop downs would not populate when an effect was edited. Possibly fixes other odities with editing effects on owned items.
+* Fixed a bug in editing special traits using the dae feature to show active effect values.
+* Fix for onUpdateTarget not triggering on, for example, data.attributes.hp.value = 0.
+* Enhanced treatment of system.abilities.src/dex/etc.bonuses.save/check. Mode custom will now correctly handle the need for a "+" sign, so no ugly double plusses on the roll display.
+* Instantaneous durations are converted to 1 second/1 turn.
+* Support for dnd5e-custom-skills module and setting .value for the skill.
+* Fix for rapid equip/unequip not functioning as expected.
+* Effects that are marked as suppressed (attunement required or not equipped) will disable/enable all macro.XXX effects (CE/CUB/tokenMagic/execute/ItemMacro) when suppressed/unsuppressed.
+* Updated ja.json thanks @Brother Sharp
+
+
 ### 10.0.2
 * Fix for overriding actor sheet flags editor
 * Fix for effect.duration.remaining not updating.
