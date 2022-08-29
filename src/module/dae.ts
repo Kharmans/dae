@@ -103,7 +103,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 /*
  * Replace default appplyAffects to do value lookups
  */
-export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCards: RegExp[]) {
+export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCardsInclude: RegExp[], wildCardsExclue: RegExp[]) {
   if (disableEffects) return;
   const overrides = {};
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
@@ -114,7 +114,8 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
     return changes.concat(expandEffectChanges(effect.data.changes)
       .filter(c => {
         return !completedSpecs[c.key]
-          && (allowAllSpecs || specList[c.key] !== undefined || wildCards.some(re => c.key.match(re) !== null))
+          && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null))
+          && (!wildCardsExclue.some(re=>re => c.key.match(re) !== null))
           && !c.key.startsWith("ATL.")
       })
       .map(c => {

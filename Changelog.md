@@ -1,3 +1,8 @@
+### 0.10.29
+* Fix for toggleEffect item property not working.
+* Added some extra fields for dnd5e-custom-skills
+* Fix for bug in setting proficiency
+
 ### 0.10.28
 * Support for dnd5e-custom-skills module and setting .value for the skill.
 * Fix for rapid equip/unequip not functioning as expected.

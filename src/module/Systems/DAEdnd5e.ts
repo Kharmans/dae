@@ -254,7 +254,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     warn("system is ", game.system);
     if (game.modules.get("dnd5e-custom-skills")?.active) {
       wildcardEffects.push(/data\.skills\..*\.value/);
-      wildcardEffects.push(/data\.abilities\..*\.bonuses/)
+      wildcardEffects.push(/data\.skills\..*\.bonuses/);
+      wildcardEffects.push(/data\.abilities\..*\.bonuses/);
     }
     dice = game[game.system.id].dice;
     if (!dice) error("Dice not defined! Many things won't work")
@@ -507,7 +508,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
       const upgrade = profValues[change.value]
       if (upgrade === undefined) return;
-      let newProf = currentProf + upgrade;
+      let newProf = Number(currentProf) + upgrade;
       if (newProf > 1 && newProf < 2) newProf = 1;
       if (newProf > 2) newProf = 2;
       return setProperty(actor.data, change.key, newProf);
@@ -786,7 +787,7 @@ function prepareData(wrapped) {
   wrapped();
   const hasHeavy = this.items.find(i => i.data.data.equipped && i.data.data.stealth) !== undefined;
   if (hasHeavy) setProperty(this.data, "flags.midi-qol.disadvantage.skill.ste", true);
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, []);
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
   preparePassiveSkills.bind(this)();
   this._prepareSkills
   //TODO find another way to tdo this
