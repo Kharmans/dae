@@ -1,3 +1,17 @@
+
+### 10.0.5
+This release just cleans up some of the 10.0.4 changes
+* Fix for toggle effect item property
+* Fix support for custom skills module.
+* Fix for incorrect handling of passive effect changes on items.
+* Stopgap fix to support foundryvtt 10.279/stable, which currently breaks active effect editing on unlinked targets. You must use the DAE active effect editor.
+
+### 10.0.4
+* Stopgap fix to support foundryvtt 10.279/stable, which currently breaks active effect editing on unlinked targets. You must use the DAE active effect editor.
+* Fix for toggle effect item property
+* Fix support for custom skills module.
+* Fix for incorrect handling of passive effect changes on items.
+
 ### 10.0.3
 * added support for templates via flags.dae.deleteUuid
 * Fixed a bug when editing effects on owned items where the drop downs would not populate when an effect was edited. Possibly fixes other odities with editing effects on owned items.
@@ -10,11 +24,10 @@
 * Effects that are marked as suppressed (attunement required or not equipped) will disable/enable all macro.XXX effects (CE/CUB/tokenMagic/execute/ItemMacro) when suppressed/unsuppressed.
 * Updated ja.json thanks @Brother Sharp
 
-
 ### 10.0.2
 * Fix for overriding actor sheet flags editor
 * Fix for effect.duration.remaining not updating.
-* Fix for so statusEffect Restrained (CUB) (etc) will behave as is CUB has applied the condition.
+* Fix for so statusEffect Restrained (CUB) (etc) will behave as isfCUB has applied the condition.
 * remove require item targets setting as it does not do anything.
 
 ### 10.0.1

@@ -102,7 +102,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 /*
  * Replace default appplyAffects to do value lookups
  */
-export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCards: RegExp[]) {
+export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCardsInclude: RegExp[], wildCardsExclude: RegExp[]) {
   if (disableEffects) return;
   const overrides = {};
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
@@ -113,7 +113,8 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
     return changes.concat(expandEffectChanges(effect.changes)
       .filter(c => {
         return !completedSpecs[c.key] 
-          && (allowAllSpecs || specList[c.key] !== undefined || wildCards.some(re => c.key.match(re) !== null)) 
+          && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null)) 
+          && (!wildCardsExclude.some(re => c.key.match(re) !== null))
           && !c.key.startsWith("ATL.")
         })
       .map(c => {
@@ -287,7 +288,7 @@ export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}
     //@ts-ignore - undefined fields
     effectId: effect.id,
     origin: effect.origin,
-    efData: effect.toObject(),
+    efData: effect.toObject(false),
     actorId: actor.id,
     actorUuid: actor.uuid,
     tokenId: actor.token ? actor.token.id : getSelfTarget(actor)?.id,
@@ -312,20 +313,17 @@ function _onCreateActiveEffect(...args) {
         for (let change of effect.changes) {
           if (cubActive && change.key === "macro.CUB" && token) {
             addCubChange(change.value, [token])
-            // await game.cub.addCondition(change.value, [token]);
           }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor)
             addConvenientEffectsChange(change.value, actor.uuid, effect.origin, lastArg);
-            //@ts-ignore
-            // await game.dfreds.effectInterface?.addEffect({ effectName: change.value, uuid: parent.uuid, origin: effect.origin });
           }
           const tokenMagic = globalThis.TokenMagic;
           if (tokenMagic && change.key === "macro.tokenMagic" && token)
             addTokenMagicChange(parent, change, tokens); //TODO check disabled
         }
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
-          actionQueue.add(daeMacro, "on", parent, effect.toObject(), {}); // TODO revisit to see if passing the effect is ok
+          actionQueue.add(daeMacro, "on", parent, effect.toObject(false), {}); // TODO revisit to see if passing the effect is ok
 
       } catch (err) {
         console.warn("dae | create effect error", err);
@@ -341,10 +339,9 @@ function _onCreateActiveEffect(...args) {
 function preCreateActiveEffectHook(candidate, data, options, user) {
   const actor: any = candidate.parent;
   // TODO remove the isToken check if and when core does not break for this
-
   //@ts-ignore
-  if (!(actor instanceof CONFIG.Actor.documentClass) || actor.isToken) return true;
-  candidate.updateSource({ "flags.dae.transfer": data.transfer });
+  if (!(actor instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
+  if (!candidate.flags?.dae?.specialDuration) candidate.updateSource({ "flags.dae.specialDuration": []});
   if (getProperty(candidate, "flags.dae.stackable") === undefined) candidate.updateSource({ "flags.dae.stackable": "multi" });
   const stackable = getProperty(candidate, "flags.dae.stackable");
   if (getProperty(candidate, "flags.dae.transfer") && ["noneName", "none"].includes(stackable)) {
@@ -378,12 +375,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
 
     if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
 
-    let updates = {};
-
-    if (this.origin === parent.uuid) {
-      updates = { "flags.dae.transfer": this.transfer || data.transfer };
-    }
-
+    let updates = { "flags.dae.transfer": data.transfer };
     //@ts-ignore documentClass 
     if (this.flags?.dae?.durationExpression && parent instanceof CONFIG.Actor.documentClass) {
       let sourceActor = parent;
@@ -405,7 +397,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
     let changesChanged = false;
     let newChanges = [];
     for (let change of this.changes) {
-      let inline = typeof change.value === "string" && change.value.includes("[[");
+      const inline = typeof change.value === "string" && change.value.includes("[[");
       if (change.key === "StatusEffect") {
         const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
         if (statusEffect) {
@@ -467,7 +459,7 @@ export function _onUpdateActiveEffect(...args) {
   let [effect, changes, options, userId] = args;
   if (userId !== game.user.id) return true;
   const parent = effect.parent;
-  //@ts-ignore documentClass TODO
+  //@ts-ignore documentClass
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return true;
 
   let changeLoop = async () => {
@@ -492,7 +484,7 @@ export function _onUpdateActiveEffect(...args) {
             if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(parent, change, tokens);
           }
           if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
-            actionQueue.add(daeMacro, "off", parent, effect.toObject(), {});
+            actionQueue.add(daeMacro, "off", parent, effect.toObject(false), {});
 
         } else if (changes.disabled === false && !effect.isSuppressed) {
           for (let change of effect.changes) {
@@ -506,7 +498,7 @@ export function _onUpdateActiveEffect(...args) {
             if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(parent, change, tokens);
           }
           if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
-            actionQueue.add(daeMacro, "on", parent, effect.toObject(), {});
+            actionQueue.add(daeMacro, "on", parent, effect.toObject(false), {});
         }
       }
     } catch (err) {
@@ -522,7 +514,7 @@ export function _onUpdateActiveEffect(...args) {
 
 export async function _preUpdateActiveEffect(wrapped, updates, options, user) {
   const parent = this.parent;
-  //@ts-ignore documentClass TODO
+  //@ts-ignore documentClass
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) {
     return wrapped(updates, options, user);
   }
@@ -582,7 +574,7 @@ export function _onDeleteActiveEffect(...args) {
 
         }
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
-          actionQueue.add(daeMacro, "off", actor, effect.toObject(), options);
+          actionQueue.add(daeMacro, "off", actor, effect.toObject(false), options);
 
         if (entityToDelete) socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
       }
@@ -651,7 +643,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   if (source instanceof CONFIG.Item.documentClass) {
     context.item = source;
     //@ts-ignore toObject
-    context.itemData = source.toObject();
+    context.itemData = source.toObject(false);
   }
 
   let theItem;
@@ -673,9 +665,9 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         tokenizer.tokenize(theChange.value, (token) => args.push(token));
         if (theItem) args = args.map(arg => {
           if ("@itemData" === arg) {
-            return theItem.toObject();
+            return theItem.toObject(false);
           } else if ("@item" === arg) {
-            return theItem.toTobject();
+            return theItem.toTobject(false);
           }
           return arg;
         })
@@ -756,7 +748,7 @@ export async function evalArgs({ effectData = null, item, context, actor, change
 
   if (item) {
     setProperty(effectData, "flags.dae.itemUuid", item.uuid);
-    setProperty(effectData, "flags.dae.itemData", item.toObject());
+    setProperty(effectData, "flags.dae.itemData", item.toObject(false));
     contextToUse["itemData"] = "@itemData";
     contextToUse["item"] = item.getRollData().item;
   } else {
@@ -848,7 +840,7 @@ export async function getMacro({ change, name }, item, effectData) {
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
 export async function doEffects(item, activate, targets = undefined,
-  { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, effectsToApply = [], removeMatchLabel = false, toggleEffect = false, selfEffects = false }) {
+  { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, effectsToApply = [], removeMatchLabel = false, toggleEffect = false, selfEffects = "none" }) {
   return await applyNonTransferEffects.bind(item)(activate, targets, { effectsToApply, whisper, spellLevel, damageTotal, itemCardId, critical, fumble, removeMatchLabel, toggleEffect, selfEffects })
 }
 
@@ -856,13 +848,21 @@ export async function doEffects(item, activate, targets = undefined,
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client if the token is not owned
-export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [], removeMatchLabel = false, toggleEffect = false, selfEffects = false }) {
+export async function applyNonTransferEffects(activate, targets, { whisper = false, spellLevel = 0, damageTotal = null, itemCardId = null, critical = false, fumble = false, tokenId: tokenId, effectsToApply = [], removeMatchLabel = false, toggleEffect = false, selfEffects = "none" }) {
   if (!targets) return;
   let macroLocation = "mixed";
-  let appliedEffects = duplicate(this.effects.filter(
-    ae => ae.transfer !== true
-      && ((selfEffects ?? false) === (getProperty(ae, "flags.dae.selfTarget") ?? false))
-  ));
+  let appliedEffects = [];
+  switch (selfEffects) {
+    case "selfEffectsAlways":
+      appliedEffects = duplicate(this.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways));
+      break;
+    case "selfEffectsAll":
+      appliedEffects = duplicate(this.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae.selfTarget)));
+      break
+    case "none":
+    default:
+      appliedEffects = duplicate(this.effects.filter(ae => ae.transfer !== true));
+  }
   if (effectsToApply.length > 0) appliedEffects = appliedEffects.filter(aeData => effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = this.getRollData(); //TODO if not caster eval move to evalArgs call
@@ -882,7 +882,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
     };
     activeEffectData.origin = this.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
-    setProperty(activeEffectData, "flags.dae.itemData", this.toObject());
+    setProperty(activeEffectData, "flags.dae.itemData", this.toObject(false));
     activeEffectData.transfer = false;
     appliedEffects[aeIndex] = activeEffectData;
   }
@@ -945,18 +945,18 @@ function updateItemEffects(candidate, updates, options, user) {
     // Now get all the itemm transfer effects
     let additions = candidate.effects.filter(aef => {
       const isTransfer = aef.flags?.dae?.transfer || aef.transfer === true;
+      setProperty(aef.flags, "dae.transfer", isTransfer);
       return isTransfer;
     });
-    additions = additions.map(ef => ef.toObject()); // TODO v10 try toObjct
+    additions = additions.map(ef => ef.toObject(false)); // TODO v10 try toObjct
     additions.forEach(efData => {
       efData.origin = itemUuid;
     });
     if (deletions.length > 0) {
-      candidate.parent.deleteEmbeddedDocuments("ActiveEffect", deletions).then(() => {
-        if (additions.length > 0) candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
-      });
-    } else if (additions.length > 0) {
-      candidate.parent.createEmbeddedDocuments("ActiveEffect", additions);
+      actionQueue.add(candidate.parent.deleteEmbeddedDocuments.bind(candidate.parent), "ActiveEffect", deletions)
+    }
+    if (additions.length > 0) {
+      actionQueue.add(candidate.parent.createEmbeddedDocuments.bind(candidate.parent), "ActiveEffect", additions);
     }
   }
   return true;
@@ -964,7 +964,6 @@ function updateItemEffects(candidate, updates, options, user) {
 
 //TODO find out why this is here - does not seem to make any sense - registration commented out
 export function preCreateItemHook(candidate, data, options, user) {
-  console.warn("midi-qol | preCreate item hook called ", candidate, data, options)
   return true;
   if (!candidate.isOwned) return true;
   if (data.effects) {
@@ -1162,7 +1161,6 @@ export function daeInitActions() {
   });
   actionQueue = new globalThis.Semaphore();
 }
-
 
 function initActorSheetHook(app, html, data) {
   if (!daeTitleBar) return;

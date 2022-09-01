@@ -12,7 +12,7 @@
   </header>
 
   <!-- Effect Configuration Tabs -->
-  <nav class="sheet-tabs tabs">
+  <nav class="sheet-tabs tabs" aria-role="{{localize 'SHEETS.FormNavLabel'}}">
     <a class="item" data-tab="details"><i class="fas fa-book"></i> {{localize "EFFECT.TabDetails"}}</a>
     <a class="item" data-tab="duration"><i class="fas fa-clock"></i> {{localize "EFFECT.TabDuration"}}</a>
     <a class="item" data-tab="effects"><i class="fas fa-cogs"></i> {{localize "EFFECT.TabEffects"}}</a>
@@ -45,8 +45,17 @@
 
     <div class="form-group">
       <label>{{ localize "EFFECT.Disabled" }}</label>
-      <input type="checkbox" name="disabled" {{ checked effect.disabled }} />
+      <input type="checkbox" name="disabledX" {{ checked effect.disabled }} />
     </div>
+
+    {{#if isActorEffect}}
+    <div class="form-group">
+        <label>{{ localize "EFFECT.Origin" }}</label>
+        <div class="form-fields">
+            <input type="text" name="origin" value="{{ data.origin }}" disabled/>
+        </div>
+    </div>
+    {{/if}}
 
     {{#if isItem}}
     <div class="form-group">
@@ -55,12 +64,17 @@
     </div>
     {{ localize "dae.transfer.Hint" }}
 
-    
     <div class="form-group">
       <label>{{ localize "dae.SelfTarget.Name" }}</label>
       <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
     </div>
     {{ localize "dae.SelfTarget.Hint" }}
+
+    <div class="form-group">
+      <label>{{ localize "dae.SelfTargetAlways.Name" }}</label>
+      <input type="checkbox" name="flags.dae.selfTargetAlways" {{ checked effect.flags.dae.selfTargetAlways }} />
+    </div>
+    {{ localize "dae.SelfTargetAlways.Hint" }}
 
     {{/if}}
 
@@ -237,7 +251,7 @@
 
         {{/if}}
         <div class="priority">
-          <input type="text" name="changes.{{i}}.priority" value="{{change.priority}}" />
+          <input type="text" name="changes.{{i}}.priority" value="{{ change.priority }}" />
         </div>
         <div class="effect-controls">
           <a class="effect-control" data-action="delete"><i class="fas fa-trash"></i></a>

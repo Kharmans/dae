@@ -241,7 +241,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   static modifyValidSpec(spec, validSpec: ValidSpec): ValidSpec {
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-    // TODO move this into a system specfic bit of code.
     if (spec.includes("system.skills") && spec.includes("ability")) {
       validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
     }
@@ -256,7 +255,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     warn("system is ", game.system)
     if(game.modules.get("dnd5e-custom-skills")?.active) {
       wildcardEffects.push(/system\.skills\..*\.value/);
-      wildcardEffects.push(/system\.abilities\..*\.bonuses/)
+      wildcardEffects.push(/system\.skills\..*\.ability/);
+      wildcardEffects.push(/system\.skills\..*\.bonuses/);
+      wildcardEffects.push(/system\.abilities\..*\.value/);
     }
     dice = game[game.system.id].dice
     if (!dice) error("Dice not defined! Many things won't work")
@@ -341,7 +342,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${CONFIG.DND5E.damageTypes[dt]}`;
       });
       Object.keys(CONFIG.DND5E.skills).forEach(skillId => {
-        daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId]}`;
+        daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId].label}`;
       });
     }
     // Rely on suppression Hooks.on("updateItem", updateItem); // deal with disabling effects for unequipped items
@@ -510,7 +511,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
       const upgrade = profValues[change.value]
       if (upgrade === undefined) return;
-      let newProf = currentProf + upgrade;
+      let newProf = Number(currentProf) + upgrade;
       if (newProf > 1 && newProf < 2) newProf = 1;
       if (newProf > 2) newProf = 2;
       return setProperty(actor, change.key, newProf);
@@ -518,9 +519,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     if (change.key.startsWith("system.abilities") && (change.key.endsWith("bonuses.save") || change.key.endsWith("bonuses.check"))) {
       value = change.value;
-      if (!current) return setProperty(actor.data, change.key, value)
+      if (!current) return setProperty(actor, change.key, value)
       value = current + ((change.value.startsWith("+") || change.value.startsWith("-")) ? change.value : "+" + change.value);
-      return setProperty(actor.data, change.key, value)
+      return setProperty(actor, change.key, value)
     }
     /*
     if (change.key.startsWith("items.")) {
@@ -755,7 +756,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         const flagValue = getProperty(rollData.flags, `dae.${flagName}`) || 0;
         // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
         setProperty(rollData, `flags.dae.${flagName}`, flagValue);
-        //@ts-ignore evaluate TODO work out async
+        //@ts-ignore evaluate 
         value = new Roll(formula, rollData).evaluate({ async: false }).total;
         setProperty(actor, `flags.dae.${flagName}`, value);
         return true;
@@ -788,7 +789,7 @@ function prepareData(wrapped) {
   wrapped();
   const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
   if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, []);
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
   preparePassiveSkills.bind(this)();
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.items)
@@ -1001,7 +1002,8 @@ async function _updateObject(event, formData) {
 }
 
 // Update the actor active effects when editing an owned item
-// TODO change this to on update item
+// TODO remove this eventually
+/*
 function updateItem(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;
@@ -1010,7 +1012,9 @@ function updateItem(candidate, updates, options, user) {
   }
   return true;
 }
-
+*/
+//TODO remove this eventually
+/*
 async function toggleDisabledEffect(item, updates: any) {
   const equipped = updates.system?.equipped ?? item.system?.equipped;
   const attuned = (updates.system?.attunement ?? item.system?.attunement) !== 1; // CONFIG>DND5E.attunementTypes.REQUIRED
@@ -1028,7 +1032,7 @@ async function toggleDisabledEffect(item, updates: any) {
   };
   if (wasChanged) item.parent.updateEmbeddedDocuments("ActiveEffect", updateEffectsData)
 }
-
+*/
 function determineSuppression() {
   this.isSuppressed = false;
   if (this.disabled || (this.parent.documentName !== "Actor")) return;
@@ -1056,8 +1060,8 @@ function preUpdateItemHook(candidate, updates, options, user) {
   try {
 
     const wasSuppressed = candidate.areEffectsSuppressed;
-    candidate.data.data.equipped = updates.system?.equipped ?? candidate.system.equipped;
-    candidate.data.data.attunement = updates.system?.attunement ?? candidate.system.attunement;
+    candidate.system.equipped = updates.system?.equipped ?? candidate.system.equipped;
+    candidate.system.attunement = updates.system?.attunement ?? candidate.system.attunement;
     const isSuppressed = candidate.areEffectsSuppressed;
     if (wasSuppressed === isSuppressed) return true;
 

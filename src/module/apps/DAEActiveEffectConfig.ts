@@ -46,7 +46,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     this.fieldsList = this.fieldsList.join(", ");
 
     daeSystemClass.configureLists(this)
-   
+
     if (cubActive) {
       this.cubConditionList = {}
       game.cub.conditions?.forEach(cubc => {
@@ -88,7 +88,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       this.validFields[field] = field;
     }
   }
- 
+
   /** @override */
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
@@ -133,6 +133,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /** @override */
   async getData(options) {
+    if (getProperty(this.object, "flags.dae.specialDuration") === undefined)
+      setProperty(this.object, "flags.dae.specialDuration", []);
     const data = super.getData(options);
     let validSpecsToUse = ValidSpec.specs["union"]; // TODO this needs to be thought about
     await daeSystemClass.editConfig();
@@ -144,7 +146,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         obj[e[1]] = game.i18n.localize("EFFECT.MODE_" + e[0]);
         return obj;
       }, {});
-      data.modes = allModes;
+    data.modes = allModes;
     //@ts-ignore
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
@@ -158,7 +160,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       data.isActor = this.object.parent instanceof CONFIG.Actor.documentClass;
     }
     if (data.isItem) validSpecsToUse = ValidSpec.specs["union"]; // TODO think about what it means to edit an item effect
-    if (data.isActor) validSpecsToUse = ValidSpec.specs[this.object.parent.type]; 
+    if (data.isActor) validSpecsToUse = ValidSpec.specs[this.object.parent.type];
     data.validFields = this.validFields;
     data.submitText = "EFFECT.Submit";
     //@ts-ignore
@@ -202,16 +204,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   _keySelected(event) {
     const target = event.target;
-    // $(target.parentElement.parentElement.children[1]).find(".keylist").val(ValidSpec.allSpecs[target.selectedIndex].fieldSpec)
     if (target.selectedIndex === 0) return; // Account for dummy element 0
     $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(target.value)
-    /*
-        if (!ValidSpec.allSpecs[selected]) { // otherfields
-          $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(selected)
-        } else {
-          $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(ValidSpec.allSpecs[target.selectedIndex-1].fieldSpec)
-        }
-        */
     return this.submit({ preventClose: true }).then(() => this.render());
   }
   /* ----------------------------------------- */
@@ -235,15 +229,14 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     const button = event.currentTarget;
     switch (button.dataset.action) {
       case "add":
-        this._addEffectChange(button);
-        return this.submit({ preventClose: true }).then(() => this.render());
+        this._addEffectChange();
       case "delete":
         return confirmAction(confirmDelete, () => {
           button.closest(".effect-change").remove();
           this.submit({ preventClose: true }).then(() => this.render());
         });
       case "add-specDur":
-        this._addSpecDuration(button);
+        this._addSpecDuration();
         return this.submit({ preventClose: true }).then(() => this.render());
       case "delete-specDur":
         return confirmAction(confirmDelete, () => {
@@ -253,63 +246,62 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
   }
 
-  _addSpecDuration(button) {
-    const durations = button.closest(".tab").querySelector(".special-duration-list");
-    const last = durations.lastElementChild;
-    const idx = last ? last.dataset.index + 1 : 0;
-    const duration = $(` 
-    <li class="effect-special-duration flexrow" data-index="${idx}">
-    <div class="formgroup">
-      <select name="flags.dae.specialDuration.${idx}" data-dtype="string">
-        {{selectOptions ../specialDuration selected=label}}
-      </select>
-      <div class="effect-controls">
-        <a class="effect-control" data-action="delete-specDur"><i class="fas fa-trash"></i></a>
-      </div>
-    </div>
-  </li>
-    `);
-    durations.appendChild(duration[0])
+  _addSpecDuration() {
+    const idx = this.object.flags?.dae.specialDuration?.length ?? 0;
+    if (idx === 0) setProperty(this.object, "flags.dae.specialDuration", []);
+    return this.submit({
+      preventClose: true, updateData: {
+        //@ts-ignore
+        [`flags.dae.specialDuration.${idx}`]: ""
+      }
+    });
   }
 
   /* ----------------------------------------- */
 
-  _addEffectChange(button) {
-    const changes = button.closest(".tab").querySelector(".changes-list");
-    const last = changes.lastElementChild;
-    const idx = last ? last.dataset.index + 1 : 0;
-    const change = $(`
-    <li class="effect-change" data-index="${idx}">
-        <input type="text" name="changes.${idx}.key" value=""/>
-        <input type="number" name="changes.${idx}.mode" value="2"/>
-        <input type="text" name="changes.${idx}.value" value="0"/>
-        <input type="number" name="changes.${idx}.priority" value="0">
-    </li>`);
-    changes.appendChild(change[0]);
+  async _addEffectChange() {
+    const idx = this.object.changes.length;
+    return this.submit({
+      preventClose: true, updateData: {
+        //@ts-ignore
+        [`changes.${idx}`]: { key: "", mode: CONST.ACTIVE_EFFECT_MODES.ADD, value: "" }
+      }
+    });
   }
 
+  _getSubmitData(updateData: any = {}) {
+    //@ts-ignore _getSubmitData
+    // const data = super._getSubmitData(updateData); TODO revisit when this is fixed
+    const fd = new FormDataExtended(this.form, {editors: this.editors});
+    let data = expandObject(fd.object);
+    if ( updateData ) mergeObject(data, updateData);
+    data.changes = Array.from(Object.values(data.changes ?? {}));
+    for (let change of data.changes) {
+      if (change.priority === undefined) change.priority = change.mode ? change.mode * 10 : 0;
+      if (typeof change.priority === "string") change.priority = Number(change.priority);
+    }
+    if (data.disabledX !== undefined) {
+      data.disabled = data.disabledX;
+      delete data.disabledX;
+    }
+    if (!data.tint || data.tint === "") data.tint = null;
+    
+    setProperty(data.flags, "dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
+    return data;
+  }
   /* ----------------------------------------- */
 
   /** @override */
   async _updateObject(event, formData) {
-    formData = expandObject(formData);
-    if (!formData.changes) formData.changes = [];
-    formData.changes = Object.values(formData.changes);
-
-    if (formData.flags?.dae?.specialDuration && typeof formData.flags.dae.specialDuration !== "string") {
-      const newSpecDur = []
-      Object.values(formData.flags?.dae?.specialDuration).forEach(value => newSpecDur.push(value));
-      formData.flags.dae.specialDuration = newSpecDur;
-    } else setProperty(formData, "flags.dae.specialDuration", []);
-
-    //@ts-ignore isNumeric
-    if (Number.isNumeric(formData.duration.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
-      let startTime = parseInt(formData.duration.startTime);
-      if (Math.abs(startTime) <= 3600) { // Only acdept durations of 1 hour or less as the start time field
-        formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
-      }
-    } else if (this.object.parent.isOwned) formData.duration.startTime = null;
-    setProperty(formData, "flags.dae.transfer", formData.transfer);
+    if (formData.duration) {
+      //@ts-ignore isNumeric
+      if (Number.isNumeric(formData.duration?.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
+        let startTime = parseInt(formData.duration.startTime);
+        if (Math.abs(startTime) <= 3600) { // Only acdept durations of 1 hour or less as the start time field
+          formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
+        }
+      } else if (this.object.parent.isOwned) formData.duration.startTime = null;
+    }
     await this.object.update(formData);
   }
 }

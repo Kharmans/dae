@@ -73,13 +73,12 @@ export class ValidSpec {
         }
         specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       }
-      // TODO reactivate when cond vis is 0.8.6 ready
+      // TODO reactivate when cond vis is v10 ready
       // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["flags.dae.onUpdateTarget"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["flags.dae.onUpdateSource"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
 
-      
       Object.keys(specials).forEach(key => {
         delete baseValues[key]
       })
@@ -306,7 +305,7 @@ function prepareData(wrapped) {
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, []);
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
@@ -314,7 +313,7 @@ function prepareData(wrapped) {
 
 // this function replaces applyActiveEffects in Actor
 export function applyBaseActiveEffects() {
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects)
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects, [])
 }
 
 setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);

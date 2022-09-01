@@ -185,12 +185,16 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           && notMulti;
       });
 
-      if (removeList.length > 0) {
+      if (removeList.length > 0 && !toggleEffect) {
         currentStacks = removeList.filter(ae => getProperty(ae, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae, "flags.dae.stacks") ?? 1), 1)
         removeList = removeList.map(ae => ae._id);
         await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList);
       }
-      if (toggleEffect && removeList.length > 0) activate = false;;
+      if (toggleEffect && removeList.length > 0) {
+        removeList = removeList.map(ef => {ef.disabled = !ef.disabled; return ef.toObject(false)});
+        targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
+        activate = false;
+      }
       if (activate) {
         let dupEffects = duplicate(activeEffects); // .filter(aeData => !aeData.selfTarget));
         for (let aeData of dupEffects) {

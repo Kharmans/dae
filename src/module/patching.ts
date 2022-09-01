@@ -10,11 +10,12 @@ export function patchingSetup() {
   // patchAbilitySave(); removed in 0.8.74
   log("Patching Roll.replaceFormulaData");
   libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
-  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isTemporary", isTemporary, "MIXED")
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isTemporary", isTemporary, "WRAPPER")
 };
 
-export function isTemporary(wrapped) {
+function isTemporary(wrapped) {
   //@ts-ignore
-  // CHECKTHIS if (this.parent instanceof CONFIG.Actor.documentClass && this.data.flags?.dae?.transfer) return false;
+  // if (this.parent instanceof CONFIG.Actor.documentClass && this.data.flags?.dae?.transfer) return false;
+  this._prepareDuration();
   return wrapped();
 }
