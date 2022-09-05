@@ -689,7 +689,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           let args: any[] = [data.action];
           args = args.concat(data.args).concat(data.lastArg);
           const body = `return (async () => {
-            ${macro.data.command}
+            ${macro.command ?? macro.data.command}
           })()`;
           const fn = Function("{speaker, actor, token, character, args}={}", body);
 
@@ -786,18 +786,20 @@ export async function getMacro({ change, name }, itemData, effectData) {
     // Get the macro command for the macro TODO look at using an item name as well?
 
 
-    let macroCommand;
+    let macroCommand = itemData?.flags.itemacro?.macro.command ?? itemData?.flags.itemacro?.macro.data.command;
     if (change.macro) macroCommand = change.macro.macroCommand;
-    // 1. Try and get item dat to look for the command in.
     if (!itemData) itemData = getProperty(effectData.flags, "dae.itemData")
-    macroCommand = getProperty(effectData.flags, "dae.itemData.flags.itemacro.macro.data.command");
+    // 1. Try and get item data to look for the command in.
+    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.flags.itemacro.macro.command");
+    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.flags.itemacro.macro.data.command");
+
 
     // Could not get the macro from the itemData or we had not Itemdata
     if (!macroCommand && !itemData) { // we never got an item do a last ditch attempt
       warn("eval args: fetching item from effectData/origin ", effectData.origin)
       itemData = DAEfromUuid(effectData?.origin)?.data.toObject(false); // Try and get it from the effectData
       //@ts-ignore
-      macroCommand = itemData?.flags.itemacro?.macro.data.command;
+      macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
     }
     if (effectData && itemData) setProperty(effectData.flags, "dae.itemData", itemData);
 
@@ -993,11 +995,11 @@ export async function preUpdateActor(wrapped, updates, options, user) {
       let macroText;
       if (onUpdate.macroName.startsWith("ItemMacro")) {
         if (onUpdate.macroName === "ItemMacro") {
-          macroText = originObject?.data?.flags?.itemacro?.macro.data.command;
+          macroText = originObject?.flags?.itemacro?.macro.command ?? originObject?.flags?.itemacro?.macro.data.command;
         } else if (onUpdate.macroName.startsWith("ItemMacro.")) {
           let macroObject = sourceActor?.items.getName(onUpdate.macroName.split(".")[1]);
           if (!macroObject) macroObject = originObject?.parent?.items.getName(onUpdate.macroName.split(".")[1]);
-          macroText = macroObject.data?.flags?.itemacro?.macro.data.command;
+          macroText = macroObject?.flags?.itemacro?.macro?.command ?? macroObject.data?.flags?.itemacro?.macro?.data?.command;
         }
       } else {
         const theMacro: Macro = game.macros.getName(onUpdate.macroName);

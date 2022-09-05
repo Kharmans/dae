@@ -1,3 +1,6 @@
+### 0.10.30
+* Fix for new version of item macro mdoule
+
 ### 0.10.29
 * Fix for toggleEffect item property not working.
 * Added some extra fields for dnd5e-custom-skills
