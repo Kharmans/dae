@@ -1,5 +1,8 @@
+### 0.10.31
+* Fix for attempting to get item details error.
+
 ### 0.10.30
-* Fix for new version of item macro mdoule
+* Fix for new version of item macro module
 
 ### 0.10.29
 * Fix for toggleEffect item property not working.

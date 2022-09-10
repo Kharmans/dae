@@ -798,8 +798,7 @@ export async function getMacro({ change, name }, itemData, effectData) {
     if (!macroCommand && !itemData) { // we never got an item do a last ditch attempt
       warn("eval args: fetching item from effectData/origin ", effectData.origin)
       itemData = DAEfromUuid(effectData?.origin)?.data.toObject(false); // Try and get it from the effectData
-      //@ts-ignore
-      macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
+      macroCommand = itemData?.flags.itemacro?.macro.command ?? itemData?.flags.itemacro?.macro.data.command;
     }
     if (effectData && itemData) setProperty(effectData.flags, "dae.itemData", itemData);
 
