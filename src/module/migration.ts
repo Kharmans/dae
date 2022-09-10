@@ -245,9 +245,13 @@ export async function removeActorArmorItems(actor: Actor) {
   }
 }
 
-export async function cleanEffectOrigins() {
+export async function cleanEffectOrigins(processItems: boolean = false) {
   await cleanAllActorEffectOrigins();
   await cleanAllTokenEffectOrigins();
+  if (processItems) {
+    await  cleanAllActorItemsEffectOrigins();
+    await cleanAllTokenEffectOrigins()
+  }
 }
 
 export async function cleanAllActorEffectOrigins() {
@@ -260,9 +264,52 @@ export async function cleanAllActorEffectOrigins() {
       await actor.updateEmbeddedDocuments("ActiveEffect", updates)
       console.warn("Updates are ", actor.name, updates)
     }
+    const itemChanges = [];
+    for (let item of actor.items) {
+      if (!(item.effects.some(ef => ef.origin?.includes("OwnedItem")))) continue;
+      const itemData = item.toObject(true);
+      for (let effectData of itemData.effects)
+        if (effectData.origin) effectData.origin = effectData.origin.replace("OwnedItem", "Item")
+      itemChanges.push(itemData);
+    }
+    if (itemChanges.length > 0) {
+      await actor.updateEmbeddedDocuments("Item", itemChanges);
+      console.warn("Item changes are", actor.name, itemChanges)
+    }
   }
 }
 
+export async function cleanAllTokenItemEffectOrigins() {
+  for (let scene of game.scenes) {
+    //@ts-ignore
+    for (let tokenDocument of scene.tokens) {
+      if (!tokenDocument.isLinked && tokenDocument.actor) {
+        const actor = tokenDocument.actor;
+        cleanActorItemsEffectOrigins(actor)
+      }
+    }
+  }
+}
+
+export async function cleanAllActorItemsEffectOrigins() {
+  //@ts-ignore
+  for (let actor of game.actors.contents) 
+  await cleanActorItemsEffectOrigins(actor)
+}
+export async function cleanActorItemsEffectOrigins(actor) {
+  const itemChanges = [];
+  for (let item of actor.items) {
+    if (!(item.effects.some(ef => ef.origin?.includes("OwnedItem")))) continue;
+    const itemData = item.toObject(true);
+    for (let effectData of itemData.effects)
+      if (effectData.origin) effectData.origin = effectData.origin.replace("OwnedItem", "Item")
+    itemChanges.push(itemData);
+  }
+  if (itemChanges.length > 0) {
+    await actor.updateEmbeddedDocuments("Item", itemChanges);
+    console.warn("Item changes are", actor.name, itemChanges)
+  }
+}
 
 export async function cleanAllTokenEffectOrigins() {
   for (let scene of game.scenes) {

@@ -5,7 +5,7 @@ import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, daeSystemClass, actionQueue } from "./module/dae";
 import { daeReadyActions } from "./module/dae";
 import { convertDuration, setupSocket } from './module/GMAction';
-import { checkLibWrapperVersion, cleanEffectOrigins, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, tobMapper } from './module/migration';
+import { checkLibWrapperVersion, cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, tobMapper } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
@@ -87,6 +87,10 @@ Hooks.once('ready', async function () {
       daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
       daeSpecialDurations["turnStartSource"] = i18n("dae.turnStartSource");
       daeSpecialDurations["turnEndSource"] = i18n("dae.turnEndSource");
+      daeSpecialDurations["combatEnd"] = i18n("COMBAT.End");
+      daeSpecialDurations["joinCombat"] = i18n("COMBAT.CombatantCreate");
+
+      "COMBAT.CombatantCreate"
       daeMacroRepeats = {
         "none": "",
         "startEveryTurn": i18n("dae.startEveryTurn"),
@@ -119,7 +123,8 @@ Hooks.once('setup', function () {
       ActiveEffects: ActiveEffects,
       addAutoFields: addAutoFields,
       blindToken: blindToken,
-      cleanEffectOrigins: cleanEffectOrigins,
+      cleanEffectOrigins,
+      cleanActorItemsEffectOrigins,
       confirmAction,
       convertDuration,
       createToken: createToken,

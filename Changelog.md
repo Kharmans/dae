@@ -1,3 +1,16 @@
+### 10.0.6
+* Fix for deprecating warning on doing item update.
+* Fix some cases of not setting lastArg.effectData.flags.dae.itemData.
+* Fix for not fetch item macro sometimes
+* Added combat end (combat is ended) and create combatatnt (actor is added to combat) as special duration expiry options.
+* If you have some very old items the origin may incorrectly have OwnedItem in the string which will throw an error in fromUuid. If you see these errors you can run 
+```js
+await DAE.cleanActorItemsEffectOrigins(_token.actor)
+```
+while having an a token selected or
+```js
+await DAE.cleanActorItemsEffectOrigins(game.actors.getName("The name of you actor"));
+```
 
 ### 10.0.5
 This release just cleans up some of the 10.0.4 changes

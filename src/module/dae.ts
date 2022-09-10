@@ -454,6 +454,24 @@ async function evalInline(expression: string, actor: Actor, effect) {
     return "0";
   }
 }
+export function preDeleteCombatHook(...args) {
+  // This could cause race conditions....
+  const [combat, options, user] = args;
+  for (let combatant of combat.combatants) {
+    const actor = combatant.actor;
+    if (!actor) continue;
+    const effectsToDelete = actor.effects.filter(ef => ef.flags.dae?.specialDuration?.includes("combatEnd")).map(ef=>ef.id);
+    actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToDelete);
+  }
+}
+
+export function preCreateCombatantHook(...args) {
+  const [combatant, data, options, user] = args;
+  const actor = combatant.actor;
+  if (!actor) return;
+  const effectsToDelete = actor.effects.filter(ef => ef.flags.dae?.specialDuration?.includes("joinCombat")).map(ef=>ef.id);
+  actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToDelete);
+}
 
 export function _onUpdateActiveEffect(...args) {
   let [effect, changes, options, userId] = args;
@@ -627,16 +645,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     selfTarget = getSelfTarget(actor);
     tokenUuid = selfTarget.uuid ?? selfTarget.document.uuid;
   }
-  let lastArg = mergeObject(lastArgOptions, {
-    //@ts-ignore - undefined fields
-    effectId: effectData._id,
-    origin: effectData.origin,
-    efData: effectData,
-    actorId: actor.id,
-    actorUuid: actor.uuid,
-    tokenId: selfTarget.id,
-    tokenUuid,
-  }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
+
   let source = effectData.origin ? DAEfromUuid(effectData.origin) : undefined;
   let context = actor.getRollData();
   //@ts-ignore
@@ -682,7 +691,16 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
             continue;
           }
         }
-
+        let lastArg = mergeObject(lastArgOptions, {
+          //@ts-ignore - undefined fields
+          effectId: effectData._id,
+          origin: effectData.origin,
+          efData: effectData,
+          actorId: actor.id,
+          actorUuid: actor.uuid,
+          tokenId: selfTarget.id,
+          tokenUuid,
+        }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         let data = { action, lastArg, args: [], macroData: { change, name: args[0], effectData } };
         if (theChange.key.includes("macro.execute"))
           data.args = args.slice(1);
@@ -699,13 +717,23 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           let args: any[] = [data.action];
           args = args.concat(data.args).concat(data.lastArg);
           const body = `return (async () => {
-            ${macro.command}
+            ${macro.command ?? macro.data?.command}
           })()`;
           const fn = Function("{speaker, actor, token, character, args}={}", body);
 
           return fn.call(this, { speaker, actor, token: selfTarget, character, args });
         }
       } else if (theChange.key === "macro.actorUpdate") {
+        let lastArg = mergeObject(lastArgOptions, {
+          //@ts-ignore - undefined fields
+          effectId: effectData._id,
+          origin: effectData.origin,
+          efData: effectData,
+          actorId: actor.id,
+          actorUuid: actor.uuid,
+          tokenId: selfTarget.id,
+          tokenUuid,
+        }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         await macroActorUpdate(action, ...args, lastArg);
         // result = await macroActorUpdate(action, ...args, lastArg);
       }
@@ -799,8 +827,8 @@ export async function getMacro({ change, name }, item, effectData) {
     // Get the macro command for the macro 
     // TODO look at using an item name as well?
     let macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
-    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.itemMacro.macro.command");
-    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.itemMacro.macro.data.command");
+    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.flags.itemacro.macro.command");
+    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.flags.itemacro.macro.data.command");
     // Could not get the macro from the item or we had no item
     if (!macroCommand && !item) { // we never got an item do a last ditch attempt
       warn("eval args: fetching item from effectData/origin ", effectData.origin);
@@ -818,6 +846,7 @@ export async function getMacro({ change, name }, item, effectData) {
       // setProperty(effectData.flags, "dae.itemData", item.toObject());
       setProperty(effectData.flags, "dae.itemUuid", item.uuid);
       setProperty(effectData.flags, "dae.itemId", item.id);
+      setProperty(effectData.flags, "dae.itemData", item.toObject(false));
     }
 
     if (!macroCommand) {
@@ -1154,6 +1183,8 @@ export function daeInitActions() {
   Hooks.on('renderActorSheet', initActorSheetHook);
   // disabled since not needed with full active effect edting.
   Hooks.on('renderItemSheet', initItemSheetHook);
+  Hooks.on("preDeleteCombat", preDeleteCombatHook);
+  Hooks.on("preCreateCombatant", preCreateCombatantHook);
 
   //@ts-ignore
   tokenizer = new DETokenizeThis({

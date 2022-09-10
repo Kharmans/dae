@@ -1056,7 +1056,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   const actor = candidate.parent;
   if (!(actor instanceof Actor)) return true;
-  if (updates.data?.equipped === undefined && !updates.data?.attunement === undefined) return true;
+  if (updates.system?.equipped === undefined && !updates.system?.attunement === undefined) return true;
   try {
 
     const wasSuppressed = candidate.areEffectsSuppressed;
