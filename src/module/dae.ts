@@ -103,7 +103,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 /*
  * Replace default appplyAffects to do value lookups
  */
-export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCardsInclude: RegExp[], wildCardsExclue: RegExp[]) {
+export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCardsInclude: RegExp[], wildCardsExclude: RegExp[]) {
   if (disableEffects) return;
   const overrides = {};
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
@@ -112,10 +112,10 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
     if (daeSystemClass.effectDisabled(this, effect)) return changes;
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.data.changes)
-      .filter(c => {
+      .filter(c => { 
         return !completedSpecs[c.key]
           && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null))
-          && (!wildCardsExclue.some(re=>re => c.key.match(re) !== null))
+          && (!wildCardsExclude.some(re => c.key.match(re) !== null))
           && !c.key.startsWith("ATL.")
       })
       .map(c => {

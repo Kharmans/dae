@@ -1,3 +1,6 @@
+### 0.10.32
+* Fix for custom skills module integration breaking lots of effects.
+
 ### 0.10.31
 * Fix for attempting to get item details error.
 
