@@ -112,11 +112,11 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.changes)
       .filter(c => {
-        return !completedSpecs[c.key] 
-          && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null)) 
+        return !completedSpecs[c.key]
+          && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null))
           && (!wildCardsExclude.some(re => c.key.match(re) !== null))
           && !c.key.startsWith("ATL.")
-        })
+      })
       .map(c => {
         c = duplicate(c);
         flagChangeKeys(this, c);
@@ -341,7 +341,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
   // TODO remove the isToken check if and when core does not break for this
   //@ts-ignore
   if (!(actor instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
-  if (!candidate.flags?.dae?.specialDuration) candidate.updateSource({ "flags.dae.specialDuration": []});
+  if (!candidate.flags?.dae?.specialDuration) candidate.updateSource({ "flags.dae.specialDuration": [] });
   if (getProperty(candidate, "flags.dae.stackable") === undefined) candidate.updateSource({ "flags.dae.stackable": "multi" });
   const stackable = getProperty(candidate, "flags.dae.stackable");
   if (getProperty(candidate, "flags.dae.transfer") && ["noneName", "none"].includes(stackable)) {
@@ -375,11 +375,11 @@ async function _preCreateActiveEffect(wrapped, ...args) {
 
     if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
 
-    let updates = { "flags.dae.transfer": data.transfer };
+    let updates = { "flags.dae.transfer": data.transfer === true ? true : false };
     //@ts-ignore documentClass 
     if (this.flags?.dae?.durationExpression && parent instanceof CONFIG.Actor.documentClass) {
       let sourceActor = parent;
-      if (!this.transfer) {
+      if (!data.transfer) {
         const thing = await fromUuid(this.origin);
         //@ts-ignore
         if (thing?.actor) sourceActor = thing.actor;
@@ -460,7 +460,7 @@ export function preDeleteCombatHook(...args) {
   for (let combatant of combat.combatants) {
     const actor = combatant.actor;
     if (!actor) continue;
-    const effectsToDelete = actor.effects.filter(ef => ef.flags.dae?.specialDuration?.includes("combatEnd")).map(ef=>ef.id);
+    const effectsToDelete = actor.effects.filter(ef => ef.flags.dae?.specialDuration?.includes("combatEnd")).map(ef => ef.id);
     actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToDelete);
   }
 }
@@ -469,7 +469,7 @@ export function preCreateCombatantHook(...args) {
   const [combatant, data, options, user] = args;
   const actor = combatant.actor;
   if (!actor) return;
-  const effectsToDelete = actor.effects.filter(ef => ef.flags.dae?.specialDuration?.includes("joinCombat")).map(ef=>ef.id);
+  const effectsToDelete = actor.effects.filter(ef => ef.flags.dae?.specialDuration?.includes("joinCombat")).map(ef => ef.id);
   actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToDelete);
 }
 
@@ -579,7 +579,7 @@ export function _onDeleteActiveEffect(...args) {
         for (let change of effect.changes) {
           if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
           if (ceActive && change.key === "macro.CE") {
-            const lastArg = prepareLastArgData(effect, actor)
+            const lastArg = prepareLastArgData(effect, actor);
             removeConvenientEffectsChange(change.value, actor.uuid, undefined, lastArg);
           }
           if (token && cubActive && change.key === "macro.CUB") {
@@ -625,8 +625,10 @@ export function getSelfTarget(actor) {
   if (actor.token) return actor.token;
   const speaker = ChatMessage.getSpeaker({ actor })
   if (speaker.token) return canvas.tokens.get(speaker.token);
+  const tokenData = actor.prototypeToken.toObject(false);
+
   //@ts-ignore this is a token document not a token ??
-  return new CONFIG.Token.documentClass(actor.getTokenData(), { actor });
+  return new CONFIG.Token.documentClass(tokenData, { actor });
 }
 
 export async function daeMacro(action: string, actor, effectData, lastArgOptions = {}) {
@@ -661,7 +663,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   }
   if (!theItem && effectData.flags?.dae?.itemData) {
     //@ts-ignore documentClass
-    theItem = new CONFIG.Item.documentClass(effectData.flags.dae.itemData, {actor})
+    theItem = new CONFIG.Item.documentClass(effectData.flags.dae.itemData, { actor })
   }
   for (let change of effectData.changes) {
     try {
@@ -670,7 +672,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
       const theChange = await evalArgs({ item: null, effectData, context, actor, change, doRolls: true })
       let args = [];
       if (typeof theChange.value === "string") {
-    
+
         tokenizer.tokenize(theChange.value, (token) => args.push(token));
         if (theItem) args = args.map(arg => {
           if ("@itemData" === arg) {
@@ -839,7 +841,7 @@ export async function getMacro({ change, name }, item, effectData) {
     if (!macroCommand && !item) {
       const itemUuid = getProperty(effectData.flags, "dae.itemUuid");
       if (itemUuid) item = DAEfromUuid(itemUuid);
-        macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
+      macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
     }
 
     if (effectData && item) {
@@ -912,7 +914,7 @@ export async function applyNonTransferEffects(activate, targets, { whisper = fal
     activeEffectData.origin = this.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
     setProperty(activeEffectData, "flags.dae.itemData", this.toObject(false));
-    activeEffectData.transfer = false;
+    setProperty(activeEffectData, "flags.dae.transfer", false);
     appliedEffects[aeIndex] = activeEffectData;
   }
 
@@ -971,9 +973,9 @@ function updateItemEffects(candidate, updates, options, user) {
       const isTransfer = aef.flags?.dae?.transfer;
       if (isTransfer && (aef.origin === itemUuid)) deletions.push(aef.id);
     };
-    // Now get all the itemm transfer effects
+    // Now get all the item transfer effects
     let additions = candidate.effects.filter(aef => {
-      const isTransfer = aef.flags?.dae?.transfer || aef.transfer === true;
+      const isTransfer = aef.flags?.dae?.transfer === true || aef.transfer === true;
       setProperty(aef.flags, "dae.transfer", isTransfer);
       return isTransfer;
     });
@@ -1002,10 +1004,10 @@ export function preCreateItemHook(candidate, data, options, user) {
   return true;
 }
 
-export async function preUpdateActor(wrapped, updates, options, user) {
+export /*async*/ function preUpdateActor(candidate, updates, options, user) {
   try {
     if (options.onUpdateCalled) return;
-    for (let onUpdate of (getProperty(this, "flags.dae.onUpdateTarget") ?? [])) {
+    for (let onUpdate of (getProperty(candidate, "flags.dae.onUpdateTarget") ?? [])) {
       if (onUpdate.macroName.length === 0) continue;
       if (getProperty(updates, onUpdate.filter) === undefined) continue;
 
@@ -1020,11 +1022,11 @@ export async function preUpdateActor(wrapped, updates, options, user) {
       if (!originItem) {
         const theEffect = targetActor.effects.find(ef => ef.origin === onUpdate.origin);
         if (getProperty(theEffect, "flags.dae.itemUuid")) {
-        //@ts-ignore fromUUid type error
-        originItem = await fromUuid(getProperty(theEffect, "flags.dae.itemUuid"));
+          //@ts-ignore fromUUid type error
+          originItem = fromUuidSync(getProperty(theEffect, "flags.dae.itemUuid"));
         }
       }
-      
+
       let lastArg = {
         tag: "onUpdateTarget",
         effectId: null,
@@ -1076,14 +1078,18 @@ export async function preUpdateActor(wrapped, updates, options, user) {
     ${macroText}
   })()`;
         const fn = Function("{speaker, actor, token, character, item, args}={}", body);
-        await fn.call(this, { speaker, actor: this, token: undefined, character, item: originItem, args });
+        // await fn.call(this, { speaker, actor: candidate, token: undefined, character, item: originItem, args });
+        fn.call(this, { speaker, actor: candidate, token: undefined, character, item: originItem, args });
+
       } catch (err) {
+
         ui.notifications?.error(`There was an error running your macro. See the console (F12) for details`);
         error("dae | Error evaluating macro for onUpdateActor", err)
       }
     }
   } finally {
-    return wrapped(updates, options, user);
+    return true;
+    // return wrapped(updates, options, user);
   }
 }
 
@@ -1111,27 +1117,32 @@ export var tokenizer;
 
 function daeApply(wrapped, actor, change) { // TODO remains broken in v10
   //TODO revisit this for item changes, requires setProperty(map, "index", value) to work.
-  if (change.key?.startsWith("items")) {
-    const fields = change.key.split(".");
-    const name = fields[1];
-    let indices;
-    if (false || daeSystemClass.daeActionTypeKeys.includes(name)) { //TODO multiple changes are a problem
-      const items = actor.items.contents.map((item, index) => item.system.actionType === name ? index : -1)
-      indices = items.filter(index => index !== -1)
-    } else {
-      indices = [actor.items.contents.findIndex(i => i.name === name)];
-    }
-    if (indices.length > 0) { // Only works for a single effect because of overrides
-      for (let index of indices) {
-        fields[1] = `contents.${index}`;
-        if (fields[1] !== -1) {
-          change.key = fields.join(".");
-          var rval = wrapped(actor, change)
-        }
+  try {
+    if (change.key?.startsWith("items")) {
+      const fields = change.key.split(".");
+      const name = fields[1];
+      let indices;
+      if (false || daeSystemClass.daeActionTypeKeys.includes(name)) { //TODO multiple changes are a problem
+        const items = actor.items.contents.map((item, index) => item.system.actionType === name ? index : -1)
+        indices = items.filter(index => index !== -1)
+      } else {
+        indices = [actor.items.contents.findIndex(i => i.name === name)];
       }
-      // change.key = originalKey;
-      return rval;
+      if (indices.length > 0) { // Only works for a single effect because of overrides
+        for (let index of indices) {
+          fields[1] = `contents.${index}`;
+          if (fields[1] !== -1) {
+            change.key = fields.join(".");
+            var rval = wrapped(actor, change)
+            console.error(" applying ", change, rval)
+          }
+        }
+        // change.key = originalKey;
+        return rval;
+      }
     }
+  } catch (err) {
+    console.warn("dae | dae apply error")
   }
   return wrapped(actor, change)
 }
@@ -1169,8 +1180,8 @@ export function daeInitActions() {
   Hooks.on("preCreateActiveEffect", preCreateActiveEffectHook);
 
   // Hooks.on("preUpdateActor", preUpdateActorHook);
-  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._preUpdate", preUpdateActor, "WRAPPER");
-
+  // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._preUpdate", preUpdateActor, "WRAPPER");
+  Hooks.on("preUpdateActor", preUpdateActor);
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "WRAPPER");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "WRAPPER");

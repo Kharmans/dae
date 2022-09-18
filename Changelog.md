@@ -1,8 +1,13 @@
+### 10.0.7
+* Fixed some v10 deprecation warnings.
+* Cleaned up some of the DAE. fumctions for v10.
+* Update DAE.blindToken, DAE.restoreVision to work with v10
+
 ### 10.0.6
-* Fix for deprecating warning on doing item update.
+* Fix for deprecation warning on doing item update.
 * Fix some cases of not setting lastArg.effectData.flags.dae.itemData.
-* Fix for not fetch item macro sometimes
-* Added combat end (combat is ended) and create combatatnt (actor is added to combat) as special duration expiry options.
+* Fix for not fetching item macro sometimes
+* Added combat end (combat is ended) and create combatant (actor is added to combat) as special duration expiry options.
 * If you have some very old items the origin may incorrectly have OwnedItem in the string which will throw an error in fromUuid. If you see these errors you can run 
 ```js
 await DAE.cleanActorItemsEffectOrigins(_token.actor)

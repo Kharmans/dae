@@ -65,14 +65,16 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
       userId: game.user.id,
       startSceneId: canvas.scene.id,
       tokenUuid: getTokenUuid(token),
-      targetSceneId: scene.id, tokenData: token.data,
+      targetSceneId: scene.id, 
+      tokenData: token.document.toObject(false),
       x: found.x + xGridOffset * canvas.scene.grid,
       y: found.y + yGridOffset * canvas.scene.grid
     });
 }
 
 export let renameToken = async (token: Token, newName: string) => {
-  socketlibSocket.executeAsGM("renameToken", { userId: game.user.id, startSceneId: canvas.scene.id, tokenData: token.data, newName });
+  //@ts-ignore
+  socketlibSocket.executeAsGM("renameToken", { userId: game.user.id, startSceneId: canvas.scene.id, tokenData: token.document.toObject(false), newName });
 }
 
 export async function teleportToken(token: Token, scene: Scene | string, position: {x:number, y: number}) {
@@ -121,8 +123,7 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
     CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
     let sourceSceneId = canvas.scene.id;
     //@ts-ignore
-    await socketlibSocket.executeAsGM("recreateToken", { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(), x: xpos, y: ypos });
-    //requestGMAction(GMAction.actions.recreateToken, { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
+    await socketlibSocket.executeAsGM("recreateToken", { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos });
     canvas.pan({ x: xpos, y: ypos });
     return true;
   }
@@ -130,8 +131,7 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
   var sourceSceneId = canvas.scene.id;
   Hooks.once("canvasReady", async () => {
     //@ts-ignore v10 token.document
-    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(), x: xpos, y: ypos });
-    // await requestGMAction(GMAction.actions.createToken, { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.data, x: xpos, y: ypos });
+    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos });
     // canvas.pan({ x: xpos, y: ypos });
 
     await socketlibSocket.executeAsGM("deleteToken", { userId: game.user.id, tokenUuid: getTokenUuid(token) })
@@ -145,11 +145,12 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
   return await targetScene.view();
 }
 
-export async function setTokenVisibility(tokenId: string | Token, visible: boolean) {
+export async function setTokenVisibility(tokenOrId: string | Token, visible: boolean) {
   let tokenUuid: string;
-  if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
-  else if (tokenId.startsWith("Scene")) tokenUuid = tokenId;
-  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
+  //@ts-ignore
+  if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
+  else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
+  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenOrId}`;
   return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
 }
 
@@ -170,19 +171,23 @@ export async function setTileVisibility(tileOrId: Tile | string, visible: boolea
   return socketlibSocket.executeAsGM("setTileVisibility", { tileUuid, hidden: !visible });
 }
 
-export async function blindToken(tokenId: Token | string) {
+// TODO fix this for v10
+export async function blindToken(tokenOrId: Token | string) {
   let tokenUuid: string;
-  if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
-  else if (tokenId.startsWith("Scene")) tokenUuid = tokenId;
-  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
+  //@ts-ignore
+  if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
+  else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
+  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenOrId}`;
   return socketlibSocket.executeAsGM("blindToken", { tokenUuid });
 }
 
-export async function restoreVision(tokenId: Token | string) {
+// TODO fix this for v10
+export async function restoreVision(tokenOrId: Token | string) {
   let tokenUuid: string;
-  if (typeof tokenId !== "string") tokenUuid = tokenId.uuid;
-  else if (tokenId.startsWith("Scene")) tokenUuid = tokenId;
-  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenId}`;
+  //@ts-ignore
+  if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
+  else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
+  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenOrId}`;
   return socketlibSocket.executeAsGM("restoreVision", { tokenUuid });
 }
 
@@ -199,11 +204,11 @@ export async function deleteActiveEffect(uuid: string, origin: string, ignore: s
   return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore, deleteEffects });
 }
 
-export async function setTokenFlag(token: Token | string, flagName: string, flagValue: any) {
+export async function setTokenFlag(tokenOrId: Token | string, flagName: string, flagValue: any) {
   let tokenUuid: string;
-  if (typeof token === "string") {
-    if (token.startsWith("Scene.")) tokenUuid = token;
-    else tokenUuid = canvas.scene.tokens.get(token)?.uuid;
+  if (typeof tokenOrId === "string") {
+    if (tokenOrId.startsWith("Scene.")) tokenUuid = tokenOrId;
+    else tokenUuid = canvas.scene.tokens.get(tokenOrId)?.docuement.uuid;
   } 
   //@ts-ignore document
   else tokenUuid = getTokenUuid(token);
@@ -228,8 +233,8 @@ export function getFlag(entity: Actor | Token | string, flagId: string) {
       theActor = entity.actor;
   }
   if (!theActor) return error(`dae.getFlag: actor not defined`)
-  warn("dae get flag ", entity, theActor, getProperty(theActor.data, `flags.dae.${flagId}`))
-  return getProperty(theActor.data, `flags.dae.${flagId}`)
+  warn("dae get flag ", entity, theActor, getProperty(theActor, `flags.dae.${flagId}`))
+  return getProperty(theActor, `flags.dae.${flagId}`)
 }
 
 export async function setFlag(tactor: Actor | Token | string, flagId: string, value: any) {
@@ -289,10 +294,10 @@ export async function macroActorUpdate(...args) {
   actor = tactor.actor ? tactor.actor : tactor;
   // const fieldDef = `flags.dae.save.${targetField}`;
   const fieldDef = `flags.dae.actorUpdate.${targetField}`;
-  let actorValue = getProperty(actor.data, targetField);
+  let actorValue = getProperty(actor, targetField);
   if (args[0] === "each") {
     // for subsequent executions we have to recover the origianl actor value from the saved value.
-    const fieldValue = getProperty(actor.data, fieldDef);
+    const fieldValue = getProperty(actor, fieldDef);
     actorValue = fieldValue.actorValue;
   }
   const rollContext = actor.getRollData();
@@ -325,7 +330,7 @@ export async function macroActorUpdate(...args) {
     update[targetField] = value;
     await actor.update(update);
   } else if (args[0] === "off") {
-    const {oldValue = undefined, updateValue} = getProperty(actor.data, fieldDef);
+    const {oldValue = undefined, updateValue} = getProperty(actor, fieldDef);
     let restoreValue;
     if (undo === undefined) undo = true;
     if (typeof undo === "string") undo = undo.replace(/(\*\*(.+?)\*\*)/g, "@$2");

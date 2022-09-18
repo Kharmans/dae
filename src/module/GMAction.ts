@@ -104,11 +104,13 @@ async function _unsetFlag(data: { actorUuid: string, flagId: string }) {
 }
 
 async function _blindToken(data: { tokenUuid: string }) {
-  return await DAEfromUuid(data.tokenUuid)?.update({ vision: false });
+  const blind = CONFIG.statusEffects.find(se=>se.id === CONFIG.specialStatusEffects.BLIND)
+  return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, {overlay: false, active: true})
 }
 
 async function _restoreVision(data: { tokenUuid: string }) {
-  return await DAEfromUuid(data.tokenUuid)?.update({ vision: true })
+  const blind = CONFIG.statusEffects.find(se=>se.id === CONFIG.specialStatusEffects.BLIND)
+  return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, {overlay: false, active: false})
 }
 
 async function _renameToken(data: { tokenData: any, newName: string }) { // TODO update this for uuids
@@ -227,7 +229,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
           }
           warn("Apply active effects ", aeData, itemCardId)
 
-          setProperty(aeData.flags, "dae.transfer", false);
+          setProperty(aeData, "flags.dae.transfer", false);
           let source: any | undefined = await fromUuid(aeData.origin);
           let context = targetActor.getRollData();
           //@ts-ignore
