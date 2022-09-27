@@ -775,7 +775,6 @@ export async function evalArgs({ effectData = null, item, context, actor, change
     itemUuid: item?.uuid,
   }, context, { overwrite: false });
   //contextToUse["item"] = "@item";
-
   if (item) {
     setProperty(effectData, "flags.dae.itemUuid", item.uuid);
     setProperty(effectData, "flags.dae.itemData", item.toObject(false));
@@ -1009,6 +1008,10 @@ export /*async*/ function preUpdateActor(candidate, updates, options, user) {
     if (options.onUpdateCalled) return;
     for (let onUpdate of (getProperty(candidate, "flags.dae.onUpdateTarget") ?? [])) {
       if (onUpdate.macroName.length === 0) continue;
+      if (onUpdate.filter.startsWith("data.")) {
+        console.error(`dae | onUpdateTarget ${onUpdate.filter} is deprecated use ${onUpdate.filter.replace("data.", "system.")}`);
+        onUpdate.filter = onUpdate.filter.replace("data.", "system.");
+      }
       if (getProperty(updates, onUpdate.filter) === undefined) continue;
 
       const originObject: any = DAEfromUuid(onUpdate.origin);
@@ -1082,11 +1085,12 @@ export /*async*/ function preUpdateActor(candidate, updates, options, user) {
         fn.call(this, { speaker, actor: candidate, token: undefined, character, item: originItem, args });
 
       } catch (err) {
-
         ui.notifications?.error(`There was an error running your macro. See the console (F12) for details`);
         error("dae | Error evaluating macro for onUpdateActor", err)
       }
     }
+  } catch(err) {
+    console.warn("dae | error in onUpdateTarget ", err);
   } finally {
     return true;
     // return wrapped(updates, options, user);
@@ -1117,6 +1121,7 @@ export var tokenizer;
 
 function daeApply(wrapped, actor, change) { // TODO remains broken in v10
   //TODO revisit this for item changes, requires setProperty(map, "index", value) to work.
+  // Probably won't ever work since items only has a getter - need to rethink.
   try {
     if (change.key?.startsWith("items")) {
       const fields = change.key.split(".");
@@ -1134,7 +1139,6 @@ function daeApply(wrapped, actor, change) { // TODO remains broken in v10
           if (fields[1] !== -1) {
             change.key = fields.join(".");
             var rval = wrapped(actor, change)
-            console.error(" applying ", change, rval)
           }
         }
         // change.key = originalKey;

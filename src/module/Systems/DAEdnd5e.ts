@@ -15,11 +15,16 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   traitList;
   languageList;
   conditionList;
+  bypassesList;
+  customDamageResistanceList;
   static profInit;
   static toolProfList;
   static armorProfList;
   static weaponProfList;
 
+  public static get systemConfig() {
+    return CONFIG.DND5E;
+  }
 
   public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
     super.modifyBaseValues(actorType, baseValues, characterSpec);
@@ -75,19 +80,24 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         baseValues[key] = 0;
       }
     });
+    /*
     baseValues["system.traits.di.all"] = false;
     baseValues["system.traits.di.value"] = "";
     baseValues["system.traits.di.custom"] = "";
+    baseValues["system.traits.di.bypasses"] = "";
     baseValues["system.traits.dr.all"] = false;
     baseValues["system.traits.dr.value"] = "";
+    baseValues["system.traits.dr.bypasses"] = "";
     baseValues["system.traits.dr.custom"] = "";
     baseValues["system.traits.dv.all"] = false;
     baseValues["system.traits.dv.value"] = "";
+    baseValues["system.traits.dv.bypasses"] = "";
     baseValues["system.traits.dv.custom"] = "";
     baseValues["system.traits.ci.all"] = false;
     baseValues["system.traits.ci.value"] = "";
     baseValues["system.traits.ci.custom"] = "";
     baseValues["system.traits.size"] = "";
+    */
     delete baseValues["system.attributes.init.total"];
     delete baseValues["system.attributes.init.mod"];
     delete baseValues["system.attributes.init.bonus"]
@@ -115,21 +125,24 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.abilities.${abl}.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     }
     specials["system.attributes.encumbrance.max"] = [0, -1];
-    /*
+
     specials["system.traits.di.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.di.value"] = ["", -1];
+    specials["system.traits.di.value"] = ["",];
     specials["system.traits.di.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.di.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dr.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dr.value"] = ["", -1];
     specials["system.traits.dr.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dr.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.value"] = ["", -1];
     specials["system.traits.dv.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dv.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.ci.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.ci.value"] = ["", -1];
     specials["system.traits.ci.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.size"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
-    */
+
     specials["system.spells.pact.level"] = [0, -1];
     specials["flags.dae"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
 
@@ -177,9 +190,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
       if (characterSpec.system.spells) {
         for (let spellSpec of Object.keys(characterSpec.system.spells))
-        specials[`system.spells.${spellSpec}.max`] = [0, -1];
+          specials[`system.spells.${spellSpec}.max`] = [0, -1];
       }
-  
+
       /*/
       if (game.modules.get("resourcesplus")?.active) {
         const maxResources = Math.min(game.settings.get("resourcesplus", "globalLimit"), game.settings.get("resourcesplus", "localLimit"));
@@ -253,7 +266,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   // Any actions to be called on init Hook 
   public static initActions() {
     warn("system is ", game.system)
-    if(game.modules.get("dnd5e-custom-skills")?.active) {
+    if (game.modules.get("dnd5e-custom-skills")?.active) {
       wildcardEffects.push(/system\.skills\..*\.value/);
       wildcardEffects.push(/system\.skills\..*\.ability/);
       wildcardEffects.push(/system\.skills\..*\.bonuses/);
@@ -290,7 +303,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   public static setupActions(): void {
   }
-  
+
   public static readyActions(): void {
     // checkArmorDisabled();
     // Modify armor attribution for DAE specific cases
@@ -372,10 +385,16 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   // For DAE Editor
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
-    this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
+    // this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
+    this.traitList = duplicate(CONFIG.DND5E.damageTypes);
     this.traitList = mergeObject(this.traitList, CONFIG.DND5E.healingTypes);
+    this.bypassesList = duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
+    const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
+    const damageTypes = Object.values(daeSystemClass.systemConfig.damageTypes);
+    this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
+      .reduce((obj: {}, key: string) => {obj[key]= key; return obj}, {})
     Object.keys(this.traitList).forEach(type => {
-      this.traitList[`-${type}`] = `-${CONFIG.DND5E.damageResistanceTypes[type]}`;
+      this.traitList[`-${type}`] = `-${CONFIG.DND5E.damageTypes[type]}`;
     });
 
     this.languageList = duplicate(CONFIG.DND5E.languages);
@@ -408,7 +427,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       });
     }
   }
-  
+
   public static getOptionsForSpec(spec) {
     if (spec === "system.traits.languages.value")
       return this.languageList;
@@ -422,6 +441,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return this.weaponProfList;
     if (["system.traits.di.value", "system.traits.dr.value", "system.traits.dv.value"].includes(spec))
       return this.traitList;
+    if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom"].includes(spec)) {
+      return this.customDamageResistanceList;
+    }
+
+      if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses"].includes(spec))
+      return this.bypassesList;
+
     if (spec.includes("system.skills") && spec.includes("value"))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.includes("system.skills") && spec.includes("ability")) {
@@ -447,7 +473,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
-              const item = globalThis.dnd5e.applications.ProficiencySelector.getBaseItem(id, { indexOnly: true})
+              const item = globalThis.dnd5e.applications.ProficiencySelector.getBaseItem(id, { indexOnly: true })
               // const item = await pack.getDocument(id);
               list[key] = item.name;
             }
@@ -487,6 +513,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
    */
   public static daeCustomEffect(actor, change, current, delta, changes) {
     if (!super.daeCustomEffect(actor, change)) return;
+    const systemConfig = daeSystemClass.systemConfig;
     // const current = getProperty(actor, change.key);
     var validValues;
     var value;
@@ -555,10 +582,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdr.all":
       case "system.traits.sdv.all":
         const key = change.key.replace(".all", ".value")
-        if (game.system.id === "dnd5e")
-          setProperty(actor, key, Object.keys(CONFIG.DND5E.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
-        else
-          setProperty(actor, key, Object.keys(CONFIG.DND5E.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
+        setProperty(actor, key, Object.keys(systemConfig).filter(k => !["healing", "temphp"].includes(k)));
         return true;
       case "system.traits.di.value":
       case "system.traits.dr.value":
@@ -566,10 +590,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdi.value":
       case "system.traits.sdr.value":
       case "system.traits.sdv.value":
-        if (game.system.id === "dnd5e")
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.damageResistanceTypes));
-        else
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.damageResistanceTypes));
+        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageResistanceTypes));
+      case "system.traits.di.bypasses":
+      case "system.traits.dr.bypasses":
+      case "system.traits.dv.bypasses":
+        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.physicalWeaponProperties));
       case "system.traits.di.custom":
       case "system.traits.dr.custom":
       case "system.traits.dv.custom":
@@ -577,6 +602,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdr.custom":
       case "system.traits.sdv.custom":
       case "system.traits.ci.custom":
+        value = (current ?? "").length > 0 ? current.trim().split(";").map(s => s.trim()) : [];
+        const traitSet = new Set(value);
+        traitSet.add(change.value);
+        value = Array.from(traitSet).join("; ");
+        setProperty(actor, change.key, value)
+        return true;
       case "system.traits.languages.custom":
       case "system.traits.toolProf.custom":
       case "system.traits.armorProf.custom":
@@ -588,59 +619,29 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         setProperty(actor, change.key, value)
         return true;
       case "system.traits.languages.all":
-        if (game.system.id === "dnd5e")
-          setProperty(actor, "system.traits.languages.value", Object.keys(CONFIG.DND5E.languages))
-        else
-          setProperty(actor, "system.traits.languages.value", Object.keys(CONFIG.SW5E.languages))
+        setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
         return true;
       case "system.traits.languages.value":
-        if (game.system.id === "dnd5e")
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.languages));
-        else
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.languages));
+        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.languages));
       case "system.traits.ci.all":
-        if (game.system.id === "dnd5e")
-          setProperty(actor, "system.traits.ci.value", Object.keys(CONFIG.DND5E.conditionTypes))
-        else
-          setProperty(actor, "system.traits.ci.value", Object.keys(CONFIG.SW5E.conditionTypes))
+        setProperty(actor, "system.traits.ci.value", Object.keys(systemConfig.conditionTypes))
         return true;
       case "system.traits.ci.value":
-        if (game.system.id === "dnd5e")
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.conditionTypes))
-        else
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.conditionTypes))
+        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.conditionTypes))
       case "system.traits.toolProf.value":
-        if (game.system.id === "dnd5e")
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.toolProficiencies))
-        else
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.toolProficiencies))
+        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.toolProficiencies))
       case "system.traits.toolProf.all":
-        if (game.system.id === "dnd5e")
-          setProperty(actor, "system.traits.toolProf.value", Object.keys(CONFIG.DND5E.toolProficiencies))
-        else
-          setProperty(actor, "system.traits.toolProf.value", Object.keys(CONFIG.SW5E.toolProficiencies))
+        setProperty(actor, "system.traits.toolProf.value", Object.keys(systemConfig.toolProficiencies))
         return true;
       case "system.traits.armorProf.value":
-        if (game.system.id === "dnd5e")
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.armorProficiencies))
-        else
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.armorProficiencies))
+        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.armorProficiencies))
       case "system.traits.armorProf.all":
-        if (game.system.id === "dnd5e")
-          setProperty(actor, "system.traits.armorProf.value", Object.keys(CONFIG.DND5E.armorProficiencies))
-        else
-          setProperty(actor, "system.traits.armorProf.value", Object.keys(CONFIG.SW5E.armorProficiencies))
+        setProperty(actor, "system.traits.armorProf.value", Object.keys(systemConfig.armorProficiencies))
         return true;
       case "system.traits.weaponProf.value": // TODO v10 armor and weapon proiciencies
-        if (game.system.id === "dnd5e")
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.DND5E.weaponProficiencies))
-        else
-          return super.doCustomArrayValue(actor, current, change, Object.keys(CONFIG.SW5E.weaponProficiencies))
-      case "system.traits.weaponProf.all":  
-        if (game.system.id === "dnd5e")
-          setProperty(actor, "system.traits.weaponProf.value", Object.keys(CONFIG.DND5E.weaponProficiencies))
-        else
-          setProperty(actor, "system.traits.weaponProf.value", Object.keys(CONFIG.SW5E.weaponProficiencies))
+        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.weaponProficiencies))
+      case "system.traits.weaponProf.all":
+        setProperty(actor, "system.traits.weaponProf.value", Object.keys(systemConfig.weaponProficiencies))
         return true;
       case "system.bonuses.weapon.damage":
         value = this.attackDamageBonusEval(change.value, actor)
@@ -863,7 +864,7 @@ function patchPrepareArmorClassAttribution() {
 function patchSpecialTraits() {
   displayTraits = game.settings.get("dae", "displayTraits");
   //@ts-ignore
-  if ("dnd5e" === game.system.id || "sw5e" === game.system.id) {
+  if (["dnd5e", "sw5e"].includes(game.system.id)) {
     log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._updateObject (override=${displayTraits})`);
     log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getFlags (override=${displayTraits})`);
     log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getBonuses (override=${displayTraits})`);
@@ -1111,3 +1112,5 @@ function preUpdateItemHook(candidate, updates, options, user) {
 
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 setProperty(globalThis.daeSystems, "dnd5e", DAESystemDND5E);
+
+

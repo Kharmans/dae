@@ -7,6 +7,9 @@ import { DAESystem, ValidSpec } from "./DAESystem";
 const CONFIG: any = globalThis.CONFIG;
 export class DAESystemSW5E extends DAESystemDND5E {
 
+  public static get systemConfig() {
+    return CONFIG.SW5E;
+  }
 
   public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
     super.modifyBaseValues(actorType, baseValues, characterSpec);

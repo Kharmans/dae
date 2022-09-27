@@ -271,6 +271,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
                 change.value = change.value.replace("##", "@");
               } else {
                 change.value = duplicate(change.value).map(f => {
+                  console.error("change is ", change.deepClone(), tokenUuid, tokenOrDocument)
                   if (f === "@itemCardId") return itemCardId;
                   if (f === "@target") return tokenOrDocument.id;
                   if (f === "@targetUuid") return tokenUuid;

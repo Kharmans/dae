@@ -180,6 +180,10 @@ export class DAESystem {
   static bonusSelectors: any;
   static daeActionTypeKeys: string[];
 
+  public static get systemConfig() {
+    throw new Error("system class must implement getSystemConfig()")
+  }
+
   /**
    * accepts a string field specificaiton, e.g. system.traits.languages.value. Used extensively in ConfigPanel.ts
    * return an object or false.

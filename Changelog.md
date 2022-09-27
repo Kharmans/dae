@@ -1,3 +1,6 @@
+### 10.0.8
+** Breaking dae now requires dnd5e 2.0.3
+* Changes to support dnd5e 2.0.3
 ### 10.0.7
 * Fixed some v10 deprecation warnings.
 * Cleaned up some of the DAE. fumctions for v10.
