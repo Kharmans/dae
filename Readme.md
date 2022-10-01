@@ -447,6 +447,7 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
 </li>
 </ul>
 </details>
+</detsils>
 
 ## Macros
 
