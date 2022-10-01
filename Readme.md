@@ -4,7 +4,7 @@ If you have a problem please read the [Issues section](#Issues) before reporting
 The dnd5e 1.5.x release of dnd5e means some of the features of DAE are no longer required which is great. Once you upgrade to dnd1.5.x some features in DAE will change - most are not breaking (I hope).
 
 **Most derived fields now have .bonuses values available:**
-data.abilities.str.bonuses.save/.check. This field supercedes the DAE support of data.abilities.str.save and data.abilities.str.mod, in much the same way data.attributes.ac.bonus means changes to data.attributes.ac.value are no longer required.
+system.abilities.str.bonuses.save/.check. This field supercedes the DAE support of system.abilities.str.save and system.abilities.str.mod, in much the same way system.attributes.ac.bonus means changes to system.attributes.ac.value are no longer required.
 
 values that have .bonuses available:
   - abilities.str/dex/cha etc, bonusess.check, bonuses.save
@@ -18,8 +18,8 @@ Global bonuses have been enhanced to accept @fields for all bonues, instead of j
 Accordingly effect changes to the derived values for abilities, skills and ac are deprecated and will generate an error in the console if used, whilst still working. A later version will make this a notification in game and subsequently they will be disabled entirely.
 
  Effects to change (they will eventually be removed from dae)
- data.abilities.str/dex/cha.save -> data.abilities.str.bonuses.save
- data.abilities.str/dex/cha.mod -> data.abilities.str.bonuses.check
+ system.abilities.str/dex/cha.save -> system.abilities.str.bonuses.save
+ system.abilities.str/dex/cha.mod -> system.abilities.str.bonuses.check
  skills.acr/per/prc/etc.bonus (use skills.prc.bonuses.check) and skills.prc.passive (use skills.bonuses.passive instead).
 
 There are some cleanup functions to get rid of the deprecated fields in active effects for actors and items. Please backup your world first - I have run these over my worlds without problems, but there could be lurking bugs.
@@ -69,7 +69,7 @@ This module modifies how active effects behave over and above what is supported 
 DAE does add some features to core active effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.  
 1. Editing of owned item effects is fully supported.
 2. **Obsolete** as of DND5E 1.4.3 DND5E handles enabling/disabling effects for transfer effects and item equip/unequip.
-3. The ability to reference actor data in active effects data fields like `@abilities.str.value` where core restricts you to numbers and strings. If an active effect modifies a field that will be used in a roll like `data.bonuses.mwak.attack` (and soon to be .bonus fields - dnd1.5), a string field like `@abilities.dex.mod` will get looked up when the roll is made.
+3. The ability to reference actor data in active effects data fields like `@abilities.str.value` where core restricts you to numbers and strings. If an active effect modifies a field that will be used in a roll like `system.bonuses.mwak.attack` (and soon to be .bonus fields - dnd1.5), a string field like `@abilities.dex.mod` will get looked up when the roll is made.
 4. The ability to update derived fields, such as `abilities.dex.mod`. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
     * Most/Some of these will be redundant after dnd1.5.
 5. The ability to perform arithmetic in field data definitions, like `ceil(@classes.rogue.levels/2)`
@@ -144,31 +144,31 @@ Additionally, there is a priority that can be given to each change within an eff
   * `UPGRADE:   40`
   * `OVERRIDE:  50`  
 So if an actor has the following changes, 
-`data.attributes.hp.max ADD 10`  
-`data.attributes.hp.max OVERRIDE 20`  
-then with default priorities hp.max will be 20, since overrides comes after ADD. If priorities are assigned `data.attributes.hp.max  ADD 10        Priority:100`
-`data.attributes.hp.max  OVERRIDE 20   Priority:10`  
+`system.attributes.hp.max ADD 10`  
+`system.attributes.hp.max OVERRIDE 20`  
+then with default priorities hp.max will be 20, since overrides comes after ADD. If priorities are assigned `system.attributes.hp.max  ADD 10        Priority:100`
+`system.attributes.hp.max  OVERRIDE 20   Priority:10`  
 hp.max will become 30.  
 
 DAE allows you to use expressions as well as fixed values. So for example you could have the following  
-`data.attributes.hp.max ADD "@classes.paladin.levels * @abilities.con.mod"   Priority:100`  
-`data.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10`  
+`system.attributes.hp.max ADD "@classes.paladin.levels * @abilities.con.mod"   Priority:100`  
+`system.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10`  
 hp.max will be set to `31 + con.mod * paladin levels`  
 
 **Roll once expressions**
 ```
-  data.attributes.ac.value UPGRADE [[1d20+@abilities.dex.mod+5]]
+  system.attributes.ac.value UPGRADE [[1d20+@abilities.dex.mod+5]]
 ```
 When the effect is applied to the actor the expression inside `[[]]` will be evaluated as a roll and the resulting value will replace the change value, all the normal substituions will be appliied (and the @ and ## fields are supported).
 
 **Number** fields are fully evaluated during the applyEffects pass.   
-**String** fields are not evaluated at all. So setting `data.bonuses.mwak.attack ADD "@abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `data.bonuses.mwak` is a string field.
+**String** fields are not evaluated at all. So setting `system.bonuses.mwak.attack ADD "@abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `system.bonuses.mwak` is a string field.
 * Recognizing what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. 
 
 #### Supported fields for dnd5e
-**Pretty much @data.abilities.anything is supported.**
+**Pretty much @system.abilities.anything is supported.**
 
 <details><summary>The current list of derived fields for dnd5e - click to expand</summary>
 <br>
@@ -176,101 +176,101 @@ DAE defines a game system specific set of "derived" values, which are calculated
 
 Fields that have a mode specified below means that ONLY that mode is supported for the effect (and the editor will set the mode when the change is saved)
 <br><br>
-<details><summary>data.attributes</summary>
+<details><summary>system.attributes</summary>
 
 | Attribute Key	| Change Mode	| Details 	|
 |-----	|:-----------:	|-----	|
-| `data.attributes.ac.bonus`            	|            	| This is applied before prepared data so CANNOT include derived fields.	|
-| `data.attributes.ac.value`	|            	| This is applied after prepare data so can include derived fields like dex.mod and so on.	|
-| `data.attributes.ac.calc`	|	| Accepts any of the predefined calculation types or custom 	|
-| `data.attributes.ac.formula`	|	|  if the calc type is custom let's you specifiy your own AC calc formula 	|
-| `data.attributes.death.failure`          	|            	| 	|
-| `data.attributes.death.success`          	|            	| 	|
-| `data.attributes.encumbrance.max`          	|            	| 	|
-| `data.attributes.exhaustion`          	|            	| 	|
-| `data.attributes.hd` 	| 	| Hit dice modifier	|
-| `data.attributes.hp.max`              	|            	| 	|
-| `data.attributes.hp.min`              	|            	| 	|
-| `data.attributes.hp.temp`          	|            	| 	|
-| `data.attributes.hp.tempmax`          	|            	| 	|
-| `data.attributes.hp.value`          	|            	| 	|
-| `data.attributes.init.bonus`          	|            	| 	|
-| `data.attributes.init.mod`          	|            	| 	|
-| `data.attributes.init.total`          	|            	| 	|
-| `data.attributes.init.value`          	|            	| 	|
-| `data.attributes.inspiration`          	|            	| 	|
-| `data.attributes.movement.all`          	|    CUSTOM   	| 	|
-| `data.attributes.movement.TYPE`          	|            	| TYPE: burrow/climb/fly/hover/swim/walk	|
-| `data.attributes.movement.units`          	|            	| 	|
-| `data.attributes.prof`                	|    CUSTOM   	| Allows addition of a numeric value to `data.abilities.prof`. You can use a negative value to reduce proficiency.<br>When updated, skills, spelldc and saves are updated accordingly (this calculation should be considered beta and if you find something missing let me know).	|
-| `data.attributes.senses.TYPE`          	|            	| TYPE: blindsight/darkvision/special/tremorsense/truesight	|
-| `data.attributes.senses.units`          	|            	| 	|
-| `data.attributes.spellcasting`          	|            	| 	|
-| `data.attributes.ac.base`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-| `data.attributes.ac.cover`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-| `data.attributes.ac.flat`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-| `data.attributes.ac.min`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
+| `system.attributes.ac.bonus`            	|            	| This is applied before prepared data so CANNOT include derived fields.	|
+| `system.attributes.ac.value`	|            	| This is applied after prepare data so can include derived fields like dex.mod and so on.	|
+| `system.attributes.ac.calc`	|	| Accepts any of the predefined calculation types or custom 	|
+| `system.attributes.ac.formula`	|	|  if the calc type is custom let's you specifiy your own AC calc formula 	|
+| `system.attributes.death.failure`          	|            	| 	|
+| `system.attributes.death.success`          	|            	| 	|
+| `system.attributes.encumbrance.max`          	|            	| 	|
+| `system.attributes.exhaustion`          	|            	| 	|
+| `system.attributes.hd` 	| 	| Hit dice modifier	|
+| `system.attributes.hp.max`              	|            	| 	|
+| `system.attributes.hp.min`              	|            	| 	|
+| `system.attributes.hp.temp`          	|            	| 	|
+| `system.attributes.hp.tempmax`          	|            	| 	|
+| `system.attributes.hp.value`          	|            	| 	|
+| `system.attributes.init.bonus`          	|            	| 	|
+| `system.attributes.init.mod`          	|            	| 	|
+| `system.attributes.init.total`          	|            	| 	|
+| `system.attributes.init.value`          	|            	| 	|
+| `system.attributes.inspiration`          	|            	| 	|
+| `system.attributes.movement.all`          	|    CUSTOM   	| 	|
+| `system.attributes.movement.TYPE`          	|            	| TYPE: burrow/climb/fly/hover/swim/walk	|
+| `system.attributes.movement.units`          	|            	| 	|
+| `system.attributes.prof`                	|    CUSTOM   	| Allows addition of a numeric value to `system.abilities.prof`. You can use a negative value to reduce proficiency.<br>When updated, skills, spelldc and saves are updated accordingly (this calculation should be considered beta and if you find something missing let me know).	|
+| `system.attributes.senses.TYPE`          	|            	| TYPE: blindsight/darkvision/special/tremorsense/truesight	|
+| `system.attributes.senses.units`          	|            	| 	|
+| `system.attributes.spellcasting`          	|            	| 	|
+| `system.attributes.ac.base`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
+| `system.attributes.ac.cover`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
+| `system.attributes.ac.flat`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
+| `system.attributes.ac.min`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
 
 </details>
-<details><summary>data.details</summary>
+<details><summary>system.details</summary>
 
 | Attribute Key	| Change Mode	| Details 	|
 |-----	|:-----------:	|-----	|
-| `data.details.alignment`          	|            	| 	|
-| `data.details.appearance`          	|            	| 	|
-| `data.details.background`          	|            	| 	|
-| `data.details.biography.public`          	|            	| 	|
-| `data.details.biography.value`          	|            	| 	|
-| `data.details.TYPE`          	|            	| TYPE: bond/flaw/ideal	|
-| `data.details.level`          	|            	| 	|
-| `data.details.originalClass`          	|            	| 	|
-| `data.details.race`          	|            	| 	|
-| `data.details.trait`          	|            	| 	|
-| `data.details.xp.max`          	|            	| 	|
-| `data.details.xp.min`          	|            	| 	|
-| `data.details.xp.value`          	|            	| 	|
+| `system.details.alignment`          	|            	| 	|
+| `system.details.appearance`          	|            	| 	|
+| `system.details.background`          	|            	| 	|
+| `system.details.biography.public`          	|            	| 	|
+| `system.details.biography.value`          	|            	| 	|
+| `system.details.TYPE`          	|            	| TYPE: bond/flaw/ideal	|
+| `system.details.level`          	|            	| 	|
+| `system.details.originalClass`          	|            	| 	|
+| `system.details.race`          	|            	| 	|
+| `system.details.trait`          	|            	| 	|
+| `system.details.xp.max`          	|            	| 	|
+| `system.details.xp.min`          	|            	| 	|
+| `system.details.xp.value`          	|            	| 	|
 
 </details>
-<details><summary>data.traits</summary>
+<details><summary>system.traits</summary>
 
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------------	|:----------:	|-------- 	|
-| `data.traits.languages.all`	|    CUSTOM	| The actor will be given all languages specified in `CONFIG.DND5E.languages` 	|
-| `data.traits.languages.value`	|    CUSTOM	| The value will be added the known languages 	|
-| `data.traits.languages.custom`	|    CUSTOM	| The specified string will be appended to the custom language field 	|
-| `data.traits.size`	|   OVERRIDE	| Overrides the size setting on the character sheet 	|
-| `data.traits.di.all`	|    CUSTOM	| 	|
-| `data.traits.dr.all`	|    CUSTOM	| 	|
-| `data.traits.dv.all`	|    CUSTOM	| The actor will be given immunity/resistance/vulnerability to all damage types specified in `CONFIG.DND5E.damageResistanceTypes` 	|
-| `data.traits.di.custom`	|    CUSTOM	| 	|
-| `data.traits.dr.custom`	|    CUSTOM	| 	|
-| `data.traits.dv.custom`	|    CUSTOM	| The actor will have the specified string appended to the list of custom immunities/resistances/vulnerabilities. 	|
-| `data.traits.di.value`	|    CUSTOM	| 	|
-| `data.traits.dr.value`	|    CUSTOM	| 	|
-| `data.traits.dv.value`	|    CUSTOM	| The actor will be given immunity/resistance/vulnerability to the specified damage type 	|
-| `data.traits.ci.all`	|    CUSTOM	| 	|
-| `data.traits.ci.custom`	|    CUSTOM	| 	|
-| `data.traits.ci.value`	|    CUSTOM	| Same as above but for `CONFIG.DND5E.conditionTypes` 	|
-| `data.traits.armorProf.all`	|    CUSTOM	| 	|
-| `data.traits.armorProf.custom`	|    CUSTOM	| 	|
-| `data.traits.armorProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.armorProficiencies` 	|
-| `data.traits.toolProf.all`	|    CUSTOM	| 	|
-| `data.traits.toolProf.custom`	|    CUSTOM	| 	|
-| `data.traits.toolProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.toolProficiencies` 	|
-| `data.traits.weaponProf.all`	|    CUSTOM	| 	|
-| `data.traits.weaponProf.custom`	|    CUSTOM	| 	|
-| `data.traits.weaponProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.weaponProficiencies` 	|
+| `system.traits.languages.all`	|    CUSTOM	| The actor will be given all languages specified in `CONFIG.DND5E.languages` 	|
+| `system.traits.languages.value`	|    CUSTOM	| The value will be added the known languages 	|
+| `system.traits.languages.custom`	|    CUSTOM	| The specified string will be appended to the custom language field 	|
+| `system.traits.size`	|   OVERRIDE	| Overrides the size setting on the character sheet 	|
+| `system.traits.di.all`	|    CUSTOM	| 	|
+| `system.traits.dr.all`	|    CUSTOM	| 	|
+| `system.traits.dv.all`	|    CUSTOM	| The actor will be given immunity/resistance/vulnerability to all damage types specified in `CONFIG.DND5E.damageResistanceTypes` 	|
+| `system.traits.di.custom`	|    CUSTOM	| 	|
+| `system.traits.dr.custom`	|    CUSTOM	| 	|
+| `system.traits.dv.custom`	|    CUSTOM	| The actor will have the specified string appended to the list of custom immunities/resistances/vulnerabilities. 	|
+| `system.traits.di.value`	|    CUSTOM	| 	|
+| `system.traits.dr.value`	|    CUSTOM	| 	|
+| `system.traits.dv.value`	|    CUSTOM	| The actor will be given immunity/resistance/vulnerability to the specified damage type 	|
+| `system.traits.ci.all`	|    CUSTOM	| 	|
+| `system.traits.ci.custom`	|    CUSTOM	| 	|
+| `system.traits.ci.value`	|    CUSTOM	| Same as above but for `CONFIG.DND5E.conditionTypes` 	|
+| `system.traits.armorProf.all`	|    CUSTOM	| 	|
+| `system.traits.armorProf.custom`	|    CUSTOM	| 	|
+| `system.traits.armorProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.armorProficiencies` 	|
+| `system.traits.toolProf.all`	|    CUSTOM	| 	|
+| `system.traits.toolProf.custom`	|    CUSTOM	| 	|
+| `system.traits.toolProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.toolProficiencies` 	|
+| `system.traits.weaponProf.all`	|    CUSTOM	| 	|
+| `system.traits.weaponProf.custom`	|    CUSTOM	| 	|
+| `system.traits.weaponProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.weaponProficiencies` 	|
 </details>
-<details><summary>data.resources</summary>
+<details><summary>system.resources</summary>
 
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------	|:-----------:	|----------------	|
-| `data.resources.legact.max`	|	| Legendary Actions	|
-| `data.resources.legres.max`	|	| Legendary Resistance	|
-| `data.resources.RES.label`	|   OVERRIDE	|	|
-| `data.resources.RES.max`	|	|	|
-| `data.resources.RES.lr`	|	| lr/sr = long/short rest	|
-| `data.resources.RES.sr`	|	| RES: primary/secondary/tertiary	|
+| `system.resources.legact.max`	|	| Legendary Actions	|
+| `system.resources.legres.max`	|	| Legendary Resistance	|
+| `system.resources.RES.label`	|   OVERRIDE	|	|
+| `system.resources.RES.max`	|	|	|
+| `system.resources.RES.lr`	|	| lr/sr = long/short rest	|
+| `system.resources.RES.sr`	|	| RES: primary/secondary/tertiary	|
 
 
 </details>
@@ -278,36 +278,36 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------	|:-----------:	|----------------	|
-| `data.attributes.ABILITY.dc`	|    CUSTOM	| Adds the value (must be numeric) to the field and recomputes items saving throw dcs.	|
-| `data.attributes.ABILITY.min`	|    CUSTOM	| 	|
-| `data.attributes.ABILITY.mod`	|   A/M/D/U/O	| Allows modification of the ability modifier.	|
-| `data.attributes.ABILITY.proficient`	|     ADD	| Multiplies character proficiency by this amount and adds it to the current value for the ability.	|
-| `data.attributes.ABILITY.save`	|   	| Provides a bonus to ability saves. This is only active if the "Use ability save field when rolling saving throws" module setting is enabled. <br>This will use the save plus rather than the ability modifier when rolling saving throws.	|
-| `data.attributes.ABILITY.value`	|   	| ABILITY: cha/con/dex/int/str/wis	|
-| `data.bonuses.abilities.check`          	|            	| 	|
-| `data.bonuses.abilities.save`          	|            	| 	|
-| `data.bonuses.abilities.skill`          	|            	| 	|
-| `data.skills.SKILL.ability`	|   OVERRIDE	| Dropdown: Strength/Dexterity/Constitution/Intelligence/Wisdom/Charisma	|
-| `data.skills.SKILL.mod`	|	| SKILL: acr/ani/arc/ath/dec/his/ins/inv/itm/med/nat/per/prc/prf/rel/slt/ste/sur	|
-| `data.skills.SKILL.passive`	|	| This affects the specified skill adjusting modifier or passive value for the skill. <br>Changes to modifier are only reflected when rolling the skill, not on the character sheet.	|
-| `data.skills.SKILL.value`	|	| Dropdown: Not Proficient/Proficient/Expertise/Half Proficiency	|
+| `system.attributes.ABILITY.dc`	|    CUSTOM	| Adds the value (must be numeric) to the field and recomputes items saving throw dcs.	|
+| `system.attributes.ABILITY.min`	|    CUSTOM	| 	|
+| `system.attributes.ABILITY.mod`	|   A/M/D/U/O	| Allows modification of the ability modifier.	|
+| `system.attributes.ABILITY.proficient`	|     ADD	| Multiplies character proficiency by this amount and adds it to the current value for the ability.	|
+| `system.attributes.ABILITY.save`	|   	| Provides a bonus to ability saves. This is only active if the "Use ability save field when rolling saving throws" module setting is enabled. <br>This will use the save plus rather than the ability modifier when rolling saving throws.	|
+| `system.attributes.ABILITY.value`	|   	| ABILITY: cha/con/dex/int/str/wis	|
+| `system.bonuses.abilities.check`          	|            	| 	|
+| `system.bonuses.abilities.save`          	|            	| 	|
+| `system.bonuses.abilities.skill`          	|            	| 	|
+| `system.skills.SKILL.ability`	|   OVERRIDE	| Dropdown: Strength/Dexterity/Constitution/Intelligence/Wisdom/Charisma	|
+| `system.skills.SKILL.mod`	|	| SKILL: acr/ani/arc/ath/dec/his/ins/inv/itm/med/nat/per/prc/prf/rel/slt/ste/sur	|
+| `system.skills.SKILL.passive`	|	| This affects the specified skill adjusting modifier or passive value for the skill. <br>Changes to modifier are only reflected when rolling the skill, not on the character sheet.	|
+| `system.skills.SKILL.value`	|	| Dropdown: Not Proficient/Proficient/Expertise/Half Proficiency	|
 
 </details>
 <details><summary>Spells and Attacks</summary>
 
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------------	|:----------:	|-------- 	|
-| `data.bonuses.All-Attacks`	|    CUSTOM	| The specified string field will be appended to `bonuses.mwak.attack`, `bonuses.rwak.attack`, `bonuses.msak.attack`, `bonuses.rsak.attack`	|
-| `data.bonuses.All-Damage`	|    CUSTOM	| The specified string field will be appended to ?	|
-| `data.bonuses.abil.damage`          	|            	| 	|
-| `data.bonuses.TYPE.attack`          	|    CUSTOM  	| 	|
-| `data.bonuses.TYPE.damage`          	|            	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon 	|
-| `data.bonuses.save.damage`          	|            	| 	|
-| `data.bonuses.spell.dc` 	|     ANY 	| Always numeric, so any dice expression will be evaluated once when prepareData is called and **NOT** on each spell cast.<br>You cannot do lookups of derived fields for spell.dc calculations. 	|
-| `data.spells.pact.level`	|	|	|
-| `data.spells.pact.override`	|	| `spellslots.value` is not able to be modified with DAE.	|
-| `data.spells.spell[1-9].override`	|	| e.g. `data.spells.spell3.override`	|
-| `data.spells.spell[1-9].max`	|	| e.g. `data.spells.spell3.max`	|
+| `system.bonuses.All-Attacks`	|    CUSTOM	| The specified string field will be appended to `bonuses.mwak.attack`, `bonuses.rwak.attack`, `bonuses.msak.attack`, `bonuses.rsak.attack`	|
+| `system.bonuses.All-Damage`	|    CUSTOM	| The specified string field will be appended to ?	|
+| `system.bonuses.abil.damage`          	|            	| 	|
+| `system.bonuses.TYPE.attack`          	|    CUSTOM  	| 	|
+| `system.bonuses.TYPE.damage`          	|            	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon 	|
+| `system.bonuses.save.damage`          	|            	| 	|
+| `system.bonuses.spell.dc` 	|     ANY 	| Always numeric, so any dice expression will be evaluated once when prepareData is called and **NOT** on each spell cast.<br>You cannot do lookups of derived fields for spell.dc calculations. 	|
+| `system.spells.pact.level`	|	|	|
+| `system.spells.pact.override`	|	| `spellslots.value` is not able to be modified with DAE.	|
+| `system.spells.spell[1-9].override`	|	| e.g. `system.spells.spell3.override`	|
+| `system.spells.spell[1-9].max`	|	| e.g. `system.spells.spell3.max`	|
 
 </details>
 <details><summary>Special Traits Flags</summary>
@@ -332,7 +332,7 @@ These fields accept 0 off, or 1 on.
 
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------------	|:----------:	|-------- 	|
-| `data.currency.TYPE`          	|            	| TYPE: cp/ep/sp/gp/pp	|
+| `system.currency.TYPE`          	|            	| TYPE: cp/ep/sp/gp/pp	|
 | `flags.dnd5e.meleeCriticalDamageDice` 	| 	| How many dice to roll on melee critical hits.      	|
 | `flags.dnd5e.spellCriticalThreshold` 	| 	| Sets the threshold range for spell critical hits.       	|
 | `flags.dnd5e.weaponCriticalThreshold` 	| 	| Sets the threshold range for weapon critical hits.       	|
@@ -373,14 +373,14 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
  <li>
   Creates a flag on the target actor (onUpdateTarget) or the sourceActor (onUpdateSource) that recordds the origin item, the targetToken and the initiating actor's token (sourceToken) and actor (sourceActor) on the target (flags.dae.onUpdateTarget) or the source actor (flags.dae.onUpdateSource). Note that onUpdateSource is different to other active effects in that it is ALWAYS created on the actor using the item/creating the effect and NOT on the target.
   </li>
-  <li>allows you specify a macro that will be called whenever the target token/actor filter field is updated. The filter field does not need to reference a single value, data.abilities will call the macro when any ability is update.
+  <li>allows you specify a macro that will be called whenever the target token/actor filter field is updated. The filter field does not need to reference a single value, system.abilities will call the macro when any ability is update.
   </li>
   <li>
-  For example ``flags.dae.onUpdateTarget CUSTOM Arcane Link, ItemMacro,data.attributes.hp.value, 1,2,3 `` will add an entry to actor.data.flags.dae.onUpdateTarget (an array of such entries) on the target actor with:
+  For example ``flags.dae.onUpdateTarget CUSTOM Arcane Link, ItemMacro,system.attributes.hp.value, 1,2,3 `` will add an entry to actor.flags.dae.onUpdateTarget (an array of such entries) on the target actor with:
   <ul>
   <li>args: []<br>
   </li><li>
-  filter: 'data.attributes.hp.value', this is used to check that the update contains an update to the specified filter fields, you could use data.attributes.hp for any hp update.
+  filter: 'system.attributes.hp.value', this is used to check that the update contains an update to the specified filter fields, you could use system.attributes.hp for any hp update.
   </li><li>
   flagName: 'Warding Bond'
   </li><li>
@@ -523,7 +523,7 @@ macro.actorUpdate allows you to update a field on the actor and (optionally) hav
 * **actorUuid**: string, e.g. @actorUuid (the casters uuid) or @targetUuid (the target's uuid)
 * **type**: number, boolean, string (it's important to match these to the type of the target field)
 * **expression**: a roll expression, string, or boolean e.g. "@attributes.dex.mod * 2 + 10" (**must** be in "" marks), the expression can start with one of +-*/ and will treated as a (actor current value + value) etc.
-* **targetField**: "string", e.g. data.attrbutes.hp.temp
+* **targetField**: "string", e.g. system.attrbutes.hp.temp
 * **optional undo action** values:
   - missing/true/restore -> restore original value of target field on expiry
   - remove -> subtract the change made to the current value of the field on expiry, i.e. undo the change allowing for changes from other sources.
@@ -541,8 +541,8 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
     label: "Ring of Protection",
     icon: "icons/mystery-man.svg",
     changes: [
-      {key: "data.bonuses.abilities.save", value: "+1", mode: EFFECTMODES.ADD},
-      {key: "data.attributes.ac.value", value: 1, mode: EFFECTMODES.ADD},
+      {key: "system.bonuses.abilities.save", value: "+1", mode: EFFECTMODES.ADD},
+      {key: "system.attributes.ac.value", value: 1, mode: EFFECTMODES.ADD},
     ],
     transfer: true,
   };
@@ -600,11 +600,11 @@ Write a function that does
   
   function myCustomEffect(actor, change) {
     // actor is the actor being processed and change a key/value pair
-    if (change.key !=== "data.attributes.ac.value") return;
+    if (change.key !=== "system.attributes.ac.value") return;
     // If your active effect spec was 
-    // data.actor.attributes.ac.value (change.key) CUSTOM value (the value is not relevant here, but it gets passed as change.value)
-    const actorData = actor.data.data;
-    actorData.attributes.ac.value += Math.ceil((actorData.abilities.str.mod + actorData.abilities.dex.mod) / 2);
+    // system.actor.attributes.ac.value (change.key) CUSTOM value (the value is not relevant here, but it gets passed as change.value)
+    const actorData = actor.system;
+    actorsystem.attributes.ac.value += Math.ceil((actorData.abilities.str.mod + actorData.abilities.dex.mod) / 2);
     // Although you can change fields other than the change.key field you should not as the core active effects tracks all changes made.
   }
 ```
@@ -712,7 +712,7 @@ Same application options as for CUB.
 This modules adds the ability to drop effects from an item to an actor or world item. My testing suggests it is compatible with DAE. Highly recommended (almost a dependency).
 
 **5e-sheet resources plus**
-If enabled dae will add target fields for additional resource fields up to "tenth". data.resources.fourth.max, data.resources.fourth.label etc.
+If enabled dae will add target fields for additional resource fields up to "tenth". system.resources.fourth.max, system.resources.fourth.label etc.
 
 ## Issues
 
@@ -745,8 +745,8 @@ After clean up you will need to check any actors with armor and look at the AC t
 You can run `DAE.cleanArmorWorld()` at any time, from the console or as a macro, in case you have actors which did not get cleaned the first time. Needs to be run as a GM.
 
 After dnd5e 1.4.0 you can still use DAE to modify armor class.  
-`data.attributes.ac.bonus` is the dnd5e supported field to modify AC and can be used without DAE loaded. It is evaluated BEFORE prepareData is run so no derived fields can use used, i.e. no dex.mod, flags.anything and so on.  
-`data.attributes.ac.value` requires DAE to be effective, without DAE changes to ac.value will have no effect. Changes to ac.value are applied AFTER prepareData so can use any field. 
+`system.attributes.ac.bonus` is the dnd5e supported field to modify AC and can be used without DAE loaded. It is evaluated BEFORE prepareData is run so no derived fields can use used, i.e. no dex.mod, flags.anything and so on.  
+`system.attributes.ac.value` requires DAE to be effective, without DAE changes to ac.value will have no effect. Changes to ac.value are applied AFTER prepareData so can use any field. 
 
 #### After updating to dnd5e 1.4.2 my characters AC is wrong. 
 dnd5e 1.4.2 **removed** the magical bonus equipment type and so anything that had a type of magical bonus will stop working. The quickest solution is to create an active effect on the item which sets the ac.bonus to the value that used to be in the magical bonus.
