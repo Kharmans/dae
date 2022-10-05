@@ -44,12 +44,16 @@ export class ValidSpec {
       this.specs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
       _characterSpec["system"] = duplicate(game.system.model.Actor[specKey]);
       let baseValues = flattenObject(_characterSpec);
+      for (let prop in baseValues) {
+        baseValues[prop] = [baseValues[prop], -1];
+      }
       daeSystemClass.modifyBaseValues(specKey, baseValues, _characterSpec);
       Hooks.callAll("dae.modifyBaseValues", specKey, baseValues, _characterSpec);
 
       // baseValues["items"] = ""; // TODO one day work this out.
       if (game.modules.get("gm-notes")?.active) {
-        baseValues["flags.gm-notes.notes"] = "";
+        baseValues["flags.gm-notes.notes"] = ["", -1];
+        baseValues["system.att"]
       }
 
       var specials = {};
@@ -85,7 +89,7 @@ export class ValidSpec {
 
       // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
       this.specs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
-        let validSpec = new ValidSpec(spec, baseValues[spec], -1);
+        let validSpec = new ValidSpec(spec, baseValues[spec][0], baseValues[spec][1]);
 
         if (spec.includes(`flags.${game.system.id}`))
           validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
@@ -254,6 +258,10 @@ export class DAESystem {
     this.attackTypes = [];
     this.bonusSelectors = {};
     this.daeActionTypeKeys = [];
+  }
+  public static addDAEMetaData(activeEffectData, item, options) {
+    setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
+    setProperty(activeEffectData, "flags.dae.transfer", false);
   }
 
   public static daeCustomEffect(actor, change): boolean {

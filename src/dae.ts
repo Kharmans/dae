@@ -155,7 +155,8 @@ Hooks.once('setup', function () {
       unsetFlag: unsetFlag,
       ValidSpec,
       actionQueue: actionQueue,
-      wildcardBaseEffects: wildcardEffects
+      wildcardBaseEffects: wildcardEffects,
+      daeCustomEffect: daeSystemClass.daeCustomEffect
     }
     setupSocket();
     Hooks.callAll("DAE.setupComplete");

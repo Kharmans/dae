@@ -1,3 +1,11 @@
+### 10.0.9
+* Added support for "metaData" to be passed to doEffects which will get added to the active effects applied to the target.
+* Added support for system.attributes.ac.calc as an override field to allow you to change the ac calculation on an actor and if set to custom to configure the damage calc via ac.custom.
+* Assed support for system.attributes.ac.custom to allow you to add effects to configure the ac calc of an actor.
+* Fix for effects dr.all/di.all/dv.all not populating the appropriate dr/di/dv values.
+* Fix for getRollData breaking @prof max item uses.
+* Effects which specify an ItemMacro flag value, like DamageBonusMacro can now simply specify flags.midi-qol.DamageBonusMacro CUSTOM ItemMacro and dae will convert ItemMacro to an actor specific ItemMacro.UUID which will map to the item that caused the effect to be applied. For example Sneak Attack/Hunter's Mark in the sample items compendium (and many others) - means you do not need to rename the item on equip.
+
 ### 10.0.8
 ** Breaking dae now requires dnd5e 2.0.3
 * Changes to support dnd5e 2.0.3 di/dr/dv
@@ -62,7 +70,7 @@ This release just cleans up some of the 10.0.4 changes
 
 ### 0.10.24
 * **BREAKING** onUpdateTarget macro calls will now have args[0] set to "onUpdateTarget".
-* As ra eminder it is strongly recommended that you create onUpdateTarget effects with an update filter which is as precise as you can make it, this will significantly improve performance.
+* As a reminder it is strongly recommended that you create onUpdateTarget effects with an update filter which is as precise as you can make it, this will significantly improve performance.
 * Support for a new dae effect flag, Self Target (on the effect details tab for effects owned by an item). doEffects now accepts an additional optional argument selfTaget, true means only apply selfTarget effects and false only apply non-selfTarget effects. See midi-qol changelog for details of how to use.
 
 ### 0.10.23

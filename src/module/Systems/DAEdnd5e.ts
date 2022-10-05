@@ -17,6 +17,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   conditionList;
   bypassesList;
   customDamageResistanceList;
+  armorClassCalcList;
   static profInit;
   static toolProfList;
   static armorProfList;
@@ -28,27 +29,31 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
     super.modifyBaseValues(actorType, baseValues, characterSpec);
-    baseValues["system.attributes.prof"] = 0;
-    baseValues["system.details.level"] = 0;
-    baseValues["system.attributes.ac.bonus"] = 0;
-    baseValues["system.attributes.ac.base"] = 0;
-    baseValues["system.attributes.ac.cover"] = 0;
+    //@ts-ignore
+    const modes = CONST.ACTIVE_EFFECT_MODES;
+    baseValues["system.attributes.prof"] = [0,-1];;
+    baseValues["system.details.level"] = [0,-1];
+    baseValues["system.attributes.ac.bonus"] = [0, -1];
+    baseValues["system.attributes.ac.base"] = [0, -1];;
+    baseValues["system.attributes.ac.cover"] = [0, -1];;
+    baseValues["system.attributes.ac.calc"] = ["", modes.OVERRIDE];
+    baseValues["system.attributes.ac.formula"] = ["", -1];
     if (characterSpec.system.bonuses) {
       // system.attributes.prof/system.details.level and system.attributes.hd are all calced in prepareBaseData
-      baseValues["system.bonuses.All-Attacks"] = "";
-      baseValues["system.bonuses.weapon.attack"] = "";
-      baseValues["system.bonuses.spell.attack"] = "";
-      baseValues["system.bonuses.All-Damage"] = "";
-      baseValues["system.bonuses.weapon.damage"] = "";
-      baseValues["system.bonuses.spell.damage"] = "";
+      baseValues["system.bonuses.All-Attacks"] = ["",-1];
+      baseValues["system.bonuses.weapon.attack"] = ["",-1];
+      baseValues["system.bonuses.spell.attack"] = ["",-1];
+      baseValues["system.bonuses.All-Damage"] = ["",-1];
+      baseValues["system.bonuses.weapon.damage"] = ["",-1];
+      baseValues["system.bonuses.spell.damage"] = ["",-1];
       // These are for item action types - works by accident.
-      baseValues["system.bonuses.heal.damage"] = "";
-      baseValues["system.bonuses.heal.attack"] = "";
-      baseValues["system.bonuses.save.damage"] = "";
-      baseValues["system.bonuses.check.damage"] = "";
-      baseValues["system.bonuses.abil.damage"] = "";
-      baseValues["system.bonuses.other.damage"] = "";
-      baseValues["system.bonuses.util.damage"] = "";
+      baseValues["system.bonuses.heal.damage"] = ["",-1];
+      baseValues["system.bonuses.heal.attack"] = ["",-1];
+      baseValues["system.bonuses.save.damage"] = ["",-1];
+      baseValues["system.bonuses.check.damage"] = ["",-1];
+      baseValues["system.bonuses.abil.damage"] = ["",-1];
+      baseValues["system.bonuses.other.damage"] = ["",-1];
+      baseValues["system.bonuses.util.damage"] = ["",-1];
     }
     // move all the characteer flags to specials so that the can be custom effects only
     let charFlagKeys = (game.system.id === "dnd5e") ? Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
@@ -402,6 +407,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       this.languageList[`-${type}`] = `-${CONFIG.DND5E.languages[type]}`;
     });
 
+    this.armorClassCalcList = {};
+    for (let acCalc in daeSystemClass.systemConfig.armorClasses) {
+      this.armorClassCalcList[acCalc] = daeSystemClass.systemConfig.armorClasses[acCalc].label
+    }
+
     this.conditionList = duplicate(CONFIG.DND5E.conditionTypes);
     Object.keys(CONFIG.DND5E.conditionTypes).forEach(type => {
       this.conditionList[`-${type}`] = `-${CONFIG.DND5E.conditionTypes[type]}`;
@@ -443,6 +453,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return this.traitList;
     if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom"].includes(spec)) {
       return this.customDamageResistanceList;
+    }
+    if (spec === "system.attributes.ac.calc") {
+      return this.armorClassCalcList;
     }
 
       if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses"].includes(spec))
@@ -582,7 +595,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdr.all":
       case "system.traits.sdv.all":
         const key = change.key.replace(".all", ".value")
-        setProperty(actor, key, Object.keys(systemConfig).filter(k => !["healing", "temphp"].includes(k)));
+        setProperty(actor, key, Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
         return true;
       case "system.traits.di.value":
       case "system.traits.dr.value":
@@ -763,12 +776,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
     }
   }
-
-
 }
 
-function getRollData(wrapped) {
-  const data = wrapped();
+function getRollData(wrapped, ...args) {
+  const data = wrapped(...args);
   data.flags = this.flags;
   return data;
 }
