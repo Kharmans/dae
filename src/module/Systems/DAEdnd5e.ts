@@ -1042,17 +1042,12 @@ function preUpdateItemHook(candidate, updates, options, user) {
   if (!(actor instanceof Actor)) return true;
   if (updates.system?.equipped === undefined && updates.system?.attunement === undefined) return true;
   try {
+    const wasSuppressed = candidate.areEffectsSuppressed;
     const updatedItem = candidate.clone({
       "system.equipped": updates.system?.equipped ?? candidate.system.equipped,
-      "system.attunement": updates.system?.attunement ?? candidate.system.attunement});
-    const wasSuppressed = candidate.areEffectsSuppressed;
-    // const candidateEquipped = candidate.system.equipped; // tried deepClone but that updated the original item
-    // const candidateAttunement = candidate.system.attunement;
-    // candidate.system.equipped = updates.system?.equipped ?? candidate.system.equipped;
-    // candidate.system.attunement = updates.system?.attunement ?? candidate.system.attunement;
+      "system.attunement": updates.system?.attunement ?? candidate.system.attunement
+    });
     const isSuppressed = updatedItem.areEffectsSuppressed;
-    // candidate.system.equipped = candidateEquipped;
-    // candidate.system.attunement = candidateAttunement;
     if (wasSuppressed === isSuppressed) return true;
     const tokens = actor.getActiveTokens();
     const token = tokens[0];
