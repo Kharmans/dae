@@ -64,19 +64,7 @@ export class ValidSpec {
       specials["StatusEffectLabel"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       daeSystemClass.modifySpecials(specKey, specials, _characterSpec);
       Hooks.callAll("dae.modifySpecials", specKey, specials, _characterSpec)
-      if (game.modules.get("ATL")?.active) {
-        // support new version of ATL
-        if (isNewerVersion("0.3.04", game.modules.get("ATL").version)) {
-          for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
-            specials[`ATL.${label}`] = [0, -1];
-          }
-        } else {
-          for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
-            specials[`ATL.${label}`] = [0, -1];
-          }
-        }
-        specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      }
+
       // TODO reactivate when cond vis is v10 ready
       // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -101,8 +89,9 @@ export class ValidSpec {
       if (game.modules.get("tokenmagic")?.active) {
         specials["macro.tokenMagic"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       }
+      
       daeSystemClass.modifyDerivedSpecs(specKey, this.specs[specKey].derivedSpecs, _characterSpec)
-      Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.specs[specKey].derivdSpecs, _characterSpec);
+      Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.specs[specKey].derivedSpecs, _characterSpec);
       Object.entries(specials).forEach(special => {
         let validSpec = new ValidSpec(special[0], special[1][0], special[1][1]);
         this.specs[specKey].derivedSpecs.push(validSpec);
@@ -154,10 +143,10 @@ export class ValidSpec {
         m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`).replaceAll("dae.", "")).join(" ");
         if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
           const fieldId = m.fieldSpec.replace(fieldStart, "");
-          const characterFlags = 
-            (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags 
-            : (game.system.id === "sw5e") ? CONFIG.SW5E.characterFlags 
-            : {};
+          const characterFlags =
+            (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags
+              : (game.system.id === "sw5e") ? CONFIG.SW5E.characterFlags
+                : {};
           const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
           m._label = `Flags ${localizedString}`;
         }
@@ -183,6 +172,7 @@ export class DAESystem {
   static attackTypes: string[];
   static bonusSelectors: any;
   static daeActionTypeKeys: string[];
+  static detectionModeList: any;
 
   public static get systemConfig() {
     throw new Error("system class must implement getSystemConfig()")
@@ -195,10 +185,18 @@ export class DAESystem {
    * e.g. {common: "Common"}
    * */
   public static getOptionsForSpec(specification: string): {} {
+    if (specification === "ATE.detectionMode") {
+      return this.detectionModeList;
+    }
     return false;
   }
   // Configure any lookp lists that might be required by getOptionsForSpec.
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
+    this.detectionModeList = {};
+    Object.values(CONFIG.Canvas.detectionModes).forEach(dm => {
+      //@ts-expect-error .id .label
+      this.detectionModeList[dm.id] = i18n(`${dm.label}`);
+    })
   }
 
   public static async editConfig() {
@@ -216,6 +214,8 @@ export class DAESystem {
     specials["macro.itemMacro.local"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["macro.itemMacro.GM"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["macro.actorUpdate"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.createItem"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.createToken"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
   };
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
   }
@@ -224,7 +224,7 @@ export class DAESystem {
     return effect.disabled;
   }
 
-  public static modifyValidSpec(spec, validSpec: ValidSpec) : ValidSpec {
+  public static modifyValidSpec(spec, validSpec: ValidSpec): ValidSpec {
     return validSpec;
   }
 
@@ -276,11 +276,11 @@ export class DAESystem {
       const sourceTokenUuid = values[2];
       const sourceActorUuid = values[3];
       const flagName = values[4];
-      const macroName = ["none",""].includes(values[5] ?? "") ? "" : values[5];
+      const macroName = ["none", ""].includes(values[5] ?? "") ? "" : values[5];
       const filter = ["none", ""].includes(values[6] ?? "") ? "system" : values[6];;
       const args = values.slice(7);
       let flagValue = getProperty(actor, "flags.dae.onUpdateTarget") ?? [];
-      flagValue.push({flagName, macroName, origin, sourceTokenUuid, args, targetTokenUuid, filter, sourceActorUuid})
+      flagValue.push({ flagName, macroName, origin, sourceTokenUuid, args, targetTokenUuid, filter, sourceActorUuid })
       setProperty(actor, "flags.dae.onUpdateTarget", flagValue);
     }
     return true;
@@ -329,3 +329,101 @@ export function applyBaseActiveEffects() {
 }
 
 setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
+
+Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
+  // Prelim support for ATE v10 - need some more detail.
+  
+  //@ts-ignore
+  const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
+  if (isNewerVersion(game.version, "10") && (false && game.modules.get("ATE")?.active)) {
+    /*ATL.
+        alpha               | 0.0:1.0
+        elevation           | #
+        height              | #
+        width               | #
+        hidden              | true/false
+        rotation            | 0:360
+        detectionModes      | {id: 'X', enabled: true/false, range: #}
+        light.
+          alpha         | 0.00:1.00
+          angle         | 0:360
+          animation     | {intensity: 1:10, reverse: true/false, speed: 1:10, type: "X"}
+          attenuation   | 0.00:1.00
+          bright        | #
+          color         | #XXXXXX
+          coloration    | 0:10 (see below)
+          contrast      | -1.00:1.00
+          dim           | #
+          luminosity    | -1.00:1.00
+          saturation    | -1.00:1.00
+          shadows       | 0.00:1.00
+          darkness.
+                    max  | 0:1 (Default 1)
+                    min  | 0:1 (Default 0)
+        sight.
+          angle         | 0:360
+          attenuation   | 0.00:1.00
+          brightness    | -1.00:1.00
+          color         | #XXXXXX
+          contrast      | -1.00:1.00
+          enabled       | true/false
+          range         | #
+          saturation    | -1.00:1.00
+          visionMode    | X (see below)
+        texture.
+          offsetX       | #?
+          offsetY       | #?
+          rotation      | 0:360
+          scaleX        | 0.2:3.0
+          scaleY        | 0.2:3.0
+          src           | img/path.webp
+          tint          | #XXXXXX
+      */
+      specials["ATE.alpha"] =  [0, -1];
+      specials["ATE.elevation"] =  [0, -1];
+      specials["ATE.height"] =  [0, -1];
+      specials["ATE.width"] =  [0, -1];
+      specials["ATE.hidden"] =  [0, -1];
+      specials["ATE.rotation"] =  [0, -1];
+      specials["ATE.detetionModes"] =  ["", -1];
+      // specials["ATE.detectionModes.id"] =  ["", -1];
+      // specials["ATE.detectionModes.enabled"] =  [false, -1];
+      // specials["ATE.detectionModes.range"] =  [0, -1];
+
+
+    specials["ATE.sight.angle"] =  [0, -1];
+    specials["ATE.sight.animation"] =  ["", -1]; //
+    specials["ATE.sight.attenuation"] =  [0, -1];
+    specials["ATE.sight.bright"] =  [0, -1];
+    specials["ATE.sight.color"] =  [0, -1];
+    specials["ATE.sight.coloration"] =  [0, -1];
+    specials["ATE.sight.contrast"] =  [0, -1];
+    specials["ATE.sight.dim"] =  [0, -1];
+    specials["ATE.sight.luminosity"] =  [0, -1];
+    specials["ATE.sight.saturation"] =  [0, -1];
+    specials["ATE.sight.shadows"] =  [0, -1];
+    specials["ATE.sight.darkness.max"] = [0, -1];
+    specials["ATE.sight.darkness.min"] = [0, -1];
+    specials["ATE.texture.offsetX"] =  [0, -1];
+    specials["ATE.texture.offsetY"] =  [0, -1];
+    specials["ATE.texture.rotation"] =  [0, -1];
+    specials["ATE.texture.scaleX"] =  [0, -1];
+    specials["ATE.texture.scaleY"] =  [0, -1];
+    specials["ATE.texture.src"] =  ["", -1];
+    specials["ATE.texture.tint"] =  [0, -1];
+  } else if (game.modules.get("ATL")?.active) {
+    // support new version of ATL
+    if (isNewerVersion("0.3.04", game.modules.get("ATL").version)) {
+      for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
+        specials[`ATL.${label}`] = [0, -1];
+      }
+    } else {
+      for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
+        specials[`ATL.${label}`] = [0, -1];
+      }
+    }
+    specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+  }
+});
+
+

@@ -98,7 +98,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       width: 900,
       height: "auto",
       resizable: true,
-      tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }]
+      tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }],
+      dragDrop: [{dropSelector: ".value"}]
     });
   }
 
@@ -215,13 +216,23 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     super.activateListeners(html);
     html.find(".keylist").change(this._keySelected.bind(this))
     html.find(".awesomplete").on("awesomplete-selectcomplete", this._textSelected.bind(this));
+
+    // html.find("value").onDrop = ev => this._onDrop(ev);
+    // this.form.ondrop = ev => this._onDrop(ev);
   }
 
   /* ----------------------------------------- */
   _textSelected(event) {
     return this.submit({ preventClose: true }).then(() => this.render());
   }
+  _onDragStart(ev) {}
 
+  _onDrop(ev) {
+    ev.preventDefault();
+    //@ts-ignore
+    const data = TextEditor.getDragEventData(ev);
+    if (data.uuid) ev.target.value += data.uuid;
+  }
 
   /* ----------------------------------------- */
   _onEffectControl(event) {

@@ -232,6 +232,18 @@ export function replaceAtFields(value, context, options: { blankValue: any | num
   return result;
 }
 */
+
+//@ts-ignore
+export function addCreateItemChange(itemId: string, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
+  actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", {uuid: actor.uuid, itemUuid: itemId, effectUuid: effect.uuid})
+}
+
+//@ts-ignore
+export function removeCreateItemChange(itemId: string, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
+  actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", {uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags.dae.itemsToDelete})
+
+}
+
 export async function addTokenMagicChange(actor, change, tokens) {
   const tokenMagic = globalThis.TokenMagic;
   if (!tokenMagic) return;
@@ -317,6 +329,9 @@ function _onCreateActiveEffect(...args) {
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor)
             addConvenientEffectsChange(change.value, actor.uuid, effect.origin, lastArg);
+          }
+          if (change.key === "macro.createItem") {
+            addCreateItemChange(change.value, actor, effect)
           }
           const tokenMagic = globalThis.TokenMagic;
           if (tokenMagic && change.key === "macro.tokenMagic" && token)
@@ -500,6 +515,9 @@ export function _onUpdateActiveEffect(...args) {
               removeConvenientEffectsChange(change.value, parent.uuid, undefined, lastArg);
             }
             if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(parent, change, tokens);
+            if (change.key === "macro.createItem") {
+              removeCreateItemChange(change.value, parent, effect)
+            }
           }
           if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
             actionQueue.add(daeMacro, "off", parent, effect.toObject(false), {});
@@ -514,6 +532,9 @@ export function _onUpdateActiveEffect(...args) {
               addConvenientEffectsChange(change.value, parent.uuid, undefined, lastArg);
             }
             if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(parent, change, tokens);
+            if (change.key === "macro.createItem") {
+              addCreateItemChange(change.value, parent, effect)
+            }
           }
           if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
             actionQueue.add(daeMacro, "on", parent, effect.toObject(false), {});
@@ -578,6 +599,9 @@ export function _onDeleteActiveEffect(...args) {
       if (effect.changes) {
         for (let change of effect.changes) {
           if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
+          if (change.key === "macro.createItem") {
+            removeCreateItemChange(change.value, actor, effect)
+          }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor);
             removeConvenientEffectsChange(change.value, actor.uuid, undefined, lastArg);
@@ -807,6 +831,8 @@ export async function evalArgs({ effectData = null, item, context, actor, change
       case "macro.CE":
       case "macro.CUB":
       case "macro.tokenMagic":
+      case "macro.createItem":
+      case "macro.summonToken":
         break;
       default:
         if (doRolls && typeof ValidSpec.specs[actor.type].allSpecsObj[change.key]?.sampleValue === "number") {
@@ -822,8 +848,11 @@ export async function evalArgs({ effectData = null, item, context, actor, change
 
 export async function getMacro({ change, name }, item, effectData) {
   if (change.key.includes("macro.execute")) {
-    // the first argument conatins the macro name
-    return game.macros.getName(name);
+    if (change.value.startsWith("Compendium")) {
+
+    } else {    // the first argument conatins the macro name
+      return game.macros.getName(name);
+    }
   } else if (change.key.startsWith("macro.itemMacro")) {
     // Get the macro command for the macro 
     // TODO look at using an item name as well?
@@ -869,10 +898,12 @@ export async function getMacro({ change, name }, item, effectData) {
 /*
  * appply non-transfer effects to target tokens - provided for backwards compat
  */
-export async function doEffects(item, activate, targets = undefined, options: any = 
-  { whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false, 
-    fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, 
-    selfEffects: "none" }) {
+export async function doEffects(item, activate, targets = undefined, options: any =
+  {
+    whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,
+    fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false,
+    selfEffects: "none"
+  }) {
   return await applyNonTransferEffects.bind(item)(activate, targets, options)
 }
 
@@ -893,7 +924,7 @@ export async function applyNonTransferEffects(activate, targets, options: any = 
       break
     case "none":
     default:
-      appliedEffects = duplicate(this.effects.filter(ae => ae.transfer !== true));
+      appliedEffects = duplicate(this.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae.selfTarget));
   }
   if (options.effectsToApply?.length > 0) appliedEffects = appliedEffects.filter(aeData => options.effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
@@ -914,7 +945,7 @@ export async function applyNonTransferEffects(activate, targets, options: any = 
         context: rollData,
         change,
         doRolls
-      } )
+      })
       evalArgsOptions.item = this;
       if (this.actor) evalArgsOptions.actor = this.actor;
       let newChange = await evalArgs(evalArgsOptions)
@@ -957,8 +988,9 @@ export async function applyNonTransferEffects(activate, targets, options: any = 
     t => typeof t === "string" ? t : (t.document?.uuid ?? t.uuid)
   );
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, localTargets, gmTargets)
-  if (gmTargets.length > 0)
+  if (gmTargets.length > 0) {
     await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, targets: gmTargets, itemDuration: this.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect })
+  }
 
   if (localTargets.length > 0) {
     const result = await applyActiveEffects(activate, localTargets, appliedEffects, this.system.duration, options.itemCardId, options.removeMatchLabel, options.toggleEffect)
@@ -1071,6 +1103,7 @@ export /*async*/ function preUpdateActor(candidate, updates, options, user) {
         } else if (onUpdate.macroName.startsWith("ItemMacro.")) {
           let macroObject = sourceActor?.items.getName(onUpdate.macroName.split(".")[1]);
           if (!macroObject) macroObject = originObject?.parent?.items.getName(onUpdate.macroName.split(".")[1]);
+          //@ts-ignore .flags
           macroText = macroObject?.flags?.itemacro?.macro?.command ?? macroObject.data?.flags?.itemacro?.macro?.data?.command;
         }
       } else {
@@ -1104,7 +1137,7 @@ export /*async*/ function preUpdateActor(candidate, updates, options, user) {
         error("dae | Error evaluating macro for onUpdateActor", err)
       }
     }
-  } catch(err) {
+  } catch (err) {
     console.warn("dae | error in onUpdateTarget ", err);
   } finally {
     return true;
@@ -1166,17 +1199,17 @@ function daeApply(wrapped, actor, change) { // TODO remains broken in v10
   return wrapped(actor, change)
 }
 
-export function matchItemMacroName(candidate, data, options, user) {
+export function matchItemMacroName(candidate, updates, options, user) {
   // if (!data.transfer) return true;
   //@ts-expect-error .documentClass
   if (!candidate.parent || !(candidate.parent instanceof CONFIG.Actor.documentClass)) return true;
   const macroChanges = candidate.changes.map(change => {
     if (change.value === "ItemMacro")
-   change.value = change.value.replace("ItemMacro", `ItemMacro.${candidate.origin}`); 
-   return change;
+      change.value = change.value.replace("ItemMacro", `ItemMacro.${candidate.origin}`);
+    return change;
   });
 
-  candidate.updateSource({"changes": macroChanges});
+  candidate.updateSource({ "changes": macroChanges });
   return true;
 }
 
@@ -1202,7 +1235,7 @@ export function daeInitActions() {
     return;
   }
 
-  
+
   // TODO put this back when doing item effects.
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
@@ -1215,8 +1248,6 @@ export function daeInitActions() {
   // Fixup ItemMacro references on transfer effects
   Hooks.on("preCreateActiveEffect", matchItemMacroName)
 
-
-  // Hooks.on("preUpdateActor", preUpdateActorHook);
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._preUpdate", preUpdateActor, "WRAPPER");
   Hooks.on("preUpdateActor", preUpdateActor);
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER");
@@ -1320,7 +1351,7 @@ export function DAEfromUuid(uuid) {
   return fromUuidSync(uuid);
 }
 
-export function DAEfromActorUuid(uuid) {
+export function DAEfromActorUuid(uuid): Actor | null {
   let doc = DAEfromUuid(uuid);
   if (doc instanceof CONFIG.Token.documentClass) doc = doc.actor;
 

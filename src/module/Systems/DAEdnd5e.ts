@@ -1,6 +1,6 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { actionQueue, addConvenientEffectsChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, fetchParams, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCubChange, removeTokenMagicChange } from "../dae";
+import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, fetchParams, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
 import { applyBaseActiveEffects, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
@@ -298,7 +298,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // Fix for dnd5e broken determine suppression (does not work for unlinked actors) + support condition immunity
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "OVERRIDE");
-
+    
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
 
@@ -803,6 +803,10 @@ function prepareData(wrapped) {
   if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
   applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
   preparePassiveSkills.bind(this)();
+  // Fix for dnd5e _prepareSpellcasting overwriting the _source pact.value
+  const pact = this.system.spells.pact;
+  if (pact)
+    pact.value = this._source.system.spells.pact.value;
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
@@ -1013,38 +1017,6 @@ async function _updateObject(event, formData) {
   await actor.update(diffObject(actor.overrides || {}, updateData), { diff: false });
 }
 
-// Update the actor active effects when editing an owned item
-// TODO remove this eventually
-/*
-function updateItem(candidate, updates, options, user) {
-  if (!candidate.isOwned) return true;
-  if (user !== game.user.id) return true;
-  if (updates.system?.attunement !== undefined || updates.system?.equipped !== undefined) { // item effects have changed - update transferred effects
-    toggleDisabledEffect(candidate, updates);
-  }
-  return true;
-}
-*/
-//TODO remove this eventually
-/*
-async function toggleDisabledEffect(item, updates: any) {
-  const equipped = updates.system?.equipped ?? item.system?.equipped;
-  const attuned = (updates.system?.attunement ?? item.system?.attunement) !== 1; // CONFIG>DND5E.attunementTypes.REQUIRED
-
-  const disabled = !equipped || !attuned;
-  let updateEffectsData = [];
-  let wasChanged = false;
-  for (let aef of duplicate(item.parent.effects)) { // remove all transferred effects for the item
-    const isTransfer = aef.flags?.dae?.transfer || aef.transfer === undefined;
-    if (isTransfer && aef.origin === item.uuid) {
-      wasChanged = true;
-      aef.disabled = disabled;
-    }
-    updateEffectsData.push(aef);
-  };
-  if (wasChanged) item.parent.updateEmbeddedDocuments("ActiveEffect", updateEffectsData)
-}
-*/
 function determineSuppression() {
   this.isSuppressed = false;
   if (this.disabled || (this.parent.documentName !== "Actor")) return;
@@ -1068,20 +1040,24 @@ function preUpdateItemHook(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   const actor = candidate.parent;
   if (!(actor instanceof Actor)) return true;
-  if (updates.system?.equipped === undefined && !updates.system?.attunement === undefined) return true;
+  if (updates.system?.equipped === undefined && updates.system?.attunement === undefined) return true;
   try {
-
+    const updatedItem = candidate.clone({
+      "system.equipped": updates.system?.equipped ?? candidate.system.equipped,
+      "system.attunement": updates.system?.attunement ?? candidate.system.attunement});
     const wasSuppressed = candidate.areEffectsSuppressed;
-    candidate.system.equipped = updates.system?.equipped ?? candidate.system.equipped;
-    candidate.system.attunement = updates.system?.attunement ?? candidate.system.attunement;
-    const isSuppressed = candidate.areEffectsSuppressed;
+    // const candidateEquipped = candidate.system.equipped; // tried deepClone but that updated the original item
+    // const candidateAttunement = candidate.system.attunement;
+    // candidate.system.equipped = updates.system?.equipped ?? candidate.system.equipped;
+    // candidate.system.attunement = updates.system?.attunement ?? candidate.system.attunement;
+    const isSuppressed = updatedItem.areEffectsSuppressed;
+    // candidate.system.equipped = candidateEquipped;
+    // candidate.system.attunement = candidateAttunement;
     if (wasSuppressed === isSuppressed) return true;
-
-    // Toggle macro.XX effects
     const tokens = actor.getActiveTokens();
     const token = tokens[0];
     for (let effect of candidate.effects) {
-      if (!effect.flags.dae.transfer || effect.origin !== candidate.uuid) continue;
+      if (!effect.transfer || effect.origin !== candidate.uuid) continue;
       for (let change of effect.changes) {
         if (isSuppressed) {
           switch (change.key) {
@@ -1094,6 +1070,13 @@ function preUpdateItemHook(candidate, updates, options, user) {
               break;
             case "macro.tokenMagic":
               removeTokenMagicChange(actor, change, tokens);
+              break;
+            case "macro.createItem":
+              //@ts-expect-error
+              const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && ef.flags?.dae?.transfer)
+              for (let effect of effects) {
+                removeCreateItemChange(change.value, actor, effect)
+              }
               break;
             default:
           }
@@ -1108,14 +1091,23 @@ function preUpdateItemHook(candidate, updates, options, user) {
               break;
             case "macro.tokenMagic":
               addTokenMagicChange(actor, change, tokens);
+              break;
+            case "macro.createItem":
+              //@ts-expect-error
+              const actorEffect = actor.effects.find(ef => ef.origin === candidate.uuid && ef.flags?.dae?.transfer)
+              addCreateItemChange(change.value, actor, actorEffect);
+              break;
             default:
           }
 
         }
       }
+      // Toggle macro.XX effects
       if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
         actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect, actor.getRollData());
     }
+  } catch (err) {
+    console.warn("dae | preItemUpdate ", err)
   } finally {
     return true;
   }

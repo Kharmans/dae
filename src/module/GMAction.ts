@@ -35,6 +35,38 @@ export let setupSocket = () => {
   socketlibSocket.register("deleteEffects", _deleteEffects);
   socketlibSocket.register("deleteUuid", _deleteUuid);
   socketlibSocket.register("executeMacro", _executeMacro);
+  socketlibSocket.register("createActorItem", _createActorItem);
+  socketlibSocket.register("removeActorItem", _removeActorItem);
+}
+
+async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuids: string[]}) {
+  const {uuid, itemUuid, itemUuids} = data;
+
+  for (let itemUuid of itemUuids ?? []) {
+    const item: any = await fromUuid(itemUuid);
+    if (!item?.isOwned) continue; // Just in case we are trying to delete a world/compendium item
+    await item.delete();
+  }
+}
+
+async function _createActorItem(data: {uuid: string, itemUuid: string, effectUuid: string}) {
+  const {uuid, itemUuid, effectUuid} = data;
+  const item = await fromUuid(itemUuid);
+  if (!item || !(item instanceof Item)) {
+    error(`createActorItem could not find item ${itemUuid}`);
+    return undefined;
+  }
+  let actor: Actor = DAEfromActorUuid(uuid);
+  if (!actor) {
+    error(`createActorItem could not find Actor ${uuid}`);
+  }
+  //@ts-expect-error createEmbeddedDocument toObject
+  const documents = await actor.createEmbeddedDocuments("Item", [item.toObject(false)]);
+  //@ts-expect-error CONFIG
+  const effect: CONFIG.ActiveEffect.documentClass = await fromUuid(effectUuid);
+  const itemsToDelete = effect?.flags.dae?.itemsToDelete ?? [];
+  itemsToDelete.push(documents[0].uuid);
+  await effect.update({"flags.dae.itemsToDelete": itemsToDelete});
 }
 
 async function _executeMacro(data: {action, args, lastArg, macroData: {change, name, effectData}}) {

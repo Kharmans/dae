@@ -1,7 +1,14 @@
+### 10.0.10
+* Added new macro effect, macro.createItem CUSTOM uuid, which will create the item referenced by the Uuuid on the target actor. On expiry/removal of the effect the item will be removed, which provides a way of providing a tempoary item/feature to an actor for the duration of the feature. Should simplify a variety of effects that would previously have required a macro to create the feature/item on the target actor.
+* Enhanced the effect editor so that dragging an item onto a change value field will place the uuid of the item in the field. (Useful with the above mentioned macro.createItem).
+* Fix for overriding system.equipped and system.attunement in preUpdateItem hooks when toggling suppressed status for items. Fixed an error where passive effects were not being disabled/enabled on equipped/attuned toggle.
+* Fix for self effects also being applied to the target.
+* Allow pact.max to be updated so that long rest will replenish up to the new pact.max value.
+
 ### 10.0.9
 * Added support for "metaData" to be passed to doEffects which will get added to the active effects applied to the target.
 * Added support for system.attributes.ac.calc as an override field to allow you to change the ac calculation on an actor and if set to custom to configure the damage calc via ac.custom.
-* Assed support for system.attributes.ac.custom to allow you to add effects to configure the ac calc of an actor.
+* Added support for system.attributes.ac.custom to allow you to add effects to configure the ac calc of an actor.
 * Fix for effects dr.all/di.all/dv.all not populating the appropriate dr/di/dv values.
 * Fix for getRollData breaking @prof max item uses.
 * Effects which specify an ItemMacro flag value, like DamageBonusMacro can now simply specify flags.midi-qol.DamageBonusMacro CUSTOM ItemMacro and dae will convert ItemMacro to an actor specific ItemMacro.UUID which will map to the item that caused the effect to be applied. For example Sneak Attack/Hunter's Mark in the sample items compendium (and many others) - means you do not need to rename the item on equip.
