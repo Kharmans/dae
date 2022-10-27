@@ -804,7 +804,7 @@ function prepareData(wrapped) {
   applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
   preparePassiveSkills.bind(this)();
   // Fix for dnd5e _prepareSpellcasting overwriting the _source pact.value
-  const pact = this.system.spells.pact;
+  const pact = this.system.spells?.pact;
   if (pact)
     pact.value = this._source.system.spells.pact.value;
   //TODO find another way to tdo this
@@ -1079,7 +1079,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
           switch (change.key) {
             case "macro.CE":
               const lastArg = prepareLastArgData(effect, actor);
-              addConvenientEffectsChange(change.value, actor.uuid, effect.origin, lastArg);
+              addConvenientEffectsChange(change.value, actor.uuid, effect.origin, {}, lastArg);
               break;
             case "macro.CUB":
               addCubChange(change.value, [token]);

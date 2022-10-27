@@ -262,6 +262,8 @@ export class DAESystem {
   public static addDAEMetaData(activeEffectData, item, options) {
     setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
     setProperty(activeEffectData, "flags.dae.transfer", false);
+    if (options.metaData) mergeObject(activeEffectData, options.metaData);
+
   }
 
   public static daeCustomEffect(actor, change): boolean {

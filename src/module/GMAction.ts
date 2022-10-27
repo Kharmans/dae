@@ -101,7 +101,8 @@ async function _setTileVisibility(data) {
 }
 
 async function _applyActiveEffects(data) {
-  return await applyActiveEffects(data.activate, data.targets, data.activeEffects, data.itemDuration, data.itemCardId, data.removeMatchLabel, data.toggleEffect)
+
+  return await applyActiveEffects(data);
 }
 async function _recreateToken(data: { userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
   await _createToken(data);
@@ -187,7 +188,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   if (globalThis.Sequencer && data.origin) globalThis.Sequencer.EffectManager.endEffects({ origin: data.origin })
 }
 
-export async function applyActiveEffects(activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect) {
+export async function applyActiveEffects({activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect, metaData = undefined}) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
 
   for (let tid of tokenList) {
@@ -290,7 +291,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
                 const newEffectData = duplicate(aeData);
                 newEffectData.changes = [duplicate(change)];
                 newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
-                sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData])
+                sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], {metaData})
                 // createSourceActorLink(change, aeData, tokenUuid, change.value);
                 return undefined;
               }
@@ -318,7 +319,7 @@ export async function applyActiveEffects(activate, tokenList, activeEffects, ite
         }
 
         if (dupEffects.length > 0) {
-          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects);
+          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, {metaData});
           setTimeout( () => {
           if (globalThis.EffectCounter) {
             for (let effectData of dupEffects) {

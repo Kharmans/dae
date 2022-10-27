@@ -1,3 +1,9 @@
+### 10.0.11
+* Fix for error thrown when a vheicle is in the sidebar (in prepareData).
+* Fixed support for flags["midi-qol"].castData being set correctly.
+* Fix in case you have a self target item AND specify self target in the effect. Thanks @thatLonelyBugbear
+* **Reminder** When reporting a bug for an active effect's behaviour please test with DAE enabled and disabled, particularly if reporting to the dnd5e/foundry githubs. They are unable to deal with issues caused by DAE. Also remember core foundry/dnd5e does NOT support referring to @abilities etc in the change.value (except if the field is a bonus field), nor does it allow you to modify derived fields like .mod or .save fields in the change key, so problems with those are DAE specific.
+
 ### 10.0.10
 * Added new macro effect, macro.createItem CUSTOM uuid, which will create the item referenced by the Uuuid on the target actor. On expiry/removal of the effect the item will be removed, which provides a way of providing a tempoary item/feature to an actor for the duration of the feature. Should simplify a variety of effects that would previously have required a macro to create the feature/item on the target actor.
 * Enhanced the effect editor so that dragging an item onto a change value field will place the uuid of the item in the field. (Useful with the above mentioned macro.createItem).

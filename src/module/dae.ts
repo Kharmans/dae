@@ -273,9 +273,14 @@ export function removeConvenientEffectsChange(effectName: string, uuid: string, 
   if (ceInterface) actionQueue.add(ceInterface.removeEffect.bind(ceInterface), { effectName, uuid, origin, metaData })
 }
 
-export function addConvenientEffectsChange(effectName: string, uuid: string, origin, metaData: {} = {}) {
+export function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, CEmetaData: {} = {}) {
   const ceInterface = game?.dfreds?.effectInterface;
-  actionQueue.add(ceInterface.addEffect.bind(ceInterface), { effectName, uuid, origin, metaData })
+  // actionQueue.add(ceInterface.addEffect.bind(ceInterface), { effectName, uuid, origin, metaData })
+  let ceEffect = game.dfreds.effects.all.find(e => e.name === effectName);
+  if (!ceEffect) return;
+  let effectData = mergeObject(ceEffect.convertToObject(), context.metaData)
+  game.dfreds.effectInterface?.addEffectWith({ effectData, uuid, origin: origin, CEmetaData });
+
 }
 export function addCubChange(conditionName, tokens: [Token], options = {}) {
   const cubInterface = game?.cub;
@@ -310,7 +315,7 @@ export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}
 }
 
 function _onCreateActiveEffect(...args) {
-  let [effect, options, userId] = args;
+  let [effect, context, userId] = args;
   if (userId !== game.user.id) return true;
   const parent = effect.parent;
   //@ts-ignore documentClass TODO v10
@@ -328,7 +333,7 @@ function _onCreateActiveEffect(...args) {
           }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor)
-            addConvenientEffectsChange(change.value, actor.uuid, effect.origin, lastArg);
+            addConvenientEffectsChange(change.value, actor.uuid, effect.origin, context, lastArg);
           }
           if (change.key === "macro.createItem") {
             addCreateItemChange(change.value, actor, effect)
@@ -444,11 +449,13 @@ async function _preCreateActiveEffect(wrapped, ...args) {
       } else newChanges.push(change);
     }
     if (changesChanged) updates["changes"] = newChanges;
-    this.updateSource(updates);
+    // this.updateSource(updates);
+    mergeObject(data, updates);
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {
-    let result = wrapped(...args);
+    console
+    let result = wrapped(data, options, user);
     return result;
   }
 }
@@ -489,7 +496,7 @@ export function preCreateCombatantHook(...args) {
 }
 
 export function _onUpdateActiveEffect(...args) {
-  let [effect, changes, options, userId] = args;
+  let [effect, changes, context, userId] = args;
   if (userId !== game.user.id) return true;
   const parent = effect.parent;
   //@ts-ignore documentClass
@@ -904,31 +911,31 @@ export async function doEffects(item, activate, targets = undefined, options: an
     fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false,
     selfEffects: "none"
   }) {
-  return await applyNonTransferEffects.bind(item)(activate, targets, options)
+  return await applyNonTransferEffects(item, activate, targets, options)
 }
 
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client if the token is not owned
-export async function applyNonTransferEffects(activate, targets, options: any = { whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false, fumble: false, tokenId: undefined, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, selfEffects: "none" }) {
+export async function applyNonTransferEffects(item, activate, targets, options: any = { whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false, fumble: false, tokenId: undefined, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, selfEffects: "none" }) {
   if (!targets) return;
   let macroLocation = "mixed";
   let appliedEffects = [];
   switch (options.selfEffects) {
     case "selfEffectsAlways":
-      appliedEffects = duplicate(this.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways));
+      appliedEffects = duplicate(item.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways));
       break;
     case "selfEffectsAll":
-      appliedEffects = duplicate(this.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae.selfTarget)));
+      appliedEffects = duplicate(item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae.selfTarget)));
       break
     case "none":
     default:
-      appliedEffects = duplicate(this.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae.selfTarget));
+      appliedEffects = duplicate(item.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget));
   }
   if (options.effectsToApply?.length > 0) appliedEffects = appliedEffects.filter(aeData => options.effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
-  const rollData = this.getRollData(); //TODO if not caster eval move to evalArgs call
+  const rollData = item.getRollData(); //TODO if not caster eval move to evalArgs call
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     for (let [changeIndex, change] of activeEffectData.changes.entries()) {
       const doRolls = allMacroEffects.includes(change.key);
@@ -946,20 +953,19 @@ export async function applyNonTransferEffects(activate, targets, options: any = 
         change,
         doRolls
       })
-      evalArgsOptions.item = this;
-      if (this.actor) evalArgsOptions.actor = this.actor;
+      evalArgsOptions.item = item;
+      if (item.actor) evalArgsOptions.actor = item.actor;
       let newChange = await evalArgs(evalArgsOptions)
-      /* let newChange = await evalArgs({ item: this, effectData: activeEffectData, context: rollData, 
-        actor: this.actor, change, spellLevel: options.spellLevel, damageTotal: options.damageTotal, 
+      /* let newChange = await evalArgs({ item: item, effectData: activeEffectData, context: rollData, 
+        actor: item.actor, change, spellLevel: options.spellLevel, damageTotal: options.damageTotal, 
         doRolls, critical: options.critical, fumble: options.fumble, 
         itemCardId: options.itemCardId, whisper: options.whisper }) */
       activeEffectData.changes[changeIndex] = newChange;
     };
-    activeEffectData.origin = this.uuid;
+    activeEffectData.origin = item.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
 
-    if (options.metaData) mergeObject(activeEffectData, options.metaData); // add any calling metadata
-    daeSystemClass.addDAEMetaData(activeEffectData, this, options)
+    daeSystemClass.addDAEMetaData(activeEffectData, item, options)
     appliedEffects[aeIndex] = activeEffectData;
   }
 
@@ -989,11 +995,12 @@ export async function applyNonTransferEffects(activate, targets, options: any = 
   );
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0) {
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, targets: gmTargets, itemDuration: this.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user.id, activate, activeEffects: appliedEffects, tokenList: gmTargets, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
 
+
   if (localTargets.length > 0) {
-    const result = await applyActiveEffects(activate, localTargets, appliedEffects, this.system.duration, options.itemCardId, options.removeMatchLabel, options.toggleEffect)
+    const result = await applyActiveEffects({activate, tokenList: localTargets, activeEffects: appliedEffects, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData})
   }
 }
 
@@ -1039,7 +1046,7 @@ function updateItemEffects(candidate, updates, options, user) {
   return true;
 }
 
-//TODO find out why this is here - does not seem to make any sense - registration commented out
+//TODO find out why this is here - does not seem to make any sense 
 export function preCreateItemHook(candidate, data, options, user) {
   return true;
   if (!candidate.isOwned) return true;
@@ -1243,7 +1250,7 @@ export function daeInitActions() {
   // If updating item effects recreate actor effects for updated item.
   Hooks.on("updateItem", updateItemEffects);
   Hooks.on("preUpdateItem", preUpdateItemHook);
-  Hooks.on("preCreateItem", preCreateItemHook);
+  // Hooks.on("preCreateItem", preCreateItemHook);
   Hooks.on("preCreateActiveEffect", preCreateActiveEffectHook);
   // Fixup ItemMacro references on transfer effects
   Hooks.on("preCreateActiveEffect", matchItemMacroName)
