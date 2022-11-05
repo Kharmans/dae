@@ -328,7 +328,8 @@ export async function macroActorUpdate(...args) {
     const update = {};
     update[fieldDef] = {oldValue: actorValue, updateValue: value};
     update[targetField] = value;
-    await actor.update(update);
+    return await socketlibSocket.execuateAsGM("_updateActor", {actorUuid: actor.uuid, update});
+    // await actor.update(update);
   } else if (args[0] === "off") {
     const {oldValue = undefined, updateValue} = getProperty(actor, fieldDef);
     let restoreValue;
@@ -361,7 +362,8 @@ export async function macroActorUpdate(...args) {
       const nulledField = nullField.join(".");
       update[nulledField] = null;
       update[targetField] = restoreValue;
-      await actor.update(update);
+      return await socketlibSocket.execuateAsGM("_updateActor", {actorUuid: actor.uuid, update})
+      // await actor.update(update);
       if (tactor.actor) { // TODO need to do something special for tokens
       }
     }

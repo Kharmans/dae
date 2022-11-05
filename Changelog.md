@@ -1,3 +1,7 @@
+### 10.0.12
+* Fix for macro.actorUpdate to work on non-owned tokens/actors.
+* Updated macro.createItem ItemUuid, permanent. This creates items that are not automatically removed on expiry of the effect.
+
 ### 10.0.11
 * Fix for error thrown when a vehicle is in the sidebar (in prepareData).
 * Fixed support for flags["midi-qol"].castData being set correctly.

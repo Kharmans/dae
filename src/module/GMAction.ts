@@ -37,6 +37,12 @@ export let setupSocket = () => {
   socketlibSocket.register("executeMacro", _executeMacro);
   socketlibSocket.register("createActorItem", _createActorItem);
   socketlibSocket.register("removeActorItem", _removeActorItem);
+  socketlibSocket.register("_updateActor", _updateActor)
+}
+
+async function _updateActor(data) {
+  const actor = await fromUuid(data.actorUuid);
+  return actor.update(data.update)
 }
 
 async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuids: string[]}) {
@@ -49,8 +55,9 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
   }
 }
 
-async function _createActorItem(data: {uuid: string, itemUuid: string, effectUuid: string}) {
-  const {uuid, itemUuid, effectUuid} = data;
+async function _createActorItem(data: {uuid: string, itemDetails: string, effectUuid: string}) {
+  const {uuid, itemDetails, effectUuid} = data;
+  const [itemUuid, option] = itemDetails.split(",").map(s=> s.trim());
   const item = await fromUuid(itemUuid);
   if (!item || !(item instanceof Item)) {
     error(`createActorItem could not find item ${itemUuid}`);
@@ -62,11 +69,13 @@ async function _createActorItem(data: {uuid: string, itemUuid: string, effectUui
   }
   //@ts-expect-error createEmbeddedDocument toObject
   const documents = await actor.createEmbeddedDocuments("Item", [item.toObject(false)]);
+  if (option === "permanent") return;
   //@ts-expect-error CONFIG
   const effect: CONFIG.ActiveEffect.documentClass = await fromUuid(effectUuid);
   const itemsToDelete = effect?.flags.dae?.itemsToDelete ?? [];
   itemsToDelete.push(documents[0].uuid);
   await effect.update({"flags.dae.itemsToDelete": itemsToDelete});
+  return documents;
 }
 
 async function _executeMacro(data: {action, args, lastArg, macroData: {change, name, effectData}}) {

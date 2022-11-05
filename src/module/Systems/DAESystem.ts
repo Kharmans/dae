@@ -215,7 +215,7 @@ export class DAESystem {
     specials["macro.itemMacro.GM"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["macro.actorUpdate"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["macro.createItem"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.createToken"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    // specials["macro.createToken"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
   };
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
   }

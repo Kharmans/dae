@@ -234,14 +234,16 @@ export function replaceAtFields(value, context, options: { blankValue: any | num
 */
 
 //@ts-ignore
-export function addCreateItemChange(itemId: string, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
-  actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", {uuid: actor.uuid, itemUuid: itemId, effectUuid: effect.uuid})
+export function addCreateItemChange(itemDetails: string, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
+  actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", {uuid: actor.uuid, itemDetails: itemDetails, effectUuid: effect.uuid})
 }
 
 //@ts-ignore
 export function removeCreateItemChange(itemId: string, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
-  actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", {uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags.dae.itemsToDelete})
-
+  let [uuid, option] = itemId.split(",").map(s => s.trim());
+  if (option === "permanent") return; // don't delete permanent items
+  if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
+  actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", {uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete})
 }
 
 export async function addTokenMagicChange(actor, change, tokens) {
