@@ -1,3 +1,6 @@
+### 10.0.13
+* Fix for some typos in 10.0.12 - thanks @Elwin
+
 ### 10.0.12
 * Fix for macro.actorUpdate to work on non-owned tokens/actors.
 * Updated macro.createItem ItemUuid, permanent. This creates items that are not automatically removed on expiry of the effect.

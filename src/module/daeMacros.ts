@@ -100,7 +100,7 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
 export async function createToken(tokenData, x, y) {
   let targetSceneId = canvas.scene.id;
   // requestGMAction(GMAction.actions.createToken, {userId: game.user.id, targetSceneId, tokenData, x, y})
-  return socketlibSocket.execuateAsGM("createToken", { userId: game.user.id, targetSceneId, tokenData, x, y })
+  return socketlibSocket.executeAsGM("createToken", { userId: game.user.id, targetSceneId, tokenData, x, y })
 }
 
 export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
@@ -328,8 +328,8 @@ export async function macroActorUpdate(...args) {
     const update = {};
     update[fieldDef] = {oldValue: actorValue, updateValue: value};
     update[targetField] = value;
-    return await socketlibSocket.execuateAsGM("_updateActor", {actorUuid: actor.uuid, update});
-    // await actor.update(update);
+    if (actor.isOwner) return await actor.update(update);
+    else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update});
   } else if (args[0] === "off") {
     const {oldValue = undefined, updateValue} = getProperty(actor, fieldDef);
     let restoreValue;
@@ -362,10 +362,8 @@ export async function macroActorUpdate(...args) {
       const nulledField = nullField.join(".");
       update[nulledField] = null;
       update[targetField] = restoreValue;
-      return await socketlibSocket.execuateAsGM("_updateActor", {actorUuid: actor.uuid, update})
-      // await actor.update(update);
-      if (tactor.actor) { // TODO need to do something special for tokens
-      }
+      if (actor.isOwner) return await actor.update(update);
+      else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update})
     }
   }
 }
