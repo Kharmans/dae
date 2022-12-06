@@ -1,3 +1,9 @@
+### 10.0.14
+* Fix for sw5e pact magic bug
+* Fix for inline rolls not being processed in some cases.
+* Fix for passive items with macro.createItem not creating/removing item on identify/equipped toggle.
+* Fix for items with a permanent duration not applying effects correctly.
+
 ### 10.0.13
 * Fix for some typos in 10.0.12 - thanks @Elwin
 

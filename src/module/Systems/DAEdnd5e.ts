@@ -806,7 +806,7 @@ function prepareData(wrapped) {
   // Fix for dnd5e _prepareSpellcasting overwriting the _source pact.value
   const pact = this.system.spells?.pact;
   if (pact)
-    pact.value = this._source.system.spells.pact.value;
+    pact.value = this._source.system.spells.pact?.value;
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
@@ -1052,7 +1052,8 @@ function preUpdateItemHook(candidate, updates, options, user) {
     const tokens = actor.getActiveTokens();
     const token = tokens[0];
     for (let effect of candidate.effects) {
-      if (!effect.transfer || effect.origin !== candidate.uuid) continue;
+      // if (!effect.transfer || effect.origin !== candidate.uuid) continue;
+      if (!effect.transfer) continue;
       for (let change of effect.changes) {
         if (isSuppressed) {
           switch (change.key) {

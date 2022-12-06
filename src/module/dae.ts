@@ -451,12 +451,12 @@ async function _preCreateActiveEffect(wrapped, ...args) {
       } else newChanges.push(change);
     }
     if (changesChanged) updates["changes"] = newChanges;
-    // this.updateSource(updates);
+
+    this.updateSource(updates);
     mergeObject(data, updates);
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {
-    console
     let result = wrapped(data, options, user);
     return result;
   }
@@ -964,6 +964,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
         itemCardId: options.itemCardId, whisper: options.whisper }) */
       activeEffectData.changes[changeIndex] = newChange;
     };
+
     activeEffectData.origin = item.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
 

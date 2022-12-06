@@ -410,6 +410,8 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
     }
   } else {
     switch (itemDuration.units) {
+      case "perm":
+        return { type: "seconds", seconds: undefined, rounds: undefined, turns: undefined};
       case "turn":
       case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value };
       case "round":

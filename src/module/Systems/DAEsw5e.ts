@@ -1,7 +1,6 @@
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
 import { daeSystemClass } from "../dae";
 import { DAESystemDND5E } from "./DAEdnd5e";
-import { DAESystem, ValidSpec } from "./DAESystem";
 
 //@ts-ignore
 const CONFIG: any = globalThis.CONFIG;
@@ -139,6 +138,7 @@ export class DAESystemSW5E extends DAESystemDND5E {
 
   // For DAE Config
 }
+
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);
 

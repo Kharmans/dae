@@ -62,19 +62,25 @@
       <label>{{ localize "dae.transfer.Name" }}</label>
       <input type="checkbox" name="transfer" {{ checked effect.transfer }} />
     </div>
+    <p class="notes" style="margin-bottom:1em"> 
     {{ localize "dae.transfer.Hint" }}
+    </p>
 
     <div class="form-group">
       <label>{{ localize "dae.SelfTarget.Name" }}</label>
       <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
     </div>
+    <p class="notes" style="margin-bottom:1em"> 
     {{ localize "dae.SelfTarget.Hint" }}
+    </p>
 
     <div class="form-group">
       <label>{{ localize "dae.SelfTargetAlways.Name" }}</label>
       <input type="checkbox" name="flags.dae.selfTargetAlways" {{ checked effect.flags.dae.selfTargetAlways }} />
     </div>
+    <p class="notes" style="margin-bottom:1em"> 
     {{ localize "dae.SelfTargetAlways.Hint" }}
+    </p>
 
     {{/if}}
 
@@ -84,7 +90,9 @@
         <input type="text" name="flags.core.statusId" value="{{ effect.flags.core.statusId }}" />
       </div>
     </div>
+    <p class="notes" style="margin-bottom:1em"> 
     {{ localize "dae.forceToHud.Hint" }}
+    </p>
 
     {{#if isItem}}
     <div class="form-group">
