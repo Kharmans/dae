@@ -261,8 +261,8 @@
 	"dae.displayTraits.Hint": "L'affichage des traits spéciaux comprend les changements d'effets actifs. Les valeurs saisies sont supposées correspondre à la valeur de l'effet pré-actif.",
 	"dae.ConditionalVisibility": "Conditional Visibility",
 	"dae.ConditionalVisibilityVision": "CV Vision",
-	"dae.noDupDamageMacro.Name": "No Duplicate Damage macros",
-	"dae.noDupDamageMacro.Hint": "If checked duplicate Damage Macros will be ignored",
+	"dae.noDupDamageMacro.Name": "Pas de doublon de Macros de Dégâts",
+	"dae.noDupDamageMacro.Hint": "Si coché les doublons des Macros de Dégâts seront ignorés",
 	"dae.DisableEffects.Name": "Désactiver tous les traitements d'effets actifs",
 	"dae.DisableEffects.Hint": "Si cette option est activée, aucun effet actif ne sera appliqué aux personnages. Utile si vous voulez changer les valeurs des caractères qui sont modifiées par les effets actifs.",
 	"dae.HandleEquip.Name": "Gérer les effets actifs des objets d'équipement et de déséquipement",
@@ -279,9 +279,10 @@
 	"dae.ShowInline.Name": "Afficher les résultats des jets en ligne",
 	"dae.ShowInline.Hint": "Les effets avec un jet en ligne afficheront les résultats du jet s'ils sont définis",
 	"dae.stackableOptions": {
-		"none": "Effects do not stack",
-		"multi": "Stacking effects apply the effect multiple times",
-		"count": "each stack increase stack count by 1"
+		"none": "Les effets ne s'ajoutent pas par origine", 
+    	"noneName": "Les effets ne s'ajoutent pas par nom", 
+    	"multi": "Superposer les effets applique le même effet plusieurs fois", 
+    	"count": "Chaque superposition augmente le compteur d'effets de 1"
 	},
 	"dae.SW5EHint": "Note For Translators - The following strings are ONLY required for the SW5E system",
 	"dae.SW5E": "sw5e",
@@ -340,6 +341,6 @@
 	"dae.sightAngle": "Angle de vue",
 	"dae.lightColor": "Light Color",
 	"dae.lightAnimation": "Light Animation",
-	"dae.lightAlpha": "Light ALpha",
+	"dae.lightAlpha": "Light Alpha",
 	"dae.lightAngle": "Light Angle"
 }
