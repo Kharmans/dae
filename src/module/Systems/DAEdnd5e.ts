@@ -157,22 +157,22 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.ac.AR"] = [0, -1];
 
     if (characterSpec.system.attributes.hd) specials["system.attributes.hd"] = [0, -1];
-    if (characterSpec.system.traits.weaponProf) {
+    if (characterSpec.system.traits?.weaponProf) {
       specials["system.traits.weaponProf.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials["system.traits.weaponProf.value"] = ["", -1];
       specials["system.traits.weaponProf.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     }
-    if (characterSpec.system.traits.languages) {
+    if (characterSpec.system.traits?.languages) {
       specials["system.traits.languages.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials["system.traits.languages.value"] = ["", -1];
       specials["system.traits.languages.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     }
-    if (characterSpec.system.traits.armorProf) {
+    if (characterSpec.system.traits?.armorProf) {
       specials["system.traits.armorProf.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials["system.traits.armorProf.value"] = ["", -1];
       specials["system.traits.armorProf.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     }
-    if (characterSpec.system.traits.toolProf) {
+    if (characterSpec.system.traits?.toolProf) {
       specials["system.traits.toolProf.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials["system.traits.toolProf.value"] = ["", -1];
       specials["system.traits.toolProf.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -486,7 +486,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
-              const item = globalThis.dnd5e.applications.ProficiencySelector.getBaseItem(id, { indexOnly: true })
+              const item = game.dnd5e.documents.Trait.getBaseItem(id, { indexOnly: true })
               // const item = await pack.getDocument(id);
               list[key] = item.name;
             }
@@ -637,24 +637,36 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.languages.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.languages));
       case "system.traits.ci.all":
-        setProperty(actor, "system.traits.ci.value", Object.keys(systemConfig.conditionTypes))
+        if (actor.system.traits.ci.value instanceof Set)
+          setProperty(actor, "system.traits.ci.value", new Set(Object.keys(systemConfig.conditionTypes)))
+        else 
+          setProperty(actor, "system.traits.ci.value", Object.keys(systemConfig.conditionTypes))
         return true;
       case "system.traits.ci.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.conditionTypes))
       case "system.traits.toolProf.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.toolProficiencies))
       case "system.traits.toolProf.all":
-        setProperty(actor, "system.traits.toolProf.value", Object.keys(systemConfig.toolProficiencies))
+        if (actor.system.traits.toolProf.value instanceof Set)
+          setProperty(actor, "system.traits.toolProf.value", new Set(Object.keys(systemConfig.toolProficiencies)))
+        else
+          setProperty(actor, "system.traits.toolProf.value", Object.keys(systemConfig.toolProficiencies))
         return true;
       case "system.traits.armorProf.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.armorProficiencies))
       case "system.traits.armorProf.all":
-        setProperty(actor, "system.traits.armorProf.value", Object.keys(systemConfig.armorProficiencies))
+        if (actor.system.traits.armorProf.value instanceof Set)
+          setProperty(actor, "system.traits.armorProf.value", new Set(Object.keys(systemConfig.armorProficiencies)))
+        else
+          setProperty(actor, "system.traits.armorProf.value", Object.keys(systemConfig.armorProficiencies))
         return true;
       case "system.traits.weaponProf.value": // TODO v10 armor and weapon proiciencies
         return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.weaponProficiencies))
       case "system.traits.weaponProf.all":
-        setProperty(actor, "system.traits.weaponProf.value", Object.keys(systemConfig.weaponProficiencies))
+        if (actor.system.traits.weaponProf.value instanceof Set)
+          setProperty(actor, "system.traits.weaponProf.value", new Set(Object.keys(systemConfig.weaponProficiencies)))
+        else
+          setProperty(actor, "system.traits.weaponProf.value", Object.keys(systemConfig.weaponProficiencies))
         return true;
       case "system.bonuses.weapon.damage":
         value = this.attackDamageBonusEval(change.value, actor)
@@ -781,6 +793,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 function getRollData(wrapped, ...args) {
   const data = wrapped(...args);
   data.flags = this.flags;
+  data.effects = this.effects;
   return data;
 }
 
@@ -1030,9 +1043,15 @@ function determineSuppression() {
   }
   if (this.parent) {
     const ci = this.parent.system.traits?.ci?.value;
-    const statusId = (this.label ?? "no effect").toLocaleLowerCase();
-    const ciSuppressed = (ci?.length && ci.some(c => statusId == c));
-    this.disabled = Boolean(ciSuppressed);
+    if (ci instanceof Set) {
+      const statusId = (this.label ?? "no effect").toLocaleLowerCase();
+      const ciSuppressed = (ci?.has(statusId));
+      this.disabled = Boolean(ciSuppressed);
+    } else {
+      const statusId = (this.label ?? "no effect").toLocaleLowerCase();
+      const ciSuppressed = (ci?.length && ci.some(c => statusId == c));
+      this.disabled = Boolean(ciSuppressed);
+    }
   }
 }
 

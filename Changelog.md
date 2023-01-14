@@ -1,3 +1,12 @@
+### 10.0.15
+* Fix for effect values that are now Sets, specifically traits and profiencies.
+* Fix for trait multipliers (damage immunities) with the change to sets.
+* Fix for effects being disabled due to condition immunities.
+
+Changes should be backwards compatible with 2.0.3 but have not tested in detail. So only upgrate if you have moved to dnd5e 2.1.x
+
+* Added ko-fi donation link https://ko-fi.com/tposney
+
 ### 10.0.14
 * Fix for sw5e pact magic bug
 * Fix for inline rolls not being processed in some cases.

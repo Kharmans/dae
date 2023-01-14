@@ -236,6 +236,7 @@ export class DAESystem {
   }
 
   public static doCustomArrayValue(actor, current, change, validValues) {
+    if (current instanceof Array) {
     if (getType(change.value) === "string" && change.value[0] === "-") {
       const checkValue = change.value.slice(1);
       const currentIndex = (current ?? []).indexOf(checkValue)
@@ -249,6 +250,24 @@ export class DAESystem {
       if (!validValues.includes(change.value)) return true;
       setProperty(actor, change.key, current.concat([change.value]))
     }
+  } else if (current instanceof Set) {
+    if (getType(change.value) === "string" && change.value[0] === "-") {
+      const checkValue = change.value.slice(1);
+      if (!current.has(checkValue)) return true;
+      if (!validValues.includes(checkValue)) return true;
+      //@ts-expect-error
+      const returnValue = deepClone(current);
+      returnValue.delete(change.checkValue);
+      setProperty(actor, change.key, returnValue);
+    } else {
+      if ((current ?? new Set()).has(change.value)) return true;
+      if (!validValues.includes(change.value)) return true;
+      //@ts-expect-error
+      let returnValue = deepClone(current);
+      returnValue.delete(change.value);
+      setProperty(actor, change.key, returnValue);
+    }
+  }
     return true;
   }
 
