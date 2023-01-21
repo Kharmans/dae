@@ -1,3 +1,7 @@
+### 10.0.16
+* Fix for macro.itemMacro effects in transfer effects( fixes the error no item macro for undefined warning).
+* Fix for doCustomArray value error thanks @Elwin
+
 ### 10.0.15
 * Fix for effect values that are now Sets, specifically traits and profiencies.
 * Fix for trait multipliers (damage immunities) with the change to sets.

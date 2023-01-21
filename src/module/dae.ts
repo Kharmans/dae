@@ -717,7 +717,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         })
       } else args = change.value;
       if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro")) {
-        const macro = await getMacro({ change, name: args[0] }, null, effectData);
+        const macro = await getMacro({ change, name: args[0] }, theItem, effectData);
         if (!macro) {
           //TODO localize this
           if (action !== "off") {
@@ -1015,7 +1015,6 @@ function preUpdateItemHook(candidate, updates, options, user) {
 function updateItemEffects(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;
-
   if (options.isAdvancement) {
     console.warn(`Dae | Skipping effect re-creation for class advancement ${candidate.parent?.name ?? ""} item ${candidate.name}`)
     return;
@@ -1049,13 +1048,26 @@ function updateItemEffects(candidate, updates, options, user) {
   return true;
 }
 
-//TODO find out why this is here - does not seem to make any sense 
+// When an item is created any effects have a source that points to the original item
+// Need to update to refer to the created item
+// THe id in the candidate is not the final _id
 export function preCreateItemHook(candidate, data, options, user) {
   return true;
   if (!candidate.isOwned) return true;
-  if (data.effects) {
-    candidate.effects.delete();
-    candidate.updateSource({ "effects": data.effects });
+  return true;
+}
+// When an item is created any effects have a source that points to the original item
+// Need to update to refer to the created item
+// Can't do in precreate since the _id is wrong.
+export function createItemHook(candidate, options, user) {
+  if (!candidate.isOwned) return;
+  if (candidate.effects) {
+    const newEffects = duplicate(candidate._source.effects).map(ef => {
+      ef.origin = candidate.uuid;
+      return ef;
+    });
+
+    candidate.update({ "effects": newEffects });
   }
   return true;
 }
@@ -1254,6 +1266,8 @@ export function daeInitActions() {
   Hooks.on("updateItem", updateItemEffects);
   Hooks.on("preUpdateItem", preUpdateItemHook);
   // Hooks.on("preCreateItem", preCreateItemHook);
+  Hooks.on("createItem", createItemHook);
+
   Hooks.on("preCreateActiveEffect", preCreateActiveEffectHook);
   // Fixup ItemMacro references on transfer effects
   Hooks.on("preCreateActiveEffect", matchItemMacroName)

@@ -257,14 +257,14 @@ export class DAESystem {
       if (!validValues.includes(checkValue)) return true;
       //@ts-expect-error
       const returnValue = deepClone(current);
-      returnValue.delete(change.checkValue);
+      returnValue.delete(checkValue);
       setProperty(actor, change.key, returnValue);
     } else {
       if ((current ?? new Set()).has(change.value)) return true;
       if (!validValues.includes(change.value)) return true;
       //@ts-expect-error
       let returnValue = deepClone(current);
-      returnValue.delete(change.value);
+      returnValue.add(change.value);
       setProperty(actor, change.key, returnValue);
     }
   }

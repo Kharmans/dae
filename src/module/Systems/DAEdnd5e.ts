@@ -132,19 +132,19 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.encumbrance.max"] = [0, -1];
 
     specials["system.traits.di.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.di.value"] = ["",];
+    specials["system.traits.di.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dr.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dr.value"] = ["", -1];
+    specials["system.traits.dr.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dr.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dr.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dv.value"] = ["", -1];
+    specials["system.traits.dv.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.ci.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.ci.value"] = ["", -1];
+    specials["system.traits.ci.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.ci.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.size"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
 
