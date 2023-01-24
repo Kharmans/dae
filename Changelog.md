@@ -1,3 +1,7 @@
+### 10.0.17
+* Fix for system.traits.dr|di|dv.all not being applied correctly
+* updated ja.json
+
 ### 10.0.16
 * Fix for macro.itemMacro effects in transfer effects( fixes the error no item macro for undefined warning).
 * Fix for doCustomArray value error thanks @Elwin

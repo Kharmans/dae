@@ -595,7 +595,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdr.all":
       case "system.traits.sdv.all":
         const key = change.key.replace(".all", ".value")
-        setProperty(actor, key, Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
+        if (getProperty(actor, key) instanceof Set)
+          setProperty(actor, key, new Set(Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k))));
+        else
+          setProperty(actor, key, Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
         return true;
       case "system.traits.di.value":
       case "system.traits.dr.value":
@@ -632,7 +635,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         setProperty(actor, change.key, value)
         return true;
       case "system.traits.languages.all":
-        setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
+        if (actor.system.traits.languages.value instanceof Set)
+          setProperty(actor, "system.traits.languages.value", new Set(Object.keys(systemConfig.languages)))
+        else 
+          setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
         return true;
       case "system.traits.languages.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.languages));
