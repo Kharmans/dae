@@ -1,3 +1,6 @@
+### 10.0.18
+* Fix for DAE breaking scale values in dnd 2.1.3.
+
 ### 10.0.17
 * Fix for system.traits.dr|di|dv.all not being applied correctly
 * updated ja.json
