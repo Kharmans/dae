@@ -72,6 +72,10 @@ async function _createActorItem(data: {uuid: string, itemDetails: string, effect
   if (option === "permanent") return;
   //@ts-expect-error CONFIG
   const effect: CONFIG.ActiveEffect.documentClass = await fromUuid(effectUuid);
+  if (!effect) {
+    console.warn(`dae | createActorItem could not fetch ${effectUuid}`);
+    return documents;
+  }
   const itemsToDelete = effect?.flags.dae?.itemsToDelete ?? [];
   itemsToDelete.push(documents[0].uuid);
   await effect.update({"flags.dae.itemsToDelete": itemsToDelete});

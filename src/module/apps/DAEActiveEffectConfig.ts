@@ -20,6 +20,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ConditionalVisibilityList;
   ConditionalVisibilityVisionList;
   ATLPresets;
+  ATLVisionModes;
   validFields;
   constructor(object = {}, options = {}) {
     super(object, options);
@@ -76,6 +77,15 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (atlActive) {
       this.ATLPresets = {};
       game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets[preset.name] = preset.name);
+      this.ATLVisionModes = 
+      {
+        "blind": i18n("VISION.ModeBlindness"),
+        "basic": i18n("VISION.ModeBasicVision"),
+        "darkvision" : i18n("VISION.ModeDarkvision"),
+        "monochromatic" : i18n("VISION.ModeMonochromatic"),
+        "tremorsense" : i18n("VISION.ModeTremorsense"),
+        "lightAmplification": i18n("VISION.ModeLightAmplification")
+      };
     }
     this.validFields = { "__": "" }
     this.validFields = validSpecsToUse.allSpecs
@@ -127,6 +137,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
     if (spec === "ATL.preset") return this.ATLPresets;
+    if (spec === "ATL.sight.visionMode") return this.ATLVisionModes;
 
     return daeSystemClass.getOptionsForSpec(spec);
   }

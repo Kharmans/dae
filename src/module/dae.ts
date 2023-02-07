@@ -344,9 +344,9 @@ function _onCreateActiveEffect(...args) {
           if (tokenMagic && change.key === "macro.tokenMagic" && token)
             addTokenMagicChange(parent, change, tokens); //TODO check disabled
         }
-        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           actionQueue.add(daeMacro, "on", parent, effect.toObject(false), {}); // TODO revisit to see if passing the effect is ok
-
+        }
       } catch (err) {
         console.warn("dae | create effect error", err);
       } finally {
@@ -1060,14 +1060,14 @@ export function preCreateItemHook(candidate, data, options, user) {
 // Need to update to refer to the created item
 // Can't do in precreate since the _id is wrong.
 export function createItemHook(candidate, options, user) {
+  if (user !== game.user.id) return;
   if (!candidate.isOwned) return;
   if (candidate.effects) {
     const newEffects = duplicate(candidate._source.effects).map(ef => {
       ef.origin = candidate.uuid;
       return ef;
     });
-
-    candidate.update({ "effects": newEffects });
+    candidate.update({"effects": []}).then(() => candidate.update({ "effects": newEffects }));
   }
   return true;
 }

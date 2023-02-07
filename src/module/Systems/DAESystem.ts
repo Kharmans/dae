@@ -362,82 +362,49 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
   
   //@ts-ignore
   const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-  if (isNewerVersion(game.version, "10") && (false && game.modules.get("ATE")?.active)) {
-    /*ATL.
-        alpha               | 0.0:1.0
-        elevation           | #
-        height              | #
-        width               | #
-        hidden              | true/false
-        rotation            | 0:360
-        detectionModes      | {id: 'X', enabled: true/false, range: #}
-        light.
-          alpha         | 0.00:1.00
-          angle         | 0:360
-          animation     | {intensity: 1:10, reverse: true/false, speed: 1:10, type: "X"}
-          attenuation   | 0.00:1.00
-          bright        | #
-          color         | #XXXXXX
-          coloration    | 0:10 (see below)
-          contrast      | -1.00:1.00
-          dim           | #
-          luminosity    | -1.00:1.00
-          saturation    | -1.00:1.00
-          shadows       | 0.00:1.00
-          darkness.
-                    max  | 0:1 (Default 1)
-                    min  | 0:1 (Default 0)
-        sight.
-          angle         | 0:360
-          attenuation   | 0.00:1.00
-          brightness    | -1.00:1.00
-          color         | #XXXXXX
-          contrast      | -1.00:1.00
-          enabled       | true/false
-          range         | #
-          saturation    | -1.00:1.00
-          visionMode    | X (see below)
-        texture.
-          offsetX       | #?
-          offsetY       | #?
-          rotation      | 0:360
-          scaleX        | 0.2:3.0
-          scaleY        | 0.2:3.0
-          src           | img/path.webp
-          tint          | #XXXXXX
-      */
-      specials["ATE.alpha"] =  [0, -1];
-      specials["ATE.elevation"] =  [0, -1];
-      specials["ATE.height"] =  [0, -1];
-      specials["ATE.width"] =  [0, -1];
-      specials["ATE.hidden"] =  [0, -1];
-      specials["ATE.rotation"] =  [0, -1];
-      specials["ATE.detetionModes"] =  ["", -1];
-      // specials["ATE.detectionModes.id"] =  ["", -1];
-      // specials["ATE.detectionModes.enabled"] =  [false, -1];
-      // specials["ATE.detectionModes.range"] =  [0, -1];
+  if (isNewerVersion(game.version, "10") && (game.modules.get("ATL")?.active)) {
+    for (let label of ["dimSight", "brightSight"]) {
+      specials[`ATL.${label}`] = [0, -1];
+    }
+    specials["ATL.alpha"] = [0,-1];
+    specials["ATL.elevation"] = [0,-1];
+    specials["ATL.height"] = [0,-1];
+    specials["ATL.width"] = [0,-1];
+    specials["ATL.hidden"] = [false,-1];
+    specials["ATL.rotation"] = [0,-1];
 
+    specials["ATL.light.animation"] = ["", -1]; //{intensity: 1:10, reverse: true/false, speed: 1:10, type: "X"}	Light Animation settings, see below for Animation Types
+    specials["ATL.light.alpha"] = [0,-1];
+    specials["ATL.light.angle"] = [0,-1];
+    specials["ATL.light.attenuation"] = [0,-1];
+    specials["ATL.light.bright"] = [0,-1];
+    specials["ATL.light.color"] = [0,-1];
+    specials["ATL.light.coloration"] = [0,-1];
+    specials["ATL.light.contrast"] = [0,-1];
+    specials["ATL.light.dim"] = [0,-1];
+    specials["ATL.light.luminosity"] = [0,-1];
+    specials["ATL.light.saturation"] = [0,-1];
+    specials["ATL.light.shadows"] = [0,-1];
+    specials["ATL.light.darkness.max"] = [0,-1];
+    specials["ATL.light.darkness.min"] = [0,-1];
+    specials["ATL.detectionModes.basic.range"] = [0, -1];
+    specials["ATL.detectionModes.seeInvisibility.range"] = [0, -1];
+    specials["ATL.detectionModes.senseInvisibility.range"] = [0, -1];
+    specials["ATL.detectionModes.feelTremor.range"] = [0, -1];
+    specials["ATL.detectionModes.seeAll.range"] = [0, -1];
+    specials["ATL.detectionModes.senseAll.range"] = [0, -1];
+    specials["ATL.sight.visionMode"] = ["",-1]; // selection list
+    specials["ATL.light.animation"] = ["", -1]; // json string
+    specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["ATL.sight.angle"] = [0,-1];
+    specials["ATL.sight.attenuation"] = [0,-1];
+    specials["ATL.sight.brightness"] = [0,-1];
+    specials["ATL.sight.contrast"] = [0,-1];
+    specials["ATL.sight.enabled"] = [0,-1];
+    specials["ATL.sight.range"] = [0,-1];
+    specials["ATL.sight.saturation"] = [0,-1];
+    specials["ATL.sight.color"] = ["", 0-1];
 
-    specials["ATE.sight.angle"] =  [0, -1];
-    specials["ATE.sight.animation"] =  ["", -1]; //
-    specials["ATE.sight.attenuation"] =  [0, -1];
-    specials["ATE.sight.bright"] =  [0, -1];
-    specials["ATE.sight.color"] =  [0, -1];
-    specials["ATE.sight.coloration"] =  [0, -1];
-    specials["ATE.sight.contrast"] =  [0, -1];
-    specials["ATE.sight.dim"] =  [0, -1];
-    specials["ATE.sight.luminosity"] =  [0, -1];
-    specials["ATE.sight.saturation"] =  [0, -1];
-    specials["ATE.sight.shadows"] =  [0, -1];
-    specials["ATE.sight.darkness.max"] = [0, -1];
-    specials["ATE.sight.darkness.min"] = [0, -1];
-    specials["ATE.texture.offsetX"] =  [0, -1];
-    specials["ATE.texture.offsetY"] =  [0, -1];
-    specials["ATE.texture.rotation"] =  [0, -1];
-    specials["ATE.texture.scaleX"] =  [0, -1];
-    specials["ATE.texture.scaleY"] =  [0, -1];
-    specials["ATE.texture.src"] =  ["", -1];
-    specials["ATE.texture.tint"] =  [0, -1];
   } else if (game.modules.get("ATL")?.active) {
     // support new version of ATL
     if (isNewerVersion("0.3.04", game.modules.get("ATL").version)) {

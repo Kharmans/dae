@@ -1,3 +1,8 @@
+### 10.0.19
+* Updated ATL.xxxx effects in the auto complete. Have not tested evereything. If someone who uses the module could test it I would be grateful. I based the settings on https://github.com/kandashi/Active-Token-Lighting/wiki/Key-Reference
+* Fix for some instances of createItem duplicating effects
+
+
 ### 10.0.18
 * Fix for DAE breaking scale values in dnd 2.1.3.
 
