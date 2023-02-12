@@ -1,5 +1,6 @@
 
 import { debug, warn, log, i18n, error } from "../dae";
+import { effectIsTransfer } from "./dae";
 
 //@ts-ignore
 const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
@@ -381,8 +382,8 @@ export async function tobMapper(iconsPath = "icons/TOB") {
 }
 
 export async function fixTransferEffects(actor) {
-  let items = actor.items.filter(i => i.effects.some(e => e.transfer));
-  let transferEffects = actor.effects.filter(e => (!e.isTmporary || e.flags.dae?.transfer) && e.origin.includes("Item."));
+  let items = actor.items.filter(i => i.effects.some(e => effectIsTransfer(e)));
+  let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && e.origin.includes("Item."));
   console.warn("Deleing effects", transferEffects)
   await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
   const toCreate = items.map(i => i.toObject())

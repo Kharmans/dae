@@ -38,6 +38,14 @@ export let setupSocket = () => {
   socketlibSocket.register("createActorItem", _createActorItem);
   socketlibSocket.register("removeActorItem", _removeActorItem);
   socketlibSocket.register("_updateActor", _updateActor)
+  socketlibSocket.register("itemReplaceEffects", _itemReplaceEffects);
+}
+
+async function _itemReplaceEffects(data) {
+  //@ts-expect-error
+  const item = fromUuidSync(data.itemUuid);
+  // await item.update({"effects": []});
+  return item.update({"effects": data.effects});
 }
 
 async function _updateActor(data) {
@@ -67,9 +75,12 @@ async function _createActorItem(data: {uuid: string, itemDetails: string, effect
   if (!actor) {
     error(`createActorItem could not find Actor ${uuid}`);
   }
+  if (actor.token) { // need to delay for unliked tokens as there is a timing issue
+    await new Promise(resolve => setTimeout(() => resolve(true), 250))
+  }
   //@ts-expect-error createEmbeddedDocument toObject
   const documents = await actor.createEmbeddedDocuments("Item", [item.toObject(false)]);
-  if (option === "permanent") return;
+  if (option === "permanent") return documents;
   //@ts-expect-error CONFIG
   const effect: CONFIG.ActiveEffect.documentClass = await fromUuid(effectUuid);
   if (!effect) {

@@ -240,6 +240,7 @@ export function addCreateItemChange(itemDetails: string, actor: Actor, effect: g
 
 //@ts-ignore
 export function removeCreateItemChange(itemId: string, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
+
   let [uuid, option] = itemId.split(",").map(s => s.trim());
   if (option === "permanent") return; // don't delete permanent items
   if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
@@ -366,7 +367,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
   if (!candidate.flags?.dae?.specialDuration) candidate.updateSource({ "flags.dae.specialDuration": [] });
   if (getProperty(candidate, "flags.dae.stackable") === undefined) candidate.updateSource({ "flags.dae.stackable": "multi" });
   const stackable = getProperty(candidate, "flags.dae.stackable");
-  if (getProperty(candidate, "flags.dae.transfer") && ["noneName", "none"].includes(stackable)) {
+  if (effectIsTransfer(candidate) && ["noneName", "none"].includes(stackable)) {
     const parent = candidate.parent;
     if (!parent) return true;
     const hasExisting = parent.effects.filter(ef => {
@@ -386,6 +387,12 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
     return false;
   }
   return true;
+}
+
+export async function _preCreateItem(wrapped, ...args) {
+  
+  return wrapped(...args)
+
 }
 
 async function _preCreateActiveEffect(wrapped, ...args) {
@@ -1025,12 +1032,12 @@ function updateItemEffects(candidate, updates, options, user) {
     // delete all actor effects for the given item
     let deletions = [];
     for (let aef of candidate.parent.effects) { // remove all transferred effects for the item
-      const isTransfer = aef.flags?.dae?.transfer;
+      const isTransfer = aef.flags.dae?.transfer;
       if (isTransfer && (aef.origin === itemUuid)) deletions.push(aef.id);
     };
     // Now get all the item transfer effects
     let additions = candidate.effects.filter(aef => {
-      const isTransfer = aef.flags?.dae?.transfer === true || aef.transfer === true;
+      const isTransfer = aef.transfer;
       setProperty(aef.flags, "dae.transfer", isTransfer);
       return isTransfer;
     });
@@ -1053,23 +1060,12 @@ function updateItemEffects(candidate, updates, options, user) {
 // THe id in the candidate is not the final _id
 export function preCreateItemHook(candidate, data, options, user) {
   return true;
-  if (!candidate.isOwned) return true;
-  return true;
 }
 // When an item is created any effects have a source that points to the original item
 // Need to update to refer to the created item
 // Can't do in precreate since the _id is wrong.
 export function createItemHook(candidate, options, user) {
-  if (user !== game.user.id) return;
-  if (!candidate.isOwned) return;
-  if (candidate.effects) {
-    const newEffects = duplicate(candidate._source.effects).map(ef => {
-      ef.origin = candidate.uuid;
-      return ef;
-    });
-    candidate.update({"effects": []}).then(() => candidate.update({ "effects": newEffects }));
-  }
-  return true;
+  return;
 }
 
 export /*async*/ function preUpdateActor(candidate, updates, options, user) {
@@ -1264,9 +1260,9 @@ export function daeInitActions() {
 
   // If updating item effects recreate actor effects for updated item.
   Hooks.on("updateItem", updateItemEffects);
-  Hooks.on("preUpdateItem", preUpdateItemHook);
+  // Hooks.on("preUpdateItem", preUpdateItemHook);
   // Hooks.on("preCreateItem", preCreateItemHook);
-  Hooks.on("createItem", createItemHook);
+  // Hooks.on("createItem", createItemHook);
 
   Hooks.on("preCreateActiveEffect", preCreateActiveEffectHook);
   // Fixup ItemMacro references on transfer effects
@@ -1277,6 +1273,8 @@ export function daeInitActions() {
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "WRAPPER");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "WRAPPER");
+  // libWrapper.register("dae", "CONFIG.Item.documentClass.prototype._preCreate", _preCreateItem, "WRAPPER");
+
 
   Hooks.on("createActiveEffect", _onCreateActiveEffect);
   Hooks.on("deleteActiveEffect", _onDeleteActiveEffect);
@@ -1404,4 +1402,9 @@ export function tokenForActor(actor): Token | undefined {
   if (!tokens.length) return undefined;
   const controlled = tokens.filter(t => t._controlled);
   return controlled.length ? controlled.shift() : tokens.shift();
+}
+
+export function effectIsTransfer(effect) {
+  if (effect.transfer !== undefined) return effect.transfer;
+  return effect.flags.dae?.transfer;
 }

@@ -1,5 +1,5 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
-import { confirmDelete, simpleCalendarInstalled } from "../dae"
+import { confirmDelete, effectIsTransfer, simpleCalendarInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { EditOwnedItemEffectsActiveEffect } from "../editItemEffects/classes/owned-item-effect";
 import { ValidSpec } from "../Systems/DAESystem";
@@ -99,7 +99,7 @@ getData() {
     else {
       setProperty(e, "flags.dae.itemName", "????");
     }
-    e.transfer = e.transfer ?? e.flags?.dae?.transfer ?? true;
+    e.transfer = effectIsTransfer(e) ?? true;
   });
 
   let efl = CONFIG.statusEffects

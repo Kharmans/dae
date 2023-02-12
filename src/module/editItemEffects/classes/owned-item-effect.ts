@@ -24,7 +24,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     dataToCreate.transfer = false;
     this.transfer = false;
     debug('Attempting create on Owned Item Effect', context, dataToCreate);
-
+    console.error('Attempting create on Owned Item Effect', context, dataToCreate);
     try {
       await this._preCreate(dataToCreate, context, game.userId);
     } catch (error) {
@@ -120,7 +120,7 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     }
 
     debug('Attempting update on Owned Item Effect', newEffects);
-    
+    console.error('Attempting update on Owned Item Effect', newEffects);
     try {
       await embeddedItem.update({
         effects: newEffects

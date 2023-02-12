@@ -1,3 +1,8 @@
+### 10.0.20
+* Fix for consumable items imported from dbd importer duplicating non-transfer effects on the imported actor. May require a fix from dnd importer as well.
+* More cleanup of macro.createItem calls. Needed to put in a dealy for macro.createItem n unlinked tokens.
+* Fix for some more cases of duplicating effects on item create.
+
 ### 10.0.19
 * Updated ATL.xxxx effects in the auto complete. Have not tested evereything. If someone who uses the module could test it I would be grateful. I based the settings on https://github.com/kandashi/Active-Token-Lighting/wiki/Key-Reference
 * Fix for some instances of createItem duplicating effects

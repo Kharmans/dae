@@ -1,6 +1,6 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, fetchParams, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
+import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
 import { applyBaseActiveEffects, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
@@ -1115,7 +1115,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
               break;
             case "macro.createItem":
               //@ts-expect-error
-              const actorEffect = actor.effects.find(ef => ef.origin === candidate.uuid && ef.flags?.dae?.transfer)
+              const actorEffect = actor.effects.find(ef => ef.origin === candidate.uuid && ef.flags.dae?.transfer)
               addCreateItemChange(change.value, actor, actorEffect);
               break;
             default:
