@@ -1,3 +1,8 @@
+### 10.0.21
+* macro.createItemRunMacro behaves the same as macro.createItem, but in addition when the item is created on the actor DAE will run the item's Item Macro with args[0] set to "onCreate" allowing you to save the uuid of the created item (passed in lastArg) somewhere for future reference.
+* Items created via macro.createItem will replicate the dnd5e base behaviour of being set not proficient, not equipped and not identified, rather than copying the values of the stored item.
+* Fix for effects that have multiple macro.CE changes in them.
+
 ### 10.0.20
 * Fix for consumable items imported from dbd importer duplicating non-transfer effects on the imported actor. May require a fix from dnd importer as well.
 * More cleanup of macro.createItem calls. Needed to put in a dealy for macro.createItem n unlinked tokens.

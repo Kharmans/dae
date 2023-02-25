@@ -234,8 +234,8 @@ export function replaceAtFields(value, context, options: { blankValue: any | num
 */
 
 //@ts-ignore
-export function addCreateItemChange(itemDetails: string, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
-  actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", {uuid: actor.uuid, itemDetails: itemDetails, effectUuid: effect.uuid})
+export function addCreateItemChange(change: {key: string, value: string}, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
+  actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", {uuid: actor.uuid, itemDetails: change.value, effectUuid: effect.uuid, callItemMacro: change.key === "macro.createItemRunMacro"})
 }
 
 //@ts-ignore
@@ -278,10 +278,12 @@ export function removeConvenientEffectsChange(effectName: string, uuid: string, 
 
 export function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, CEmetaData: {} = {}) {
   const ceInterface = game?.dfreds?.effectInterface;
-  // actionQueue.add(ceInterface.addEffect.bind(ceInterface), { effectName, uuid, origin, metaData })
   let ceEffect = game.dfreds.effects.all.find(e => e.name === effectName);
   if (!ceEffect) return;
   let effectData = mergeObject(ceEffect.convertToObject(), context.metaData)
+  actionQueue.add(ceInterface.addEffectWith.bind(ceInterface), { effectData, uuid, origin, overlay: false })
+  return;
+
   game.dfreds.effectInterface?.addEffectWith({ effectData, uuid, origin: origin, CEmetaData });
 
 }
@@ -338,8 +340,8 @@ function _onCreateActiveEffect(...args) {
             const lastArg = prepareLastArgData(effect, actor)
             addConvenientEffectsChange(change.value, actor.uuid, effect.origin, context, lastArg);
           }
-          if (change.key === "macro.createItem") {
-            addCreateItemChange(change.value, actor, effect)
+          if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
+            addCreateItemChange(change, actor, effect)
           }
           const tokenMagic = globalThis.TokenMagic;
           if (tokenMagic && change.key === "macro.tokenMagic" && token)
@@ -531,7 +533,7 @@ export function _onUpdateActiveEffect(...args) {
               removeConvenientEffectsChange(change.value, parent.uuid, undefined, lastArg);
             }
             if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(parent, change, tokens);
-            if (change.key === "macro.createItem") {
+            if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
               removeCreateItemChange(change.value, parent, effect)
             }
           }
@@ -548,8 +550,8 @@ export function _onUpdateActiveEffect(...args) {
               addConvenientEffectsChange(change.value, parent.uuid, undefined, lastArg);
             }
             if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(parent, change, tokens);
-            if (change.key === "macro.createItem") {
-              addCreateItemChange(change.value, parent, effect)
+            if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
+              addCreateItemChange(change, parent, effect)
             }
           }
           if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
@@ -615,7 +617,7 @@ export function _onDeleteActiveEffect(...args) {
       if (effect.changes) {
         for (let change of effect.changes) {
           if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
-          if (change.key === "macro.createItem") {
+          if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             removeCreateItemChange(change.value, actor, effect)
           }
           if (ceActive && change.key === "macro.CE") {
@@ -848,6 +850,7 @@ export async function evalArgs({ effectData = null, item, context, actor, change
       case "macro.CUB":
       case "macro.tokenMagic":
       case "macro.createItem":
+      case "macro.createItemRunMacro":
       case "macro.summonToken":
         break;
       default:

@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro, actionQueue, tokenForActor } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro, actionQueue, tokenForActor, daeMacro } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
 
 export class GMActionMessage {
@@ -63,7 +63,7 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
   }
 }
 
-async function _createActorItem(data: {uuid: string, itemDetails: string, effectUuid: string}) {
+async function _createActorItem(data: {uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean}) {
   const {uuid, itemDetails, effectUuid} = data;
   const [itemUuid, option] = itemDetails.split(",").map(s=> s.trim());
   const item = await fromUuid(itemUuid);
@@ -78,8 +78,25 @@ async function _createActorItem(data: {uuid: string, itemDetails: string, effect
   if (actor.token) { // need to delay for unliked tokens as there is a timing issue
     await new Promise(resolve => setTimeout(() => resolve(true), 250))
   }
+  //@ts-expect-error onDropSingleItem toObject
+  const itemData = await actor.sheet._onDropSingleItem(item.toObject(false));
+  if (!itemData) return [];
   //@ts-expect-error createEmbeddedDocument toObject
-  const documents = await actor.createEmbeddedDocuments("Item", [item.toObject(false)]);
+  const documents = await actor.createEmbeddedDocuments("Item", [itemData]);
+  if (data.callItemMacro) {
+    const change = {key: "macro.itemMacro"};
+    for (let item of documents) {
+      const effectData = {itemUuid: item.uuid, flags: {}}
+      const macro = await getMacro({change, name: ""}, item, effectData);
+      let lastArg = mergeObject({itemUuid: item.uuid}, {
+        //@ts-ignore - undefined fields
+        actorId: actor.id,
+        actorUuid: actor.uuid,
+      }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
+      let data = { action: "onCreate", lastArg, args: [], macroData: { change, name: "" } };
+      const result = await macro.execute(data.action, ...data.args, data.lastArg)
+    };
+  }
   if (option === "permanent") return documents;
   //@ts-expect-error CONFIG
   const effect: CONFIG.ActiveEffect.documentClass = await fromUuid(effectUuid);

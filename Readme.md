@@ -558,6 +558,14 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
   ```
 Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
 
+### macro.createItem macro.createItemRunMacro
+When these are applied to an actor the item specified by the uuid is created on the actor. If the permanent option is given the item remains even if the effect is deleted from the actor. If permanent is not specified the item is removed when the effect is removed/disabled.
+
+macro.createItemRunMacro behaves the same as macro.createItem, but in addition when the item is created on the actor DAE will run the item's Item Macro with args[0] set to "onCreate" allowing you to save the uuid of the created item (passed in lastArg) somewhere for future reference.
+
+**Example**
+macro.createItem CUSTOM Item.do9L8ghurwrOnB6v, permanent
+
 ### flags.dae.deleteUuid
 Here's an example, which summons a token, via warpgate and creates an effect to delete it on spell expiry/loss of concentration.
 ```js

@@ -1093,6 +1093,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
               removeTokenMagicChange(actor, change, tokens);
               break;
             case "macro.createItem":
+            case "macro.createItemRunMacro":
               //@ts-expect-error
               const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && ef.flags?.dae?.transfer)
               for (let effect of effects) {
@@ -1114,9 +1115,10 @@ function preUpdateItemHook(candidate, updates, options, user) {
               addTokenMagicChange(actor, change, tokens);
               break;
             case "macro.createItem":
+            case "macro.createItemRunMacro":
               //@ts-expect-error
               const actorEffect = actor.effects.find(ef => ef.origin === candidate.uuid && ef.flags.dae?.transfer)
-              addCreateItemChange(change.value, actor, actorEffect);
+              addCreateItemChange(change, actor, actorEffect);
               break;
             default:
           }
