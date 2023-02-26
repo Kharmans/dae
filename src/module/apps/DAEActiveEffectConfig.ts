@@ -70,7 +70,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (ceActive) {
       this.ceEffectList = {};
       game.dfreds.effects?.all.forEach(ceEffect => {
-        this.ceEffectList[ceEffect.name] = ceEffect.name;
+        this.ceEffectList[ceEffect.label] = ceEffect.label;
       })
     }
 

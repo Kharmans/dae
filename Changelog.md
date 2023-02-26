@@ -1,3 +1,6 @@
+### 10.0.22
+* Fix for macro.CE having empty list and not being able to apply CE effects post Convenient Effect 4.0.x
+
 ### 10.0.21
 * macro.createItemRunMacro behaves the same as macro.createItem, but in addition when the item is created on the actor DAE will run the item's Item Macro with args[0] set to "onCreate" allowing you to save the uuid of the created item (passed in lastArg) somewhere for future reference.
 * Items created via macro.createItem will replicate the dnd5e base behaviour of being set not proficient, not equipped and not identified, rather than copying the values of the stored item.

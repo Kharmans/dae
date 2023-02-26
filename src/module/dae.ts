@@ -278,9 +278,9 @@ export function removeConvenientEffectsChange(effectName: string, uuid: string, 
 
 export function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, CEmetaData: {} = {}) {
   const ceInterface = game?.dfreds?.effectInterface;
-  let ceEffect = game.dfreds.effects.all.find(e => e.name === effectName);
+  let ceEffect = game.dfreds.effects.all.find(e => e.label === effectName);
   if (!ceEffect) return;
-  let effectData = mergeObject(ceEffect.convertToObject(), context.metaData)
+  let effectData = mergeObject(ceEffect.toObject(), context.metaData)
   actionQueue.add(ceInterface.addEffectWith.bind(ceInterface), { effectData, uuid, origin, overlay: false })
   return;
 
