@@ -407,7 +407,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
     if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
 
     let updates = { "flags.dae.transfer": data.transfer === true ? true : false };
-    //@ts-ignore documentClass 
+    //@ts-expect-error documentClass 
     if (this.flags?.dae?.durationExpression && parent instanceof CONFIG.Actor.documentClass) {
       let sourceActor = parent;
       if (!data.transfer) {
@@ -416,7 +416,7 @@ async function _preCreateActiveEffect(wrapped, ...args) {
         if (thing?.actor) sourceActor = thing.actor;
       }
       //@ts-ignore roll(argument)
-      const theDuration = await new Roll(`${this.flags.dae.durationExpression}`, sourceActor.getRollData()).roll({ async: true });
+      const theDuration = await new Roll(`${this.flags.dae.durationExpression}`, sourceActor?.getRollData()).roll({ async: true });
       //@ts-ignore turnData.actor
       const inCombat = game.combat?.turns?.some(turnData => turnData.actor?.uuid === parent.uuid);
 
@@ -711,7 +711,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     try {
       if (!allMacroEffects.includes(change.key)) continue;
       context.stackCount = effectData.flags?.dae?.stacks ?? effectData.flags?.dae?.statuscounter?.counter.value ?? 1;
-      const theChange = await evalArgs({ item: null, effectData, context, actor, change, doRolls: true })
+      const theChange = await evalArgs({ item: theItem, effectData, context, actor, change, doRolls: true })
       let args = [];
       if (typeof theChange.value === "string") {
 
@@ -821,7 +821,7 @@ export async function evalArgs({ effectData = null, item, context, actor, change
     setProperty(effectData, "flags.dae.itemUuid", item.uuid);
     setProperty(effectData, "flags.dae.itemData", item.toObject(false));
     contextToUse["itemData"] = "@itemData";
-    contextToUse["item"] = item.getRollData().item;
+    contextToUse["item"] = item.getRollData()?.item;
   } else {
     contextToUse["itemData"] = "@itemData";
     contextToUse["item"] = "@item";

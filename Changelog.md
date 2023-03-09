@@ -1,3 +1,8 @@
+### 10.0.23
+* **Breaking** if an active effect has a duration < 60 seconds and the token is in combat the effect duration will be converted to rounds and turns when applied to a target. This does not apply to convenient effects (yet).
+* Fix for error "no item macro for undefined" errors when transfer effects have a macro.itemMacro to execute.
+* Fix for multiple macro.createItem transfer effects on an actor.
+
 ### 10.0.22
 * Fix for macro.CE having empty list and not being able to apply CE effects post Convenient Effect 4.0.x
 

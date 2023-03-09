@@ -283,6 +283,17 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
           if (aeData.duration.seconds) {
             //@ts-ignore
             aeData.duration.startTime = game.time.worldTime;
+            //@ts-expect-error
+            const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token.id));
+
+            const convertedDuration = convertDuration({value: aeData.duration.seconds, units: "second"}, inCombat);
+            if (convertedDuration.type === "turns") {
+              aeData.duration.rounds = convertedDuration.rounds;
+              aeData.duration.turns = convertedDuration.turns;
+              aeData.startRound = game.combat?.round;
+              aeData.startTurn = game.combat?.turn;
+              delete aeData.duration.seconds;
+            }
           } else if (aeData.duration.rounds || aeData.duration.turns) {
             aeData.duration.startRound = game.combat?.round;
             aeData.duration.startTurn = game.combat?.turn;

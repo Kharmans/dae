@@ -119,7 +119,6 @@ export class EditOwnedItemEffectsActiveEffect extends CONFIG.ActiveEffect.docume
     }
 
     debug('Attempting update on Owned Item Effect', newEffects);
-    console.error('Attempting update on Owned Item Effect', newEffects);
     try {
       await embeddedItem.update({
         effects: newEffects

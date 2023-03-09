@@ -1117,8 +1117,10 @@ function preUpdateItemHook(candidate, updates, options, user) {
             case "macro.createItem":
             case "macro.createItemRunMacro":
               //@ts-expect-error
-              const actorEffect = actor.effects.find(ef => ef.origin === candidate.uuid && ef.flags.dae?.transfer)
-              addCreateItemChange(change, actor, actorEffect);
+              const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && ef.flags?.dae?.transfer)
+              for (let effect of effects) {
+                addCreateItemChange(change, actor, effect);
+              }
               break;
             default:
           }
@@ -1127,6 +1129,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
       }
       // Toggle macro.XX effects
       if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+        setProperty(effect, "flags.dae.itemUuid", candidate.uuid)
         actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect, actor.getRollData());
     }
   } catch (err) {
