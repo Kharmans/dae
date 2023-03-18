@@ -1,3 +1,9 @@
+### 10.0.24
+* Fix for deleting dependent effects firing at the wrong time and potentially not working.
+* Fix for duplicating onUpdateTarget effects if prepareData is called.
+* Added setTimeout(nop, 1) in token effect application to try and manage the timing better.
+* Some tweaking of application of macro.CE/CUB effects to make it more? robust.
+
 ### 10.0.23
 * **Breaking** if an active effect has a duration < 60 seconds and the token is in combat the effect duration will be converted to rounds and turns when applied to a target. This does not apply to convenient effects (yet).
 * Fix for error "no item macro for undefined" errors when transfer effects have a macro.itemMacro to execute.

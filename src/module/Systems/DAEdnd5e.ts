@@ -816,6 +816,9 @@ async function preparePassiveSkills() {
 
 function prepareData(wrapped) {
   debug("prepare data: before passes", this.name, this._source);
+  // setProperty(this, "flags.dae", getProperty(this._source, "flags.dae") ?? {});
+  setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
+
   this.overrides = {};
   wrapped();
   const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
@@ -1084,7 +1087,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
           switch (change.key) {
             case "macro.CE":
               const lastArg = prepareLastArgData(effect, actor);
-              removeConvenientEffectsChange(change.value, actor.uuid, effect.origin, lastArg);
+              removeConvenientEffectsChange(change.value, actor.uuid, effect.origin, actor.isToken, lastArg);
               break;
             case "macro.CUB":
               removeCubChange(change.value, [token])
@@ -1106,7 +1109,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
           switch (change.key) {
             case "macro.CE":
               const lastArg = prepareLastArgData(effect, actor);
-              addConvenientEffectsChange(change.value, actor.uuid, effect.origin, {}, lastArg);
+              addConvenientEffectsChange(change.value, actor.uuid, effect.origin, {}, actor.isToken, lastArg);
               break;
             case "macro.CUB":
               addCubChange(change.value, [token]);

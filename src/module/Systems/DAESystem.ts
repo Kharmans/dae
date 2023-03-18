@@ -336,6 +336,7 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
+  setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdteTarget"));
   debug("prepare data: before passes", this.name, this._source);
   this.overrides = {};
   wrapped();

@@ -268,7 +268,10 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
       }
       if (toggleEffect && removeList.length > 0) {
         removeList = removeList.map(ef => {ef.disabled = !ef.disabled; return ef.toObject(false)});
-        targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
+        await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
+        if (targetActor.token && false) { // need to delay for unliked tokens as there is a timing issue
+          await new Promise(resolve => setTimeout(() => resolve(true), 250))
+        }
         activate = false;
       }
       if (activate) {
