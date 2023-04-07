@@ -447,24 +447,24 @@ async function _removeExistingEffects(...args) {
   }
 }
 
-function preCreateActiveEffectHook(this, data, options, user) {
-  const actor: any = this.parent;
+function preCreateActiveEffectHook(candidate, data, options, user) {
+  const actor: any = candidate.parent;
   // TODO remove the isToken check if and when core does not break for this
   //@ts-ignore
   if (!(actor instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
-  if (!this.flags?.dae?.specialDuration) this.updateSource({ "flags.dae.specialDuration": [] });
+  if (!candidate.flags?.dae?.specialDuration) candidate.updateSource({ "flags.dae.specialDuration": [] });
   /* move to removeexisting
-  if (getProperty(this, "flags.dae.stackable") === undefined) this.updateSource({ "flags.dae.stackable": "multi" });
-  const stackable = getProperty(this, "flags.dae.stackable");
-  if (effectIsTransfer(this) && ["noneName", "none"].includes(stackable)) {
-    const parent = this.parent;
+  if (getProperty(candidate, "flags.dae.stackable") === undefined) candidate.updateSource({ "flags.dae.stackable": "multi" });
+  const stackable = getProperty(candidate, "flags.dae.stackable");
+  if (effectIsTransfer(candidate) && ["noneName", "none"].includes(stackable)) {
+    const parent = candidate.parent;
     if (!parent) return true;
     const hasExisting = parent.effects.filter(ef => {
       switch (stackable) {
         case "noneName":
-          return ef.label === this.label
+          return ef.label === candidate.label
         case "none":
-          return this.origin && ef.origin === this.origin;
+          return candidate.origin && ef.origin === candidate.origin;
       }
     });
     if (hasExisting.length === 0) return true;
@@ -473,8 +473,8 @@ function preCreateActiveEffectHook(this, data, options, user) {
     return true;
   }
   */
-  if (getProperty(this, "flags.dae.stackable") !== "noneName") return true;
-  if (actor.effects.contents.some(ef => ef.label === this.label)) {
+  if (getProperty(candidate, "flags.dae.stackable") !== "noneName") return true;
+  if (actor.effects.contents.some(ef => ef.label === candidate.label)) {
     return false;
   }
   return true;
@@ -1162,29 +1162,29 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   }
 }
 
-function preUpdateItemHook(this, updates, options, user) {
+function preUpdateItemHook(candidate, updates, options, user) {
   return true;
 }
 
 // Update the actor active effects when editing an owned item
-function updateItemEffects(this, updates, options, user) {
-  if (!this.isOwned) return true;
+function updateItemEffects(candidate, updates, options, user) {
+  if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;
   if (options.isAdvancement) {
-    console.warn(`Dae | Skipping effect re-creation for class advancement ${this.parent?.name ?? ""} item ${this.name}`)
+    console.warn(`Dae | Skipping effect re-creation for class advancement ${candidate.parent?.name ?? ""} item ${candidate.name}`)
     return;
   }
   if (updates.effects) { // item effects have changed - update transferred effects
     //@ts-ignore
-    const itemUuid = this.uuid;
+    const itemUuid = candidate.uuid;
     // delete all actor effects for the given item
     let deletions = [];
-    for (let aef of this.parent.effects) { // remove all transferred effects for the item
+    for (let aef of candidate.parent.effects) { // remove all transferred effects for the item
       const isTransfer = aef.flags.dae?.transfer;
       if (isTransfer && (aef.origin === itemUuid)) deletions.push(aef.id);
     };
     // Now get all the item transfer effects
-    let additions = this.effects.filter(aef => {
+    let additions = candidate.effects.filter(aef => {
       const isTransfer = aef.transfer;
       setProperty(aef.flags, "dae.transfer", isTransfer);
       return isTransfer;
@@ -1194,10 +1194,10 @@ function updateItemEffects(this, updates, options, user) {
       efData.origin = itemUuid;
     });
     if (deletions.length > 0) {
-      actionQueue.add(this.parent.deleteEmbeddedDocuments.bind(this.parent), "ActiveEffect", deletions)
+      actionQueue.add(candidate.parent.deleteEmbeddedDocuments.bind(candidate.parent), "ActiveEffect", deletions)
     }
     if (additions.length > 0) {
-      actionQueue.add(this.parent.createEmbeddedDocuments.bind(this.parent), "ActiveEffect", additions);
+      actionQueue.add(candidate.parent.createEmbeddedDocuments.bind(candidate.parent), "ActiveEffect", additions);
     }
   }
   return true;
@@ -1206,20 +1206,20 @@ function updateItemEffects(this, updates, options, user) {
 // When an item is created any effects have a source that points to the original item
 // Need to update to refer to the created item
 // THe id in the this is not the final _id
-export function preCreateItemHook(this, data, options, user) {
+export function preCreateItemHook(candidate, data, options, user) {
   return true;
 }
 // When an item is created any effects have a source that points to the original item
 // Need to update to refer to the created item
 // Can't do in precreate since the _id is wrong.
-export function createItemHook(this, options, user) {
+export function createItemHook(candidate, options, user) {
   return;
 }
 
-export /*async*/ function preUpdateActorHook(this, updates, options, user) {
+export /*async*/ function preUpdateActorHook(candidate, updates, options, user) {
   try {
     if (options.onUpdateCalled) return true;
-    for (let onUpdate of (getProperty(this, "flags.dae.onUpdateTarget") ?? [])) {
+    for (let onUpdate of (getProperty(candidate, "flags.dae.onUpdateTarget") ?? [])) {
       if (onUpdate.macroName.length === 0) continue;
       if (onUpdate.filter.startsWith("data.")) {
         onUpdate.filter = onUpdate.filter.replace("data.", "system.");
@@ -1251,7 +1251,7 @@ export /*async*/ function preUpdateActorHook(this, updates, options, user) {
         actorUuid: targetActor.uuid,
         tokenId: targetToken.id,
         tokenUuid: targetTokenDocument.uuid,
-        actor: this,
+        actor: candidate,
         updates,
         options,
         user,
@@ -1274,7 +1274,7 @@ export /*async*/ function preUpdateActorHook(this, updates, options, user) {
       } else {
         const theMacro: Macro = game.macros.getName(onUpdate.macroName);
         if (!theMacro) {
-          console.warn(`dae | onUpdateActor no macro found for actor ${this.name} macro ${onUpdate.macroName}`);
+          console.warn(`dae | onUpdateActor no macro found for actor ${candidate.name} macro ${onUpdate.macroName}`);
           continue;
         }
         //@ts-ignore type v10
@@ -1286,7 +1286,7 @@ export /*async*/ function preUpdateActorHook(this, updates, options, user) {
         macroText = theMacro?.command;
       }
       try {
-        const speaker = ChatMessage.getSpeaker({ actor: this });
+        const speaker = ChatMessage.getSpeaker({ actor: candidate });
         const args: any[] = ["onUpdateActor"].concat(onUpdate.args);
         args.push(lastArg);
         const character = undefined; // game.user?.character;
@@ -1294,8 +1294,8 @@ export /*async*/ function preUpdateActorHook(this, updates, options, user) {
     ${macroText}
   })()`;
         const fn = Function("{speaker, actor, token, character, item, args}={}", body);
-        // await fn.call(this, { speaker, actor: this, token: undefined, character, item: originItem, args });
-        fn.call(this, { speaker, actor: this, token: undefined, character, item: originItem, args });
+        // await fn.call(candidate, { speaker, actor: candidate, token: undefined, character, item: originItem, args });
+        fn.call(candidate, { speaker, actor: candidate, token: undefined, character, item: originItem, args });
 
       } catch (err) {
         ui.notifications?.error(`There was an error running your macro. See the console (F12) for details`);
@@ -1364,17 +1364,17 @@ function daeApply(wrapped, actor, change) { // TODO remains broken in v10
   return wrapped(actor, change)
 }
 
-export function matchItemMacroName(this, updates, options, user) {
+export function matchItemMacroName(candidate, updates, options, user) {
   // if (!data.transfer) return true;
   //@ts-expect-error .documentClass
-  if (!this.parent || !(this.parent instanceof CONFIG.Actor.documentClass)) return true;
-  const macroChanges = this.changes.map(change => {
+  if (!candidate.parent || !(candidate.parent instanceof CONFIG.Actor.documentClass)) return true;
+  const macroChanges = candidate.changes.map(change => {
     if (change.value === "ItemMacro")
-      change.value = change.value.replace("ItemMacro", `ItemMacro.${this.origin}`);
+      change.value = change.value.replace("ItemMacro", `ItemMacro.${candidate.origin}`);
     return change;
   });
 
-  this.updateSource({ "changes": macroChanges });
+  candidate.updateSource({ "changes": macroChanges });
   return true;
 }
 

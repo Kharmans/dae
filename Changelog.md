@@ -1,3 +1,6 @@
+### 10.0.25
+* Fix for damageBonusMacros that reference an ItemMacro - looks like a brain freeze on my part.
+
 ### 10.0.24
 * Fix for deleting dependent effects firing at the wrong time and potentially not working.
 * Fix for duplicating onUpdateTarget effects if prepareData is called.
