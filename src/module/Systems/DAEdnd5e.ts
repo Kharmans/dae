@@ -156,7 +156,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.ac.EC"] = [0, -1];
     specials["system.attributes.ac.AR"] = [0, -1];
 
-    if (characterSpec.system.attributes.hd) specials["system.attributes.hd"] = [0, -1];
+    if (characterSpec.system.attributes?.hd) specials["system.attributes.hd"] = [0, -1];
     if (characterSpec.system.traits?.weaponProf) {
       specials["system.traits.weaponProf.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials["system.traits.weaponProf.value"] = ["", -1];
@@ -815,6 +815,7 @@ async function preparePassiveSkills() {
 }
 
 function prepareData(wrapped) {
+  try {
   debug("prepare data: before passes", this.name, this._source);
   // setProperty(this, "flags.dae", getProperty(this._source, "flags.dae") ?? {});
   setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
@@ -832,6 +833,9 @@ function prepareData(wrapped) {
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
+  } catch (err) {
+    console.error("Could not prepare data ", this.name,  err);
+  }
 }
 
 function procAdvantageSkill(actor, abilityId, skillId): number {
@@ -875,7 +879,7 @@ function _prepareArmorClassAttribution(wrapped, data) {
       //@ts-ignore .isNumeric - core does not look at ac.value or non-numeric ac.bonus
       if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
         attributions.push({
-          label: `${effect.label} (dae)`,
+          label: `${effect.name || effect.label} (dae)`,
           mode: change.mode,
           value: change.value
         })
@@ -1053,11 +1057,12 @@ function determineSuppression() {
   if (this.parent) {
     const ci = this.parent.system.traits?.ci?.value;
     if (ci instanceof Set) {
-      const statusId = (this.label ?? "no effect").toLocaleLowerCase();
-      const ciSuppressed = (ci?.has(statusId));
+      const statusId = (this.name || this.label || "no effect").toLocaleLowerCase();
+      const capStatusId = duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
+      const ciSuppressed = ci?.has(statusId) || ci?.has(`Convenient Effect: ${capStatusId}`);
       this.disabled = Boolean(ciSuppressed);
     } else {
-      const statusId = (this.label ?? "no effect").toLocaleLowerCase();
+      const statusId = (this.name || this.label || "no effect").toLocaleLowerCase();
       const ciSuppressed = (ci?.length && ci.some(c => statusId == c));
       this.disabled = Boolean(ciSuppressed);
     }

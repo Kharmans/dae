@@ -58,8 +58,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     let efl = CONFIG.statusEffects
       .filter(se => se.id)
       .map(se => {
-        if (se.id.startsWith("combat-utility-belt.")) return { id: se.id, label: `${se.label} (CUB)` };
-        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.label} (CE)` };
+        if (se.id.startsWith("combat-utility-belt.")) return { id: se.id, label: `${se.name || se.label} (CUB)` };
+        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.name || se.label} (CE)` };
         return { id: se.id, label: i18n(se.label) };
       })
       .sort((a, b) => a.label < b.label ? -1 : 1);
@@ -70,7 +70,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (ceActive) {
       this.ceEffectList = {};
       game.dfreds.effects?.all.forEach(ceEffect => {
-        this.ceEffectList[ceEffect.label] = ceEffect.label;
+        this.ceEffectList[ceEffect.name || ceEffect.label] = ceEffect.name || ceEffect.label;
       })
     }
 
@@ -118,7 +118,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   get title() {
     let suffix = this.object.parent.isOwned ? "(Owned Item) Experimental" : "";
-    return `${i18n("EFFECT.ConfigTitle")}: ${this.object.label}` + suffix;
+    return `${i18n("EFFECT.ConfigTitle")}: ${this.object.name || this.object.label}` + suffix;
   }
 
   get id() {
@@ -147,7 +147,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   async getData(options) {
     if (getProperty(this.object, "flags.dae.specialDuration") === undefined)
       setProperty(this.object, "flags.dae.specialDuration", []);
-    const data = super.getData(options);
+    const data = await super.getData(options);
     let validSpecsToUse = ValidSpec.specs["union"]; // TODO this needs to be thought about
     await daeSystemClass.editConfig();
 
@@ -282,7 +282,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /* ----------------------------------------- */
 
   async _addEffectChange() {
-    const idx = this.object.changes.length;
+    //@ts-expect-error .document
+    const idx = (this.document ?? this.object).changes.length;
     return this.submit({
       preventClose: true, updateData: {
         //@ts-ignore
@@ -307,7 +308,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       delete data.disabledX;
     }
     if (!data.tint || data.tint === "") data.tint = null;
-    
+    if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
     setProperty(data.flags, "dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
     return data;
   }

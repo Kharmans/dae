@@ -336,7 +336,7 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
-  setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdteTarget"));
+  setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
   debug("prepare data: before passes", this.name, this._source);
   this.overrides = {};
   wrapped();
@@ -403,7 +403,7 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
     specials["ATL.sight.attenuation"] = [0,-1];
     specials["ATL.sight.brightness"] = [0,-1];
     specials["ATL.sight.contrast"] = [0,-1];
-    specials["ATL.sight.enabled"] = [0,-1];
+    specials["ATL.sight.enabled"] = [0, -1];
     specials["ATL.sight.range"] = [0,-1];
     specials["ATL.sight.saturation"] = [0,-1];
     specials["ATL.sight.color"] = ["", 0-1];

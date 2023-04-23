@@ -105,6 +105,10 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCardsInclude: RegExp[], wildCardsExclude: RegExp[]) {
   if (disableEffects) return;
   const overrides = {};
+  const effects = this.effects.contents;
+  if ( isNewerVersion(game.version, "11.293") && !CONFIG.ActiveEffect.legacyTransferral) {
+    effects.push(...this.items.contents.flatMap(i => i.transferredEffects));
+  }
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   // Organize non-disabled effects by their application priority
   const changes = this.effects.reduce((changes, effect) => {
@@ -251,32 +255,33 @@ export async function removeTokenMagicChange(actor, change, tokens) {
   }
 }
 
-export async function removeConvenientEffectsChange(effectName: string, uuid: string, origin, isToken: boolean, metaData: {} = {}) {
+async function myRemoveCEEffect(effectName: string, uuid: string, origin, isToken: boolean, metaData: any) {
   const ceInterface = game?.dfreds?.effectInterface;
-  await ceInterface.removeEffect({ effectName, uuid, origin, metaData })
-
-  if (isToken) await new Promise(resolve => setTimeout(resolve, 1)); // let all of the stuff settle down
-  const returnValue = await actionQueue.add(ceInterface.removeEffect.bind(ceInterface), { effectName, uuid, origin, metaData });
+  let interval = 1;
+  if (isNewerVersion("11.294", game.version)) interval = isToken ? 250: 1;
+  await delay(interval); // let all of the stuff settle down
+  return await ceInterface.removeEffect({ effectName, uuid, origin, metaData });
+}
+export async function removeConvenientEffectsChange(effectName: string, uuid: string, origin, isToken: boolean, metaData: {} = {}) {
+  if (isToken) await delay(1); // let all of the stuff settle down
+  const returnValue = await actionQueue.add(myRemoveCEEffect, effectName, uuid, origin, isToken, metaData);
   return returnValue;
-  //if (isToken) await new Promise(resolve => setTimeout(resolve, 250));
-  return await ceInterface.removeEffect.bind({ effectName, uuid, origin, metaData })
-
-  //  return;
 }
 
-export async function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, isToken: boolean, CEmetaData: {} = {}) {
+async function myAddCEEffectWith(effectData: any, uuid: string, origin, overlay: boolean, isToken: boolean) {
   const ceInterface = game?.dfreds?.effectInterface;
-  let ceEffect = game.dfreds.effects.all.find(e => e.label === effectName);
+  let interval = 1;
+  if (isNewerVersion("11.294", game.version)) interval = isToken ? 250: 0;
+  if (interval) await delay(interval);
+  return await ceInterface.addEffectWith({ effectData, uuid, origin, overlay: false });
+}
+export async function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, isToken: boolean, CEmetaData: {} = {}) {
+  let ceEffect = game.dfreds.effects.all.find(e => (e.name || e.label) === effectName);
   if (!ceEffect) return;
   let effectData = mergeObject(ceEffect.toObject(), context.metaData);
-
-  if (isToken) await new Promise(resolve => setTimeout(resolve, 1)); // let all of the stuff settle down
-
-  const returnValue = actionQueue.add(ceInterface.addEffectWith.bind(ceInterface), { effectData, uuid, origin, overlay: false })
+  let returnValue;
+  returnValue =  await actionQueue.add(myAddCEEffectWith, effectData, uuid, origin, false, isToken);
   return returnValue;
-
-  // await game.dfreds.effectInterface?.addEffectWith({ effectData, uuid, origin: origin, CEmetaData });
-
 }
 export async function addCubChange(conditionName, tokens: [Token], options = {}) {
   const cubInterface = game?.cub;
@@ -288,7 +293,7 @@ export async function addCubChange(conditionName, tokens: [Token], options = {})
 export async function removeCubChange(conditionName, tokens: [Token], options = {}) {
   const cubInterface = game?.cub;
   const isToken = tokens.find(t=>t.actor.isToken);
-  if (isToken) await new Promise(resolve => setTimeout(resolve, 1)); // let all of the stuff settle down
+  if (isToken) await delay(1); // let all of the stuff settle down
   if (cubInterface?.enhancedConditions.supported) await actionQueue.add(cubInterface.removeCondition, conditionName, tokens, options);
 }
 
@@ -325,7 +330,7 @@ function createActiveEffectHook(...args) {
   effect.determineSuppression && effect.determineSuppression();
   if (effect.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
-      // await new Promise(resolve => setTimeout(resolve, 200));
+      // await delay(200);
       try {
         for (let change of effect.changes) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
@@ -394,7 +399,7 @@ async function _preCreateActiveEffect(...args) {
   const token = tokens[0];
   this.determineSuppression && this.determineSuppression();
   if (this.changes && !this.disabled && !this.isSuppressed) {
-    if (parent.isToken) await new Promise(resolve => setTimeout(resolve, 200)); // let all of the stuff settle down
+    if (parent.isToken) await delay(200); // let all of the stuff settle down
     try {
       for (let change of this.changes) {
         if (cubActive && change.key === "macro.CUB" && token) {
@@ -402,7 +407,7 @@ async function _preCreateActiveEffect(...args) {
         }
         if (ceActive && change.key === "macro.CE") {
           const lastArg = prepareLastArgData(this, actor)
-          if (actor.isToken) addConvenientEffectsChange(change.value, actor.uuid, this.origin, {}, actor.isToken, options.lastArg);
+          if (actor.isToken) await addConvenientEffectsChange(change.value, actor.uuid, this.origin, {}, actor.isToken, options.lastArg);
           else await addConvenientEffectsChange(change.value, actor.uuid, this.origin, {}, actor.isToken, options.lastArg);
         }
  
@@ -435,7 +440,7 @@ async function _removeExistingEffects(...args) {
     const hasExisting = parent.effects.filter(ef => {
       switch (stackable) {
         case "noneName":
-          return ef.label === this.label
+          return (ef.name || ef.label) === (this.name || this.label);
         case "none":
           return this.origin && ef.origin === this.origin;
       }
@@ -462,7 +467,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
     const hasExisting = parent.effects.filter(ef => {
       switch (stackable) {
         case "noneName":
-          return ef.label === candidate.label
+          return (ef.name || ef.label) === (candidate.name || candidate.label);
         case "none":
           return candidate.origin && ef.origin === candidate.origin;
       }
@@ -474,7 +479,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
   }
   */
   if (getProperty(candidate, "flags.dae.stackable") !== "noneName") return true;
-  if (actor.effects.contents.some(ef => ef.label === candidate.label)) {
+  if (actor.effects.contents.some(ef => (ef.name || ef.label) === (candidate.name || candidate.label))) {
     return false;
   }
   return true;
@@ -490,7 +495,6 @@ async function _preCreateActiveEffectUpdateData(...args) {
   const parent = this.parent;
   let [data, options, user] = args;
   try {
-
     //if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return wrapped(...args);
     //@ts-expect-error documentClass
     if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return;
@@ -523,15 +527,13 @@ async function _preCreateActiveEffectUpdateData(...args) {
         if (statusEffect) {
           newChanges = statusEffect.changes ? newChanges.concat(statusEffect.changes) : newChanges;
           updates["icon"] = statusEffect.icon;
-          updates["label"] = i18n(statusEffect.label);
+          updates["label"] = i18n(statusEffect.name || statusEffect.label);
           changesChanged = true;
-          updates["flags.core.statusId"] = statusEffect.id;
           if (statusEffect.flags) {
-            updates["flags.combat-utility-belt"] = statusEffect.flags["combat-utility-belt"];
-            updates["flags.isConvenient"] = statusEffect.flags?.isConvenient;
-            updates["flags.convenientDescription"] = statusEffect.flags?.convenientDescription;
-            updates["flags.isCustomConvenient"] = statusEffect.flags?.isCustomConvenient;
+            setProperty(updates, "flags", statusEffect.flags);
           }
+          updates["flags.core.statusId"] = statusEffect.id; //TODO V11
+
         }
       } else if (change.key === "StatusEffectLabel") {
         updates["label"] = change.value;
@@ -555,6 +557,7 @@ async function _preCreateActiveEffectUpdateData(...args) {
   } catch (err) {
     console.warn("dae | create effect error", err);
   } finally {
+    // This is called in the enclosing function
     // let result = wrapped(data, options, user);
     // return result;
   }
@@ -568,7 +571,7 @@ async function evalInline(expression: string, actor: Actor, effect) {
     //@ts-ignore evaluate
     const roll = await (new Roll(expression, actor?.getRollData())).evaluate({ async: true });
     if (showInline) {
-      roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effect.label} ${expression}`, chatMessage: true })
+      roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effect.name || effect.label} ${expression}`, chatMessage: true })
     }
     return `${roll.total}`;
   } catch (err) {
@@ -682,7 +685,7 @@ export async function _preUpdateActiveEffectEvalInline(wrapped, updates, options
       };
     }
   } catch (err) {
-    console.warn(`dae | update active effect Actor ${parent.name}, Effect ${this.label}`, updates, err);
+    console.warn(`dae | update active effect Actor ${parent.name}, Effect ${this.name || this.label}`, updates, err);
   } finally {
     return wrapped(updates, options, user);
   }
@@ -701,7 +704,7 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
   const tokens = actor.token ? [actor.token] : actor.getActiveTokens();
   const token = tokens[0];
   const tokenMagic = globalThis.TokenMagic;
-  /// if (actor.isToken) await new Promise(resolve => setTimeout(resolve, 1));
+  /// if (actor.isToken) await delay(1);
   try {
     let entityToDelete;
     if (this.changes) {
@@ -761,7 +764,7 @@ export function deleteActiveEffectHook(...args) {
     const tokens = actor.token ? [actor.token] : actor.getActiveTokens();
     const token = tokens[0];
     const tokenMagic = globalThis.TokenMagic;
-    /// if (actor.isToken) await new Promise(resolve => setTimeout(resolve, 1));
+    /// if (actor.isToken) await delay(1);
     try {
       let entityToDelete;
       if (effect.changes) {
@@ -834,7 +837,6 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     selfTarget = getSelfTarget(actor);
     tokenUuid = selfTarget.uuid ?? selfTarget.document.uuid;
   }
-
   let source = effectData.origin ? DAEfromUuid(effectData.origin) : undefined;
   let context = actor.getRollData();
   //@ts-ignore
@@ -898,6 +900,8 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           data.args = args;
         // insert item data
         if (furnaceActive) {
+          macro.actor = actor;
+          macro.token = selfTarget;
           result = await macro.execute(data.action, ...data.args, data.lastArg)
           // result = await socketlibSocket.executeAsGM("executeMacro", data)
         } else { // support macro calling without furnace.
@@ -1565,4 +1569,8 @@ export function tokenForActor(actor): Token | undefined {
 export function effectIsTransfer(effect) {
   if (effect.transfer !== undefined) return effect.transfer;
   return effect.flags.dae?.transfer;
+}
+
+export async function delay(interval: number) {
+  await new Promise(resolve => setTimeout(resolve, interval)); 
 }

@@ -1,3 +1,12 @@
+### 10.0.26
+* Fix for onUpdateTarget not being applied thanks @thatlonelybugbear.
+* Another fix for applying macro.CE effects to unlinked tokens - all the problems seem to be resolved in v11 without the fancy shenanigans.
+* Fix for statusEffect not picking up all flags on an effect, means status effect is now more compatible with effectMacro.
+* Fix for not triggering effectMacro toggle on/off when toggling an effect.
+* A change to macro handling, midi now never uses advanced macros. It turns out there seems to be a bug/feature where AM always uses the selected token. Dae checks that the user has permission to execute the macro and silently forwards to the GM if required.
+* First steps for v11 compatibility. More or less works (I think) but not ready for a real game.
+
+
 ### 10.0.25
 * Fix for damageBonusMacros that reference an ItemMacro - looks like a brain freeze on my part.
 

@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro, actionQueue, tokenForActor, daeMacro } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro, actionQueue, tokenForActor, daeMacro, delay } from "./dae";
 import { warn, debug, error, log, changesQueue } from "../dae";
 
 export class GMActionMessage {
@@ -45,7 +45,7 @@ async function _itemReplaceEffects(data) {
   //@ts-expect-error
   const item = fromUuidSync(data.itemUuid);
   // await item.update({"effects": []});
-  return item.update({"effects": data.effects});
+  return item.update({ "effects": data.effects });
 }
 
 async function _updateActor(data) {
@@ -53,8 +53,8 @@ async function _updateActor(data) {
   return actor.update(data.update)
 }
 
-async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuids: string[]}) {
-  const {uuid, itemUuid, itemUuids} = data;
+async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuids: string[] }) {
+  const { uuid, itemUuid, itemUuids } = data;
 
   for (let itemUuid of itemUuids ?? []) {
     const item: any = await fromUuid(itemUuid);
@@ -63,9 +63,9 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
   }
 }
 
-async function _createActorItem(data: {uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean}) {
-  const {uuid, itemDetails, effectUuid} = data;
-  const [itemUuid, option] = itemDetails.split(",").map(s=> s.trim());
+async function _createActorItem(data: { uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean }) {
+  const { uuid, itemDetails, effectUuid } = data;
+  const [itemUuid, option] = itemDetails.split(",").map(s => s.trim());
   const item = await fromUuid(itemUuid);
   if (!item || !(item instanceof Item)) {
     error(`createActorItem could not find item ${itemUuid}`);
@@ -76,7 +76,7 @@ async function _createActorItem(data: {uuid: string, itemDetails: string, effect
     error(`createActorItem could not find Actor ${uuid}`);
   }
   if (actor.token) { // need to delay for unliked tokens as there is a timing issue
-    await new Promise(resolve => setTimeout(() => resolve(true), 250))
+    if (isNewerVersion("11.293", game.version)) await delay(250)
   }
   //@ts-expect-error onDropSingleItem toObject
   const itemData = await actor.sheet._onDropSingleItem(item.toObject(false));
@@ -84,11 +84,11 @@ async function _createActorItem(data: {uuid: string, itemDetails: string, effect
   //@ts-expect-error createEmbeddedDocument toObject
   const documents = await actor.createEmbeddedDocuments("Item", [itemData]);
   if (data.callItemMacro) {
-    const change = {key: "macro.itemMacro"};
+    const change = { key: "macro.itemMacro" };
     for (let item of documents) {
-      const effectData = {itemUuid: item.uuid, flags: {}}
-      const macro = await getMacro({change, name: ""}, item, effectData);
-      let lastArg = mergeObject({itemUuid: item.uuid}, {
+      const effectData = { itemUuid: item.uuid, flags: {} }
+      const macro = await getMacro({ change, name: "" }, item, effectData);
+      let lastArg = mergeObject({ itemUuid: item.uuid }, {
         //@ts-ignore - undefined fields
         actorId: actor.id,
         actorUuid: actor.uuid,
@@ -106,12 +106,12 @@ async function _createActorItem(data: {uuid: string, itemDetails: string, effect
   }
   const itemsToDelete = effect?.flags.dae?.itemsToDelete ?? [];
   itemsToDelete.push(documents[0].uuid);
-  await effect.update({"flags.dae.itemsToDelete": itemsToDelete});
+  await effect.update({ "flags.dae.itemsToDelete": itemsToDelete });
   return documents;
 }
 
-async function _executeMacro(data: {action, args, lastArg, macroData: {change, name, effectData}}) {
-  const macro = await getMacro({ change: data.macroData.change, name: data.macroData.name}, null, data.macroData.effectData);
+async function _executeMacro(data: { action, args, lastArg, macroData: { change, name, effectData } }) {
+  const macro = await getMacro({ change: data.macroData.change, name: data.macroData.name }, null, data.macroData.effectData);
   //@ts-ignore
   const result = await macro.execute(data.action, ...data.args, data.lastArg)
   return result;
@@ -178,13 +178,13 @@ async function _unsetFlag(data: { actorUuid: string, flagId: string }) {
 }
 
 async function _blindToken(data: { tokenUuid: string }) {
-  const blind = CONFIG.statusEffects.find(se=>se.id === CONFIG.specialStatusEffects.BLIND)
-  return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, {overlay: false, active: true})
+  const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND)
+  return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: true })
 }
 
 async function _restoreVision(data: { tokenUuid: string }) {
-  const blind = CONFIG.statusEffects.find(se=>se.id === CONFIG.specialStatusEffects.BLIND)
-  return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, {overlay: false, active: false})
+  const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND)
+  return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: false })
 }
 
 async function _renameToken(data: { tokenData: any, newName: string }) { // TODO update this for uuids
@@ -229,7 +229,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   if (globalThis.Sequencer && data.origin) globalThis.Sequencer.EffectManager.endEffects({ origin: data.origin })
 }
 
-export async function applyActiveEffects({activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect, metaData = undefined}) {
+export async function applyActiveEffects({ activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect, metaData = undefined }) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
 
   for (let tid of tokenList) {
@@ -242,7 +242,7 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
       // Remove any existing effects that are not stackable or transfer from the same origin
       let currentStacks = 1;
 
-      const origins = activeEffects.map(aeData => ({ origin: aeData.origin, label: aeData.label }));
+      const origins = activeEffects.map(aeData => ({ origin: aeData.origin, name: (aeData.name || aeData.label) }));
       //const origins = actEffects.map(aeData => aeData.origin);
 
       // TODO: update exsiting count stacks rather than removing and adding.
@@ -250,29 +250,31 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
       let removeList = targetActor.effects.filter(ae => {
         const notMulti = getProperty(ae, "flags.dae.stackable") !== "multi";
         const noStackByName = getProperty(ae, "flags.dae.stackable") === "noneName";
-        if (noStackByName) 
-          return origins.find(o => o.label === ae.label)
+        if (noStackByName)
+          return origins.find(o => o.name === (ae.name || ae.label))
         else return origins.find(o => {
-              const escapedLabel = o.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              return o.origin === ae.origin
-              && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.label))
-          })
+          const escapedLabel = o.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return o.origin === ae.origin
+            && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.name || ae.label))
+        })
           && getProperty(ae, "flags.dae.transfer") === false
           && notMulti;
       });
 
-      if (removeList.length > 0 && !toggleEffect) {
-        currentStacks = removeList.filter(ae => getProperty(ae, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae, "flags.dae.stacks") ?? 1), 1)
-        removeList = removeList.map(ae => ae._id);
-        await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList);
-      }
-      if (toggleEffect && removeList.length > 0) {
-        removeList = removeList.map(ef => {ef.disabled = !ef.disabled; return ef.toObject(false)});
-        await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
-        if (targetActor.token && false) { // need to delay for unliked tokens as there is a timing issue
-          await new Promise(resolve => setTimeout(() => resolve(true), 250))
+      if (removeList.length > 0) {
+        if (toggleEffect) {
+          removeList = removeList.map(ef => ({ _id: ef.id, disabled: !ef.disabled, "duration.startTime": game.time.worldTime}));
+          await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
+          activate = false;
+        } else { // remove the effect
+          const interval = removeList.some(ef => ef.flags.effectmacro || ef.changes.some(change => change.value.startsWith("macro"))) ? 250 : 1; // for unlinked tokens and effect macros that might create effects need a long delay
+          currentStacks = removeList.filter(ae => getProperty(ae, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae, "flags.dae.stacks") ?? 1), 1)
+          removeList = removeList.map(ae => ae._id);
+          await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList);
+          if (targetActor.isToken && isNewerVersion("11.293", game.version)) { // need to delay for unliked tokens as there is a timing issue
+            await delay(interval);
+          }
         }
-        activate = false;
       }
       if (activate) {
         let dupEffects = duplicate(activeEffects); // .filter(aeData => !aeData.selfTarget));
@@ -280,8 +282,11 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
           setProperty(aeData, "flags.dae.token", tid);
           if (getProperty(aeData, "flags.dae.stackable") === "count") {
             setProperty(aeData, "flags.dae.stacks", currentStacks);
-            aeData.label = `${aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
+            if (aeData.name || aeData.name === '')
+              aeData.name = `${aeData.name || aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
+            else aeData.label = `${aeData.name || aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
           }
+
           // convert item duration to seconds/rounds/turns according to combat
           if (aeData.duration.seconds) {
             //@ts-ignore
@@ -289,7 +294,7 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
             //@ts-expect-error
             const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token.id));
 
-            const convertedDuration = convertDuration({value: aeData.duration.seconds, units: "second"}, inCombat);
+            const convertedDuration = convertDuration({ value: aeData.duration.seconds, units: "second" }, inCombat);
             if (convertedDuration.type === "turns") {
               aeData.duration.rounds = convertedDuration.rounds;
               aeData.duration.turns = convertedDuration.turns;
@@ -330,10 +335,10 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
               let originItem = DAEfromUuid(aeData.origin);
               let sourceActor = originItem?.actor;
               if (!originItem && aeData.flags?.dae?.itemData) { // could not find the item reconstruct it.
-                const originActorUuid = aeData.origin.replace(/.Item.*/,"");
+                const originActorUuid = aeData.origin.replace(/.Item.*/, "");
                 sourceActor = DAEfromActorUuid(originActorUuid);
               } else {
-                const originActorUuid = aeData.origin.replace(/.Item.*/,"");
+                const originActorUuid = aeData.origin.replace(/.Item.*/, "");
                 sourceActor = DAEfromActorUuid(originActorUuid);
               }
               if (change.key === "flags.dae.onUpdateTarget") {
@@ -346,12 +351,12 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
                 const newEffectData = duplicate(aeData);
                 newEffectData.changes = [duplicate(change)];
                 newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
-                sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], {metaData})
+                sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], { metaData })
                 // createSourceActorLink(change, aeData, tokenUuid, change.value);
                 return undefined;
               }
 
-            // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
+              // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
               if (typeof change.value === "number") {
               } else if (typeof change.value === "string") {
                 //@ts-ignore replaceFormulaData
@@ -374,18 +379,18 @@ export async function applyActiveEffects({activate, tokenList, activeEffects, it
         }
 
         if (dupEffects.length > 0) {
-          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, {metaData});
-          setTimeout( () => {
-          if (globalThis.EffectCounter) {
-            for (let effectData of dupEffects) {
-              let flags = effectData.flags;
-              if (flags?.dae?.stackable === "count" && flags?.dae?.stacks) {
-                const counter = globalThis.EffectCounter.findCounter(token, effectData.icon);
-                counter.setValue(flags.dae.stacks);
+          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { metaData });
+          setTimeout(() => {
+            if (globalThis.EffectCounter) {
+              for (let effectData of dupEffects) {
+                let flags = effectData.flags;
+                if (flags?.dae?.stackable === "count" && flags?.dae?.stacks) {
+                  const counter = globalThis.EffectCounter.findCounter(token, effectData.icon);
+                  counter.setValue(flags.dae.stacks);
+                }
               }
             }
-          }
-        }, 1000);
+          }, 1000);
 
           //TODO remove this when timesup is in the wild.
           if (!timesUpInstalled) { // do the kludgey old form removal
@@ -457,7 +462,7 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
   } else {
     switch (itemDuration.units) {
       case "perm":
-        return { type: "seconds", seconds: undefined, rounds: undefined, turns: undefined};
+        return { type: "seconds", seconds: undefined, rounds: undefined, turns: undefined };
       case "turn":
       case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value };
       case "round":

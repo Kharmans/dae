@@ -62,7 +62,7 @@ getData() {
     newAe.isTemporary  = true;
     newAe.isTemporary = ae.isTemporary ;
     newAe.sourceName = ae.sourceName;
-    if (newAe.sourceName === newAe.label) newAe.sourceName = "";
+    if (newAe.sourceName === (newAe.name ?? newAe.label)) newAe.sourceName = "";
     else newAe.sourceName = `(${newAe.sourceName})`;
     if (this.filters.has("summary")) {
       newAe.changes = [];
@@ -103,7 +103,7 @@ getData() {
   });
 
   let efl = CONFIG.statusEffects
-  .map(se => {return {"id": se.id, "label": se.id?.startsWith("combat-utility-belt.") ? `${se.label} (CUB)` : i18n(se.label)}})
+  .map(se => {return {"id": se.id, "label": se.id?.startsWith("combat-utility-belt.") ? `${se.name || se.label} (CUB)` : i18n(se.label)}})
   .sort((a,b) => a.label < b.label ? -1 : 1);
   this.effectList = {"new": "new"}
   efl.forEach(se => {
@@ -207,7 +207,7 @@ activateListeners(html) {
       }
     } else {
       AEDATA = CONFIG.statusEffects.find(se => se.id === id);
-      AEDATA.label = i18n(AEDATA.label);
+      AEDATA.label = i18n(AEDATA.name || AEDATA.label);
       //TODO remove this when core has this already?
       AEDATA["flags.core.statusId"] = id;
     }
