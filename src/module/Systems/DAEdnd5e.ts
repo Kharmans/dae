@@ -1,7 +1,7 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
 import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
-import { applyBaseActiveEffects, ValidSpec, wildcardEffects } from "./DAESystem";
+import { ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
 var specialTraitsPatched = false;
@@ -31,8 +31,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     super.modifyBaseValues(actorType, baseValues, characterSpec);
     //@ts-ignore
     const modes = CONST.ACTIVE_EFFECT_MODES;
-    baseValues["system.attributes.prof"] = [0,-1];;
-    baseValues["system.details.level"] = [0,-1];
+    baseValues["system.attributes.prof"] = [0, -1];;
+    baseValues["system.details.level"] = [0, -1];
     baseValues["system.attributes.ac.bonus"] = [0, -1];
     baseValues["system.attributes.ac.base"] = [0, -1];;
     baseValues["system.attributes.ac.cover"] = [0, -1];;
@@ -40,20 +40,20 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     baseValues["system.attributes.ac.formula"] = ["", -1];
     if (characterSpec.system.bonuses) {
       // system.attributes.prof/system.details.level and system.attributes.hd are all calced in prepareBaseData
-      baseValues["system.bonuses.All-Attacks"] = ["",-1];
-      baseValues["system.bonuses.weapon.attack"] = ["",-1];
-      baseValues["system.bonuses.spell.attack"] = ["",-1];
-      baseValues["system.bonuses.All-Damage"] = ["",-1];
-      baseValues["system.bonuses.weapon.damage"] = ["",-1];
-      baseValues["system.bonuses.spell.damage"] = ["",-1];
+      baseValues["system.bonuses.All-Attacks"] = ["", -1];
+      baseValues["system.bonuses.weapon.attack"] = ["", -1];
+      baseValues["system.bonuses.spell.attack"] = ["", -1];
+      baseValues["system.bonuses.All-Damage"] = ["", -1];
+      baseValues["system.bonuses.weapon.damage"] = ["", -1];
+      baseValues["system.bonuses.spell.damage"] = ["", -1];
       // These are for item action types - works by accident.
-      baseValues["system.bonuses.heal.damage"] = ["",-1];
-      baseValues["system.bonuses.heal.attack"] = ["",-1];
-      baseValues["system.bonuses.save.damage"] = ["",-1];
-      baseValues["system.bonuses.check.damage"] = ["",-1];
-      baseValues["system.bonuses.abil.damage"] = ["",-1];
-      baseValues["system.bonuses.other.damage"] = ["",-1];
-      baseValues["system.bonuses.util.damage"] = ["",-1];
+      baseValues["system.bonuses.heal.damage"] = ["", -1];
+      baseValues["system.bonuses.heal.attack"] = ["", -1];
+      baseValues["system.bonuses.save.damage"] = ["", -1];
+      baseValues["system.bonuses.check.damage"] = ["", -1];
+      baseValues["system.bonuses.abil.damage"] = ["", -1];
+      baseValues["system.bonuses.other.damage"] = ["", -1];
+      baseValues["system.bonuses.util.damage"] = ["", -1];
     }
     // move all the characteer flags to specials so that the can be custom effects only
     let charFlagKeys = (game.system.id === "dnd5e") ? Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
@@ -291,14 +291,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     });
 
     // We will call this in prepareData
-    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
+    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", this.applyBaseEffectsFunc, "OVERRIDE");
     // Add flags to roll data so they can be referenced in effects
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", getRollData, "WRAPPER");
     // Overide prepareData so it can add the extra pass
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // Fix for dnd5e broken determine suppression (does not work for unlinked actors) + support condition immunity
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "OVERRIDE");
-    
+
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
 
@@ -366,6 +366,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // Rely on suppression Hooks.on("updateItem", updateItem); // deal with disabling effects for unequipped items
   }
 
+  static get applyBaseEffectsFunc() {
+    return applyBaseActiveEffectsdnd5e
+  }
   public static initSystemData() {
     // Setup attack types and expansion change mappings
     this.spellAttacks = ["msak", "rsak"];
@@ -397,7 +400,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
     const damageTypes = Object.values(daeSystemClass.systemConfig.damageTypes);
     this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
-      .reduce((obj: {}, key: string) => {obj[key]= key; return obj}, {})
+      .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {})
     Object.keys(this.traitList).forEach(type => {
       this.traitList[`-${type}`] = `-${CONFIG.DND5E.damageTypes[type]}`;
     });
@@ -458,7 +461,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return this.armorClassCalcList;
     }
 
-      if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses"].includes(spec))
+    if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses"].includes(spec))
       return this.bypassesList;
 
     if (spec.includes("system.skills") && spec.includes("value"))
@@ -637,7 +640,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.languages.all":
         if (actor.system.traits.languages.value instanceof Set)
           setProperty(actor, "system.traits.languages.value", new Set(Object.keys(systemConfig.languages)))
-        else 
+        else
           setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
         return true;
       case "system.traits.languages.value":
@@ -645,7 +648,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.ci.all":
         if (actor.system.traits.ci.value instanceof Set)
           setProperty(actor, "system.traits.ci.value", new Set(Object.keys(systemConfig.conditionTypes)))
-        else 
+        else
           setProperty(actor, "system.traits.ci.value", Object.keys(systemConfig.conditionTypes))
         return true;
       case "system.traits.ci.value":
@@ -795,6 +798,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
   }
 }
+// this function replaces applyActiveEffects in Actor
+function applyBaseActiveEffectsdnd5e() {
+  if (this._prepareScaleValues) this._prepareScaleValues();
+  // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
+  // determine whether they are suppressed or not.
+  this.effects.forEach(e => e.determineSuppression());
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects, [])
+}
 
 function getRollData(wrapped, ...args) {
   const data = wrapped(...args);
@@ -816,25 +827,25 @@ async function preparePassiveSkills() {
 
 function prepareData(wrapped) {
   try {
-  debug("prepare data: before passes", this.name, this._source);
-  // setProperty(this, "flags.dae", getProperty(this._source, "flags.dae") ?? {});
-  setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
+    debug("prepare data: before passes", this.name, this._source);
+    // setProperty(this, "flags.dae", getProperty(this._source, "flags.dae") ?? {});
+    setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
 
-  this.overrides = {};
-  wrapped();
-  const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
-  if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
-  preparePassiveSkills.bind(this)();
-  // Fix for dnd5e _prepareSpellcasting overwriting the _source pact.value
-  const pact = this.system.spells?.pact;
-  if (pact)
-    pact.value = this._source.system.spells.pact?.value;
-  //TODO find another way to tdo this
-  // this._prepareOwnedItems(this.items)
-  debug("prepare data: after passes", this);
+    this.overrides = {};
+    wrapped();
+    const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
+    if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
+    applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
+    preparePassiveSkills.bind(this)();
+    // Fix for dnd5e _prepareSpellcasting overwriting the _source pact.value
+    const pact = this.system.spells?.pact;
+    if (pact)
+      pact.value = this._source.system.spells.pact?.value;
+    //TODO find another way to tdo this
+    // this._prepareOwnedItems(this.items)
+    debug("prepare data: after passes", this);
   } catch (err) {
-    console.error("Could not prepare data ", this.name,  err);
+    console.error("Could not prepare data ", this.name, err);
   }
 }
 
@@ -873,16 +884,17 @@ function procAdvantageSkill(actor, abilityId, skillId): number {
 
 function _prepareArmorClassAttribution(wrapped, data) {
   const attributions = wrapped(data);
-  if (!this.object.effects) return attributions;
-  for (let effect of this.object.effects) {
-    for (let change of effect.changes) {
-      //@ts-ignore .isNumeric - core does not look at ac.value or non-numeric ac.bonus
-      if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
-        attributions.push({
-          label: `${effect.name || effect.label} (dae)`,
-          mode: change.mode,
-          value: change.value
-        })
+  if (this.object?.effects) {
+    for (let effect of this.object.effects) {
+      for (let change of effect.changes) {
+        //@ts-ignore .isNumeric - core does not look at ac.value or non-numeric ac.bonus
+        if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
+          attributions.push({
+            label: `${effect.name || effect.label} (dae)`,
+            mode: change.mode,
+            value: change.value
+          })
+        }
       }
     }
   }
@@ -1138,7 +1150,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
       // Toggle macro.XX effects
       if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
         setProperty(effect, "flags.dae.itemUuid", candidate.uuid)
-        actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect, actor.getRollData());
+      actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect, actor.getRollData());
     }
   } catch (err) {
     console.warn("dae | preItemUpdate ", err)

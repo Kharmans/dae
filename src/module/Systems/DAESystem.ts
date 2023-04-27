@@ -328,6 +328,10 @@ export class DAESystem {
 
   public static setupActions(): void {
   }
+
+  static get applyBaseEffects() {
+    return applyBaseActiveEffects;
+  }
 }
 
 /*
@@ -348,13 +352,7 @@ function prepareData(wrapped) {
 }
 
 // this function replaces applyActiveEffects in Actor
-export function applyBaseActiveEffects() {
-  if (game.system.id === "dnd5e" && isNewerVersion(game.system.version, "2.1.2")) {
-    this._prepareScaleValues();
-  }
-    // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
-    // determine whether they are suppressed or not.
-    this.effects.forEach(e => e.determineSuppression());
+function applyBaseActiveEffects() {
   applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects, [])
 }
 

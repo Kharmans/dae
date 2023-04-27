@@ -93,8 +93,18 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
         actorId: actor.id,
         actorUuid: actor.uuid,
       }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
-      let data = { action: "onCreate", lastArg, args: [], macroData: { change, name: "" } };
-      const result = await macro.execute(data.action, ...data.args, data.lastArg)
+      let data = {
+        action: "onCreate",
+        lastArg,
+        args: [],
+        macroData: { change, name: "", effectData: undefined },
+        actor,
+        token: tokenForActor(actor),
+        item
+      };
+
+      _executeMacro(data);
+      // const result = await macro.execute(data.action, ...data.args, data.lastArg)
     };
   }
   if (option === "permanent") return documents;
@@ -110,11 +120,26 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
   return documents;
 }
 
-async function _executeMacro(data: { action, args, lastArg, macroData: { change, name, effectData } }) {
-  const macro = await getMacro({ change: data.macroData.change, name: data.macroData.name }, null, data.macroData.effectData);
-  //@ts-ignore
-  const result = await macro.execute(data.action, ...data.args, data.lastArg)
-  return result;
+async function _executeMacro(data: {
+  action,
+  args,
+  lastArg,
+  macroData: { change, name, effectData },
+  actor,
+  token,
+  item
+}) {
+  const macro = await getMacro({ change: data.macroData.change, name: data.macroData.name }, data.item, data.macroData.effectData);
+  let v11args: any = {};
+  v11args[0] = "on";
+  v11args[1] = data.lastArg;
+  v11args.length = 2;
+  v11args.lastArg = data.lastArg;
+  const speaker = data.actor ? ChatMessage.getSpeaker({ actor: data.actor }) : undefined;
+  const AsyncFunction = (async function () { }).constructor;
+  //@ts-expect-error
+  const fn = new AsyncFunction("speaker", "actor", "token", "character", "item", "args", macro.command);
+  return fn.call(this, speaker, data.actor, data.token, undefined, data.item, v11args);
 }
 
 async function _deleteUuid(data: { uuid: string }) {
@@ -263,7 +288,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
 
       if (removeList.length > 0) {
         if (toggleEffect) {
-          removeList = removeList.map(ef => ({ _id: ef.id, disabled: !ef.disabled, "duration.startTime": game.time.worldTime}));
+          removeList = removeList.map(ef => ({ _id: ef.id, disabled: !ef.disabled, "duration.startTime": game.time.worldTime }));
           await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
           activate = false;
         } else { // remove the effect
@@ -410,7 +435,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
                 duration = ((ae.duration.rounds ?? 0) + ((ae.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
               }
               warn("removing effect ", ae.toObject, " in ", duration, " seconds ")
-              if (duration && aboutTimeInstalled) { // TODO check this v10
+              if (duration && aboutTimeInstalled) {
                 game.Gametime.doIn({ seconds: duration }, doRemoveEffect, tokenUuid, ae.toObject())
               } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
                 setTimeout(doRemoveEffect, duration * 1000 || 6000, tokenUuid, ae.toObject());

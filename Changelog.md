@@ -1,3 +1,9 @@
+### 10.0.27
+* renable onUpdateTarget/Actor flags which were turned off by mistake.
+* Remove dependency on advanced macros when calling macro.execute/macro.itemMacro/macro.createItemRunMacro
+* Support v11 args as well as existing args as an array. In line with the v11 arguments to macros you can now reference args.lastArgs and set arguments like "attackerStrength=@abilities.str.value defenderStrength=##abilities.str.value", and acessed as args.attackerStrength and args.defenderStrength, as well as still support args as an array (well args[i] and args.length are supported, but not args.map etc). I've not come across any errors, but I'm leaving the manifest link for 10.0.26 in case there is a breaking problem.
+* Fix for sw5e prepareScaleValues not being called
+
 ### 10.0.26
 * Fix for onUpdateTarget not being applied thanks @thatlonelybugbear.
 * Another fix for applying macro.CE effects to unlinked tokens - all the problems seem to be resolved in v11 without the fancy shenanigans.

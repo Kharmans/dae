@@ -1,6 +1,7 @@
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { daeSystemClass } from "../dae";
+import { applyDaeEffects, daeSystemClass } from "../dae";
 import { DAESystemDND5E } from "./DAEdnd5e";
+import { ValidSpec, wildcardEffects } from "./DAESystem";
 
 //@ts-ignore
 const CONFIG: any = globalThis.CONFIG;
@@ -120,7 +121,9 @@ export class DAESystemSW5E extends DAESystemDND5E {
       });
     }
   }
-
+  static get applyBaseEffectsFunc() {
+    return applyBaseActiveEffectssw5e
+  }
   public static getOptionsForSpec(spec: string): {} {
     if (spec.includes("system.skills") && spec.includes("ability")) 
         return CONFIG.SW5E.abilities;
@@ -135,10 +138,16 @@ export class DAESystemSW5E extends DAESystemDND5E {
   public static initActions() {
     super.initActions();
   }
-
-  // For DAE Config
 }
-
+// this function replaces applyActiveEffects in Actor
+function applyBaseActiveEffectssw5e() {
+  if (this._prepareScaleValues) this._prepareScaleValues();
+  
+  // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
+  // determine whether they are suppressed or not.
+  this.effects.forEach(e => e.determineSuppression());
+  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects, [])
+}
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);
 
