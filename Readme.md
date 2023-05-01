@@ -1,83 +1,44 @@
-If you have a problem please read the [Issues section](#Issues) before reporting a bug.
+If you have a problem please read the [Issues section](#issues) before reporting a bug.
 
-## Getting ready for dnd5e 1.5.x 
-The dnd5e 1.5.x release of dnd5e means some of the features of DAE are no longer required which is great. Once you upgrade to dnd1.5.x some features in DAE will change - most are not breaking (I hope).
-
-**Most derived fields now have .bonuses values available:**
-system.abilities.str.bonuses.save/.check. This field supercedes the DAE support of system.abilities.str.save and system.abilities.str.mod, in much the same way system.attributes.ac.bonus means changes to system.attributes.ac.value are no longer required.
-
-values that have .bonuses available:
-  - abilities.str/dex/cha etc, bonusess.check, bonuses.save
-  - skills.acr/per/prc etc. have a bonuses.check and bonuses.passive.
-  - attributes.ac.bonus **ac.bonus is special** it will not accept derived fields (i.e. abilities.dex.mod and so on - dnd5e limitation).
-
-These fields support the the use of @values and dice expressions when specifying the bonus - and this is a core dnd5e effect - dae is not required for this.
-
-Global bonuses have been enhanced to accept @fields for all bonues, instead of just the rwak/mwak/rsak/msak fields. As far as I am aware the new fields are supported in DAE immediately.
-
-Accordingly effect changes to the derived values for abilities, skills and ac are deprecated and will generate an error in the console if used, whilst still working. A later version will make this a notification in game and subsequently they will be disabled entirely.
-
- Effects to change (they will eventually be removed from dae)
- system.abilities.str/dex/cha.save -> system.abilities.str.bonuses.save
- system.abilities.str/dex/cha.mod -> system.abilities.str.bonuses.check
- skills.acr/per/prc/etc.bonus (use skills.prc.bonuses.check) and skills.prc.passive (use skills.bonuses.passive instead).
-
-There are some cleanup functions to get rid of the deprecated fields in active effects for actors and items. Please backup your world first - I have run these over my worlds without problems, but there could be lurking bugs.
-async DAE.fixDeprecatedChangesActor(actor) - e.g. 
-```await DAE.fixDeprecatedChangesActor(game.actors.getName("fred"));```
-async fixDeprecatedChangesItem(item) - e.g. 
-```await DAE.fixDeprecatedChangesItem(game.items.getName("Fireball"))```
-async fixDeprecatedChanges() - fix all actors/tokens/items
-```await DAE.fixDeprecatedChanges()```
-
-**BREAKING in 1.5.x of dnd5e**
- * Now that you can specify a save.bonus field for each ability you no longer need the DAE saving throw replacement roll. I will disable the dae replacement saving throw which uses ability.save rather than ability.mod. This will be disabled when dnd5e reaches 1.5.3.
-* **You should switch off this flag in DAE (and disable the DAE saving throw) as soon as practical since the new abilities.bonuses.save are not compatible with the DAE version.**
-* I have decided to disable this sooner, rather than later, since the new bonuses.save fields are a better alternative and I don't want DAE getting in the way of the new mechanic.
-
-## BREAKING as of dnd5e 1.4.3
-**My lights do not go off when I unequip an item** **I can't toggle an effect from Token HUD**
-As of DND5E 1.4.3 and/or foundry 0.9.2 unequipping an item makes it unavailable **EVEN** if it is active. DAE understands about unavailable effects and won't apply effects that are marked as unavailable.
-
-DAE makes no changes to active effects when equipping/unequipping, in 1.4.3 and/or foundry 0.9.2 (which it used to do) so that there is no confusion about who is toggling effects it is all foundry/DND5E.
-
-This will negatively impact ATL and Token HUD (at least) both of which used to rely on DAE sending out an updateEffect notification when items were equipped/unequipped. DND5E 1.4.3/foundry 0.9.2 do not notify of changes to item equipped satus via updateActiveEffect. 
-  * ATL currently ignores unavailable looking only at active/inactive - so toggling equipped to enable/disable lights won't work, you have to toggle the effect. 
-  * Token HUD toggles active/inactive when you choose an effec so if the item is equipped toggling will work, but if not equippd it won't change anything.
-
-[TOC]
-
-Dynamic Active Effects (DAE) is a replacement for Dynamic Effects (which will *NOT* work in 0.71+, and won't be ported).
-
-Much of the functionality of Dynamic Effects is now included in the Foundry core active effects system. DAE augments the core functionality with some additional features.. 
-
-Core active effects allow you to modify a base value (defined in template.json - most fields you can edit in the character sheet) and apply a fixed value or string to it. There are additional options in core that were not present in Dynamic Effects, see: [Calculations](#Calculations).
+## What does DAE do?
+First off you probably don't need DAE. The core Foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and consider DAE *only* if you run into a roadblock on what you want to do.
 
 Foundry core active effects attach to an item and are designated as transfer or non-transfer.  
 Transfer Effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. 
-Non-transfer Effects are not moved from the item to any actor without additional functions, which DAE/Midi-QOL provide.
+Non-transfer Effects are not moved from the item to any actor without additional functions, which DAE and Midi-QOL provide.
 
 You can also create active effects directly on an actor and bypass the whole transfer/non-transfer question.
-
-## What does DAE do?
-First off you probably don't need DAE. The core Foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and using DAE only if you run into a roadblock on what you want to do.
-
-If you've come here because someone said you should use the module, here's a little bit of background:
 
 This module modifies how active effects behave over and above what is supported in core. An active effect allows you to modify values on an actor (e.g. Strength). You can create effects directly on an actor or create them on an item and have them transfer to the actor when the item is added to the actor.
 
 DAE does add some features to core active effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.  
-1. Editing of owned item effects is fully supported.
-2. **Obsolete** as of DND5E 1.4.3 DND5E handles enabling/disabling effects for transfer effects and item equip/unequip.
-3. The ability to reference actor data in active effects data fields like `@abilities.str.value` where core restricts you to numbers and strings. If an active effect modifies a field that will be used in a roll like `system.bonuses.mwak.attack` (and soon to be .bonus fields - dnd1.5), a string field like `@abilities.dex.mod` will get looked up when the roll is made.
-4. The ability to update derived fields, such as `abilities.dex.mod`. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
+
+- Editing of owned item effects is fully supported.
+- The ability to reference actor data in active effects data fields like `@abilities.str.value` where core restricts you to numbers and strings. If an active effect modifies a field that will be used in a roll like `system.bonuses.mwak.attack` (and soon to be .bonus fields - dnd1.5), a string field like `@abilities.dex.mod` will get looked up when the roll is made.
+- The ability to update derived fields, such as `abilities.dex.mod`. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
     * Most/Some of these will be redundant after dnd1.5.
-5. The ability to perform arithmetic in field data definitions, like `ceil(@classes.rogue.levels/2)`
-6. Support for an API that allows non-transfer effects to be applied to a target token. In combination with Midi-QOL it allows you to have spells/weapons/features apply non-transfer effects to other tokens.
-7. An extended active effect editor that provides `CUSTOM` fields, a list of valid fields, a drop down list of options, drop down lists for restricted field values, and the ability to set the priority of an effect.
-8. The ability to call macros when active effects are applied to an actor.
-9. Several short hand CUSTOM effects to simplify giving all damage immunities and so on.
-10. DAE makes the actor flags available in actor.getRollData(), so you can dereferences @flags. in expressions
+- The ability to perform arithmetic in field data definitions, like `ceil(@classes.rogue.levels/2)`
+- Support for an API that allows non-transfer effects to be applied to a target token. In combination with Midi-QOL it allows you to have spells/weapons/features apply non-transfer effects to other tokens.
+- An extended active effect editor that provides `CUSTOM` fields, a list of valid fields, a drop down list of options, drop down lists for restricted field values, and the ability to set the priority of an effect.
+- The ability to call macros when active effects are applied to an actor.
+- Several short hand CUSTOM effects to simplify giving all damage immunities and so on.
+- DAE makes the actor flags available in actor.getRollData(), so you can dereference @flags. in expressions
+- [Create items tied to an ActiveEffect](##Creating-items-with-DAE), so when the ActiveEffect is deleted, the item disappears as well. Useful for transformations or conjured weapons.
+
+# Index
+[Active Effect Expiry](##Active-Effect-Expiry)  
+[Stackable effects](##Stackable-effects)  
+[Editing Active Effects](##Editing-Active-Effects)  
+[Macros](##Macros)  
+[Macros and transfer effect](##Macros-and-transfer-effect)  
+[Creating items with DAE](##Creating-items-with-DAE)  
+[Macro Functions](##Macro-Functions)  
+[Useful bits](##Useful-bits)  
+[Sample Items/Macros](##Sample-Items/Macros)  
+[Module Integrations](##Module-Integrations)  
+[Issues](##issues)  
+
+
 
 ## Active Effect Expiry
 Expiry of effects requires additional [modules](#Module Integrations) to be installed. All of the modules play nicely together. If times-up is installed it takes over the expiry of timed effects.
@@ -109,7 +70,7 @@ Requires times-up installed and active:
 
 See also Midi-qol and OverTime effects which support some conditional expiry options if the actor is in combat.
 
-## Stackable effects.
+## Stackable effects
 Active effects can be marked as stackable, either apply multiple times or stack with a count.
 
 You can refer to ##/@stackCount for stackable effects which can be used in active effect evaluation. Since you almost always want to refer to the stackCount on the target, for non-passive effects remember to use ##stackCount so it will evaluate on the target not the caster/attacker and for passive effects @stackCount.
@@ -298,11 +259,11 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 | Attribute Key	| Change Mode	| Details	|
 |---------------------------------------	|:----------:	|-------- 	|
 | `system.bonuses.All-Attacks`	|    CUSTOM	| The specified string field will be appended to `bonuses.mwak.attack`, `bonuses.rwak.attack`, `bonuses.msak.attack`, `bonuses.rsak.attack`	|
-| `system.bonuses.All-Damage`	|    CUSTOM	| The specified string field will be appended to ?	|
-| `system.bonuses.abil.damage`          	|            	| 	|
-| `system.bonuses.TYPE.attack`          	|    CUSTOM  	| 	|
-| `system.bonuses.TYPE.damage`          	|            	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon 	|
-| `system.bonuses.save.damage`          	|            	| 	|
+| `system.bonuses.All-Damage`	|    CUSTOM	| The specified string field will be appended to each of rwak/mwak/rsak/msak	|
+| `system.bonuses.abil.damage`          	|   CUSTOM   	| The specified string will appended to the damage roll for action type ability check	|
+| `system.bonuses.TYPE.attack`          	|   CUSTOM  	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon	|
+| `system.bonuses.TYPE.damage`          	|   CUSTOM  	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon 	|
+| `system.bonuses.save.damage`          	|            	| The specified string will appended to the damage roll for action type saving throw	|
 | `system.bonuses.spell.dc` 	|     ANY 	| Always numeric, so any dice expression will be evaluated once when prepareData is called and **NOT** on each spell cast.<br>You cannot do lookups of derived fields for spell.dc calculations. 	|
 | `system.spells.pact.level`	|	|	|
 | `system.spells.pact.override`	|	| `spellslots.value` is not able to be modified with DAE.	|
@@ -368,7 +329,7 @@ flags.dae.deleteOrigin, which if present as a change in an active effect, will w
 When an active effecr with a change flags.dae.deleteUuid is deleted, and whose change.value is an owned uuid, token uuid or ActiveEffect uuid, the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems/ActiveEffects are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.  
 </li>
 <li>
- "flags.dae.onUpdateTarget" and "flags.dae.onUpdateSource" with the change value being "Label, macroReference, updateFilter, arguments". macroReference, updateFilter and arguments are all optional. This effect does 2 things:
+ "flags.dae.onUpdateTarget" and "flags.dae.onUpdateSource" with the change value being "Label, macroReferece, updateFilter, arguments". macroReference, updateFilter and arguments are all optional. This effect does 2 things:
  <ul>
  <li>
   Creates a flag on the target actor (onUpdateTarget) or the sourceActor (onUpdateSource) that recordds the origin item, the targetToken and the initiating actor's token (sourceToken) and actor (sourceActor) on the target (flags.dae.onUpdateTarget) or the source actor (flags.dae.onUpdateSource). Note that onUpdateSource is different to other active effects in that it is ALWAYS created on the actor using the item/creating the effect and NOT on the target.
@@ -376,7 +337,7 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
   <li>allows you specify a macro that will be called whenever the target token/actor filter field is updated. The filter field does not need to reference a single value, system.abilities will call the macro when any ability is update.
   </li>
   <li>
-  For example ``flags.dae.onUpdateTarget CUSTOM Arcane Link, ItemMacro,system.attributes.hp.value, 1,2,3 `` will add an entry to actor.flags.dae.onUpdateTarget (an array of such entries) on the target actor with:
+  For example ``flags.dae.onUpdateTarget CUSTOM Arcane Link, ItemMacro,system.attributes.hp.value, 1,2,3 `` will add an entry to actor.system.flags.dae.onUpdateTarget (an array of such entries) on the target actor with:
   <ul>
   <li>args: []<br>
   </li><li>
@@ -534,8 +495,14 @@ macro.actorUpdate allows you to update a field on the actor and (optionally) hav
 **macro.tokenMagic "filterName"**  
 Will apply the specified Token Magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.
 
-**Example**  
-This is a programmatic way to create items with effects.  
+## Creating items with DAE
+**macro.createItem CUSTOM uuid**  
+Will create the item referenced by the Uuid on the target actor. On expiry/removal of the effect the item will be removed, which provides a way of providing a tempoary item/feature to an actor for the duration of the feature. You can quickly get an item's uuid by opening the item and right-clicking the book in the title. You can also drag and drop the item into the effect value.
+
+**macro.createItemRunMacro CUSTOM uuid**  
+This behaves the same as macro.createItem, but in addition when the item is created on the actor DAE will run the item's Item Macro with args[0] set to "onCreate" allowing you to save the uuid of the created item (passed in lastArg) somewhere for future reference.
+
+**Programmatically create items with active effects**
 ``` js
 const EXAMPLE_TRANSFERRED_EFFECT = {
     label: "Ring of Protection",
@@ -557,14 +524,6 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
 
   ```
 Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
-
-### macro.createItem macro.createItemRunMacro
-When these are applied to an actor the item specified by the uuid is created on the actor. If the permanent option is given the item remains even if the effect is deleted from the actor. If permanent is not specified the item is removed when the effect is removed/disabled.
-
-macro.createItemRunMacro behaves the same as macro.createItem, but in addition when the item is created on the actor DAE will run the item's Item Macro with args[0] set to "onCreate" allowing you to save the uuid of the created item (passed in lastArg) somewhere for future reference.
-
-**Example**
-macro.createItem CUSTOM Item.do9L8ghurwrOnB6v, permanent
 
 ### flags.dae.deleteUuid
 Here's an example, which summons a token, via warpgate and creates an effect to delete it on spell expiry/loss of concentration.
@@ -597,7 +556,18 @@ The macro functions in dynamicitems have been replaced in DAE with the following
   `activate` (boolean) enables/disables the actor effects.  
   `targets` is an array of target tokens or token ids.
 
-## Really cool Core functionality that you can use....
+## Useful bits
+ * One of the most common things to do with dynamic effects is to create a damage bonus as a number of dice based on level. For DAE this requires a specific syntax in the damage bonus field.
+     ```
+     (ceil(@classes.rogue.levels/2))d6
+     ```
+* Changing actor spellDC. The way that works is to use Bonuses Spell DC. Anything else won't do what you want.
+* Ability Saving Throw bonuses. The supplied DND5E system does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
+* Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified value to the existing system.
+* Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
+* Conditional expressions (a ? b : c) used to work, but a change in the foundry roll parser means they no longer work.
+
+### Really cool Core functionality that you can use....
 You can add your own custom effects without needing any DAE module changes. Say you want to add the average of str.mod and dex.mod to AC (and DAE does not support it) and the expressions don't work...  
 
 Core active effects has the idea of CUSTOM effects. If one is encountered when processing the active effects on an actor the system calls Hooks.call("applyActiveEffect")
@@ -611,47 +581,13 @@ Write a function that does
     if (change.key !=== "system.attributes.ac.value") return;
     // If your active effect spec was 
     // system.actor.attributes.ac.value (change.key) CUSTOM value (the value is not relevant here, but it gets passed as change.value)
-    const actorData = actor.system;
-    actorsystem.attributes.ac.value += Math.ceil((actorData.abilities.str.mod + actorData.abilities.dex.mod) / 2);
+    const actorData = actor.system.data;
+    actorsystem.attributes.ac.value += Math.ceil((actorsystem.abilities.str.mod + actorsystem.abilities.dex.mod) / 2);
     // Although you can change fields other than the change.key field you should not as the core active effects tracks all changes made.
   }
 ```
 
 Your custom effects can create new fields on the actor as well (DAE does this for flags.dnd5e.conditions for example). Just reference the field in the active effect spec and it will be created on the actor when the custom effect updates the value. There is no support for "arbitrary" field specification in the DAE UI (yet) so you would have to create the effect on the actor yourself.
-
-## Useful bits.
- * One of the most common things to do with dynamic effects is to create a damage bonus as a number of dice based on level. For DAE this requires a specific syntax in the damage bonus field.
-     ```
-     (ceil(@classes.rogue.levels/2))d6
-     ```
-* Changing actor spellDC. The way that works is to use Bonuses Spell DC. Anything else won't do what you want.
-* Ability Saving Throw bonuses. The supplied DND5E system does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
-* Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified value to the existing data.
-* Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
-* Conditional expressions (a ? b : c) used to work, but a change in the foundry roll parser means they no longer work.
-
-### Characters imported from dnd beyond.
-**This section is wildly out of date and very likely completely wrong**
-Before running these functions you must disable all DAE effect processing in the DAE confiuration settings.
-
-There are functions to migrate actor owned items to Dynamic-Effects-SRD (DAE SRD/Midi SRD) items. The function will look through an actor and replace items that have analogues in the Dynamic-Effects-SRD (and optionally the DND5E SRD - which will effectively refresh the items with fresh onse from the DND SRD). This is useful for characters that have been imported with vtta-beyond/ddb-beond. Or any actors whose items could do with a refresh.
-```
-DAE.migrateActorDAESRD(actor, includeSRD)
-```
-actor is any actor, includeSRD is a boolean, if true will also use the DND5E compendia for migation.
-
-This is a dangerous feature and might have bugs - I managed to trash one test world with an earlier version - so MAKE A BACKUP OF YOUR ACTOR FIRST!!!!!.
-Example
-```
-DAE.migrateActorDAESRD(game.actors.getName("The name of the actor"), false)
-```
-There are 2 functions that loop through all actors in the game, and all NPCs in the game respectively. In case it did not sink if you run these functions BACK UP YOUR WORLD first. There is always a chance they will make changes that are wrong and irrevocable.
-```
-migrateAllActorsDAESRD(includeSRD:boolean)
-migrateAllNPCDAESRD(includeSRD: boolean)
-```
-
-These functions can be called from the developer console or by creating a macro which calls them.
 
 ### Initiative
 Changes to initiative are challenging due to the way it is calculated and rolled in the dnd5e system. Here is a quick guide to what you can do.
@@ -666,15 +602,10 @@ Changes to initiative are challenging due to the way it is calculated and rolled
 ## Sample Items/Macros 
   There is a compendium of items that have been setup to work with DAE. All active effects work best if both Midi-QOL and about-time/times-up are installed and active, but will still function without them.
 
-  The sample macros compendium has been updated. It is very limited but should provide some help in getting started. You should definitely look at the excelled DAE SRD compendia from @Kandashi for a wealth of pre-configured items/spells/macros.
-
 ## Module Integrations
 
 ### Dependencies
 DAE **requires** libwrapper and socketlib to be istalled.
-
-### [Drop Effects on Items](https://foundryvtt.com/packages/drop-effects-on-items)
-Strongly recommended.
 
 ### [Midi-QOL](https://gitlab.com/tposney/midi-qol)
 When rolling an item (weapon, spell, feature, tool, consumable) using Midi-QOL, non-transfer active effects are applied to the targeted tokens. If the definition of the item indicates that it is self then effects are applied to self. So, a bless spell when cast will apply the active effects to the targeted tokens. 
@@ -702,7 +633,7 @@ If the module is installed and active effects can update the actors gm-notes fie
 ### [Combat Utility Belt](https://github.com/death-save/combat-utility-belt)
 
 CUB conditions are applied in 3 ways:  
-* StatusEffect, this will lookup the CUB conditon at the time of apllication and copy the data. This is the **strongly** preferred way to apply conditions.
+* StatusEffect, this will lookup the CUB conditon at the time of apllication and copy the system. This is the **strongly** preferred way to apply conditions.
 * You create an active effect that takes it's changes from CUB via the drop down list in the DAE Active Effects Screen. "new" is pre-selected but you choose various items from that list, including CUB conditions.
 If you select condition (CUB) from the drop down list DAE will copy the active effect from CUB into the actor/item. From then on it won't change, any changes you make in condition lab will NOT be reflected in actors who have the condition applied via DAE/Midi-QOL.
 * Using macro.CUB to apply a condition that is looked up from CUB when applied. This should be considered deprecated.
@@ -712,15 +643,6 @@ Combat Utility Belt has it's own effects editor that does not support the DAE ex
 ### [Convenient Effects](https://github.com/DFreds/dfreds-convenient-effects)
 
 Same application options as for CUB.
-
-
-### Other modules
-
-**Drop Effects on Items**
-This modules adds the ability to drop effects from an item to an actor or world item. My testing suggests it is compatible with DAE. Highly recommended (almost a dependency).
-
-**5e-sheet resources plus**
-If enabled dae will add target fields for additional resource fields up to "tenth". system.resources.fourth.max, system.resources.fourth.label etc.
 
 ## Issues
 
