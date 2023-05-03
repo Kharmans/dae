@@ -1,3 +1,7 @@
+### 10.0.28
+* Incorporate change for auto complete list to be always visible. From chris of CPR.
+* Fix for @item.level needing to be surrounded by "".
+
 ### 10.0.27
 * renable onUpdateTarget/Actor flags which were turned off by mistake.
 * Remove dependency on advanced macros when calling macro.execute/macro.itemMacro/macro.createItemRunMacro

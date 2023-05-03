@@ -245,6 +245,13 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (data.uuid) ev.target.value += data.uuid;
   }
 
+  // TODO find out how to do this proerply
+  async _renderOuter(options: any): Promise<any> {
+    let html = await super._renderOuter(options);
+    $(html).find(".window-content").css({overflow: "visible"})
+    return html;
+  }
+
   /* ----------------------------------------- */
   _onEffectControl(event) {
     event.preventDefault();

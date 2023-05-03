@@ -888,15 +888,17 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
             return theItem.toObject(false);
           } else if ("@item" === arg) {
             return theItem.toTobject(false);
-          } 
-          const splitArg = arg.split("=");
-          if (splitArg.length === 2) {
-            if (splitArg[1] === "@itemData" || splitArg[1] === "@item") {
-              const itemData = theItem?.toObject(false);
-              v11args[splitArg[0]] = itemData
-              return itemData;
+          }
+          if (typeof arg === "string") {
+            const splitArg = arg.split("=");
+            if (splitArg.length === 2) {
+              if (splitArg[1] === "@itemData" || splitArg[1] === "@item") {
+                const itemData = theItem?.toObject(false);
+                v11args[splitArg[0]] = itemData
+                return itemData;
+              }
+              else v11args[splitArg[0]] = splitArg[1];
             }
-            else v11args[splitArg[0]] = splitArg[1];
           }
           return arg;
         })
@@ -907,7 +909,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           //TODO localize this
           if (action !== "off") {
             ui.notifications.warn(`macro.execute/macro.itemMacro | No macro ${args[0]} found`)
-            error(`macro.execute/macro.itemMacro | No macro ${args[0]} found`);
+            warn(`macro.execute/macro.itemMacro | No macro ${args[0]} found`);
             continue;
           }
         }
@@ -1087,7 +1089,7 @@ export async function getMacro({ change, name }, item, effectData) {
 
     if (!macroCommand) {
       macroCommand = `if (!args || args[0] === "on") {ui.notifications.warn("macro.itemMacro | No macro found for item ${item?.name}");}`;
-      error(`No macro found for item ${item?.name}`);
+      warn(`No macro found for item ${item?.name}`);
     }
     return CONFIG.Macro.documentClass.create({
       name: "DAE-Item-Macro",
