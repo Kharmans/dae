@@ -378,6 +378,11 @@ function createActiveEffectHookOLD(...args) {
   if (effect.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
       try {
+        const selfAuraChange = getProperty(effect, "flags.ActiveAuras.isAura") === true
+          && getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
+          && effect.origin.startsWith(actor.uuid);
+        // don't apply macro or macro like effects if active aura and not targeting self
+        if (selfAuraChange) return;
         for (let change of effect.changes) {
           if (cubActive && change.key === "macro.CUB" && token) {
             await addCubChange(change.value, [token])
