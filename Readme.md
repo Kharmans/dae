@@ -1,4 +1,6 @@
 If you have a problem please read the [Issues section](#issues) before reporting a bug.
+There is a dedicated discord server for my modules where you can get lots of help: https://discord.gg/Xd4NEvw5d7
+If you want to support this module then go to; https://ko-fi.com/tposney
 
 ## What does DAE do?
 First off you probably don't need DAE. The core Foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and consider DAE *only* if you run into a roadblock on what you want to do.

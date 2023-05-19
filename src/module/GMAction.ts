@@ -81,6 +81,7 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
   //@ts-expect-error onDropSingleItem toObject
   const itemData = await actor.sheet._onDropSingleItem(item.toObject(false));
   if (!itemData) return [];
+  setProperty(itemData, "flags.dae.DAECreated", true);
   //@ts-expect-error createEmbeddedDocument toObject
   const documents = await actor.createEmbeddedDocuments("Item", [itemData]);
   if (data.callItemMacro) {
@@ -147,7 +148,8 @@ async function _deleteUuid(data: { uuid: string }) {
   if (data.uuid.startsWith("Compendium") || data.uuid.startsWith("Item")) return false;
   const entity = DAEfromUuid(data.uuid);
   if (!entity) return false;
-  if (entity instanceof Item) return await entity.delete();
+  //@ts-expect-error
+  if (entity instanceof CONFIG.Item.documentClass) return await entity.delete();
   if (entity instanceof CONFIG.Token.documentClass) return await entity.delete();
   if (entity instanceof CONFIG.ActiveEffect.documentClass) return await entity.delete();
   if (entity instanceof CONFIG.MeasuredTemplate.documentClass) return await entity.delete();
@@ -310,8 +312,20 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
             if (aeData.name || aeData.name === '')
               aeData.name = `${aeData.name || aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
             else aeData.label = `${aeData.name || aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
-          }
 
+          }
+          if (aeData.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
+            //@ts-expect-error fromUuidSync
+            const item = fromUuidSync(aeData.origin);
+            let macroCommand;
+            if (item instanceof Item) {
+              //@ts-expect-error flags
+              macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
+            } else if (aeData.flags?.dae?.itemData) {
+              macroCommand = aeData?.flags.dae.itemData.flags.itemacro?.macro.command ?? aeData?.flags.dae.itemData.flags.itemacro?.macro.data.command;
+            }
+            setProperty(aeData, "flags.dae.itemMacro", macroCommand)
+          }
           // convert item duration to seconds/rounds/turns according to combat
           if (aeData.duration.seconds) {
             //@ts-ignore
@@ -320,6 +334,11 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
             const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token.id));
 
             const convertedDuration = convertDuration({ value: aeData.duration.seconds, units: "second" }, inCombat);
+            if (aeData.duration.seconds === -1) { // special case duration of -1 se
+              delete convertedDuration.rounds;
+              delete convertedDuration.turns;
+              delete convertedDuration.seconds;
+            }
             if (convertedDuration.type === "turns") {
               aeData.duration.rounds = convertedDuration.rounds;
               aeData.duration.turns = convertedDuration.turns;
@@ -350,7 +369,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
           setProperty(aeData, "flags.dae.transfer", false);
           let source: any | undefined = await fromUuid(aeData.origin);
           let context = targetActor.getRollData();
-          //@ts-ignore
+          //@ts-expect-error documentClass
           if (false && source instanceof CONFIG.Item.documentClass) {
             context = source?.getRollData();
           }
@@ -377,7 +396,6 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
                 newEffectData.changes = [duplicate(change)];
                 newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
                 sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], { metaData })
-                // createSourceActorLink(change, aeData, tokenUuid, change.value);
                 return undefined;
               }
 
@@ -404,7 +422,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
         }
 
         if (dupEffects.length > 0) {
-          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { metaData });
+          let timedRemoveList = await actionQueue.add(targetActor.createEmbeddedDocuments.bind(targetActor), "ActiveEffect", dupEffects, { metaData });
           setTimeout(() => {
             if (globalThis.EffectCounter) {
               for (let effectData of dupEffects) {

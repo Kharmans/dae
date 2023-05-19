@@ -22,7 +22,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLPresets;
   ATLVisionModes;
   validFields;
-  constructor(object = {}, options = {}) {
+  object: any;
+  constructor(object: any = {}, options = {}) {
     super(object, options);
     this.tokenMagicEffects = {};
     //@ts-ignore
@@ -33,7 +34,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     } else this.tokenMagicEffects["invalid"] = "module not installed"
 
     let validSpecsToUse = ValidSpec.specs["union"];
-    //@ts-ignore documentClass
+    //@ts-expect-error parent documentClass
     if (this.object.parent instanceof CONFIG.Actor.documentClass) {
       validSpecsToUse = ValidSpec.specs[this.object.parent.type]
     }
@@ -55,8 +56,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       })
     }
     this.statusEffectList = {};
-    let efl = CONFIG.statusEffects
-      .filter(se => se.id)
+    let efl: any = CONFIG.statusEffects;
+      efl = efl.filter(se => se.id)
       .map(se => {
         if (se.id.startsWith("combat-utility-belt.")) return { id: se.id, label: `${se.name || se.label} (CUB)` };
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.name || se.label} (CE)` };
@@ -163,7 +164,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
     const translations = geti18nTranslations();
-    data.stackableOptions = translations.stackableOptions ?? { "none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1" };
+    data.stackableOptions = translations.stackableOptions ?? { "noneName": "Effects do not stack by name", "none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1" };
 
     if (this.object.parent) {
       //@ts-ignore documentClass
@@ -303,7 +304,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     //@ts-ignore _getSubmitData
     // const data = super._getSubmitData(updateData); TODO revisit when this is fixed
     const fd = new FormDataExtended(this.form, {editors: this.editors});
-    let data = expandObject(fd.object);
+    let data = expandObject(fd.toObject());
     if ( updateData ) mergeObject(data, updateData);
     data.changes = Array.from(Object.values(data.changes ?? {}));
     for (let change of data.changes) {

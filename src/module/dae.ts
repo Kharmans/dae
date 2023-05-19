@@ -452,10 +452,10 @@ async function _preCreateActiveEffect(...args) {
 async function _removeExistingEffects(...args) {
   let [data, options, user] = args;
   const actor = this.parent;
-  //@ts-expect-error documentClass
+  //@ts-expect-error
   if (!(actor instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
   if (!this.flags?.dae?.specialDuration) this.updateSource({ "flags.dae.specialDuration": [] });
-  if (getProperty(this, "flags.dae.stackable") === undefined) this.updateSource({ "flags.dae.stackable": "multi" });
+  if (getProperty(this, "flags.dae.stackable") === undefined) this.updateSource({ "flags.dae.stackable": "noneName" });
   const stackable = getProperty(this, "flags.dae.stackable");
   if (effectIsTransfer(this) && ["noneName", "none"].includes(stackable)) {
     const parent = this.parent;
@@ -522,7 +522,8 @@ async function _preCreateActiveEffectUpdateData(...args) {
     //@ts-expect-error documentClass
     if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return;
 
-    let updates = { "flags.dae.transfer": data.transfer === true ? true : false };
+    let updates = {};
+    setProperty(updates, "flags.dae.transfer", data.transfer === true ? true : false );
     //@ts-expect-error documentClass 
     if (this.flags?.dae?.durationExpression && parent instanceof CONFIG.Actor.documentClass) {
       let sourceActor = parent;
@@ -546,7 +547,7 @@ async function _preCreateActiveEffectUpdateData(...args) {
     for (let change of this.changes) {
       const inline = typeof change.value === "string" && change.value.includes("[[");
       if (change.key === "StatusEffect") {
-        const statusEffect = CONFIG.statusEffects.find(se => se.id === change.value);
+        const statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
         if (statusEffect) {
           newChanges = statusEffect.changes ? newChanges.concat(statusEffect.changes) : newChanges;
           updates["icon"] = statusEffect.icon;
@@ -555,8 +556,9 @@ async function _preCreateActiveEffectUpdateData(...args) {
           if (statusEffect.flags) {
             setProperty(updates, "flags", statusEffect.flags);
           }
-          updates["flags.core.statusId"] = statusEffect.id; //TODO V11
-
+          if (isNewerVersion(game.version, "11.0")) {//TODO check in v11
+            updates["statuses"] = new Set([statusEffect.id])
+          } else updates["flags.core.statusId"] = statusEffect.id; 
         }
       } else if (change.key === "StatusEffectLabel") {
         updates["label"] = change.value;
@@ -571,6 +573,14 @@ async function _preCreateActiveEffectUpdateData(...args) {
           }
         }
         newChanges.push(newChange);
+      } else if (change.key.startsWith("macro.itemMacro")) {
+        //@ts-expect-error
+        const item: any = fromUuidSync(this.origin);
+        if (item instanceof Item) {
+          //@ts-expect-error
+          let macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
+          setProperty(updates, `flags.dae.itemMacro`, macroCommand)
+        }
       } else newChanges.push(change);
     }
     if (changesChanged) updates["changes"] = newChanges;
@@ -653,6 +663,7 @@ export function updateActiveEffectHook(...args) {
             }
           }
           if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+          warn("dae add macro off", actionQueue._queue.length)
             await actionQueue.add(daeMacro, "off", parent, effect.toObject(false), {});
 
         } else if (changes.disabled === false && !effect.isSuppressed) {
@@ -669,8 +680,10 @@ export function updateActiveEffectHook(...args) {
               await addCreateItemChange(change, parent, effect)
             }
           }
-          if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+          if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+            warn("action queue add dae macro on ", actionQueue._queue.length)
             await actionQueue.add(daeMacro, "on", parent, effect.toObject(false), {});
+          }
         }
       }
     } catch (err) {
@@ -750,8 +763,10 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
         if (change.key === "flags.dae.deleteOrigin") entityToDelete = this.origin;
 
       }
-      if (this.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+      if (this.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+        warn("action queue add daemacro off ", actionQueue._queue.length)
         await actionQueue.add(daeMacro, "off", actor, this.toObject(false), options);
+      }
 
       if (entityToDelete) await socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
     }
@@ -809,8 +824,10 @@ export function deleteActiveEffectHook(...args) {
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.origin;
 
         }
-        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+          warn("action queue dae macro add off ", actionQueue._queue.length)
           await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), options);
+        }
 
         if (entityToDelete) await socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
       }
@@ -954,7 +971,6 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           v11args.length = args.length;
           v11args.lastArg = lastArg;
           v11args.item = theItem;
-
           const AsyncFunction = (async function () { }).constructor;
           //@ts-expect-error
           const fn = new AsyncFunction("speaker", "actor", "token", "character", "args", body)
@@ -1067,6 +1083,7 @@ export async function getMacro({ change, name }, item, effectData) {
       return game.macros.getName(name);
     }
   } else if (change.key.startsWith("macro.itemMacro")) {
+    /*
     // Get the macro command for the macro 
     // TODO look at using an item name as well?
     let macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
@@ -1092,6 +1109,8 @@ export async function getMacro({ change, name }, item, effectData) {
       setProperty(effectData.flags, "dae.itemData", item.toObject(false));
     }
 
+    */
+   let macroCommand = getProperty(effectData, "flags.dae.itemMacro");
     if (!macroCommand) {
       macroCommand = `if (!args || args[0] === "on") {ui.notifications.warn("macro.itemMacro | No macro found for item ${item?.name}");}`;
       warn(`No macro found for item ${item?.name}`);
@@ -1311,7 +1330,7 @@ export /*async*/ function preUpdateActorHook(candidate, updates, options, user) 
         originItem
       };
       let macroText;
-      if (onUpdate.macroName.startsWith("ItemMacro")) {
+      if (onUpdate.macroName.startsWith("ItemMacro")) { // TODO Come back and make sure this is tagged to the effect
         if (onUpdate.macroName === "ItemMacro") {
           macroText = originObject?.flags?.itemacro?.macro.command ?? originObject?.flags?.itemacro?.macro.data.command;
         } else if (onUpdate.macroName.startsWith("ItemMacro.")) {

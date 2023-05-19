@@ -1083,7 +1083,7 @@ function determineSuppression() {
 
 function preUpdateItemHook(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
-  const actor = candidate.parent;
+  const actor: Actor = candidate.parent;
   if (!(actor instanceof Actor)) return true;
   if (updates.system?.equipped === undefined && updates.system?.attunement === undefined) return true;
   try {
@@ -1096,9 +1096,11 @@ function preUpdateItemHook(candidate, updates, options, user) {
     if (wasSuppressed === isSuppressed) return true;
     const tokens = actor.getActiveTokens();
     const token = tokens[0];
-    for (let effect of candidate.effects) {
+    //@ts-expect-error actor.effects?
+    for (let effect of actor.effects) {
       // if (!effect.transfer || effect.origin !== candidate.uuid) continue;
-      if (!effect.transfer) continue;
+      if (!effect.transfer && !effect.flags?.dae?.transfer) continue;
+      if (effect.origin !== candidate.uuid) continue;
       for (let change of effect.changes) {
         if (isSuppressed) {
           switch (change.key) {
@@ -1146,11 +1148,14 @@ function preUpdateItemHook(candidate, updates, options, user) {
           }
 
         }
-      }
+      }/*
       // Toggle macro.XX effects
       if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
-        setProperty(effect, "flags.dae.itemUuid", candidate.uuid)
-      actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect, actor.getRollData());
+        setProperty(effect, "flags.dae.itemUuid", candidate.uuid);
+      */
+        warn("action queue add suppressed ", actionQueue._queue.length)
+
+      actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect.toObject(), actor.getRollData());
     }
   } catch (err) {
     console.warn("dae | preItemUpdate ", err)

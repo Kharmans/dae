@@ -32,7 +32,7 @@ export class ActiveEffects extends FormApplication {
     return options;
 }
 get id() {
-  const actor = this.object;
+  const actor: any = this.object;
   let id = `ActiveEffects-${actor.id}`;
   if (actor.isToken) id += `-${actor.token.id}`;
   return id;
@@ -43,10 +43,11 @@ get title() {
 }
 get filters() {return ActiveEffects.filters}
 getData() {
-  //@ts-ignore
+  const object: any = this.object;
+  //@ts-expect-error
   const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
   const modeKeys = Object.keys(EFFECTMODES);
-  let actives = this.object.effects.map(ae=> {
+  let actives = object.effects.map(ae=> {
     let newAe = duplicate(ae);
     newAe.duration = duplicate(ae.duration);
     if (simpleCalendarInstalled && newAe.duration?.type === "seconds") {
@@ -73,7 +74,7 @@ getData() {
       if (this.object instanceof CONFIG.Item.documentClass) 
         change.label=ValidSpec.specs["union"].allSpecsObj[change.key]?.label || change.key; 
       else
-        change.label=ValidSpec.specs[this.object.type].allSpecsObj[change.key]?.label || change.key; 
+        change.label=ValidSpec.specs[object.type].allSpecsObj[change.key]?.label || change.key; 
       if (typeof change.value === "string" && change.value.length > 40) {
         change.value = change.value.substring(0, 30) + " ... ";
       } else if (Array.isArray(change.value)) {
@@ -93,7 +94,7 @@ getData() {
     setProperty(e, "flags.dae.active", !e.disabled);
     let id = e.origin?.match(/Actor.*Item\.(.*)/);
     if (id?.length === 2) {
-      const item = this.object.items?.get(id[1]);
+      const item = object.items?.get(id[1]);
       setProperty(e, "flags.dae.itemName", item?.name || "???");
     }
     else {
@@ -116,10 +117,10 @@ getData() {
     actives: actives, 
     isGM: game.user.isGM,
     isItem,
-    isOwned: this.object.isOwned,
-    flags: this.object.flags,
+    isOwned: object.isOwned,
+    flags: object.flags,
     modes: modeKeys,
-    validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[this.object.type],
+    validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[object.type],
     //@ts-ignore
     // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
     canEdit: true,
@@ -132,6 +133,7 @@ getData() {
   return data;
 }
 async _updateObject(event, formData) {
+  const object: any = this.object;
   formData = expandObject(formData);
   if (!formData.changes) formData.changes = [];
   formData.changes = Object.values(formData.changes);
@@ -139,7 +141,7 @@ async _updateObject(event, formData) {
     //@ts-ignore
     if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
   }
-  return this.object.update(formData);
+  return object.update(formData);
 }
 
 _initializeFilterItemList(i, ul) {
@@ -171,14 +173,15 @@ activateListeners(html) {
   
   // Delete Effect
   html.find('.effect-delete').click(async ev => {
+    const object = this.object;
     const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     //@ts-ignore
-    if (this.object instanceof CONFIG.Actor.documentClass) {
+    if (object instanceof CONFIG.Actor.documentClass) {
       confirmAction(confirmDelete, () => {
-        this.object.deleteEmbeddedDocuments("ActiveEffect", [effectid]);
+        object.deleteEmbeddedDocuments("ActiveEffect", [effectid]);
       })
     } else {
-      let effect = this.object.effects.get(effectid);
+      let effect = object.effects.get(effectid);
       effect =  new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
       confirmAction(confirmDelete, () => {
         effect.delete({});
@@ -186,22 +189,24 @@ activateListeners(html) {
     }
   });
   html.find('.effect-edit').click(async ev => {
-    if (this.object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
+    const object: any = this.object;
+    if (object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
     const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    let effect = this.object.effects.get(effectid);
+    let effect = object.effects.get(effectid);
     
     const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
     return ownedItemEffect.sheet.render(true);
   })
   html.find('.effect-add').click(async ev => {
+    const object: any = this.object;
     let effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
     let AEDATA;
     let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
     if (effect_name === "new") {
       //@ts-ignore
       AEDATA = {
-        label: this.object.name,
-        icon: this.object.img || "icons/svg/mystery-man.svg",
+        label: object.name,
+        icon: object.img || "icons/svg/mystery-man.svg",
         changes: [],
         transfer: false,
       }
@@ -212,8 +217,8 @@ activateListeners(html) {
       AEDATA["flags.core.statusId"] = id;
     }
     //@ts-ignore
-    if (this.object instanceof CONFIG.Actor.documentClass) {
-      this.object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
+    if (object instanceof CONFIG.Actor.documentClass) {
+      object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
     } else {
       let parent = this.object;
       //@ts-ignore

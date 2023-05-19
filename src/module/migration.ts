@@ -99,7 +99,7 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
   let replaceItems = [];
   let count = 0;
   items.forEach(item => {
-    let replaceData;
+    let replaceData: any;
     switch (item.type) {
       case "feat":
         let srdFeats = (actor?.type === "npc") ? dndSRDMonsterfeaturesPack : dndSRDClassfeaturesPack;

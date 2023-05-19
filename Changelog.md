@@ -1,3 +1,9 @@
+### 10.0.29
+* Macro.itemMacro effects store the macro on the effect when the effect is created - so any changes to the macro will require the effect to be reapplied. This also means macro.itemMacro calls for consumables that are removed when used will now work as expected.
+* A duration of -1 seconds in an effect means that the effect will never expire unless there is a special duration to cancel it.
+* Items created via macro.createItem have flags.dae.DAECreated set to true.
+* There is now a dedicated discord for my modules https://discord.gg/Xd4NEvw5d7
+
 ### 10.0.28
 * Incorporate change for auto complete list to be always visible. From chris of CPR.
 * Fix for @item.level needing to be surrounded by "".
