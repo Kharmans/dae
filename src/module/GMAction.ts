@@ -287,6 +287,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
           && getProperty(ae, "flags.dae.transfer") === false
           && notMulti;
       });
+      // TODO check why this is essentially done twice (noName, none)
 
       if (removeList.length > 0) {
         if (toggleEffect) {

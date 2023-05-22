@@ -328,9 +328,9 @@ export async function cleanAllTokenEffectOrigins() {
   }
 }
 
-export async function tobMapper(iconsPath = "icons/TOB") {
+export async function tobMapper(iconsPath = "icons/TOBTokens") {
   const pack = game.packs.get("tome-of-beasts.beasts");
-  await pack.getContent();
+  await pack.getDocuments();
   let details = pack.contents.map(a => a._source);
   let detailNames = duplicate(details).map(detail => {
     let name = detail.name
@@ -347,7 +347,7 @@ export async function tobMapper(iconsPath = "icons/TOB") {
     return detail;
   })
   detailNames = detailNames.sort((a, b) => b.splitName.length - a.splitName.length)
-  let fields = details.map(a => { return { "name": a.name, "id": a._id, "tokenimg": a.token.img } });
+  let fields = details.map(a => { return { "name": a.name, "id": a._id, "tokenimg": a.prototypeToken.texture.src } });
   let count = 0;
   game.socket.emit("manageFiles", { action: "browseFiles", storage: "data", target: iconsPath }, {},
     async (result) => {
@@ -363,7 +363,7 @@ export async function tobMapper(iconsPath = "icons/TOB") {
           for (let namePart of dtname.splitName) {
             if (!name.includes(namePart)) return false
           }
-          dtname.token.img = fileEntry;
+          dtname.prototypeToken.texture.src = fileEntry;
           // dtname.img = fileEntry;
           delete dtname.splitName;
           // dtname.img = fileEntry;

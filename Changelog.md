@@ -1,3 +1,14 @@
+### 10.0.30
+* Made some changes to the blocking of creating active effects when no duplicates by origin/name are specified.
+* Allow multiple effects of the same name when created by hand on an actor.
+* made evalInline synchronous to move the inline roll processing to the preCreateActiveEffect hook.
+* macros are now called consistently with the v11 arguments processing. 
+  - args (an array is still supported)
+  - "scope" is also set, supporting scope.args, scope.lastArg (and therefore args and lastArg as values inside the macro). 
+  - Named parameters are also supported, so targetUuid=@targetUuid allows you to reference scope.targetUuid or just targetUuid inside the macro without needing to count which element of args it is.
+  - support for advanced macros/furnace has been dropped. (It's not needed).
+* Added support for options {isUndo: true} in creation and deletion of active effects, which will avoid calling macros or applying macro.effects when an effect is added. actor.createEmbeddedDocuments("ActiveEffect, effectData, {isUndo: true});
+
 ### 10.0.29
 * Macro.itemMacro effects store the macro on the effect when the effect is created - so any changes to the macro will require the effect to be reapplied. This also means macro.itemMacro calls for consumables that are removed when used will now work as expected.
 * A duration of -1 seconds in an effect means that the effect will never expire unless there is a special duration to cancel it.
