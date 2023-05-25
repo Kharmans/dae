@@ -1028,7 +1028,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         const token = selfTarget.document ?? selfTarget;
         let macroArgs: any[] = [data.action];
         macroArgs = macroArgs.concat(data.args).concat(data.lastArg);
-        const scope = { args: macroArgs, lastArg: data.lastArg, item: theItem };
+        const scope = { actor, token, args: macroArgs, lastArg: data.lastArg, item: theItem };
         macroArgs.forEach(argString => {
           if (typeof argString === "string") {
             const parts = argString.split("=");
@@ -1037,17 +1037,20 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
             }
           }
         })
+        
         if (isNewerVersion(game.version, "11.293")) {
-          return macro.execute({ actor, token, scope });
+          return macro.execute(scope);
         } else {
           const AsyncFunction = (async function () { }).constructor;
-          const argNames = Object.keys(scope);
-          const argValues = Object.values(scope);
+
           const speaker = ChatMessage.getSpeaker({ token: selfTarget.document ?? selfTarget, actor });
           const character = game.user?.character;
-          const body = `return (async () => {
+          let body = `return (async () => {
           ${macro.command ?? macro.data?.command}
           })()`;
+          body = macro.command ?? macro.data?.command;
+          const argNames = Object.keys(scope);
+          const argValues = Object.values(scope);
           //@ts-expect-error
           const fn = new AsyncFunction("speaker", "actor", "token", "character", "scope", ...argNames, body)
           // const fn = Function("{speaker, actor, token, character, item, args}={}", body);
@@ -1315,6 +1318,8 @@ function preUpdateItemHook(candidate, updates, options, user) {
 function updateItemEffects(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;
+  if (options.isUndo) return true;
+  
   if (options.isAdvancement) {
     console.warn(`Dae | Skipping effect re-creation for class advancement ${candidate.parent?.name ?? ""} item ${candidate.name}`)
     return;

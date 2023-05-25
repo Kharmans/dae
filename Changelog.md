@@ -1,3 +1,6 @@
+### 10.0.31
+* Fix for calling macros in v11 stable. DAE will use foundry's built in macro.execute in v11 stable.
+
 ### 10.0.30
 * Made some changes to the blocking of creating active effects when no duplicates by origin/name are specified.
 * Allow multiple effects of the same name when created by hand on an actor.
