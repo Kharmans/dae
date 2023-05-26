@@ -301,12 +301,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
 
   _getSubmitData(updateData: any = {}) {
-    //@ts-ignore _getSubmitData
-    // const data = super._getSubmitData(updateData); TODO revisit when this is fixed
-    const fd = new FormDataExtended(this.form, {editors: this.editors});
-    let data = expandObject(fd.toObject());
-    if ( updateData ) mergeObject(data, updateData);
-    data.changes = Array.from(Object.values(data.changes ?? {}));
+    //@ts-expect-error getSubmitData
+    const data = super._getSubmitData(updateData);
     for (let change of data.changes) {
       if (change.priority === undefined) change.priority = change.mode ? change.mode * 10 : 0;
       if (typeof change.priority === "string") change.priority = Number(change.priority);
@@ -316,6 +312,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       delete data.disabledX;
     }
     if (!data.tint || data.tint === "") data.tint = null;
+    // fixed for very old items
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
     setProperty(data.flags, "dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
     return data;

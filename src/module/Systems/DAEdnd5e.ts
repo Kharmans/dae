@@ -351,10 +351,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["shortRest"] = i18n("DND5E.ShortRest");
       daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
       Object.keys(CONFIG.DND5E.abilities).forEach(abl => {
-        daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}`;
-        daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
-        daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
-        daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${CONFIG.DND5E.abilities[abl]} ${i18n("dae.isCheckDetail")}`;
+        let ablString = isNewerVersion(game.system.version, "2.1.5")
+         ? CONFIG.DND5E.abilities[abl].label
+         : CONFIG.DND5E.abilities[abl];
+        daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}`;
+        daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
+        daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
+        daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isCheckDetail")}`;
       })
       Object.keys(CONFIG.DND5E.damageTypes).forEach(dt => {
         daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${CONFIG.DND5E.damageTypes[dt]}`;

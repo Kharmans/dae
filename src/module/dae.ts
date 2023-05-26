@@ -1017,27 +1017,24 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           tokenId: selfTarget.id,
           tokenUuid,
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
-        let data = { action, lastArg, args: [], macroData: { change, name: args[0], effectData } };
         if (theChange.key.includes("macro.execute"))
-          data.args = args.slice(1);
-        //@ts-ignore
-        else
-          data.args = args;
-        // insert item data
-
+          args = args.slice(1);
         const token = selfTarget.document ?? selfTarget;
-        let macroArgs: any[] = [data.action];
-        macroArgs = macroArgs.concat(data.args).concat(data.lastArg);
-        const scope = { actor, token, args: macroArgs, lastArg: data.lastArg, item: theItem };
-        macroArgs.forEach(argString => {
-          if (typeof argString === "string") {
-            const parts = argString.split("=");
+        let macroArgs: any[] = [action];
+        macroArgs = macroArgs.concat(args).concat(lastArg);
+        const scope: any = { actor, token, lastArgValue: lastArg, item: theItem };
+
+        scope.args = macroArgs.filter(arg => {
+          if (typeof arg === "string") {
+            const parts = arg.split("=");
             if (parts.length === 2) {
               scope[parts[0]] = parts[1];
+              return false;
             }
           }
+          return true;
         })
-        
+
         if (isNewerVersion(game.version, "11.293")) {
           return macro.execute(scope);
         } else {
@@ -1054,7 +1051,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           //@ts-expect-error
           const fn = new AsyncFunction("speaker", "actor", "token", "character", "scope", ...argNames, body)
           // const fn = Function("{speaker, actor, token, character, item, args}={}", body);
-          return fn.call(this, speaker, actor, token, character, scope, ...argValues);
+          return fn.call(macro, speaker, actor, token, character, scope, ...argValues);
         }
       } else if (theChange.key === "macro.actorUpdate") {
         let lastArg = mergeObject(lastArgOptions, {
@@ -1319,7 +1316,7 @@ function updateItemEffects(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;
   if (options.isUndo) return true;
-  
+
   if (options.isAdvancement) {
     console.warn(`Dae | Skipping effect re-creation for class advancement ${candidate.parent?.name ?? ""} item ${candidate.name}`)
     return;

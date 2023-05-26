@@ -1,5 +1,11 @@
+### 10.0.32
+* To avoid collision with existing macro scope.lastArgValue and therefore lastArgValue are available inside the macro. This replaces scope.lastArg and lastArg being defined. You can refer to lastArvalue in both v10 and v11.
+* Name argumets (i.e. targetUuid=@targetUuid) are avaialbe by name in the macro and are not passed in args. Arguments of the form @targetUuid are still passed in args.
+* Fix for deprecation warnings for FormDataExtended.
+* Fix for CONFIG.abilities deprecation warnings in dnd 2.2.0
+
 ### 10.0.31
-* Fix for calling macros in v11 stable. DAE will use foundry's built in macro.execute in v11 stable.
+* Fix for calling macros in v11 stable. DAE uses foundry's built in macro.execute in v11 stable.
 
 ### 10.0.30
 * Made some changes to the blocking of creating active effects when no duplicates by origin/name are specified.
