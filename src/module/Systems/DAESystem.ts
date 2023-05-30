@@ -89,7 +89,7 @@ export class ValidSpec {
       if (game.modules.get("tokenmagic")?.active) {
         specials["macro.tokenMagic"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       }
-      
+
       daeSystemClass.modifyDerivedSpecs(specKey, this.specs[specKey].derivedSpecs, _characterSpec)
       Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.specs[specKey].derivedSpecs, _characterSpec);
       Object.entries(specials).forEach(special => {
@@ -239,37 +239,37 @@ export class DAESystem {
 
   public static doCustomArrayValue(actor, current, change, validValues) {
     if (current instanceof Array) {
-    if (getType(change.value) === "string" && change.value[0] === "-") {
-      const checkValue = change.value.slice(1);
-      const currentIndex = (current ?? []).indexOf(checkValue)
-      if (currentIndex === -1) return true;
-      if (!validValues.includes(checkValue)) return true;
-      const returnValue = duplicate(current);
-      returnValue.splice(currentIndex, 1)
-      setProperty(actor, change.key, returnValue);
-    } else {
-      if ((current ?? []).includes(change.value)) return true;
-      if (!validValues.includes(change.value)) return true;
-      setProperty(actor, change.key, current.concat([change.value]))
+      if (getType(change.value) === "string" && change.value[0] === "-") {
+        const checkValue = change.value.slice(1);
+        const currentIndex = (current ?? []).indexOf(checkValue)
+        if (currentIndex === -1) return true;
+        if (!validValues.includes(checkValue)) return true;
+        const returnValue = duplicate(current);
+        returnValue.splice(currentIndex, 1)
+        setProperty(actor, change.key, returnValue);
+      } else {
+        if ((current ?? []).includes(change.value)) return true;
+        if (!validValues.includes(change.value)) return true;
+        setProperty(actor, change.key, current.concat([change.value]))
+      }
+    } else if (current instanceof Set) {
+      if (getType(change.value) === "string" && change.value[0] === "-") {
+        const checkValue = change.value.slice(1);
+        if (!current.has(checkValue)) return true;
+        if (!validValues.includes(checkValue)) return true;
+        //@ts-expect-error
+        const returnValue = deepClone(current);
+        returnValue.delete(checkValue);
+        setProperty(actor, change.key, returnValue);
+      } else {
+        if ((current ?? new Set()).has(change.value)) return true;
+        if (!validValues.includes(change.value)) return true;
+        //@ts-expect-error
+        let returnValue = deepClone(current);
+        returnValue.add(change.value);
+        setProperty(actor, change.key, returnValue);
+      }
     }
-  } else if (current instanceof Set) {
-    if (getType(change.value) === "string" && change.value[0] === "-") {
-      const checkValue = change.value.slice(1);
-      if (!current.has(checkValue)) return true;
-      if (!validValues.includes(checkValue)) return true;
-      //@ts-expect-error
-      const returnValue = deepClone(current);
-      returnValue.delete(checkValue);
-      setProperty(actor, change.key, returnValue);
-    } else {
-      if ((current ?? new Set()).has(change.value)) return true;
-      if (!validValues.includes(change.value)) return true;
-      //@ts-expect-error
-      let returnValue = deepClone(current);
-      returnValue.add(change.value);
-      setProperty(actor, change.key, returnValue);
-    }
-  }
     return true;
   }
 
@@ -340,12 +340,31 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
+  if (!this.statuses) this.statuses = new Set();
+  // Identify which special statuses had been active
+  const specialStatuses = new Map();
+  if (isNewerVersion(game.version, "11.293")) {
+    for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
+      specialStatuses.set(statusId, this.statuses.has(statusId));
+    }
+    this.statuses.clear();
+  }
   setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
   debug("prepare data: before passes", this.name, this._source);
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
   applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
+  if (isNewerVersion(game.version, "11.293")) {
+    // Apply special statuses that changed to active tokens
+    let tokens;
+    for (const [statusId, wasActive] of specialStatuses) {
+      const isActive = this.statuses.has(statusId);
+      if (isActive === wasActive) continue;
+      if (!tokens) tokens = this.getActiveTokens();
+      for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
+    }
+  }
   //TODO find another way to tdo this
   // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
@@ -360,51 +379,51 @@ setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
 
 Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
   // Prelim support for ATE v10 - need some more detail.
-  
+
   //@ts-ignore
   const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
   if (isNewerVersion(game.version, "10") && (game.modules.get("ATL")?.active)) {
     for (let label of ["dimSight", "brightSight"]) {
       specials[`ATL.${label}`] = [0, -1];
     }
-    specials["ATL.alpha"] = [0,-1];
-    specials["ATL.elevation"] = [0,-1];
-    specials["ATL.height"] = [0,-1];
-    specials["ATL.width"] = [0,-1];
-    specials["ATL.hidden"] = [false,-1];
-    specials["ATL.rotation"] = [0,-1];
+    specials["ATL.alpha"] = [0, -1];
+    specials["ATL.elevation"] = [0, -1];
+    specials["ATL.height"] = [0, -1];
+    specials["ATL.width"] = [0, -1];
+    specials["ATL.hidden"] = [false, -1];
+    specials["ATL.rotation"] = [0, -1];
 
     specials["ATL.light.animation"] = ["", -1]; //{intensity: 1:10, reverse: true/false, speed: 1:10, type: "X"}	Light Animation settings, see below for Animation Types
-    specials["ATL.light.alpha"] = [0,-1];
-    specials["ATL.light.angle"] = [0,-1];
-    specials["ATL.light.attenuation"] = [0,-1];
-    specials["ATL.light.bright"] = [0,-1];
-    specials["ATL.light.color"] = [0,-1];
-    specials["ATL.light.coloration"] = [0,-1];
-    specials["ATL.light.contrast"] = [0,-1];
-    specials["ATL.light.dim"] = [0,-1];
-    specials["ATL.light.luminosity"] = [0,-1];
-    specials["ATL.light.saturation"] = [0,-1];
-    specials["ATL.light.shadows"] = [0,-1];
-    specials["ATL.light.darkness.max"] = [0,-1];
-    specials["ATL.light.darkness.min"] = [0,-1];
+    specials["ATL.light.alpha"] = [0, -1];
+    specials["ATL.light.angle"] = [0, -1];
+    specials["ATL.light.attenuation"] = [0, -1];
+    specials["ATL.light.bright"] = [0, -1];
+    specials["ATL.light.color"] = [0, -1];
+    specials["ATL.light.coloration"] = [0, -1];
+    specials["ATL.light.contrast"] = [0, -1];
+    specials["ATL.light.dim"] = [0, -1];
+    specials["ATL.light.luminosity"] = [0, -1];
+    specials["ATL.light.saturation"] = [0, -1];
+    specials["ATL.light.shadows"] = [0, -1];
+    specials["ATL.light.darkness.max"] = [0, -1];
+    specials["ATL.light.darkness.min"] = [0, -1];
     specials["ATL.detectionModes.basic.range"] = [0, -1];
     specials["ATL.detectionModes.seeInvisibility.range"] = [0, -1];
     specials["ATL.detectionModes.senseInvisibility.range"] = [0, -1];
     specials["ATL.detectionModes.feelTremor.range"] = [0, -1];
     specials["ATL.detectionModes.seeAll.range"] = [0, -1];
     specials["ATL.detectionModes.senseAll.range"] = [0, -1];
-    specials["ATL.sight.visionMode"] = ["",-1]; // selection list
+    specials["ATL.sight.visionMode"] = ["", -1]; // selection list
     specials["ATL.light.animation"] = ["", -1]; // json string
     specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["ATL.sight.angle"] = [0,-1];
-    specials["ATL.sight.attenuation"] = [0,-1];
-    specials["ATL.sight.brightness"] = [0,-1];
-    specials["ATL.sight.contrast"] = [0,-1];
+    specials["ATL.sight.angle"] = [0, -1];
+    specials["ATL.sight.attenuation"] = [0, -1];
+    specials["ATL.sight.brightness"] = [0, -1];
+    specials["ATL.sight.contrast"] = [0, -1];
     specials["ATL.sight.enabled"] = [0, -1];
-    specials["ATL.sight.range"] = [0,-1];
-    specials["ATL.sight.saturation"] = [0,-1];
-    specials["ATL.sight.color"] = ["", 0-1];
+    specials["ATL.sight.range"] = [0, -1];
+    specials["ATL.sight.saturation"] = [0, -1];
+    specials["ATL.sight.color"] = ["", 0 - 1];
 
   } else if (game.modules.get("ATL")?.active) {
     // support new version of ATL

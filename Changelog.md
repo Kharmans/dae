@@ -1,3 +1,10 @@
+### 10.0.33
+* v11 support for new mechanism for special statuses in effects.
+* Active effects "StatusEffect" now work correctly in v11.
+* Allow Convenient Effects custom effects that are not transferred from an item to stack when do not stack by origin is specified.
+* Fix for dae macro.ItemMacro macro effects not being found in v10/11 of dae.
+* With some trepidation I have reorganised some of the processing for CE/CUB/token magic effects triggered when creating an effect. Seems to work but I would not be surprised if something crawls out of the woodwork.
+
 ### 10.0.32
 * To avoid collision with existing macro scope.lastArgValue and therefore lastArgValue are available inside the macro. This replaces scope.lastArg and lastArg being defined. You can refer to lastArvalue in both v10 and v11.
 * Name argumets (i.e. targetUuid=@targetUuid) are avaialbe by name in the macro and are not passed in args. Arguments of the form @targetUuid are still passed in args.

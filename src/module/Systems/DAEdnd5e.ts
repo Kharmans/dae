@@ -352,8 +352,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
       Object.keys(CONFIG.DND5E.abilities).forEach(abl => {
         let ablString = isNewerVersion(game.system.version, "2.1.5")
-         ? CONFIG.DND5E.abilities[abl].label
-         : CONFIG.DND5E.abilities[abl];
+          ? CONFIG.DND5E.abilities[abl].label
+          : CONFIG.DND5E.abilities[abl];
         daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}`;
         daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
         daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
@@ -831,6 +831,16 @@ async function preparePassiveSkills() {
 function prepareData(wrapped) {
   try {
     debug("prepare data: before passes", this.name, this._source);
+    const specialStatuses = new Map();
+    if (isNewerVersion(game.version, "11.293")) {
+      this.statuses = this.statuses ?? new Set();
+      // Identify which special statuses had been active
+
+      for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
+        specialStatuses.set(statusId, this.statuses.has(statusId));
+      }
+      this.statuses.clear();
+    }
     // setProperty(this, "flags.dae", getProperty(this._source, "flags.dae") ?? {});
     setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
 
@@ -846,6 +856,16 @@ function prepareData(wrapped) {
       pact.value = this._source.system.spells.pact?.value;
     //TODO find another way to tdo this
     // this._prepareOwnedItems(this.items)
+    if (isNewerVersion(game.version, "11.293")) {
+      // Apply special statuses that changed to active tokens
+      let tokens;
+      for (const [statusId, wasActive] of specialStatuses) {
+        const isActive = this.statuses.has(statusId);
+        if (isActive === wasActive) continue;
+        tokens = tokens ?? this.getActiveTokens();
+        for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
+      }
+    }
     debug("prepare data: after passes", this);
   } catch (err) {
     console.error("Could not prepare data ", this.name, err);
@@ -1156,7 +1176,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
       if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
         setProperty(effect, "flags.dae.itemUuid", candidate.uuid);
       */
-        warn("action queue add suppressed ", actionQueue._queue.length)
+      warn("action queue add suppressed ", actionQueue._queue.length)
 
       actionQueue.add(daeMacro, isSuppressed ? "off" : "on", actor, effect.toObject(), actor.getRollData());
     }
