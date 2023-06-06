@@ -65,8 +65,6 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
 
 async function _createActorItem(data: { uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean }) {
   const { uuid, itemDetails, effectUuid } = data;
-  debugger;
-
   const [itemUuid, option] = itemDetails.split(",").map(s => s.trim());
   const item = await fromUuid(itemUuid);
   if (!item || !(item instanceof Item)) {

@@ -1262,7 +1262,6 @@ function updateItemEffects(candidate, updates, options, user) {
     return;
   }
   if (updates.effects) { // item effects have changed - update transferred effects
-    debugger;
     //@ts-ignore
     const itemUuid = candidate.uuid;
     // delete all actor effects for the given item
