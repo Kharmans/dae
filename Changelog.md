@@ -1,3 +1,7 @@
+### 10.0.34
+* Fix for effect durations of < 1 round of seconds being the same as applying a passive effect, will now default to 1 turn.
+* **BREAKING** If an effect specifies both a duration in seconds and one in rounds, the duration in rounds is ignored when applying the effect, only the duration is seconds is used. In this version DAE will preferentially use the duration in rounds, if there is one and the target actor is in combat.
+
 ### 10.0.33
 * v11 support for new mechanism for special statuses in effects.
 * Active effects "StatusEffect" now work correctly in v11.

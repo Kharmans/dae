@@ -65,6 +65,8 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
 
 async function _createActorItem(data: { uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean }) {
   const { uuid, itemDetails, effectUuid } = data;
+  debugger;
+
   const [itemUuid, option] = itemDetails.split(",").map(s => s.trim());
   const item = await fromUuid(itemUuid);
   if (!item || !(item instanceof Item)) {
@@ -333,9 +335,15 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
             aeData.duration.startTime = game.time.worldTime;
             //@ts-expect-error
             const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token.id));
-
-            const convertedDuration = convertDuration({ value: aeData.duration.seconds, units: "second" }, inCombat);
-            if (aeData.duration.seconds === -1) { // special case duration of -1 se
+            let convertedDuration;
+            if (inCombat && (aeData.duration.rounds || aeData.duration.turns)) {
+              convertedDuration = {
+                type: "turns",
+                rounds: aeData.duration.rounds ?? 0,
+                turns: aeData.duration.turns ?? 0
+              }
+            } else convertedDuration = convertDuration({ value: aeData.duration.seconds, units: "second" }, inCombat);
+            if (aeData.duration.seconds === -1) { // special case duration of -1 seconds
               delete convertedDuration.rounds;
               delete convertedDuration.turns;
               delete convertedDuration.seconds;
@@ -470,7 +478,13 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
 export function convertDuration(itemDuration: { units: string, value: number }, inCombat) {
   // TODO rewrite this abomination
   const useTurns = inCombat && timesUpInstalled;
-  if (!itemDuration) return { type: "seconds", seconds: 0, rounds: 0, turns: 0 };
+  if (!itemDuration || (itemDuration.units === "second" && itemDuration.value < CONFIG.time.roundTime)) { // no duration or very short (less than 1 round)
+    if (useTurns)
+      return { type: "turns", seconds: 0, rounds: 0, turns: 1 };
+    else
+      return { type: "seconds", seconds: Math.min(1, itemDuration.value), rounds: 0, turns: 0 };
+  }
+
   if (!simpleCalendarInstalled) {
     switch (itemDuration.units) {
       case "turn":
@@ -511,7 +525,8 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
       case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value };
       case "round":
       case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0 }
-      case "second": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0 };
+      case "second":
+        return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0 };
       case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
       default:
         let interval = {}

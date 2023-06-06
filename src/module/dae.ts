@@ -859,7 +859,7 @@ export function deleteActiveEffectHook(...args) {
 }
 
 export function getSelfTarget(actor) {
-  if (actor.token) return actor.token;
+  if (actor.token) return actor.token.object;
   const speaker = ChatMessage.getSpeaker({ actor })
   if (speaker.token) return canvas.tokens.get(speaker.token);
   const tokenData = actor.prototypeToken.toObject(false);
@@ -879,7 +879,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   let tokenUuid;
   if (actor.token) {
     tokenUuid = actor.token.uuid;
-    selfTarget = actor.token;
+    selfTarget = actor.token.object;
   }
   else {
     selfTarget = getSelfTarget(actor);
@@ -954,10 +954,9 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         if (theChange.key.includes("macro.execute"))
           args = args.slice(1);
-        const token = selfTarget.document ?? selfTarget;
         let macroArgs: any[] = [action];
         macroArgs = macroArgs.concat(args).concat(lastArg);
-        const scope: any = { actor, token, lastArgValue: lastArg, item: theItem };
+        const scope: any = { actor, token: selfTarget, lastArgValue: lastArg, item: theItem };
 
         scope.args = macroArgs.filter(arg => {
           if (typeof arg === "string") {
@@ -975,7 +974,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         } else {
           const AsyncFunction = (async function () { }).constructor;
 
-          const speaker = ChatMessage.getSpeaker({ token: selfTarget.document ?? selfTarget, actor });
+          const speaker = ChatMessage.getSpeaker({ token: selfTarget, actor });
           const character = game.user?.character;
           let body = `return (async () => {
           ${macro.command ?? macro.data?.command}
@@ -986,7 +985,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           //@ts-expect-error
           const fn = new AsyncFunction("speaker", "actor", "token", "character", "scope", ...argNames, body)
           // const fn = Function("{speaker, actor, token, character, item, args}={}", body);
-          return fn.call(macro, speaker, actor, token, character, scope, ...argValues);
+          return fn.call(macro, speaker, actor, selfTarget, character, scope, ...argValues);
         }
       } else if (theChange.key === "macro.actorUpdate") {
         let lastArg = mergeObject(lastArgOptions, {
@@ -1037,7 +1036,7 @@ export async function evalArgs({ effectData = null, item, context, actor, change
     change: JSON.stringify(change.toJSON),
     itemId: item?.id,
     itemUuid: item?.uuid,
-  }, context, { overwrite: false });
+  }, context, { overwrite: true });
   //contextToUse["item"] = "@item";
   if (item) {
     setProperty(effectData, "flags.dae.itemUuid", item.uuid);
@@ -1263,6 +1262,7 @@ function updateItemEffects(candidate, updates, options, user) {
     return;
   }
   if (updates.effects) { // item effects have changed - update transferred effects
+    debugger;
     //@ts-ignore
     const itemUuid = candidate.uuid;
     // delete all actor effects for the given item

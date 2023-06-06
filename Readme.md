@@ -417,8 +417,7 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
 Macros have changed substantially in their implementation. When you have a non-transfer effect that includes a macro, the macro is transferred to the target actor and runs when created on the actor. Deletion of the active effect from the target actor calls the macro again with `args[0] = "off"`.
 Since the macro attaches to the target actor the macro can schedule itself to be activated on other events, such as combat updates to support damage over time effects.
 
-Using macros with arguments requires that you have the Furnace module installed and advanced macros enabled. That is the only setting you will want to enable.  
-Furnace is now deprecated, the module Advanced Macros is a direct replacement and DAE will work with it if installed and active.
+Dae does not use furnace/advanced macros any longer.
 
 ```js
 macro.execute "macro_name" args
@@ -432,7 +431,7 @@ In addition to the standard `@values` the following are supported (only as macro
 `@targetUuid` will pass the Uuid of the targeted token.  
 `@scene` will pass the scene id of the scene on which the user who activated the effect is located.  
 `@item` will pass the item data of the item that was used in the activation.  
-`@spellLevel` if using Midi-QOL this will be the spell level the spell was cast at.  
+`@spellLevel` if using Midi-QOL this will be the spell level the spell was cast at. This is the preferred field to use
 `@item.level` if using Midi-QOL this will be the spell level the spell was cast at.  
 `@damage` The total damage rolled for the attack.  
 `@token` The id of the token that used the item.  
@@ -442,20 +441,20 @@ In addition to the standard `@values` the following are supported (only as macro
 `##field` The `##` means the argument will not be evaluated using caster values, but will be replaced with `@field` when it is applied to the target.  
 
 ### lastArg
-IN some circumstances (when macros are called with args[0] === "off or args[0] === "each") the standard actor and token variables will **not** be initailised. So inside the macro you can't do actor.anything. To access the actor/token in a way that will always work there is an additional argument (in addition to those specified in the `macro.execute` definition) **lastArg**, which includes a lot of information for executing the macro. You ccan access lastArg via
+In some circumstances (when macros are called with args[0] === "off or args[0] === "each") the standard actor and token variables will **not** be initailised. So inside the macro you can't do actor.anything. To access the actor/token in a way that will always work there is an additional argument (in addition to those specified in the `macro.execute` definition) **lastArg**, which includes a lot of information for executing the macro. You ccan access lastArg via
 ```let lastArg = args[args.length-1]```. lastArg will always include, at least,  
 * effectId - the id of the effect being triggered  
 *  origin:  
-    the origin of the effect being triggered (use this with ```await fromUuid(lastArg.origin)``` - usually an item.  
+    the origin of the effect being triggered (use this with ```fromUuidSync(lastArg.origin)``` - usually an item.  
 * efData - the effect data of the effect being triggered.  
 * actorId - the id of the actor on whom the effect exists. 
 * actorUuid - the uuid of the actor fetch it with  
 ```js
-  let tokenOrActor = await fromUuid(lastArg.actorUuid);
+  let tokenOrActor = fromUuidSync(lastArg.actorUuid);
   let actor = tokenOrActor.actor ? tokenOrActor.actor : tokenOrActor
 ```  
 * tokenId - the id of the token on whom the effect exists, fetch via ```js canvas.scene.tokens.get(lastArg).tokenId) ```
-* tokenUuid - the uuid of the token on whom the effect exists, feth via ```js await fromUuid(lastArg.tokenuuid)  ```  
+* tokenUuid - the uuid of the token on whom the effect exists, feth via ```js fromUuidSync(lastArg.tokenuuid)  ```  
 
 Generally prefer to use the uuids when fetching an actor/token since it will alway work and avoid problems.  
 
