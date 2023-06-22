@@ -214,7 +214,12 @@ activateListeners(html) {
       AEDATA = CONFIG.statusEffects.find(se => se.id === id);
       AEDATA.label = i18n(AEDATA.name || AEDATA.label);
       //TODO remove this when core has this already?
-      AEDATA["flags.core.statusId"] = id;
+      if (isNewerVersion(game.version, "11.0")) {
+        AEDATA["statuses"] = [id];
+        if (AEDATA["flags.core.statusId"]) delete AEDATA["flags.core.statusId"]
+      } else {
+        AEDATA["flags.core.statusId"] = id;
+      }
     }
     //@ts-ignore
     if (object instanceof CONFIG.Actor.documentClass) {

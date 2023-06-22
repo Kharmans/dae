@@ -1,3 +1,9 @@
+### 10.0.35
+* Fix for some deprecation warnings for flags.core.statusId
+* Fix for speaker error when calling macros
+* Support for some honor/sanity effects.
+
+
 ### 10.34.1
 * Remove some debugger statements left in by accident
 

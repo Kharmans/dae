@@ -104,6 +104,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
  * Replace default appplyAffects to do value lookups
  */
 export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCardsInclude: RegExp[], wildCardsExclude: RegExp[]) {
+  
   if (disableEffects) return;
   const overrides = {};
   const effects = this.effects.contents;
@@ -388,10 +389,10 @@ function createActiveEffectHook(...args) {
         return true;
       }
     };
-
-    if (!context.isUndo) changeLoop(); // If undo then don't call any macros
-  }
-  removeExistingEffectsHook(...args);
+    if (!context.isUndo) {
+      changeLoop().then(() => removeExistingEffectsHook(...args));
+    }
+  } else removeExistingEffectsHook(...args);
   return true;
 }
 async function _preCreateActiveEffect(...args) {
@@ -974,7 +975,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         } else {
           const AsyncFunction = (async function () { }).constructor;
 
-          const speaker = ChatMessage.getSpeaker({ token: selfTarget, actor });
+          const speaker = ChatMessage.getSpeaker({ token: selfTarget?.document ?? selfTarget, actor });
           const character = game.user?.character;
           let body = `return (async () => {
           ${macro.command ?? macro.data?.command}
@@ -1395,7 +1396,7 @@ export function preUpdateActorHook(candidate, updates, options, user) {
         const argValues = Object.values(scope);
         //@ts-expect-error
         const fn = new AsyncFunction("speaker", "actor", "token", "character", "scope", ...argNames, macroText)
-        return fn.call(this, speaker, candidate, targetTokenDocument?.object, character, scope, ...argValues);
+        fn.call(this, speaker, candidate, targetTokenDocument?.object, character, scope, ...argValues);
       } catch (err) {
         ui.notifications?.error(`There was an error running your macro. See the console (F12) for details`);
         error("dae | Error evaluating macro for onUpdateActor", err)

@@ -371,7 +371,11 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
               aeData.duration.startTurn = game.combat?.turn;
             }
           }
-          warn("Apply active effects ", aeData, itemCardId)
+          warn("Apply active effects ", aeData, itemCardId);
+          if (isNewerVersion(game.version, "11.0")) {
+            if (aeData.flags?.core?.statusId) aeData.statuses = [aeData.flags.core.statusId];
+            delete aeData.flags.core.statusId;
+          }
 
           setProperty(aeData, "flags.dae.transfer", false);
           let source: any | undefined = await fromUuid(aeData.origin);

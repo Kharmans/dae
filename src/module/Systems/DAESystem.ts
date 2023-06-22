@@ -203,7 +203,22 @@ export class DAESystem {
     return;
   }
 
-  public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void { };
+  public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void { 
+
+    if (["character", "npc"].includes(actorType)) {
+      if (game.settings.get("dnd5e", "honorScore")) {
+        baseValues["system.abilities.hon.value"] = [0, -1];
+        baseValues["system.abilities.hon.bonuses.save"] = ["", -1];
+        baseValues["system.abilities.hon.bonuses.check"] = ["", -1];
+      }
+      if (game.settings.get("dnd5e", "sanityScore")) {
+        baseValues["system.abilities.san.value"] = [0, -1];
+        baseValues["system.abilities.san.bonuses.save"] = ["", -1];
+        baseValues["system.abilities.san.bonuses.check"] = ["", -1];
+
+      }
+    }
+  };
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
@@ -217,6 +232,18 @@ export class DAESystem {
     specials["macro.createItem"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["macro.createItemRunMacro"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
 
+    if (["character", "npc"].includes(actorType)) {
+      if (game.settings.get("dnd5e", "honorScore")) {
+
+
+      }
+      if (game.settings.get("dnd5e", "sanityScore")) {
+        specials["system.abilities.san.value"] = [0, -1];
+
+
+
+      }
+    }
     // specials["macro.createToken"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
   };
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
