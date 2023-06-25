@@ -1,8 +1,11 @@
+### 10.0.36
+* Fix for error thrown with v11 only active effects (flags.core.statusId) not defined.
+* First fix for ghost concentration (and other effects) being applied to tokens.
+
 ### 10.0.35
 * Fix for some deprecation warnings for flags.core.statusId
 * Fix for speaker error when calling macros
 * Support for some honor/sanity effects.
-
 
 ### 10.34.1
 * Remove some debugger statements left in by accident

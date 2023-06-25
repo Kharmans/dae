@@ -374,7 +374,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
           warn("Apply active effects ", aeData, itemCardId);
           if (isNewerVersion(game.version, "11.0")) {
             if (aeData.flags?.core?.statusId) aeData.statuses = [aeData.flags.core.statusId];
-            delete aeData.flags.core.statusId;
+            if (aeData.flags?.core?.statusId !== undefined) delete aeData.flags.core.statusId;
           }
 
           setProperty(aeData, "flags.dae.transfer", false);
@@ -433,7 +433,9 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
         }
 
         if (dupEffects.length > 0) {
-          let timedRemoveList = await actionQueue.add(targetActor.createEmbeddedDocuments.bind(targetActor), "ActiveEffect", dupEffects, { metaData });
+          // let timedRemoveList = await actionQueue.add(targetActor.createEmbeddedDocuments.bind(targetActor), "ActiveEffect", dupEffects, { metaData });
+          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect",  dupEffects, { metaData });
+
           setTimeout(() => {
             if (globalThis.EffectCounter) {
               for (let effectData of dupEffects) {

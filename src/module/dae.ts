@@ -147,7 +147,7 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
   // Organize non-disabled effects by their application priority
   changes.sort((a, b) => a.priority - b.priority);
 
-  if (changes.length > 0) debug("Applying effect ", this.name, changes)
+  if (changes.length > 0 && debugEnabled > 0) warn("Applying effect ", this.name, changes)
   // Apply all changes
   for (let c of changes) {
     if (!c.key) continue;
@@ -455,6 +455,7 @@ function removeExistingEffectsHook(...args) {
     });
     if (hasExisting.length === 0) return true;
     try {
+      if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting)
       effect.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id));
     } finally {
       return true
@@ -1483,6 +1484,14 @@ export function matchItemMacroName(candidate, updates, options, user) {
   return true;
 }
 
+// Fix for v11 not adding effects as expected. i.e. token.effects.visible ending up false
+async function drawEffects(wrapped) {
+  const tokenEffects = this.document.effects;
+  const actorEffects = this.actor?.temporaryEffects || [];
+  this.effects.visible = this.effects.visible || tokenEffects.length || actorEffects.length;
+  return wrapped();
+}
+
 export function daeInitActions() {
   // Default systtem class is setup, this oeverrides with system specific calss
   const dnd5esystem = DAESystemDND5E; // force reference so they are installed?
@@ -1505,6 +1514,7 @@ export function daeInitActions() {
     return;
   }
 
+  libWrapper.register("dae", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER")
 
   // TODO put this back when doing item effects.
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
