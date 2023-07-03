@@ -271,7 +271,7 @@ export async function unsetFlag(tactor: Actor | Token | string, flagId) {
 
 export async function macroActorUpdate(...args) {
   let [onOff, actorUuid, type, value, targetField, undo] = args;
-
+  //if (args.length>6) undo = args.slice(5,-1).join('');    //someone might have forgotten to wrap the undo within ""
   const lastArg =  args[args.length -1];
   if (!(actorUuid && type && value && targetField)) {
     console.warn("dae | invalid arguments passed ", ...args)
@@ -345,9 +345,10 @@ export async function macroActorUpdate(...args) {
       restoreValue = Math.max(0, actorValue - (updateValue - oldValue))
     } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
       restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
-    } else if (typeof undo === "string" && type === "number") {
+    } else if (typeof undo === "string" /*&&!undo.includes("Actor") && !undo.includes("Token")*/ && type === "number") {
       //@ts-ignore
-      restoreValue = (await new Roll(`${undo}`, rollContext).roll({aysnc: true})).total;
+      if (undo.includes("actorValue")) undo = undo.replace("actorValue",`${actorValue}`);
+      restoreValue = (await new Roll(`${undo}`, rollContext).evaluate({async: true})).total;
     } else if (undo === "undefined") {
       restoreValue = undefined;
     } else if (typeof undo === "string") {
