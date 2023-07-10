@@ -85,6 +85,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         baseValues[key] = 0;
       }
     });
+
     /*
     baseValues["system.traits.di.all"] = false;
     baseValues["system.traits.di.value"] = "";
@@ -107,12 +108,28 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues["system.attributes.init.mod"];
     delete baseValues["system.attributes.init.bonus"]
     delete baseValues["flags"];
+
+    baseValues["system.traits.ci.all"] = [false, modes.CUSTOM];
+    baseValues["system.traits.ci.value"] = ["", modes.CUSTOM];
+    baseValues["system.traits.ci.custom"] = ["", modes.CUSTOM];
+    if (["character", "npc"].includes(actorType) && game.system.id === "dnd5e") {
+      if (game.settings.get("dnd5e", "honorScore")) {
+        baseValues["system.abilities.hon.value"] = [0, -1];
+        baseValues["system.abilities.hon.bonuses.save"] = ["", -1];
+        baseValues["system.abilities.hon.bonuses.check"] = ["", -1];
+      }
+      if (game.settings.get("dnd5e", "sanityScore") && game.system.id === "dnd5e") {
+        baseValues["system.abilities.san.value"] = [0, -1];
+        baseValues["system.abilities.san.bonuses.save"] = ["", -1];
+        baseValues["system.abilities.san.bonuses.check"] = ["", -1];
+      }
+    }
   }
 
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
     super.modifySpecials(actorType, specials, characterSpec);
 
-    //@ts-ignore
+    //@ts-expect-error
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     if (actorType === "vehicle") {
       specials["system.attributes.ac.motionless"] = [0, -1];
@@ -143,9 +160,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.traits.dv.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.ci.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.ci.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.ci.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    // specials["system.traits.ci.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+    // specials["system.traits.ci.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    // specials["system.traits.ci.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.size"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
 
     specials["system.spells.pact.level"] = [0, -1];
@@ -198,6 +215,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           specials[`system.spells.${spellSpec}.max`] = [0, -1];
       }
 
+
+    if (["character", "npc"].includes(actorType) && game.system.id === "dnd5e") {
+      if (game.settings.get("dnd5e", "honorScore")) {
+      }
+      if (game.settings.get("dnd5e", "sanityScore")) {
+        specials["system.abilities.san.value"] = [0, -1];
+      }
+    }
       /*/
       if (game.modules.get("resourcesplus")?.active) {
         const maxResources = Math.min(game.settings.get("resourcesplus", "globalLimit"), game.settings.get("resourcesplus", "localLimit"));
@@ -337,6 +362,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["DamageDealt"] = i18n("dae.DamageDealt");
       daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
       daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
+      daeSpecialDurations["isHealed"] = i18n("dae.isHealed");
       daeSpecialDurations["zeroHP"] = i18n("dae.ZeroHP");
       daeSpecialDurations["isHit"] = i18n("dae.isHit");
       daeSpecialDurations["isSave"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}`;
@@ -362,6 +388,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       Object.keys(CONFIG.DND5E.damageTypes).forEach(dt => {
         daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${CONFIG.DND5E.damageTypes[dt]}`;
       });
+      daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${CONFIG.DND5E.healingTypes["healing"]}`;
       Object.keys(CONFIG.DND5E.skills).forEach(skillId => {
         daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId].label}`;
       });
@@ -806,6 +833,12 @@ function applyBaseActiveEffectsdnd5e() {
   if (this._prepareScaleValues) this._prepareScaleValues();
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
   // determine whether they are suppressed or not.
+
+  // Handle traits.ci specially - they can disable other effects so need to be done at the very start.
+  const traitsCI = {};
+  traitsCI["system.traits.ci.all"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.all"];
+  traitsCI["system.traits.ci.value"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.value"];
+  applyDaeEffects.bind(this)(traitsCI, {}, false, wildcardEffects, [])
   this.effects.forEach(e => e.determineSuppression());
   applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects, [])
 }
@@ -841,7 +874,6 @@ function prepareData(wrapped) {
       }
       this.statuses.clear();
     }
-    // setProperty(this, "flags.dae", getProperty(this._source, "flags.dae") ?? {});
     setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
 
     this.overrides = {};

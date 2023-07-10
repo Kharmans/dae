@@ -314,7 +314,7 @@ export async function macroActorUpdate(...args) {
           value=value.trim();
           op = value[0];
         }
-        value = value.replace(/(\*\*(.+?)\*\*)/g, "@$2");
+        value = `${value}`.replace(/(\*\*(.+?)\*\*)/g, "@$2");
         //@ts-ignore isNumeric
         if (["+","-","*","/"].includes(op) && Number.isNumeric(actorValue))
           //@ts-ignore
@@ -346,8 +346,8 @@ export async function macroActorUpdate(...args) {
     } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
       restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
     } else if (typeof undo === "string" /*&&!undo.includes("Actor") && !undo.includes("Token")*/ && type === "number") {
-      //@ts-ignore
       if (undo.includes("actorValue")) undo = undo.replace("actorValue",`${actorValue}`);
+      //@ts-expect-error .evaluate
       restoreValue = (await new Roll(`${undo}`, rollContext).evaluate({async: true})).total;
     } else if (undo === "undefined") {
       restoreValue = undefined;

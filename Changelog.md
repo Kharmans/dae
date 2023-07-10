@@ -1,3 +1,13 @@
+### 10.0.37
+* Fix for removing items not calling item macros with "off".
+* Some documentation fixes
+* Merged request from @thatlonelybugbear for ActorUpdate special case.
+* Fix for error when loading DAE in non-dnd5e system.
+* Change for v11/CE statusEffect, will now fetch the effect from dfreds.effects.all matching by the status id in the effect statuses.
+* Fix for sometimes not finding the item macro when an item has been deleted.
+* FIx for traits.ci.value/all not working when applied as an effect to an actor.
+* Do not stack by origin now also checks the name of the effect. This means an item can have two effects (with different names) and specify do not stack by origin and it will work.
+
 ### 10.0.36
 * Fix for error thrown with v11 only active effects (flags.core.statusId) not defined.
 * First fix for ghost concentration (and other effects) being applied to tokens.

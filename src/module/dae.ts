@@ -114,7 +114,7 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   const changes = this.effects.reduce((changes, effect) => {
     if (daeSystemClass.effectDisabled(this, effect)) return changes;
-    if (isNewerVersion(game.version, "11.293")) {
+    if (isNewerVersion(game.version, "11.293") && effect.changes.some(c => specList[c.key] !== undefined)) {
       for (const statusId of effect.statuses) {
         this.statuses.add(statusId);
       }
@@ -139,7 +139,10 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
         }
         if (c.key === "flags.midi-qol.OverTime") c.key = `flags.midi-qol.OverTime.${randomID()}`;
         c.effect = effect;
-        c.priority = c.priority ?? (c.mode * 10);
+        if (["system.traits.ci.value", "system.traits.ci.all", "system.traits.ci.custom"].includes(c.key))
+          c.priority = 0;
+        else 
+          c.priority = c.priority ?? (c.mode * 10);
         return c;
       }));
   }, []);
@@ -450,7 +453,7 @@ function removeExistingEffectsHook(...args) {
         case "noneName":
           return (ef.name || ef.label) === (effect.name || effect.label);
         case "none":
-          return effect.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === effect.origin;
+          return effect.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === effect.origin && (ef.name ?? ef.label) === (effect.name ?? effect.label);
       }
     });
     if (hasExisting.length === 0) return true;
@@ -518,7 +521,12 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
         if (change.key === "StatusEffect") {
           const statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
           if (statusEffect) {
-            newChanges = statusEffect.changes ? newChanges.concat(statusEffect.changes) : newChanges;
+            let changes = statusEffect.changes ?? [];
+            if (game.dfreds?.effects && isNewerVersion(game.version, "11.0")) {
+              const ceEffect = game.dfreds.effects.all.find(ef => ef.statuses.has(statusEffect.id));
+              if (ceEffect) changes = ceEffect.changes;
+            }
+            newChanges = newChanges.concat(changes);
             updates["icon"] = statusEffect.icon;
             if (isNewerVersion(game.version, "11.290")) {
               updates["name"] = i18n(statusEffect.name ?? statusEffect.label);
@@ -1133,6 +1141,9 @@ export async function getMacro({ change, name }, item, effectData) {
       macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
     }
 
+    if (!macroCommand) {
+      macroCommand = effectData.flags?.dae?.itemMacro;
+    }
     if (!macroCommand) {
       macroCommand = `if (!args || args[0] === "on") {ui.notifications.warn("macro.itemMacro | No macro found for item ${item?.name}");}`;
       warn(`No macro found for item ${item?.name}`);

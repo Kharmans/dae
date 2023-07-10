@@ -160,7 +160,6 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 | `system.attributes.init.bonus`          	|            	| 	|
 | `system.attributes.init.mod`          	|            	| 	|
 | `system.attributes.init.total`          	|            	| 	|
-| `system.attributes.init.value`          	|            	| 	|
 | `system.attributes.inspiration`          	|            	| 	|
 | `system.attributes.movement.all`          	|    CUSTOM   	| 	|
 | `system.attributes.movement.TYPE`          	|            	| TYPE: burrow/climb/fly/hover/swim/walk	|
@@ -505,12 +504,13 @@ This behaves the same as macro.createItem, but in addition when the item is crea
 
 **Programmatically create items with active effects**
 ``` js
+const EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
 const EXAMPLE_TRANSFERRED_EFFECT = {
     label: "Ring of Protection",
-    icon: "icons/mystery-man.svg",
+    icon: "icons/svg/mystery-man.svg",
     changes: [
-      {key: "system.bonuses.abilities.save", value: "+1", mode: EFFECTMODES.ADD},
-      {key: "system.attributes.ac.value", value: 1, mode: EFFECTMODES.ADD},
+      {key: "system.bonuses.abilities.save", value: "+1", mode: EFFECT_MODES.ADD},
+      {key: "system.attributes.ac.bonus", value: "+1", mode: EFFECT_MODES.ADD},
     ],
     transfer: true,
   };
@@ -520,8 +520,8 @@ const EXAMPLE_TRANSFERRED_EFFECT = {
   })
   await item.createEmbeddedDocuments("ActiveEffect", [EXAMPLE_TRANSFERRED_EFFECT]);
 
-  let actor = game.actors.getName("My actor")
-  await actor.createEmbededDocuments("Item", [item.data])
+  let myActor = game.actors.getName("My Actor")
+  await myActor.createEmbeddedDocuments("Item", [item])to [item]. 
 
   ```
 Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
@@ -592,7 +592,6 @@ Your custom effects can create new fields on the actor as well (DAE does this fo
 
 ### Initiative
 Changes to initiative are challenging due to the way it is calculated and rolled in the dnd5e system. Here is a quick guide to what you can do.
-  * `init.value` is now set before prepareDerived data is run, so it appears on the character sheet (in the "mod" field and in the total) and effects initiative rolls, but cannot reference dex.mod etc.
   * `init.bonus` is set after prepareDerivedData so will not show up on the character sheet but CAN reference fields like dex.mod
   * `init.total` can be updated and will show up on the character sheet but will NOT be included in rolls.
   So if you want to add @abilities.wis.mod to initiative AND have it show up on the character sheet, you need two changes:  
