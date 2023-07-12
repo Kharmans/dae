@@ -103,8 +103,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 /*
  * Replace default appplyAffects to do value lookups
  */
-export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean, wildCardsInclude: RegExp[], wildCardsExclude: RegExp[]) {
-  
+export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpecs = false, wildCardsInclude = [], wildCardsExclude = [], doStatusEffects = true}) {
   if (disableEffects) return;
   const overrides = {};
   const effects = this.effects.contents;
@@ -114,7 +113,7 @@ export function applyDaeEffects(specList, completedSpecs, allowAllSpecs: boolean
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   const changes = this.effects.reduce((changes, effect) => {
     if (daeSystemClass.effectDisabled(this, effect)) return changes;
-    if (isNewerVersion(game.version, "11.293") && effect.changes.some(c => specList[c.key] !== undefined)) {
+    if (isNewerVersion(game.version, "11.293") && doStatusEffects) {
       for (const statusId of effect.statuses) {
         this.statuses.add(statusId);
       }

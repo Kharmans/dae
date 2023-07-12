@@ -838,9 +838,9 @@ function applyBaseActiveEffectsdnd5e() {
   const traitsCI = {};
   traitsCI["system.traits.ci.all"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.all"];
   traitsCI["system.traits.ci.value"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.value"];
-  applyDaeEffects.bind(this)(traitsCI, {}, false, wildcardEffects, [])
+  applyDaeEffects.bind(this)({specList: traitsCI, completedSpecs: {}, allowAllSpecs: false, wildeCardsInclude: [], wildCardsExclude: [], doStatusEffects: false})
   this.effects.forEach(e => e.determineSuppression());
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects, [])
+  applyDaeEffects.bind(this)({specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclue: [], doStatusEffects: true});
 }
 
 function getRollData(wrapped, ...args) {
@@ -880,7 +880,7 @@ function prepareData(wrapped) {
     wrapped();
     const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
     if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
-    applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
+    applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true});
     preparePassiveSkills.bind(this)();
     // Fix for dnd5e _prepareSpellcasting overwriting the _source pact.value
     const pact = this.system.spells?.pact;

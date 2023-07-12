@@ -1,10 +1,10 @@
 import { debug, warn } from '../../../dae.js';
-import { EditOwnedItemEffectsActiveEffect } from './owned-item-effect.js';
+// import { EditOwnedItemEffectsActiveEffect } from './owned-item-effect.js';
 
 /**
  * Handles all the logic related to Item Sheet
  */
-export class EditOwnedItemEffectsItemSheet {
+export class ItemEffectsItemSheet {
   static init() {
     Hooks.on('renderItemSheet', this.handleItemSheetRender);
   }
@@ -20,6 +20,32 @@ export class EditOwnedItemEffectsItemSheet {
    * @param {*} html 
    * @returns 
    */
+
+  static onManageActiveEffect(event, owner) {
+    event.preventDefault();
+    const a = event.currentTarget;
+    const li = a.closest("li");
+    const effect = li.dataset.effectId ? owner.effects.get(li.dataset.effectId) : null;
+    if (a.dataset.action !== "transfer") {
+      // if (CONFIG.ActiveEffect.documentClass.onManageActiveEffect) return CONFIG.ActiveEffect.documentClass.onManageActiveEffect(event, owner);
+    } else {
+      event.stopPropagation();
+        const actor = effect.parent?.parent;
+
+        if (!actor || !(actor instanceof Actor)) {
+          debug('Attempted to Transfer an effect on an unowned item.');
+          return;
+        }
+
+        debug('Attempting to Transfer an effect to an Actor', { effectUuid: effect.uuid, actor });
+
+        return CONFIG.ActiveEffect.documentClass.create({
+          ...effect.toObject(),
+          origin: effect.parent.uuid,
+        }, { parent: actor });
+    }
+  }
+
   static handleItemSheetRender = (app, html) => {
     const effectsList = html.find('.tab.effects-list');
 
@@ -28,10 +54,10 @@ export class EditOwnedItemEffectsItemSheet {
     }
 
     // unregister all remaining listeners on the effect controls
-    html.find(".effect-control").unbind('click');
+    // tml.find(".effect-control").unbind('click');
 
     // remove the 'activate' button on the effect list as it's confusing
-    html.find('.effect-control[data-action="toggle"]').remove();
+    // html.find('.effect-control[data-action="toggle"]').remove();
 
     // add 'transfer' button to the AEs which should be transferrable
     app.item.effects.filter(effect => effect.transfer).forEach(effect => {
@@ -45,57 +71,9 @@ export class EditOwnedItemEffectsItemSheet {
     });
 
     // override the listener preventing management of these effects
+
     html.on('click', ".effect-control", (ev) => {
-      ev.stopPropagation();
-      EditOwnedItemEffectsActiveEffect.onManageOwnedItemActiveEffect(ev, app.item);
+      ItemEffectsItemSheet.onManageActiveEffect(ev, app.item);
     })
-
-    debug('binding dragdrop');
-
-    //@ts-ignore 0 vs 1 argument
-    const dragDrop = new DragDrop({
-      dropSelector: '.effects-list',
-      permissions: {
-        dragdrop: () => app.isEditable && app.item.isOwned 
-      },
-      callbacks: {
-        drop: EditOwnedItemEffectsItemSheet._onDrop(app.object) 
-      }
-    });
-
-    //@ts-ignore
-    dragDrop.bind(html[0]);
-  }
-
-  /**
-   * When an effect is dropped on the sheet, create a copy of that effect
-   */
-  static _onDrop = (effectParent) => async (event) => {
-    if (!effectParent) {
-      return;
-    }
-
-    // Try to extract the data
-    let dropData;
-    try {
-      dropData = JSON.parse(event.dataTransfer.getData('text/plain'));
-
-      debug('DragDrop drop', event, dropData);
-    } catch (err) {
-      warn('DragDrop drop', err);
-      return false;
-    }
-
-    if (dropData.type !== 'ActiveEffect') return false;
-
-    debug('DragDrop drop starting:', effectParent, dropData)
-
-    return EditOwnedItemEffectsActiveEffect.create(
-      {
-        ...dropData.data,
-        origin: effectParent.uuid,
-        _id: null,
-      }, {parent: effectParent}
-    );
   }
 }

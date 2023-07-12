@@ -355,7 +355,7 @@ function prepareData(wrapped) {
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].derivedSpecsObj, ValidSpec.specs[this.type].baseSpecsObj, true, [], wildcardEffects);
+  applyDaeEffects.bind(this)({specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true});
   if (isNewerVersion(game.version, "11.293")) {
     // Apply special statuses that changed to active tokens
     let tokens;
@@ -373,7 +373,7 @@ function prepareData(wrapped) {
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects, [])
+  applyDaeEffects.bind(this)({specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatisEffects: true});
 }
 
 setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);

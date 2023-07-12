@@ -1,3 +1,9 @@
+### 11.0.0
+* First v11 only version of dae. This means development of the foundry v10 version will revert to bug fixes.
+* Moved to core ActiveEffects for all effects including on owned items. This means there is no special case code for active effects on owned items.
+* Fixed a bug with not setting actor.statuses which causes effects like blind/etc not working.
+* Update to the active effect sheet to match v11 ActiveEffectConfig sheet.
+
 ### 10.0.37
 * Fix for removing items not calling item macros with "off".
 * Some documentation fixes

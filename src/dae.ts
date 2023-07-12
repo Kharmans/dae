@@ -10,7 +10,7 @@ import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken } from './module/daeMacros';
-import { EditOwnedItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
+import { ItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
 import { ValidSpec, wildcardEffects } from './module/Systems/DAESystem';
 import { DAESystemDND5E } from './module/Systems/DAEdnd5e';
 import { DAESystemSW5E } from './module/Systems/DAEsw5e';
@@ -98,7 +98,7 @@ Hooks.once('ready', async function () {
       };
     }
     daeReadyActions();
-    EditOwnedItemEffectsItemSheet.init();
+    ItemEffectsItemSheet.init();
     // setupDAEMacros();
   } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
     ui.notifications.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);

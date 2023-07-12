@@ -146,7 +146,7 @@ function applyBaseActiveEffectssw5e() {
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
   // determine whether they are suppressed or not.
   this.effects.forEach(e => e.determineSuppression());
-  applyDaeEffects.bind(this)(ValidSpec.specs[this.type].baseSpecsObj, {}, false, wildcardEffects, [])
+  applyDaeEffects.bind(this)({specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpes: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true});
 }
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);

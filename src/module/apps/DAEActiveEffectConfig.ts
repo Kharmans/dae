@@ -49,12 +49,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
     daeSystemClass.configureLists(this)
 
-    if (cubActive) {
-      this.cubConditionList = {}
-      game.cub.conditions?.forEach(cubc => {
-        this.cubConditionList[cubc.name] = cubc.name;
-      })
-    }
     this.statusEffectList = {};
     let efl: any = CONFIG.statusEffects;
       efl = efl.filter(se => se.id)
@@ -116,13 +110,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /* ----------------------------------------- */
 
-  /** @override */
-  get title() {
-    let suffix = this.object.parent.isOwned ? "(Owned Item) Experimental" : "";
-    return `${i18n("EFFECT.ConfigTitle")}: ${this.object.name || this.object.label}` + suffix;
-  }
-
   get id() {
+    //@ts-expect-error
+    return `${this.constructor.name}-${this.document.uuid.replace(/\./g, "-")}`;
+
     const object = this.object;
     let id = `ActiveEffectsConfig-${object?.id}`;
     if (object?.isToken) id += `-${object.token.id}`;
@@ -168,12 +159,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
     if (this.object.parent) {
       //@ts-ignore documentClass
-      data.isItem = this.object.parent instanceof CONFIG.Item.documentClass;
+      data.isItemEffect = this.object.parent instanceof CONFIG.Item.documentClass;
       //@ts-ignore documentClass
-      data.isActor = this.object.parent instanceof CONFIG.Actor.documentClass;
+      data.isActorEffrect = this.object.parent instanceof CONFIG.Actor.documentClass;
     }
-    if (data.isItem) validSpecsToUse = ValidSpec.specs["union"]; // TODO think about what it means to edit an item effect
-    if (data.isActor) validSpecsToUse = ValidSpec.specs[this.object.parent.type];
+    if (data.isItemEffect) validSpecsToUse = ValidSpec.specs["union"]; // TODO think about what it means to edit an item effect
+    if (data.isActorEffect) validSpecsToUse = ValidSpec.specs[this.object.parent.type];
     data.validFields = this.validFields;
     data.submitText = "EFFECT.Submit";
     //@ts-ignore

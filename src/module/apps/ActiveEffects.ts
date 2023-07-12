@@ -1,7 +1,7 @@
 // import {ItemEffectSelector} from "./apps/daeSelector"
 import { confirmDelete, effectIsTransfer, simpleCalendarInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
-import { EditOwnedItemEffectsActiveEffect } from "../editItemEffects/classes/owned-item-effect";
+// import { EditOwnedItemEffectsActiveEffect } from "../editItemEffects/classes/owned-item-effect";
 import { ValidSpec } from "../Systems/DAESystem";
 
 export class ActiveEffects extends FormApplication {
@@ -62,9 +62,7 @@ getData() {
     newAe.duration.label += ", " + `[${specialDuration.map(dur => daeSpecialDurations[dur])}]`;
     newAe.isTemporary  = true;
     newAe.isTemporary = ae.isTemporary ;
-    newAe.sourceName = ae.sourceName;
-    if (newAe.sourceName === (newAe.name ?? newAe.label)) newAe.sourceName = "";
-    else newAe.sourceName = `(${newAe.sourceName})`;
+    newAe.sourceName = `(${ae.sourceName ?? "Unknown"})`;
     if (this.filters.has("summary")) {
       newAe.changes = [];
       return newAe;
@@ -182,7 +180,8 @@ activateListeners(html) {
       })
     } else {
       let effect = object.effects.get(effectid);
-      effect =  new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
+      // effect =  new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
+      // effect = new CONFIG.ActiveEffect.documentClass(effect.toObjct(), effect.parent);
       confirmAction(confirmDelete, () => {
         effect.delete({});
       })
@@ -194,8 +193,10 @@ activateListeners(html) {
     const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     let effect = object.effects.get(effectid);
     
-    const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
-    return ownedItemEffect.sheet.render(true);
+    // const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
+    //const ownedItemEffect = new CONFIG.ActiveEffect.documentClass(effect.toObject(), effect.parent);
+
+    return effect.sheet.render(true);
   })
   html.find('.effect-add').click(async ev => {
     const object: any = this.object;
@@ -221,16 +222,21 @@ activateListeners(html) {
         AEDATA["flags.core.statusId"] = id;
       }
     }
+    object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
+
+/*
     //@ts-ignore
     if (object instanceof CONFIG.Actor.documentClass) {
       object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
     } else {
       let parent = this.object;
       //@ts-ignore
-      const created = new EditOwnedItemEffectsActiveEffect(duplicate(AEDATA), this.object);
+//       const created = new EditOwnedItemEffectsActiveEffect(duplicate(AEDATA), this.object);
+      const created = new CONFIG.ActiveEffect.documentClass(duplicate(AEDATA), this.object);
       //@ts-ignore
       created.create();
     }
+    */
   })
 
   function efhandler(type, effect, data, options, user) {
