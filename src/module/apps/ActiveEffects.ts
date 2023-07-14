@@ -102,7 +102,10 @@ getData() {
   });
 
   let efl = CONFIG.statusEffects
-  .map(se => {return {"id": se.id, "label": se.id?.startsWith("combat-utility-belt.") ? `${se.name || se.label} (CUB)` : i18n(se.label)}})
+  .map(se => {
+    if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.name ?? se.label} (CE)` };
+    return { id: se.id, label: i18n(se.label) };
+  })
   .sort((a,b) => a.label < b.label ? -1 : 1);
   this.effectList = {"new": "new"}
   efl.forEach(se => {

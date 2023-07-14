@@ -1,3 +1,6 @@
+### 11.0.1
+* Put back support for new CE effects in the DAE actor/item active effect editor.
+
 ### 11.0.0
 * First v11 only version of dae. This means development of the foundry v10 version will revert to bug fixes.
 * Moved to core ActiveEffects for all effects including on owned items. This means there is no special case code for active effects on owned items.

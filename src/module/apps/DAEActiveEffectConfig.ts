@@ -53,8 +53,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     let efl: any = CONFIG.statusEffects;
       efl = efl.filter(se => se.id)
       .map(se => {
-        if (se.id.startsWith("combat-utility-belt.")) return { id: se.id, label: `${se.name || se.label} (CUB)` };
-        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.name || se.label} (CE)` };
+        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.name ?? se.label} (CE)` };
         return { id: se.id, label: i18n(se.label) };
       })
       .sort((a, b) => a.label < b.label ? -1 : 1);
@@ -72,7 +71,11 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (atlActive) {
       this.ATLPresets = {};
       game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets[preset.name] = preset.name);
-      this.ATLVisionModes = 
+      this.ATLVisionModes = {};
+      Object.keys(CONFIG.Canvas.visionModes).forEach(vm => {
+        this.ATLVisionModes[vm] = i18n(CONFIG.Canvas.visionModes[vm].label);
+      });
+/*
       {
         "blind": i18n("VISION.ModeBlindness"),
         "basic": i18n("VISION.ModeBasicVision"),
@@ -81,7 +84,18 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         "tremorsense" : i18n("VISION.ModeTremorsense"),
         "lightAmplification": i18n("VISION.ModeLightAmplification")
       };
+      */
     }
+    this.ATLVisionModes = 
+    {
+      "blind": i18n("VISION.ModeBlindness"),
+      "basic": i18n("VISION.ModeBasicVision"),
+      "darkvision" : i18n("VISION.ModeDarkvision"),
+      "monochromatic" : i18n("VISION.ModeMonochromatic"),
+      "tremorsense" : i18n("VISION.ModeTremorsense"),
+      "lightAmplification": i18n("VISION.ModeLightAmplification")
+    };
+
     this.validFields = { "__": "" }
     this.validFields = validSpecsToUse.allSpecs
       .filter(e => e._fieldSpec.includes(""))
