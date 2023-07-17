@@ -28,7 +28,7 @@
 
         {{#each actives as |effect iid|}}
         <li class="flexrow effect-header" effect-id="{{effect._id}}">
-          <div class="effect-label">{{effect.label}}</div>
+          <div class="effect-label">{{effect.name}}</div>
           <div><img src="{{effect.icon}}" height="20px" style="border:0px"></div>
           {{#if effect.transfer}}
           {{#if ../isOwned}}

@@ -1164,6 +1164,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
               removeConvenientEffectsChange(change.value, actor.uuid, effect.origin, actor.isToken, lastArg);
               break;
             case "macro.CUB":
+            case "macro.CLT":
               removeCubChange(change.value, [token])
               break;
             case "macro.tokenMagic":
@@ -1186,6 +1187,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
               addConvenientEffectsChange(change.value, actor.uuid, effect.origin, {}, actor.isToken, lastArg);
               break;
             case "macro.CUB":
+            case "macro.CLT":
               addCubChange(change.value, [token]);
               break;
             case "macro.tokenMagic":

@@ -12,7 +12,7 @@ let templates = {};
 export var aboutTimeInstalled = false;
 export var timesUpInstalled = false;
 export var simpleCalendarInstalled = false;
-export var cubActive;
+export var cltActive;
 export var ceActive;
 export var atlActive;
 export var furnaceActive;
@@ -319,7 +319,7 @@ export async function addCubChange(conditionName, tokens: [Token], options = {})
   if (cubInterface?.enhancedConditions.supported) await actionQueue.add(cubInterface.addCondition, conditionName, tokens);
 }
 
-export async function removeCubChange(conditionName, tokens: [Token], options = {}) {
+export async function removeCubChange(conditionName, tokens: [Token], options = {warn: false}) {
   const cubInterface = game?.cub;
   const isToken = tokens.find(t => t.actor.isToken);
   if (isToken) await delay(1); // let all of the stuff settle down
@@ -368,7 +368,7 @@ function createActiveEffectHook(...args) {
         // don't apply macro or macro like effects if active aura and not targeting self
         if (selfAuraChange) return;
         for (let change of effect.changes) {
-          if (cubActive && change.key === "macro.CUB" && token) {
+          if (cltActive && ["macro.CUB", "macro.CLT"].includes(change.key) && token) {
             await addCubChange(change.value, [token])
           }
           if (ceActive && change.key === "macro.CE") {
@@ -411,7 +411,7 @@ async function _preCreateActiveEffect(...args) {
     if (parent.isToken) await delay(200); // let all of the stuff settle down
     try {
       for (let change of this.changes) {
-        if (cubActive && change.key === "macro.CUB" && token) {
+        if (cltActive && ["macro.CUB", "macro.CLT"].includes(change.key) && token) {
           await addCubChange(change.value, [token])
         }
         if (ceActive && change.key === "macro.CE") {
@@ -469,28 +469,33 @@ function removeExistingEffectsHook(...args) {
 }
 
 function preCreateActiveEffectHook(candidate, data, options, user) {
+  let result = true;
   try {
-    if (options.isUndo) return true;
+    if (options.isUndo) return result = true;
     const actor: any = candidate.parent;
     // Check if we are trying to create an existing item
-    if (actor.effects?.find(ef => ef.id === data._idid)) {
+    if (actor.effects?.find(ef => ef.id === data._id)) {
       if (debugEnabled > 0) warn("Blocking creation of duplcate effect", candidate, actor.effects?.find(ef => ef.id === data._idid));
-      return false;
+      return result = false; // "finally" will return the value
     }
     //@ts-ignore
-    if (!(actor instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
+    if (!(actor instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return result = true;
     if (!candidate.flags?.dae?.specialDuration) candidate.updateSource({ "flags.dae.specialDuration": [] });
 
     const stackable = getProperty(candidate, "flags.dae.stackable");
     if (candidate.origin === candidate.parent?.uuid) return false;
+    /* Leave this checking to the ordinary stackable checking
     if (stackable === "noneName" && actor.effects.contents.some(ef => (ef.name || ef.label) === (candidate.name || candidate.label))) {
       warn("Blocking creation of", candidate.name ?? candidate.label, "name");
-      return false;
+
+      return result = false; // "finally" will return the value
     }
     if (stackable === "none" && actor.effects.contents.some(ef => ef.origin && ef.orign !== CECustomEffectsItemUuid && ef.origin === candidate.origin)) {
       warn("Blocking creation of", candidate.name ?? candidate.label, "origin");
-      return false;
+
+      return result = false; // "finally" will return the value
     }
+    */
     const parent = candidate.parent;
     if (parent && parent instanceof Actor) {
       let updates:any = {};
@@ -516,6 +521,20 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
       let changesChanged = false;
       let newChanges = [];
       for (let change of candidate.changes) {
+        if (typeof change.value === "string") {
+          const token = getSelfTarget(parent);
+          const context = {"actorUuid": parent?.uuid,  "tokenUuid": token?.uuid ?? token?.document?.uuid, "targetUuid": token?.uuid ?? token?.document?.uuid};
+          let newValue = change.value;
+          for (let key of Object.keys(context)) {
+            newValue = newValue.replace(`@${key}`, context[key])
+          }
+          // const newValue = Roll.replaceFormulaData(change.value, context, { missing: "<undefined>", warn: false });
+          if (newValue !== change.value) {
+            changesChanged = true;
+            change.value = newValue;
+          }
+        }
+
         const inline = typeof change.value === "string" && change.value.includes("[[");
         if (change.key === "StatusEffect") {
           const statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
@@ -543,8 +562,8 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
               // updates["statuses"].add(statusEffect.id);
             } else updates["flags.core.statusId"] = statusEffect.id;
           }
-        } else if (change.key === "StatusEffectLabel") {
-          updates["label"] = change.value;
+        } else if (["StatusEffectLabel", "StatusEffectName"].includes(change.key)) {
+          updates["name"] = change.value;
         } else if (inline) {
           const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
           const newChange = duplicate(change);
@@ -573,7 +592,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
   } catch (err) {
     console.warn("dae | preCreateActiveEffectHook", err)
   } finally {
-    return true;
+    return result;
   }
 }
 
@@ -614,8 +633,9 @@ export function preCreateCombatantHook(...args) {
 
 export function updateActiveEffectHook(...args) {
   let [effect, changes, context, userId] = args;
-  if (context.isUndo) return true;
-  if (userId !== game.user.id) return true;
+  let result = true;
+  if (context.isUndo) return result = true;
+  if (userId !== game.user.id) return result = true;
   const parent = effect.parent;
   //@ts-ignore documentClass
   if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return true;
@@ -632,7 +652,7 @@ export function updateActiveEffectHook(...args) {
         const tokenMagic = globalThis.TokenMagic;
         if (changes.disabled === true) {
           for (let change of effect.changes) {
-            if (token && cubActive && change.key === "macro.CUB") {
+            if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
               await removeCubChange(change.value, [token], { warn: false });
             }
             if (ceActive && change.key === "macro.CE") {
@@ -650,7 +670,7 @@ export function updateActiveEffectHook(...args) {
 
         } else if (changes.disabled === false && !effect.isSuppressed) {
           for (let change of effect.changes) {
-            if (token && cubActive && change.key === "macro.CUB") {
+            if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
               await addCubChange(change.value, [token])
             }
             if (ceActive && change.key === "macro.CE") {
@@ -671,12 +691,12 @@ export function updateActiveEffectHook(...args) {
     } catch (err) {
       console.warn("dae | updating active effect error", err)
     } finally {
-      return true;
+      return result;
     }
   };
   changeLoop();
 
-  return true;
+  return result = true;
 }
 
 export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options, user) {
@@ -768,8 +788,8 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
           const lastArg = prepareLastArgData(this, actor);
           await removeConvenientEffectsChange(change.value, actor.uuid, lastArg.origin, actor.isToken, lastArg);
         }
-        if (token && cubActive && change.key === "macro.CUB") {
-          await removeCubChange(change.value, [token]);
+        if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
+          await removeCubChange(change.value, [token], {warn: false});
         }
         if (change.key === "flags.dae.deleteUuid" && change.value) {
           await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
@@ -831,8 +851,8 @@ export function deleteActiveEffectHook(...args) {
             const lastArg = prepareLastArgData(effect, actor);
             await removeConvenientEffectsChange(change.value, actor.uuid, lastArg.origin, actor.isToken, lastArg);
           }
-          if (token && cubActive && change.key === "macro.CUB") {
-            await removeCubChange(change.value, [token]);
+          if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
+            await removeCubChange(change.value, [token], {warn: false});
           }
           if (change.key === "flags.dae.deleteUuid" && change.value) {
             await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
@@ -909,7 +929,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   }
   if (!theItem && effectData.flags?.dae?.itemData) {
     //@ts-ignore documentClass
-    theItem = new CONFIG.Item.documentClass(effectData.flags.dae.itemData, { actor })
+    theItem = new CONFIG.Item.documentClass(effectData.flags.dae.itemData, { parent: actor })
   }
   for (let change of effectData.changes) {
     try {
@@ -919,23 +939,24 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
       let args = [];
       let v11args: any = {};
       if (typeof theChange.value === "string") {
-
         tokenizer.tokenize(theChange.value, (token) => args.push(token));
         if (theItem) args = args.map(arg => {
           if ("@itemData" === arg) {
             return theItem.toObject(false);
           } else if ("@item" === arg) {
-            return theItem.toTobject(false);
+            return theItem;
           }
           if (typeof arg === "string") {
             const splitArg = arg.split("=");
             if (splitArg.length === 2) {
-              if (splitArg[1] === "@itemData" || splitArg[1] === "@item") {
+              if (splitArg[1] === "@itemData") {
                 const itemData = theItem?.toObject(false);
                 v11args[splitArg[0]] = itemData
                 return itemData;
-              }
-              else v11args[splitArg[0]] = splitArg[1];
+              } else if (splitArg[1] === "@item") {
+                v11args[splitArg[0]] = theItem;
+                return theItem;
+              } else v11args[splitArg[0]] = splitArg[1];
             }
           }
           return arg;
@@ -1078,6 +1099,7 @@ export async function evalArgs({ effectData = null, item, context, actor, change
         break;
       case "macro.CE":
       case "macro.CUB":
+      case "macro.CLT":
       case "macro.tokenMagic":
       case "macro.createItem":
       case "macro.createItemRunMacro":
@@ -1318,8 +1340,9 @@ export function createItemHook(candidate, options, user) {
 }
 
 export function preUpdateActorHook(candidate, updates, options, user) {
+  let result = true;
   try {
-    if (options.onUpdateCalled) return true;
+    if (options.onUpdateCalled) return result = true;
     for (let onUpdate of (getProperty(candidate, "flags.dae.onUpdateTarget") ?? [])) {
       if (onUpdate.macroName.length === 0) continue;
       if (onUpdate.filter.startsWith("data.")) {
@@ -1416,7 +1439,7 @@ export function preUpdateActorHook(candidate, updates, options, user) {
   } catch (err) {
     console.warn("dae | error in onUpdateTarget ", err);
   } finally {
-    return true;
+    return result;
     // return wrapped(updates, options, user);
   }
 }
@@ -1609,16 +1632,16 @@ function initItemSheetHook(app, html, data) {
 }
 
 export function daeSetupActions() {
-  cubActive = game.modules.get("combat-utility-belt")?.active;
+  cltActive = game.modules.get("condition-lab-triggler")?.active;
   ceActive = game.modules.get("dfreds-convenient-effects")?.active && isNewerVersion(game.modules.get("dfreds-convenient-effects").version, "1.6.2");
-  debug("Combat utility belt active ", cubActive, " and cub version is ", game.modules.get("combat-utility-belt")?.version)
+  debug("Condition Lab Triggle Active ", cltActive, " and cub version is ", game.modules.get("condition-lab-triggler")?.version)
 
   atlActive = game.modules.get("ATL")?.active;
-  if (cubActive && !isNewerVersion(game.modules.get("combat-utility-belt")?.version, "1.1.2")) {
-    ui.notifications.warn("Combat Utility Belt needs to be version 1.1.3 or later - conditions disabled");
-    console.warn("Combat Utility Belt needs to be version 1.1.3 or later - conditions disabled");
-    cubActive = false;
-  } else if (cubActive) {
+  if (cltActive && !isNewerVersion(game.modules.get("condition-lab-triggler")?.version, "1.4.0")) {
+    ui.notifications.warn("Condition Lab Triggler needs to be version 1.4.0 or later - conditions disabled");
+    console.warn("Condition Lab Triggler needs to be version 1.4.0 or later - conditions disabled");
+    cltActive = false;
+  } else if (cltActive) {
     debug("dae | Combat Utility Belt active and conditions enabled");
   }
   itemacroActive = game.modules.get("itemacro")?.active;

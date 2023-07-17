@@ -6,7 +6,7 @@ If you want to support this module then go to; https://ko-fi.com/tposney
 First off you probably don't need DAE. The core Foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and consider DAE *only* if you run into a roadblock on what you want to do.
 
 Foundry core active effects attach to an item and are designated as transfer or non-transfer.  
-Transfer Effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. 
+Transfer Effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. This is a core foundry function and the implementation of this is done by core foundry.
 Non-transfer Effects are not moved from the item to any actor without additional functions, which DAE and Midi-QOL provide.
 
 You can also create active effects directly on an actor and bypass the whole transfer/non-transfer question.
@@ -39,8 +39,6 @@ DAE does add some features to core active effects, so if the following features 
 [Sample Items/Macros](##Sample-Items/Macros)  
 [Module Integrations](##Module-Integrations)  
 [Issues](##issues)  
-
-
 
 ## Active Effect Expiry
 Expiry of effects requires additional [modules](#Module Integrations) to be installed. All of the modules play nicely together. If times-up is installed it takes over the expiry of timed effects.
@@ -129,6 +127,26 @@ When the effect is applied to the actor the expression inside `[[]]` will be eva
 * Recognizing what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated. 
+
+### Argument Evaluation
+When an effect is applied to an actor (passive or non-transfer) dae will make some changes to the change.value string.
+
+If the effect is applied as a passive/transfer effect few alterations are made. 
+* If the key is StatusEffect the contents of the referred effect is looked up and added to the effect (this means the number of changes will increase), the name of the effect is changed to the status effect and the icon is changed to the status effect icon.
+* If the change has an inline roll specified, the roll is evaluated and the return value replaces the inline roll in change.value
+* If the change has @tokenUuid (or @targetUuid) or @actorUuid it is replaced with the uuid of the actor or actor's token (if there is one). This can be useful in some condition evaluation where you can access the actor/token.
+
+The rest of the @fields are left untouched to be looked up when the effect is evaluated in actor.prepareData().
+
+If the effect is a non-transfer effect (i..e applied when you use an item) it is a little more complicated. You may want to refer to values on the actor/token using the item or on the target of the item use. DAE uses the following rule:
+@fields are looked up in the actor/token using the item and the @field is replaced with the value from the actor using the item
+##fields are not evaluated and the ##field string is replaced with an @field in the change value created on the target actor - where they will follow the evaluation rules for passive effects.
+
+Here's a little example, assume a strength 18 actor which attacks with an item against a strength 10 target which applies an active effect:  
+@abiltiies.str.mod will evaluate to 18  
+##abilities.str.mod will evaluate to @abilities.str.mod (and evaluate to 10 when prepareData is called).  
+
+For macro.XXXX changes there are a lot of other fields available which will be converted when the effect is applied to the target actor. Look at the macros section.
 
 #### Supported fields for dnd5e
 **Pretty much @system.abilities.anything is supported.**
@@ -413,10 +431,11 @@ When an active effecr with a change flags.dae.deleteUuid is deleted, and whose c
 
 ## Macros
 
-Macros have changed substantially in their implementation. When you have a non-transfer effect that includes a macro, the macro is transferred to the target actor and runs when created on the actor. Deletion of the active effect from the target actor calls the macro again with `args[0] = "off"`.
+When you have a **non-transfer effect** that includes a macro, the macro is transferred to the target actor and runs when created on the actor. Deletion of the active effect from the target actor calls the macro again with `args[0] = "off"`.
 Since the macro attaches to the target actor the macro can schedule itself to be activated on other events, such as combat updates to support damage over time effects.
 
 Dae does not use furnace/advanced macros any longer.
+Macro arguments are evaluated when the effect is applied to the target actor, i.e. when the item is rolled. @fields refer to the actor using the item - e.g. @abilities.str.mod is the item user's strength mod.  
 
 ```js
 macro.execute "macro_name" args
@@ -426,18 +445,20 @@ This will call the macro "macro_name" (or the ItemMacro for the item with the ef
 
 In addition to the standard `@values` the following are supported (only as macro arguments):
 
-`@target` will pass the token id of the targeted token.  
-`@targetUuid` will pass the Uuid of the targeted token.  
+`@target` will pass the token id of the targeted token.  Active Effects only.
+`@targetUuid` will pass the Uuid of the targeted token.  Active E
 `@scene` will pass the scene id of the scene on which the user who activated the effect is located.  
 `@item` will pass the item data of the item that was used in the activation.  
 `@spellLevel` if using Midi-QOL this will be the spell level the spell was cast at. This is the preferred field to use
 `@item.level` if using Midi-QOL this will be the spell level the spell was cast at.  
 `@damage` The total damage rolled for the attack.  
 `@token` The id of the token that used the item.  
+`@tokenUuid` The uuid of the token that used the item.
 `@actor` The actor.data for the actor that used the item.  
+`@actorUuid` the uuid of the actor that used the item
 `@FIELD` The value of the FIELD within the actor that used the item, e.g. `@abilities.str.mod`.  
 `@unique` A randomly generated unique id.  
-`##field` The `##` means the argument will not be evaluated using caster values, but will be replaced with `@field` when it is applied to the target.  
+`##field` The `##` means the argument will not be evaluated using caster values, but will be replaced with `@field` when it is applied to the target; and will be evaluated when the macro is called using values from the actor with the effect applied.
 
 ### lastArg
 In some circumstances (when macros are called with args[0] === "off or args[0] === "each") the standard actor and token variables will **not** be initailised. So inside the macro you can't do actor.anything. To access the actor/token in a way that will always work there is an additional argument (in addition to those specified in the `macro.execute` definition) **lastArg**, which includes a lot of information for executing the macro. You ccan access lastArg via
@@ -468,7 +489,7 @@ The same as `macro.execute`, but the item is inspected to find the item macro st
 
 If you are using `macro.itemMacro` please make sure you disable the Item Macro module config settings:
 * "character sheet hook" else when you use the item the macro will get called bypassing Midi-QOL/DAE completely and none of the arguments will get populated.
-* "override default macro execution"  IF this is enabled the hotbar hooks will directly call the item macro and won't work as expected for DAE/Midi-QOL.
+* "override default macro execution"  If this is enabled the hotbar hooks will directly call the item macro and won't work as expected for DAE/Midi-QOL.
 
 The setting is per player so each player needs to change the setting to disabled.  
 
@@ -662,30 +683,3 @@ DAE/Midi-QOL store a reference to the item that created an active effect in the 
 There is a script `DAE.cleanEffectOrigins()` which will fix up item origins which include OwnedItem on all actors and tokens in the game. It can be run multiple times either from the console or as a macro.
 
 Needs to be run as a GM.
-
-### My armor class is not calculating correctly
-DAE no longer calculates AC, that is now a dnd5e function. If you have migrated recently from a version below 1.4.0 you will have to go through a migration process.
-
-If you have not updated to dnd 1.4.x do so now. The 1.4.x release stream for dnd5e takes over the AC calculation so do the update and then see if you have a problem still.
-
-DAE will run a migration script the first time that you start your world after moving to 1.4 which should remove all DAE related AC features from you actors. If you see any active effects that were generated by DAE after running the script just delete them.
-
-After clean up you will need to check any actors with armor and look at the AC tooltip, if it shows AC Flat and a value edit the AC and change the calculation type to one of the supplied options (normally equipped armor).
-
-You can run `DAE.cleanArmorWorld()` at any time, from the console or as a macro, in case you have actors which did not get cleaned the first time. Needs to be run as a GM.
-
-After dnd5e 1.4.0 you can still use DAE to modify armor class.  
-`system.attributes.ac.bonus` is the dnd5e supported field to modify AC and can be used without DAE loaded. It is evaluated BEFORE prepareData is run so no derived fields can use used, i.e. no dex.mod, flags.anything and so on.  
-`system.attributes.ac.value` requires DAE to be effective, without DAE changes to ac.value will have no effect. Changes to ac.value are applied AFTER prepareData so can use any field. 
-
-#### After updating to dnd5e 1.4.2 my characters AC is wrong. 
-dnd5e 1.4.2 **removed** the magical bonus equipment type and so anything that had a type of magical bonus will stop working. The quickest solution is to create an active effect on the item which sets the ac.bonus to the value that used to be in the magical bonus.
-
-### dnd5e 1.4.3
-As of dnd5e 1.4.3 toggling effects based on item equip/attuned is supported directly, so this functionality has been disabled in dae if you are on dnd5e 1.4.3 or above. Toggling an active effect will NOT toggle equiping the item.
-
-### dnd5e 1.5
-DND5e version 1.5 will have significant impact on DAE. The mechanism for applying bonuses in dnd5e for ability saves, checks and skills will be enhanced to include .bonus field on most of these modifiers. The .bonus field is evaluated when the item is rolled which means that the DAE processing to apply bonuses is no longer required, since the bonus will be looked up at the time the roll is made. After the release of dnd5e 1.5 DAE will provide an automatic mapping for some fields (details to be determined, but will include ability.mod, ability.save and skills) and a deprecation warning. At a future stage the deprecation will change to a not supported. 
-
-**DND5E 1.5 changes**
-* New fields str.bonuses.check/str.bonuses.save which are string fields supporting expressions like @abilities.dex.mod.

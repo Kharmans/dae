@@ -59,9 +59,11 @@ export class ValidSpec {
       var specials = {};
       //@ts-ignore
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.CLT"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffectLabel"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["StatusEffectName"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       daeSystemClass.modifySpecials(specKey, specials, _characterSpec);
       Hooks.callAll("dae.modifySpecials", specKey, specials, _characterSpec)
 
@@ -154,12 +156,13 @@ export class ValidSpec {
         const checkBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).mod/);
         const skillMod = m._fieldSpec.match(/system.skills.(\w\w\w).mod/);
         const skillPassive = m._fieldSpec.match(/system.skills.(\w\w\w).passive/);
-        if (saveBonus) m._label = `${m._label} (Deprecated)`
-        else if (checkBonus) m._label = `${m._label} (Deprecated)`
-        else if (skillMod) m._label = `${m._label} (Deprecated)`
-        else if (skillPassive) m._label = `${m._label} (Deprecated)`
+        if (saveBonus) m._label = `${m._label} (Deprecated)`;
+        else if (checkBonus) m._label = `${m._label} (Deprecated)`;
+        else if (skillMod) m._label = `${m._label} (Deprecated)`;
+        else if (skillPassive) m._label = `${m._label} (Deprecated)`;
+        else if (m._fieldSpec === "StatusEffectLabel") m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "system.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
-        else if (this.specs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`
+        else if (this.specs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`;
         return m;
       });
     }

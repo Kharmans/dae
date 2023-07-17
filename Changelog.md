@@ -1,3 +1,22 @@
+### 11.0.2
+* Fix for DAE.blindToken/restoreVision not working with dfreds convenient effects installed
+* Added macro.CLT for condition-lab-triggler effects.
+  - macro.CUB will remain supported and behave exactly as if it were a macro.CLT effect.
+* More fixes for the DAE Active Effects app. (Thanks #thatlonelybugbear)
+  - correctly display time remaining
+  - display effect name
+* Improved support for condition-lab-triggler. It now replaces Combat utility belt everywhere and support for macro.CLT. (Thanks @thatlonelybugbear)
+  - macro.CUB effects will act as macro.CLT effects (no change is required), but you are advised to migrate to macro.CLT over time.
+  - Be aware that condition-lab-triggler does not interact with the foundry core effects, like blinded and invisible etc so using CUB condition Blinded won't update the tokens vision. When CLT returns the correct statuses this will work.
+* Created StatusEffectName to let you set the name of applied status effects, this supercedes StatusEffectLabel which is now deprecated (but will function as statusEffectName)
+* Fix for @targetUuid, @target not being evaluated when applying non-transfer effects (i.e when rolling an item) to a target. This allows things like
+  ``flags.midi-qol.advantage.abilities.save.dex CUSTOM checkNearby(1, "@targetUuid", 5)`` to give advantage to saves when the target token has a nearby ally.
+* Additon: when applying passive effects (effects added by equipping an item) you may specify @token, @tokenUuid, @actor, @actorUuid (all of which reference the actor/token that has the item) which allows a passive effect which will give advantage when a token has an ally nearby.
+``flags.midi-qol.advantage.abilities.save.dex CUSTOM checkNearby(1, "@tokenUuid", 5)``
+or
+``flags.midi-qol.disadvantage.attack.attack.rwak CUSTOM checkNearby(-1, "@tokenUuid", 5)``
+which will give disadvantage to ranged weapon attacks when there is a nearby foe.
+
 ### 11.0.1
 * Put back support for new CE effects in the DAE actor/item active effect editor.
 

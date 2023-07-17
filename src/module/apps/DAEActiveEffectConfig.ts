@@ -1,4 +1,4 @@
-import { confirmDelete, cubActive, ceActive, atlActive, daeSystemClass } from "../dae";
+import { confirmDelete, cltActive, ceActive, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
 
@@ -14,7 +14,7 @@ export function addAutoFields(fields: string[]) {
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
   fieldsList;
-  cubConditionList;
+  cltConditionList;
   ceEffectList;
   statusEffectList;
   ConditionalVisibilityList;
@@ -48,23 +48,30 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     this.fieldsList = this.fieldsList.join(", ");
 
     daeSystemClass.configureLists(this)
+    if (cltActive) {
+      this.cltConditionList = {}
+      game.cub.conditions?.forEach(cltc => {
+        this.cltConditionList[cltc.name] = cltc.name;
+      })
+    }
 
     this.statusEffectList = {};
     let efl: any = CONFIG.statusEffects;
       efl = efl.filter(se => se.id)
       .map(se => {
-        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.name ?? se.label} (CE)` };
-        return { id: se.id, label: i18n(se.label) };
+        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
+        if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
+        return { id: se.id, name: i18n(se.name ?? se.label) };
       })
-      .sort((a, b) => a.label < b.label ? -1 : 1);
+      .sort((a, b) => a.name < b.name ? -1 : 1);
     efl.forEach(se => {
-      this.statusEffectList[se.id] = se.label;
+      this.statusEffectList[se.id] = se.name;
     });
 
     if (ceActive) {
       this.ceEffectList = {};
       game.dfreds.effects?.all.forEach(ceEffect => {
-        this.ceEffectList[ceEffect.name || ceEffect.label] = ceEffect.name || ceEffect.label;
+        this.ceEffectList[ceEffect.name] = ceEffect.name;
       })
     }
 
@@ -137,8 +144,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   getOptionsForSpec(spec) {
     if (spec.includes("tokenMagic"))
       return this.tokenMagicEffects;
-    if (spec === "macro.CUB") return this.cubConditionList;
+    if (spec === "macro.CUB") return this.cltConditionList;
     if (spec === "macro.CE") return this.ceEffectList;
+    if (spec === "macro.CLT") return this.cltConditionList;
     if (spec === "StatusEffect") return this.statusEffectList;
     if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;

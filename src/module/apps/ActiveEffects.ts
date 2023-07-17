@@ -48,14 +48,15 @@ getData() {
   const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
   const modeKeys = Object.keys(EFFECTMODES);
   let actives = object.effects.map(ae=> {
-    let newAe = duplicate(ae);
+//    let newAe = globalThis.foundry.utils.deepClone(ae);
+    let newAe = ae.toObject();
     newAe.duration = duplicate(ae.duration);
-    if (simpleCalendarInstalled && newAe.duration?.type === "seconds") {
+    ae.updateDuration(); // TODO remove this if v10 change made
+    if (simpleCalendarInstalled && ae.duration?.type === "seconds") {
       const simpleCalendar = globalThis.SimpleCalendar?.api;
-      ae._prepareDuration(); // TODO remove this if v10 change made
-      simpleCalendar.formatDateTime(simpleCalendar.timestampToDate(ae.duration.remaining)).time
-    } else if (newAe.duration.label) {
-      newAe.duration.label = newAe.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
+      newAe.duration.label = simpleCalendar.formatTimestamp(ae.duration.remaining).time
+    } else if (ae.duration.label) {
+      newAe.duration.label = ae.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
     }
     let specialDuration = getProperty(ae.flags, "dae.specialDuration") || [daeSpecialDurations["None"]];
     if (typeof specialDuration === "string") specialDuration = [ae.flags.dae.specialDuration]
@@ -87,7 +88,7 @@ getData() {
 
   if (this.filters.has("temporary")) actives = actives.filter(e=>e.isTemporary);
   if (this.filters.has("enabled")) actives = actives.filter(e=>!e.disabled)
-  actives.sort((a,b) => a.label < b.label ? -1 : 1);
+  actives.sort((a,b) => a.name < b.name ? -1 : 1);
   actives.forEach(e=> {
     setProperty(e, "flags.dae.active", !e.disabled);
     let id = e.origin?.match(/Actor.*Item\.(.*)/);
@@ -103,13 +104,14 @@ getData() {
 
   let efl = CONFIG.statusEffects
   .map(se => {
-    if (se.id.startsWith("Convenient Effect:")) return { id: se.id, label: `${se.name ?? se.label} (CE)` };
-    return { id: se.id, label: i18n(se.label) };
+    if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
+    if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name || se.label} (CLT)` };
+    return { id: se.id, name: i18n(se.name ?? se.label) };
   })
-  .sort((a,b) => a.label < b.label ? -1 : 1);
+  .sort((a,b) => a.name < b.name ? -1 : 1);
   this.effectList = {"new": "new"}
   efl.forEach(se => {
-    this.effectList[se.id] = se.label;
+    this.effectList[se.id] = se.name;
   });
 
   //@ts-ignore documentClass;
@@ -209,37 +211,23 @@ activateListeners(html) {
     if (effect_name === "new") {
       //@ts-ignore
       AEDATA = {
-        label: object.name,
+        name: object.name,
         icon: object.img || "icons/svg/mystery-man.svg",
         changes: [],
         transfer: false,
       }
     } else {
       AEDATA = CONFIG.statusEffects.find(se => se.id === id);
-      AEDATA.label = i18n(AEDATA.name || AEDATA.label);
-      //TODO remove this when core has this already?
-      if (isNewerVersion(game.version, "11.0")) {
-        AEDATA["statuses"] = [id];
-        if (AEDATA["flags.core.statusId"]) delete AEDATA["flags.core.statusId"]
+      if (id.startsWith("Convenient Effect") && game.dfreds?.effects) {
+        const effect = game.dfreds?.effects.all.find(ef => ef.statuses.has(AEDATA.id));
+        if(effect) AEDATA = effect.toObject();
       } else {
-        AEDATA["flags.core.statusId"] = id;
+          AEDATA["statuses"] = [id];
       }
+      if (AEDATA["flags.core.statusId"]) delete AEDATA["flags.core.statusId"]
+      AEDATA.name = i18n(AEDATA.name ?? AEDATA.label); // need label for condition-lab-triggler
     }
     object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
-
-/*
-    //@ts-ignore
-    if (object instanceof CONFIG.Actor.documentClass) {
-      object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
-    } else {
-      let parent = this.object;
-      //@ts-ignore
-//       const created = new EditOwnedItemEffectsActiveEffect(duplicate(AEDATA), this.object);
-      const created = new CONFIG.ActiveEffect.documentClass(duplicate(AEDATA), this.object);
-      //@ts-ignore
-      created.create();
-    }
-    */
   })
 
   function efhandler(type, effect, data, options, user) {

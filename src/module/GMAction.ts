@@ -205,13 +205,23 @@ async function _unsetFlag(data: { actorUuid: string, flagId: string }) {
 }
 
 async function _blindToken(data: { tokenUuid: string }) {
-  const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND)
-  return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: true })
+  if (game.dfreds?.effects?._blinded) {
+    const actor = DAEfromUuid(data.tokenUuid)?.object?.actor
+    game.dfreds.effectInterface.addEffect({ effectName: game.dfreds.effects._blinded.name, uuid: actor.uuid })
+  } else {
+    const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
+    return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: false })
+  }
 }
 
 async function _restoreVision(data: { tokenUuid: string }) {
-  const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND)
-  return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: false })
+  if (game.dfreds?.effects?._blinded) {
+    const actor = DAEfromUuid(data.tokenUuid)?.object?.actor
+    game.dfreds.effectInterface.removeEffect({ effectName: game.dfreds.effects._blinded.name, uuid: actor.uuid })
+  } else {
+    const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
+    return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: false })
+  }
 }
 
 async function _renameToken(data: { tokenData: any, newName: string }) { // TODO update this for uuids
@@ -385,6 +395,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
             context = source?.getRollData();
           }
           context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
+
           aeData.changes = aeData.changes.map(change => {
             if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
               let originItem = DAEfromUuid(aeData.origin);
@@ -425,8 +436,15 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
                 })
               }
             } else {
+              // context = me
+              // For non macros most @fields can be left to be evaluated when the change is applied by dae
+              // rgeObject(context, { "target": tokenOrDocument.id, "@target": "target", tokenUuid, "targetUuid": tokenUuid, "itemCardid": itemCardId, "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" }, { overwrite: true });
               //@ts-ignore replaceFormulaData
-              //change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false})
+              // change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false })
+              const targetContext = {"targetUuid": tokenUuid, "target": tokenOrDocument.id, "tokenUuid": tokenUuid, "token": tokenOrDocument.id};
+              for (let key of Object.keys(targetContext)) {
+                change.value = change.value.replace(`@${key}`, targetContext[key])
+              }
             }
             return change;
           }).filter(change => change !== undefined);
@@ -434,7 +452,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
 
         if (dupEffects.length > 0) {
           // let timedRemoveList = await actionQueue.add(targetActor.createEmbeddedDocuments.bind(targetActor), "ActiveEffect", dupEffects, { metaData });
-          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect",  dupEffects, { metaData });
+          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { metaData });
 
           setTimeout(() => {
             if (globalThis.EffectCounter) {
