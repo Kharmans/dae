@@ -1,7 +1,10 @@
 ### 11.0.3
 * Replace all occurences of @actorUuid etc when creating an effect, not just the first one.
-* Tweaks to effect editing. New effects on an item will have the name of the item and its image by default. The effect name will have a number attached if an effect of the same name already exists.
-* Drag and drop of effects to/from Actors/Items reenabled.
+* Tweaks to effect creation on the item sheet. 
+  - New effects on an item will have the name of the item and its image by default. The effect name will have a number attached if an effect of the same name already exists.
+  - Created effects correctly have trasnfer (passive)/suspended when created from the core item sheet.
+  - Editing effects on actor owned items is supported by core, so I have removed all handling for this in DAE.
+* Drag and drop of effects to/from Actors/Items re-enabled.
 
 ### 11.0.2
 * Fix for DAE.blindToken/restoreVision not working with dfreds convenient effects installed
