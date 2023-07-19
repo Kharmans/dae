@@ -1153,9 +1153,9 @@ function preUpdateItemHook(candidate, updates, options, user) {
     const token = tokens[0];
     //@ts-expect-error actor.effects?
     for (let effect of actor.effects) {
-      // if (!effect.transfer || effect.origin !== candidate.uuid) continue;
-      if (!effect.transfer && !effect.flags?.dae?.transfer) continue;
-      if (effect.origin !== candidate.uuid) continue;
+      if (!effectIsTransfer(effect) || effect.origin !== candidate.uuid) continue;
+      //if (!effect.transfer && !effect.flags?.dae?.transfer) continue;
+      // if (effect.origin !== candidate.uuid) continue;
       for (let change of effect.changes) {
         if (isSuppressed) {
           switch (change.key) {
@@ -1173,7 +1173,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
             case "macro.createItem":
             case "macro.createItemRunMacro":
               //@ts-expect-error
-              const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && ef.flags?.dae?.transfer)
+              const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && effectIsTransfer(ef))
               for (let effect of effects) {
                 removeCreateItemChange(change.value, actor, effect)
               }
@@ -1196,7 +1196,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
             case "macro.createItem":
             case "macro.createItemRunMacro":
               //@ts-expect-error
-              const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && ef.flags?.dae?.transfer)
+              const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && effectIsTransfer(ef))
               for (let effect of effects) {
                 addCreateItemChange(change, actor, effect);
               }

@@ -526,7 +526,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
           const context = {"actorUuid": parent?.uuid,  "tokenUuid": token?.uuid ?? token?.document?.uuid, "targetUuid": token?.uuid ?? token?.document?.uuid};
           let newValue = change.value;
           for (let key of Object.keys(context)) {
-            newValue = newValue.replace(`@${key}`, context[key])
+            newValue = newValue.replaceAll(`@${key}`, context[key])
           }
           // const newValue = Roll.replaceFormulaData(change.value, context, { missing: "<undefined>", warn: false });
           if (newValue !== change.value) {
@@ -1716,7 +1716,7 @@ export function tokenForActor(actor): Token | undefined {
 
 export function effectIsTransfer(effect) {
   if (effect.transfer !== undefined) return effect.transfer;
-  return effect.flags.dae?.transfer;
+  return effect.flags.dae?.transfer ?? false;
 }
 
 export async function delay(interval: number) {
