@@ -1,7 +1,7 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
-import { ValidSpec, wildcardEffects } from "./DAESystem";
+import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
+import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
 var specialTraitsPatched = false;
@@ -317,8 +317,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     // We will call this in prepareData
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", this.applyBaseEffectsFunc, "OVERRIDE");
-    // Add flags to roll data so they can be referenced in effects
-    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", getRollData, "WRAPPER");
     // Overide prepareData so it can add the extra pass
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // Fix for dnd5e broken determine suppression (does not work for unlinked actors) + support condition immunity
@@ -329,7 +327,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
-
   }
   public static setupActions(): void {
   }
@@ -827,6 +824,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
     }
   }
+  static getRollDataFunc() {
+    return getRollData;
+  }
 }
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffectsdnd5e() {
@@ -844,7 +844,8 @@ function applyBaseActiveEffectsdnd5e() {
 }
 
 function getRollData(wrapped, ...args) {
-  const data = wrapped(...args);
+  // Can only have one getRollData wrapper so need call the parent one by hand
+  const data = DAESystem.getRollDataFunc().bind(this)(wrapped, ...args);
   data.flags = this.flags;
   data.effects = this.effects;
   return data;

@@ -1,3 +1,8 @@
+### 11.0.4
+* Fix for effects with no flags throwing an error when edited/referencing specialDuration
+* fix for calling a dae macro, always pass lastArg.efData.flags.dae.itemData if the item exists.
+* Add actorUuid, actorID, tokenUuid (if defined) and tokenId (if defined) to actor.getRollData() - which is used in most condition evaluations.
+
 ### 11.0.3
 * Replace all occurences of @actorUuid etc when creating an effect, not just the first one.
 * Tweaks to effect creation on the item sheet. 

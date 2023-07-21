@@ -217,14 +217,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       }
     }
     setProperty(data.effect, "flags.dae.durationExpression", this.object.flags?.dae?.durationExpression);
-    if (!data.effect.flags.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
+    if (!data.effect.flags?.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       setProperty(data.effect.flags, "dae.specialDuration", []);
     data.sourceName = await this.object.sourceName;
     data.fieldsList = this.fieldsList;
-    if (false && game.modules.get("dfreds-convenient-effects")?.active && !getProperty(this.object, "flags.convenientDescription")) {
-      setProperty(this.object, "flags.convenientDescription", "");
-      setProperty(data.effect, "flags.convenientDescription", "");
-    }
     return data;
   }
 
@@ -317,8 +313,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     //@ts-expect-error getSubmitData
     const data = super._getSubmitData(updateData);
     for (let change of data.changes) {
-      if (change.priority === undefined) change.priority = change.mode ? change.mode * 10 : 0;
       if (typeof change.priority === "string") change.priority = Number(change.priority);
+      if (change.priority === undefined || isNaN(change.priority)) change.priority = change.mode ? change.mode * 10 : 0;
     }
     if (data.disabledX !== undefined) {
       data.disabled = data.disabledX;
@@ -327,7 +323,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!data.tint || data.tint === "") data.tint = null;
     // fixed for very old items
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
-    setProperty(data.flags, "dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
+    setProperty(data, "flags.dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
     return data;
   }
   /* ----------------------------------------- */

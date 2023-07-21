@@ -1,6 +1,6 @@
 import { debug, error, i18n } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, DAEfromActorUuid, daeSystemClass, libWrapper } from "../dae";
+import { applyDaeEffects, DAEfromActorUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
 
 export let wildcardEffects = [];
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
@@ -169,6 +169,21 @@ export class ValidSpec {
   }
 }
 
+function getRollData(wrapped, ...args): any {
+  const data = wrapped(...args);
+  data.actorId = this.id;
+  data.actorUuid = this.uuid;
+  if (this.isToken) {
+    data.tokenUuid = this.token?.uuid ?? "undefined";
+    data.toeknId = this.token?.object?.id ?? "undefined";
+  } else {
+    const tokenDocument = getSelfTarget(this);
+    data.tokenUuid = tokenDocument?.uuid ?? "undefined";
+    data.tokenId = tokenDocument?.object?.id ?? "undefined"
+  }
+  return data;
+}
+
 export class DAESystem {
   static spellAttacks: string[];
   static weaponAttacks: string[];
@@ -181,6 +196,9 @@ export class DAESystem {
     throw new Error("system class must implement getSystemConfig()")
   }
 
+  public static getRollDataFunc() {
+    return getRollData;
+  }
   /**
    * accepts a string field specificaiton, e.g. system.traits.languages.value. Used extensively in ConfigPanel.ts
    * return an object or false.

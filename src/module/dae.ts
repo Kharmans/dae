@@ -107,17 +107,18 @@ export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpe
   if (disableEffects) return;
   const overrides = {};
   const effects = this.effects.contents;
-  if (isNewerVersion(game.version, "11.293") && !CONFIG.ActiveEffect.legacyTransferral) {
+  if (!CONFIG.ActiveEffect.legacyTransferral) {
     effects.push(...this.items.contents.flatMap(i => i.transferredEffects));
   }
   if (!this.effects || this.effects.size === 0) return this.overrides || {};
   const changes = this.effects.reduce((changes, effect) => {
     if (daeSystemClass.effectDisabled(this, effect)) return changes;
-    if (isNewerVersion(game.version, "11.293") && doStatusEffects) {
+    if (doStatusEffects) {
       for (const statusId of effect.statuses) {
         this.statuses.add(statusId);
       }
     }
+
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.changes)
       .filter(c => {
@@ -145,7 +146,6 @@ export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpe
         return c;
       }));
   }, []);
-
   // Organize non-disabled effects by their application priority
   changes.sort((a, b) => a.priority - b.priority);
 
@@ -219,7 +219,7 @@ function mySafeEval(expression: string, sandbox: any, onErrorReturn: boolean | u
     sandbox = mergeObject(sandbox, Roll.MATH_PROXY);
     result = evl(sandbox);
   } catch (err) {
-    console.warn("midi-qol | expression evaluation failed ", expression, err);
+    console.warn("dae | expression evaluation failed ", expression, err);
     result = onErrorReturn;
   }
   //@ts-expect-error
@@ -526,7 +526,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
           const context = {"actorUuid": parent?.uuid,  "tokenUuid": token?.uuid ?? token?.document?.uuid, "targetUuid": token?.uuid ?? token?.document?.uuid};
           let newValue = change.value;
           for (let key of Object.keys(context)) {
-            newValue = newValue.replaceAll(`@${key}`, context[key])
+            // newValue = newValue.replaceAll(`@${key}`, context[key])
           }
           // const newValue = Roll.replaceFormulaData(change.value, context, { missing: "<undefined>", warn: false });
           if (newValue !== change.value) {
@@ -540,17 +540,14 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
           const statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
           if (statusEffect) {
             let changes = statusEffect.changes ?? [];
-            if (game.dfreds?.effects && isNewerVersion(game.version, "11.0")) {
+            if (game.dfreds?.effects) {
               const ceEffect = game.dfreds.effects.all.find(ef => ef.statuses.has(statusEffect.id));
               if (ceEffect) changes = ceEffect.changes;
             }
             newChanges = newChanges.concat(changes);
             updates["icon"] = statusEffect.icon;
-            if (isNewerVersion(game.version, "11.290")) {
-              updates["name"] = i18n(statusEffect.name ?? statusEffect.label);
-            } else {
-              updates["label"] = i18n(statusEffect.label);
-            }
+            updates["name"] = i18n(statusEffect.name ?? statusEffect.label);
+
             changesChanged = true;
             if (statusEffect.flags) {
               setProperty(updates, "flags", statusEffect.flags);
@@ -931,6 +928,13 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     //@ts-ignore documentClass
     theItem = new CONFIG.Item.documentClass(effectData.flags.dae.itemData, { parent: actor })
   }
+  if (!theItem) {
+    const origin = await fromUuid(effectData.origin);
+    if (origin instanceof Item)  theItem = origin
+  }
+
+  if (theItem) setProperty(effectData, "flags.dae.itemData", theItem.toObject());
+
   for (let change of effectData.changes) {
     try {
       if (!allMacroEffects.includes(change.key)) continue;
@@ -1547,6 +1551,8 @@ export function daeInitActions() {
     return;
   }
 
+  // Augment actor get rollData with actorUuid, actorId, tokenId, tokenUuid
+  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", daeSystemClass.getRollDataFunc(), "WRAPPER");
   libWrapper.register("dae", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER")
 
   // TODO put this back when doing item effects.
@@ -1564,23 +1570,7 @@ export function daeInitActions() {
   // Hooks.on("preCreateItem", preCreateItemHook);
   // Hooks.on("createItem", createItemHook);
 
-  async function doPreCreateActiveEffect(wrapped, ...args) {
-    let [data, options, user] = args;
-    let result;
-    try {
-      if (!options.isUndo) {
-        // await _preCreateActiveEffectUpdateData.bind(this)(...args); // moved to preCreateActiveEffect hook
-        // await _removeExistingEffects.bind(this)(...args);
-        // await _preCreateActiveEffect.bind(this)(...args);
-      }
-    } finally {
-      return wrapped(...args);
-    }
-  }
-
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._preUpdate", preUpdateActor, "WRAPPER");
-  // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", doPreCreateActiveEffect, "WRAPPER");
-  // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "WRAPPER");
   // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffectEvalInline, "WRAPPER");
   // libWrapper.register("dae", "CONFIG.Item.documentClass.prototype._preCreate", _preCreateItem, "WRAPPER");
 
