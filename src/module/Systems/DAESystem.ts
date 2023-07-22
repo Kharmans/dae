@@ -175,7 +175,7 @@ function getRollData(wrapped, ...args): any {
   data.actorUuid = this.uuid;
   if (this.isToken) {
     data.tokenUuid = this.token?.uuid ?? "undefined";
-    data.toeknId = this.token?.object?.id ?? "undefined";
+    data.tokenId = this.token?.object?.id ?? "undefined";
   } else {
     const tokenDocument = getSelfTarget(this);
     data.tokenUuid = tokenDocument?.uuid ?? "undefined";
