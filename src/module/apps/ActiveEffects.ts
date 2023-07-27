@@ -39,7 +39,7 @@ get id() {
 }
 
 get title() {
-  return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.name}` + (this.object.isOwned ? " (Owned Item) EXPERIMENTAL" : "");
+  return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.name}`;
 }
 get filters() {return ActiveEffects.filters}
 getData() {

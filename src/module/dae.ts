@@ -137,6 +137,7 @@ export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpe
             c.key = `${c.key}.all`;
           }
         }
+
         if (c.key === "flags.midi-qol.OverTime") c.key = `flags.midi-qol.OverTime.${randomID()}`;
         c.effect = effect;
         if (["system.traits.ci.value", "system.traits.ci.all", "system.traits.ci.custom"].includes(c.key))
@@ -158,6 +159,9 @@ export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpe
     if (typeof c.value === "string" && c.value.includes("@data.")) {
       console.warn("dae | @data.key is deprecated, use @key instead", c.value)
       c.value = c.value.replace(/@data./g, "@");
+    }
+    if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
+      c.value = daeSystemClass.safeEvalExpression(c.value, this.getRollData())
     }
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
     //@ts-ignore

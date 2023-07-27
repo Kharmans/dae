@@ -946,7 +946,7 @@ function _prepareArmorClassAttribution(wrapped, data) {
         //@ts-ignore .isNumeric - core does not look at ac.value or non-numeric ac.bonus
         if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
           attributions.push({
-            label: `${effect.name || effect.label} (dae)`,
+            label: `${effect.name} (dae)`,
             mode: change.mode,
             value: change.value
           })
@@ -1122,18 +1122,13 @@ function determineSuppression() {
         this.isSuppressed = item.areEffectsSuppressed;
     }
   }
-  if (this.parent) {
-    const ci = this.parent.system.traits?.ci?.value;
-    if (ci instanceof Set) {
-      const statusId = (this.name || this.label || "no effect").toLocaleLowerCase();
+  if (this.parent?.system.traits) {
+    let customStats: Array<string> = this.parent.system.traits.ci?.custom?.split(';').map(s=>s.trim().toLocaleLowerCase());
+    const ci = new Set([...(this.parent.system.traits?.ci?.value ?? []), ...customStats]);
+      const statusId = duplicate(this.name ?? "no effect").toLocaleLowerCase();
       const capStatusId = duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
       const ciSuppressed = ci?.has(statusId) || ci?.has(`Convenient Effect: ${capStatusId}`);
       this.disabled = Boolean(ciSuppressed);
-    } else {
-      const statusId = (this.name || this.label || "no effect").toLocaleLowerCase();
-      const ciSuppressed = (ci?.length && ci.some(c => statusId == c));
-      this.disabled = Boolean(ciSuppressed);
-    }
   }
 }
 

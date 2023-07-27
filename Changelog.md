@@ -1,3 +1,14 @@
+### 11.0.5
+* Added dae.safeEval for change values. This is evaluated against the actor's data when the change is applid, but before other processing. This means any target field can have computed expressions (live bonuses etc) even though dae will place the result of the expression as a string. The evaluation is done against actor.getRollData(), so any of the actor data is available as well as functions/constants from Math.
+- flags.dae.AcrOrAth OVERRIDE dae.eval(skills.acr.total > skills.ath.total ? "acr" : "ath"), will set the flag value to acr/ath.
+* Added dae.roll to allow you to embed evaluated roll expressions in your effects
+  - There are some expressions that cause problems when embedded in a bonuses field, e.g. @abilities.str.mod(d4) et al. You can't simply do
+  ``bounses.mwak.damage ADD dae.eval(abilities.str.mod)d4``, since when eval is done it is before abilities.str.mod has been calculated and it will resolve to 0d4. You can do 
+  ``flags.dae.bonusDamageDice OVERRIDE dae.eval(abilities.str.mod)d4 ``
+  and
+  ``bonuses.mwak.damage ADD +@flags.dae.bonusDamageDice``
+There is nothing that you could not do with macros that is enabled by these functions, they can just be a little bit clearer.
+
 ### 11.0.4
 * Fix for effects with no flags throwing an error when edited/referencing specialDuration
 * fix for calling a dae macro, always pass lastArg.efData.flags.dae.itemData if the item exists.

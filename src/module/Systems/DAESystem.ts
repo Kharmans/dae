@@ -1,6 +1,7 @@
-import { debug, error, i18n } from "../../dae";
+import { debug, error, i18n, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
 import { applyDaeEffects, DAEfromActorUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
+import { setupSocket } from "../GMAction";
 
 export let wildcardEffects = [];
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
@@ -224,7 +225,7 @@ export class DAESystem {
     return;
   }
 
-  public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void { 
+  public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
 
   };
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
@@ -309,7 +310,170 @@ export class DAESystem {
 
   }
 
-  public static daeCustomEffect(actor, change): boolean {
+  static MATH_PROXY = new Proxy(Math, {
+    has: () => true, // Include everything
+    get: (t, k) => k === Symbol.unscopables ? undefined : t[k],
+    set: () => { console.error("You may not set properties of the Roll.MATH_PROXY environment"); return undefined } // No-op
+  });
+
+  public static safeEval(expression: string, sandbox: any = {}, onErrorReturn: any | undefined = undefined) {
+    let result;
+    try {
+      const src = 'with (sandbox) { return ' + expression + '}';
+      const evl = new Function('sandbox', src);
+      sandbox = mergeObject(sandbox, this.MATH_PROXY);
+      sandbox = mergeObject(sandbox, { Roll });
+      result = evl(sandbox);
+    } catch (err) {
+      console.warn("midi-qol | expression evaluation failed ", expression, err);
+      result = onErrorReturn;
+    }
+    //@ts-expect-error isNumeric
+    if (Number.isNumeric(result)) return Number(result)
+    return result;
+  };
+  public static safeEvalExpressionNew(input, context = {}, depth = 0) {
+    let stack = [];
+    let output = '';
+    let temp;
+    let functionStack = []; // additional stack for function name
+    let newStack = []; // stack for new keyword
+    let validFunctionName = /^([a-zA-Z_$][0-9a-zA-Z_$]*.)*[a-zA-Z_$][0-9a-zA-Z_$]*$/; // regex for valid JS function name
+
+    for (let char of input) {
+        if (char === " " && stack[stack.length -1] === " ") continue;
+        if (char === '(') {
+            let funcName = '';
+            let isNew = false;
+            while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
+                funcName = stack.pop() + funcName;
+            }
+            if (stack.slice(-4).join("") === "new ") {
+                isNew = true;
+                stack = stack.slice(0,-4);
+            } else {
+              if (Math[funcName]) funcName = `Math.${funcName}`;
+            }
+
+            if (!validFunctionName.test(funcName) && funcName.length > 0) {
+                throw new Error(`Invalid function name: ${funcName}`);
+            }
+
+            functionStack.push(funcName);
+            newStack.push(isNew);
+            stack.push('(');
+        } else if (char === ')') {
+            temp = '';
+            let poppedChar;
+
+            // Pop elements from the stack until we find the matching opening parenthesis
+            while ((poppedChar = stack.pop()) !== '(') {
+                temp = poppedChar + temp;
+            }
+
+            // Pop the function name and the new flag
+            let funcName = functionStack.pop();
+            let isNew = newStack.pop();
+
+            // Evaluate the function call
+            if (funcName === "dae.eval") {
+              stack.push(`${this.safeEval(this.safeEvalExpression(temp, context, depth + 1), context)}`);
+            } if (funcName.length > 0) {
+              const expression =
+                    `${isNew ? "new " : ""}${funcName}(${this.safeEvalExpression(temp, context, depth + 1)})`;
+              if (depth) stack.push(this.safeEval(expression, context));
+              else stack.push(expression);
+            } else {
+                stack.push('(');
+                for (let t of temp) stack.push(t);
+                stack.push(')');
+            }
+        } else stack.push(char);
+    
+    }
+
+    // Evaluate any remaining alphanumeric sequences
+    let value = '';
+    while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
+        value = stack.pop() + value;
+    }
+    if (value.length > 0) {
+        stack.push(eval(value).toString());
+    }
+
+    output = stack.join('');
+    return eval(output);
+}
+  public static safeEvalExpression(input: string, context: any, depth = 0) {
+    let validFunctionName = /^[a-zA-Z_$][0-9a-zA-Z_$.]*$/; // regex for valid JS function name
+    if (depth > 20) {
+      console.error("It's turtles all the way down....")
+      return input;
+    }
+    let stack = [];
+    let output = '';
+    let temp;
+    let functionStack = []; // additional stack for function name
+
+    for (let char of input) {
+      if (char === '(') {
+
+        let funcName = '';
+        while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
+          funcName = stack.pop() + funcName;
+        }
+        if (Math[funcName]) funcName = funcName = `Math.${funcName}`;
+
+        if (!validFunctionName.test(funcName) && funcName.length > 0) {
+          throw new Error(`Invalid function name: ${funcName}`);
+        }
+
+        functionStack.push(funcName);
+        stack.push('(');
+      } else if (char === ')') {
+        temp = '';
+        let poppedChar;
+
+        // Pop elements from the stack until we find the matching opening parenthesis
+        while ((poppedChar = stack.pop()) !== '(') {
+          temp = poppedChar + temp;
+        }
+
+        // Pop the function name
+        let funcName = functionStack.pop();
+
+        // Evaluate the function call
+        if (funcName === "dae.eval")
+          stack.push(`${this.safeEval(this. safeEvalExpression(temp, context, depth + 1), context)}`);
+        else if (funcName === "dae.roll") {
+          try {
+            const rollExpression = `new Roll(${temp}).evaluate({async: false}).total`;
+            stack.push(this.safeEval(rollExpression, context));
+            // stack.push(new Roll(temp, context).evaluate({async: false}).total);
+          } catch (err) {
+            console.warn(`dae | dae.roll bad dice expression ${temp}`, err)
+            stack.push(0);
+          }
+        } else if (depth) {
+          const expression = `${funcName}(${this. safeEvalExpression(temp, context, depth + 1)})`;
+          stack.push(`${this.safeEval(expression, context)}`)
+        } else stack.push(`${funcName}(${temp})`);
+      } else {
+        stack.push(char);
+      }
+    }
+
+    output = stack.join('');
+    return output; // depth ? this.safeEval(output, context) : output;
+  }
+
+  public static daeCustomEffect(actor, change): any {
+    if (change.value.includes("dae.eval(")) {
+      const context = actor.getRollData();
+      context.actor = actor;
+      change.value = this. safeEvalExpression(change.value, context, 0);
+      setProperty(actor, change.key, change.value);
+    }
     if (change.key === "flags.dae.onUpdateTarget" && change.value.includes(",")) {
       const values = change.value.split(",").map(str => str.trim());
       if (values.length < 5) {
@@ -376,7 +540,7 @@ function prepareData(wrapped) {
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
-  applyDaeEffects.bind(this)({specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true});
+  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
   if (isNewerVersion(game.version, "11.293")) {
     // Apply special statuses that changed to active tokens
     let tokens;
@@ -394,7 +558,7 @@ function prepareData(wrapped) {
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
-  applyDaeEffects.bind(this)({specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatisEffects: true});
+  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
 }
 
 setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
