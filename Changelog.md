@@ -1,5 +1,9 @@
+### 11.0.6
+* Added support for force displaying passive effect icons on the token and combat tracker. Available in the effect editor on the details tab
+  - If creating the effect programatically set effect.flags.dae.showIcon = true.
+  
 ### 11.0.5
-* Added dae.safeEval for change values. This is evaluated against the actor's data when the change is applid, but before other processing. This means any target field can have computed expressions (live bonuses etc) even though dae will place the result of the expression as a string. The evaluation is done against actor.getRollData(), so any of the actor data is available as well as functions/constants from Math.
+* Added dae.safeEval for change values. This is evaluated against the actor's data when the change is applied, but before other processing. This means any target field can have computed expressions (live bonuses etc) even though dae will place the result of the expression as a string. The evaluation is done against actor.getRollData(), so any of the actor data is available as well as functions/constants from Math.
 - flags.dae.AcrOrAth OVERRIDE dae.eval(skills.acr.total > skills.ath.total ? "acr" : "ath"), will set the flag value to acr/ath.
 * Added dae.roll to allow you to embed evaluated roll expressions in your effects
   - There are some expressions that cause problems when embedded in a bonuses field, e.g. @abilities.str.mod(d4) et al. You can't simply do

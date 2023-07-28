@@ -96,7 +96,13 @@
       </div>
     </div>
     {{/if}}
-   
+    <div class="form-group">
+      <label>{{ localize "dae.ShowIcon.Name" }}</label>
+      <input type="checkbox" name="flags.dae.showIcon" {{ checked effect.flags.dae.showIcon }} />
+    </div>
+    <p class="notes" style="margin-bottom:1em"> 
+    {{ localize "dae.ShowIcon.Hint" }}
+    </p>
   </section>
 
   <!-- Duration Tab -->

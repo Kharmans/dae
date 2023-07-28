@@ -394,7 +394,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
           if (false && source instanceof CONFIG.Item.documentClass) {
             context = source?.getRollData();
           }
-          context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
+          context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "targetActorUuid": targetActor?.uuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
 
           aeData.changes = aeData.changes.map(change => {
             if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {

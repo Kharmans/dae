@@ -1061,6 +1061,7 @@ export async function evalArgs({ effectData = null, item, context, actor, change
     token: ChatMessage.getSpeaker({ actor }).token,
     target: "@target",
     targetUuid: "@targetUuid",
+    targetActorUuid: "@targetActorUuid",
     spellLevel,
     itemLevel: spellLevel,
     damage: damageTotal,

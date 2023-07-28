@@ -3,10 +3,10 @@
 	"title": "Dynamic effects using Active Effects",
 	"description": "replacement for dynamic effects",
   "authors": [{ "name": "tposney" }],
-	"version": "11.0.5",
+	"version": "11.0.6",
 	"compatibility": {
 		"minimum": "11.303",
-		"verified": "11.305",
+		"verified": "11.306",
 		"maximum": "11.999"
 	},
 	"scripts": ["libs/tokenizer.min.js"],
@@ -76,5 +76,5 @@
 	"bugs": "https://gitlab.com/tposney/dae/-/issues",
 	"allowBugReporter": true,
 	"manifest": "https://gitlab.com/tposney/dae/raw/v11/package/module.json",
-	"download": "https://gitlab.com/tposney/dae/raw/v11/package/dae-v11.0.5.zip"
+	"download": "https://gitlab.com/tposney/dae/raw/v11/package/dae-v11.0.6.zip"
 }

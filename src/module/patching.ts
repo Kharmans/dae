@@ -17,5 +17,5 @@ function isTemporary(wrapped) {
   //@ts-ignore
   // if (this.parent instanceof CONFIG.Actor.documentClass && this.data.flags?.dae?.transfer) return false;
   this._prepareDuration();
-  return wrapped();
+  return wrapped() || this.flags?.dae?.showIcon;
 }
