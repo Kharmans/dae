@@ -455,7 +455,7 @@ export class DAESystem {
             stack.push(0);
           }
         } else if (depth) {
-          const expression = `${funcName}(${this. safeEvalExpression(temp, context, depth + 1)})`;
+          const expression = `${funcName}(${this.safeEvalExpression(temp, context, depth + 1)})`;
           stack.push(`${this.safeEval(expression, context)}`)
         } else stack.push(`${funcName}(${temp})`);
       } else {
@@ -468,13 +468,13 @@ export class DAESystem {
   }
 
   public static daeCustomEffect(actor, change): any {
-    if (change.value.includes("dae.eval(")) {
+    if (typeof change.value === "string" && (change.value?.includes("dae.eval(") || change.value?.includes("dae.roll("))) {
       const context = actor.getRollData();
       context.actor = actor;
-      change.value = this. safeEvalExpression(change.value, context, 0);
+      change.value = this.safeEvalExpression(change.value, context, 0);
       setProperty(actor, change.key, change.value);
     }
-    if (change.key === "flags.dae.onUpdateTarget" && change.value.includes(",")) {
+    if (change.key === "flags.dae.onUpdateTarget" && change.value?.includes(",")) {
       const values = change.value.split(",").map(str => str.trim());
       if (values.length < 5) {
         error("custom effect flags.dae.onUpdateTarget details incomplete", values);
