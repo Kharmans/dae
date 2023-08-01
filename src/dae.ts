@@ -10,7 +10,7 @@ import { ActiveEffects } from './module/apps/ActiveEffects';
 import { patchingSetup, patchingInitSetup } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken } from './module/daeMacros';
-import { EditOwnedItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
+import { EditOwnedItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet.js';
 import { ValidSpec, wildcardEffects } from './module/Systems/DAESystem';
 import { DAESystemDND5E } from './module/Systems/DAEdnd5e';
 import { DAESystemSW5E } from './module/Systems/DAEsw5e';

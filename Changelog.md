@@ -1,3 +1,6 @@
+### 10.0.38
+* Fix for ability strings being "undefined" in sw5e
+
 ### 10.0.37
 * Fix for removing items not calling item macros with "off".
 * Some documentation fixes

@@ -143,10 +143,7 @@ export class ValidSpec {
         m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`).replaceAll("dae.", "")).join(" ");
         if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
           const fieldId = m.fieldSpec.replace(fieldStart, "");
-          const characterFlags =
-            (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags
-              : (game.system.id === "sw5e") ? CONFIG.SW5E.characterFlags
-                : {};
+          const characterFlags = daeSystemClass.systemConfig.characterFlags;
           const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
           m._label = `Flags ${localizedString}`;
         }
