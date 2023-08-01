@@ -377,10 +377,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["shortRest"] = i18n("DND5E.ShortRest");
       daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
       Object.keys(daeSystemClass.systemConfig.abilities).forEach(abl => {
-        let ablString = isNewerVersion(game.system.version, "2.1.5") && game.system.id !== "sw5e"
-          ? daeSystemClass.systemConfig.abilities[abl].label
-          : daeSystemClass.systemConfig.abilities[abl];
-          console.error("abilities ", CONFIG.SW5E.abilities, daeSystemClass.systemConfig.abilities)
+        let ablString = daeSystemClass.systemConfig.abilities[abl];
+        if (ablString.label) ablString = ablString.label;
         daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}`;
         daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
         daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;

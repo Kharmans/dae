@@ -1,5 +1,5 @@
 
-// Import TypeScript modules
+// Import TypeScript modules RTRR
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
 import { daeSetupActions, doEffects, daeInitActions, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, daeSystemClass, actionQueue } from "./module/dae";
