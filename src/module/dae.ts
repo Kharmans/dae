@@ -390,7 +390,11 @@ function createActiveEffectHook(...args) {
           await actionQueue.add(daeMacro, "on", parent, effect.toObject(false), {}); // TODO revisit to see if passing the effect is ok
         }
       } catch (err) {
-        console.warn("dae | create effect error", err);
+        const message = "dae | createActiveEffectHook | create effect error";
+        if (globalThis.MidiQOL?.TroubleShooter) {
+          globalThis.MidiQOL.TroubleShooter.recordError(err, message);
+        }
+        console.warn(message);
       } finally {
         return true;
       }
@@ -903,6 +907,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   let effects
   let selfTarget;
   let v11args: any = {};
+  let macro;
   // Work out what itemdata should be
   warn("Dae macro ", action, actor, effectData, lastArgOptions)
   if (!effectData.changes) return effectData;
@@ -971,7 +976,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         })
       } else args = change.value;
       if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro")) {
-        const macro = await getMacro({ change, name: args[0] }, theItem, effectData);
+        macro = await getMacro({ change, name: args[0] }, theItem, effectData);
         if (!macro) {
           //TODO localize this
           if (action !== "off") {
@@ -1006,25 +1011,8 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           }
           return true;
         })
+        return await macro.execute(scope);
 
-        if (isNewerVersion(game.version, "11.293")) {
-          return macro.execute(scope);
-        } else {
-          const AsyncFunction = (async function () { }).constructor;
-
-          const speaker = ChatMessage.getSpeaker({ token: selfTarget?.document ?? selfTarget, actor });
-          const character = game.user?.character;
-          let body = `return (async () => {
-          ${macro.command ?? macro.data?.command}
-          })()`;
-          body = macro.command ?? macro.data?.command;
-          const argNames = Object.keys(scope);
-          const argValues = Object.values(scope);
-          //@ts-expect-error
-          const fn = new AsyncFunction("speaker", "actor", "token", "character", "scope", ...argNames, body)
-          // const fn = Function("{speaker, actor, token, character, item, args}={}", body);
-          return fn.call(macro, speaker, actor, selfTarget, character, scope, ...argValues);
-        }
       } else if (theChange.key === "macro.actorUpdate") {
         let lastArg = mergeObject(lastArgOptions, {
           //@ts-ignore - undefined fields
@@ -1041,7 +1029,10 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         // result = await macroActorUpdate(action, ...args, lastArg);
       }
     } catch (err) {
-      console.warn("dae | daemacro", err);
+      const message = `daeMacro | "${action}" macro "${macro?.name}" for actor ${actor?.name} in ${theItem ? "item " + theItem.name : ""} ${actor?.uuid} ${theItem?.uuid}`; 
+      console.warn(message, err);
+      if (globalThis.MidiQOL?.TroubleShooter)
+        globalThis.MidiQOL.TroubleShooter.recordError(err, message);
     }
   };
   return effectData;

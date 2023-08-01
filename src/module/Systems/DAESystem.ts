@@ -625,5 +625,3 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
     specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
   }
 });
-
-

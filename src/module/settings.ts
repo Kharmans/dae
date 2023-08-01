@@ -70,7 +70,16 @@ export const registerSettings = function () {
     config: true,
     onChange: fetchParams
   });
-
+/*
+  game.settings.register("dae", "patchCustom", {
+    name: "Patch CE Custom Effects",
+    hint: "If Custom effects have an incorrect date when create/edited turn this on",
+    scope: "world",
+    type: Boolean,
+    config: true,
+    requiresReload: true
+  });
+*/
   game.settings.register("dae", "DAEUntestedSystems", {
     name: game.i18n.localize("dae.DAEUntestedSystems.Name"),
     hint: game.i18n.localize("dae.DAEUntestedSystems.Hint"),
@@ -99,7 +108,7 @@ export const registerSettings = function () {
     default: false,
     type: Boolean,
     config: true,
-    onChange: () => window.location.reload()
+    requiresReload: true
   })
 
 };

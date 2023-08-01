@@ -56,7 +56,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       baseValues["system.bonuses.util.damage"] = ["", -1];
     }
     // move all the characteer flags to specials so that the can be custom effects only
-    let charFlagKeys = (game.system.id === "dnd5e") ? Object.keys(CONFIG.DND5E.characterFlags) : Object.keys(CONFIG.SW5E.characterFlags);
+    let charFlagKeys = Object.keys(daeSystemClass.systemConfig.characterFlags);
     charFlagKeys.forEach(key => {
       let theKey = `flags.${game.system.id}.${key}`;
       if ([`flags.${game.system.id}.weaponCriticalThreshold`,
@@ -69,7 +69,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // Need to add spellSniper by hand
     baseValues[`flags.${game.system.id}.spellSniper`] = false;
     if (game.modules.get("skill-customization-5e")?.active && game.system.id === "dnd5e") {
-      Object.keys(CONFIG.DND5E.skills).forEach(skl => {
+      Object.keys(daeSystemClass.systemConfig.skills).forEach(skl => {
         baseValues[`flags.skill-customization-5e.${skl}.skill-bonus`] = "";
       })
     }
@@ -143,7 +143,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.hp.min"] = [0, -1];
     specials["system.attributes.init.total"] = [0, -1];
     specials["system.attributes.init.bonus"] = [0, -1];
-    for (let abl of Object.keys(CONFIG.DND5E.abilities)) {
+    for (let abl of Object.keys(daeSystemClass.systemConfig.abilities)) {
       specials["system.abilities.${abl}.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     }
     specials["system.attributes.encumbrance.max"] = [0, -1];
@@ -244,12 +244,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (game.modules.get("tidy5e-sheet")?.active)
       specials["system.details.maxPreparedSpells"] = [0, -1];
     // change movement effects to be after prepareDerivedData
-    for (let key of Object.keys(CONFIG.DND5E.movementTypes)) {
+    for (let key of Object.keys(daeSystemClass.systemConfig.movementTypes)) {
       specials[`system.attributes.movement.${key}`] = [0, -1];
     }
 
     // move all the characteer flags to specials so that the can be custom effects only
-    let charFlagKeys = Object.keys(CONFIG.DND5E?.characterFlags ?? {});
+    let charFlagKeys = Object.keys(daeSystemClass.systemConfig?.characterFlags ?? {});
     charFlagKeys.forEach(key => {
       let theKey = `flags.${game.system.id}.${key}`;
       if ([`flags.${game.system.id}.weaponCriticalThreshold`,
@@ -353,8 +353,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
       attackTypes.forEach(at => {
         //@ts-ignore
-        daeSpecialDurations[`1Attack:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${game.i18n.format("dae.1Attack", { type: CONFIG.DND5E.itemActionTypes[at] })}`;
-        daeSpecialDurations[`1Hit:${at}`] = `${CONFIG.DND5E.itemActionTypes[at]}: ${game.i18n.format("dae.1Hit", { type: CONFIG.DND5E.itemActionTypes[at] })}`;
+        daeSpecialDurations[`1Attack:${at}`] = `${daeSystemClass.systemConfig.itemActionTypes[at]}: ${game.i18n.format("dae.1Attack", { type: daeSystemClass.systemConfig.itemActionTypes[at] })}`;
+        daeSpecialDurations[`1Hit:${at}`] = `${daeSystemClass.systemConfig.itemActionTypes[at]}: ${game.i18n.format("dae.1Hit", { type: daeSystemClass.systemConfig.itemActionTypes[at] })}`;
       })
       daeSpecialDurations["DamageDealt"] = i18n("dae.DamageDealt");
       daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
@@ -373,21 +373,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["longRest"] = i18n("DND5E.LongRest");
       daeSpecialDurations["shortRest"] = i18n("DND5E.ShortRest");
       daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
-      Object.keys(CONFIG.DND5E.abilities).forEach(abl => {
+      Object.keys(daeSystemClass.systemConfig.abilities).forEach(abl => {
         let ablString = isNewerVersion(game.system.version, "2.1.5")
-          ? CONFIG.DND5E.abilities[abl].label
-          : CONFIG.DND5E.abilities[abl];
+          ? daeSystemClass.systemConfig.abilities[abl].label
+          : daeSystemClass.systemConfig.abilities[abl];
         daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}`;
         daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
         daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
         daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isCheckDetail")}`;
       })
-      Object.keys(CONFIG.DND5E.damageTypes).forEach(dt => {
-        daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${CONFIG.DND5E.damageTypes[dt]}`;
+      Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dt => {
+        daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.damageTypes[dt]}`;
       });
-      daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${CONFIG.DND5E.healingTypes["healing"]}`;
-      Object.keys(CONFIG.DND5E.skills).forEach(skillId => {
-        daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${CONFIG.DND5E.skills[skillId].label}`;
+      daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.healingTypes["healing"]}`;
+      Object.keys(daeSystemClass.systemConfig.skills).forEach(skillId => {
+        daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${daeSystemClass.systemConfig.skills[skillId].label}`;
       });
     }
     // Rely on suppression Hooks.on("updateItem", updateItem); // deal with disabling effects for unequipped items
@@ -409,7 +409,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       "system.bonuses.weapon.damage": { attacks: this.weaponAttacks, selector: "damage" },
       "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage" }
     };
-    daeSystemClass.daeActionTypeKeys = Object.keys(CONFIG.DND5E.itemActionTypes);
+    daeSystemClass.daeActionTypeKeys = Object.keys(daeSystemClass.systemConfig.itemActionTypes);
   }
 
   public static effectDisabled(actor, effect, itemData = null) {
@@ -420,21 +420,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   // For DAE Editor
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
-    // this.traitList = duplicate(CONFIG.DND5E.damageResistanceTypes);
-    this.traitList = duplicate(CONFIG.DND5E.damageTypes);
-    this.traitList = mergeObject(this.traitList, CONFIG.DND5E.healingTypes);
+    // this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
+    this.traitList = duplicate(daeSystemClass.systemConfig.damageTypes);
+    this.traitList = mergeObject(this.traitList, daeSystemClass.systemConfig.healingTypes);
     this.bypassesList = duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
     const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
     const damageTypes = Object.values(daeSystemClass.systemConfig.damageTypes);
     this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
       .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {})
     Object.keys(this.traitList).forEach(type => {
-      this.traitList[`-${type}`] = `-${CONFIG.DND5E.damageTypes[type]}`;
+      this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageTypes[type]}`;
     });
 
-    this.languageList = duplicate(CONFIG.DND5E.languages);
-    Object.keys(CONFIG.DND5E.languages).forEach(type => {
-      this.languageList[`-${type}`] = `-${CONFIG.DND5E.languages[type]}`;
+    this.languageList = duplicate(daeSystemClass.systemConfig.languages);
+    Object.keys(daeSystemClass.systemConfig.languages).forEach(type => {
+      this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type]}`;
     });
 
     this.armorClassCalcList = {};
@@ -442,28 +442,28 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       this.armorClassCalcList[acCalc] = daeSystemClass.systemConfig.armorClasses[acCalc].label
     }
 
-    this.conditionList = duplicate(CONFIG.DND5E.conditionTypes);
-    Object.keys(CONFIG.DND5E.conditionTypes).forEach(type => {
-      this.conditionList[`-${type}`] = `-${CONFIG.DND5E.conditionTypes[type]}`;
+    this.conditionList = duplicate(daeSystemClass.systemConfig.conditionTypes);
+    Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
+      this.conditionList[`-${type}`] = `-${daeSystemClass.systemConfig.conditionTypes[type]}`;
     });
     if (this.profInit) {
       this.toolProfList = this.toolProfList;
       this.armorProfList = this.armorProfList;
       this.weaponProfList = this.weaponProfList;
     } else {
-      this.toolProfList = duplicate(CONFIG.DND5E.toolProficiencies);
-      Object.keys(CONFIG.DND5E.toolProficiencies).forEach(type => {
-        this.toolProfList[`-${type}`] = `-${CONFIG.DND5E.toolProficiencies[type]}`;
+      this.toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
+      Object.keys(daeSystemClass.systemConfig.toolProficiencies).forEach(type => {
+        this.toolProfList[`-${type}`] = `-${daeSystemClass.systemConfig.toolProficiencies[type]}`;
       });
 
-      this.armorProfList = duplicate(CONFIG.DND5E.armorProficiencies);
-      Object.keys(CONFIG.DND5E.armorProficiencies).forEach(type => {
-        this.armorProfList[`-${type}`] = `-${CONFIG.DND5E.armorProficiencies[type]}`;
+      this.armorProfList = duplicate(daeSystemClass.systemConfig.armorProficiencies);
+      Object.keys(daeSystemClass.systemConfig.armorProficiencies).forEach(type => {
+        this.armorProfList[`-${type}`] = `-${daeSystemClass.systemConfig.armorProficiencies[type]}`;
       });
 
-      this.weaponProfList = duplicate(CONFIG.DND5E.weaponProficiencies);
-      Object.keys(CONFIG.DND5E.weaponProficiencies).forEach(type => {
-        this.weaponProfList[`-${type}`] = `-${CONFIG.DND5E.weaponProficiencies[type]}`;
+      this.weaponProfList = duplicate(daeSystemClass.systemConfig.weaponProficiencies);
+      Object.keys(daeSystemClass.systemConfig.weaponProficiencies).forEach(type => {
+        this.weaponProfList[`-${type}`] = `-${daeSystemClass.systemConfig.weaponProficiencies[type]}`;
       });
     }
   }
@@ -495,24 +495,24 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.includes("system.skills") && spec.includes("ability")) {
       if (game.system.id === "dnd5e")
-        return CONFIG.DND5E.abilities;
+        return daeSystemClass.systemConfig.abilities;
     }
-    if (spec === "system.traits.size") return CONFIG.DND5E?.actorSizes;
+    if (spec === "system.traits.size") return daeSystemClass.systemConfig?.actorSizes;
     return super.getOptionsForSpec(spec);
   }
 
   public static async editConfig() {
     if (game.system.id === "dnd5e") {
       try {
-        const pack = game.packs.get(CONFIG.DND5E.sourcePacks.ITEMS);
+        const pack = game.packs.get(daeSystemClass.systemConfig.sourcePacks.ITEMS);
         const profs = [
           { type: "tool", list: this.toolProfList },
           { type: "armor", list: this.armorProfList },
           { type: "weapon", list: this.weaponProfList }
         ];
         for (let { type, list } of profs) {
-          let choices = CONFIG.DND5E[`${type}Proficiencies`];
-          const ids = CONFIG.DND5E[`${type}Ids`];
+          let choices = daeSystemClass.systemConfig[`${type}Proficiencies`];
+          const ids = daeSystemClass.systemConfig[`${type}Ids`];
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
@@ -1000,7 +1000,7 @@ const _getFlags = { "dnd5e": _getFlagsdnd5e, "sw5e": _getFlagssw5e };
 function _getFlagsdnd5e() {
   const flags = {};
   const baseData = this.document;
-  for (let [k, v] of Object.entries(CONFIG.DND5E.characterFlags)) {
+  for (let [k, v] of Object.entries(daeSystemClass.systemConfig.characterFlags)) {
     //@ts-ignore
     if (!flags.hasOwnProperty(v.section)) flags[v.section] = {};
     let flag = duplicate(v);
@@ -1021,7 +1021,7 @@ function _getFlagsdnd5e() {
 function _getFlagssw5e() {
   const flags = {};
   const baseData = this.document;
-  for (let [k, v] of Object.entries(CONFIG.DND5E.characterFlags)) {
+  for (let [k, v] of Object.entries(daeSystemClass.systemConfig.characterFlags)) {
     //@ts-ignore
     if (!flags.hasOwnProperty(v.section)) flags[v.section] = {};
     let flag = duplicate(v);

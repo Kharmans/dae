@@ -7,13 +7,11 @@ import { daeReadyActions } from "./module/dae";
 import { convertDuration, setupSocket } from './module/GMAction';
 import { checkLibWrapperVersion, cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, tobMapper } from './module/migration';
 import { ActiveEffects } from './module/apps/ActiveEffects';
-import { patchingSetup, patchingInitSetup } from './module/patching';
+import { setupPatching, initPatching } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken } from './module/daeMacros';
 import { ItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
-import { DAESystem, ValidSpec, wildcardEffects } from './module/Systems/DAESystem';
-import { DAESystemDND5E } from './module/Systems/DAEdnd5e';
-import { DAESystemSW5E } from './module/Systems/DAEsw5e';
+import { ValidSpec, wildcardEffects } from './module/Systems/DAESystem';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = { "none": 0, "warn": 1, "debug": 2, "all": 3 }[debugText] || 0;
@@ -59,7 +57,7 @@ Hooks.once('init', async function () {
     if (gameSystemCompatible === "yes" || daeUntestedSystems) {
       if (gameSystemCompatible === "maybe") console.warn(`DAE compatibility warning for ${game.system.title} is not tested with DAE`);
       daeInitActions();
-      patchingInitSetup();
+      initPatching();
       fetchParams(false);
 
       // Preload Handlebars templates
@@ -117,7 +115,7 @@ Hooks.once('setup', function () {
     // ready
     debug("setup actions")
     daeSetupActions();
-    patchingSetup();
+    setupPatching();
     //@ts-ignore
     window.DAE = {
       ActiveEffects: ActiveEffects,

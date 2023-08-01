@@ -207,7 +207,7 @@ async function _unsetFlag(data: { actorUuid: string, flagId: string }) {
 async function _blindToken(data: { tokenUuid: string }) {
   if (game.dfreds?.effects?._blinded) {
     const actor = DAEfromUuid(data.tokenUuid)?.object?.actor
-    game.dfreds.effectInterface.addEffect({ effectName: game.dfreds.effects._blinded.name, uuid: actor.uuid })
+    game.dfreds.effectInterface?.addEffect({ effectName: game.dfreds.effects._blinded.name, uuid: actor.uuid })
   } else {
     const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
     return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: false })
@@ -217,7 +217,7 @@ async function _blindToken(data: { tokenUuid: string }) {
 async function _restoreVision(data: { tokenUuid: string }) {
   if (game.dfreds?.effects?._blinded) {
     const actor = DAEfromUuid(data.tokenUuid)?.object?.actor
-    game.dfreds.effectInterface.removeEffect({ effectName: game.dfreds.effects._blinded.name, uuid: actor.uuid })
+    game.dfreds.effectInterface?.removeEffect({ effectName: game.dfreds.effects._blinded.name, uuid: actor.uuid })
   } else {
     const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
     return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: false })
