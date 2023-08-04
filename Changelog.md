@@ -1,3 +1,6 @@
+### 11.0.7.1
+* Remove out of data premadeitems compendium
+
 ### 11.0.7
 * Added a fix for DAE potentially throwing an error when dfreds modules not including convenient-effects are loaded. This is a DAE problem not a dfreds issue.
 * Improved some error messages in DAE when running a macro to make it easier to track down where the error occured.

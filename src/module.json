@@ -3,7 +3,7 @@
 	"title": "Dynamic effects using Active Effects",
 	"description": "replacement for dynamic effects",
   "authors": [{ "name": "tposney" }],
-	"version": "11.0.7.1",
+	"version": "11.0.7.2",
 	"compatibility": {
 		"minimum": "11.303",
 		"verified": "11.306",
@@ -23,17 +23,6 @@
 		]
 	},
 	"styles": ["css/dae.css", "css/awesomplete.css"],
-	"packs": [
-		{
-			"name": "premadeitems",
-			"label": "Premade Items",
-			"path": "./packs/premadeitems.db",
-			"module": "world",
-			"type": "Item",
-      "system": "dnd5e",
-			"lang": ["en", "de"]
-		}
-	],
 	"languages": [
 		{
 			"lang": "en",
@@ -76,5 +65,5 @@
 	"bugs": "https://gitlab.com/tposney/dae/-/issues",
 	"allowBugReporter": true,
 	"manifest": "https://gitlab.com/tposney/dae/raw/v11/package/module.json",
-	"download": "https://gitlab.com/tposney/dae/raw/v11/package/dae-v11.0.7.1.zip"
+	"download": "https://gitlab.com/tposney/dae/raw/v11/package/dae-v11.0.7.2.zip"
 }
