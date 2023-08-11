@@ -1,7 +1,7 @@
 ### 11.0.8
 * Added new flag on an active effect, dontApply which means both midi and dae will skip that when applying effects to a target. Allows you to have an active effect stored on a item that you can apply manually later. Means you can treat an item as a repositry of effects to be applied by macros.
 * Added new api function, to delete applied active effects on a set of tokens from an item
-```js DAE.deleteItemActiveEffectss({targets: Array<Token | TokenDocument | string>, origin: stting}))
+```js DAE.deleteItemActiveEffects({targets: Array<Token | TokenDocument | string>, origin: string}))
 ```
 
 ### 11.0.7.1
