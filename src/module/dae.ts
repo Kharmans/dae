@@ -1212,6 +1212,10 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
     default:
       appliedEffects = duplicate(item.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget));
   }
+  if (!options.applyAll)
+    appliedEffects = appliedEffects.filter(aeData => aeData.flags.dae.dontApply !== true);
+  else 
+    appliedEffects.forEach(aeData => setProperty(aeData.flags, "dae.dontApply", false));
   if (options.effectsToApply?.length > 0) appliedEffects = appliedEffects.filter(aeData => options.effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = item.getRollData(); //TODO if not caster eval move to evalArgs call

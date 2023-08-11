@@ -315,7 +315,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
         }
       }
       if (activate) {
-        let dupEffects = duplicate(activeEffects); // .filter(aeData => !aeData.selfTarget));
+        let dupEffects = duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true); // .filter(aeData => !aeData.selfTarget));
         for (let aeData of dupEffects) {
           setProperty(aeData, "flags.dae.token", tid);
           if (getProperty(aeData, "flags.dae.stackable") === "count") {

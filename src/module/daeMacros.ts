@@ -192,12 +192,16 @@ export async function restoreVision(tokenOrId: Token | string) {
 }
 
 export let macroReadySetup = () => {
-
 }
 
 export function getTokenFlag(token: Token | any /* TokenDocument*/, flagName: string) {
   const tokenDocument = token.document ? token.document: token;
   return getProperty(token.document, `flags.dae.${flagName}`);
+}
+
+export async function deleteItemActiveEffects(tokens: Array<string | Token | any /* TokenDocument */>, origin: string, ignore: string[] = [], deleteEffects: string[] = []) {
+  const targets = tokens.map(t => ({"uuid": typeof t === "string" ? t : (t.document?.uuid ?? t.uuid)}));
+  return socketlibSocket.executeAsGM("deleteEffects", { targets, origin, ignore, deleteEffects });
 }
 
 export async function deleteActiveEffect(uuid: string, origin: string, ignore: string[] = [], deleteEffects: string[] = []) {

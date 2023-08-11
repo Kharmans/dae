@@ -9,7 +9,7 @@ import { checkLibWrapperVersion, cleanActorItemsEffectOrigins, cleanEffectOrigin
 import { ActiveEffects } from './module/apps/ActiveEffects';
 import { setupPatching, initPatching } from './module/patching';
 import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
-import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken } from './module/daeMacros';
+import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken, deleteItemActiveEffects } from './module/daeMacros';
 import { ItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
 import { ValidSpec, wildcardEffects } from './module/Systems/DAESystem';
 
@@ -131,7 +131,8 @@ Hooks.once('setup', function () {
       DAEfromUuid: DAEfromUuid,
       daeMacro: daeMacro,
       daeSpecialDurations: () => { return daeSpecialDurations },
-      deleteActiveEffect: deleteActiveEffect,
+      deleteActiveEffect,
+      deleteItemActiveEffects,
       doEffects,
       fixTransferEffects: fixTransferEffects,
       fixupDDBAC: fixupDDBAC,

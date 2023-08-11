@@ -73,6 +73,14 @@
     {{ localize "dae.SelfTargetAlways.Hint" }}
     </p>
 
+    <div class="form-group">
+      <label>{{ localize "dae.DontApply.Name" }}</label>
+      <input type="checkbox" name="flags.dae.dontApply" {{ checked effect.flags.dae.dontApply }} />
+    </div>
+    <p class="notes" style="margin-bottom:1em"> 
+    {{ localize "dae.DontApply.Hint" }}
+    </p>
+
     {{/if}}
 
     <!--

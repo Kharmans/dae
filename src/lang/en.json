@@ -349,5 +349,7 @@
     "dae.SelfTargetAlways.Name": "Apply to self when item is rolled",
     "dae.SelfTargetAlways.Hint": "Effect is applied to the user of the item, not the targets whenever the item is rolled",
     "dae.ShowIcon.Name": "Always Show Effect Icon",
-    "dae.ShowIcon.Hint": "Display the effect Icon on the token and combat display"
+    "dae.ShowIcon.Hint": "Display the effect Icon on the token and combat display",
+    "dae.DontApply.Name": "Don't apply the effect",
+    "dae.DontApply.Hint": "When Dae (and midi) applies active effects, skip this one"
   }
