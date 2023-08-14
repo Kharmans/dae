@@ -165,12 +165,12 @@ export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpe
     }
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
     //@ts-ignore
-    if (typeof specList[c.key]?.sampleValue !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
+    if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.sampleValue !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
       c.value = c.value.replace("@stackCount", stackCount)
 
     //@ts-ignore
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
-      if (typeof specList[c.key]?.sampleValue === "number" && typeof c.value === "string") {
+      if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value);
         const rollData = this.getRollData();
 

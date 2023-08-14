@@ -1,3 +1,8 @@
+### 11.0.9
+* Added support system.abilities.str/dex/etc.max to be set via active effects
+* Additonal parameter removeSequencer: boolean = true in deleteItemActiveEffects and deleteEffects, if false sequencer animations attached to the effects will remain.
+* Change to active effects processing to improve the type guesses for target fields.
+
 ### 11.0.8
 * Added new flag on an active effect, dontApply which means both midi and dae will skip that when applying effects to a target. Allows you to have an active effect stored on a item that you can apply manually later. Means you can treat an item as a repositry of effects to be applied by macros.
 * Added new api function, to delete applied active effects on a set of tokens from an item

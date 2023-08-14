@@ -245,7 +245,7 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   }
 }
 
-async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[] }) {
+async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean }) {
   for (let idData of data.targets) {
     const entity = DAEfromUuid(idData.uuid);
     const actor = entity.actor ? entity.actor : entity;
@@ -256,14 +256,16 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
     if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete.filter(ae => data.deleteEffects.includes(ae.id))
     if (effectsToDelete?.length > 0) {
       try {
-        return await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
+        await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
       } catch (err) {
         warn("delete effects failed ", err)
         // TODO can get thrown since more than one thing tries to delete an effect
-      };
+        return false;
+      }
     }
   }
-  if (globalThis.Sequencer && data.origin) globalThis.Sequencer.EffectManager.endEffects({ origin: data.origin })
+  if (globalThis.Sequencer && data.origin && data.removeSequencer !== false) globalThis.Sequencer.EffectManager.endEffects({ origin: data.origin })
+  return true;
 }
 
 export async function applyActiveEffects({ activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect, metaData = undefined }) {

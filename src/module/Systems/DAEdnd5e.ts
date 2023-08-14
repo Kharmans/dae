@@ -270,6 +270,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.mod`, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.save`, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.min`, 0))
+      derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.max`, 0))
+
     })
     // adjust specs for bonuses - these are strings, @fields are looked up but dice are not rolled.
 
