@@ -1,6 +1,6 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
-import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, DAEfromUuid, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
+import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
+import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, atlActive, DAEfromUuid, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
@@ -338,6 +338,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // Modify armor attribution for DAE specific cases
     patchPrepareArmorClassAttribution();
 
+    if (atlActive) {
+      const atlFields = Object.keys(CONFIG.Canvas.detectionModes).map(dm => `ATL.detectionModes.${dm}.range`);
+      addAutoFields(atlFields);
+    }
     Hooks.on("dae.settingsChanged", () => {
       patchSpecialTraits();
     });

@@ -1,6 +1,6 @@
 import { debug, error, i18n, warn } from "../../dae";
-import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, DAEfromActorUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
+import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
+import { applyDaeEffects, atlActive, DAEfromActorUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
 import { setupSocket } from "../GMAction";
 
 export let wildcardEffects = [];
@@ -341,69 +341,69 @@ export class DAESystem {
     let validFunctionName = /^([a-zA-Z_$][0-9a-zA-Z_$]*.)*[a-zA-Z_$][0-9a-zA-Z_$]*$/; // regex for valid JS function name
 
     for (let char of input) {
-        if (char === " " && stack[stack.length -1] === " ") continue;
-        if (char === '(') {
-            let funcName = '';
-            let isNew = false;
-            while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
-                funcName = stack.pop() + funcName;
-            }
-            if (stack.slice(-4).join("") === "new ") {
-                isNew = true;
-                stack = stack.slice(0,-4);
-            } else {
-              if (Math[funcName]) funcName = `Math.${funcName}`;
-            }
+      if (char === " " && stack[stack.length - 1] === " ") continue;
+      if (char === '(') {
+        let funcName = '';
+        let isNew = false;
+        while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
+          funcName = stack.pop() + funcName;
+        }
+        if (stack.slice(-4).join("") === "new ") {
+          isNew = true;
+          stack = stack.slice(0, -4);
+        } else {
+          if (Math[funcName]) funcName = `Math.${funcName}`;
+        }
 
-            if (!validFunctionName.test(funcName) && funcName.length > 0) {
-                throw new Error(`Invalid function name: ${funcName}`);
-            }
+        if (!validFunctionName.test(funcName) && funcName.length > 0) {
+          throw new Error(`Invalid function name: ${funcName}`);
+        }
 
-            functionStack.push(funcName);
-            newStack.push(isNew);
-            stack.push('(');
-        } else if (char === ')') {
-            temp = '';
-            let poppedChar;
+        functionStack.push(funcName);
+        newStack.push(isNew);
+        stack.push('(');
+      } else if (char === ')') {
+        temp = '';
+        let poppedChar;
 
-            // Pop elements from the stack until we find the matching opening parenthesis
-            while ((poppedChar = stack.pop()) !== '(') {
-                temp = poppedChar + temp;
-            }
+        // Pop elements from the stack until we find the matching opening parenthesis
+        while ((poppedChar = stack.pop()) !== '(') {
+          temp = poppedChar + temp;
+        }
 
-            // Pop the function name and the new flag
-            let funcName = functionStack.pop();
-            let isNew = newStack.pop();
+        // Pop the function name and the new flag
+        let funcName = functionStack.pop();
+        let isNew = newStack.pop();
 
-            // Evaluate the function call
-            if (funcName === "dae.eval") {
-              stack.push(`${this.safeEval(this.safeEvalExpression(temp, context, depth + 1), context)}`);
-            } if (funcName.length > 0) {
-              const expression =
-                    `${isNew ? "new " : ""}${funcName}(${this.safeEvalExpression(temp, context, depth + 1)})`;
-              if (depth) stack.push(this.safeEval(expression, context));
-              else stack.push(expression);
-            } else {
-                stack.push('(');
-                for (let t of temp) stack.push(t);
-                stack.push(')');
-            }
-        } else stack.push(char);
-    
+        // Evaluate the function call
+        if (funcName === "dae.eval") {
+          stack.push(`${this.safeEval(this.safeEvalExpression(temp, context, depth + 1), context)}`);
+        } if (funcName.length > 0) {
+          const expression =
+            `${isNew ? "new " : ""}${funcName}(${this.safeEvalExpression(temp, context, depth + 1)})`;
+          if (depth) stack.push(this.safeEval(expression, context));
+          else stack.push(expression);
+        } else {
+          stack.push('(');
+          for (let t of temp) stack.push(t);
+          stack.push(')');
+        }
+      } else stack.push(char);
+
     }
 
     // Evaluate any remaining alphanumeric sequences
     let value = '';
     while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
-        value = stack.pop() + value;
+      value = stack.pop() + value;
     }
     if (value.length > 0) {
-        stack.push(eval(value).toString());
+      stack.push(eval(value).toString());
     }
 
     output = stack.join('');
     return eval(output);
-}
+  }
   public static safeEvalExpression(input: string, context: any, depth = 0) {
     let validFunctionName = /^[a-zA-Z_$][0-9a-zA-Z_$.]*$/; // regex for valid JS function name
     if (depth > 20) {
@@ -444,7 +444,7 @@ export class DAESystem {
 
         // Evaluate the function call
         if (funcName === "dae.eval")
-          stack.push(`${this.safeEval(this. safeEvalExpression(temp, context, depth + 1), context)}`);
+          stack.push(`${this.safeEval(this.safeEvalExpression(temp, context, depth + 1), context)}`);
         else if (funcName === "dae.roll") {
           try {
             const rollExpression = `new Roll(${temp}).evaluate({async: false}).total`;
@@ -593,13 +593,13 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
     specials["ATL.light.shadows"] = [0, -1];
     specials["ATL.light.darkness.max"] = [0, -1];
     specials["ATL.light.darkness.min"] = [0, -1];
-    specials["ATL.detectionModes.basicSight.range"] = [0, -1];
-    specials["ATL.detectionModes.seeInvisibility.range"] = [0, -1];
-    specials["ATL.detectionModes.senseInvisibility.range"] = [0, -1];
-    specials["ATL.detectionModes.feelTremor.range"] = [0, -1];
-    specials["ATL.detectionModes.seeAll.range"] = [0, -1];
-    specials["ATL.detectionModes.senseAll.range"] = [0, -1];
-    specials["ATL.sight.visionMode"] = ["", -1]; // selection list
+    // specials["ATL.detectionModes.basicSight.range"] = [0, -1];
+    // specials["ATL.detectionModes.seeInvisibility.range"] = [0, -1];
+    // specials["ATL.detectionModes.senseInvisibility.range"] = [0, -1];
+    // specials["ATL.detectionModes.feelTremor.range"] = [0, -1];
+    // specials["ATL.detectionModes.seeAll.range"] = [0, -1];
+    // specials["ATL.detectionModes.senseAll.range"] = [0, -1];
+    specials["ATL.sight.visionMode"] = ["", 0]; // selection list
     specials["ATL.light.animation"] = ["", -1]; // json string
     specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["ATL.sight.angle"] = [0, -1];

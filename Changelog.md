@@ -1,3 +1,7 @@
+### 11.0.10
+* Dae now uses the configured vision modes to create the ATL.sight.VisionMode dropdown.
+* Dae now uses the configured detection modes when creating the keys ATL.detecectionModes.XXXX.range keys. SO detect magic spell should now e possible via an active effect.
+
 ### 11.0.9
 * Added support system.abilities.str/dex/etc.max to be set via active effects
 * Additonal parameter removeSequencer: boolean = true in deleteItemActiveEffects and deleteEffects, if false sequencer animations attached to the effects will remain.

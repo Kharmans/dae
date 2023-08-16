@@ -78,30 +78,18 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (atlActive) {
       this.ATLPresets = {};
       game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets[preset.name] = preset.name);
-      this.ATLVisionModes = {};
-      Object.keys(CONFIG.Canvas.visionModes).forEach(vm => {
-        this.ATLVisionModes[vm] = i18n(CONFIG.Canvas.visionModes[vm].label);
+
+      Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
+        otherFields.push([`ATL.detectionModes.${dm}.range`]);
       });
-/*
-      {
-        "blind": i18n("VISION.ModeBlindness"),
-        "basic": i18n("VISION.ModeBasicVision"),
-        "darkvision" : i18n("VISION.ModeDarkvision"),
-        "monochromatic" : i18n("VISION.ModeMonochromatic"),
-        "tremorsense" : i18n("VISION.ModeTremorsense"),
-        "lightAmplification": i18n("VISION.ModeLightAmplification")
-      };
-      */
+
+      this.ATLVisionModes = {};
+      Object.values(CONFIG.Canvas.visionModes)
+      //@ts-expect-error TokenConfig, the core sheet for a token does this filtering, I think we should too
+      .filter(f => f.tokenConfig)
+      //@ts-expect-error
+      .forEach(f => this.ATLVisionModes[f.id] = i18n(f.label) )
     }
-    this.ATLVisionModes = 
-    {
-      "blind": i18n("VISION.ModeBlindness"),
-      "basic": i18n("VISION.ModeBasicVision"),
-      "darkvision" : i18n("VISION.ModeDarkvision"),
-      "monochromatic" : i18n("VISION.ModeMonochromatic"),
-      "tremorsense" : i18n("VISION.ModeTremorsense"),
-      "lightAmplification": i18n("VISION.ModeLightAmplification")
-    };
 
     this.validFields = { "__": "" }
     this.validFields = validSpecsToUse.allSpecs
