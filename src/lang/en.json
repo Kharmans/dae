@@ -268,6 +268,8 @@
     "dae.HandleEquip.Hint": "If set DAE will handle equip/unequip enabling/disabling active effects and toggling active will toggle equip/unequip",
     "dae.DAETitleBar.Name": "DAE Title Bar",
     "dae.DAETitleBar.Hint": "Display DAE effect editor button in Title Bar. (You don't need this anymore - just edit from the effects tab)",
+    "dae.DAEColorTitleBar.Name": "DAE Colored Title Bar",
+    "dae.DAEColorTitleBar.Hint": "Apply a color to the DAE effect editor button, if that is displayed and effects are present in the document.",
     "dae.DAENoTitleText.Name": " Just Icon",
     "dae.DAENoTitleText.Hint": " Only display the wrench icon in the Title Bar otherwise icon + DAE",
     "dae.StatusEffect": "Status Effect",
