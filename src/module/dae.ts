@@ -1582,8 +1582,8 @@ export function daeInitActions() {
   Hooks.on("updateActiveEffect", updateActiveEffectHook);
 
   // Add the active effects title bar actions
-  Hooks.on('renderActorSheet', initActorSheetHook);
-  Hooks.on('renderItemSheet', initItemSheetHook);
+  Hooks.on("getActorSheetHeaderButtons", attachActorSheetHeaderButton);
+  Hooks.on("getItemSheetHeaderButtons", attachItemSheetHeaderButton);
   Hooks.on("preDeleteCombat", preDeleteCombatHook);
   Hooks.on("preCreateCombatant", preCreateCombatantHook);
 
@@ -1594,31 +1594,27 @@ export function daeInitActions() {
   actionQueue = new globalThis.Semaphore();
 }
 
-function initActorSheetHook(app, html, data) {
-  if (!daeTitleBar) return;
-  const title = game.i18n.localize('dae.ActiveEffectName')
-  let titleText = daeNoTitleText ? "" : title;
-  let openBtn = $(`<a class="open-actor-effect" title="${title}"><i class="fas fa-wrench"></i>${titleText}</a>`);
-  openBtn.click(ev => {
-    new ActiveEffects(app.document, {}).render(true);
-  });
-  html.closest('.app').find('.open-actor-effect').remove();
-  let titleElement = html.closest('.app').find('.window-title');
-  if (!app._minimized) openBtn.insertAfter(titleElement);
+function attachActorSheetHeaderButton(app, buttons) {
+    if (!daeTitleBar) return;
+    const title = game.i18n.localize('dae.ActiveEffectName');
+    const titleText = daeNoTitleText ? "" : title;
+    buttons.unshift({
+        label: titleText,
+        class: 'dae-config-actorsheet',
+        icon: 'fas fa-wrench',
+        onclick: ev => {new ActiveEffects(app.document, {}).render(true);}
+    })
 }
-
-function initItemSheetHook(app, html, data) {
-  if (!daeTitleBar) return true;
-  const title = game.i18n.localize('dae.ActiveEffectName')
-  let titleText = daeNoTitleText ? "" : title;
-  let openBtn = $(`<a class="open-item-effect" title="${title}"><i class="fas fa-wrench"></i>${titleText}</a>`);
-  openBtn.click(ev => {
-    new ActiveEffects(app.document, {}).render(true);
-  });
-  html.closest('.app').find('.open-item-effect').remove();
-  let titleElement = html.closest('.app').find('.window-title');
-  openBtn.insertAfter(titleElement);
-  return true;
+function attachItemSheetHeaderButton(app, buttons) {
+    if (!daeTitleBar) return;
+    const title = game.i18n.localize('dae.ActiveEffectName');
+    const titleText = daeNoTitleText ? "" : title;
+    buttons.unshift({
+        label: titleText,
+        class: 'dae-config-itemsheet',
+        icon: 'fas fa-wrench',
+        onclick: ev => {new ActiveEffects(app.document, {}).render(true);}
+    })
 }
 
 export function daeSetupActions() {
