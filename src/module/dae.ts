@@ -157,7 +157,7 @@ export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpe
 
     //TODO remove @data sometime
     if (typeof c.value === "string" && c.value.includes("@data.")) {
-      console.warn("dae | @data.key is deprecated, use @key instead", c.value)
+      console.warn("dae | @data.key is deprecated, use @key instead (${c.effect.name} (${c.effect.id}) has value ${c.value})");
       c.value = c.value.replace(/@data./g, "@");
     }
     if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
