@@ -347,6 +347,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     });
     patchSpecialTraits();
 
+
+    Object.keys(CONFIG.Item.sheetClasses.base).forEach(sheetId => {
+      libWrapper.register("dae", `CONFIG.Item.sheetClasses.base['${sheetId}'].cls.prototype._onDropActiveEffect`, _onDropActiveEffect, "OVERRIDE");
+    })
+
     if (game.modules.get("midi-qol")?.active) {
       daeSpecialDurations["1Action"] = i18n("dae.1Action");
       daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
@@ -1226,4 +1231,13 @@ function preUpdateItemHook(candidate, updates, options, user) {
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 setProperty(globalThis.daeSystems, "dnd5e", DAESystemDND5E);
 
-
+async function _onDropActiveEffect(event, data) {
+  //@ts-expect-error
+  const effect = await ActiveEffect.implementation.fromDropData(data);
+  if ( !this.item.isOwner || !effect ) return false;
+  if ( (this.item.uuid === effect.parent?.uuid) || (this.item.uuid === effect.origin) ) return false;
+  return CONFIG.ActiveEffect.documentClass.create({
+    ...effect.toObject(),
+    origin: this.item.uuid
+  }, {parent: this.item});
+}

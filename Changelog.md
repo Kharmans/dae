@@ -1,3 +1,6 @@
+### 11.0.11
+* Patch so that dnd5e dropping of Convenient effects to items does not fail.
+
 ### 11.0.10
 * Dae now uses the configured vision modes to create the ATL.sight.VisionMode dropdown.
 * Dae now uses the configured detection modes when creating the keys ATL.detecectionModes.XXXX.range keys. SO detect magic spell should now e possible via an active effect.
@@ -14,7 +17,7 @@
 ```
 
 ### 11.0.7.1
-* Remove out of data premadeitems compendium
+* Remove out of date premadeitems compendium
 
 ### 11.0.7
 * Added a fix for DAE potentially throwing an error when dfreds modules not including convenient-effects are loaded. This is a DAE problem not a dfreds issue.
