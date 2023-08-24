@@ -1623,7 +1623,6 @@ function attachItemSheetHeaderButton(app, buttons) {
 
 function updateSheetHeaderButton(app, [elem], options) {
   if (!daeColorTitleBar || !daeTitleBar) return;
-  elem = elem.closest('window-app');
   if (!elem?.querySelector('.dae-config-actorsheet') && !elem?.querySelector('.dae-config-itemsheet')) return;
   const daeActorSheetButton = elem.closest('.window-app').querySelector('.dae-config-actorsheet');
   const daeItemSheetButton = elem.closest('.window-app').querySelector('.dae-config-itemsheet');
