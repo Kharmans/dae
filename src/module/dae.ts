@@ -1597,19 +1597,6 @@ export function daeInitActions() {
   actionQueue = new globalThis.Semaphore();
 }
 
-function updateSheetHeaderButton(app, [elem], options) {
-  if (!daeColorTitleBar) return;
-  elem = elem.closest('window-app');
-  if (!elem?.querySelector('.dae-config-actorsheet') && !elem?.querySelector('.dae-config-itemsheet')) return;
-  const daeActorSheetButton = elem.closest('.window-app').querySelector('.dae-config-actorsheet');
-  const daeItemSheetButton = elem.closest('.window-app').querySelector('.dae-config-itemsheet');
-  const hasEffects = app.document.effects.size;
-  if (!!hasEffects) {
-    const sheetButtonToUpdate = !!daeActorSheetButton ? daeActorSheetButton : daeItemSheetButton;
-    sheetButtonToUpdate.style.color = 'yellow';  //that could be added in another setting
-  }
-}
-
 function attachActorSheetHeaderButton(app, buttons) {
     if (!daeTitleBar) return;
     const title = game.i18n.localize('dae.ActiveEffectName');
@@ -1632,6 +1619,19 @@ function attachItemSheetHeaderButton(app, buttons) {
         icon: 'fas fa-wrench',
         onclick: ev => {new ActiveEffects(app.document, {}).render(true);}
     })
+}
+
+function updateSheetHeaderButton(app, [elem], options) {
+  if (!daeColorTitleBar || !daeTitleBar) return;
+  elem = elem.closest('window-app');
+  if (!elem?.querySelector('.dae-config-actorsheet') && !elem?.querySelector('.dae-config-itemsheet')) return;
+  const daeActorSheetButton = elem.closest('.window-app').querySelector('.dae-config-actorsheet');
+  const daeItemSheetButton = elem.closest('.window-app').querySelector('.dae-config-itemsheet');
+  const hasEffects = app.document.effects.size;
+  if (!!hasEffects) {
+    const sheetButtonToUpdate = !!daeActorSheetButton ? daeActorSheetButton : daeItemSheetButton;
+    sheetButtonToUpdate.style.color = 'yellow';  //that could be added in another setting
+  }
 }
 
 export function daeSetupActions() {
