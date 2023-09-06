@@ -177,10 +177,26 @@ function getRollData(wrapped, ...args): any {
   if (this.isToken) {
     data.tokenUuid = this.token?.uuid ?? "undefined";
     data.tokenId = this.token?.object?.id ?? "undefined";
-  } else {
-    const tokenDocument = getSelfTarget(this);
-    data.tokenUuid = tokenDocument?.uuid ?? "undefined";
-    data.tokenId = tokenDocument?.object?.id ?? "undefined"
+  } else { // create deferred lookups for these since they are a bit expensive
+    Object.defineProperty(data, "token", {
+      get() {
+        if (!data._token) {
+          const actor = DAEfromActorUuid(data.actorUuid ?? "")
+          data._token = getSelfTarget(actor);
+        }
+        return data._token;
+      }
+    });
+    Object.defineProperty(data, "tokenUuid", {
+      get() { // During initialisation getSelfTarget will return a token document not a token
+        if (data.token instanceof Token)
+          return data.token?.document.uuid ?? "undefined";
+        else return data.token.uuid ?? "undefined"
+      }
+    });
+    Object.defineProperty(data, "tokenId", {
+      get() {return data.token?.id ?? "undefined";}
+    });
   }
   return data;
 }
@@ -260,7 +276,7 @@ export class DAESystem {
     return true;
   }
 
-  public static doCustomArrayValue(actor, current, change, validValues) {
+  public static doCustomArrayValue(actor, current, change, validValues: string[] | undefined) {
     if (current instanceof Array) {
       if (getType(change.value) === "string" && change.value[0] === "-") {
         const checkValue = change.value.slice(1);
@@ -279,14 +295,14 @@ export class DAESystem {
       if (getType(change.value) === "string" && change.value[0] === "-") {
         const checkValue = change.value.slice(1);
         if (!current.has(checkValue)) return true;
-        if (!validValues.includes(checkValue)) return true;
+        if (validValues && !validValues.includes(checkValue)) return true;
         //@ts-expect-error
         const returnValue = deepClone(current);
         returnValue.delete(checkValue);
         setProperty(actor, change.key, returnValue);
       } else {
         if ((current ?? new Set()).has(change.value)) return true;
-        if (!validValues.includes(change.value)) return true;
+        if (validValues && !validValues.includes(change.value)) return true;
         //@ts-expect-error
         let returnValue = deepClone(current);
         returnValue.add(change.value);

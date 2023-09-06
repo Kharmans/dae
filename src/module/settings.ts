@@ -1,17 +1,6 @@
 import { fetchParams } from "./dae";
 
 export const registerSettings = function () {
-
-  game.settings.register("dae", "useDAESheet", {
-    scope: "world",
-    default: true,
-    config: true,
-    type: Boolean,
-    onChange: fetchParams,
-    name: game.i18n.localize("dae.useDAESheet.Name"),
-    hint: game.i18n.localize("dae.useDAESheet.Hint"),
-  });
-
   game.settings.register("dae", "noDupDamageMacro", {
     name: "dae.noDupDamageMacro.Name",
     hint: "dae.noDupDamageMacro.Hint",

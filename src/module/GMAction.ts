@@ -332,10 +332,11 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
             const item = fromUuidSync(aeData.origin);
             let macroCommand;
             if (item instanceof Item) {
-              //@ts-expect-error flags
-              macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
+              macroCommand = getProperty(item, "flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
             } else if (aeData.flags?.dae?.itemData) {
-              macroCommand = aeData?.flags.dae.itemData.flags.itemacro?.macro.command ?? aeData?.flags.dae.itemData.flags.itemacro?.macro.data.command;
+              const itemData = getProperty(aeData, "flags.dae.itemData");
+              if (itemData)
+                macroCommand = getProperty(itemData, "flags.dae.macro.command") ?? getProperty(itemData, "flags.itemacro.macro.command") ?? getProperty(itemData, "flags.itemacro.macro.data.command");
             }
             setProperty(aeData, "flags.dae.itemMacro", macroCommand)
           }

@@ -6,6 +6,7 @@ import { macroActorUpdate } from "./daeMacros";
 import { ValidSpec } from "./Systems/DAESystem";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e";
 import { DAESystemSW5E } from "./Systems/DAEsw5e";
+import { DIMEditor } from "./apps/DIMEditor";
 
 let templates = {};
 
@@ -103,7 +104,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 /*
  * Replace default appplyAffects to do value lookups
  */
-export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpecs = false, wildCardsInclude = [], wildCardsExclude = [], doStatusEffects = true}) {
+export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSpecs = false, wildCardsInclude = [], wildCardsExclude = [], doStatusEffects = true }) {
   if (disableEffects) return;
   const overrides = {};
   const effects = this.effects.contents;
@@ -142,7 +143,7 @@ export function applyDaeEffects({specList = [], completedSpecs = {}, allowAllSpe
         c.effect = effect;
         if (["system.traits.ci.value", "system.traits.ci.all", "system.traits.ci.custom"].includes(c.key))
           c.priority = 0;
-        else 
+        else
           c.priority = c.priority ?? (c.mode * 10);
         return c;
       }));
@@ -323,7 +324,7 @@ export async function addCubChange(conditionName, tokens: [Token], options = {})
   if (cubInterface?.enhancedConditions.supported) await actionQueue.add(cubInterface.addCondition, conditionName, tokens);
 }
 
-export async function removeCubChange(conditionName, tokens: [Token], options = {warn: false}) {
+export async function removeCubChange(conditionName, tokens: [Token], options = { warn: false }) {
   const cubInterface = game?.cub;
   const isToken = tokens.find(t => t.actor.isToken);
   if (isToken) await delay(1); // let all of the stuff settle down
@@ -336,6 +337,7 @@ export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}
   if (actor.token) tokenUuid = actor.token.uuid;
   else {
     const selfTarget = getSelfTarget(actor);
+    //@ts-expect-error .document
     if (selfTarget.document) tokenUuid = selfTarget.document.uuid;
     else tokenUuid = selfTarget.uuid;
   }
@@ -400,9 +402,10 @@ function createActiveEffectHook(...args) {
       }
     };
     if (!context.isUndo) {
-      changeLoop().then(() => removeExistingEffectsHook(...args));
+      // changeLoop().then(() => removeExistingEffectsHook(...args));
+      changeLoop();
     }
-  } else removeExistingEffectsHook(...args);
+  } // else removeExistingEffectsHook(...args);
   return true;
 }
 async function _preCreateActiveEffect(...args) {
@@ -445,6 +448,7 @@ async function _preCreateActiveEffect(...args) {
 
 function removeExistingEffectsHook(...args) {
   let [effect, data, options, user] = args;
+  if (options.isUndo) return true;
   const parent = effect.parent;
   if (options.isUndo) return true;
   //@ts-expect-error
@@ -470,9 +474,6 @@ function removeExistingEffectsHook(...args) {
     } finally {
       return true
     }
-    // hasExisting.forEach(existingEffect =>
-    // actionQueue.add(existingEffect.delete.bind(existingEffect)));
-    // return true;
   }
 }
 
@@ -506,7 +507,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
     */
     const parent = candidate.parent;
     if (parent && parent instanceof Actor) {
-      let updates:any = {};
+      let updates: any = {};
       setProperty(updates, "flags.dae.transfer", data.transfer === true ? true : false);
       if (candidate.flags?.dae?.durationExpression && parent instanceof Actor) {
         let sourceActor = parent;
@@ -531,7 +532,8 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
       for (let change of candidate.changes) {
         if (typeof change.value === "string") {
           const token = getSelfTarget(parent);
-          const context = {"actorUuid": parent?.uuid,  "tokenUuid": token?.uuid ?? token?.document?.uuid, "targetUuid": token?.uuid ?? token?.document?.uuid};
+          //@ts-expect-error .document
+          const context = { "actorUuid": parent?.uuid, "tokenUuid": token?.uuid ?? token?.document?.uuid, "targetUuid": token?.uuid ?? token?.document?.uuid };
           let newValue = change.value;
           for (let key of Object.keys(context)) {
             // newValue = newValue.replaceAll(`@${key}`, context[key])
@@ -584,8 +586,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
           //@ts-expect-error
           const item: any = fromUuidSync(candidate.origin);
           if (item instanceof Item) {
-            //@ts-expect-error
-            let macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
+            let macroCommand = getProperty(item, "flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
             setProperty(updates, `flags.dae.itemMacro`, macroCommand)
           }
         } else newChanges.push(change);
@@ -794,7 +795,7 @@ export async function _preDeleteActiveEffect(wrapped, ...args) {
           await removeConvenientEffectsChange(change.value, actor.uuid, lastArg.origin, actor.isToken, lastArg);
         }
         if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
-          await removeCubChange(change.value, [token], {warn: false});
+          await removeCubChange(change.value, [token], { warn: false });
         }
         if (change.key === "flags.dae.deleteUuid" && change.value) {
           await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
@@ -857,7 +858,7 @@ export function deleteActiveEffectHook(...args) {
             await removeConvenientEffectsChange(change.value, actor.uuid, lastArg.origin, actor.isToken, lastArg);
           }
           if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
-            await removeCubChange(change.value, [token], {warn: false});
+            await removeCubChange(change.value, [token], { warn: false });
           }
           if (change.key === "flags.dae.deleteUuid" && change.value) {
             await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
@@ -892,7 +893,7 @@ export function deleteActiveEffectHook(...args) {
   return true;
 }
 
-export function getSelfTarget(actor) {
+export function getSelfTarget(actor): Token {
   if (actor.token) return actor.token.object;
   const speaker = ChatMessage.getSpeaker({ actor })
   if (speaker.token) return canvas.tokens.get(speaker.token);
@@ -939,7 +940,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   }
   if (!theItem) {
     const origin = await fromUuid(effectData.origin);
-    if (origin instanceof Item)  theItem = origin
+    if (origin instanceof Item) theItem = origin
   }
 
   if (theItem) setProperty(effectData, "flags.dae.itemData", theItem.toObject());
@@ -1029,7 +1030,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         // result = await macroActorUpdate(action, ...args, lastArg);
       }
     } catch (err) {
-      const message = `daeMacro | "${action}" macro "${macro?.name}" for actor ${actor?.name} in ${theItem ? "item " + theItem.name : ""} ${actor?.uuid} ${theItem?.uuid}`; 
+      const message = `daeMacro | "${action}" macro "${macro?.name}" for actor ${actor?.name} in ${theItem ? "item " + theItem.name : ""} ${actor?.uuid} ${theItem?.uuid}`;
       console.warn(message, err);
       if (globalThis.MidiQOL?.TroubleShooter)
         globalThis.MidiQOL.TroubleShooter.recordError(err, message);
@@ -1119,49 +1120,37 @@ export async function evalArgs({ effectData = null, item, context, actor, change
 
 export async function getMacro({ change, name }, item, effectData) {
   if (change.key.includes("macro.execute")) {
-    if (change.value.startsWith("Compendium")) {
-
-    } else {    // the first argument conatins the macro name
-      return game.macros.getName(name);
+    let macro = game.macros.getName(name);
+    let itemOrMacro;
+    if (!macro) itemOrMacro = await fromUuid(name);
+    if (itemOrMacro) {
+      if (itemOrMacro instanceof Item) {
+        macro = getProperty(item, "flags.dae.macro") ?? getProperty(item, "flags.itemacro.macro");
+        return macro;
+      } else if (itemOrMacro instanceof Macro) {
+        return itemOrMacro;
+      }
     }
   } else if (change.key.startsWith("macro.itemMacro")) {
-    /*
-    // Get the macro command for the macro 
-    // TODO look at using an item name as well?
-    let macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
-    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.flags.itemacro.macro.command");
-    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.flags.itemacro.macro.data.command");
-    // Could not get the macro from the item or we had no item
+    let macroCommand = getProperty(item, "Flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
+    const itemData = getProperty(effectData, "flags.ade.itemData");
+    if (!macroCommand && itemData) macroCommand = getProperty(itemData, "flags.dae.macro.command");
+    if (!macroCommand && itemData) macroCommand = getProperty(itemData, "flags.itemacro.macro.command");
+    if (!macroCommand && itemData) macroCommand = getProperty(itemData, "flags.itemacro.macro.data.command");
     if (!macroCommand && !item) { // we never got an item do a last ditch attempt
       warn("eval args: fetching item from effectData/origin ", effectData?.origin);
       item = DAEfromUuid(effectData?.origin); // Try and get it from the effectData
       //@ts-ignore
-      macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
+      macroCommand = getProperty(item, "flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
     }
-    if (!macroCommand && !item) {
-      const itemUuid = getProperty(effectData.flags, "dae.itemUuid");
-      if (itemUuid) item = DAEfromUuid(itemUuid);
-      macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
+    if (!macroCommand) {
+      const itemOrMacro = await fromUuid(change.value);
+      if (itemOrMacro instanceof Macro) macroCommand = getProperty(itemOrMacro, "command");
+      if (itemOrMacro instanceof Item) {
+        const macro = getProperty(itemOrMacro, "flags.dae.macro") ?? getProperty(itemOrMacro, "flags.itemacro.macro");
+        macroCommand = getProperty(macro, "command");
+      }
     }
-
-    if (effectData && item) {
-      // setProperty(effectData.flags, "dae.itemData", item.toObject());
-      setProperty(effectData.flags, "dae.itemUuid", item.uuid);
-      setProperty(effectData.flags, "dae.itemId", item.id);
-      setProperty(effectData.flags, "dae.itemData", item.toObject(false));
-    }
-
-    */
-    let macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
-    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.flags.itemacro.macro.command");
-    if (!macroCommand) macroCommand = getProperty(effectData, "flags.dae.itemData.flags.itemacro.macro.data.command");
-    if (!macroCommand && !item) { // we never got an item do a last ditch attempt
-      warn("eval args: fetching item from effectData/origin ", effectData?.origin);
-      item = DAEfromUuid(effectData?.origin); // Try and get it from the effectData
-      //@ts-ignore
-      macroCommand = item?.flags.itemacro?.macro.command ?? item?.flags.itemacro?.macro.data.command;
-    }
-
     if (!macroCommand) {
       macroCommand = effectData.flags?.dae?.itemMacro;
     }
@@ -1203,18 +1192,18 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   let appliedEffects = [];
   switch (options.selfEffects) {
     case "selfEffectsAlways":
-      appliedEffects = duplicate(item.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways));
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways).map(ae => ae.toObject(false));
       break;
     case "selfEffectsAll":
-      appliedEffects = duplicate(item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae.selfTarget)));
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae.selfTarget)).map(ae => ae.toObject(false));
       break
     case "none":
     default:
-      appliedEffects = duplicate(item.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget));
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => ae.toObject(false));
   }
   if (!options.applyAll)
     appliedEffects = appliedEffects.filter(aeData => getProperty(aeData, "flags.dae.dontApply") !== true);
-  else 
+  else
     appliedEffects.forEach(aeData => setProperty(aeData.flags, "dae.dontApply", false));
   if (options.effectsToApply?.length > 0) appliedEffects = appliedEffects.filter(aeData => options.effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
@@ -1294,7 +1283,11 @@ function updateItemEffects(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;
   if (options.isUndo) return true;
-
+  if (updates.system.equipped !== undefined || updates.system.attuned !== undefined) {
+    // equipped / attuned updated.
+    const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && (updates.system.attuned ?? candidate.system.attuned) ===1;
+    const effects = candidate.effects.filter(ef => ef.transfer || ef.flags.dae.transfer)
+  }
   if (options.isAdvancement) {
     console.warn(`Dae | Skipping effect re-creation for class advancement ${candidate.parent?.name ?? ""} item ${candidate.name}`)
     return;
@@ -1392,12 +1385,11 @@ export function preUpdateActorHook(candidate, updates, options, user) {
       let macroText;
       if (onUpdate.macroName.startsWith("ItemMacro")) { // TODO Come back and make sure this is tagged to the effect
         if (onUpdate.macroName === "ItemMacro") {
-          macroText = originObject?.flags?.itemacro?.macro.command ?? originObject?.flags?.itemacro?.macro.data.command;
+          macroText = getProperty(originObject, "flags.dae.macro.command") ?? getProperty(originObject, "flags.itemacro.macro.command") ?? getProperty(originObject, "flags.itemacro.macro.data.command");
         } else if (onUpdate.macroName.startsWith("ItemMacro.")) {
           let macroObject = sourceActor?.items.getName(onUpdate.macroName.split(".")[1]);
           if (!macroObject) macroObject = originObject?.parent?.items.getName(onUpdate.macroName.split(".")[1]);
-          //@ts-ignore .flags
-          macroText = macroObject?.flags?.itemacro?.macro?.command ?? macroObject.data?.flags?.itemacro?.macro?.data?.command;
+          macroText = getProperty(macroObject, "flags.dae.macro.command") ?? getProperty(macroObject, "flags.itemacro.macro.command") ?? getProperty(macroObject, "flags.itemacro.macro.data.command");
         }
       } else {
         const theMacro: Macro = game.macros.getName(onUpdate.macroName);
@@ -1566,7 +1558,7 @@ export function daeInitActions() {
   // Fixup ItemMacro references on transfer effects
   Hooks.on("preCreateActiveEffect", matchItemMacroName)
 
-  // Hooks.on("preUpdateItem", preUpdateItemHook);
+  Hooks.on("preUpdateItem", preUpdateItemHook);
   // Hooks.on("preCreateItem", preCreateItemHook);
   // Hooks.on("createItem", createItemHook);
 
@@ -1576,6 +1568,7 @@ export function daeInitActions() {
 
 
   Hooks.on("preUpdateActor", preUpdateActorHook);
+  Hooks.on("preCreateActiveEffect", removeExistingEffectsHook)
   Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
   Hooks.on("preUpdateActiveEffect", preUpdateActiveEffectEvalInlineHook)
@@ -1595,26 +1588,37 @@ export function daeInitActions() {
 }
 
 function attachActorSheetHeaderButton(app, buttons) {
-    if (!daeTitleBar) return;
-    const title = game.i18n.localize('dae.ActiveEffectName');
-    const titleText = daeNoTitleText ? "" : title;
-    buttons.unshift({
-        label: titleText,
-        class: 'dae-config-actorsheet',
-        icon: 'fas fa-wrench',
-        onclick: ev => {new ActiveEffects(app.document, {}).render(true);}
-    })
+  if (!daeTitleBar) return;
+  const title = game.i18n.localize('dae.ActiveEffectName');
+  const titleText = daeNoTitleText ? "" : title;
+  buttons.unshift({
+    label: titleText,
+    class: 'dae-config-actorsheet',
+    icon: 'fas fa-wrench',
+    onclick: ev => { new ActiveEffects(app.document, {}).render(true); }
+  })
 }
 function attachItemSheetHeaderButton(app, buttons) {
-    if (!daeTitleBar) return;
-    const title = game.i18n.localize('dae.ActiveEffectName');
-    const titleText = daeNoTitleText ? "" : title;
-    buttons.unshift({
-        label: titleText,
-        class: 'dae-config-itemsheet',
-        icon: 'fas fa-wrench',
-        onclick: ev => {new ActiveEffects(app.document, {}).render(true);}
-    })
+  if (!daeTitleBar) return;
+  const title = game.i18n.localize('dae.ActiveEffectName');
+  const titleText = daeNoTitleText ? "" : title;
+  buttons.unshift({
+    label: titleText,
+    class: 'dae-config-itemsheet',
+    icon: 'fas fa-wrench',
+    onclick: ev => { new ActiveEffects(app.document, {}).render(true); }
+  })
+  const DIMtitle = game.i18n.localize('dae.DIMEditor.Name');
+  const DIMtitleText = daeNoTitleText ? "" : DIMtitle;
+  const buttonData: any = {
+    label: DIMtitleText,
+    class: 'dae-dimeditor',
+    icon: 'fas fa-file-pen',
+    onclick: ev => { new DIMEditor(app.document, {}).render(true); }
+  }
+  const hasMacro = app.object.getFlag("dae", "macro.command") ?? (itemacroActive && !!(app.object.getFlag("itemacro", `macro`)?.command));
+  if (hasMacro) buttonData.color = "#00ff00";
+  buttons.unshift(buttonData)
 }
 
 export function daeSetupActions() {
@@ -1645,17 +1649,6 @@ export function fetchParams(doUpdatePatches = true) {
   disableEffects = game.settings.get("dae", "disableEffects");
   daeTitleBar = game.settings.get("dae", "DAETitleBar");
   daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
-
-  let useDAESheet = game.settings.get("dae", "useDAESheet");
-  if (useDAESheet) { // TODO v10 Do this properly
-    if (CONFIG.ActiveEffect.sheetClasses.base)
-      CONFIG.ActiveEffect.sheetClasses.base["core.ActiveEffectConfig"].cls = DAEActiveEffectConfig;
-  } else {
-    if (CONFIG.ActiveEffect.sheetClasses.base)
-      CONFIG.ActiveEffect.sheetClasses.base["core.ActiveEffectConfig"].cls = ActiveEffectConfig;
-
-    // CONFIG.ActiveEffect.sheetClass = ActiveEffectConfig;
-  }
   expireRealTime = game.settings.get("dae", "expireRealTime");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   showInline = game.settings.get("dae", "showInline") ?? false;

@@ -225,9 +225,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     super.activateListeners(html);
     html.find(".keylist").change(this._keySelected.bind(this))
     html.find(".awesomplete").on("awesomplete-selectcomplete", this._textSelected.bind(this));
-
-    // html.find("value").onDrop = ev => this._onDrop(ev);
-    // this.form.ondrop = ev => this._onDrop(ev);
   }
 
   /* ----------------------------------------- */
@@ -236,11 +233,13 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
   _onDragStart(ev) {}
 
-  _onDrop(ev) {
+  async _onDrop(ev) {
     ev.preventDefault();
-    //@ts-ignore
+    //@ts-expect-error getDragEventData
     const data = TextEditor.getDragEventData(ev);
-    if (data.uuid) ev.target.value += data.uuid;
+    const item = await fromUuid(data.uuid);
+    const targetValue = ev.target.value?.split(",")[1];
+    if (data.uuid) ev.target.value = data.uuid + (targetValue ? `, ${targetValue}` : "");
   }
 
   // TODO find out how to do this proerply
@@ -337,3 +336,17 @@ export function geti18nTranslations() {
   if (!translations) translations = game.i18n._fallback["dae"];
   return translations ?? {};
 }
+
+Hooks.once("setup", () => {
+  //@ts-expect-error DocumentSheetConfig
+  DocumentSheetConfig.registerSheet(
+    CONFIG.ActiveEffect.documentClass, 
+    "core", 
+    DAEActiveEffectConfig, 
+    {
+      label: i18n("dae.EffectSheetLabel"),
+      makeDefault: false,
+      canBeDefault: true,
+      canConfigure: true
+    });
+  })
