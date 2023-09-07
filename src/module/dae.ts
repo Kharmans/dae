@@ -1293,7 +1293,7 @@ function updateItemEffects(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   if (user !== game.user.id) return true;
   if (options.isUndo) return true;
-  if (updates.system.equipped !== undefined || updates.system.attuned !== undefined) {
+  if (updates.system?.equipped !== undefined || updates.system?.attuned !== undefined) {
     // equipped / attuned updated.
     const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && (updates.system.attuned ?? candidate.system.attuned) === 1;
     const effects = candidate.effects.filter(ef => ef.transfer || ef.flags.dae.transfer)

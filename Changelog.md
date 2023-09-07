@@ -1,8 +1,11 @@
+### 11.0.12.3
+* Fix for etror being thrown when editing an item.
+
 ### 11.0.12.2
-* Dime/Itemacro editors can now be used interchangealbly
+* Dime/Itemacro editors can now be used interchangeably
 
 ### 11.0.12.1
-* Fix for some missed itemacro/dime interations
+* Fix for some missed itemacro/dime interactions
 * Added colored dae/dime title bar items - thanks @thatlonelybugbear
 
 ### 11.0.12

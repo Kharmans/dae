@@ -1160,12 +1160,10 @@ function determineSuppression() {
   this.isSuppressed = false;
   if (this.disabled || (this.parent.documentName !== "Actor")) return;
   if (this.origin) {
-    const originParts = this.origin.split(".");
-    if (originParts[originParts.length - 2] === "Item") {
-      const item = this.parent.items.get(originParts[originParts.length - 1]);
-      if (item)
-        this.isSuppressed = item.areEffectsSuppressed;
-    }
+    //@ts-expect-error fromUuidSync
+    const originObject = fromUuidSync(origin)
+    //@ts-expect-error areeffectsSuppressed
+    if (originObject instanceof Item) this.isSuppressed = originObject.areEffectsSuppressed;
   }
   if (this.parent?.system.traits) {
     let customStats: Array<string> = this.parent.system.traits.ci?.custom?.split(';').map(s => s.trim().toLocaleLowerCase());
@@ -1173,7 +1171,7 @@ function determineSuppression() {
     const statusId = duplicate(this.name ?? "no effect").toLocaleLowerCase();
     const capStatusId = duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
     const ciSuppressed = ci?.has(statusId) || ci?.has(`Convenient Effect: ${capStatusId}`);
-    this.disabled = Boolean(ciSuppressed);
+    this.isSuppressed = Boolean(ciSuppressed);
   }
 }
 
