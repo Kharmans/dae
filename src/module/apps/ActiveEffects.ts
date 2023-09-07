@@ -5,7 +5,7 @@ import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae
 import { ValidSpec } from "../Systems/DAESystem";
 
 export class ActiveEffects extends FormApplication {
-  static filters = new Set().add("summary");
+  static filters = new Set();
   hookId = null;
   itemHookId = null;
   effectHookIdu = null;

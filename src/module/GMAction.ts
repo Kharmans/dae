@@ -63,13 +63,13 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
   }
 }
 
-async function _createActorItem(data: { uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean }) {
+async function _createActorItem(data: { uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean }): Promise<Array<Item>> {
   const { uuid, itemDetails, effectUuid } = data;
   const [itemUuid, option] = itemDetails.split(",").map(s => s.trim());
   const item = await fromUuid(itemUuid);
   if (!item || !(item instanceof Item)) {
     error(`createActorItem could not find item ${itemUuid}`);
-    return undefined;
+    return [];
   }
   let actor: Actor = DAEfromActorUuid(uuid);
   if (!actor) {

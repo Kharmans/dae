@@ -67,19 +67,16 @@ export class DIMEditor extends FormApplication {
   }
 
   hasMacro() {
-    let command = getProperty(this.object, "flags.dae.macro")?.command ?? "";
-    if (!command) {
-      let flag = getProperty(this.object, "flags.itemacro.macro");
-      command = flag?.command ?? flag?.data.command
-    }
+    let command = getProperty(this.object, "flags.dae.macro.command") ?? getProperty(this.object, "flags.itemacro.macro");
     return !!command;
   }
 
   getMacro(): Macro {
-    let command = getProperty(this.object, "flags.dae.macro")?.command ?? "";
-    if (!command) {
-      command = getProperty(this.object, "flags.itemacro.macro")?.command;
-    }
+    let command = getProperty(this.object, "flags.dae.macro.command") 
+      ?? getProperty(this.object, "flags.itemacro.macro.command") 
+      ?? getProperty(this.object, "flags.itemacro.macro.data.command") 
+      ?? "";
+  
     debug("DIMEditor | getMacro | ", { command });
 
     //@ts-expect-error img

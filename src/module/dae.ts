@@ -1120,22 +1120,29 @@ export async function evalArgs({ effectData = null, item, context, actor, change
   return returnChange;
 }
 
-export async function getMacro({ change, name }, item, effectData) {
+export async function getMacro({ change, name }, item, effectData): Promise<Macro | undefined> {
   if (change.key.includes("macro.execute")) {
     let macro = game.macros.getName(name);
     let itemOrMacro;
     if (!macro) itemOrMacro = await fromUuid(name);
     if (itemOrMacro) {
       if (itemOrMacro instanceof Item) {
-        macro = getProperty(item, "flags.dae.macro") ?? getProperty(item, "flags.itemacro.macro");
-        return macro;
+        const macroData = getProperty(item, "Flags.dae.macro") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro");
+        if (!macroData.command && macroData.data.command) {
+          macroData.command = macroData.data.command;
+          delete macroData.data.command;
+        };
+        macroData.flags = mergeObject(macroData.flags ?? {}, { "dnd5e.itemMacro": true })
+        return CONFIG.Macro.documentClass.create(macroData, { displaySheet: false, temporary: true });
       } else if (itemOrMacro instanceof Macro) {
         return itemOrMacro;
       }
+      // Other uuids are not valid
+      return undefined;
     }
   } else if (change.key.startsWith("macro.itemMacro")) {
     let macroCommand = getProperty(item, "Flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
-    const itemData = getProperty(effectData, "flags.ade.itemData");
+    const itemData = getProperty(effectData, "flags.dae.itemData");
     if (!macroCommand && itemData) macroCommand = getProperty(itemData, "flags.dae.macro.command");
     if (!macroCommand && itemData) macroCommand = getProperty(itemData, "flags.itemacro.macro.command");
     if (!macroCommand && itemData) macroCommand = getProperty(itemData, "flags.itemacro.macro.data.command");
@@ -1171,6 +1178,7 @@ export async function getMacro({ change, name }, item, effectData) {
   } else if (change.key === "actorUpdate") {
     console.error("Should not be trying to lookup the macro for actorUpdate")
   }
+  return undefined;
 }
 /*
  * appply non-transfer effects to target tokens - provided for backwards compat
@@ -1287,7 +1295,7 @@ function updateItemEffects(candidate, updates, options, user) {
   if (options.isUndo) return true;
   if (updates.system.equipped !== undefined || updates.system.attuned !== undefined) {
     // equipped / attuned updated.
-    const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && (updates.system.attuned ?? candidate.system.attuned) ===1;
+    const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && (updates.system.attuned ?? candidate.system.attuned) === 1;
     const effects = candidate.effects.filter(ef => ef.transfer || ef.flags.dae.transfer)
   }
   if (options.isAdvancement) {
@@ -1621,20 +1629,25 @@ function attachItemSheetHeaderButton(app, buttons) {
     icon: 'fas fa-file-pen',
     onclick: ev => { new DIMEditor(app.document, {}).render(true); }
   }
-  const hasMacro = app.object.getFlag("dae", "macro.command") ?? (itemacroActive && !!(app.object.getFlag("itemacro", `macro`)?.command));
-  if (hasMacro) buttonData.color = "#00ff00";
-  buttons.unshift(buttonData)
+  buttons.unshift(buttonData);
 }
 
 function updateSheetHeaderButton(app, [elem], options) {
   if (!daeColorTitleBar || !daeTitleBar) return;
-  if (!elem?.querySelector('.dae-config-actorsheet') && !elem?.querySelector('.dae-config-itemsheet')) return;
-  const daeActorSheetButton = elem.closest('.window-app').querySelector('.dae-config-actorsheet');
-  const daeItemSheetButton = elem.closest('.window-app').querySelector('.dae-config-itemsheet');
-  const hasEffects = app.document.effects.size;
-  if (!!hasEffects) {
-    const sheetButtonToUpdate = !!daeActorSheetButton ? daeActorSheetButton : daeItemSheetButton;
-    sheetButtonToUpdate.style.color = 'yellow';  //that could be added in another setting
+  if (elem?.querySelector('.dae-config-actorsheet') || elem?.querySelector('.dae-config-itemsheet')) {
+    const daeActorSheetButton = elem.closest('.window-app').querySelector('.dae-config-actorsheet');
+    const daeItemSheetButton = elem.closest('.window-app').querySelector('.dae-config-itemsheet');
+    const hasEffects = app.document.effects.size;
+    if (!!hasEffects) {
+      const sheetButtonToUpdate = !!daeActorSheetButton ? daeActorSheetButton : daeItemSheetButton;
+      sheetButtonToUpdate.style.color = 'yellow';  //that could be added in another setting
+    }
+  }
+  if (elem?.querySelector('.dae-dimeditor')) {
+    const daeSheetButton = elem.closest('.window-app').querySelector('.dae-dimeditor');
+    const hasMacro = !!(getProperty(app.object, "flags.dae.macro") ?? getProperty(app.object, "flags.itemacro.macro"));
+    if (hasMacro)
+    daeSheetButton.style.color = 'yellow';  //that could be added in another setting
   }
 }
 
@@ -1666,18 +1679,8 @@ export function fetchParams(doUpdatePatches = true) {
   disableEffects = game.settings.get("dae", "disableEffects");
   daeTitleBar = game.settings.get("dae", "DAETitleBar");
   daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
-  daeNoTitleText = game.settings.get("dae", "DAENoTitleText");  
+  daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
 
-  let useDAESheet = game.settings.get("dae", "useDAESheet");
-  if (useDAESheet) { // TODO v10 Do this properly
-    if (CONFIG.ActiveEffect.sheetClasses.base)
-      CONFIG.ActiveEffect.sheetClasses.base["core.ActiveEffectConfig"].cls = DAEActiveEffectConfig;
-  } else {
-    if (CONFIG.ActiveEffect.sheetClasses.base)
-      CONFIG.ActiveEffect.sheetClasses.base["core.ActiveEffectConfig"].cls = ActiveEffectConfig;
-
-    // CONFIG.ActiveEffect.sheetClass = ActiveEffectConfig;
-  }
   expireRealTime = game.settings.get("dae", "expireRealTime");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   showInline = game.settings.get("dae", "showInline") ?? false;
