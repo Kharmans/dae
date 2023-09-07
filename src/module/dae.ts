@@ -29,6 +29,7 @@ export var expireRealTime
 export var noDupDamageMacro;
 export var disableEffects;
 export var daeTitleBar;
+export var daeColorTitleBar;
 export var daeNoTitleText;
 export var libWrapper;
 export var needStringNumericValues;
@@ -1577,6 +1578,8 @@ export function daeInitActions() {
   // Add the active effects title bar actions
   Hooks.on("getActorSheetHeaderButtons", attachActorSheetHeaderButton);
   Hooks.on("getItemSheetHeaderButtons", attachItemSheetHeaderButton);
+  Hooks.on('renderActorSheet', updateSheetHeaderButton);
+  Hooks.on('renderItemSheet', updateSheetHeaderButton);
   Hooks.on("preDeleteCombat", preDeleteCombatHook);
   Hooks.on("preCreateCombatant", preCreateCombatantHook);
 
@@ -1598,6 +1601,7 @@ function attachActorSheetHeaderButton(app, buttons) {
     onclick: ev => { new ActiveEffects(app.document, {}).render(true); }
   })
 }
+
 function attachItemSheetHeaderButton(app, buttons) {
   if (!daeTitleBar) return;
   const title = game.i18n.localize('dae.ActiveEffectName');
@@ -1619,6 +1623,18 @@ function attachItemSheetHeaderButton(app, buttons) {
   const hasMacro = app.object.getFlag("dae", "macro.command") ?? (itemacroActive && !!(app.object.getFlag("itemacro", `macro`)?.command));
   if (hasMacro) buttonData.color = "#00ff00";
   buttons.unshift(buttonData)
+}
+
+function updateSheetHeaderButton(app, [elem], options) {
+  if (!daeColorTitleBar || !daeTitleBar) return;
+  if (!elem?.querySelector('.dae-config-actorsheet') && !elem?.querySelector('.dae-config-itemsheet')) return;
+  const daeActorSheetButton = elem.closest('.window-app').querySelector('.dae-config-actorsheet');
+  const daeItemSheetButton = elem.closest('.window-app').querySelector('.dae-config-itemsheet');
+  const hasEffects = app.document.effects.size;
+  if (!!hasEffects) {
+    const sheetButtonToUpdate = !!daeActorSheetButton ? daeActorSheetButton : daeItemSheetButton;
+    sheetButtonToUpdate.style.color = 'yellow';  //that could be added in another setting
+  }
 }
 
 export function daeSetupActions() {
@@ -1648,7 +1664,19 @@ export function fetchParams(doUpdatePatches = true) {
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
   disableEffects = game.settings.get("dae", "disableEffects");
   daeTitleBar = game.settings.get("dae", "DAETitleBar");
-  daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
+  daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
+  daeNoTitleText = game.settings.get("dae", "DAENoTitleText");  
+
+  let useDAESheet = game.settings.get("dae", "useDAESheet");
+  if (useDAESheet) { // TODO v10 Do this properly
+    if (CONFIG.ActiveEffect.sheetClasses.base)
+      CONFIG.ActiveEffect.sheetClasses.base["core.ActiveEffectConfig"].cls = DAEActiveEffectConfig;
+  } else {
+    if (CONFIG.ActiveEffect.sheetClasses.base)
+      CONFIG.ActiveEffect.sheetClasses.base["core.ActiveEffectConfig"].cls = ActiveEffectConfig;
+
+    // CONFIG.ActiveEffect.sheetClass = ActiveEffectConfig;
+  }
   expireRealTime = game.settings.get("dae", "expireRealTime");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   showInline = game.settings.get("dae", "showInline") ?? false;

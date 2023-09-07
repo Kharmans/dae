@@ -1,6 +1,17 @@
 import { fetchParams } from "./dae";
 
 export const registerSettings = function () {
+
+  game.settings.register("dae", "useDAESheet", {
+    scope: "world",
+    default: true,
+    config: true,
+    type: Boolean,
+    onChange: fetchParams,
+    name: game.i18n.localize("dae.useDAESheet.Name"),
+    hint: game.i18n.localize("dae.useDAESheet.Hint"),
+  });
+
   game.settings.register("dae", "noDupDamageMacro", {
     name: "dae.noDupDamageMacro.Name",
     hint: "dae.noDupDamageMacro.Hint",
@@ -43,6 +54,16 @@ export const registerSettings = function () {
   game.settings.register("dae", "DAETitleBar", {
     name: game.i18n.localize("dae.DAETitleBar.Name"),
     hint: game.i18n.localize("dae.DAETitleBar.Hint"),
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
+  game.settings.register("dae", "DAEColorTitleBar", {
+    name: game.i18n.localize("dae.DAEColorTitleBar.Name"),
+    hint: game.i18n.localize("dae.DAEColorTitleBar.Hint"),
     scope: "world",
     default: true,
     type: Boolean,
