@@ -1,4 +1,5 @@
 import { debug } from "../../dae.js";
+import { itemacroActive } from "../dae.js";
 export class DIMEditor extends FormApplication {
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
@@ -20,8 +21,8 @@ export class DIMEditor extends FormApplication {
   getData(options = {}) {
     const macroTypes = game.documentTypes.Macro.reduce((obj, t) => {
       //@ts-expect-error
-      if ( t === CONST.BASE_DOCUMENT_TYPE ) return obj;
-      if ( (t === "script") && !game.user.can("MACRO_SCRIPT") ) return obj;
+      if (t === CONST.BASE_DOCUMENT_TYPE) return obj;
+      if ((t === "script") && !game.user.can("MACRO_SCRIPT")) return obj;
       obj[t] = game.i18n.localize(CONFIG.Macro.typeLabels[t]);
       return obj;
     }, {});
@@ -72,11 +73,11 @@ export class DIMEditor extends FormApplication {
   }
 
   getMacro(): Macro {
-    let command = getProperty(this.object, "flags.dae.macro.command") 
-      ?? getProperty(this.object, "flags.itemacro.macro.command") 
-      ?? getProperty(this.object, "flags.itemacro.macro.data.command") 
+    let command = getProperty(this.object, "flags.dae.macro.command")
+      ?? getProperty(this.object, "flags.itemacro.macro.command")
+      ?? getProperty(this.object, "flags.itemacro.macro.data.command")
       ?? "";
-  
+
     debug("DIMEditor | getMacro | ", { command });
 
     //@ts-expect-error img
@@ -87,7 +88,16 @@ export class DIMEditor extends FormApplication {
     if (macro instanceof Macro) {
       //@ts-expect-error toObject
       const data = macro.toObject();
-      return await this.object.setFlag("dae", `macro`, data);
+      await this.object.setFlag("dae", `macro`, data);
+      if (getProperty(this.object, "flags.itemacro.macro") || itemacroActive)
+        await this.object.update({"flags.itemacro.macro": data});
     }
+  }
+
+  public static preUpdateItemHook(item, updates, context, user): boolean {
+    if (!getProperty(updates, "flags.itemacro.macro")) return true;
+    if (getProperty(updates, "flags.dae.macro")) return true;
+    updates["flags.dae.macro"] = getProperty(updates, "flags.itemacro.macro");
+    return true;
   }
 }

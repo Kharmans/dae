@@ -1466,6 +1466,9 @@ export function daeReadyActions() {
     const ceItemId = game.settings.get("dfreds-convenient-effects", "customEffectsItemId");
     CECustomEffectsItemUuid = game.items.get(ceItemId)?.uuid;
   }
+  if (itemacroActive) {
+    Hooks.on("preUpdateItem", DIMEditor.preUpdateItemHook);
+  }
 }
 
 export function localDeleteFilters(tokenId: string, filterName: string) {

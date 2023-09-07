@@ -60,7 +60,7 @@ getData() {
     }
     let specialDuration = getProperty(ae.flags, "dae.specialDuration") || [daeSpecialDurations["None"]];
     if (typeof specialDuration === "string") specialDuration = [ae.flags.dae.specialDuration]
-    newAe.duration.label += ", " + `[${specialDuration.map(dur => daeSpecialDurations[dur])}]`;
+    newAe.duration.label += ", " + `[${specialDuration.map(dur => (daeSpecialDurations[dur], dur))}]`;
     newAe.isTemporary  = true;
     newAe.isTemporary = ae.isTemporary ;
     newAe.sourceName = `(${ae.sourceName ?? "Unknown"})`;

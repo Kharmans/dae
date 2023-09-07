@@ -1,3 +1,10 @@
+### 11.0.12.2
+* Dime/Itemacro editors can now be used interchangealbly
+
+### 11.0.12.1
+* Fix for some missed itemacro/dime interations
+* Added colored dae/dime title bar items - thanks @thatlonelybugbear
+
 ### 11.0.12
 * Added DAE Item Macro Editor (DIME) which is a complete replacement for itemacro. DIME will pick up any itemacro macros present on the item. When the macro is saved the macro command is stored on flags.dae.macro.
 * Fix for getRollData to return a tokenId/tokenUuid where possible.
