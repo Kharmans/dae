@@ -12,6 +12,7 @@ import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEff
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken, deleteItemActiveEffects } from './module/daeMacros';
 import { ItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
 import { ValidSpec, wildcardEffects } from './module/Systems/DAESystem';
+import { DIMEditor } from './module/apps/DIMEditor';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = { "none": 0, "warn": 1, "debug": 2, "all": 3 }[debugText] || 0;
@@ -38,14 +39,12 @@ export var daeUntestedSystems: boolean;
 /* ------------------------------------ */
 Hooks.once('init', async function () {
   debug('Init setup actions');
-  CONFIG.compatibility.excludePatterns.push(new RegExp("/modules/itemacro/"));
   CONFIG.compatibility.excludePatterns.push(new RegExp("/modules/socketlib/"));
   CONFIG.compatibility.excludePatterns.push(new RegExp("/modules/libWrapper/"));
 
 
   const daeFlags = game.modules.get("dae").flags;
   const systemDaeFlag = game.system.flags?.daeCompatible;
-
   if (daeFlags.compatible?.includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
   else if (daeFlags.incompatible?.includes(game.system.id) || systemDaeFlag === false) gameSystemCompatible = "no";
 
@@ -133,6 +132,7 @@ Hooks.once('setup', function () {
       daeSpecialDurations: () => { return daeSpecialDurations },
       deleteActiveEffect,
       deleteItemActiveEffects,
+      DIMEditor,
       doEffects,
       fixTransferEffects: fixTransferEffects,
       fixupDDBAC: fixupDDBAC,

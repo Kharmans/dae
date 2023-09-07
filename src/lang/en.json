@@ -214,8 +214,7 @@
     "dae.temporaryFilter": "Timed effects",
     "dae.Priority": "Priority",
     "dae.Stackable": "Stackable",
-    "dae.useDAESheet.Name": "Use the DAE Active Effect Config Sheet?",
-    "dae.useDAESheet.Hint": "If false uses the Core ActiveEffectConfig Sheet",
+    "dae.EffectSheetLabel": "DAE Active Effect Sheet",
     "dae.confirm": "Confirmation Dialog",
     "dae.sure": "Are you sure?",
     "dae.dae": "DAE",
@@ -353,5 +352,6 @@
     "dae.ShowIcon.Name": "Always Show Effect Icon",
     "dae.ShowIcon.Hint": "Display the effect Icon on the token and combat display",
     "dae.DontApply.Name": "Don't apply the effect",
-    "dae.DontApply.Hint": "When Dae (and midi) applies active effects, skip this one"
+    "dae.DontApply.Hint": "When Dae (and midi) applies active effects, skip this one",
+    "dae.DIMEditor.Name": "DIME"
   }

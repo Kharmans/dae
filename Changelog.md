@@ -1,3 +1,16 @@
+### 11.0.12
+* Added DAE Item Macro Editor (DIME) which is a complete replacement for itemacro. DIME will pick up any itemacro macros present on the item. When the macro is saved the macro command is stored on flags.dae.macro.
+* Fix for getRollData to return a tokenId/tokenUuid where possible.
+* When calling item macros preferentially lookup flags.dae.macro and if not present flags.itemacro.macro.
+* Fix for not using the preparedData for item effects when applying effects.
+* Removed support for pre dnd5e v2.2 tool proficiency keys.
+* Added support for post dnd5e v2.2. tool proficiencies. You can set prof/ability/bonus for individual skills or for groups of skills. If you subsequently edit the configuration for a tool proficiency from the tool proficiency config application then the tool proficiency will become permanent (i.e. removing the active effect will not remove the proficiency which you will need to remove by hand).
+* Fix for system.traits.weaponProf.value not being reflected in items with proficiency automatic.
+* **Breaking** DAE now respects the standard foundry way of setting which sheet to use when editing an effect. You can specify the desired sheet via the sheet configuration dialog. The DAE sheet can either be chosen per effect or set as default.
+
+### 11.0.11
+* Patch so that dnd5e dropping of Convenient effects to items does not fail.
+
 ### 11.0.10
 * Dae now uses the configured vision modes to create the ATL.sight.VisionMode dropdown.
 * Dae now uses the configured detection modes when creating the keys ATL.detecectionModes.XXXX.range keys. SO detect magic spell should now e possible via an active effect.
@@ -14,7 +27,7 @@
 ```
 
 ### 11.0.7.1
-* Remove out of data premadeitems compendium
+* Remove out of date premadeitems compendium
 
 ### 11.0.7
 * Added a fix for DAE potentially throwing an error when dfreds modules not including convenient-effects are loaded. This is a DAE problem not a dfreds issue.
