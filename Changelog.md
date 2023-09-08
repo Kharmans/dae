@@ -1,3 +1,6 @@
+### 11.0.12.4
+* Make the DAE active effect editor the default sheet
+
 ### 11.0.12.3
 * Fix for etror being thrown when editing an item.
 

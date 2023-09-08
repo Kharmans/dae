@@ -345,7 +345,7 @@ Hooks.once("setup", () => {
     DAEActiveEffectConfig, 
     {
       label: i18n("dae.EffectSheetLabel"),
-      makeDefault: false,
+      makeDefault: true,
       canBeDefault: true,
       canConfigure: true
     });
