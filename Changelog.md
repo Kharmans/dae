@@ -1,3 +1,6 @@
+### 11.0.13
+* Fix for effect suppression not working.
+
 ### 11.0.12.4
 * Make the DAE active effect editor the default sheet
 

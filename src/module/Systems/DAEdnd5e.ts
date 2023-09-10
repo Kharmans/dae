@@ -1156,14 +1156,35 @@ async function _updateObject(event, formData) {
   await actor.update(diffObject(actor.overrides || {}, updateData), { diff: false });
 }
 
+export function getActorItemForEffect(effect: any /* ActiveEffect */) {
+  if (!effect.origin) return undefined;
+  const parts = effect.origin?.split(".") ?? [];
+  const [parentType, parentId, documentType, documentId] = parts;
+  let item;
+  // Case 1: effect is a linked or sidebar actor - only if the actor ids match
+  if ( parentType === "Actor" && documentType === "Item"  && parentId === effect.parent.id) {
+    item = effect.parent.items.get(documentId);
+  }
+  // Case 2: effect is a synthetic actor on the scene - only if the token ids match
+  else if ( parentType === "Scene" ) {
+    const [parentType, parentId, tokeyType, tokenId, syntheticActor, sntheticActorId, syntheticItem, syntheticItemId] = parts;
+    if ( (tokenId === effect.parent.token?.id) && (syntheticItem === "Item") )
+      item = effect.parent.items.get(syntheticItemId);
+  }
+  // Case 3: effect is a compendium item - only if the item id is present on the actor
+  if (parentType === "Compendium") {
+    let matches = effect.origin.match(/Compendium\.(.+)\.(.+?)Item\.(.+)/);
+    if (matches && matches[3]) item = effect.parent.items.get(matches[3]);
+  }
+  return item;
+}
 function determineSuppression() {
   this.isSuppressed = false;
   if (this.disabled || (this.parent.documentName !== "Actor")) return;
+  //TODO when dnd5e fixed make this a call to wrapped.
   if (this.origin) {
-    //@ts-expect-error fromUuidSync
-    const originObject = fromUuidSync(origin)
-    //@ts-expect-error areeffectsSuppressed
-    if (originObject instanceof Item) this.isSuppressed = originObject.areEffectsSuppressed;
+    const item = getActorItemForEffect(this);
+    if ( item ) this.isSuppressed = item.areEffectsSuppressed;
   }
   if (this.parent?.system.traits) {
     let customStats: Array<string> = this.parent.system.traits.ci?.custom?.split(';').map(s => s.trim().toLocaleLowerCase());
@@ -1171,7 +1192,7 @@ function determineSuppression() {
     const statusId = duplicate(this.name ?? "no effect").toLocaleLowerCase();
     const capStatusId = duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
     const ciSuppressed = ci?.has(statusId) || ci?.has(`Convenient Effect: ${capStatusId}`);
-    this.isSuppressed = Boolean(ciSuppressed);
+    if (Boolean(ciSuppressed)) this.isSuppressed = true;
   }
 }
 
