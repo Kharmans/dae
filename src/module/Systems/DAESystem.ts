@@ -189,13 +189,18 @@ function getRollData(wrapped, ...args): any {
     });
     Object.defineProperty(data, "tokenUuid", {
       get() { // During initialisation getSelfTarget will return a token document not a token
+        if(data._tokenUuid) return data.token_uuid;
         if (data.token instanceof Token)
           return data.token?.document.uuid ?? "undefined";
         else return data.token.uuid ?? "undefined"
+      },
+      set(uuid) {
+        data._tokenUuid = uuid;
       }
     });
     Object.defineProperty(data, "tokenId", {
-      get() {return data.token?.id ?? "undefined";}
+      get() {return data._tokenId ?? data.token?.id ?? "undefined"},
+      set(tokenId) {data._tokenId = tokenId}
     });
   }
   return data;

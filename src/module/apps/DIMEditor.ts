@@ -88,16 +88,17 @@ export class DIMEditor extends FormApplication {
     if (macro instanceof Macro) {
       //@ts-expect-error toObject
       const data = macro.toObject();
-      await this.object.setFlag("dae", `macro`, data);
-      if (getProperty(this.object, "flags.itemacro.macro") || itemacroActive)
-        await this.object.update({"flags.itemacro.macro": data});
+      await this.object.setFlag("itemacro", `macro`, data);
+      await this.object.unsetFlag("dae", `macro`);
+      // if (getProperty(this.object, "flags.itemacro.macro") || itemacroActive)
+      //   await this.object.update({"flags.itemacro.macro": data});
     }
   }
 
   public static preUpdateItemHook(item, updates, context, user): boolean {
     if (!getProperty(updates, "flags.itemacro.macro")) return true;
-    if (getProperty(updates, "flags.dae.macro")) return true;
-    updates["flags.dae.macro"] = getProperty(updates, "flags.itemacro.macro");
+    // if (getProperty(updates, "flags.dae.macro")) return true;
+    updates["flags.dae.-=macro"] = null;
     return true;
   }
 }

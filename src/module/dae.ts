@@ -1123,8 +1123,9 @@ export async function evalArgs({ effectData = null, item, context, actor, change
 export async function getMacro({ change, name }, item, effectData): Promise<Macro | undefined> {
   if (change.key.includes("macro.execute")) {
     let macro = game.macros.getName(name);
+    if (macro) return macro;
     let itemOrMacro;
-    if (!macro) itemOrMacro = await fromUuid(name);
+    itemOrMacro = await fromUuid(name);
     if (itemOrMacro) {
       if (itemOrMacro instanceof Item) {
         const macroData = getProperty(item, "Flags.dae.macro") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro");
@@ -1648,7 +1649,7 @@ function updateSheetHeaderButton(app, [elem], options) {
   }
   if (elem?.querySelector('.dae-dimeditor')) {
     const daeSheetButton = elem.closest('.window-app').querySelector('.dae-dimeditor');
-    const hasMacro = !!(getProperty(app.object, "flags.dae.macro") ?? getProperty(app.object, "flags.itemacro.macro"));
+    const hasMacro = !!(getProperty(app.object, "flags.dae.macro.command") ?? getProperty(app.object, "flags.itemacro.macro.command"));
     if (hasMacro)
     daeSheetButton.style.color = 'yellow';  //that could be added in another setting
   }

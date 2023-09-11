@@ -1,5 +1,12 @@
+### 11.0.14
+* DIME now always writes changes to flags.itemacro.macro. It will still pick flags.dae.macro, but on save will remove flags.dae.macro and write to flags.itemacro.macro.
+
 ### 11.0.13
 * Fix for effect suppression not working.
+
+### 11.0.13
+* switch DIME to always use flags.itemacro, support fetching both flags.dae.macro and flags.itemacro.
+* Fix for macro.execute CUSTOM macro-name not working.
 
 ### 11.0.12.4
 * Make the DAE active effect editor the default sheet
