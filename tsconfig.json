@@ -3,13 +3,12 @@
     "types": ["@league-of-foundry-developers/foundry-vtt-types/index-lenient"],
     "moduleResolution": "node",
     "strictNullChecks": true,
-    "target": "ES2020",
+    "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
     "lib": [
-	"DOM",
-	"ES6",
-	"ES2020"
+      "ESNext",
+      "DOM"
     ],
     "resolveJsonModule": true,
     /**
