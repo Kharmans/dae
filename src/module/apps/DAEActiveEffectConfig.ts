@@ -179,18 +179,17 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.submitText = "EFFECT.Submit";
     //@ts-ignore
     data.effect.changes.forEach(change => {
-      if (change.key.startsWith("flags.midi-qol")) {
-        //@ts-ignore
-        change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
-      }
-      else if ([-1, undefined].includes(validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
+      if ([-1, undefined].includes(validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
         change.modes = allModes;
-      }
-      else {
+      } else if (validSpecsToUse.allSpecsObj[change.key]) {
         const mode = {};
         mode[validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
         change.modes = mode;
+      } else if (!validSpecsToUse.allSpecsObjchange.key.startsWith("flags.midi-qol")) {
+        //@ts-ignore
+        change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
       }
+
       change.options = this.getOptionsForSpec(change.key);
       if (!change.priority) change.priority = change.mode * 10;
     });

@@ -345,6 +345,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
     this.configureLists(null);
+    Hooks.once("babel.ready", () => { this.configureLists(null); });
   }
   public static setupActions(): void {
   }
@@ -474,26 +475,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
       this.conditionList[`-${type}`] = `-${daeSystemClass.systemConfig.conditionTypes[type]}`;
     });
-    if (this.profInit) {
-      this.toolProfList = this.toolProfList;
-      this.armorProfList = this.armorProfList;
-      this.weaponProfList = this.weaponProfList;
-    } else {
-      this.toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
-      Object.keys(daeSystemClass.systemConfig.toolProficiencies).forEach(type => {
-        this.toolProfList[`-${type}`] = `-${daeSystemClass.systemConfig.toolProficiencies[type]}`;
-      });
 
-      this.armorProfList = duplicate(daeSystemClass.systemConfig.armorProficiencies);
-      Object.keys(daeSystemClass.systemConfig.armorProficiencies).forEach(type => {
-        this.armorProfList[`-${type}`] = `-${daeSystemClass.systemConfig.armorProficiencies[type]}`;
-      });
+    this.toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
+    Object.keys(daeSystemClass.systemConfig.toolProficiencies).forEach(type => {
+      this.toolProfList[`-${type}`] = `-${daeSystemClass.systemConfig.toolProficiencies[type]}`;
+    });
 
-      this.weaponProfList = duplicate(daeSystemClass.systemConfig.weaponProficiencies);
-      Object.keys(daeSystemClass.systemConfig.weaponProficiencies).forEach(type => {
-        this.weaponProfList[`-${type}`] = `-${daeSystemClass.systemConfig.weaponProficiencies[type]}`;
-      });
-    }
+    this.armorProfList = duplicate(daeSystemClass.systemConfig.armorProficiencies);
+    Object.keys(daeSystemClass.systemConfig.armorProficiencies).forEach(type => {
+      this.armorProfList[`-${type}`] = `-${daeSystemClass.systemConfig.armorProficiencies[type]}`;
+    });
+
+    this.weaponProfList = duplicate(daeSystemClass.systemConfig.weaponProficiencies);
+    Object.keys(daeSystemClass.systemConfig.weaponProficiencies).forEach(type => {
+      this.weaponProfList[`-${type}`] = `-${daeSystemClass.systemConfig.weaponProficiencies[type]}`;
+    });
   }
 
   public static getOptionsForSpec(spec) {
@@ -503,7 +499,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return this.conditionList;
     if (spec.match(/system.tools..*prof/))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
-    if (spec.match(/system.tools..*ability/)) 
+    if (spec.match(/system.tools..*ability/))
       return daeSystemClass.systemConfig.abilities;
     if (spec === "system.traits.armorProf.value")
       return this.armorProfList;
@@ -629,12 +625,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       if (change.key === "system.tools.all") {
         for (let prof in this.toolProfList) {
           if (current[prof]) continue;
-          current[prof] = {value: 1, ability: "int", bonuses: {check: ""}}
+          current[prof] = { value: 1, ability: "int", bonuses: { check: "" } }
         }
         return true;
       }
       const [_1, _2, tool, key] = change.key.split(".");
-      if (!current[tool]) current[tool] = {value: 1, ability: "int", bonuses: {check: ""}};
+      if (!current[tool]) current[tool] = { value: 1, ability: "int", bonuses: { check: "" } };
       if (key === "prof") {
         value = Number(change.value);
         current[tool].value = value;
@@ -739,15 +735,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         if (actor.system.traits.armorProf.value instanceof Set)
           setProperty(actor, "system.traits.armorProf.value", new Set(Object.keys(this.armorProfList).filter(k => !k.startsWith("-"))));
         else
-          setProperty(actor, "system.traits.armorProf.value", Object.keys(this.armorProfList).filter(k=> !k.startsWith("-")));
+          setProperty(actor, "system.traits.armorProf.value", Object.keys(this.armorProfList).filter(k => !k.startsWith("-")));
         return true;
       case "system.traits.weaponProf.value": // TODO v10 armor and weapon proiciencies
         return super.doCustomArrayValue(actor, current, change, undefined)
       case "system.traits.weaponProf.all":
         if (actor.system.traits.weaponProf.value instanceof Set)
-          setProperty(actor, "system.traits.weaponProf.value", new Set(Object.keys(this.weaponProfList).filter(k=>!k.startsWith("-"))));
+          setProperty(actor, "system.traits.weaponProf.value", new Set(Object.keys(this.weaponProfList).filter(k => !k.startsWith("-"))));
         else
-          setProperty(actor, "system.traits.weaponProf.value", Object.keys(this.weaponProfList).filter(k=>!k.startsWith("-")));
+          setProperty(actor, "system.traits.weaponProf.value", Object.keys(this.weaponProfList).filter(k => !k.startsWith("-")));
         return true;
       case "system.bonuses.weapon.damage":
         value = this.attackDamageBonusEval(change.value, actor)
@@ -1162,13 +1158,13 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
   const [parentType, parentId, documentType, documentId] = parts;
   let item;
   // Case 1: effect is a linked or sidebar actor - only if the actor ids match
-  if ( parentType === "Actor" && documentType === "Item"  && parentId === effect.parent.id) {
+  if (parentType === "Actor" && documentType === "Item" && parentId === effect.parent.id) {
     item = effect.parent.items.get(documentId);
   }
   // Case 2: effect is a synthetic actor on the scene - only if the token ids match
-  else if ( parentType === "Scene" ) {
+  else if (parentType === "Scene") {
     const [parentType, parentId, tokeyType, tokenId, syntheticActor, sntheticActorId, syntheticItem, syntheticItemId] = parts;
-    if ( (tokenId === effect.parent.token?.id) && (syntheticItem === "Item") )
+    if ((tokenId === effect.parent.token?.id) && (syntheticItem === "Item"))
       item = effect.parent.items.get(syntheticItemId);
   }
   // Case 3: effect is a compendium item - only if the item id is present on the actor
@@ -1184,7 +1180,7 @@ function determineSuppression() {
   //TODO when dnd5e fixed make this a call to wrapped.
   if (this.origin) {
     const item = getActorItemForEffect(this);
-    if ( item ) this.isSuppressed = item.areEffectsSuppressed;
+    if (item) this.isSuppressed = item.areEffectsSuppressed;
   }
   if (this.parent?.system.traits) {
     let customStats: Array<string> = this.parent.system.traits.ci?.custom?.split(';').map(s => s.trim().toLocaleLowerCase());

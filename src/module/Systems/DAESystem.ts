@@ -177,7 +177,7 @@ function getRollData(wrapped, ...args): any {
   if (this.isToken) {
     data.tokenUuid = this.token?.uuid ?? "undefined";
     data.tokenId = this.token?.object?.id ?? "undefined";
-  } else { // create deferred lookups for these since they are a bit expensive
+  } else if (!data.token) { // create deferred lookups for these since they are a bit expensive
     Object.defineProperty(data, "token", {
       get() {
         if (!data._token) {
@@ -185,7 +185,8 @@ function getRollData(wrapped, ...args): any {
           data._token = getSelfTarget(actor);
         }
         return data._token;
-      }
+      },
+      set(token) { data._token = token; }
     });
     Object.defineProperty(data, "tokenUuid", {
       get() { // During initialisation getSelfTarget will return a token document not a token

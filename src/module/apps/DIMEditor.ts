@@ -73,22 +73,22 @@ export class DIMEditor extends FormApplication {
   }
 
   getMacro(): Macro {
-    let command = getProperty(this.object, "flags.dae.macro.command")
-      ?? getProperty(this.object, "flags.itemacro.macro.command")
-      ?? getProperty(this.object, "flags.itemacro.macro.data.command")
-      ?? "";
-
-    debug("DIMEditor | getMacro | ", { command });
-
-    //@ts-expect-error img
-    return new Macro({ command, img: this.object.img, name: this.object.name, scope: "global", type: "script" }, {});
+    let  macroData = getProperty(this.object, "flags.dae.macro")
+      ?? getProperty(this.object, "flags.itemacro.macro")
+      ?? {};
+    
+    if (!macroData.command && macroData.data) macroData = macroData.data;
+    delete macroData.data;
+    macroData = mergeObject(macroData, {img: this.object.img, name: this.object.name, scope: "global", type:"script"});
+    debug("DIMEditor | getMacro | ", { macroData });
+    return new Macro(macroData, {});
   }
 
   async setMacro(macro: Macro) {
     if (macro instanceof Macro) {
       //@ts-expect-error toObject
       const data = macro.toObject();
-      await this.object.setFlag("itemacro", `macro`, data);
+      await this.object.update({"flags.itemacro.macro": data});
       await this.object.unsetFlag("dae", `macro`);
       // if (getProperty(this.object, "flags.itemacro.macro") || itemacroActive)
       //   await this.object.update({"flags.itemacro.macro": data});

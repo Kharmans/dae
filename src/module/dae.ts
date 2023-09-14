@@ -1,7 +1,6 @@
 import { applyActiveEffects, socketlibSocket } from "./GMAction";
 import { warn, error, debug, setDebugLevel, i18n, timelog, changesQueue, daeSpecialDurations } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
-import { DAEActiveEffectConfig } from "./apps/DAEActiveEffectConfig";
 import { macroActorUpdate } from "./daeMacros";
 import { ValidSpec } from "./Systems/DAESystem";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e";
@@ -448,34 +447,36 @@ async function _preCreateActiveEffect(...args) {
   };
 }
 
-function removeExistingEffectsHook(...args) {
+async function removeExistingEffectsHook(...args) {
   let [effect, data, options, user] = args;
+  if (user !== game.user.id) return;
   if (options.isUndo) return true;
   const parent = effect.parent;
-  if (options.isUndo) return true;
-  //@ts-expect-error
-  if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
-  if (!effect.flags?.dae?.specialDuration) effect.updateSource({ "flags.dae.specialDuration": [] });
-  // if (getProperty(effect, "flags.dae.stackable") === undefined) effect.updateSource({ "flags.dae.stackable": "noneName" });
-  const stackable = getProperty(effect, "flags.dae.stackable");
-  if (/* effectIsTransfer(effect) && */["noneName", "none"].includes(stackable)) { // transfer effects should replace the existing effect
-    if (!parent) return true;
-    const hasExisting = parent.effects.filter(ef => {
-      if (ef.id === effect.id) return false;
-      switch (stackable) {
-        case "noneName":
-          return (ef.name || ef.label) === (effect.name || effect.label);
-        case "none":
-          return effect.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === effect.origin && (ef.name ?? ef.label) === (effect.name ?? effect.label);
-      }
-    });
-    if (hasExisting.length === 0) return true;
-    try {
-      if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting)
-      effect.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id));
-    } finally {
-      return true
+  try {
+    //@ts-expect-error
+    if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
+    if (!effect.flags?.dae?.specialDuration) effect.updateSource({ "flags.dae.specialDuration": [] });
+    // if (getProperty(effect, "flags.dae.stackable") === undefined) effect.updateSource({ "flags.dae.stackable": "noneName" });
+    const stackable = getProperty(effect, "flags.dae.stackable");
+    if (effectIsTransfer(effect) && ["noneName", "none"].includes(stackable)) { // transfer effects should replace the existing effect
+      if (!parent) return true;
+      const hasExisting = parent.effects.filter(ef => {
+        if (ef.id === effect.id) return false;
+        switch (stackable) {
+          case "noneName":
+            return (ef.name || ef.label) === (effect.name || effect.label);
+          case "none":
+            return effect.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === effect.origin && (ef.name ?? ef.label) === (effect.name ?? effect.label);
+        }
+      });
+      if (hasExisting.length === 0) return true;
+
+      if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
+      console.warn("removing existing ", hasExisting)
+      await effect.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id));
     }
+  } catch (err) {
+    error("removeExistingEffects ", err);
   }
 }
 
@@ -979,7 +980,14 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         })
       } else args = change.value;
       if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro")) {
-        macro = await getMacro({ change, name: args[0] }, theItem, effectData);
+        if (typeof args[0] === "string" && args[0].startsWith("function.")) {
+          macro = new CONFIG.Macro.documentClass({
+            name: "DAE-Item-Macro",
+            type: "script",
+            img: null,
+            command: `return await ${args[0].replace("function.", "").trim()}.bind(this)({ speaker, actor, token, character, item, args, scope, workflow: scope.workflow })`,
+          }, { displaySheet: false, temporary: true });
+        } else macro = await getMacro({ change, name: args[0] }, theItem, effectData);
         if (!macro) {
           //TODO localize this
           if (action !== "off") {
@@ -1582,7 +1590,7 @@ export function daeInitActions() {
 
 
   Hooks.on("preUpdateActor", preUpdateActorHook);
-  Hooks.on("preCreateActiveEffect", removeExistingEffectsHook)
+  Hooks.on("createActiveEffect", removeExistingEffectsHook)
   Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
   Hooks.on("preUpdateActiveEffect", preUpdateActiveEffectEvalInlineHook)
@@ -1649,9 +1657,9 @@ function updateSheetHeaderButton(app, [elem], options) {
   }
   if (elem?.querySelector('.dae-dimeditor')) {
     const daeSheetButton = elem.closest('.window-app').querySelector('.dae-dimeditor');
-    const hasMacro = !!(getProperty(app.object, "flags.dae.macro.command") ?? getProperty(app.object, "flags.itemacro.macro.command"));
+    const hasMacro = !!(getProperty(app.object, "flags.dae.macro.command") ?? getProperty(app.object, "flags.itemacro.macro.command") ?? getProperty(app.object, "flags.itemacro.macro.data.command"));
     if (hasMacro)
-    daeSheetButton.style.color = 'yellow';  //that could be added in another setting
+      daeSheetButton.style.color = 'yellow';  //that could be added in another setting
   }
 }
 

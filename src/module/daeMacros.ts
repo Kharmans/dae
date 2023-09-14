@@ -94,7 +94,7 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
     return `Token ${targetTokenName} not found`;
   }
   //@ts-ignore target.scene.grid
-  return await teleport(token, scene, found.x + xGridOffset * canvas.scene.grid, found.y + yGridOffset * canvas.scene.grid)
+  return await teleport(token, scene, found.x + xGridOffset * canvas.scene.grid.size, found.y + yGridOffset * canvas.scene.grid.size)
 }
 
 export async function createToken(tokenData, x, y) {
