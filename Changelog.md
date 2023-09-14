@@ -1,8 +1,5 @@
-### 11.0.15
+### 11.0.14
 * DIME now always writes changes to flags.itemacro.macro. It will still pick flags.dae.macro, but on save will remove flags.dae.macro and write to flags.itemacro.macro.
-* Fix for DIME throwing an error if itemacro not installd/active.
-* support macro.ItemMacro/macro.execute both support function.XXXX to call a function instead of executing a macro.
-* fix for DAE.teleportToken function
 
 ### 11.0.13
 * Fix for effect suppression not working.

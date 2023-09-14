@@ -22,7 +22,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLPresets;
   ATLVisionModes;
   validFields;
-  object: any;
+  // object: any; Patch 4535992 Why ???
   constructor(object: any = {}, options = {}) {
     super(object, options);
     this.tokenMagicEffects = {};
