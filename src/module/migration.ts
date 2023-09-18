@@ -2,9 +2,7 @@
 import { debug, warn, log, i18n, error } from "../dae";
 import { effectIsTransfer } from "./dae";
 
-//@ts-ignore
 const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
-
 
 function findDAEItem(item, packs) {
   for (let pack of packs) {
@@ -30,21 +28,21 @@ var dndSRDMonsterfeaturesPack;
 
 export async function loadPacks() {
   if (packsLoaded) return;
-  daeItemPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Items").getDocuments();
-  midiItemPack = await game.packs.get("midi-srd.Midi SRD Items").getDocuments();
+  daeItemPack = await game.packs?.get("Dynamic-Effects-SRD.DAE SRD Items")?.getDocuments();
+  midiItemPack = await game.packs?.get("midi-srd.Midi SRD Items")?.getDocuments();
 
-  daeSpellPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Spells")?.getDocuments();
-  midiSpellPack = await game.packs.get("midi-srd.Midi SRD Spells").getDocuments();
+  daeSpellPack = await game.packs?.get("Dynamic-Effects-SRD.DAE SRD Spells")?.getDocuments();
+  midiSpellPack = await game.packs?.get("midi-srd.Midi SRD Spells")?.getDocuments();
 
-  daeFeatsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Feats").getDocuments();
-  midiFeatsPack = await game.packs.get("midi-srd.Midi SRD Feats").getDocuments();
+  daeFeatsPack = await game.packs?.get("Dynamic-Effects-SRD.DAE SRD Feats")?.getDocuments();
+  midiFeatsPack = await game.packs?.get("midi-srd.Midi SRD Feats")?.getDocuments();
 
-  magicItemsPack = await game.packs.get("Dynamic-Effects-SRD.DAE SRD Magic Items").getDocuments();
-  dndSRDItemsPack = await game.packs.get(`${game.system.id}.items`).getDocuments();
-  dndSRDSpellsPack = await game.packs.get(`${game.system.id}.spells`).getDocuments();
-  dndSRDclassesPack = await game.packs.get(`${game.system.id}.classes`).getDocuments();
-  dndSRDMonsterfeaturesPack = await game.packs.get(`${game.system.id}.monsterfeatures`)?.getDocuments();
-  dndSRDClassfeaturesPack = await game.packs.get(`${game.system.id}.classfeatures`)?.getDocuments();
+  magicItemsPack = await game.packs?.get("Dynamic-Effects-SRD.DAE SRD Magic Items")?.getDocuments();
+  dndSRDItemsPack = await game.packs?.get(`${game.system.id}.items`)?.getDocuments();
+  dndSRDSpellsPack = await game.packs?.get(`${game.system.id}.spells`)?.getDocuments();
+  dndSRDclassesPack = await game.packs?.get(`${game.system.id}.classes`)?.getDocuments();
+  dndSRDMonsterfeaturesPack = await game.packs?.get(`${game.system.id}.monsterfeatures`)?.getDocuments();
+  dndSRDClassfeaturesPack = await game.packs?.get(`${game.system.id}.classfeatures`)?.getDocuments();
   packsLoaded = true;
 }
 
@@ -59,7 +57,7 @@ export async function migrateAllActorsDAESRD(includeSRD = false) {
     error("DAE SRD Module not active");
     return;
   }
-  for (let a of game.actors) {
+  for (let a of game.actors ?? []) {
     await migrateActorDAESRD(a, includeSRD);
   };
 }
@@ -75,8 +73,7 @@ export async function migrateAllNPCDAESRD(includeSRD = false) {
     error("DAE SRD Module not active");
     return;
   }
-  for (let a of game.actors) {
-    //@ts-ignore
+  for (let a of game.actors ?? []) {
     if (a.type !== "character") {
       await migrateActorDAESRD(a, includeSRD);
     };
@@ -96,7 +93,7 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
   }
   if (!packsLoaded) await loadPacks();
   const items = actor._source.items;
-  let replaceItems = [];
+  let replaceItems: any[] = [];
   let count = 0;
   items.forEach(item => {
     let replaceData: any;
@@ -168,19 +165,23 @@ function removeDynamiceffects(actor) {
 export async function fixupDDBAC(allActors = false) {
   try {
     const itemName = "DDB AC";
-    const content = await game.packs.get("dae.premadeitems").getDocuments();
-    const item = content.find(i => i.name === itemName);
-    let items = game.actors.filter(a => a.flags.ddbimporter && a.flags.ddbimporter.baseAC)
-      .filter(a => allActors || a.type === "character")
-      .filter(a => !a.items.getName(itemName))
-      .forEach(a => a.createEmbeddedDocuments("Item", [item.toObject()]))
+    const content = await game.packs?.get("dae.premadeitems")?.getDocuments();
+    const item = content?.find(i => i.name === itemName);
+    if (item) {
+      //@ts-expect-error .flags
+      let items = (game.actors ?? []).filter(a => a.flags.ddbimporter && a.flags.ddbimporter.baseAC)
+        .filter(a => allActors || a.type === "character")
+        .filter(a => !a.items.getName(itemName))
+        .forEach(a => a.createEmbeddedDocuments("Item", [item.toObject()]))
+    }
   } catch (err) {
     error("migration did not complete", err);
   }
 }
 
 export function checkLibWrapperVersion() {
-  if (isNewerVersion("1.8.0", game.modules.get("lib-wrapper").version)) {
+  //@ts-expect-error .version
+  if (isNewerVersion("1.8.0", game.modules.get("lib-wrapper")?.version)) {
     let d = new Dialog({
       // localize this text
       title: i18n("dae.confirm"),
@@ -204,16 +205,14 @@ export async function cleanDAEArmorWorld() {
 
 export async function removeAllActorArmorItems() {
   let promises = [];
-  for (let actor of game.actors) {
-    //@ts-ignore
+  if (game.actors) for (let actor of game.actors) {
     await removeActorArmorItems(actor);
   }
 }
 
 export async function removeAllTokenArmorItems() {
   let promises = [];
-  for (let scene of game.scenes) {
-    //@ts-ignore
+  if (game.scenes) for (let scene of game.scenes) {
     for (let tokenDocument of scene.tokens) {
       if (!tokenDocument.isLinked && tokenDocument.actor) {
         await removeActorArmorItems(tokenDocument.actor);
@@ -225,22 +224,18 @@ export async function removeAllTokenArmorItems() {
 export async function removeActorArmorItems(actor: Actor) {
   let promises = [];
   for (let item of actor.items) {
-    let toDelete = [];
-    //@ts-ignore
+    let toDelete: string[] = [];
     if (!item.effects) continue;
-    //@ts-ignore
     for (let effect of item.effects) {
+      //@ts-expect-error .changes
       for (let change of effect.changes) {
         if (change.key === "data.attributes.ac.value" && change.value === "AutoCalc") {
-          //@ts-ignore
           console.warn("Removing DAE Item ", actor.name, item.name, item.id)
-          //@ts-ignore
-          toDelete.push(item.id)
+          if (item.id) toDelete.push(item.id)
         }
       }
     }
     if (toDelete.length > 0) {
-      //@ts-ignore
       await actor.deleteEmbeddedDocuments("Item", toDelete)
     }
   }
@@ -250,27 +245,29 @@ export async function cleanEffectOrigins(processItems: boolean = false) {
   await cleanAllActorEffectOrigins();
   await cleanAllTokenEffectOrigins();
   if (processItems) {
-    await  cleanAllActorItemsEffectOrigins();
+    await cleanAllActorItemsEffectOrigins();
     await cleanAllTokenEffectOrigins()
   }
 }
 
 export async function cleanAllActorEffectOrigins() {
-  //@ts-ignore
-  for (let actor of game.actors.contents) {
-    //@ts-ignore
+  //@ts-expect-error
+  for (let actor of game.actors?.contents) {
+    //@ts-expect-error
     let ownedItemEffects = actor.effects.filter(ef => ef.origin?.includes("OwnedItem"));
+    //@ts-expect-error .origin
     let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin.replace("OwnedItem", "Item") } });
     if (updates.length > 0) {
       await actor.updateEmbeddedDocuments("ActiveEffect", updates)
       console.warn("Updates are ", actor.name, updates)
     }
-    const itemChanges = [];
+    const itemChanges: any[] = [];
     for (let item of actor.items) {
+      //@ts-expect-error .origin
       if (!(item.effects.some(ef => ef.origin?.includes("OwnedItem")))) continue;
       const itemData = item.toObject(true);
       for (let effectData of itemData.effects)
-        if (effectData.origin) effectData.origin = effectData.origin.replace("OwnedItem", "Item")
+        if (typeof effectData.origin === "string") effectData.origin = effectData.origin.replace("OwnedItem", "Item")
       itemChanges.push(itemData);
     }
     if (itemChanges.length > 0) {
@@ -281,9 +278,8 @@ export async function cleanAllActorEffectOrigins() {
 }
 
 export async function cleanAllTokenItemEffectOrigins() {
-  for (let scene of game.scenes) {
-    //@ts-ignore
-    for (let tokenDocument of scene.tokens) {
+  if (game.scenes) for (let scene of game.scenes) {
+    if (scene.tokens) for (let tokenDocument of (scene.tokens)) {
       if (!tokenDocument.isLinked && tokenDocument.actor) {
         const actor = tokenDocument.actor;
         cleanActorItemsEffectOrigins(actor)
@@ -293,17 +289,16 @@ export async function cleanAllTokenItemEffectOrigins() {
 }
 
 export async function cleanAllActorItemsEffectOrigins() {
-  //@ts-ignore
-  for (let actor of game.actors.contents) 
-  await cleanActorItemsEffectOrigins(actor)
+  if (game.actors) for (let actor of game.actors)
+    await cleanActorItemsEffectOrigins(actor)
 }
 export async function cleanActorItemsEffectOrigins(actor) {
-  const itemChanges = [];
+  const itemChanges: any[] = [];
   for (let item of actor.items) {
     if (!(item.effects.some(ef => ef.origin?.includes("OwnedItem")))) continue;
     const itemData = item.toObject(true);
     for (let effectData of itemData.effects)
-      if (effectData.origin) effectData.origin = effectData.origin.replace("OwnedItem", "Item")
+      if (typeof effectData.origin === "string") effectData.origin = effectData.origin.replace("OwnedItem", "Item")
     itemChanges.push(itemData);
   }
   if (itemChanges.length > 0) {
@@ -313,12 +308,13 @@ export async function cleanActorItemsEffectOrigins(actor) {
 }
 
 export async function cleanAllTokenEffectOrigins() {
-  for (let scene of game.scenes) {
-    //@ts-ignore
+  if (game.scenes) for (let scene of game.scenes) {
     for (let tokenDocument of scene.tokens) {
       if (!tokenDocument.isLinked && tokenDocument.actor) {
         const actor = tokenDocument.actor;
+        //@ts-expect-error .origin
         let ownedItemEffects = actor.effects.filter(ef => ef.origin?.includes("OwnedItem"));
+        //@ts-expect-error .origin
         let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin.replace("OwnedItem", "Item") } });
         if (updates.length > 0) {
           await actor.updateEmbeddedDocuments("ActiveEffect", updates)
@@ -329,9 +325,11 @@ export async function cleanAllTokenEffectOrigins() {
 }
 
 export async function tobMapper(iconsPath = "icons/TOBTokens") {
-  const pack = game.packs.get("tome-of-beasts.beasts");
-  await pack.getDocuments();
-  let details = pack.contents.map(a => a._source);
+  const pack = game.packs?.get("tome-of-beasts.beasts");
+  await pack?.getDocuments();
+  if (!pack) return;
+  //@ts-expect-error ._source
+  let details: any[] = pack?.contents.map(a => a._source);
   let detailNames = duplicate(details).map(detail => {
     let name = detail.name
       .replace(/[_\-,'"]/g, "")
@@ -349,7 +347,7 @@ export async function tobMapper(iconsPath = "icons/TOBTokens") {
   detailNames = detailNames.sort((a, b) => b.splitName.length - a.splitName.length)
   let fields = details.map(a => { return { "name": a.name, "id": a._id, "tokenimg": a.prototypeToken.texture.src } });
   let count = 0;
-  game.socket.emit("manageFiles", { action: "browseFiles", storage: "data", target: iconsPath }, {},
+  game.socket?.emit("manageFiles", { action: "browseFiles", storage: "data", target: iconsPath }, {},
     async (result) => {
       for (let fileEntry of result.files) {
         let fileNameParts = fileEntry.split("/");
@@ -373,10 +371,12 @@ export async function tobMapper(iconsPath = "icons/TOBTokens") {
       }
       console.log("Matched ", count, "out of", detailNames.length, detailNames)
       console.log("Unmatched ", detailNames.filter(dt => dt.splitName));
-      for (let actorData of detailNames) {
-        if (actorData.splitName) continue;
-        let actor = pack.get(actorData._id);
-        await actor.update(actorData);
+      if (pack) {
+        for (let actorData of detailNames) {
+          if (actorData.splitName) continue;
+          let actor = pack.get(actorData._id);
+          if (actor) await actor.update(actorData);
+        }
       }
     });
 }

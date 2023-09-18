@@ -18,11 +18,13 @@ export class DIMEditor extends FormApplication {
     });
     return super.render(force, options)
   }
+  //@ts-expect-error getData
   getData(options = {}) {
+    //@ts-expect-error documentTypes
     const macroTypes = game.documentTypes.Macro.reduce((obj, t) => {
-      //@ts-expect-error
       if (t === CONST.BASE_DOCUMENT_TYPE) return obj;
-      if ((t === "script") && !game.user.can("MACRO_SCRIPT")) return obj;
+      if ((t === "script") && !game.user?.can("MACRO_SCRIPT")) return obj;
+      //@ts-expect-error typeLabels
       obj[t] = game.i18n.localize(CONFIG.Macro.typeLabels[t]);
       return obj;
     }, {});
@@ -46,6 +48,7 @@ export class DIMEditor extends FormApplication {
   */
   async _updateObject(event, formData) {
     debug("DIMEditor | _updateObject  | ", { event, formData });
+    //@ts-expect-error type
     await this.updateMacro(mergeObject(formData, { type: "script", }));
   }
 
@@ -58,12 +61,11 @@ export class DIMEditor extends FormApplication {
     if (macro.command != command)
       await this.setMacro(new Macro({
         name: this.object.name,
-        //@ts-expect-error
         img: this.object.img,
         type: "script",
         scope: "global",
         command,
-        author: game.user.id,
+        author: game.user?.id,
       }, {}));
   }
 
@@ -86,7 +88,6 @@ export class DIMEditor extends FormApplication {
 
   async setMacro(macro: Macro) {
     if (macro instanceof Macro) {
-      //@ts-expect-error toObject
       const data = macro.toObject();
       await this.object.update({"flags.itemacro.macro": data});
       await this.object.unsetFlag("dae", `macro`);

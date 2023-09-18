@@ -73,7 +73,7 @@ export class DAESystemSW5E extends DAESystemDND5E {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
               const item = await fromUuid(`Compendium.${id}`)
-              list[key] = item.name;
+              list[key] = item?.name;
             }
           }
         }

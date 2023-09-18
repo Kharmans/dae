@@ -1,3 +1,7 @@
+### 11.0.15
+* First release with new build scripts thanks @p4535992
+* Fix for function. including erroneous reference to workflow. thanks @Elwin
+
 ### 11.0.14
 * DIME now always writes changes to flags.itemacro.macro. It will still pick flags.dae.macro, but on save will remove flags.dae.macro and write to flags.itemacro.macro.
 

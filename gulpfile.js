@@ -315,7 +315,7 @@ const copyFiles = async () => {
 							throw err;
 
 						for (const file of res) {
-							const newFile = path.join(`dist`, path.relative(process.cwd(), file.replace(/src[\/\\]/g, ``)));
+							const newFile = path.join(`dist`, path.relative(process.cwd(), file.replace(/.*src[\/\\]/g, ``)));
 							console.log(`Copying file: ` + newFile);
 							const folder = path.parse(newFile).dir;
 							if (!fs.existsSync(folder)) {

@@ -1,5 +1,4 @@
 import { itemacroActive, libWrapper, replaceFormulaData } from "./dae";
-//@ts-ignore
 import { debug, log, error, warn, } from "../dae";
 
 export function patchingInitSetup() {
@@ -17,7 +16,6 @@ export function setupPatching() {
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isTemporary", isTemporary, "WRAPPER")
 };
 function isTemporary(wrapped) {
-  //@ts-ignore
   // if (this.parent instanceof CONFIG.Actor.documentClass && this.data.flags?.dae?.transfer) return false;
   this._prepareDuration();
   return wrapped() || this.flags?.dae?.showIcon;

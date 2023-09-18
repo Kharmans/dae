@@ -8,7 +8,7 @@ var specialTraitsPatched = false;
 var d20Roll;
 var dice;
 
-// @ts-ignore
+// @ts-expect-error
 const CONFIG: any = globalThis.CONFIG;
 
 export class DAESystemDND5E extends CONFIG.DAE.systemClass {
@@ -29,7 +29,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
     super.modifyBaseValues(actorType, baseValues, characterSpec);
-    //@ts-ignore
     const modes = CONST.ACTIVE_EFFECT_MODES;
     baseValues["system.attributes.prof"] = [0, -1];;
     baseValues["system.details.level"] = [0, -1];
@@ -142,7 +141,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
     super.modifySpecials(actorType, specials, characterSpec);
 
-    //@ts-expect-error
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     if (actorType === "vehicle") {
       specials["system.attributes.ac.motionless"] = [0, -1];
@@ -299,7 +297,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   static modifyValidSpec(spec, validSpec: ValidSpec): ValidSpec {
-    //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     if (spec.includes("system.skills") && spec.includes("ability")) {
       validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
@@ -364,6 +361,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     });
     patchSpecialTraits();
 
+    //@ts-expect-error .version
     if (game.system.id === "dnd5e" && isNewerVersion("2.3.0", game.system.version)) {
       Object.keys(CONFIG.Item.sheetClasses.base).forEach(sheetId => {
         libWrapper.register("dae", `CONFIG.Item.sheetClasses.base['${sheetId}'].cls.prototype._onDropActiveEffect`, _onDropActiveEffect, "OVERRIDE");
@@ -373,7 +371,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (game.modules.get("midi-qol")?.active) {
       daeSpecialDurations["1Action"] = i18n("dae.1Action");
       daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
-      //@ts-ignore
       daeSpecialDurations["1Attack"] = game.i18n.format("dae.1Attack", { type: `${i18n("dae.spell")}/${i18n("dae.weapon")} ${i18n("dae.attack")}` });
       daeSpecialDurations["1Hit"] = game.i18n.format("dae.1Hit", { type: `${i18n("dae.spell")}/${i18n("dae.weapon")}` });
       //    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
@@ -381,7 +378,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       let attackTypes = ["mwak", "rwak", "msak", "rsak"];
       if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
       attackTypes.forEach(at => {
-        //@ts-ignore
         daeSpecialDurations[`1Attack:${at}`] = `${daeSystemClass.systemConfig.itemActionTypes[at]}: ${game.i18n.format("dae.1Attack", { type: daeSystemClass.systemConfig.itemActionTypes[at] })}`;
         daeSpecialDurations[`1Hit:${at}`] = `${daeSystemClass.systemConfig.itemActionTypes[at]}: ${game.i18n.format("dae.1Hit", { type: daeSystemClass.systemConfig.itemActionTypes[at] })}`;
       })
@@ -403,6 +399,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["shortRest"] = i18n("DND5E.ShortRest");
       daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
       Object.keys(daeSystemClass.systemConfig.abilities).forEach(abl => {
+        //@ts-expect-error .version
         let ablString = isNewerVersion(game.system.version, "2.1.5")
           ? daeSystemClass.systemConfig.abilities[abl].label
           : daeSystemClass.systemConfig.abilities[abl];
@@ -448,7 +445,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   // For DAE Editor
-  public static configureLists(daeConfig: DAEActiveEffectConfig) {
+  public static configureLists(daeConfig: DAEActiveEffectConfig | null) {
     // this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
     this.traitList = duplicate(daeSystemClass.systemConfig.damageTypes);
     this.traitList = mergeObject(this.traitList, daeSystemClass.systemConfig.healingTypes);
@@ -542,7 +539,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
-              const item = game.dnd5e.documents.Trait.getBaseItem(id, { indexOnly: true })
+              //@ts-expect-error .documents
+              const item = game.system.documents.Trait.getBaseItem(id, { indexOnly: true })
               // const item = await pack.getDocument(id);
               list[key] = item.name;
             }
@@ -559,20 +557,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   // Special case handling of (expr)dX
   public static attackDamageBonusEval(bonusString, actor) {
     return bonusString;
-    if (typeof bonusString === "string") {
-      const special = bonusString.match(/\((.+)\)\s*d([0-9]+)(.*)/);
-      // const special = bonusString.match(/\(([\s\S]+)\)\s+d([0-9]*)\)([\s\S]+)/);
-      if (special && special.length >= 3) {
-        try {
-          return new Roll(special[1].replace(/ /g, ""), actor.getRollData()).roll().total + "d" + special[2] + (special[3] ?? "");
-        }
-        catch (err) {
-          console?.warn(`DAE eval error for: ${special[1].replace(/ /g, "")} in actor ${actor.name}`, err);
-          return bonusString;
-        }
-      }
-    }
-    return `${bonusString || ""}`;
   }
 
   /*
@@ -596,7 +580,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return true;
     }
     if (change.key.includes(`flags.${game.system.id}`)) {
-      //@ts-ignore safeEval
       const value = new Boolean(Roll.safeEval(change.value)).valueOf(); // ["1", "true", 1, true].includes(change.value);
       setProperty(actor, change.key, value);
       return true;
@@ -656,9 +639,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         const newEntry = eval(change.value)
         value = value.concat([newEntry]);
       } else if (typeof value === "string") value = `${value} + ${change.value}`;
-      //@ts-ignore
+      //@ts-expect-error
       else if (typeof value === "boolean") value = Roll.safeEval(change.value);
-      //@ts-ignore
+      //@ts-expect-error
       else value = Roll.safeEval(value + change.value);
       setProperty(item, itemKey, value)
       return true;
@@ -799,12 +782,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           if (["units", "hover"].includes(key)) continue;
           let valueString = change.value;
           if (op !== "") {
-            //@ts-ignore isNumeric
             if (!movement[key]) continue;
             valueString = `${movement[key]} ${change.value}`;
           }
           try {
-            //@ts-ignore
             let result = (new Roll(valueString, actor.getRollData())).evaluate({ async: false }).total
             movement[key] = Math.floor(Math.max(0, result) + 0.5);
           } catch (err) {
@@ -825,12 +806,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.attributes.powerForceDarkDC":
       case "system.attributes.powerForceUnivDC":
       case "system.attributes.powerTechDC":
-        //@ts-ignore
         if (Number.isNumeric(change.value)) {
           value = parseInt(change.value);
         } else {
           try {
-            //@ts-ignore
             value = (new Roll(change.value, actor.getRollData())).evaluate({ async: false }).total;
           } catch (err) { };
         }
@@ -859,7 +838,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         const flagValue = getProperty(rollData.flags, `dae.${flagName}`) || 0;
         // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
         setProperty(rollData, `flags.dae.${flagName}`, flagValue);
-        //@ts-ignore evaluate 
         value = new Roll(formula, rollData).evaluate({ async: false }).total;
         setProperty(actor, `flags.dae.${flagName}`, value);
         return true;
@@ -984,7 +962,6 @@ function _prepareArmorClassAttribution(wrapped, data) {
   if (this.object?.effects) {
     for (let effect of this.object.effects) {
       for (let change of effect.changes) {
-        //@ts-ignore .isNumeric - core does not look at ac.value or non-numeric ac.bonus
         if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
           attributions.push({
             label: `${effect.name} (dae)`,
@@ -1013,7 +990,6 @@ function patchPrepareArmorClassAttribution() {
 // Patch for actor-flags app to display settings including active effects
 function patchSpecialTraits() {
   displayTraits = game.settings.get("dae", "displayTraits");
-  //@ts-ignore
   if (["dnd5e", "sw5e"].includes(game.system.id)) {
     log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._updateObject (override=${displayTraits})`);
     log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getFlags (override=${displayTraits})`);
@@ -1042,18 +1018,18 @@ function _getFlagsdnd5e() {
   const flags = {};
   const baseData = this.document;
   for (let [k, v] of Object.entries(daeSystemClass.systemConfig.characterFlags)) {
-    //@ts-ignore
+    //@ts-expect-error
     if (!flags.hasOwnProperty(v.section)) flags[v.section] = {};
     let flag = duplicate(v);
-    //@ts-ignore
+    //@ts-expect-error
     flag.type = v.type.name;
-    //@ts-ignore
+    //@ts-expect-error
     flag.isCheckbox = v.type === Boolean;
-    //@ts-ignore
+    //@ts-expect-error
     flag.isSelect = v.hasOwnProperty('choices');
-    //@ts-ignore
+    //@ts-expect-error
     flag.value = getProperty(baseData.flags, `dnd5e.${k}`);
-    //@ts-ignore
+    //@ts-expect-error
     flags[v.section][`flags.dnd5e.${k}`] = flag;
   }
   return flags;
@@ -1063,18 +1039,18 @@ function _getFlagssw5e() {
   const flags = {};
   const baseData = this.document;
   for (let [k, v] of Object.entries(daeSystemClass.systemConfig.characterFlags)) {
-    //@ts-ignore
+    //@ts-expect-error
     if (!flags.hasOwnProperty(v.section)) flags[v.section] = {};
     let flag = duplicate(v);
-    //@ts-ignore
+    //@ts-expect-error
     flag.type = v.type.name;
-    //@ts-ignore
+    //@ts-expect-error
     flag.isCheckbox = v.type === Boolean;
-    //@ts-ignore
+    //@ts-expect-error
     flag.isSelect = v.hasOwnProperty('choices');
-    //@ts-ignore
+    //@ts-expect-error
     flag.value = getProperty(baseData.flags, `sw5e.${k}`);
-    //@ts-ignore
+    //@ts-expect-error
     flags[v.section][`flags.sw5e.${k}`] = flag;
   }
   return flags;
@@ -1096,7 +1072,7 @@ function _getBonusesdnd5e() {
     { name: "system.bonuses.spell.dc", label: "DND5E.BonusSpellDC" }
   ];
   for (let b of bonuses) {
-    //@ts-ignore
+    //@ts-expect-error
     b.value = getProperty(this.object, b.name) || "";
   }
   return bonuses;
@@ -1118,7 +1094,7 @@ function _getBonusessw5e() {
     { name: "system.bonuses.spell.dc", label: "SW5E.BonusPowerlDC" }
   ];
   for (let b of bonuses) {
-    //@ts-ignore
+    //@ts-expect-error
     b.value = getProperty(this.object, b.name) || "";
   }
   return bonuses;
@@ -1132,7 +1108,7 @@ async function _updateObject(event, formData) {
   // Unset any flags which are "false"
   const flags = updateData.flags[game.system.id];
   for (let [k, v] of Object.entries(flags)) {
-    //@ts-ignore
+    //@ts-expect-error
     if ([undefined, null, "", false, 0].includes(v)) {
       delete flags[k];
       if (hasProperty(src.flags, `${game.system.id}.${k}`)) {
@@ -1143,7 +1119,9 @@ async function _updateObject(event, formData) {
 
   // Clear any bonuses which are whitespace only
   for (let b of Object.values(updateData.system.bonuses)) {
+    //@ts-expect-error
     for (let [k, v] of Object.entries(b)) {
+      //@ts-expect-error
       b[k] = v.trim();
     }
   }
@@ -1207,16 +1185,18 @@ function preUpdateItemHook(candidate, updates, options, user) {
     if (wasSuppressed === isSuppressed) return true;
     const tokens = actor.getActiveTokens();
     const token = tokens[0];
-    //@ts-expect-error actor.effects?
     for (let effect of actor.effects) {
+      //@ts-expect-error .origin
       if (!effectIsTransfer(effect) || effect.origin !== candidate.uuid) continue;
       //if (!effect.transfer && !effect.flags?.dae?.transfer) continue;
       // if (effect.origin !== candidate.uuid) continue;
+      //@ts-expect-error .changes
       for (let change of effect.changes) {
         if (isSuppressed) {
           switch (change.key) {
             case "macro.CE":
               const lastArg = prepareLastArgData(effect, actor);
+              //@ts-expect-error .origin
               removeConvenientEffectsChange(change.value, actor.uuid, effect.origin, actor.isToken, lastArg);
               break;
             case "macro.CUB":
@@ -1240,6 +1220,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
           switch (change.key) {
             case "macro.CE":
               const lastArg = prepareLastArgData(effect, actor);
+              //@ts-expect-error .origin
               addConvenientEffectsChange(change.value, actor.uuid, effect.origin, {}, actor.isToken, lastArg);
               break;
             case "macro.CUB":

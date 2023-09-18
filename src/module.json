@@ -2,7 +2,7 @@
 	"id": "dae",
 	"title": "Dynamic effects using Active Effects (DAE)",
 	"description": "Replacement for dynamic effects",
-	"version": "11.0.16",
+	"version": "11.0.15",
 	"authors": [
 	  {
 		"name": "tposney",
@@ -87,21 +87,6 @@
 		}
 	],
 	"packs": [
-	  {
-		"name": "dae-premadeitems",
-		"label": "DAE - Premade Items",
-		"type": "Item",
-		"path": "packs/premadeitems",
-		"module": "dae",
-		"system": "dnd5e"
-	  },
-	  {
-		"name": "dae-sample-macros",
-		"label": "DAE - Sample Macros",
-		"type": "Macro",
-		"path": "packs/sample-macros",
-		"module": "dae"
-	  }
 	],
 	"scripts": ["libs/tokenizer.min.js"],
 	"esmodules": ["dae.js"],
@@ -119,7 +104,7 @@
 	"manifestPlusVersion": "1.2.1",
 	"url": "https://gitlab.com/tposney/dae",
 	"manifest": "https://gitlab.com/tposney/dae/raw/v11/package/module.json",
-	"download": "https://gitlab.com/tposney/dae/raw/v11/package/dae-v11.0.16.zip",
+	"download": "https://gitlab.com/tposney/dae/raw/v11/package/dae-v11.0.15.zip",
 	"readme": "https://gitlab.com/tposney/dae/-/blob/v11/Readme.md",
 	"changelog": "https://gitlab.com/tposney/dae/-/blob/v11/Changelog.md",
 	"bugs": "https://gitlab.com/tposney/dae/-/issues",

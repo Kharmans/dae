@@ -88,8 +88,10 @@ export const registerSettings = function () {
     default: "none",
     type: String,
     config: true,
-    choices: {none: "None", warn: "warnings", debug: "debug", all: "all"},
-    onChange: fetchParams
+    onChange: fetchParams,
+    //@ts-expect-error
+    choices: {none: "None", warn: "warnings", debug: "debug", all: "all"}
+
   });
 
   game.settings.register("dae", "disableEffects", {
@@ -99,6 +101,7 @@ export const registerSettings = function () {
     default: false,
     type: Boolean,
     config: true,
+    //@ts-expect-error
     requiresReload: true
   })
 

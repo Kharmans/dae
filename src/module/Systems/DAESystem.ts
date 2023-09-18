@@ -3,7 +3,7 @@ import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectCon
 import { applyDaeEffects, atlActive, DAEfromActorUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
 import { setupSocket } from "../GMAction";
 
-export let wildcardEffects = [];
+export let wildcardEffects: RegExp[] = [];
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 
 export class ValidSpec {
@@ -57,7 +57,7 @@ export class ValidSpec {
         baseValues["system.att"]
       }
 
-      var specials = {};
+      var specials: any = {};
       //@ts-ignore
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CLT"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -96,6 +96,7 @@ export class ValidSpec {
       daeSystemClass.modifyDerivedSpecs(specKey, this.specs[specKey].derivedSpecs, _characterSpec)
       Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.specs[specKey].derivedSpecs, _characterSpec);
       Object.entries(specials).forEach(special => {
+        //@ts-expect-error
         let validSpec = new ValidSpec(special[0], special[1][0], special[1][1]);
         this.specs[specKey].derivedSpecs.push(validSpec);
       })
@@ -147,7 +148,9 @@ export class ValidSpec {
         if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
           const fieldId = m.fieldSpec.replace(fieldStart, "");
           const characterFlags =
+          //@ts-expect-error .DND5E
             (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags
+            //@ts-expect-error .SW5E
               : (game.system.id === "sw5e") ? CONFIG.SW5E.characterFlags
                 : {};
           const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
@@ -237,6 +240,7 @@ export class DAESystem {
   // Configure any lookp lists that might be required by getOptionsForSpec.
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
     this.detectionModeList = {};
+    //@ts-expect-error detectionModes
     Object.values(CONFIG.Canvas.detectionModes).forEach(dm => {
       //@ts-expect-error .id .label
       this.detectionModeList[dm.id] = i18n(`${dm.label}`);
@@ -288,13 +292,13 @@ export class DAESystem {
         const checkValue = change.value.slice(1);
         const currentIndex = (current ?? []).indexOf(checkValue)
         if (currentIndex === -1) return true;
-        if (!validValues.includes(checkValue)) return true;
+        if (!validValues?.includes(checkValue)) return true;
         const returnValue = duplicate(current);
         returnValue.splice(currentIndex, 1)
         setProperty(actor, change.key, returnValue);
       } else {
         if ((current ?? []).includes(change.value)) return true;
-        if (!validValues.includes(change.value)) return true;
+        if (!validValues?.includes(change.value)) return true;
         setProperty(actor, change.key, current.concat([change.value]))
       }
     } else if (current instanceof Set) {
@@ -302,14 +306,12 @@ export class DAESystem {
         const checkValue = change.value.slice(1);
         if (!current.has(checkValue)) return true;
         if (validValues && !validValues.includes(checkValue)) return true;
-        //@ts-expect-error
         const returnValue = deepClone(current);
         returnValue.delete(checkValue);
         setProperty(actor, change.key, returnValue);
       } else {
         if ((current ?? new Set()).has(change.value)) return true;
         if (validValues && !validValues.includes(change.value)) return true;
-        //@ts-expect-error
         let returnValue = deepClone(current);
         returnValue.add(change.value);
         setProperty(actor, change.key, returnValue);
@@ -335,7 +337,7 @@ export class DAESystem {
   static MATH_PROXY = new Proxy(Math, {
     has: () => true, // Include everything
     get: (t, k) => k === Symbol.unscopables ? undefined : t[k],
-    set: () => { console.error("You may not set properties of the Roll.MATH_PROXY environment"); return undefined } // No-op
+    set: () => { console.error("You may not set properties of the Roll.MATH_PROXY environment"); return false } // No-op
   });
 
   public static safeEval(expression: string, sandbox: any = {}, onErrorReturn: any | undefined = undefined) {
@@ -350,16 +352,15 @@ export class DAESystem {
       console.warn("midi-qol | expression evaluation failed ", expression, err);
       result = onErrorReturn;
     }
-    //@ts-expect-error isNumeric
     if (Number.isNumeric(result)) return Number(result)
     return result;
   };
   public static safeEvalExpressionNew(input, context = {}, depth = 0) {
-    let stack = [];
+    let stack: any[] = [];
     let output = '';
     let temp;
-    let functionStack = []; // additional stack for function name
-    let newStack = []; // stack for new keyword
+    let functionStack: any[] = []; // additional stack for function name
+    let newStack: any[] = []; // stack for new keyword
     let validFunctionName = /^([a-zA-Z_$][0-9a-zA-Z_$]*.)*[a-zA-Z_$][0-9a-zA-Z_$]*$/; // regex for valid JS function name
 
     for (let char of input) {
@@ -432,10 +433,10 @@ export class DAESystem {
       console.error("It's turtles all the way down....")
       return input;
     }
-    let stack = [];
+    let stack: any[] = [];
     let output = '';
     let temp;
-    let functionStack = []; // additional stack for function name
+    let functionStack: any[] = []; // additional stack for function name
 
     for (let char of input) {
       if (char === '(') {
@@ -552,6 +553,7 @@ function prepareData(wrapped) {
   // Identify which special statuses had been active
   const specialStatuses = new Map();
   if (isNewerVersion(game.version, "11.293")) {
+    //@ts-expect-error specialStatusEffects
     for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
       specialStatuses.set(statusId, this.statuses.has(statusId));
     }
@@ -635,7 +637,8 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
 
   } else if (game.modules.get("ATL")?.active) {
     // support new version of ATL
-    if (isNewerVersion("0.3.04", game.modules.get("ATL").version)) {
+    //@ts-expect-error .version
+    if (isNewerVersion("0.3.04", game.modules.get("ATL")?.version)) {
       for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
         specials[`ATL.${label}`] = [0, -1];
       }

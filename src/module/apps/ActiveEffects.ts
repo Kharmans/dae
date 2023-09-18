@@ -69,7 +69,7 @@ getData() {
       return newAe;
     }
     newAe.changes.map(change=> {
-      //@ts-ignore documentClass
+      //@ts-expect-error documentClass
       if (this.object instanceof CONFIG.Item.documentClass) 
         change.label=ValidSpec.specs["union"].allSpecsObj[change.key]?.label || change.key; 
       else
@@ -114,7 +114,7 @@ getData() {
     this.effectList[se.id] = se.name;
   });
 
-  //@ts-ignore documentClass;
+  //@ts-expect-error documentClass;
   const isItem = this.object instanceof CONFIG.Item.documentClass;
   let data = {
     actives: actives, 
@@ -124,7 +124,7 @@ getData() {
     flags: object.flags,
     modes: modeKeys,
     validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[object.type],
-    //@ts-ignore
+    //@ts-expect-error
     // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
     canEdit: true,
     // showEffects: playersCanSeeEffects !== "none" || game.user.isGM,
@@ -141,7 +141,7 @@ async _updateObject(event, formData) {
   if (!formData.changes) formData.changes = [];
   formData.changes = Object.values(formData.changes);
   for ( let c of formData.changes ) {
-    //@ts-ignore
+    //@ts-expect-error
     if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
   }
   return object.update(formData);
@@ -178,7 +178,7 @@ activateListeners(html) {
   html.find('.effect-delete').click(async ev => {
     const object = this.object;
     const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    //@ts-ignore
+    //@ts-expect-error
     if (object instanceof CONFIG.Actor.documentClass) {
       confirmAction(confirmDelete, () => {
         object.deleteEmbeddedDocuments("ActiveEffect", [effectid]);
@@ -209,7 +209,7 @@ activateListeners(html) {
     let AEDATA;
     let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
     if (effect_name === "new") {
-      //@ts-ignore
+      //@ts-expect-error
       AEDATA = {
         name: object.name,
         icon: object.img || "icons/svg/mystery-man.svg",
@@ -241,7 +241,7 @@ activateListeners(html) {
     }
   };
   function tmHandler(worldTime: number, dt: number) {
-    //@ts-ignore
+    //@ts-expect-error
     if (Array.from(this.object.effects).some(ef=>ef.isTemporary))
       setTimeout(() => this.render(), 0)
   }

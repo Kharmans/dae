@@ -2,7 +2,7 @@ import { confirmDelete, cltActive, ceActive, atlActive, daeSystemClass } from ".
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
 
-export var otherFields = [];
+export var otherFields: any[] = [];
 
 export function addAutoFields(fields: string[]) {
   fields.forEach(f => {
@@ -26,7 +26,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   constructor(object: any = {}, options = {}) {
     super(object, options);
     this.tokenMagicEffects = {};
-    //@ts-ignore
     if (game.modules.get("tokenmagic")?.active) {
       globalThis.TokenMagic.getPresets().forEach(preset => {
         this.tokenMagicEffects[preset.name] = preset.name;
@@ -34,22 +33,21 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     } else this.tokenMagicEffects["invalid"] = "module not installed"
 
     let validSpecsToUse = ValidSpec.specs["union"];
-    //@ts-expect-error parent documentClass
     if (this.object.parent instanceof CONFIG.Actor.documentClass) {
       validSpecsToUse = ValidSpec.specs[this.object.parent.type]
     }
     this.fieldsList = Object.keys(validSpecsToUse.allSpecsObj);
     this.fieldsList = this.fieldsList.concat(otherFields)
-    //@ts-ignore
     // if (window.MidiQOL?.midiFlags)  this.fieldsList = this.fieldsList.concat(window.MidiQOL.midiFlags);
     this.fieldsList.sort();
-    //@ts-ignore
+    //@ts-expect-error
     log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL?.midiFlags?.length || 0} come from midi-qol and ${validSpecsToUse.allSpecs.length} from dae`);
     this.fieldsList = this.fieldsList.join(", ");
 
     daeSystemClass.configureLists(this)
     if (cltActive) {
       this.cltConditionList = {}
+      //@ts-expect-error .cub
       game.cub.conditions?.forEach(cltc => {
         this.cltConditionList[cltc.name] = cltc.name;
       })
@@ -70,20 +68,24 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
     if (ceActive) {
       this.ceEffectList = {};
-      game.dfreds.effects?.all.forEach(ceEffect => {
+      //@ts-expect-error /dfreds
+      game.dfreds?.effects?.all.forEach(ceEffect => {
         this.ceEffectList[ceEffect.name] = ceEffect.name;
       })
     }
 
     if (atlActive) {
       this.ATLPresets = {};
-      game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets[preset.name] = preset.name);
+      //@ts-expect-error
+      game.settings.get("ATL", "presets")?.forEach(preset => this.ATLPresets[preset.name] = preset.name);
 
+      //@ts-expect-error
       Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
         otherFields.push([`ATL.detectionModes.${dm}.range`]);
       });
 
       this.ATLVisionModes = {};
+      //@ts-expect-error visionModes
       Object.values(CONFIG.Canvas.visionModes)
       //@ts-expect-error TokenConfig, the core sheet for a token does this filtering, I think we should too
       .filter(f => f.tokenConfig)
@@ -120,7 +122,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /* ----------------------------------------- */
 
   get id() {
-    //@ts-expect-error
     return `${this.constructor.name}-${this.document.uuid.replace(/\./g, "-")}`;
 
     const object = this.object;
@@ -149,35 +150,30 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   async getData(options) {
     if (getProperty(this.object, "flags.dae.specialDuration") === undefined)
       setProperty(this.object, "flags.dae.specialDuration", []);
-    const data = await super.getData(options);
+    const data: any = await super.getData(options);
     let validSpecsToUse = ValidSpec.specs["union"]; // TODO this needs to be thought about
     await daeSystemClass.editConfig();
 
-    //@ts-ignore
     const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)
       .reduce((obj, e) => {
-        //@ts-ignore
         obj[e[1]] = game.i18n.localize("EFFECT.MODE_" + e[0]);
         return obj;
       }, {});
     data.modes = allModes;
-    //@ts-ignore
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
     const translations = geti18nTranslations();
+    //@ts-expect-error
     data.stackableOptions = translations.stackableOptions ?? { "noneName": "Effects do not stack by name", "none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1" };
 
     if (this.object.parent) {
-      //@ts-ignore documentClass
       data.isItemEffect = this.object.parent instanceof CONFIG.Item.documentClass;
-      //@ts-ignore documentClass
       data.isActorEffrect = this.object.parent instanceof CONFIG.Actor.documentClass;
     }
     if (data.isItemEffect) validSpecsToUse = ValidSpec.specs["union"]; // TODO think about what it means to edit an item effect
     if (data.isActorEffect) validSpecsToUse = ValidSpec.specs[this.object.parent.type];
     data.validFields = this.validFields;
     data.submitText = "EFFECT.Submit";
-    //@ts-ignore
     data.effect.changes.forEach(change => {
       if ([-1, undefined].includes(validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
         change.modes = allModes;
@@ -186,7 +182,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         mode[validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
         change.modes = mode;
       } else if (!validSpecsToUse.allSpecsObjchange.key.startsWith("flags.midi-qol")) {
-        //@ts-ignore
         change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
       }
 
@@ -215,7 +210,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     const target = event.target;
     if (target.selectedIndex === 0) return; // Account for dummy element 0
     $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(target.value)
-    return this.submit({ preventClose: true }).then(() => this.render());
+    return this.submit({ preventClose: true })?.then(() => this.render());
   }
   /* ----------------------------------------- */
 
@@ -228,6 +223,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /* ----------------------------------------- */
   _textSelected(event) {
+    //@ts-expect-error
     return this.submit({ preventClose: true }).then(() => this.render());
   }
   _onDragStart(ev) {}
@@ -235,14 +231,16 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   async _onDrop(ev) {
     ev.preventDefault();
     //@ts-expect-error getDragEventData
-    const data = TextEditor.getDragEventData(ev);
+    const data: any = TextEditor.getDragEventData(ev);
     const item = await fromUuid(data.uuid);
     const targetValue = ev.target.value?.split(",")[1];
     if (data.uuid) ev.target.value = data.uuid + (targetValue ? `, ${targetValue}` : "");
   }
 
   // TODO find out how to do this proerply
+  //@ts-expect-error
   async _renderOuter(options: any): Promise<any> {
+    //@ts-expect-error
     let html = await super._renderOuter(options);
     $(html).find(".window-content").css({overflow: "visible"})
     return html;
@@ -258,14 +256,17 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       case "delete":
         return confirmAction(confirmDelete, () => {
           button.closest(".effect-change").remove();
+          //@ts-expect-error
           this.submit({ preventClose: true }).then(() => this.render());
         });
       case "add-specDur":
         this._addSpecDuration();
+        //@ts-expect-error
         return this.submit({ preventClose: true }).then(() => this.render());
       case "delete-specDur":
         return confirmAction(confirmDelete, () => {
           button.closest(".effect-special-duration").remove();
+          //@ts-expect-error
           this.submit({ preventClose: true }).then(() => this.render());
         });
     }
@@ -276,7 +277,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (idx === 0) setProperty(this.object, "flags.dae.specialDuration", []);
     return this.submit({
       preventClose: true, updateData: {
-        //@ts-ignore
         [`flags.dae.specialDuration.${idx}`]: ""
       }
     });
@@ -284,20 +284,18 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /* ----------------------------------------- */
 
-  async _addEffectChange() {
+  async _addEffectChange(): Promise<this> {
     //@ts-expect-error .document
     const idx = (this.document ?? this.object).changes.length;
-    return this.submit({
+    return (this.submit({
       preventClose: true, updateData: {
-        //@ts-ignore
         [`changes.${idx}`]: { key: "", mode: CONST.ACTIVE_EFFECT_MODES.ADD, value: "" }
       }
-    });
+    })) ?? this;
   }
 
   _getSubmitData(updateData: any = {}) {
-    //@ts-expect-error getSubmitData
-    const data = super._getSubmitData(updateData);
+    const data: any = super._getSubmitData(updateData);
     for (let change of data.changes) {
       if (typeof change.priority === "string") change.priority = Number(change.priority);
       if (change.priority === undefined || isNaN(change.priority)) change.priority = change.mode ? change.mode * 10 : 0;
@@ -317,7 +315,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   async _updateObject(event, formData) {
     if (formData.duration) {
-      //@ts-ignore isNumeric
+      //@ts-expect-error isNumeric
       if (Number.isNumeric(formData.duration?.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
         let startTime = parseInt(formData.duration.startTime);
         if (Math.abs(startTime) <= 3600) { // Only acdept durations of 1 hour or less as the start time field
@@ -331,16 +329,16 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
 export function geti18nTranslations() {
   let translations = game.i18n.translations["dae"];
-  //@ts-ignore _fallback not accessible
+  //@ts-expect-error _fallback not accessible
   if (!translations) translations = game.i18n._fallback["dae"];
   return translations ?? {};
 }
 
 Hooks.once("setup", () => {
-  //@ts-expect-error DocumentSheetConfig
   DocumentSheetConfig.registerSheet(
     CONFIG.ActiveEffect.documentClass, 
     "core", 
+    //@ts-expect-error
     DAEActiveEffectConfig, 
     {
       label: i18n("dae.EffectSheetLabel"),

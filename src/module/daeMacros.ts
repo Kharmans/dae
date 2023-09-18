@@ -6,14 +6,14 @@ export let applyActive = (itemName: string, activate: boolean = true, itemType: 
 
 }
 
-function getTokenUuid(token: Token) {
-  //@ts-ignore
-  return token.document?.uuid ?? token.uuid;
+function getTokenUuid(token: Token | TokenDocument) {
+  if (token instanceof Token) return token.document.uuid;
+  if (token instanceof TokenDocument) return token.uuid;
+  return undefined;
 }
 export let activateItem = () => {
-  //@ts-ignore cant do anything if there are no targets
   const speaker = ChatMessage.getSpeaker();
-  const token = canvas.tokens.get(speaker.token);
+  const token = canvas.tokens?.get(speaker.token ?? "");
   if (!token) {
     ui.notifications.warn(`${game.i18n.localize("dae.noSelection")}`)
     return;
@@ -23,24 +23,19 @@ export let activateItem = () => {
 
 let tokenScene = (tokenName, sceneName) => {
   if (!sceneName) {
-    for (let scene of game.scenes) {
-      //@ts-ignore
+    for (let scene of game.scenes ?? []) {
       let found = scene.tokens.getName(tokenName);
       if (found) return { scene, found };
-      //@ts-ignore
       found = scene.tokens.get(tokenName);
       if (found) return { scene, found };
     }
   } else {
-    //@ts-ignore
-    let scene = game.scenes.getName(sceneName)
+    let scene = game.scenes?.getName(sceneName)
     if (scene) {
-      //@ts-ignore
       let found = scene.tokens.getName(tokenName)
       if (found) {
         return { scene, found };
       }
-      //@ts-ignore
       found = scene.tokens.get(tokenName)
       if (found) {
         return { scene, found };
@@ -62,23 +57,26 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
   }
   socketlibSocket.executeAsGM("recreateToken",
     {
-      userId: game.user.id,
-      startSceneId: canvas.scene.id,
+      userId: game.user?.id,
+      startSceneId: canvas.scene?.id,
       tokenUuid: getTokenUuid(token),
-      targetSceneId: scene.id, 
+      targetSceneId: scene?.id, 
       tokenData: token.document.toObject(false),
-      x: found.x + xGridOffset * canvas.scene.grid,
-      y: found.y + yGridOffset * canvas.scene.grid
+      //@ts-expect-error .grid
+      x: found.x + xGridOffset * canvas.scene?.grid,
+      //@ts-expect-error .grid
+      y: found.y + yGridOffset * canvas.scene?.grid
     });
 }
 
 export let renameToken = async (token: Token, newName: string) => {
-  //@ts-ignore
+  //@ts-expect-error
   socketlibSocket.executeAsGM("renameToken", { userId: game.user.id, startSceneId: canvas.scene.id, tokenData: token.document.toObject(false), newName });
 }
 
 export async function teleportToken(token: Token, scene: Scene | string, position: {x:number, y: number}) {
   let theScene: Scene;
+  //@ts-expect-error .scenes
   if (typeof scene === "string") theScene = canvas.scenes.get(scene);
   else theScene = scene;
   return teleport(token, theScene, position.x, position.y)
@@ -93,14 +91,14 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
     error("dae| teleportToToken: Target Not found");
     return `Token ${targetTokenName} not found`;
   }
-  //@ts-ignore target.scene.grid
+  //@ts-expect-error target.scene.grid
   return await teleport(token, scene, found.x + xGridOffset * canvas.scene.grid.size, found.y + yGridOffset * canvas.scene.grid.size)
 }
 
 export async function createToken(tokenData, x, y) {
-  let targetSceneId = canvas.scene.id;
+  let targetSceneId = canvas.scene?.id;
   // requestGMAction(GMAction.actions.createToken, {userId: game.user.id, targetSceneId, tokenData, x, y})
-  return socketlibSocket.executeAsGM("createToken", { userId: game.user.id, targetSceneId, tokenData, x, y })
+  return socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, targetSceneId, tokenData, x, y })
 }
 
 export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
@@ -118,39 +116,35 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
   }
 
   // Hide the current token
-  if (targetScene.name === canvas.scene.name) {
-    //@ts-ignore
+  if (targetScene.name === canvas.scene?.name) {
     CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
-    let sourceSceneId = canvas.scene.id;
-    //@ts-ignore
+    let sourceSceneId = canvas.scene?.id;
+    //@ts-expect-error
     await socketlibSocket.executeAsGM("recreateToken", { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos });
     canvas.pan({ x: xpos, y: ypos });
     return true;
   }
   // deletes and recreates the token
-  var sourceSceneId = canvas.scene.id;
+  var sourceSceneId = canvas.scene?.id;
   Hooks.once("canvasReady", async () => {
-    //@ts-ignore v10 token.document
-    await socketlibSocket.executeAsGM("createToken", { userId: game.user.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos });
+    await socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos });
     // canvas.pan({ x: xpos, y: ypos });
 
-    await socketlibSocket.executeAsGM("deleteToken", { userId: game.user.id, tokenUuid: getTokenUuid(token) })
+    await socketlibSocket.executeAsGM("deleteToken", { userId: game.user?.id, tokenUuid: getTokenUuid(token) })
     // await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, tokenUuid: getTokenUuid(token)});
   })
 
   // Need to stop animation since we are going to delete the token and if that happens before the animation completes we get an error
-  //@ts-ignore
   CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
-  //@ts-ignore
   return await targetScene.view();
 }
 
 export async function setTokenVisibility(tokenOrId: string | Token, visible: boolean) {
   let tokenUuid: string;
-  //@ts-ignore
+  //@ts-expect-error
   if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
   else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
-  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenOrId}`;
+  else tokenUuid = `Scene.${canvas.scene?.id}.Token.${tokenOrId}`;
   return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
 }
 
@@ -158,15 +152,17 @@ export async function setTileVisibility(tileOrId: Tile | string, visible: boolea
   let tileUuid: string;
   let tile: Tile;
   if (typeof tileOrId !== "string") {
+    //@ts-expect-error .uuid
     tileUuid = tileOrId.uuid;
     tile = tileOrId
   } else {
     if (!(tileOrId.startsWith("Scene."))) {
-      tileUuid = `Scene.${canvas.scene.id}.Tile.${tileOrId}`;
+      tileUuid = `Scene.${canvas.scene?.id}.Tile.${tileOrId}`;
     } else tileUuid = tileOrId;
-    //@ts-ignore
+    //@ts-expect-error
     tile = await fromUuid(tileUuid)
   }
+  //@ts-expect-error .hidden
   let hidden = typeof visible === "boolean" ? !visible : !tile.document.hidden;
   return socketlibSocket.executeAsGM("setTileVisibility", { tileUuid, hidden: !visible });
 }
@@ -174,20 +170,20 @@ export async function setTileVisibility(tileOrId: Tile | string, visible: boolea
 // TODO fix this for v10
 export async function blindToken(tokenOrId: Token | string) {
   let tokenUuid: string;
-  //@ts-ignore
+  //@ts-expect-error
   if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
   else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
-  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenOrId}`;
+  else tokenUuid = `Scene.${canvas.scene?.id}.Token.${tokenOrId}`;
   return socketlibSocket.executeAsGM("blindToken", { tokenUuid });
 }
 
 // TODO fix this for v10
 export async function restoreVision(tokenOrId: Token | string) {
   let tokenUuid: string;
-  //@ts-ignore
+  //@ts-expect-error
   if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
   else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
-  else tokenUuid = `Scene.${canvas.scene.id}.Token.${tokenOrId}`;
+  else tokenUuid = `Scene.${canvas.scene?.id}.Token.${tokenOrId}`;
   return socketlibSocket.executeAsGM("restoreVision", { tokenUuid });
 }
 
@@ -208,24 +204,24 @@ export async function deleteActiveEffect(uuid: string, origin: string, ignore: s
   return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore, deleteEffects, removeSequencer });
 }
 
-export async function setTokenFlag(tokenOrId: Token | string, flagName: string, flagValue: any) {
-  let tokenUuid: string;
+export async function setTokenFlag(tokenOrId: Token | string | TokenDocument, flagName: string, flagValue: any) {
+  let tokenUuid: string = "";
   if (typeof tokenOrId === "string") {
     if (tokenOrId.startsWith("Scene.")) tokenUuid = tokenOrId;
-    else tokenUuid = canvas.scene.tokens.get(tokenOrId)?.docuement.uuid;
+    else tokenUuid = canvas.scene?.tokens.get(tokenOrId)?.uuid ?? "";
   } 
-  //@ts-ignore document
-  else tokenUuid = getTokenUuid(token);
+  else if (tokenOrId instanceof Token) tokenUuid = getTokenUuid(tokenOrId) ?? "";
+  else if (tokenOrId instanceof TokenDocument) tokenUuid = tokenOrId.uuid ?? "";
   return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
 }
 
 export function getFlag(entity: Actor | Token | string, flagId: string) {
-  let theActor: Actor;
+  let theActor: Actor | undefined  | null;
   if (!entity) return error(`dae.getFlag: actor not defined`);
   if (typeof entity === "string") { 
     // assume string === tokenId
-    theActor = canvas.tokens.get(entity)?.actor;
-    if (!theActor) theActor = game.actors.get(entity); // if not a token maybe an actor
+    theActor = canvas.tokens?.get(entity)?.actor;
+    if (!theActor) theActor = game.actors?.get(entity); // if not a token maybe an actor
     if (!theActor) {
       const actor = DAEfromUuid(entity);
       theActor = actor.actor ?? actor;
@@ -248,9 +244,8 @@ export async function setFlag(tactor: Actor | Token | string, flagId: string, va
     return socketlibSocket.executeAsGM("setFlag", { actorId: tactor, flagId, value });
     // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
-  let actor: Actor;
-  //@ts-ignore
-  if (tactor.actor) actor = tactor.actor;
+  let actor: Actor | undefined | null;
+  if (tactor instanceof Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`);
   return socketlibSocket.executeAsGM("setFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId, value });
@@ -264,9 +259,8 @@ export async function unsetFlag(tactor: Actor | Token | string, flagId) {
     return socketlibSocket.executeAsGM("unsetFlag", { actorId: tactor, flagId });
     // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
-  let actor: Actor;
-  //@ts-ignore
-  if (tactor.actor) actor = tactor.actor;
+  let actor: Actor | undefined | null;
+  if (tactor instanceof Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`)
   return socketlibSocket.executeAsGM("unsetFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId });
@@ -307,8 +301,8 @@ export async function macroActorUpdate(...args) {
   const rollContext = actor.getRollData();
   rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? lastArg.efData.flags?.dae?.statuscounter?.counter.value ?? 1;
   if (["on", "each"].includes(args[0])) {
-    if (!game.user.isGM) {
-      console.warn(`dae | macro.actorUpdate user ${game.user.name} is updating ${actor.name} ${targetField}`);
+    if (!game.user?.isGM) {
+      console.warn(`dae | macro.actorUpdate user ${game.user?.name} is updating ${actor.name} ${targetField}`);
     }
     switch (type) {
       case "boolean": value = JSON.parse(value) ? true : false;
@@ -319,12 +313,9 @@ export async function macroActorUpdate(...args) {
           op = value[0];
         }
         value = `${value}`.replace(/(\*\*(.+?)\*\*)/g, "@$2");
-        //@ts-ignore isNumeric
         if (["+","-","*","/"].includes(op) && Number.isNumeric(actorValue))
-          //@ts-ignore
           value = (await new Roll(`${actorValue}${value}`, rollContext).roll({async: true})).total;
         else
-          //@ts-ignore
           value = (await new Roll(value, rollContext).roll({async: true})).total; 
         break;
       default: // assume a string
@@ -351,7 +342,6 @@ export async function macroActorUpdate(...args) {
       restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
     } else if (typeof undo === "string" /*&&!undo.includes("Actor") && !undo.includes("Token")*/ && type === "number") {
       if (undo.includes("actorValue")) undo = undo.replace("actorValue",`${actorValue}`);
-      //@ts-expect-error .evaluate
       restoreValue = (await new Roll(`${undo}`, rollContext).evaluate({async: true})).total;
     } else if (undo === "undefined") {
       restoreValue = undefined;
