@@ -937,6 +937,17 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     try {
       if (!allMacroEffects.includes(change.key)) continue;
       context.stackCount = effectData.flags?.dae?.stacks ?? effectData.flags?.dae?.statuscounter?.counter.value ?? 1;
+      let functionMatch;
+      if (typeof change.value === "string" && change.key.startsWith("macro.execute")) change.value = change.value.trim();
+      if (change.value.startsWith("function.")) { 
+        const paramRe = /function\.\w+(\.\w+)*\("[^"]*"(?:\s*,\s*"[^"]*")+?\)/;
+        const paramMatch = change.value.match(paramRe);
+        if (paramMatch) functionMatch = paramMatch[0];
+        else functionMatch = change.value.split(" ")[0];
+        functionMatch = functionMatch.replace("function.", "");
+        if (change.key.includes("macro.execute"))
+        change.value = change.value.replace(functionMatch, "FunctionMatch");
+      }
       const theChange = await evalArgs({ item: theItem, effectData, context, actor, change, doRolls: true })
       let args: any[] = [];
       let v11args: any = {};
@@ -965,12 +976,12 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         })
       } else args = change.value;
       if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro")) {
-        if (typeof args[0] === "string" && args[0].startsWith("function.")) {
+        if (functionMatch) {
           macro = new CONFIG.Macro.documentClass({
             name: "DAE-Item-Macro",
             type: "script",
             img: null,
-            command: `return await ${args[0].replace("function.", "").trim()}.bind(this)({ speaker, actor, token, character, item, args, scope })`,
+            command: `return await ${functionMatch}.bind(this)({ speaker, actor, token, character, item, args, scope })`,
             //@ts-expect-error displaySheet
           }, { displaySheet: false, temporary: true });
         } else macro = await getMacro({ change, name: args[0] }, theItem, effectData);

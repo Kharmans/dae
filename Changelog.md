@@ -1,3 +1,6 @@
+### 11.0.16
+* Slight addition to macro.execute function.xxxxx calls. You can now use function.myFunc("arg1"...) provided the myFunc returns another function which is then called as the function to execute. Expected use is to have a single module entry point that returns the function to execute, for example getFunc("mytestFunction").
+
 ### 11.0.15
 * First release with new build scripts thanks @p4535992
 * Fix for function. including erroneous reference to workflow. thanks @Elwin
