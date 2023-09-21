@@ -148,9 +148,9 @@ export class ValidSpec {
         if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
           const fieldId = m.fieldSpec.replace(fieldStart, "");
           const characterFlags =
-          //@ts-expect-error .DND5E
+            //@ts-expect-error .DND5E
             (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags
-            //@ts-expect-error .SW5E
+              //@ts-expect-error .SW5E
               : (game.system.id === "sw5e") ? CONFIG.SW5E.characterFlags
                 : {};
           const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
@@ -177,36 +177,32 @@ function getRollData(wrapped, ...args): any {
   const data = wrapped(...args);
   data.actorId = this.id;
   data.actorUuid = this.uuid;
-  if (this.isToken) {
-    data.tokenUuid = this.token?.uuid ?? "undefined";
-    data.tokenId = this.token?.object?.id ?? "undefined";
-  } else if (!data.token) { // create deferred lookups for these since they are a bit expensive
-    Object.defineProperty(data, "token", {
-      get() {
-        if (!data._token) {
-          const actor = DAEfromActorUuid(data.actorUuid ?? "")
-          data._token = getSelfTarget(actor);
-        }
-        return data._token;
-      },
-      set(token) { data._token = token; }
-    });
-    Object.defineProperty(data, "tokenUuid", {
-      get() { // During initialisation getSelfTarget will return a token document not a token
-        if(data._tokenUuid) return data.token_uuid;
-        if (data.token instanceof Token)
-          return data.token?.document.uuid ?? "undefined";
-        else return data.token.uuid ?? "undefined"
-      },
-      set(uuid) {
-        data._tokenUuid = uuid;
+
+  Object.defineProperty(data, "token", {
+    get() {
+      if (!data._token) {
+        const actor = DAEfromActorUuid(data.actorUuid ?? "")
+        data._token = getSelfTarget(actor);
       }
-    });
-    Object.defineProperty(data, "tokenId", {
-      get() {return data._tokenId ?? data.token?.id ?? "undefined"},
-      set(tokenId) {data._tokenId = tokenId}
-    });
-  }
+      return data._token;
+    },
+    set(token) { data._token = token; }
+  });
+  Object.defineProperty(data, "tokenUuid", {
+    get() { // During initialisation getSelfTarget will return a token document not a token
+      if (data._tokenUuid) return data._tokeUuid;
+      if (data.token instanceof Token)
+        return data.token?.document.uuid ?? "undefined";
+      else return data.token.uuid ?? "undefined"
+    },
+    set(uuid) {
+      data._tokenUuid = uuid;
+    }
+  });
+  Object.defineProperty(data, "tokenId", {
+    get() { return data._tokenId ?? data.token?.id ?? "undefined" },
+    set(tokenId) { data._tokenId = tokenId }
+  });
   return data;
 }
 

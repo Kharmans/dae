@@ -1,20 +1,18 @@
-// import {ItemEffectSelector} from "./apps/daeSelector"
 import { confirmDelete, effectIsTransfer, simpleCalendarInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
-// import { EditOwnedItemEffectsActiveEffect } from "../editItemEffects/classes/owned-item-effect";
 import { ValidSpec } from "../Systems/DAESystem";
 
 export class ActiveEffects extends FormApplication {
   static filters = new Set();
-  hookId = null;
-  itemHookId = null;
-  effectHookIdu = null;
-  effectHookIdc = null;
-  effectHookIdd = null;
-  effectHookIdt = null;
-  effectHookIda = null;
-  timeHookId = null;
-  combatHookId = null;
+  hookId: number | null = null;
+  itemHookId: number | null = null;
+  effectHookIdu: number | null = null;
+  effectHookIdc: number | null = null;
+  effectHookIdd: number | null = null;
+  effectHookIdt: number | null = null;
+  effectHookIda: number | null = null;
+  timeHookId: number | null = null;
+  combatHookId: number | null = null;
   effect;
   effectList;
 
@@ -42,9 +40,8 @@ get title() {
   return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.name}`;
 }
 get filters() {return ActiveEffects.filters}
-getData() {
+getData(): any {
   const object: any = this.object;
-  //@ts-expect-error
   const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
   const modeKeys = Object.keys(EFFECTMODES);
   let actives = object.effects.map(ae=> {
@@ -69,7 +66,6 @@ getData() {
       return newAe;
     }
     newAe.changes.map(change=> {
-      //@ts-expect-error documentClass
       if (this.object instanceof CONFIG.Item.documentClass) 
         change.label=ValidSpec.specs["union"].allSpecsObj[change.key]?.label || change.key; 
       else
@@ -104,9 +100,12 @@ getData() {
 
   let efl = CONFIG.statusEffects
   .map(se => {
-    if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
-    if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name || se.label} (CLT)` };
-    return { id: se.id, name: i18n(se.name ?? se.label) };
+    //@ts-expect-error .name
+    if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name} (CE)` };
+    //@ts-expect-error .name
+    if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name} (CLT)` };
+    //@ts-expect-error .name
+    return { id: se.id, name: i18n(se.name) };
   })
   .sort((a,b) => a.name < b.name ? -1 : 1);
   this.effectList = {"new": "new"}
@@ -114,17 +113,15 @@ getData() {
     this.effectList[se.id] = se.name;
   });
 
-  //@ts-expect-error documentClass;
   const isItem = this.object instanceof CONFIG.Item.documentClass;
   let data = {
     actives: actives, 
-    isGM: game.user.isGM,
+    isGM: game.user?.isGM,
     isItem,
     isOwned: object.isOwned,
     flags: object.flags,
     modes: modeKeys,
     validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[object.type],
-    //@ts-expect-error
     // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
     canEdit: true,
     // showEffects: playersCanSeeEffects !== "none" || game.user.isGM,
@@ -141,7 +138,6 @@ async _updateObject(event, formData) {
   if (!formData.changes) formData.changes = [];
   formData.changes = Object.values(formData.changes);
   for ( let c of formData.changes ) {
-    //@ts-expect-error
     if ( Number.isNumeric(c.value) ) c.value = parseFloat(c.value);
   }
   return object.update(formData);
@@ -171,6 +167,7 @@ activateListeners(html) {
   filterLists.on("click", ".filter-item", this._onToggleFilter.bind(this));
   
   html.find('.refresh').click(async ev => {
+    //@ts-expect-error
     return this.submit({preventClose: true}).then(() => this.render());
   });
   
@@ -178,7 +175,6 @@ activateListeners(html) {
   html.find('.effect-delete').click(async ev => {
     const object = this.object;
     const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    //@ts-expect-error
     if (object instanceof CONFIG.Actor.documentClass) {
       confirmAction(confirmDelete, () => {
         object.deleteEmbeddedDocuments("ActiveEffect", [effectid]);
@@ -207,9 +203,9 @@ activateListeners(html) {
     const object: any = this.object;
     let effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
     let AEDATA;
+    //@ts-expect-error
     let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
     if (effect_name === "new") {
-      //@ts-expect-error
       AEDATA = {
         name: object.name,
         icon: object.img || "icons/svg/mystery-man.svg",
@@ -218,8 +214,10 @@ activateListeners(html) {
       }
     } else {
       AEDATA = CONFIG.statusEffects.find(se => se.id === id);
-      if (id.startsWith("Convenient Effect") && game.dfreds?.effects) {
-        const effect = game.dfreds?.effects.all.find(ef => ef.statuses.has(AEDATA.id));
+      //@ts-expect-error
+      const dfreds = game?.dfreds;
+      if (id.startsWith("Convenient Effect") && dfreds?.effects) {
+        const effect = dfreds?.effects.all.find(ef => ef.statuses.has(AEDATA.id));
         if(effect) AEDATA = effect.toObject();
       } else {
           AEDATA["statuses"] = [id];
@@ -273,14 +271,14 @@ activateListeners(html) {
     this.combatHookId = Hooks.on("updateCombat", tmHandler.bind(this));
 }
 async close() {
-  Hooks.off("updateActiveEffect", this.effectHookIdu);
-  Hooks.off("createActiveEffect", this.effectHookIdc);
-  Hooks.off("deleteActiveEffect", this.effectHookIdd);
-  Hooks.off("updateWorldTime", this.timeHookId);
-  Hooks.off("updateToken", this.effectHookIdt);
-  Hooks.off("updateActor", this.effectHookIda);
-  Hooks.off("updateItem", this.itemHookId);
-  Hooks.off("updateCombat", this.combatHookId);
+  if (this.effectHookIdu) Hooks.off("updateActiveEffect", this.effectHookIdu);
+  if (this.effectHookIdc) Hooks.off("createActiveEffect", this.effectHookIdc);
+  if (this.effectHookIdd) Hooks.off("deleteActiveEffect", this.effectHookIdd);
+  if (this.timeHookId) Hooks.off("updateWorldTime", this.timeHookId);
+  if (this.effectHookIdt) Hooks.off("updateToken", this.effectHookIdt);
+  if (this.effectHookIda) Hooks.off("updateActor", this.effectHookIda);
+  if (this.itemHookId) Hooks.off("updateItem", this.itemHookId);
+  if (this.combatHookId) Hooks.off("updateCombat", this.combatHookId);
   return super.close()
   }
 }

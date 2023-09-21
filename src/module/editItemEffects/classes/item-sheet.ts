@@ -48,7 +48,10 @@ export class ItemEffectsItemSheet {
         ...effect.toObject(),
         origin: effect.parent.uuid,
       }, { parent: owner.parent });
-    } else CONFIG.ActiveEffect.documentClass.onManageActiveEffect(event, owner);
+    } else {
+      //@ts-expect-error onManageActiveEffect
+      CONFIG.ActiveEffect.documentClass.onManageActiveEffect(event, owner);
+    }
   }
 
   static handleItemSheetRender = (app, html) => {
