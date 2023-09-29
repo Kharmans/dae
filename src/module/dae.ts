@@ -28,6 +28,7 @@ export var expireRealTime
 export var noDupDamageMacro;
 export var disableEffects;
 export var daeTitleBar;
+export var DIMETitleBar;
 export var daeColorTitleBar;
 export var daeNoTitleText;
 export var libWrapper;
@@ -44,7 +45,7 @@ export var macroDestination = {
   "macro.itemMacro": "mixed",
   "macro.itemMacro.local": "local",
   "macro.itemMacro.GM": "GM",
-  "macro.actorUpdate": "local"
+  "macro.actorUpdate": "mixed"
 };
 export var daeSystemClass;
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
@@ -311,6 +312,7 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
   if (!ceEffect) return;
   let effectData = mergeObject(ceEffect.toObject(), context.metaData);
   let returnValue;
+  effectData.orgin = origin;
   returnValue = await actionQueue.add(myAddCEEffectWith, effectData, uuid, origin, false, isToken);
   return returnValue;
 }
@@ -939,14 +941,14 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
       context.stackCount = effectData.flags?.dae?.stacks ?? effectData.flags?.dae?.statuscounter?.counter.value ?? 1;
       let functionMatch;
       if (typeof change.value === "string" && change.key.startsWith("macro.execute")) change.value = change.value.trim();
-      if (change.value.startsWith("function.")) { 
+      if (change.value.startsWith("function.")) {
         const paramRe = /function\.\w+(\.\w+)*\("[^"]*"(?:\s*,\s*"[^"]*")+?\)/;
         const paramMatch = change.value.match(paramRe);
         if (paramMatch) functionMatch = paramMatch[0];
         else functionMatch = change.value.split(" ")[0];
         functionMatch = functionMatch.replace("function.", "");
         if (change.key.includes("macro.execute"))
-        change.value = change.value.replace(functionMatch, "FunctionMatch");
+          change.value = change.value.replace(functionMatch, "FunctionMatch");
       }
       const theChange = await evalArgs({ item: theItem, effectData, context, actor, change, doRolls: true })
       let args: any[] = [];
@@ -1606,24 +1608,26 @@ function attachActorSheetHeaderButton(app, buttons) {
 }
 
 function attachItemSheetHeaderButton(app, buttons) {
-  if (!daeTitleBar) return;
-  const title = game.i18n.localize('dae.ActiveEffectName');
-  const titleText = daeNoTitleText ? "" : title;
-  buttons.unshift({
-    label: titleText,
-    class: 'dae-config-itemsheet',
-    icon: 'fas fa-wrench',
-    onclick: ev => { new ActiveEffects(app.document, {}).render(true); }
-  })
-  const DIMtitle = game.i18n.localize('dae.DIMEditor.Name');
-  const DIMtitleText = daeNoTitleText ? "" : DIMtitle;
-  const buttonData: any = {
-    label: DIMtitleText,
-    class: 'dae-dimeditor',
-    icon: 'fas fa-file-pen',
-    onclick: ev => { new DIMEditor(app.document, {}).render(true); }
+  if (daeTitleBar) {
+    const title = game.i18n.localize('dae.ActiveEffectName');
+    const titleText = daeNoTitleText ? "" : title;
+    buttons.unshift({
+      label: titleText,
+      class: 'dae-config-itemsheet',
+      icon: 'fas fa-wrench',
+      onclick: ev => { new ActiveEffects(app.document, {}).render(true); }
+    })
   }
-  buttons.unshift(buttonData);
+  if (DIMETitleBar) {
+    const DIMtitle = game.i18n.localize('dae.DIMEditor.Name');
+    const DIMtitleText = daeNoTitleText ? "" : DIMtitle;
+    buttons.unshift({
+      label: DIMtitleText,
+      class: 'dae-dimeditor',
+      icon: 'fas fa-file-pen',
+      onclick: ev => { new DIMEditor(app.document, {}).render(true); }
+    });
+  }
 }
 
 function updateSheetHeaderButton(app, [elem], options) {
@@ -1676,6 +1680,7 @@ export function fetchParams() {
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
   disableEffects = game.settings.get("dae", "disableEffects");
   daeTitleBar = game.settings.get("dae", "DAETitleBar");
+  DIMETitleBar = game.settings.get("dae", "DIMETitleBar");
   daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
   daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
 
@@ -1724,8 +1729,9 @@ export function tokenForActor(actor): Token | undefined {
 }
 
 export function effectIsTransfer(effect) {
+  if (effect.flags.dae?.transfer !== undefined) return effect.flags.dae.transfer;
   if (effect.transfer !== undefined) return effect.transfer;
-  return effect.flags.dae?.transfer ?? false;
+  return false;
 }
 
 export async function delay(interval: number) {

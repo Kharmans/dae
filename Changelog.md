@@ -1,3 +1,8 @@
+### 11.0.18
+* Fix for dependent AE (i.e. macro.ce, macro.execute etc) not being run for item passive effects.
+* Support enabling/disabling DIME in the title bar separately from DAE in the title bar.
+* Fix for macro.actorUpdate running on local client instead of GM when needed.
+
 ### 11.0.17
 * Fix for chat cards not being displayed when browseer/app reload is done.
 

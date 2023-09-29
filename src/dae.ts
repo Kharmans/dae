@@ -39,30 +39,30 @@ export var daeUntestedSystems: boolean;
 /* ------------------------------------ */
 Hooks.once('init', async function () {
   debug('Init setup actions');
-  CONFIG.compatibility.excludePatterns.push(new RegExp("/modules/socketlib/"));
-  CONFIG.compatibility.excludePatterns.push(new RegExp("/modules/libWrapper/"));
 
-
-  const daeFlags = game.modules.get("dae").flags;
+  //@ts-expect-error
+  const daeFlags = game.modules.get("dae")?.flags ?? {};
+  //@ts-expect-error .flags
   const systemDaeFlag = game.system.flags?.daeCompatible;
   if (daeFlags.compatible?.includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
   else if (daeFlags.incompatible?.includes(game.system.id) || systemDaeFlag === false) gameSystemCompatible = "no";
 
   if (gameSystemCompatible === "no") {
+    //@ts-expect-error .title
     console.error(`DAE is not compatible with ${game.system.title} module disabled`)
   } else {
     registerSettings();
-    daeUntestedSystems = game.settings.get("dae", "DAEUntestedSystems")
+    daeUntestedSystems = game.settings.get("dae", "DAEUntestedSystems") === true;
     if (gameSystemCompatible === "yes" || daeUntestedSystems) {
+      //@ts-expect-error .title
       if (gameSystemCompatible === "maybe") console.warn(`DAE compatibility warning for ${game.system.title} is not tested with DAE`);
       daeInitActions();
       initPatching();
-      fetchParams(false);
+      fetchParams();
 
       // Preload Handlebars templates
       await preloadTemplates();
 
-      //@ts-ignore Semaphore
       changesQueue = new window.Semaphore(1);
     }
   };
@@ -73,13 +73,15 @@ export var daeMacroRepeats;
 Hooks.once('ready', async function () {
   if (gameSystemCompatible !== "no" && (gameSystemCompatible === "yes" || daeUntestedSystems)) {
     if ("maybe" === gameSystemCompatible) {
-      if (game.user.isGM) ui.notifications.warn(`DAE is has not been tested with ${game.system.title}. Disable DAE if there are problems`);
+      //@ts-expect-error .title
+      if (game.user?.isGM) ui.notifications.warn(`DAE is has not been tested with ${game.system.title}. Disable DAE if there are problems`);
     }
     checkLibWrapperVersion();
     fetchParams();
     debug("ready setup actions")
     daeSpecialDurations = { "None": "" };
-    if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up").version, "0.0.9")) {
+    //@ts-expect-error .version
+    if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up")?.version ?? "0", "0.0.9")) {
       daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
       daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
       daeSpecialDurations["turnStartSource"] = i18n("dae.turnStartSource");
@@ -108,6 +110,7 @@ Hooks.once('ready', async function () {
 /* ------------------------------------ */
 Hooks.once('setup', function () {
   if (gameSystemCompatible === "no" || (gameSystemCompatible === "maybe" && !daeUntestedSystems)) {
+    //@ts-expect-error .name
     ui.notifications.warn(`DAE disabled for ${game.system.name} - to enable choose Allow Untested Systems from the DAE settings`)
   } else {
     // Do anything after initialization but before
@@ -115,7 +118,7 @@ Hooks.once('setup', function () {
     debug("setup actions")
     daeSetupActions();
     setupPatching();
-    //@ts-ignore
+    //@ts-expect-error
     window.DAE = {
       ActiveEffects: ActiveEffects,
       addAutoFields: addAutoFields,

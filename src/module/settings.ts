@@ -51,6 +51,16 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
+  game.settings.register("dae", "DIMETitleBar", {
+    name: game.i18n.localize("dae.DIMETitleBar.Name"),
+    hint: game.i18n.localize("dae.DIMETitleBar.Hint"),
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
   game.settings.register("dae", "DAEColorTitleBar", {
     name: game.i18n.localize("dae.DAEColorTitleBar.Name"),
     hint: game.i18n.localize("dae.DAEColorTitleBar.Hint"),
