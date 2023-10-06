@@ -983,8 +983,10 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
             name: "DAE-Item-Macro",
             type: "script",
             img: null,
+            //@ts-expect-error ownership
+            ownership: {default: CONST.DOCUMENT_PERMISSION_LEVELS.OWNER},
+            author: game.user?.id,
             command: `return await ${functionMatch}.bind(this)({ speaker, actor, token, character, item, args, scope })`,
-            //@ts-expect-error displaySheet
           }, { displaySheet: false, temporary: true });
         } else macro = await getMacro({ change, name: args[0] }, theItem, effectData);
         if (!macro) {
@@ -1176,6 +1178,8 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
       type: "script",
       img: null,
       command: macroCommand,
+      author: game.user?.id,
+      ownership:{default: CONST.DOCUMENT_PERMISSION_LEVELS.OWNER},
       // TODO see if this should change.
       flags: { "dnd5e.itemMacro": true }
     }, { displaySheet: false, temporary: true });

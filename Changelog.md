@@ -1,3 +1,6 @@
+### 11.0.19
+* Fix for potential permission errors for macro.execute/macro.ItemMacro etc
+
 ### 11.0.18
 * Fix for dependent AE (i.e. macro.ce, macro.execute etc) not being run for item passive effects.
 * Support enabling/disabling DIME in the title bar separately from DAE in the title bar.
