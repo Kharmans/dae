@@ -382,13 +382,29 @@ export async function tobMapper(iconsPath = "icons/TOBTokens") {
 }
 
 export async function fixTransferEffects(actor) {
-  let items = actor.items.filter(i => i.effects.some(e => effectIsTransfer(e)));
-  let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && e.origin.includes("Item."));
-  console.warn("Deleing effects", transferEffects)
-  await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
-  const toCreate = items.map(i => i.toObject())
-  console.warn("Deleting items ", items.map(i => i.id))
-  await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id));
-  console.warn("Creating items ", toCreate)
-  await actor.createEmbeddedDocuments("Item", toCreate);
+    if(!actor) {
+        return;
+    }
+    let items = actor.items || [];
+    return await _fixTransferEffects(actor, items);
+}
+
+async function _fixTransferEffects(actor, itemsToCheck) {
+    let items = itemsToCheck.filter(i => i.effects.some(e => effectIsTransfer(e)));
+    let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && e.origin.includes("Item."));
+    console.warn("Deleting effects", transferEffects)
+    await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
+    const toCreate = items.map(i => i.toObject())
+    console.warn("Deleting items ", items.map(i => i.id))
+    await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id));
+    console.warn("Creating items ", toCreate)
+    await actor.createEmbeddedDocuments("Item", toCreate);
+  }
+
+export async function fixTransferEffect(actor, item) {
+    if(!item) {
+        return;
+    }
+    let items = [item];
+    return await _fixTransferEffects(actor, items);
 }

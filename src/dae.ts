@@ -13,6 +13,7 @@ import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTile
 import { ItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
 import { ValidSpec, wildcardEffects } from './module/Systems/DAESystem';
 import { DIMEditor } from './module/apps/DIMEditor';
+import API from './module/API/api';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = { "none": 0, "warn": 1, "debug": 2, "all": 3 }[debugText] || 0;
@@ -118,49 +119,13 @@ Hooks.once('setup', function () {
     debug("setup actions")
     daeSetupActions();
     setupPatching();
+
+    // Set API
+    const data:any = game.modules.get("dae");
+    data.api = API;
     //@ts-expect-error
-    window.DAE = {
-      ActiveEffects: ActiveEffects,
-      addAutoFields: addAutoFields,
-      blindToken: blindToken,
-      cleanEffectOrigins,
-      cleanActorItemsEffectOrigins,
-      confirmAction,
-      convertDuration,
-      createToken: createToken,
-      DAEActiveEffectConfig: DAEActiveEffectConfig,
-      DAEfromActorUuid: DAEfromActorUuid,
-      DAEfromUuid: DAEfromUuid,
-      daeMacro: daeMacro,
-      daeSpecialDurations: () => { return daeSpecialDurations },
-      deleteActiveEffect,
-      deleteItemActiveEffects,
-      DIMEditor,
-      doEffects,
-      fixTransferEffects: fixTransferEffects,
-      fixupDDBAC: fixupDDBAC,
-      getFlag: getFlag,
-      getTokenFlag: getTokenFlag,
-      migrateActorDAESRD: migrateActorDAESRD,
-      migrateAllActorsDAESRD: migrateAllActorsDAESRD,
-      migrateAllNPCDAESRD: migrateAllNPCDAESRD,
-      moveToken: moveToken,
-      renameToken: renameToken,
-      restoreVision: restoreVision,
-      evalExpression: daeSystemClass.safeEvalExpression.bind(daeSystemClass),
-      setFlag: setFlag,
-      setTileVisibility: setTileVisibility,
-      setTokenFlag: setTokenFlag,
-      setTokenVisibility: setTokenVisibility,
-      teleportToken: teleportToken,
-      teleportToToken: teleportToToken,
-      tobMapper: tobMapper,
-      unsetFlag: unsetFlag,
-      ValidSpec,
-      actionQueue: actionQueue,
-      wildcardBaseEffects: wildcardEffects,
-      daeCustomEffect: daeSystemClass.daeCustomEffect
-    }
+    window.DAE = game.modules.get("dae").api;
+
     setupSocket();
     Hooks.callAll("DAE.setupComplete");
   }
