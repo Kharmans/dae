@@ -1,5 +1,5 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, DAEfromUuid, DAEfromActorUuid, simpleCalendarInstalled, allMacroEffects, getMacro, actionQueue, tokenForActor, daeMacro, delay } from "./dae";
-import { warn, debug, error, log, changesQueue } from "../dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken } from "./dae";
+import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
   action: string;
@@ -58,7 +58,7 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
 
   for (let itemUuid of itemUuids ?? []) {
     const item: any = await fromUuid(itemUuid);
-    if (!item?.isOwned) continue; // Just in case we are trying to delete a world/compendium item
+    if (!(item instanceof Item) || !item?.isOwned) continue; // Just in case we are trying to delete a world/compendium item
     await item.delete();
   }
 }
@@ -71,7 +71,7 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
     error(`createActorItem could not find item ${itemUuid}`);
     return [];
   }
-  let actor: Actor | undefined | null= DAEfromActorUuid(uuid);
+  let actor: Actor | undefined | null = actorFromUuid(uuid);
   if (!actor) {
     error(`createActorItem could not find Actor ${uuid}`);
     return [];
@@ -146,7 +146,8 @@ async function _executeMacro(data: {
 async function _deleteUuid(data: { uuid: string }) {
   // don't allow deletion of compendium entries or world Items
   if (data.uuid.startsWith("Compendium") || data.uuid.startsWith("Item")) return false;
-  const entity = DAEfromUuid(data.uuid);
+  //@ts-expect-error fromUuidSync
+  const entity = fromUuidSync(data.uuid);
   if (!entity) return false;
   if (entity instanceof CONFIG.Item.documentClass) return await entity.delete();
   if (entity instanceof CONFIG.Token.documentClass) return await entity.delete();
@@ -160,20 +161,23 @@ function _testMessage(data) {
   return "Test message received and processed";
 }
 async function _setTokenVisibility(data) {
-  await DAEfromUuid(data.tokenUuid)?.update({ hidden: data.hidden })
+  //@ts-expect-error fromUuidSync
+  await fromUuidSync(data.tokenUuid)?.update({ hidden: data.hidden })
 }
 
 async function _setTileVisibility(data) {
-  return await DAEfromUuid(data.tileUuid)?.update({ visible: data.hidden })
+  //@ts-expect-error fromUuidSync
+  return await fromUuidSync(data.tileUuid)?.update({ visible: data.hidden })
 }
 
 async function _applyActiveEffects(data) {
-
   return await applyActiveEffects(data);
 }
 async function _recreateToken(data: { userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
+  //TODO this looks odd - should get the token data form the tokenUuid?
   await _createToken(data);
-  const token = await DAEfromUuid(data.tokenUuid);
+  //@ts-expect-error fromUuidSync
+  const token = await fromUuidSync(data.tokenUuid);
   return token?.delete();
 }
 
@@ -185,47 +189,51 @@ async function _createToken(data: { userId: string, targetSceneId: string, token
 }
 
 async function _deleteToken(data: { tokenUuid: string }) {
-  return await DAEfromUuid(data.tokenUuid)?.delete();
+  //@ts-expect-error fromUuidSync
+  return await fromUuidSync(data.tokenUuid)?.delete();
 }
 
 async function _setTokenFlag(data: { flagName: string, flagValue: any, tokenUuid: string }) {
   const update = {};
   update[`flags.dae.${data.flagName}`] = data.flagValue;
-  return await DAEfromUuid(data.tokenUuid)?.update(update)
+  const tokenDocument = getTokenDocument(data.tokenUuid);
+  return await tokenDocument?.update(update);
 }
 
 async function _setFlag(data: { actorUuid: string | undefined, actorId: string | undefined, flagId: string, value: any }) {
   if (data.actorId !== undefined) return await game.actors?.get(data.actorId)?.setFlag("dae", data.flagId, data.value);
-  else return await DAEfromActorUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
+  else return await actorFromUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
 }
 
 async function _unsetFlag(data: { actorUuid: string, flagId: string }) {
-  return await DAEfromActorUuid(data.actorUuid)?.unsetFlag("dae", data.flagId)
+  return await actorFromUuid(data.actorUuid)?.unsetFlag("dae", data.flagId)
 }
 
 async function _blindToken(data: { tokenUuid: string }) {
+  const tokenDocument = getTokenDocument(data.tokenUuid);
   //@ts-expect-error .dfreds
-  if (game.dfreds?.effects?._blinded) {
-    const actor = DAEfromUuid(data.tokenUuid)?.object?.actor
-    //@ts-expect-error .dfreds
-    game.dfreds.effectInterface?.addEffect({ effectName: game.dfreds.effects._blinded.name, uuid: actor.uuid })
+  const dfreds = game.dfreds;
+  if (!tokenDocument) return;
+  if (tokenDocument.actor && dfreds?.effects?._blinded) {
+    dfreds.effectInterface?.addEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor?.uuid })
   } else {
     //@ts-expect-error .specialStatusEffects
     const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
-    return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: false })
+    return await getToken(tokenDocument)?.toggleEffect(blind, { overlay: false, active: false })
   }
 }
 
 async function _restoreVision(data: { tokenUuid: string }) {
+  const tokenDocument = getTokenDocument(data.tokenUuid);
   //@ts-expect-error .dfreds
-  if (game.dfreds?.effects?._blinded) {
-    const actor = DAEfromUuid(data.tokenUuid)?.object?.actor
-    //@ts-expect-error .dfreds
-    game.dfreds.effectInterface?.removeEffect({ effectName: game.dfreds.effects._blinded.name, uuid: actor.uuid })
+  const dfreds = game.dfreds;
+  if (!tokenDocument) return;
+  if (dfreds?.effects?._blinded && tokenDocument.actor) {
+    dfreds.effectInterface?.removeEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor.uuid })
   } else {
     //@ts-expect-error .specialStatusEffects
     const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
-    return await DAEfromUuid(data.tokenUuid)?.object.toggleEffect(blind, { overlay: false, active: false })
+    return await getToken(tokenDocument)?.toggleEffect(blind, { overlay: false, active: false })
   }
 }
 
@@ -234,34 +242,30 @@ async function _renameToken(data: { tokenData: any, newName: string }) { // TODO
 }
 
 async function _addTokenMagic(data: { tokenUuid: string, effectId: string }) {
-  // console.error("remove gma", data.tokenUuid, data.effectId);
-  let token = DAEfromUuid(data.tokenUuid)?.object;
-  let tokenMagic = globalThis.TokenMagic;
-  if (tokenMagic && token) {
-    return await tokenMagic.addFilters(token, data.effectId);
-  }
+  const tokenMagic = globalThis.TokenMagic;
+  if (!tokenMagic) return;
+  const token = getToken(data.tokenUuid);
+  if (token) return await tokenMagic.addFilters(token, data.effectId);
 }
 async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) {
-  // console.error("remove gma", data.tokenUuid, data.effectId);
-  let token = DAEfromUuid(data.tokenUuid)?.object;
-  let tokenMagic = globalThis.TokenMagic;
-  if (tokenMagic && token) {
-    return await tokenMagic.deleteFilters(token, data.effectId);
-  }
+  const tokenMagic = globalThis.TokenMagic;
+  if (!tokenMagic) return;
+  const token = getToken(data.tokenUuid);
+  if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
 async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean }) {
   for (let idData of data.targets) {
-    const entity = DAEfromUuid(idData.uuid);
-    const actor = entity.actor ? entity.actor : entity;
+    const actor = actorFromUuid(idData.uuid);
     if (!actor) {
       error("could not find actor for ", idData);
     }
+    //@ts-expect-error .origin
     let effectsToDelete = actor?.effects?.filter(ef => ef.origin === data.origin && !data.ignore?.includes(ef.uuid));
-    if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete.filter(ae => data.deleteEffects.includes(ae.id))
-    if (effectsToDelete?.length > 0) {
+    if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete?.filter(ae => ae.id && data.deleteEffects.includes(ae.id))
+    if (effectsToDelete && effectsToDelete?.length > 0) {
       try {
-        await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
+        await actor?.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id ?? "XXX"));
       } catch (err) {
         warn("delete effects failed ", err)
         // TODO can get thrown since more than one thing tries to delete an effect
@@ -273,230 +277,232 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect, metaData = undefined }) {
+export async function applyActiveEffects({ activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = undefined }) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
-
   for (let tid of tokenList) {
-    const tokenOrDocument = DAEfromUuid(tid) || canvas.tokens?.get(tid);
-    const tokenUuid = tokenOrDocument.uuid ?? tokenOrDocument.document.uuid;
-    let targetActor = tokenOrDocument.actor ?? tokenOrDocument; // assume if we did not get a token it is an actor
-    const token = tokenOrDocument.object ?? tokenOrDocument;
+    const token = getToken(tid) || canvas.tokens?.get(tid); // tid might be a uuid
+    const tokenUuid = token?.document.uuid;
+    let targetActor = token?.actor;
+    if (!targetActor) return false;
 
-    if (targetActor) {
-      // Remove any existing effects that are not stackable or transfer from the same origin
-      let currentStacks = 1;
+    // Remove any existing effects that are not stackable or transfer from the same origin
+    let currentStacks = 1;
 
-      const origins = activeEffects.map(aeData => ({ origin: aeData.origin, name: (aeData.name || aeData.label) }));
-      //const origins = actEffects.map(aeData => aeData.origin);
+    const origins = activeEffects.map(aeData => ({ origin: aeData.origin, name: (aeData.name || aeData.label) }));
+    //const origins = actEffects.map(aeData => aeData.origin);
 
-      // TODO: update exsiting count stacks rather than removing and adding.
-      // find existing active effect that have same origin as one of our new effects 
-      let removeList = targetActor.effects.filter(ae => {
-        const notMulti = getProperty(ae, "flags.dae.stackable") !== "multi";
-        const noStackByName = getProperty(ae, "flags.dae.stackable") === "noneName";
-        if (noStackByName)
-          return origins.find(o => o.name === (ae.name || ae.label))
-        else return origins.find(o => {
-          const escapedLabel = o.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          return o.origin === ae.origin
-            && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.name || ae.label))
-        })
-          && getProperty(ae, "flags.dae.transfer") === false
-          && notMulti;
-      });
-      // TODO check why this is essentially done twice (noName, none)
+    // TODO: update exsiting count stacks rather than removing and adding.
+    // find existing active effect that have same origin as one of our new effects 
+    let removeList: any[] = targetActor.effects.filter(ae => {
+      const notMulti = getProperty(ae, "flags.dae.stackable") !== "multi";
+      const noStackByName = getProperty(ae, "flags.dae.stackable") === "noneName";
+      if (noStackByName) {
+        //@ts-expect-error .origin
+        return origins.find(o => o.name === ae.name && o.orign === ae.origin)
+      } else return origins.find(o => {
+        const escapedLabel = o.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        //@ts-expect-error .origin
+        return o.origin === ae.origin
+          && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.name ?? ""))
+      })
+        && getProperty(ae, "flags.dae.transfer") === false
+        && notMulti;
+    });
 
-      if (removeList.length > 0) {
-        if (toggleEffect) {
-          removeList = removeList.map(ef => ({ _id: ef.id, disabled: !ef.disabled, "duration.startTime": game.time.worldTime }));
-          await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
-          activate = false;
-        } else { // remove the effect
-          const interval = removeList.some(ef => ef.flags.effectmacro || ef.changes.some(change => change.value.startsWith("macro"))) ? 250 : 1; // for unlinked tokens and effect macros that might create effects need a long delay
-          currentStacks = removeList.filter(ae => getProperty(ae, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae, "flags.dae.stacks") ?? 1), 1)
-          removeList = removeList.map(ae => ae._id);
-          await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList);
-          if (targetActor.isToken && isNewerVersion("11.293", game.version)) { // need to delay for unliked tokens as there is a timing issue
-            await delay(interval);
-          }
+    // TODO check why this is essentially done twice (noName, none)
+    if (removeList.length > 0) {
+      if (toggleEffect) {
+        removeList = removeList.map(ef => ({ _id: ef.id, disabled: !ef.disabled, "duration.startTime": game.time.worldTime }));
+        await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
+        activate = false;
+      } else { // remove the effect
+        const interval = removeList.some(ef => ef.flags.effectmacro || ef.changes.some(change => change.value.startsWith("macro"))) ? 250 : 1; // for unlinked tokens and effect macros that might create effects need a long delay
+        currentStacks = removeList.filter(ae => getProperty(ae, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae, "flags.dae.stacks") ?? 1), 1)
+        removeList = removeList.map(ae => ae._id);
+        await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList);
+        if (targetActor.isToken && isNewerVersion("11.293", game.version)) { // need to delay for unliked tokens as there is a timing issue
+          await delay(interval);
         }
       }
-      if (activate) {
-        let dupEffects = duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true); // .filter(aeData => !aeData.selfTarget));
-        for (let aeData of dupEffects) {
-          setProperty(aeData, "flags.dae.token", tid);
-          if (getProperty(aeData, "flags.dae.stackable") === "count") {
-            setProperty(aeData, "flags.dae.stacks", currentStacks);
-            if (aeData.name || aeData.name === '')
-              aeData.name = `${aeData.name || aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
-            else aeData.label = `${aeData.name || aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
+    }
+    if (activate) {
+      let dupEffects = duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true); // .filter(aeData => !aeData.selfTarget));
+      for (let aeData of dupEffects) {
+        setProperty(aeData, "flags.dae.token", tid);
+        if (getProperty(aeData, "flags.dae.stackable") === "count") {
+          setProperty(aeData, "flags.dae.stacks", currentStacks);
+          if (aeData.name || aeData.name === '')
+            aeData.name = `${aeData.name || aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
+          else aeData.label = `${aeData.name || aeData.label} (${getProperty(aeData, "flags.dae.stacks")})`;
 
+        }
+        if (aeData.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
+          //@ts-expect-error fromUuidSync
+          const item = fromUuidSync(aeData.origin);
+          let macroCommand;
+          if (item instanceof Item) {
+            macroCommand = getProperty(item, "flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
+          } else if (aeData.flags?.dae?.itemData) {
+            const itemData = getProperty(aeData, "flags.dae.itemData");
+            if (itemData)
+              macroCommand = getProperty(itemData, "flags.dae.macro.command") ?? getProperty(itemData, "flags.itemacro.macro.command") ?? getProperty(itemData, "flags.itemacro.macro.data.command");
           }
-          if (aeData.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
-            //@ts-expect-error fromUuidSync
-            const item = fromUuidSync(aeData.origin);
-            let macroCommand;
-            if (item instanceof Item) {
-              macroCommand = getProperty(item, "flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
-            } else if (aeData.flags?.dae?.itemData) {
-              const itemData = getProperty(aeData, "flags.dae.itemData");
-              if (itemData)
-                macroCommand = getProperty(itemData, "flags.dae.macro.command") ?? getProperty(itemData, "flags.itemacro.macro.command") ?? getProperty(itemData, "flags.itemacro.macro.data.command");
+          setProperty(aeData, "flags.dae.itemMacro", macroCommand)
+        }
+        // convert item duration to seconds/rounds/turns according to combat
+        if (aeData.duration.seconds) {
+          aeData.duration.startTime = game.time.worldTime;
+          const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token?.id));
+          let convertedDuration;
+          if (inCombat && (aeData.duration.rounds || aeData.duration.turns)) {
+            convertedDuration = {
+              type: "turns",
+              rounds: aeData.duration.rounds ?? 0,
+              turns: aeData.duration.turns ?? 0
             }
-            setProperty(aeData, "flags.dae.itemMacro", macroCommand)
+          } else convertedDuration = convertDuration({ value: aeData.duration.seconds, units: "second" }, inCombat);
+          if (aeData.duration.seconds === -1) { // special case duration of -1 seconds
+            delete convertedDuration.rounds;
+            delete convertedDuration.turns;
+            delete convertedDuration.seconds;
           }
-          // convert item duration to seconds/rounds/turns according to combat
-          if (aeData.duration.seconds) {
+          if (convertedDuration.type === "turns") {
+            aeData.duration.rounds = convertedDuration.rounds;
+            aeData.duration.turns = convertedDuration.turns;
+            aeData.startRound = game.combat?.round;
+            aeData.startTurn = game.combat?.turn;
+            delete aeData.duration.seconds;
+          }
+        } else if (aeData.duration.rounds || aeData.duration.turns) {
+          aeData.duration.startRound = game.combat?.round;
+          aeData.duration.startTurn = game.combat?.turn;
+        } else { // no specific duration on effect use spell duration
+          const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token?.id));
+          const convertedDuration = convertDuration(itemDuration, inCombat);
+          debug("converted duration ", convertedDuration, inCombat, itemDuration)
+          if (convertedDuration.type === "seconds") {
+            aeData.duration.seconds = convertedDuration.seconds;
             aeData.duration.startTime = game.time.worldTime;
-            const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token.id));
-            let convertedDuration;
-            if (inCombat && (aeData.duration.rounds || aeData.duration.turns)) {
-              convertedDuration = {
-                type: "turns",
-                rounds: aeData.duration.rounds ?? 0,
-                turns: aeData.duration.turns ?? 0
-              }
-            } else convertedDuration = convertDuration({ value: aeData.duration.seconds, units: "second" }, inCombat);
-            if (aeData.duration.seconds === -1) { // special case duration of -1 seconds
-              delete convertedDuration.rounds;
-              delete convertedDuration.turns;
-              delete convertedDuration.seconds;
-            }
-            if (convertedDuration.type === "turns") {
-              aeData.duration.rounds = convertedDuration.rounds;
-              aeData.duration.turns = convertedDuration.turns;
-              aeData.startRound = game.combat?.round;
-              aeData.startTurn = game.combat?.turn;
-              delete aeData.duration.seconds;
-            }
-          } else if (aeData.duration.rounds || aeData.duration.turns) {
+          } else if (convertedDuration.type === "turns") {
+            aeData.duration.rounds = convertedDuration.rounds;
+            aeData.duration.turns = convertedDuration.turns;
             aeData.duration.startRound = game.combat?.round;
             aeData.duration.startTurn = game.combat?.turn;
-          } else { // no specific duration on effect use spell duration
-            const inCombat = (game.combat?.turns.some(turnData => turnData.token?.id === token.id));
-            const convertedDuration = convertDuration(itemDuration, inCombat);
-            debug("converted duration ", convertedDuration, inCombat, itemDuration)
-            if (convertedDuration.type === "seconds") {
-              aeData.duration.seconds = convertedDuration.seconds;
-              aeData.duration.startTime = game.time.worldTime;
-            } else if (convertedDuration.type === "turns") {
-              aeData.duration.rounds = convertedDuration.rounds;
-              aeData.duration.turns = convertedDuration.turns;
-              aeData.duration.startRound = game.combat?.round;
-              aeData.duration.startTurn = game.combat?.turn;
-            }
           }
-          warn("Apply active effects ", aeData, itemCardId);
-          if (isNewerVersion(game.version, "11.0")) {
-            if (aeData.flags?.core?.statusId) aeData.statuses = [aeData.flags.core.statusId];
-            if (aeData.flags?.core?.statusId !== undefined) delete aeData.flags.core.statusId;
-          }
+        }
+        warn("Apply active effects ", aeData, itemCardId);
+        if (isNewerVersion(game.version, "11.0")) {
+          if (aeData.flags?.core?.statusId) aeData.statuses = [aeData.flags.core.statusId];
+          if (aeData.flags?.core?.statusId !== undefined) delete aeData.flags.core.statusId;
+        }
 
-          setProperty(aeData, "flags.dae.transfer", false);
-          let source: any | undefined = await fromUuid(aeData.origin);
-          let context = targetActor.getRollData();
-          if (false && source instanceof CONFIG.Item.documentClass) {
-            context = source?.getRollData();
-          }
-          context = mergeObject(context, { "target": tokenOrDocument.id, "targetUuid": tokenUuid, "targetActorUuid": targetActor?.uuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
+        setProperty(aeData, "flags.dae.transfer", false);
+        let source: any | undefined = await fromUuid(aeData.origin);
+        let context = targetActor.getRollData();
+        if (false && source instanceof CONFIG.Item.documentClass) {
+          context = source?.getRollData();
+        }
+        context = mergeObject(context, { "target": token?.id, "targetUuid": tokenUuid, "targetActorUuid": targetActor?.uuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
 
-          aeData.changes = aeData.changes.map(change => {
-            if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
-              let originItem = DAEfromUuid(aeData.origin);
-              let sourceActor = originItem?.actor;
-              if (!originItem && aeData.flags?.dae?.itemData) { // could not find the item reconstruct it.
-                const originActorUuid = aeData.origin.replace(/.Item.*/, "");
-                sourceActor = DAEfromActorUuid(originActorUuid);
-              } else {
-                const originActorUuid = aeData.origin.replace(/.Item.*/, "");
-                sourceActor = DAEfromActorUuid(originActorUuid);
-              }
-              if (change.key === "flags.dae.onUpdateTarget") {
-                // for onUpdateTarget effects, put the source actor, the target uuid, the origin and the original change.value
-                change.value = `${aeData.origin}, ${token.document.uuid}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${sourceActor.uuid}, ${change.value}`;
-              } else if (change.key === "flags.dae.onUpdateSource") {
-                change.value = `${aeData.origin}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${token.document.uuid}, ${sourceActor.uuid}, ${change.value}`;
-                const newEffectData = duplicate(aeData);
-                newEffectData.changes = [duplicate(change)];
-                newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
-                sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], { metaData })
-                return undefined;
-              }
-
-              // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
-              if (typeof change.value === "number") {
-              } else if (typeof change.value === "string") {
-                //@ts-expect-error replaceFormulaData
-                change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false });
-                change.value = change.value.replace("##", "@");
-              } else {
-                change.value = duplicate(change.value).map(f => {
-                  if (f === "@itemCardId") return itemCardId;
-                  if (f === "@target") return tokenOrDocument.id;
-                  if (f === "@targetUuid") return tokenUuid;
-                  return f;
-                })
-              }
+        aeData.changes = aeData.changes.map(change => {
+          if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
+            //@ts-expect-error fromUuidSync
+            let originItem = fromUuidSync(aeData.origin);
+            let sourceActor = originItem?.actor;
+            if (!originItem && aeData.flags?.dae?.itemData) { // could not find the item reconstruct it.
+              const originActorUuid = aeData.origin.replace(/.Item.*/, "");
+              sourceActor = actorFromUuid(originActorUuid);
             } else {
-              // context = me
-              // For non macros most @fields can be left to be evaluated when the change is applied by dae
-              // rgeObject(context, { "target": tokenOrDocument.id, "@target": "target", tokenUuid, "targetUuid": tokenUuid, "itemCardid": itemCardId, "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" }, { overwrite: true });
-              // change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false })
-              const targetContext = {"targetUuid": tokenUuid, "target": tokenOrDocument.id, "tokenUuid": tokenUuid, "token": tokenOrDocument.id};
-              for (let key of Object.keys(targetContext)) {
-                change.value = change.value.replace(`@${key}`, targetContext[key])
-              }
+              const originActorUuid = aeData.origin.replace(/.Item.*/, "");
+              sourceActor = actorFromUuid(originActorUuid);
             }
-            return change;
-          }).filter(change => change !== undefined);
-        }
-
-        if (dupEffects.length > 0) {
-          // let timedRemoveList = await actionQueue.add(targetActor.createEmbeddedDocuments.bind(targetActor), "ActiveEffect", dupEffects, { metaData });
-          let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { metaData });
-
-          setTimeout(() => {
-            if (globalThis.EffectCounter) {
-              for (let effectData of dupEffects) {
-                let flags = effectData.flags;
-                if (flags?.dae?.stackable === "count" && flags?.dae?.stacks) {
-                  const counter = globalThis.EffectCounter.findCounter(token, effectData.icon);
-                  counter.setValue(flags.dae.stacks);
-                }
-              }
-            }
-          }, 1000);
-
-          //TODO remove this when timesup is in the wild.
-          if (!timesUpInstalled) { // do the kludgey old form removal
-            let doRemoveEffect = async (tokenUuid, removeEffect) => {
-              const actor = globalThis.DAE.DAEfromActorUuid(tokenUuid);
-              let removeId = removeEffect._id;
-              if (removeId && actor?.effects.get(removeId)) {
-                await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
-              }
+            if (change.key === "flags.dae.onUpdateTarget") {
+              // for onUpdateTarget effects, put the source actor, the target uuid, the origin and the original change.value
+              change.value = `${aeData.origin}, ${token?.document.uuid}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${sourceActor.uuid}, ${change.value}`;
+            } else if (change.key === "flags.dae.onUpdateSource") {
+              change.value = `${aeData.origin}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${token?.document.uuid}, ${sourceActor.uuid}, ${change.value}`;
+              const newEffectData = duplicate(aeData);
+              newEffectData.changes = [duplicate(change)];
+              newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
+              sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], { metaData })
+              return undefined;
             }
 
-            if (!Array.isArray(timedRemoveList)) timedRemoveList = [timedRemoveList];
-            timedRemoveList.forEach(ae => {
-              // need to do separately as they might have different durations
-              let duration = ae.duration?.seconds || 0;
-              if (!duration) {
-                duration = ((ae.duration.rounds ?? 0) + ((ae.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
-              }
-              warn("removing effect ", ae.toObject, " in ", duration, " seconds ")
-              if (duration && aboutTimeInstalled) {
-                //@ts-expect-error .Gametime
-                game.Gametime.doIn({ seconds: duration }, doRemoveEffect, tokenUuid, ae.toObject())
-              } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
-                setTimeout(doRemoveEffect, duration * 1000 || 6000, tokenUuid, ae.toObject());
-              }
-            })
+            // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
+            if (typeof change.value === "number") {
+            } else if (typeof change.value === "string") {
+              //@ts-expect-error replaceFormulaData
+              change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false });
+              change.value = change.value.replace("##", "@");
+            } else {
+              change.value = duplicate(change.value).map(f => {
+                if (f === "@itemCardId") return itemCardId;
+                if (f === "@target") return token?.id;
+                if (f === "@targetUuid") return tokenUuid;
+                return f;
+              })
+            }
+          } else {
+            // context = me
+            // For non macros most @fields can be left to be evaluated when the change is applied by dae
+            // rgeObject(context, { "target": tokenOrDocument.id, "@target": "target", tokenUuid, "targetUuid": tokenUuid, "itemCardid": itemCardId, "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" }, { overwrite: true });
+            // change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false })
+            const targetContext = { "targetUuid": tokenUuid, "target": token?.id, "tokenUuid": tokenUuid, "token": token?.id };
+            for (let key of Object.keys(targetContext)) {
+              change.value = change.value.replace(`@${key}`, targetContext[key])
+            }
           }
+          return change;
+        }).filter(change => change !== undefined);
+      }
+
+      if (dupEffects.length > 0) {
+        // let timedRemoveList = await actionQueue.add(targetActor.createEmbeddedDocuments.bind(targetActor), "ActiveEffect", dupEffects, { metaData });
+        let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects,
+          //@ts-expect-error metadata
+          { metaData });
+
+        setTimeout(() => {
+          if (globalThis.EffectCounter) {
+            for (let effectData of dupEffects) {
+              let flags = effectData.flags;
+              if (flags?.dae?.stackable === "count" && flags?.dae?.stacks) {
+                const counter = globalThis.EffectCounter.findCounter(token, effectData.icon);
+                counter.setValue(flags.dae.stacks);
+              }
+            }
+          }
+        }, 1000);
+
+        //TODO remove this when timesup is in the wild.
+        if (!timesUpInstalled) { // do the kludgey old form removal
+          let doRemoveEffect = async (tokenUuid, removeEffect) => {
+            const actor = globalThis.DAE.fromActorUuid(tokenUuid);
+            let removeId = removeEffect._id;
+            if (removeId && actor?.effects.get(removeId)) {
+              await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
+            }
+          }
+
+          if (!Array.isArray(timedRemoveList)) timedRemoveList = [timedRemoveList];
+          timedRemoveList.forEach((ae: any) => {
+            // need to do separately as they might have different durations
+            let duration = ae.duration?.seconds || 0;
+            if (!duration) {
+              duration = ((ae.duration.rounds ?? 0) + ((ae.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
+            }
+            warn("removing effect ", ae.toObject, " in ", duration, " seconds ")
+            if (duration && aboutTimeInstalled) {
+              //@ts-expect-error .Gametime
+              game.Gametime.doIn({ seconds: duration }, doRemoveEffect, tokenUuid, ae.toObject())
+            } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
+              setTimeout(doRemoveEffect, duration * 1000 || 6000, tokenUuid, ae.toObject());
+            }
+          })
         }
-      };
+      }
     };
-  }
+  };
 }
 
 export function convertDuration(itemDuration: { units: string, value: number }, inCombat) {

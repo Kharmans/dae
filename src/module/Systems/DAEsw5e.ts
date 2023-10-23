@@ -124,8 +124,9 @@ export class DAESystemSW5E extends DAESystemDND5E {
   static get applyBaseEffectsFunc() {
     return applyBaseActiveEffectssw5e
   }
-  public static getOptionsForSpec(spec: string): {} {
-    if (spec.includes("system.skills") && spec.includes("ability")) 
+  public static getOptionsForSpec(spec: any): any {
+    if (!spec.key) return undefined;
+    if (spec.key.includes("system.skills") && spec.includes("ability")) 
         return CONFIG.SW5E.abilities;
     return super.getOptionsForSpec(spec);
   }

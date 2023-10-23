@@ -66,6 +66,8 @@ export class DIMEditor extends FormApplication {
         scope: "global",
         command,
         author: game.user?.id,
+        //@ts-expect-error
+        ownership: {default: CONST.DOCUMENT_PERMISSION_LEVELS.OWNER}
       }, {}));
   }
 

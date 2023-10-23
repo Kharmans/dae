@@ -654,6 +654,23 @@ Write a function that does
 
 Your custom effects can create new fields on the actor as well (DAE does this for flags.dnd5e.conditions for example). Just reference the field in the active effect spec and it will be created on the actor when the custom effect updates the value. There is no support for "arbitrary" field specification in the DAE UI (yet) so you would have to create the effect on the actor yourself.
 
+#### Defining fields to appear in the effect editor.
+You can also define fields that will be displayed in the DAE effect editor, with auto complete, labels that appear in the field list drop down, sample value (type of values in the field), valid modes and drop down list for the value field. Fields defined this way will auto complete in the field name auto complete
+
+```js
+  Hooks.on("dae.modifySpecials", {specKey, specials, charaterSpec} => {
+    if (["npc", "character".includes(specKey)]) {
+      specials["system.attributes.my.test.field = [ // the actor key that will be set
+       "", // A sample value to know the type of the field, typically "", 0, false
+       0, // valid modes for the field 0 = custom, -1 = all
+       "My Test Field", // the label to display in the dae editor drop down field list
+       {a: "Option A", "b", "Option B"}] // the aisgned values and labels to be used in the value drop down list
+    }
+  })
+```  
+specKey is one of the actor types, character, npc, vehicle or "union" which are all effect across all actor types.  
+You can specify fields that are processed in the baseValues (before prepareDerivedData) or specialValues pass (after prepareDerivedData) of DAE.
+
 ### Initiative
 
 Changes to initiative are challenging due to the way it is calculated and rolled in the dnd5e system. Here is a quick guide to what you can do.

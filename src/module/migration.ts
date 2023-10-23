@@ -162,23 +162,6 @@ function removeDynamiceffects(actor) {
   actor.update({ "flags.-=dynamiceffects": null })
 }
 
-export async function fixupDDBAC(allActors = false) {
-  try {
-    const itemName = "DDB AC";
-    const content = await game.packs?.get("dae.premadeitems")?.getDocuments();
-    const item = content?.find(i => i.name === itemName);
-    if (item) {
-      //@ts-expect-error .flags
-      let items = (game.actors ?? []).filter(a => a.flags.ddbimporter && a.flags.ddbimporter.baseAC)
-        .filter(a => allActors || a.type === "character")
-        .filter(a => !a.items.getName(itemName))
-        .forEach(a => a.createEmbeddedDocuments("Item", [item.toObject()]))
-    }
-  } catch (err) {
-    error("migration did not complete", err);
-  }
-}
-
 export function checkLibWrapperVersion() {
   //@ts-expect-error .version
   if (isNewerVersion("1.8.0", game.modules.get("lib-wrapper")?.version)) {

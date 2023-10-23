@@ -122,6 +122,7 @@
     "dae.noeffect": "Your character does not have an effect name",
     "dae.enabled": "Enabled",
     "dae.disabled": "Disabled",
+    "dae.suppressed": "Suppressed",
     "dae.tool_proficiency": "Tool Proficiency",
     "dae.notTargetItem": "This item does not have targets specified",
     "dae.ConsumeCharge.Name": "Consume Charge On Passive Activation",
@@ -355,5 +356,6 @@
     "dae.ShowIcon.Hint": "Display the effect Icon on the token and combat display",
     "dae.DontApply.Name": "Don't apply the effect",
     "dae.DontApply.Hint": "When Dae (and midi) applies active effects, skip this one",
-    "dae.DIMEditor.Name": "DIME"
+    "dae.DIMEditor.Name": "DIME",
+    "dae.IncapacitatedDisabled": "Effect disabled if actor incapacitated"
   }

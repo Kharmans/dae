@@ -1,3 +1,32 @@
+### 11.0.20
+* Various (lots of) changes to support CONFIG.ActiveEffect.legacyTransferral = false as well as true. There may be inadvertent breaking changes in this release so v11.0.19 is still available via https://gitlab.com/tposney/dae/raw/v11/package/module11019.json
+* First pass to support effects that are disabled when a character is incapacitated.
+* Fix for error thrown during getRollData if the actor already has a token.
+* Fix for an edge case in dnd5e display of armor calculations being incorrect in the armor config panel. This is most noticeable if using challenge mode armor.
+* Fix for incorrect permissions setting in DIME.
+* Fix for updating actor effects which have a macro.execute/tokenMagic/creatItem/CE/CUB effect.
+* Changes to DAE with the incorporation of an explicit API for dae - thanks @p4535992
+* Enhanced ability for user creation of effects.
+```js
+  Hooks.on("dae.modifySpecials", {specKey, specials, charaterSpec} => {
+    specials["system.attributes.my.test.field = [ // the actor key that will be set
+      "", // A sample value to know the type of the field, typically "", 0, false
+      0, // valid mode for the field 0 = custom, -1 = all
+      "My Test Field", // the label to display in the dae editor drop down list
+      {a: "Option A", "b", "Option B"} // the values and label to be used in the value drop down list
+    ]
+  })
+```
+  - The hook will be called during the init phase so you should make the Hook.on call during script load.
+
+* Updated handling of uuid -> entities in DAE
+  - DAE.actorFromUuid(uuid) will return the actor pointed to by the uuid, tokenDocument.actor if the uuid points to a tokenDocument.
+  - DAE.DAEfromUuid is deprecated in favor of foundry.utils.fromUuidSync
+  - DAE.getToken(uuid) will return the token pointed to by the uuid (if it's a tokenDocument uuid) or find a token on the scene if the uuid points to an actor.
+  - DAE.getTokenDocument(uuid) will return the tokenDocument pointed to by the uuid (if it's a tokenDocument uuid) or find the document for a token on the scene if the uuid points to an actor.
+  - These function replace DAE.DAEfromUuid, DAE.fromActorUuid.
+
+
 ### 11.0.19
 * Fix for potential permission errors for macro.execute/macro.ItemMacro etc
 

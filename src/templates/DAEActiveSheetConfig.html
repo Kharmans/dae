@@ -36,9 +36,16 @@
 
     <div class="form-group">
       <label>{{ localize "EFFECT.Disabled" }}</label>
-      <input type="checkbox" name="disabledX" {{ checked effect.disabled }} />
+      <input type="checkbox" name="disabled" {{ checked effect.disabled }} />
     </div>
 
+    {{#if midiActive}}
+    <div class="form-group">
+      <label>{{ localize "dae.IncapacitatedDisabled" }}</label>
+      <input type="checkbox" name="flags.dae.disableIncapacitated" {{ checked effect.flags.dae.disableIncapacitated }} />
+    </div>
+
+    {{/if}}
     {{#if isActorEffect}}
     <div class="form-group">
         <label>{{ localize "EFFECT.Origin" }}</label>

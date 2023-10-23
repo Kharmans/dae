@@ -32,7 +32,7 @@
         </li>
 
         {{#each actives as |effect iid|}}
-        <li class="flexrow effect-header" effect-id="{{effect._id}}">
+        <li class="flexrow effect-header" effect-id="{{effect._id}}" effect-uuid="{{effect.uuid}}">
           <div class="effect-label">
             <img src="{{effect.icon}}" style="height:20px">
             {{effect.name}}
@@ -45,6 +45,8 @@
           {{/if}}
           {{#if effect.disabled}}
           <div>&nbsp{{localize "dae.disabled"}}</div>
+          {{else if effect.isSuppressed}}
+          <div>&nbsp{{localize "dae.suppressed"}}</div>
           {{else}}
           {{#if effect.isTemporary}}
           <div style="flex-grow:3">{{effect.duration.label}}</div>

@@ -1,16 +1,14 @@
 import { confirmAction, daeSpecialDurations } from '../../dae';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken, deleteItemActiveEffects } from '../../module/daeMacros';
 import { convertDuration } from '../GMAction';
-import { DAESystemDND5E } from '../Systems/DAEdnd5e';
 import { ActiveEffects } from '../apps/ActiveEffects';
-import { DAEActiveEffectConfig, addAutoFields } from '../apps/DAEActiveEffectConfig';
+import { DAEActiveEffectConfig, addAutoFields, otherFields } from '../apps/DAEActiveEffectConfig';
 import { DIMEditor } from '../apps/DIMEditor';
-import { DAEfromActorUuid, DAEfromUuid, daeMacro, doEffects, daeSystemClass, actionQueue } from '../dae';
-import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, tobMapper } from '../migration';
+import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid } from '../dae';
+import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, tobMapper } from '../migration';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem';
 
 const API = {
-
     ActiveEffects(object: any = {}, options:any = {}) {
        return new ActiveEffects(object, options);
     },
@@ -29,7 +27,7 @@ const API = {
     confirmAction(toCheck: boolean, confirmFunction: any, title?: string) {
        return confirmAction(toCheck, confirmFunction, title);
     },
-    convertDurationn(itemDuration: { units: string, value: number }, inCombat) {
+    convertDuration(itemDuration: { units: string, value: number }, inCombat) {
         return convertDuration(itemDuration, inCombat);
     },
     async createToken(tokenData, x, y) {
@@ -39,10 +37,16 @@ const API = {
         return new DAEActiveEffectConfig(object, options);
     },
     DAEfromActorUuid(uuid): Actor | null {
-        return DAEfromActorUuid(uuid);
+        console.warn("dae | Deprecation warning | DAEfromActorUuid is deprecated, use DAE.fromActorUuid instead");
+        return actorFromUuid(uuid);
+    },
+    actorFromUuid(uuid: string): Actor | null {
+        return actorFromUuid(uuid);
     },
     DAEfromUuid(uuid) {
-        return DAEfromUuid(uuid);
+        console.warn("dae | Deprecation warning | DAEfromUuid is deprecated, use foundry.utils.fromUuidSync instead");
+        //@ts-expect-error fromUuidSync
+        return fromUuidSync(uuid);
     },
     async daeMacro(action: string, actor, effectData, lastArgOptions = {}) {
         return await daeMacro(action, actor, effectData, lastArgOptions);
@@ -72,9 +76,6 @@ const API = {
     },
     async fixTransferEffect(actor, item)  {
         return await fixTransferEffect(actor, item);
-    },
-    async fixupDDBAC(allActors = false) {
-        return await fixupDDBAC(allActors);
     },
     getFlag(entity: Actor | Token | string, flagId: string) {
         return getFlag(entity, flagId);
@@ -127,16 +128,16 @@ const API = {
     async unsetFlag(tactor: Actor | Token | string, flagId) {
         return await unsetFlag(tactor, flagId);
     },
-    ValidSpec(fs: string, sv: string | number | boolean | any[], forcedMode = -1) {
-        return new ValidSpec(fs, sv, forcedMode);
+    get ValidSpec() {return ValidSpec},
+    get otherValidSpecKeys() { return otherFields},
+    get allValidSpecKeys() {
+      return otherFields.concat(Object.keys(ValidSpec.specs["union"].allSpecsObj))
     },
-    actionQueue() {
-        return actionQueue;
-    },
-    wildcardBaseEffects(): RegExp[] {
+    get actionQueue() {return actionQueue},
+    get wildcardBaseEffects(): RegExp[] {
         return wildcardEffects;
     },
-    daeCustomEffect() {
+    get daeCustomEffect() {
         return daeSystemClass.daeCustomEffect;
     }
 

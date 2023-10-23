@@ -55,7 +55,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
     this.statusEffectList = {};
     let efl: any = CONFIG.statusEffects;
-      efl = efl.filter(se => se.id)
+    efl = efl.filter(se => se.id)
       .map(se => {
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
         if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
@@ -87,10 +87,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       this.ATLVisionModes = {};
       //@ts-expect-error visionModes
       Object.values(CONFIG.Canvas.visionModes)
-      //@ts-expect-error TokenConfig, the core sheet for a token does this filtering, I think we should too
-      .filter(f => f.tokenConfig)
-      //@ts-expect-error
-      .forEach(f => this.ATLVisionModes[f.id] = i18n(f.label) )
+        //@ts-expect-error TokenConfig, the core sheet for a token does this filtering, I think we should too
+        .filter(f => f.tokenConfig)
+        //@ts-expect-error
+        .forEach(f => this.ATLVisionModes[f.id] = i18n(f.label))
     }
 
     this.validFields = { "__": "" }
@@ -115,7 +115,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       height: "auto",
       resizable: true,
       tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }],
-      dragDrop: [{dropSelector: ".value"}]
+      dragDrop: [{ dropSelector: ".value" }]
     });
   }
 
@@ -131,16 +131,17 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
   /* ----------------------------------------- */
   getOptionsForSpec(spec) {
-    if (spec.includes("tokenMagic"))
+    if (!spec?.key) return undefined;
+    if (spec.key.includes("tokenMagic"))
       return this.tokenMagicEffects;
-    if (spec === "macro.CUB") return this.cltConditionList;
-    if (spec === "macro.CE") return this.ceEffectList;
-    if (spec === "macro.CLT") return this.cltConditionList;
-    if (spec === "StatusEffect") return this.statusEffectList;
-    if (spec === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
-    if (spec === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
-    if (spec === "ATL.preset") return this.ATLPresets;
-    if (spec === "ATL.sight.visionMode") return this.ATLVisionModes;
+    if (spec.key === "macro.CUB") return this.cltConditionList;
+    if (spec.key === "macro.CE") return this.ceEffectList;
+    if (spec.key === "macro.CLT") return this.cltConditionList;
+    if (spec.key === "StatusEffect") return this.statusEffectList;
+    if (spec.key === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
+    if (spec.key === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
+    if (spec.key === "ATL.preset") return this.ATLPresets;
+    if (spec.key === "ATL.sight.visionMode") return this.ATLVisionModes;
 
     return daeSystemClass.getOptionsForSpec(spec);
   }
@@ -185,7 +186,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
       }
 
-      change.options = this.getOptionsForSpec(change.key);
+      if (validSpecsToUse.allSpecsObj[change.key]?.options)
+        change.options = validSpecsToUse.allSpecsObj[change.key]?.options;
+      else
+        change.options = this.getOptionsForSpec(change);
       if (!change.priority) change.priority = change.mode * 10;
     });
 
@@ -203,6 +207,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       setProperty(data.effect.flags, "dae.specialDuration", []);
     data.sourceName = await this.object.sourceName;
     data.fieldsList = this.fieldsList;
+    data.midiActive = globalThis.MidiQOL !== undefined;
     return data;
   }
 
@@ -226,7 +231,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     //@ts-expect-error
     return this.submit({ preventClose: true }).then(() => this.render());
   }
-  _onDragStart(ev) {}
+  _onDragStart(ev) { }
 
   async _onDrop(ev) {
     ev.preventDefault();
@@ -242,7 +247,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   async _renderOuter(options: any): Promise<any> {
     //@ts-expect-error
     let html = await super._renderOuter(options);
-    $(html).find(".window-content").css({overflow: "visible"})
+    $(html).find(".window-content").css({ overflow: "visible" })
     return html;
   }
 
@@ -252,7 +257,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     const button = event.currentTarget;
     switch (button.dataset.action) {
       case "add":
-        this._addEffectChange();
+        return this._addEffectChange();
       case "delete":
         return confirmAction(confirmDelete, () => {
           button.closest(".effect-change").remove();
@@ -300,10 +305,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       if (typeof change.priority === "string") change.priority = Number(change.priority);
       if (change.priority === undefined || isNaN(change.priority)) change.priority = change.mode ? change.mode * 10 : 0;
     }
-    if (data.disabledX !== undefined) {
-      data.disabled = data.disabledX;
-      delete data.disabledX;
-    }
     if (!data.tint || data.tint === "") data.tint = null;
     // fixed for very old items
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
@@ -335,15 +336,15 @@ export function geti18nTranslations() {
 }
 
 Hooks.once("setup", () => {
-  DocumentSheetConfig.registerSheet(
-    CONFIG.ActiveEffect.documentClass, 
-    "core", 
-    //@ts-expect-error
-    DAEActiveEffectConfig, 
-    {
-      label: i18n("dae.EffectSheetLabel"),
-      makeDefault: true,
-      canBeDefault: true,
-      canConfigure: true
-    });
-  })
+    DocumentSheetConfig.registerSheet(
+      CONFIG.ActiveEffect.documentClass,
+      "core",
+      //@ts-expect-error
+      DAEActiveEffectConfig,
+      {
+        label: i18n("dae.EffectSheetLabel"),
+        makeDefault: true,
+        canBeDefault: true,
+        canConfigure: true
+      });
+})

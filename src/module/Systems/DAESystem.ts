@@ -1,6 +1,6 @@
 import { debug, error, i18n, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, atlActive, DAEfromActorUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
+import { applyDaeEffects, atlActive, actorFromUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
 import { setupSocket } from "../GMAction";
 
 export let wildcardEffects: RegExp[] = [];
@@ -26,11 +26,16 @@ export class ValidSpec {
   get forcedMode(): number { return this._forcedMode }
   set forcedMode(mode: number) { this._forcedMode = mode }
 
-  constructor(fs: string, sv: string | number | boolean | any[], forcedMode = -1) {
+  _options: any;
+  get options(): any { return this._options }
+  set options(options: any) { this._options = options }
+
+  constructor(fs: string, sv: string | number | boolean | any[], forcedMode = -1, label = undefined, options: any = undefined) {
     this._fieldSpec = fs;
     this._sampleValue = sv;
-    this._label = fs;
+    this._label = label ?? fs;
     this._forcedMode = forcedMode;
+    this._options = options;
   }
 
   static createValidMods() {
@@ -80,7 +85,7 @@ export class ValidSpec {
 
       // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
       this.specs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
-        let validSpec = new ValidSpec(spec, baseValues[spec][0], baseValues[spec][1]);
+        let validSpec = new ValidSpec(spec, baseValues[spec][0], baseValues[spec][1], baseValues[spec][2], baseValues[spec][3]);  
 
         if (spec.includes(`flags.${game.system.id}`))
           validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
@@ -97,7 +102,7 @@ export class ValidSpec {
       Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.specs[specKey].derivedSpecs, _characterSpec);
       Object.entries(specials).forEach(special => {
         //@ts-expect-error
-        let validSpec = new ValidSpec(special[0], special[1][0], special[1][1]);
+        let validSpec = new ValidSpec(special[0], special[1][0], special[1][1], special[1][2], special[1][3]);
         this.specs[specKey].derivedSpecs.push(validSpec);
       })
       this.specs[specKey].allSpecs = this.specs[specKey].baseSpecs.concat(this.specs[specKey].derivedSpecs);
@@ -178,10 +183,10 @@ function getRollData(wrapped, ...args): any {
   data.actorId = this.id;
   data.actorUuid = this.uuid;
 
-  Object.defineProperty(data, "token", {
+  if (!data.token) Object.defineProperty(data, "token", {
     get() {
       if (!data._token) {
-        const actor = DAEfromActorUuid(data.actorUuid ?? "")
+        const actor = actorFromUuid(data.actorUuid ?? "")
         data._token = getSelfTarget(actor);
       }
       return data._token;
@@ -190,7 +195,7 @@ function getRollData(wrapped, ...args): any {
   });
   Object.defineProperty(data, "tokenUuid", {
     get() { // During initialisation getSelfTarget will return a token document not a token
-      if (data._tokenUuid) return data._tokeUuid;
+      if (data._tokenUuid) return data._tokenUuid;
       if (data.token instanceof Token)
         return data.token?.document.uuid ?? "undefined";
       else return data.token.uuid ?? "undefined"
@@ -227,11 +232,12 @@ export class DAESystem {
    * Keys are valid options for the field specificaiton and the value is the user facing text for that option 
    * e.g. {common: "Common"}
    * */
-  public static getOptionsForSpec(specification: string): {} {
-    if (specification === "ATE.detectionMode") {
+  public static getOptionsForSpec(specification): any {
+    if (!specification.key) return undefined;
+    if (specification?.key === "ATE.detectionMode") {
       return this.detectionModeList;
     }
-    return false;
+    return undefined;
   }
   // Configure any lookp lists that might be required by getOptionsForSpec.
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
@@ -588,7 +594,7 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
 
   //@ts-ignore
   const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-  if (isNewerVersion(game.version, "10") && (game.modules.get("ATL")?.active)) {
+  if (game.modules.get("ATL")?.active) {
     for (let label of ["dimSight", "brightSight"]) {
       specials[`ATL.${label}`] = [0, -1];
     }

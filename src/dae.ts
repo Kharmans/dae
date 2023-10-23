@@ -2,17 +2,12 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, doEffects, daeInitActions, fetchParams, daeMacro, DAEfromUuid, DAEfromActorUuid, daeSystemClass, actionQueue } from "./module/dae";
+import { daeSetupActions, daeInitActions, fetchParams } from "./module/dae";
 import { daeReadyActions } from "./module/dae";
-import { convertDuration, setupSocket } from './module/GMAction';
-import { checkLibWrapperVersion, cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffects, fixupDDBAC, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, tobMapper } from './module/migration';
-import { ActiveEffects } from './module/apps/ActiveEffects';
+import { setupSocket } from './module/GMAction';
+import { checkLibWrapperVersion } from './module/migration';
 import { setupPatching, initPatching } from './module/patching';
-import { addAutoFields, DAEActiveEffectConfig } from './module/apps/DAEActiveEffectConfig';
-import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken, deleteItemActiveEffects } from './module/daeMacros';
 import { ItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
-import { ValidSpec, wildcardEffects } from './module/Systems/DAESystem';
-import { DIMEditor } from './module/apps/DIMEditor';
 import API from './module/API/api';
 
 export let setDebugLevel = (debugText: string) => {
@@ -27,7 +22,7 @@ export let log = (...args) => console.log("dae | ", ...args);
 export let warn = (...args) => { if (debugEnabled > 0) console.warn("dae | ", ...args) };
 export let error = (...args) => console.error("dae | ", ...args)
 export let timelog = (...args) => warn("dae | ", Date.now(), ...args);
-export let i18n = key => {
+export function i18n(key) {
   return game.i18n.localize(key);
 };
 export let daeAlternateStatus;
@@ -39,6 +34,8 @@ export var daeUntestedSystems: boolean;
 /* Initialize module					*/
 /* ------------------------------------ */
 Hooks.once('init', async function () {
+  //@ ts-expect-error legacyTransferral
+  // CONFIG.ActiveEffect.legacyTransferral = false;
   debug('Init setup actions');
 
   //@ts-expect-error
@@ -114,8 +111,7 @@ Hooks.once('setup', function () {
     //@ts-expect-error .name
     ui.notifications.warn(`DAE disabled for ${game.system.name} - to enable choose Allow Untested Systems from the DAE settings`)
   } else {
-    // Do anything after initialization but before
-    // ready
+    // Do anything after initialization but before ready
     debug("setup actions")
     daeSetupActions();
     setupPatching();
@@ -123,8 +119,8 @@ Hooks.once('setup', function () {
     // Set API
     const data:any = game.modules.get("dae");
     data.api = API;
-    //@ts-expect-error
-    window.DAE = game.modules.get("dae").api;
+    //@ts-expect-error .api
+    globalThis.DAE = game.modules.get("dae")?.api;
 
     setupSocket();
     Hooks.callAll("DAE.setupComplete");

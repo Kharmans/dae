@@ -1,6 +1,6 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, atlActive, DAEfromUuid, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
+import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, atlActive, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
@@ -489,38 +489,37 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     });
   }
 
-  public static getOptionsForSpec(spec) {
-    if (spec === "system.traits.languages.value")
+  public static getOptionsForSpec(spec: any): any {
+    if (!spec?.key) return undefined;
+    if (spec.key === "system.traits.languages.value")
       return this.languageList;
-    if (spec === "system.traits.ci.value")
+    if (spec.key === "system.traits.ci.value")
       return this.conditionList;
-    if (spec.match(/system.tools..*prof/))
+    if (spec.key.match(/system.tools..*prof/))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
-    if (spec.match(/system.tools..*ability/))
+    if (spec.key.match(/system.tools..*ability/))
       return daeSystemClass.systemConfig.abilities;
-    if (spec === "system.traits.armorProf.value")
+    if (spec.key === "system.traits.armorProf.value")
       return this.armorProfList;
-    if (spec === "system.traits.weaponProf.value")
+    if (spec.key === "system.traits.weaponProf.value")
       return this.weaponProfList;
-    if (["system.traits.di.value", "system.traits.dr.value", "system.traits.dv.value"].includes(spec))
+    if (["system.traits.di.value", "system.traits.dr.value", "system.traits.dv.value"].includes(spec.key))
       return this.traitList;
-    if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom"].includes(spec)) {
+    if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom"].includes(spec.key)) {
       return this.customDamageResistanceList;
     }
-    if (spec === "system.attributes.ac.calc") {
+    if (spec.key === "system.attributes.ac.calc") {
       return this.armorClassCalcList;
     }
-
-    if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses"].includes(spec))
+    if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses"].includes(spec.key.key))
       return this.bypassesList;
-
-    if (spec.includes("system.skills") && spec.includes("value"))
+    if (spec.key.includes("system.skills") && spec.key.includes("value"))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
-    if (spec.includes("system.skills") && spec.includes("ability")) {
+    if (spec.key.includes("system.skills") && spec.key.includes("ability")) {
       if (game.system.id === "dnd5e")
         return daeSystemClass.systemConfig.abilities;
     }
-    if (spec === "system.traits.size") return daeSystemClass.systemConfig?.actorSizes;
+    if (spec.key === "system.traits.size") return daeSystemClass.systemConfig?.actorSizes;
     return super.getOptionsForSpec(spec);
   }
 
@@ -906,8 +905,6 @@ function prepareData(wrapped) {
     const pact = this.system.spells?.pact;
     if (pact)
       pact.value = this._source.system.spells.pact?.value;
-    //TODO find another way to tdo this
-    // this._prepareOwnedItems(this.items)
     if (isNewerVersion(game.version, "11.293")) {
       // Apply special statuses that changed to active tokens
       let tokens;
@@ -1131,12 +1128,14 @@ async function _updateObject(event, formData) {
 }
 
 export function getActorItemForEffect(effect: any /* ActiveEffect */) {
+  if (effect.parent instanceof CONFIG.Item.documentClass && effect.parent.isEmbedded) return effect.parent;
   if (!effect.origin) return undefined;
   const parts = effect.origin?.split(".") ?? [];
   const [parentType, parentId, documentType, documentId] = parts;
   let item;
   // Case 1: effect is a linked or sidebar actor - only if the actor ids match
-  if (parentType === "Actor" && documentType === "Item" && parentId === effect.parent.id) {
+  // During preparation effect.parent.id is undefined so we need to check for that
+  if (parentType === "Actor" && documentType === "Item" && (!effect.parent.id || parentId === effect.parent.id)) {
     item = effect.parent.items.get(documentId);
   }
   // Case 2: effect is a synthetic actor on the scene - only if the token ids match
@@ -1154,12 +1153,29 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
 }
 function determineSuppression() {
   this.isSuppressed = false;
-  if (this.disabled || (this.parent.documentName !== "Actor")) return;
-  //TODO when dnd5e fixed make this a call to wrapped.
-  if (this.origin) {
-    const item = getActorItemForEffect(this);
-    if (item) this.isSuppressed = item.areEffectsSuppressed;
+  if (this.disabled) return;
+
+  // DND5e currently does not work with unlinked tokens and suppression determination so this is overtide
+  // TODO make this a WRAPPER when dnd5e fixes the unlinked token bug
+
+  if (globalThis.MidiQOL && getProperty(this, "flags.dae.disableIncapacitated")) {
+    let actor;
+    if (this.parent instanceof CONFIG.Actor.documentClass) actor = this.parent;
+    else if (this.parent instanceof CONFIG.Item.documentClass) actor = this.parent.parent;
+    if (actor) this.isSuppressed = globalThis.MidiQOL.checkIncapacitated(actor);
   }
+  if (this.parent instanceof CONFIG.Item.documentClass && effectIsTransfer(this)) {
+    // If the parent of the effect is an item then supressed is based on the item
+    this.isSuppressed = this.isSuppressed || this.parent.areEffectsSuppressed;
+    return;
+  }
+  //TODO revisit when dnd5e is fixed
+  // This is an actor effect and it's a transfer effect
+  if (this.parent instanceof CONFIG.Actor.documentClass && effectIsTransfer(this)) {
+    const item = getActorItemForEffect(this);
+    if (item) this.isSuppressed = this.isSuppressed || item.areEffectsSuppressed;
+  }
+
   if (this.parent?.system.traits) {
     let customStats: Array<string> = this.parent.system.traits.ci?.custom?.split(';').map(s => s.trim().toLocaleLowerCase());
     const ci = new Set([...(this.parent.system.traits?.ci?.value ?? []), ...customStats]);
@@ -1170,6 +1186,57 @@ function determineSuppression() {
   }
 }
 
+function addEffectChange(actor, tokens, effectToApply, candidate, change) {
+  const token = tokens[0];
+  switch (change.key) {
+    case "macro.CE":
+      const lastArg = prepareLastArgData(effectToApply, actor);
+      addConvenientEffectsChange(change.value, actor.uuid, effectToApply.origin, {}, actor.isToken, lastArg);
+      break;
+    case "macro.CUB":
+    case "macro.CLT":
+      addCubChange(change.value, [token]);
+      break;
+    case "macro.tokenMagic":
+      addTokenMagicChange(actor, change, tokens);
+      break;
+    case "macro.createItem":
+    case "macro.createItemRunMacro":
+      for (let effect of actor.allApplicableEffects()) {
+        if (effect.origin === candidate.uuid && effectIsTransfer(effect)) {
+          addCreateItemChange(change, actor, effect);
+        }
+      }
+      break;
+    default:
+  }
+}
+
+function removeEffectChange(actor, tokens, effectToApply, candidate, change) {
+  const token = tokens[0];
+  switch (change.key) {
+    case "macro.CE":
+      const lastArg = prepareLastArgData(effectToApply, actor);
+      removeConvenientEffectsChange(change.value, actor.uuid, effectToApply.origin, actor.isToken, lastArg);
+      break;
+    case "macro.CUB":
+    case "macro.CLT":
+      removeCubChange(change.value, [token])
+      break;
+    case "macro.tokenMagic":
+      removeTokenMagicChange(actor, change, tokens);
+      break;
+    case "macro.createItem":
+    case "macro.createItemRunMacro":
+      for (let effect of actor.allApplicableEffects()) {
+        if (effect.origin === candidate.uuid && effectIsTransfer(effect)) {
+          removeCreateItemChange(change.value, actor, effect)
+        }
+      }
+      break;
+    default:
+  }
+}
 function preUpdateItemHook(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
   const actor: Actor = candidate.parent;
@@ -1185,6 +1252,26 @@ function preUpdateItemHook(candidate, updates, options, user) {
     if (wasSuppressed === isSuppressed) return true;
     const tokens = actor.getActiveTokens();
     const token = tokens[0];
+    if (CONFIG.ActiveEffect.legacyTransferral === false && candidate.isOwned && candidate.parent instanceof CONFIG.Actor.documentClass) {
+      for (let effect of candidate.effects) {
+        if (!effectIsTransfer(effect)) continue;
+        const actor = candidate.parent;
+        for (let change of effect.changes) {
+          if (isSuppressed) {
+            removeEffectChange(actor, tokens, effect, candidate, change);
+            if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
+              warn("dae add macro off", actionQueue._queue.length)
+            actionQueue.add(daeMacro, "off", actor, effect.toObject(false), {});
+          } else {
+            addEffectChange(actor, tokens, effect, candidate, change);
+            if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+              warn("action queue add dae macro on ", actionQueue._queue.length)
+              actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {});
+            }
+          }
+        }
+      }
+    }
     for (let effect of actor.effects) {
       //@ts-expect-error .origin
       if (!effectIsTransfer(effect) || effect.origin !== candidate.uuid) continue;
@@ -1192,57 +1279,10 @@ function preUpdateItemHook(candidate, updates, options, user) {
       // if (effect.origin !== candidate.uuid) continue;
       //@ts-expect-error .changes
       for (let change of effect.changes) {
-        if (isSuppressed) {
-          switch (change.key) {
-            case "macro.CE":
-              const lastArg = prepareLastArgData(effect, actor);
-              //@ts-expect-error .origin
-              removeConvenientEffectsChange(change.value, actor.uuid, effect.origin, actor.isToken, lastArg);
-              break;
-            case "macro.CUB":
-            case "macro.CLT":
-              removeCubChange(change.value, [token])
-              break;
-            case "macro.tokenMagic":
-              removeTokenMagicChange(actor, change, tokens);
-              break;
-            case "macro.createItem":
-            case "macro.createItemRunMacro":
-              //@ts-expect-error
-              const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && effectIsTransfer(ef))
-              for (let effect of effects) {
-                removeCreateItemChange(change.value, actor, effect)
-              }
-              break;
-            default:
-          }
-        } else {
-          switch (change.key) {
-            case "macro.CE":
-              const lastArg = prepareLastArgData(effect, actor);
-              //@ts-expect-error .origin
-              addConvenientEffectsChange(change.value, actor.uuid, effect.origin, {}, actor.isToken, lastArg);
-              break;
-            case "macro.CUB":
-            case "macro.CLT":
-              addCubChange(change.value, [token]);
-              break;
-            case "macro.tokenMagic":
-              addTokenMagicChange(actor, change, tokens);
-              break;
-            case "macro.createItem":
-            case "macro.createItemRunMacro":
-              //@ts-expect-error
-              const effects = actor.effects.filter(ef => ef.origin === candidate.uuid && effectIsTransfer(ef))
-              for (let effect of effects) {
-                addCreateItemChange(change, actor, effect);
-              }
-              break;
-            default:
-          }
-
-        }
-      }/*
+        if (isSuppressed) removeEffectChange(actor, tokens, effect, candidate, change);
+        else addEffectChange(actor, tokens, effect, candidate, change);
+      }
+      /*
       // Toggle macro.XX effects
       if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
         setProperty(effect, "flags.dae.itemUuid", candidate.uuid);

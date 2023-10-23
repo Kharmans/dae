@@ -41,12 +41,23 @@ get title() {
 }
 get filters() {return ActiveEffects.filters}
 getData(): any {
-  const object: any = this.object;
+  // const object: any = this.object;
   const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
   const modeKeys = Object.keys(EFFECTMODES);
-  let actives = object.effects.map(ae=> {
+
+  function *effectsGenerator() {for (const effect of this.effects) yield effect};
+  let effects = effectsGenerator.bind(this.object);
+  //@ts-expect-error legacyTransferral
+  if (this.object instanceof CONFIG.Actor.documentClass && CONFIG.ActiveEffect.legacyTransferral === false) {
+    //@ts-expect-error allApplicableEffects
+    effects = this.object.allApplicableEffects.bind(this.object);
+  }
+  let actives: any[] = [];
+  for (let ae of effects()) {
 //    let newAe = globalThis.foundry.utils.deepClone(ae);
     let newAe = ae.toObject();
+    newAe.uuid = ae.uuid;
+    newAe.isSuppressed = ae.isSuppressed;
     newAe.duration = duplicate(ae.duration);
     ae.updateDuration(); // TODO remove this if v10 change made
     if (simpleCalendarInstalled && ae.duration?.type === "seconds") {
@@ -58,18 +69,18 @@ getData(): any {
     let specialDuration = getProperty(ae.flags, "dae.specialDuration") || [daeSpecialDurations["None"]];
     if (typeof specialDuration === "string") specialDuration = [ae.flags.dae.specialDuration]
     newAe.duration.label += ", " + `[${specialDuration.map(dur => (daeSpecialDurations[dur], dur))}]`;
-    newAe.isTemporary  = true;
     newAe.isTemporary = ae.isTemporary ;
     newAe.sourceName = `(${ae.sourceName ?? "Unknown"})`;
     if (this.filters.has("summary")) {
       newAe.changes = [];
-      return newAe;
+      actives.push(newAe);
+      continue;
     }
     newAe.changes.map(change=> {
       if (this.object instanceof CONFIG.Item.documentClass) 
         change.label=ValidSpec.specs["union"].allSpecsObj[change.key]?.label || change.key; 
       else
-        change.label=ValidSpec.specs[object.type].allSpecsObj[change.key]?.label || change.key; 
+        change.label=ValidSpec.specs[this.object.type].allSpecsObj[change.key]?.label || change.key; 
       if (typeof change.value === "string" && change.value.length > 40) {
         change.value = change.value.substring(0, 30) + " ... ";
       } else if (Array.isArray(change.value)) {
@@ -79,17 +90,17 @@ getData(): any {
       }
       return change;
     });
-    return newAe;
-  });
+    actives.push(newAe);
+  };
 
   if (this.filters.has("temporary")) actives = actives.filter(e=>e.isTemporary);
-  if (this.filters.has("enabled")) actives = actives.filter(e=>!e.disabled)
+  if (this.filters.has("enabled")) actives = actives.filter(e=> e.active);
   actives.sort((a,b) => a.name < b.name ? -1 : 1);
   actives.forEach(e=> {
     setProperty(e, "flags.dae.active", !e.disabled);
     let id = e.origin?.match(/Actor.*Item\.(.*)/);
     if (id?.length === 2) {
-      const item = object.items?.get(id[1]);
+      const item = this.object.items?.get(id[1]);
       setProperty(e, "flags.dae.itemName", item?.name || "???");
     }
     else {
@@ -118,10 +129,10 @@ getData(): any {
     actives: actives, 
     isGM: game.user?.isGM,
     isItem,
-    isOwned: object.isOwned,
-    flags: object.flags,
+    isOwned: this.object.isOwned,
+    flags: this.object.flags,
     modes: modeKeys,
-    validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[object.type],
+    validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[this.object.type],
     // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
     canEdit: true,
     // showEffects: playersCanSeeEffects !== "none" || game.user.isGM,
@@ -129,9 +140,9 @@ getData(): any {
     effectList: this.effectList,
     newEffect: "new"
   }
-
   return data;
 }
+
 async _updateObject(event, formData) {
   const object: any = this.object;
   formData = expandObject(formData);
@@ -175,8 +186,8 @@ activateListeners(html) {
   html.find('.effect-delete').click(async ev => {
     const object = this.object;
     const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    if (object instanceof CONFIG.Actor.documentClass) {
-      confirmAction(confirmDelete, () => {
+    if (object instanceof CONFIG.Actor.documentClass || object instanceof CONFIG.Item.documentClass) {
+      confirmAction(confirmDelete || object instanceof CONFIG.Item.documentClass, () => {
         object.deleteEmbeddedDocuments("ActiveEffect", [effectid]);
       })
     } else {
@@ -191,8 +202,9 @@ activateListeners(html) {
   html.find('.effect-edit').click(async ev => {
     const object: any = this.object;
     if (object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
-    const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-    let effect = object.effects.get(effectid);
+    const effectUuid = $(ev.currentTarget).parents(".effect-header").attr("effect-uuid");
+    //@ts-expect-error fromUuidSync
+    let effect = fromUuidSync(effectUuid);
     
     // const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
     //const ownedItemEffect = new CONFIG.ActiveEffect.documentClass(effect.toObject(), effect.parent);
@@ -229,12 +241,12 @@ activateListeners(html) {
   })
 
   function efhandler(type, effect, data, options, user) {
-    if (this.object.id === effect.parent.id) {
+    if (this.object.id === effect.parent.id || effect.parent?.parent?.id === this.object.id) {
       setTimeout(() => this.render(), 0)
     }
   };
-  function itmHandler(item, data, options, user) {
-    if (this.object.id === item.id) {
+  function itemHandler(item, data, options, user) {
+    if (this.object.id === item.id || item.parent?.id === this.object.id) {
       setTimeout(() => this.render(), 0)
     }
   };
@@ -260,7 +272,7 @@ activateListeners(html) {
   if (!this.effectHookIdd)
     this.effectHookIdd = Hooks.on("deleteActiveEffect", efhandler.bind(this, "delete"));
     if (!this.itemHookId)
-    this.itemHookId = Hooks.on("updateItem", itmHandler.bind(this))
+    this.itemHookId = Hooks.on("updateItem", itemHandler.bind(this))
   if (!this.effectHookIdt)
     this.effectHookIdt = Hooks.on("updateToken", tkHandler.bind(this));
   if (!this.effectHookIda)

@@ -1,9 +1,7 @@
 import { socketlibSocket } from "./GMAction";
 import { warn, error, debug } from "../dae";
-import { DAEfromActorUuid, DAEfromUuid } from "./dae";
 
 export let applyActive = (itemName: string, activate: boolean = true, itemType: string = "") => {
-
 }
 
 function getTokenUuid(token: Token | TokenDocument) {
@@ -223,7 +221,8 @@ export function getFlag(entity: Actor | Token | string, flagId: string) {
     theActor = canvas.tokens?.get(entity)?.actor;
     if (!theActor) theActor = game.actors?.get(entity); // if not a token maybe an actor
     if (!theActor) {
-      const actor = DAEfromUuid(entity);
+      //@ts-expect-error fromUuidSync
+      const actor = fromUuidSync(entity);
       theActor = actor.actor ?? actor;
     }
   } else {
