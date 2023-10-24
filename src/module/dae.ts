@@ -522,9 +522,12 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
         if (typeof change.value === "string") {
           const token = getSelfTarget(parent);
           //@ts-expect-error .document
-          const context = { "actorUuid": parent?.uuid, "tokenUuid": token?.uuid ?? token?.document?.uuid, "targetUuid": token?.uuid ?? token?.document?.uuid };
+          const context = { "@actorUuid": parent?.uuid, "@tokenUuid": token?.uuid ?? token?.document?.uuid, "@targetUuid": token?.uuid ?? token?.document?.uuid };
           for (let key of Object.keys(context)) {
-            const newValue = Roll.replaceFormulaData(change.value, context, { missing: "<undefined>", warn: false });
+            // Can't do a Roll.replaceFormula because of non-matches being replaced.
+            let newValue;
+            if (change.value.includes(`@${key}`)) continue;
+            newValue = change.value.replaceAll(key, context[key]);
             if (newValue !== change.value) {
               changesChanged = true;
               change.value = newValue;

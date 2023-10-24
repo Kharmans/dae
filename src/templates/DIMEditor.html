@@ -19,8 +19,8 @@
     <label>Type</label>
     <select name="type" disabled>
         {{#select data.type}}
-        {{#each macroTypes}}
-            <option value="{{this}}">{{this}}</option>
+        {{#each macroTypes as |value id|}}
+            <option value="{{id}}">{{value}}</option>
         {{/each}}
         {{/select}}
     </select>

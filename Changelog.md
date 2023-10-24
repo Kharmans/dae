@@ -1,3 +1,7 @@
+### 11.0.21
+* Fix for @values being replaced with "undefined" when applying effects
+* DIME will now play nicecly with monaco-macro-editor
+
 ### 11.0.20
 * Various (lots of) changes to support CONFIG.ActiveEffect.legacyTransferral = false as well as true. There may be inadvertent breaking changes in this release so v11.0.19 is still available via https://gitlab.com/tposney/dae/raw/v11/package/module11019.json
 * First pass to support effects that are disabled when a character is incapacitated.

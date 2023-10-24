@@ -1,5 +1,4 @@
 import { debug } from "../../dae.js";
-import { itemacroActive } from "../dae.js";
 export class DIMEditor extends FormApplication {
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
@@ -28,6 +27,7 @@ export class DIMEditor extends FormApplication {
       obj[t] = game.i18n.localize(CONFIG.Macro.typeLabels[t]);
       return obj;
     }, {});
+    console.error("Macro types are ", macroTypes)
     const macroScopes = CONST.MACRO_SCOPES;
     return mergeObject(super.getData(options), {
       macro: this.getMacro(),
