@@ -203,13 +203,13 @@ activateListeners(html) {
     const object: any = this.object;
     if (object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
     const effectUuid = $(ev.currentTarget).parents(".effect-header").attr("effect-uuid");
-    //@ts-expect-error fromUuidSync
-    let effect = fromUuidSync(effectUuid);
+    //@ ts-expect-error fromUuidSync
+    let effect: any = await fromUuid(effectUuid);
     
     // const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
     //const ownedItemEffect = new CONFIG.ActiveEffect.documentClass(effect.toObject(), effect.parent);
 
-    return effect.sheet.render(true);
+    return effect?.sheet.render(true);
   })
   html.find('.effect-add').click(async ev => {
     const object: any = this.object;

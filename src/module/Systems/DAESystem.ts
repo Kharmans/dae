@@ -179,36 +179,8 @@ export class ValidSpec {
 }
 
 function getRollData(wrapped, ...args): any {
-  const data = wrapped(...args);
-  data.actorId = this.id;
-  data.actorUuid = this.uuid;
-
-  if (!data.token) Object.defineProperty(data, "token", {
-    get() {
-      if (!data._token) {
-        const actor = actorFromUuid(data.actorUuid ?? "")
-        data._token = getSelfTarget(actor);
-      }
-      return data._token;
-    },
-    set(token) { data._token = token; }
-  });
-  Object.defineProperty(data, "tokenUuid", {
-    get() { // During initialisation getSelfTarget will return a token document not a token
-      if (data._tokenUuid) return data._tokenUuid;
-      if (data.token instanceof Token)
-        return data.token?.document.uuid ?? "undefined";
-      else return data.token.uuid ?? "undefined"
-    },
-    set(uuid) {
-      data._tokenUuid = uuid;
-    }
-  });
-  Object.defineProperty(data, "tokenId", {
-    get() { return data._tokenId ?? data.token?.id ?? "undefined" },
-    set(tokenId) { data._tokenId = tokenId }
-  });
-  return data;
+  // need to be careful - default foundry getRollData() returns the "live" actor.system
+  return wrapped(args);
 }
 
 export class DAESystem {

@@ -1,3 +1,7 @@
+### 11.0.21
+* Fix for dae getRollData adding fields to actors when not using dnd5e
+* Fix for being unable to edit item onUse macros from the character sheet.
+
 ### 11.0.20.1
 * Fix for @values being replaced with "undefined" when applying effects
 * DIME will now play nicely with monaco-macro-editor

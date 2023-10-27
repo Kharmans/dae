@@ -60,9 +60,7 @@ const API = {
     async deleteItemActiveEffects(tokens: Array<string | Token | any /* TokenDocument */>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true) {
         return await deleteItemActiveEffects(tokens, origin, ignore, deleteEffects, removeSequencer);
     },
-    DIMEditor(object:any = {}, options:any = {}) {
-        return new DIMEditor(object, options);
-    },
+    get DIMEditor() {return DIMEditor},
     async doEffects(item, activate, targets = undefined, options: any =
         {
           whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,

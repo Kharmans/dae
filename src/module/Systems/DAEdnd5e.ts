@@ -1,6 +1,6 @@
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { actionQueue, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, atlActive, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
+import { actionQueue, actorFromUuid, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, atlActive, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var displayTraits;
@@ -866,6 +866,35 @@ function getRollData(wrapped, ...args) {
   const data = DAESystem.getRollDataFunc().bind(this)(wrapped, ...args);
   data.flags = this.flags;
   data.effects = this.effects;
+  data.actorId = this.id;
+  data.actorUuid = this.uuid;
+  if (!data.token) Object.defineProperty(data, "token", {
+    get() {
+      if (!data._token) {
+        const actor = actorFromUuid(data.actorUuid ?? "");
+        const token = getSelfTarget(actor);
+        // If the return is a tokenDocument then we have no token on the scene
+        if (token instanceof Token) data._token = token;
+      }
+      return data._token;
+    },
+    set(token) { data._token = token; }
+  });
+  if (!data.tokenUuid) Object.defineProperty(data, "tokenUuid", {
+    get() { // During initialisation getSelfTarget will return a token document not a token
+      if (data._tokenUuid) return data._tokenUuid;
+      if (data.token instanceof Token)
+        return data.token?.document.uuid ?? "undefined";
+      else return data.token.uuid ?? "undefined"
+    },
+    set(uuid) {
+      data._tokenUuid = uuid;
+    }
+  });
+  if (!data.tokenId) Object.defineProperty(data, "tokenId", {
+    get() { return data._tokenId ?? data.token?.id ?? "undefined" },
+    set(tokenId) { data._tokenId = tokenId }
+  });
   return data;
 }
 
