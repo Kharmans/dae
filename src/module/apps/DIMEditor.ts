@@ -89,18 +89,23 @@ export class DIMEditor extends FormApplication {
 
   async setMacro(macro: Macro) {
     if (macro instanceof Macro) {
-      const data = macro.toObject();
-      await this.object.update({"flags.itemacro.macro": data});
-      await this.object.unsetFlag("dae", `macro`);
-      // if (getProperty(this.object, "flags.itemacro.macro") || itemacroActive)
-      //   await this.object.update({"flags.itemacro.macro": data});
+      await this.object.update({"flags.dae.macro": macro.toObject()});
     }
   }
 
   public static preUpdateItemHook(item, updates, context, user): boolean {
-    if (!getProperty(updates, "flags.itemacro.macro")) return true;
-    // if (getProperty(updates, "flags.dae.macro")) return true;
-    updates["flags.dae.-=macro"] = null;
+    if(!game.settings.get("dae", "DIMESyncItemacro") /*|| !game.modules.get("itemacro") */) return true;
+    const existing = getProperty(item, "flags.dae.macro") 
+                    ?? getProperty(item, "flags.itemacro.macro") 
+                    ?? {command: ""};
+
+    if (getProperty(updates, "flags.dae.macro")) {
+      const macroData = mergeObject(existing, updates.flags.dae.macro);
+      setProperty(updates, "flags.itemacro.macro", macroData);
+    } else if (getProperty(updates, "flags.itemacro.macro")) {
+      const macrodata = mergeObject(existing, updates.flags.itemacro.macro);
+      setProperty(updates, "flags.dae.macro", macrodata);
+    }
     return true;
   }
 }

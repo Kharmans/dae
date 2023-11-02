@@ -452,7 +452,7 @@ async function removeExistingEffectsHook(...args) {
     if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
     if (!effect.flags?.dae?.specialDuration) effect.updateSource({ "flags.dae.specialDuration": [] });
     // if (getProperty(effect, "flags.dae.stackable") === undefined) effect.updateSource({ "flags.dae.stackable": "noneName" });
-    const stackable = getProperty(effect, "flags.dae.stackable");
+    const stackable = getProperty(effect, "flags.dae.stackable") ?? "noneName";
     if (["noneName", "none"].includes(stackable)) { // transfer effects should replace the existing effect
       if (!parent) return true;
       const hasExisting = parent.effects.filter(ef => {
@@ -484,7 +484,7 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
     if (!(actor instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return result = true;
 
     // Check if we are trying to create an existing effect - not quite sure how that might happen
-    if (actor.effects?.find(ef => ef.id === data._id)) {
+    if (actor.effects?.find(ef => ef.id === data._id && false)) {
       if (debugEnabled > 0) warn("Blocking creation of duplcate effect", candidate, actor.effects?.find(ef => ef.id === data._idid));
       return result = false; // "finally" will return the value
     }
@@ -1080,8 +1080,8 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
     itemOrMacro = await fromUuid(name);
     if (itemOrMacro) {
       if (itemOrMacro instanceof Item) {
-        const macroData = getProperty(item, "Flags.dae.macro") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro");
-        if (!macroData.command && macroData.data.command) {
+        const macroData = getProperty(item, "flags.dae.macro") ?? getProperty(item, "flags.itemacro.macro");
+        if (macroData && !macroData.command && macroData.data?.command) {
           macroData.command = macroData.data.command;
           delete macroData.data.command;
         };
@@ -1095,7 +1095,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
       return undefined;
     }
   } else if (change.key.startsWith("macro.itemMacro")) {
-    let macroCommand = getProperty(item, "Flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
+    let macroCommand = getProperty(item, "flags.dae.macro.command") ?? getProperty(item, "flags.itemacro.macro.command") ?? getProperty(item, "flags.itemacro.macro.data.command");
     const itemData = getProperty(effectData, "flags.dae.itemData");
     if (!macroCommand && itemData) macroCommand = getProperty(itemData, "flags.dae.macro.command");
     if (!macroCommand && itemData) macroCommand = getProperty(itemData, "flags.itemacro.macro.command");
@@ -1465,20 +1465,6 @@ function daeApply(wrapped, actor, change) { // TODO remains broken in v10
   return wrapped(actor, change)
 }
 
-export function matchItemMacroName(candidate, updates, options, user) {
-  if (options.isUndo) return true;
-  // if (!data.transfer) return true;
-  if (!candidate.parent || !(candidate.parent instanceof CONFIG.Actor.documentClass)) return true;
-  const macroChanges = candidate.changes.map(change => {
-    if (change.value === "ItemMacro")
-      change.value = change.value.replace("ItemMacro", `ItemMacro.${candidate.origin}`);
-    return change;
-  });
-
-  candidate.updateSource({ "changes": macroChanges });
-  return true;
-}
-
 // Fix for v11 not adding effects as expected. i.e. token.effects.visible ending up false
 async function drawEffects(wrapped) {
   const tokenEffects = this.document.effects;
@@ -1521,8 +1507,7 @@ export function daeInitActions() {
   Hooks.on("updateItem", updateItemEffects);
 
   Hooks.on("preCreateActiveEffect", preCreateActiveEffectHook);
-  // Fixup ItemMacro references on transfer effects
-  Hooks.on("preCreateActiveEffect", matchItemMacroName)
+
 
   Hooks.on("preUpdateItem", preUpdateItemHook);
   // Hooks.on("preCreateItem", preCreateItemHook);

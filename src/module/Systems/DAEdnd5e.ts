@@ -885,7 +885,7 @@ function getRollData(wrapped, ...args) {
       if (data._tokenUuid) return data._tokenUuid;
       if (data.token instanceof Token)
         return data.token?.document.uuid ?? "undefined";
-      else return data.token.uuid ?? "undefined"
+      else return data.token?.uuid ?? "undefined"
     },
     set(uuid) {
       data._tokenUuid = uuid;

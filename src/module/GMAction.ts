@@ -298,7 +298,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
       const noStackByName = getProperty(ae, "flags.dae.stackable") === "noneName";
       if (noStackByName) {
         //@ts-expect-error .origin
-        return origins.find(o => o.name === ae.name && o.orign === ae.origin)
+        return origins.find(o => o.name === ae.name && o.origin === ae.origin)
       } else return origins.find(o => {
         const escapedLabel = o.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         //@ts-expect-error .origin

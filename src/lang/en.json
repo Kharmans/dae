@@ -357,5 +357,7 @@
     "dae.DontApply.Name": "Don't apply the effect",
     "dae.DontApply.Hint": "When Dae (and midi) applies active effects, skip this one",
     "dae.DIMEditor.Name": "DIME",
-    "dae.IncapacitatedDisabled": "Effect disabled if actor incapacitated"
+    "dae.IncapacitatedDisabled": "Effect disabled if actor incapacitated",
+    "dae.DIMESyncItemacro.Name": "Sync DIME and Itemacro",
+    "dae.DIMESyncItemacro.Hint": "Checked means the DIME macro and Itemacro macro will be kept in sync - you can edit with either. Uncheck DIME editor will take priority."
   }

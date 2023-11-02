@@ -1,3 +1,10 @@
+### 11.0.22
+* Fix for toggle effect not working with noneName stackable effects.
+* Added new config setting, DIME sync Itemacro (default enabled). If enabled dae will keep the Itemacro macro command and the DIME macro command synchronised, changes to either will be reflected in both. If disabled DIME/Itemacro edits will be maintained separately.
+  - If there is a DIME macro (even with an empty command) present that will be used preferentially over any Itemacro macro.
+  - Only disable the setting if you ONLY use DIME or ONLY use Itemacro. If you might/do use both leave it enabled.
+  - The setting is really only provided in case there is some divergence between Itemacro and dae's expecations of the data stored.
+
 ### 11.0.21
 * Fix for dae getRollData adding fields to actors when not using dnd5e
 * Fix for being unable to edit item onUse macros from the character sheet.

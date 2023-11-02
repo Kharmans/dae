@@ -61,6 +61,15 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
+  game.settings.register("dae", "DIMESyncItemacro", {
+    name: game.i18n.localize("dae.DIMESyncItemacro.Name"),
+    hint: game.i18n.localize("dae.DIMESyncItemacro.Hint"),
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true
+  });
+
   game.settings.register("dae", "DAEColorTitleBar", {
     name: game.i18n.localize("dae.DAEColorTitleBar.Name"),
     hint: game.i18n.localize("dae.DAEColorTitleBar.Hint"),
