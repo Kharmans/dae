@@ -1226,8 +1226,6 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   if (gmTargets.length > 0) {
     await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: appliedEffects, tokenList: gmTargets, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
-
-
   if (localTargets.length > 0) {
     const result = await applyActiveEffects({ activate, tokenList: localTargets, activeEffects: appliedEffects, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
@@ -1248,7 +1246,7 @@ function updateItemEffects(candidate, updates, options, user) {
   if (options.isUndo) return true;
   if (updates.system?.equipped !== undefined || updates.system?.attuned !== undefined) {
     // equipped / attuned updated.
-    const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && (updates.system.attuned ?? candidate.system.attuned) === 1;
+    const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && (updates.system.attuned ?? candidate.system.attuned) !== daeSystemClass.systemConfig.REQUIRED;
     const effects = candidate.effects.filter(ef => ef.transfer || ef.flags.dae.transfer)
   }
   if (options.isAdvancement) {
@@ -1283,6 +1281,49 @@ function updateItemEffects(candidate, updates, options, user) {
   return true;
 }
 
+// Update the actor active effects when changing a transfer effect on an item
+function updateTransferEffectsHook(candidate, updates, options, user) {
+  if (user !== game.user?.id) return true;
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === false) { // if not legacy transfer do nothing
+    return true;
+  }
+  if (options.isUndo) return true;
+  if (!(candidate.parent instanceof CONFIG.Item.documentClass)) return true;
+  const item = candidate.parent;
+  if (!item.isOwned) return true;
+  const actor = item.parent;
+  // const isEnabled = item.system.equipped && item.system.attuned !== daeSystemClass.systemConfig?.attunementTypes?.REQUIRED;
+  // const effects = candidate.effects.filter(ef => ef.transfer || ef.flags.dae.transfer)
+  if (options.isAdvancement) {
+    console.warn(`Dae | Skipping effect re-creation for class advancement ${candidate.parent?.name ?? ""} item ${candidate.name}`)
+    return;
+  }
+  const itemUuid = item.uuid;
+  // delete all actor effects for the given item
+  let deletions: any[] = [];
+  for (let aef of actor.effects) { // remove all transferred effects for the item
+    const isTransfer = aef.flags.dae?.transfer;
+    if (isTransfer && (aef.origin === itemUuid)) deletions.push(aef.id);
+  };
+  // Now get all the item transfer effects
+  let additions = item.effects.filter(aef => {
+    const isTransfer = aef.transfer;
+    setProperty(aef.flags, "dae.transfer", isTransfer);
+    return isTransfer;
+  });
+  additions = additions.map(ef => ef.toObject(false));
+  additions.forEach(efData => {
+    efData.origin = itemUuid;
+  });
+  if (deletions.length > 0) {
+    actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", deletions)
+  }
+  if (additions.length > 0) {
+    actionQueue.add(actor.createEmbeddedDocuments.bind(actor), "ActiveEffect", additions);
+  }
+  return true;
+}
 // When an item is created any effects have a source that points to the original item
 // Need to update to refer to the created item
 // THe id in the this is not the final _id
@@ -1523,6 +1564,7 @@ export function daeInitActions() {
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
   Hooks.on("preUpdateActiveEffect", preUpdateActiveEffectEvalInlineHook)
   Hooks.on("updateActiveEffect", updateActiveEffectHook);
+  Hooks.on("updateActiveEffect", updateTransferEffectsHook);
 
   // Add the active effects title bar actions
   Hooks.on("getActorSheetHeaderButtons", attachActorSheetHeaderButton);
@@ -1586,14 +1628,14 @@ function updateSheetHeaderButton(app, [elem], options) {
       hasEffects = app.document.effects?.size > 0;
     if (!!hasEffects) {
       const sheetButtonToUpdate = !!daeActorSheetButton ? daeActorSheetButton : daeItemSheetButton;
-      sheetButtonToUpdate.style.color = 'yellow';  //that could be added in another setting
+      sheetButtonToUpdate.style.color = 'green';  //that could be added in another setting
     }
   }
   if (elem?.querySelector('.dae-dimeditor')) {
     const daeSheetButton = elem.closest('.window-app').querySelector('.dae-dimeditor');
     const hasMacro = !!(getProperty(app.object, "flags.dae.macro.command") ?? getProperty(app.object, "flags.itemacro.macro.command") ?? getProperty(app.object, "flags.itemacro.macro.data.command"));
     if (hasMacro)
-      daeSheetButton.style.color = 'yellow';  //that could be added in another setting
+      daeSheetButton.style.color = 'green';  //that could be added in another setting
   }
 }
 

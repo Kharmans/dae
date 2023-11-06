@@ -572,10 +572,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (typeof change?.key !== "string") return true;
     const damageBonusMacroFlag = `flags.${game.system.id}.DamageBonusMacro`;
     if (change.key === damageBonusMacroFlag) {
-      let current = getProperty(actor, change.key);
+      const currentFlag = getProperty(actor, "flags.dnd5e.DamageBonusMacro") ?? "";
+      let macroRef = change.value;
+      if (change.value === "ItemMacro" && change.effect?.origin?.includes("Item.")) { // rewrite the ItemMacro if there is an origin
+        macroRef = `ItemMacro.${change.effect.origin}`;
+      }
+      const current = getProperty(actor, change.key);
       // includes wont work for macro names that are subsets of other macro names
-      if (noDupDamageMacro && current?.split(",").some(macro => macro === change.value)) return true;
-      setProperty(actor, change.key, current ? `${current},${change.value}` : change.value)
+      if (noDupDamageMacro && current?.split(",").some(macro => macro === macroRef)) return true;
+      setProperty(actor, change.key, current ? `${current},${macroRef}` : macroRef)
       return true;
     }
     if (change.key.includes(`flags.${game.system.id}`)) {
