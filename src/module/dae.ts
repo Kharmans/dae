@@ -230,16 +230,24 @@ function expandEffectChanges(changes) {
     if (!daeSystemClass.bonusSelectors[change.key]) {
       list.push(change);
     } else {
-      const attacks = daeSystemClass.bonusSelectors[change.key].attacks;
-      const selector = daeSystemClass.bonusSelectors[change.key].selector;
-      attacks.forEach(at => {
-        const c = duplicate(change);
-        c.key = `system.bonuses.${at}.${selector}`;
-        list.push(c);
-      });
+      if (daeSystemClass.bonusSelectors[change.key].replaceList) {
+        daeSystemClass.bonusSelectors[change.key].replaceList.forEach(replace => {
+          const c = duplicate(change);
+          c.key = replace;
+          list.push(c);
+        });
+      } else {
+        const attacks = daeSystemClass.bonusSelectors[change.key].attacks;
+        const selector = daeSystemClass.bonusSelectors[change.key].selector;
+        attacks.forEach(at => {
+          const c = duplicate(change);
+          c.key = `system.bonuses.${at}.${selector}`;
+          list.push(c);
+        });
+      }
     }
     return list;
-  }, [])
+  }, []);
   return returnChanges;
 }
 
@@ -296,6 +304,7 @@ export async function removeConvenientEffectsChange(effectName: string, uuid: st
 }
 
 async function myAddCEEffectWith(effectData: any, uuid: string, origin, overlay: boolean, isToken: boolean) {
+
   //@ts-expect-error dfreds
   const ceInterface = game?.dfreds?.effectInterface;
   let interval = 1;
@@ -405,78 +414,43 @@ function createActiveEffectHook(...args) {
   } // else removeExistingEffectsHook(...args);
   return true;
 }
-async function _preCreateActiveEffect(...args) {
-  let [data, options, user] = args;
-  // await wrapped(...args);
-  const parent = this.parent;
-  if (!parent || !(parent instanceof CONFIG.Actor.documentClass)) return;
-  const actor = parent;
-  const tokens = parent.isToken ? [parent.token?.object] : parent.getActiveTokens();
-  const token = tokens[0];
-  if (!(token instanceof Token)) return;
-  this.determineSuppression && this.determineSuppression();
-  if (this.changes && !this.disabled && !this.isSuppressed) {
-    if (parent.isToken) await delay(200); // let all of the stuff settle down
-    try {
-      for (let change of this.changes) {
-        if (cltActive && ["macro.CUB", "macro.CLT"].includes(change.key) && token) {
-          await addCubChange(change.value, [token])
-        }
-        if (ceActive && change.key === "macro.CE") {
-          const lastArg = prepareLastArgData(this, actor)
-          if (actor.isToken) await addConvenientEffectsChange(change.value, actor.uuid, this.origin, {}, actor.isToken, options.lastArg);
-          else await addConvenientEffectsChange(change.value, actor.uuid, this.origin, {}, actor.isToken, options.lastArg);
-        }
 
-        const tokenMagic = globalThis.TokenMagic;
-        if (tokenMagic && change.key === "macro.tokenMagic" && token)
-          await addTokenMagicChange(parent, change, tokens); //TODO check disabled
-      }
-      if (this.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
-        await actionQueue.add(daeMacro, "on", parent, this.toObject(false), {}); // TODO revisit to see if passing the effect is ok
-      }
-    } catch (err) {
-      console.warn("dae | create effect error", err);
-    } finally {
-      return true;
-    }
-  };
-}
-
-async function removeExistingEffectsHook(...args) {
-  let [effect, options, user] = args;
-  if (user !== game.user?.id) return;
-  if (options.isUndo) return true;
-  const parent = effect.parent;
+async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
   try {
-    if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return true;
-    if (!effect.flags?.dae?.specialDuration) effect.updateSource({ "flags.dae.specialDuration": [] });
-    // if (getProperty(effect, "flags.dae.stackable") === undefined) effect.updateSource({ "flags.dae.stackable": "noneName" });
-    const stackable = getProperty(effect, "flags.dae.stackable") ?? "noneName";
+    let [effectData, options, user] = args;
+    if (options.isUndo) return;
+    const parent = this.parent;
+
+    options.deleted = false;
+    if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return;
+    const stackable = getProperty(this, "flags.dae.stackable") ?? "noneName";
     if (["noneName", "none"].includes(stackable)) { // transfer effects should replace the existing effect
-      if (!parent) return true;
+      if (!parent) return;
       const hasExisting = parent.effects.filter(ef => {
-        if (ef.id === effect.id) return false;
+        if (ef.id === this.id) return;
         switch (stackable) {
           case "noneName":
-            return (ef.name === effect.name);
+            //@ts-expect-error origin
+            return this.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === this.origin && (ef.name ?? ef.label) === (this.name ?? this.label);
           case "none":
             //@ts-expect-error origin
-            return effect.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === effect.origin && (ef.name ?? ef.label) === (effect.name ?? effect.label);
+            return this.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === this.origin;
         }
       });
-      if (hasExisting.length === 0) return true;
+      if (hasExisting.length === 0) return;
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
-      console.warn("removing existing ", hasExisting)
-      await effect.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id));
+      await this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id));
     }
   } catch (err) {
     error("removeExistingEffects ", err);
+  } finally {
+    return wrapped(...args);
   }
 }
 
 function preCreateActiveEffectHook(candidate, data, options, user) {
+  // Make changes to the effect data as needed
   let result = true;
   try {
     if (options.isUndo) return result = true;
@@ -610,6 +584,7 @@ function evalInline(expression: string, actor: Actor, effect) {
 export function preDeleteCombatHook(...args) {
   // This could cause race conditions....
   const [combat, options, user] = args;
+  if (user !== game.user?.id) return
   for (let combatant of combat.combatants) {
     const actor = combatant.actor;
     if (!actor) continue;
@@ -670,6 +645,8 @@ export function updateActiveEffectHook(...args) {
       warn("add active effect actions", actor, updates)
 
       const tokenMagic = globalThis.TokenMagic;
+
+      // if (context.dae?.active?.disabled !== effect.disabled || context.dae?.active?.isSuppressed !== effect.isSuppressed || updates.changes) {
       if (effect.disabled || effect.isSuppressed || updates.changes) {
         const oldChanges = getProperty(context, "dae.active.oldChanges") ?? [];
         for (let change of oldChanges) {
@@ -1339,6 +1316,7 @@ export function createItemHook(candidate, options, user) {
   return;
 }
 
+// Process onUpdateTarget flags
 export function preUpdateActorHook(candidate, updates, options, user) {
   let result = true;
   try {
@@ -1547,6 +1525,7 @@ export function daeInitActions() {
   // If updating item effects recreate actor effects for updated item.
   Hooks.on("updateItem", updateItemEffects);
 
+  // Map some fields that need to be changed when the effect is created...
   Hooks.on("preCreateActiveEffect", preCreateActiveEffectHook);
 
 
@@ -1555,11 +1534,15 @@ export function daeInitActions() {
   // Hooks.on("createItem", createItemHook);
 
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._preUpdate", preUpdateActor, "WRAPPER");
-  // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffectEvalInline, "WRAPPER");
   // libWrapper.register("dae", "CONFIG.Item.documentClass.prototype._preCreate", _preCreateItem, "WRAPPER");
 
+  // process onUpdateTarget flags
   Hooks.on("preUpdateActor", preUpdateActorHook);
-  Hooks.on("createActiveEffect", removeExistingEffectsHook)
+
+  // wrap so we can remove the existing effect before the new one is created
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffectRemoveExisting, "WRAPPER");
+  // Hooks.on("createActiveEffect", removeExistingEffectsHook) - this fires too late
+
   Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
   Hooks.on("preUpdateActiveEffect", preUpdateActiveEffectEvalInlineHook)

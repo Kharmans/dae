@@ -433,7 +433,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       "system.bonuses.spell.attack": { attacks: this.spellAttacks, selector: "attack" },
       "system.bonuses.All-Damage": { attacks: this.attackTypes, selector: "damage" },
       "system.bonuses.weapon.damage": { attacks: this.weaponAttacks, selector: "damage" },
-      "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage" }
+      "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage" },
     };
     daeSystemClass.daeActionTypeKeys = Object.keys(daeSystemClass.systemConfig.itemActionTypes);
   }
@@ -572,7 +572,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (typeof change?.key !== "string") return true;
     const damageBonusMacroFlag = `flags.${game.system.id}.DamageBonusMacro`;
     if (change.key === damageBonusMacroFlag) {
-      const currentFlag = getProperty(actor, "flags.dnd5e.DamageBonusMacro") ?? "";
       let macroRef = change.value;
       if (change.value === "ItemMacro" && change.effect?.origin?.includes("Item.")) { // rewrite the ItemMacro if there is an origin
         macroRef = `ItemMacro.${change.effect.origin}`;
@@ -1273,6 +1272,7 @@ function removeEffectChange(actor, tokens, effectToApply, candidate, change) {
 }
 function preUpdateItemHook(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
+  if (game.user?.id !== user) return true;
   const actor: Actor = candidate.parent;
   if (!(actor instanceof Actor)) return true;
   if (updates.system?.equipped === undefined && updates.system?.attunement === undefined) return true;

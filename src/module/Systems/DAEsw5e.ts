@@ -5,6 +5,166 @@ import { ValidSpec, wildcardEffects } from "./DAESystem";
 
 //@ts-ignore
 const CONFIG: any = globalThis.CONFIG;
+const SW5ESystemFlags = [
+  "flags.sw5e.advantage.all",
+  "flags.sw5e.advantage.attack.all",
+  "flags.sw5e.advantage.attack.mwak",
+  "flags.sw5e.advantage.attack.rwak",
+  "flags.sw5e.advantage.attack.mpak",
+  "flags.sw5e.advantage.attack.rpak",
+  "flags.sw5e.advantage.attack.str",
+  "flags.sw5e.advantage.attack.dex",
+  "flags.sw5e.advantage.attack.con",
+  "flags.sw5e.advantage.attack.int",
+  "flags.sw5e.advantage.attack.wis",
+  "flags.sw5e.advantage.attack.cha",
+  "flags.sw5e.advantage.attack.hon",
+  "flags.sw5e.advantage.attack.san",
+  "flags.sw5e.grants.advantage.attack.all",
+  "flags.sw5e.grants.advantage.attack.mwak",
+  "flags.sw5e.grants.advantage.attack.rwak",
+  "flags.sw5e.grants.advantage.attack.mpak",
+  "flags.sw5e.grants.advantage.attack.rpak",
+  "flags.sw5e.advantage.ability.all",
+  "flags.sw5e.advantage.ability.check.all",
+  "flags.sw5e.advantage.ability.check.str",
+  "flags.sw5e.advantage.ability.check.dex",
+  "flags.sw5e.advantage.ability.check.con",
+  "flags.sw5e.advantage.ability.check.int",
+  "flags.sw5e.advantage.ability.check.wis",
+  "flags.sw5e.advantage.ability.check.cha",
+  "flags.sw5e.advantage.ability.check.hon",
+  "flags.sw5e.advantage.ability.check.san",
+  "flags.sw5e.advantage.skill.all",
+  "flags.sw5e.advantage.skill.acr",
+  "flags.sw5e.advantage.skill.ani",
+  "flags.sw5e.advantage.skill.ath",
+  "flags.sw5e.advantage.skill.dec",
+  "flags.sw5e.advantage.skill.ins",
+  "flags.sw5e.advantage.skill.itm",
+  "flags.sw5e.advantage.skill.inv",
+  "flags.sw5e.advantage.skill.lor",
+  "flags.sw5e.advantage.skill.med",
+  "flags.sw5e.advantage.skill.nat",
+  "flags.sw5e.advantage.skill.prc",
+  "flags.sw5e.advantage.skill.prf",
+  "flags.sw5e.advantage.skill.per",
+  "flags.sw5e.advantage.skill.pil",
+  "flags.sw5e.advantage.skill.slt",
+  "flags.sw5e.advantage.skill.ste",
+  "flags.sw5e.advantage.skill.sur",
+  "flags.sw5e.advantage.skill.tec",
+  "flags.sw5e.advantage.ability.save.all",
+  "flags.sw5e.advantage.ability.save.str",
+  "flags.sw5e.advantage.ability.save.dex",
+  "flags.sw5e.advantage.ability.save.con",
+  "flags.sw5e.advantage.ability.save.int",
+  "flags.sw5e.advantage.ability.save.wis",
+  "flags.sw5e.advantage.ability.save.cha",
+  "flags.sw5e.advantage.ability.save.hon",
+  "flags.sw5e.advantage.ability.save.san",
+  "flags.sw5e.advantage.deathSave",
+  "flags.sw5e.disadvantage.all",
+  "flags.sw5e.disadvantage.attack.all",
+  "flags.sw5e.disadvantage.attack.mwak",
+  "flags.sw5e.disadvantage.attack.rwak",
+  "flags.sw5e.disadvantage.attack.mpak",
+  "flags.sw5e.disadvantage.attack.rpak",
+  "flags.sw5e.disadvantage.attack.str",
+  "flags.sw5e.disadvantage.attack.dex",
+  "flags.sw5e.disadvantage.attack.con",
+  "flags.sw5e.disadvantage.attack.int",
+  "flags.sw5e.disadvantage.attack.wis",
+  "flags.sw5e.disadvantage.attack.cha",
+  "flags.sw5e.disadvantage.attack.hon",
+  "flags.sw5e.disadvantage.attack.san",
+  "flags.sw5e.disadvantage.ability.all",
+  "flags.sw5e.disadvantage.ability.check.all",
+  "flags.sw5e.disadvantage.ability.check.str",
+  "flags.sw5e.disadvantage.ability.check.dex",
+  "flags.sw5e.disadvantage.ability.check.con",
+  "flags.sw5e.disadvantage.ability.check.int",
+  "flags.sw5e.disadvantage.ability.check.wis",
+  "flags.sw5e.disadvantage.ability.check.cha",
+  "flags.sw5e.disadvantage.ability.check.hon",
+  "flags.sw5e.disadvantage.ability.check.san",
+  "flags.sw5e.disadvantage.skill.all",
+  "flags.sw5e.disadvantage.skill.acr",
+  "flags.sw5e.disadvantage.skill.ani",
+  "flags.sw5e.disadvantage.skill.ath",
+  "flags.sw5e.disadvantage.skill.dec",
+  "flags.sw5e.disadvantage.skill.ins",
+  "flags.sw5e.disadvantage.skill.itm",
+  "flags.sw5e.disadvantage.skill.inv",
+  "flags.sw5e.disadvantage.skill.lor",
+  "flags.sw5e.disadvantage.skill.med",
+  "flags.sw5e.disadvantage.skill.nat",
+  "flags.sw5e.disadvantage.skill.prc",
+  "flags.sw5e.disadvantage.skill.prf",
+  "flags.sw5e.disadvantage.skill.per",
+  "flags.sw5e.disadvantage.skill.pil",
+  "flags.sw5e.disadvantage.skill.slt",
+  "flags.sw5e.disadvantage.skill.ste",
+  "flags.sw5e.disadvantage.skill.sur",
+  "flags.sw5e.disadvantage.skill.tec",
+  "flags.sw5e.disadvantage.ability.save.all",
+  "flags.sw5e.disadvantage.ability.save.str",
+  "flags.sw5e.disadvantage.ability.save.dex",
+  "flags.sw5e.disadvantage.ability.save.con",
+  "flags.sw5e.disadvantage.ability.save.int",
+  "flags.sw5e.disadvantage.ability.save.wis",
+  "flags.sw5e.disadvantage.ability.save.cha",
+  "flags.sw5e.disadvantage.ability.save.hon",
+  "flags.sw5e.disadvantage.ability.save.san",
+  "flags.sw5e.disadvantage.deathSave",
+  "flags.sw5e.advantage.tool.all",
+  "flags.sw5e.advantage.tool.artisan",
+  "flags.sw5e.advantage.tool.specialist",
+  "flags.sw5e.advantage.tool.game",
+  "flags.sw5e.advantage.tool.music",
+  "flags.sw5e.advantage.ability.save.tech.all",
+  "flags.sw5e.advantage.ability.save.tech.str",
+  "flags.sw5e.advantage.ability.save.tech.dex",
+  "flags.sw5e.advantage.ability.save.tech.con",
+  "flags.sw5e.advantage.ability.save.tech.int",
+  "flags.sw5e.advantage.ability.save.tech.wis",
+  "flags.sw5e.advantage.ability.save.tech.cha",
+  "flags.sw5e.advantage.ability.save.tech.hon",
+  "flags.sw5e.advantage.ability.save.tech.san",
+  "flags.sw5e.advantage.ability.save.force.all",
+  "flags.sw5e.advantage.ability.save.force.str",
+  "flags.sw5e.advantage.ability.save.force.dex",
+  "flags.sw5e.advantage.ability.save.force.con",
+  "flags.sw5e.advantage.ability.save.force.int",
+  "flags.sw5e.advantage.ability.save.force.wis",
+  "flags.sw5e.advantage.ability.save.force.cha",
+  "flags.sw5e.advantage.ability.save.force.hon",
+  "flags.sw5e.advantage.ability.save.force.san",
+  "flags.sw5e.disadvantage.tool.all",
+  "flags.sw5e.disadvantage.tool.artisan",
+  "flags.sw5e.disadvantage.tool.specialist",
+  "flags.sw5e.disadvantage.tool.game",
+  "flags.sw5e.disadvantage.tool.music",
+  "flags.sw5e.disadvantage.ability.save.tech.all",
+  "flags.sw5e.disadvantage.ability.save.tech.str",
+  "flags.sw5e.disadvantage.ability.save.tech.dex",
+  "flags.sw5e.disadvantage.ability.save.tech.con",
+  "flags.sw5e.disadvantage.ability.save.tech.int",
+  "flags.sw5e.disadvantage.ability.save.tech.wis",
+  "flags.sw5e.disadvantage.ability.save.tech.cha",
+  "flags.sw5e.disadvantage.ability.save.tech.hon",
+  "flags.sw5e.disadvantage.ability.save.tech.san",
+  "flags.sw5e.disadvantage.ability.save.force.all",
+  "flags.sw5e.disadvantage.ability.save.force.str",
+  "flags.sw5e.disadvantage.ability.save.force.dex",
+  "flags.sw5e.disadvantage.ability.save.force.con",
+  "flags.sw5e.disadvantage.ability.save.force.int",
+  "flags.sw5e.disadvantage.ability.save.force.wis",
+  "flags.sw5e.disadvantage.ability.save.force.cha",
+  "flags.sw5e.disadvantage.ability.save.force.hon",
+  "flags.sw5e.disadvantage.ability.save.force.san",
+]
+
 export class DAESystemSW5E extends DAESystemDND5E {
 
   public static get systemConfig() {
@@ -17,9 +177,9 @@ export class DAESystemSW5E extends DAESystemDND5E {
     charFlagKeys.forEach(key => {
       let theKey = `flags.sw5e.${key}`;
       if ([`flags.sw5e.weaponCriticalThreshold`,
-      `flags.sw5e.powerCriticalThreshold`,
-      `flags.sw5e.meleeCriticalDamageDice`,
-      `flags.dnd5e.spellCriticalThreshold`].includes(theKey)) {
+        `flags.sw5e.powerCriticalThreshold`,
+        `flags.sw5e.meleeCriticalDamageDice`,
+        `flags.dnd5e.spellCriticalThreshold`].includes(theKey)) {
         delete baseValues[theKey];
       }
     });
@@ -42,15 +202,17 @@ export class DAESystemSW5E extends DAESystemDND5E {
     specials["system.attributes.powerForceDarkDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.attributes.powerForceUnivDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.attributes.powerTechDC"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
-
+    for (let flag of SW5ESystemFlags) {
+      specials[flag] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
+    }
     // move all the characteer flags to specials so that the can be custom effects only
     let charFlagKeys = Object.keys(CONFIG.SW5E.characterFlags);
     charFlagKeys.forEach(key => {
       let theKey = `flags.sw5e.${key}`;
       if ([`flags.sw5e.weaponCriticalThreshold`,
-      `flags.sw5e.powerCriticalThreshold`,
-      `flags.sw5e.meleeCriticalDamageDice`,
-      `flags.sw5e.spellCriticalThreshold`].includes(theKey)) {
+        `flags.sw5e.powerCriticalThreshold`,
+        `flags.sw5e.meleeCriticalDamageDice`,
+        `flags.sw5e.spellCriticalThreshold`].includes(theKey)) {
         specials[theKey] = [0, -1];
       }
     });
@@ -126,14 +288,18 @@ export class DAESystemSW5E extends DAESystemDND5E {
   }
   public static getOptionsForSpec(spec: any): any {
     if (!spec.key) return undefined;
-    if (spec.key.includes("system.skills") && spec.includes("ability")) 
-        return CONFIG.SW5E.abilities;
+    if (spec.key.includes("system.skills") && spec.includes("ability"))
+      return CONFIG.SW5E.abilities;
     return super.getOptionsForSpec(spec);
   }
   public static initSystemData() {
     super.initSystemData();
     daeSystemClass.daeActionTypeKeys = daeSystemClass.daeActionTypeKeys.concat(Object.keys(CONFIG.SW5E.itemActionTypes));
     daeSystemClass.spellAttacks = daeSystemClass.spellAttacks.concat(["mpak", "rpak"])
+    for (let flag of SW5ESystemFlags){
+      const midiFlag = flag.replace("flags.sw5e", "flags.midi-qol");
+      daeSystemClass.bonusSelectors[flag] = { replaceList: [flag, midiFlag] }
+    }
   }
 
   public static initActions() {
@@ -143,11 +309,11 @@ export class DAESystemSW5E extends DAESystemDND5E {
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffectssw5e() {
   if (this._prepareScaleValues) this._prepareScaleValues();
-  
+
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
   // determine whether they are suppressed or not.
   this.effects.forEach(e => e.determineSuppression());
-  applyDaeEffects.bind(this)({specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpes: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true});
+  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpes: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
 }
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);

@@ -1,3 +1,7 @@
+### 11.0.24
+* Change to handling of removing duplicated effects, to run before the new effect is applied. Should resolve some edge cases with Convenient Effects and cascading effects.
+* Added support for sw5e advantage etc flags.
+
 ### 11.0.23
 * Editing transfer effects on equipped items will now update the applied effects on actors. Reintroduces functionality removed when foundry no longer triggered the update item hook for editing effects.
 * Fixed issue with DamageBonusMacro values of "ItemMacro", these will now be set correctly according to the item that created the effect.
