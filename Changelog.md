@@ -1,3 +1,7 @@
+### 10.0.39
+* Fix for dnd5e 2.4 compatibility.
+* Removed out of date sample items compendium
+
 ### 10.0.38
 * Fix for ability strings being "undefined" in sw5e
 
