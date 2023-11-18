@@ -1,4 +1,4 @@
-### 19.0.40
+### 10.0.40
 * Fix for effect editor not opening.
 
 ### 10.0.39
