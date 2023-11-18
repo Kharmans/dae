@@ -460,7 +460,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     this.languageList = duplicate(daeSystemClass.systemConfig.languages);
     Object.keys(daeSystemClass.systemConfig.languages).forEach(type => {
-      this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type]}`;
+      //@ts-expect-error .version
+      if (isNewerVersion(game.system.version, "2.3.9")) {
+        this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type].label}`;  
+      } else this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type]}`;
     });
 
     this.armorClassCalcList = {};
@@ -853,6 +856,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffectsdnd5e() {
   if (this._prepareScaleValues) this._prepareScaleValues();
+  if ( this.system?.prepareEmbeddedData instanceof Function ) this.system.prepareEmbeddedData();
+
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
   // determine whether they are suppressed or not.
 

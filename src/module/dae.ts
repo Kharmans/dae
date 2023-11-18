@@ -314,7 +314,7 @@ async function myAddCEEffectWith(effectData: any, uuid: string, origin, overlay:
 }
 export async function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, isToken: boolean, CEmetaData: {} = {}) {
   //@ts-expect-error dfreds
-  let ceEffect = game.dfreds.effects.all.find(e => (e.name || e.label) === effectName);
+  let ceEffect = game.dfreds.effects.all.find(e => (e.name ?? e.label) === effectName);
   if (!ceEffect) return;
   let effectData = mergeObject(ceEffect.toObject(), context.metaData);
   let returnValue;
@@ -407,11 +407,8 @@ function createActiveEffectHook(...args) {
         return true;
       }
     };
-    if (!context.isUndo) {
-      // changeLoop().then(() => removeExistingEffectsHook(...args));
       changeLoop();
-    }
-  } // else removeExistingEffectsHook(...args);
+  }
   return true;
 }
 
@@ -424,10 +421,12 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
     options.deleted = false;
     if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return;
     const stackable = getProperty(this, "flags.dae.stackable") ?? "noneName";
-    if (["noneName", "none"].includes(stackable)) { // transfer effects should replace the existing effect
+    if (["noneName", "none"].includes(stackable)) {
       if (!parent) return;
       const hasExisting = parent.effects.filter(ef => {
-        if (ef.id === this.id) return;
+        if (ef.id === this.id) return true;
+        //@ts-expect-error origin - rather than do a fromUuidsSync which could fail just assume that Item. in the origin is enough
+        if (ef.origin && !ef.origin?.includes("Item.")) return false;
         switch (stackable) {
           case "noneName":
             //@ts-expect-error origin
@@ -436,6 +435,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
             //@ts-expect-error origin
             return this.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === this.origin;
         }
+        return false;
       });
       if (hasExisting.length === 0) return;
 
@@ -573,7 +573,7 @@ function evalInline(expression: string, actor: Actor, effect) {
     expression = expression.replaceAll("@data.", "@");
     const roll = (new Roll(expression, actor?.getRollData())).evaluate({ async: false });
     if (showInline) {
-      roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effect.name || effect.label} ${expression}`, chatMessage: true })
+      roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effect.name ?? effect.label} ${expression}`, chatMessage: true })
     }
     return `${roll.total}`;
   } catch (err) {
@@ -730,7 +730,7 @@ export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options,
       };
     }
   } catch (err) {
-    console.warn(`dae | update active effect Actor ${actor.name}, Effect ${candidate.name || candidate.label}`, updates, err);
+    console.warn(`dae | update active effect Actor ${actor.name}, Effect ${candidate.name ?? candidate.label}`, updates, err);
   } finally {
     return true;
   }

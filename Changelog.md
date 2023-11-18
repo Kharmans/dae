@@ -1,3 +1,7 @@
+### 11.1.1
+* dnd5e 2.4 compatibility changes.
+* Changed the remove existing effects to only remove an existing effect if it's origin is an item, all others (including invalid origins) will be allowed.
+
 ### 11.0.24
 * Change to handling of removing duplicated effects, to run before the new effect is applied. Should resolve some edge cases with Convenient Effects and cascading effects.
 * Added support for sw5e advantage etc flags.
