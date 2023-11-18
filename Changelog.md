@@ -1,3 +1,6 @@
+### 19.0.40
+* Fix for effect editor not opening.
+
 ### 10.0.39
 * Fix for dnd5e 2.4 compatibility.
 * Removed out of date sample items compendium

@@ -25,6 +25,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   object: any;
   constructor(object: any = {}, options = {}) {
     super(object, options);
+    this.object = object;
     this.tokenMagicEffects = {};
     //@ts-ignore
     if (game.modules.get("tokenmagic")?.active) {
