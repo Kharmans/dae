@@ -444,25 +444,43 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     return disabled;
   }
 
+  public static enumerateLanguages(systemLanguages: any): any {
+    const languages = {};
+    Object.keys(systemLanguages).forEach(lang => {
+      if (typeof systemLanguages[lang] === "string") {
+        languages[lang] = i18n(systemLanguages[lang]);
+      }
+      if (systemLanguages[lang].label) {
+        languages[`${lang}`] = `${systemLanguages[lang].label}`;
+      }
+      if (systemLanguages[lang].children) {
+        const subLanguages = this.enumerateLanguages(systemLanguages[lang].children);
+        Object.keys(subLanguages).forEach(subLang => {
+          languages[subLang] = subLanguages[subLang];
+        })
+      }
+    });
+    return languages;
+  }
   // For DAE Editor
   public static configureLists(daeConfig: DAEActiveEffectConfig | null) {
     // this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
-    this.traitList = duplicate(daeSystemClass.systemConfig.damageTypes);
-    this.traitList = mergeObject(this.traitList, daeSystemClass.systemConfig.healingTypes);
+    // this.traitList = duplicate(daeSystemClass.systemConfig.damageTypes);
+    // this.traitList = mergeObject(this.traitList, daeSystemClass.systemConfig.healingTypes);
+    this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
     this.bypassesList = duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
     const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
     const damageTypes = Object.values(daeSystemClass.systemConfig.damageTypes);
     this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
       .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {})
     Object.keys(this.traitList).forEach(type => {
-      this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageTypes[type]}`;
+      this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageResistanceTypes[type]}`;
     });
-
     this.languageList = duplicate(daeSystemClass.systemConfig.languages);
     Object.keys(daeSystemClass.systemConfig.languages).forEach(type => {
       //@ts-expect-error .version
       if (isNewerVersion(game.system.version, "2.3.9")) {
-        this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type].label}`;  
+        this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
       } else this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type]}`;
     });
 
@@ -709,7 +727,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
         return true;
       case "system.traits.languages.value":
-        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.languages));
+        return super.doCustomArrayValue(actor, current, change, Object.keys(this.languageList));
       case "system.traits.ci.all":
         if (actor.system.traits.ci.value instanceof Set)
           setProperty(actor, "system.traits.ci.value", new Set(Object.keys(systemConfig.conditionTypes)))
@@ -856,7 +874,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffectsdnd5e() {
   if (this._prepareScaleValues) this._prepareScaleValues();
-  if ( this.system?.prepareEmbeddedData instanceof Function ) this.system.prepareEmbeddedData();
+  if (this.system?.prepareEmbeddedData instanceof Function) this.system.prepareEmbeddedData();
 
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
   // determine whether they are suppressed or not.

@@ -109,7 +109,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSpecs = false, wildCardsInclude = [], wildCardsExclude = [], doStatusEffects = true }) {
   if (disableEffects) return;
   const overrides = {};
-  for (let effect of this.allApplicableEffects()) effect.determineSuppression();
+  for (let effect of this.allApplicableEffects()) if (effect.determineSuppression) effect.determineSuppression();
   const effects = this.appliedEffects.filter(ef => !ef.disabled && !ef.isSuppressed);
   if (!effects || effects.size === 0) return this.overrides || {};
   const changes = effects.reduce((changes, effect) => {

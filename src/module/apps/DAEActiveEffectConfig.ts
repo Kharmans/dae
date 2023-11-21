@@ -146,11 +146,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     return daeSystemClass.getOptionsForSpec(spec);
   }
 
-
   /** @override */
   async getData(options) {
     if (getProperty(this.object, "flags.dae.specialDuration") === undefined)
       setProperty(this.object, "flags.dae.specialDuration", []);
+    if (getProperty(this.object, "flags.dae.stackable") === undefined)
+      setProperty(this.object, "flags.dae.stackable", "noneName");
     const data: any = await super.getData(options);
     let validSpecsToUse = ValidSpec.specs["union"]; // TODO this needs to be thought about
     await daeSystemClass.editConfig();

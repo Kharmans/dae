@@ -1,3 +1,8 @@
+### 11.1.2
+* Fix to support new dnd2.4 languages definition when specifying an active effect.
+* Put back all damage resistance types in trait.dr(etc).value
+* Fix for some language versions incorrectly setting default stackable to none rather than noneName when editing.
+
 ### 11.1.1
 * dnd5e 2.4 compatibility changes.
 * Changed the remove existing effects to only remove an existing effect if it's origin is an item, all others (including invalid origins) will be allowed.
