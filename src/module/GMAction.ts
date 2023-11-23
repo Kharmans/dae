@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, daeSystemClass } from "./dae";
 import { warn, debug, error } from "../dae";
 
 export class GMActionMessage {
@@ -79,9 +79,18 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
   if (actor.token) { // need to delay for unliked tokens as there is a timing issue
     if (isNewerVersion("11.293", game.version)) await delay(250)
   }
-  //@ts-expect-error onDropSingleItem toObject
-  const itemData = await actor.sheet._onDropSingleItem(item.toObject(false));
+
+  let itemData:any = item?.toObject(false);
   if (!itemData) return [];
+  //@ts-expect-error unsupportedItemTypes
+  if ( actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type) || itemData.system.advancement?.length) {
+    ui.notifications.warn(game.i18n.format("DND5E.ActorWarningInvalidItem", {
+      itemType: game.i18n.localize(CONFIG.Item.typeLabels[itemData.type]),
+      actorType: game.i18n.localize(CONFIG.Actor.typeLabels[actor.type])
+    }));
+    return [];
+  }
+
   setProperty(itemData, "flags.dae.DAECreated", true);
   //@ts-expect-error
   const documents: Item[] = await actor.createEmbeddedDocuments("Item", [itemData]);
@@ -477,7 +486,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
         //TODO remove this when timesup is in the wild.
         if (!timesUpInstalled) { // do the kludgey old form removal
           let doRemoveEffect = async (tokenUuid, removeEffect) => {
-            const actor = globalThis.DAE.fromActorUuid(tokenUuid);
+            const actor = actorFromUuid(tokenUuid);
             let removeId = removeEffect._id;
             if (removeId && actor?.effects.get(removeId)) {
               await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
@@ -543,6 +552,7 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
       case "year":
       case "years": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0 };
       case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
+      case "spec": return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
       default:
         console.warn("dae | unknown time unit found", itemDuration.units);
         return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
@@ -558,6 +568,7 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
       case "second":
         return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0 };
       case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
+      case "spec": return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
       default:
         let interval = {}
         interval[itemDuration.units] = itemDuration.value;

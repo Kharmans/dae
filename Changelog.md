@@ -1,3 +1,7 @@
+### 11.1.3
+* Fix for macro.craeateItem when trying to create spells
+* Fix for toggling effects active/inactive not undoing macro.createItem etc.
+
 ### 11.1.2
 * Fix to support new dnd2.4 languages definition when specifying an active effect.
 * Put back all damage resistance types in trait.dr(etc).value

@@ -189,8 +189,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
             console.warn(`Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`)
             c.value = `${new Roll(value).evaluate({ async: false }).total}`;
           } catch (err) {
-            console.warn("change value calculation failed for", this, c);
-            console.warn(err)
+            console.warn("change value calculation failed for", err, this, c);
           }
         }
       }
@@ -402,7 +401,7 @@ function createActiveEffectHook(...args) {
         if (globalThis.MidiQOL?.TroubleShooter) {
           globalThis.MidiQOL.TroubleShooter.recordError(err, message);
         }
-        console.warn(message);
+        console.warn(message, err);
       } finally {
         return true;
       }
@@ -577,7 +576,7 @@ function evalInline(expression: string, actor: Actor, effect) {
     }
     return `${roll.total}`;
   } catch (err) {
-    console.warn(`dae | evaluate args error: rolling ${expression} failed`);
+    console.warn(`dae | evaluate args error: rolling ${expression} failed`, err);
     return "0";
   }
 }
@@ -614,6 +613,11 @@ export function preCreateCombatantHook(...args) {
     }
     actionQueue.add(actor.updateEmbeddedDocuments.bind(actor), "ActiveEffect", effectUpdates);
   }
+}
+function recordDisabledSuppressedHook(...args) {
+  let [effect, updates, context, userId] = args;
+  setProperty(context, "dae.active", { wasDisabled: effect.disabled, wasSuppressed: effect.isSuppressed, oldChanges: duplicate(effect.changes) });
+  return true;
 }
 
 export function updateActiveEffectHook(...args) {
@@ -669,8 +673,9 @@ export function updateActiveEffectHook(...args) {
           await actionQueue.add(daeMacro, "off", actor, effectData, {});
         }
       }
-      if (updates.changes) {
-        if (effect.disabled === false && !effect.isSuppressed) {
+      
+      const effectActivated = !(effect.disabled || effect.suppressed) && (context.dae?.active.wasDisabled || context.dae?.active.wasSuppressed);
+      if (updates.changes || effectActivated) {
           for (let change of effect.changes) {
             if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
               await addCubChange(change.value, [token])
@@ -689,7 +694,6 @@ export function updateActiveEffectHook(...args) {
             await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {});
           }
         }
-      }
     } catch (err) {
       console.warn("dae | updating active effect error", err)
     } finally {
@@ -712,7 +716,6 @@ export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options,
   if (parent instanceof CONFIG.Actor.documentClass) actor = parent;
   else if (parent instanceof CONFIG.Item.documentClass && effectIsTransfer(candidate)) actor = parent.parent;
   if (!actor) return true;
-  setProperty(options, "dae.active", { disabled: candidate.disabled, isSuppressed: candidate.isSuppressed, oldChanges: duplicate(candidate.changes) });
   try {
     const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
     for (let change of candidate.changes ?? []) {
@@ -1479,7 +1482,7 @@ function daeApply(wrapped, actor, change) { // TODO remains broken in v10
       }
     }
   } catch (err) {
-    console.warn("dae | dae apply error")
+    console.warn("dae | dae apply error", err)
   }
   return wrapped(actor, change)
 }
@@ -1545,7 +1548,8 @@ export function daeInitActions() {
 
   Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
-  Hooks.on("preUpdateActiveEffect", preUpdateActiveEffectEvalInlineHook)
+  Hooks.on("preUpdateActiveEffect", preUpdateActiveEffectEvalInlineHook);
+  Hooks.on("preUpdateActiveEffect", recordDisabledSuppressedHook);
   Hooks.on("updateActiveEffect", updateActiveEffectHook);
   Hooks.on("updateActiveEffect", updateTransferEffectsHook);
 

@@ -127,26 +127,8 @@ Hooks.once('setup', function () {
   }
 });
 
-export function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {
+export async function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {
   if (toCheck) {
-    let d = new Dialog({
-      // localize this text
-      title,
-      content: `<p>${i18n("dae.sure")}</p>`,
-      buttons: {
-        one: {
-          icon: '<i class="fas fa-check"></i>',
-          label: "Confirm",
-          callback: confirmFunction
-        },
-        two: {
-          icon: '<i class="fas fa-times"></i>',
-          label: "Cancel",
-          callback: () => { }
-        }
-      },
-      default: "two"
-    });
-    d.render(true);
+    return Dialog.confirm({title, content: `<p>${i18n("dae.sure")}</p>`, yes: confirmFunction});
   } else return confirmFunction();
 }
