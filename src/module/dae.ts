@@ -109,7 +109,8 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSpecs = false, wildCardsInclude = [], wildCardsExclude = [], doStatusEffects = true }) {
   if (disableEffects) return;
   const overrides = {};
-  for (let effect of this.allApplicableEffects()) if (effect.determineSuppression) effect.determineSuppression();
+  for (let effect of this.allApplicableEffects()) 
+    if (effect.determineSuppression) effect.determineSuppression();
   const effects = this.appliedEffects.filter(ef => !ef.disabled && !ef.isSuppressed);
   if (!effects || effects.size === 0) return this.overrides || {};
   const changes = effects.reduce((changes, effect) => {
@@ -171,6 +172,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
       if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value);
+
         const rollData = this.getRollData();
 
         rollData.stackCount = stackCount;
@@ -369,7 +371,7 @@ function createActiveEffectHook(...args) {
   const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
   if (!(tokens[0] instanceof Token)) return;
   const token: Token = tokens[0];
-  effect.determineSuppression();
+  if (effect.determindSuppression) effect.determineSuppression();
   if (effect.changes && !effect.disabled && !effect.isSuppressed) {
     let changeLoop = async () => {
       try {
@@ -423,7 +425,8 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
     if (["noneName", "none"].includes(stackable)) {
       if (!parent) return;
       const hasExisting = parent.effects.filter(ef => {
-        if (ef.id === this.id) return true;
+        // if (ef.id === this.id) return true; - this.id is not well defined here so don't do the check
+        // Added this check so that you can create extra effects by hand on an actor and not have the old ones removed
         //@ts-expect-error origin - rather than do a fromUuidsSync which could fail just assume that Item. in the origin is enough
         if (ef.origin && !ef.origin?.includes("Item.")) return false;
         switch (stackable) {
@@ -470,6 +473,8 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
       if (!candidate.origin && !stackable) {
         // No origin and no stackable flags - probably a CE/CLT effect set stackable to "noneName"
         candidate.updateSource({ "flags.dae.stackable": "noneName", "origin": actor.uuid });
+      } else if (!stackable) {
+        candidate.updateSource({"flags.dae.stackable": "noneName"})
       }
       setProperty(updates, "flags.dae.transfer", data.transfer === true ? true : false);
       // Update the duration on the effect if needed

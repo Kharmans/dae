@@ -304,7 +304,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
     // find existing active effect that have same origin as one of our new effects 
     let removeList: any[] = targetActor.effects.filter(ae => {
       const notMulti = getProperty(ae, "flags.dae.stackable") !== "multi";
-      const noStackByName = getProperty(ae, "flags.dae.stackable") === "noneName";
+      const noStackByName = (getProperty(ae, "flags.dae.stackable") ?? "noneName") === "noneName";
       if (noStackByName) {
         //@ts-expect-error .origin
         return origins.find(o => o.name === ae.name && o.origin === ae.origin)

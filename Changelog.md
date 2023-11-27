@@ -1,3 +1,7 @@
+### 11.1.4
+* Fix for trying to call determineSuppression when it is not defined.
+* Ensure that effects that do not have stackable applied are treated as noneName.
+
 ### 11.1.3
 * Fix for macro.craeateItem when trying to create spells
 * Fix for toggling effects active/inactive not undoing macro.createItem etc.
