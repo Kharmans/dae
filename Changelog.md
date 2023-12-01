@@ -1,3 +1,6 @@
+### 11.1.4.1
+* Fix for current release of sw5e
+
 ### 11.1.4
 * Fix for trying to call determineSuppression when it is not defined.
 * Ensure that effects that do not have stackable applied are treated as noneName.

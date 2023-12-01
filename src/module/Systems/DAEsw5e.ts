@@ -309,6 +309,7 @@ export class DAESystemSW5E extends DAESystemDND5E {
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffectssw5e() {
   if (this._prepareScaleValues) this._prepareScaleValues();
+  if (this.system?.prepareEmbeddedData instanceof Function) this.system.prepareEmbeddedData();
 
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
   // determine whether they are suppressed or not.
