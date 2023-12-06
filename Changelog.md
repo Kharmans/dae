@@ -1,3 +1,8 @@
+### 11.1.5
+* init.total removed as a target for effects.
+  - use init.bonus which will now display on the character sheet.
+* Active Effect edit window will now scroll.
+
 ### 11.1.4.1
 * Fix for current release of sw5e
 

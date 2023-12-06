@@ -108,14 +108,16 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   static get defaultOptions() {
     return mergeObject(super.defaultOptions, {
-      classes: ["sheet", "active-effect-sheet"],
+      classes: ["sheet", "active-effect-sheet window-app"],
       title: "EFFECT.ConfigTitle",
       template: `./modules/dae/templates/DAEActiveSheetConfig.html`,
       width: 900,
       height: "auto",
-      resizable: true,
       tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }],
-      dragDrop: [{ dropSelector: ".value" }]
+      dragDrop: [{ dropSelector: ".value" }],
+      scrollY: [".dae-scrollable-list .scrollable"],
+      //@ts-expect-error DOCUMENT_OWNERSHIP_LEVELS
+      viewPermission: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,
     });
   }
 
@@ -243,15 +245,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (data.uuid) ev.target.value = data.uuid + (targetValue ? `, ${targetValue}` : "");
   }
 
-  // TODO find out how to do this proerply
-  //@ts-expect-error
-  async _renderOuter(options: any): Promise<any> {
-    //@ts-expect-error
-    let html = await super._renderOuter(options);
-    $(html).find(".window-content").css({ overflow: "visible" })
-    return html;
-  }
-
   /* ----------------------------------------- */
   _onEffectControl(event) {
     event.preventDefault();
@@ -340,11 +333,11 @@ Hooks.once("setup", () => {
     DocumentSheetConfig.registerSheet(
       CONFIG.ActiveEffect.documentClass,
       "core",
-      //@ts-expect-error
       DAEActiveEffectConfig,
       {
         label: i18n("dae.EffectSheetLabel"),
         makeDefault: true,
+        //@ts-expect-error canBeDefault missing
         canBeDefault: true,
         canConfigure: true
       });

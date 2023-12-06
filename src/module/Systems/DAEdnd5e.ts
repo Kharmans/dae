@@ -106,9 +106,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     baseValues["system.traits.ci.custom"] = "";
     baseValues["system.traits.size"] = "";
     */
-    delete baseValues["system.attributes.init.total"];
+    // removed - required so that init.bonus can work (prepapreinitiative called after derived effects
+    // delete baseValues["system.attributes.init.total"];
     delete baseValues["system.attributes.init.mod"];
-    delete baseValues["system.attributes.init.bonus"]
+    // delete baseValues["system.attributes.init.bonus"];
+    // leaving this in base values works because prepareInitiative is called after applicaiton of derived effects
     delete baseValues["flags"];
 
     baseValues["system.traits.ci.all"] = [false, modes.CUSTOM];
@@ -152,8 +154,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.hp.max"] = [0, -1];
     specials["system.attributes.hp.tempmax"] = [0, -1];
     specials["system.attributes.hp.min"] = [0, -1];
-    specials["system.attributes.init.total"] = [0, -1];
-    specials["system.attributes.init.bonus"] = ["", -1];
+    // removed - required so that init.bonus can work (prepapreinitiative called after derived effects
+    // specials["system.attributes.init.total"] = [0, -1];
+    // moved to base values - specials["system.attributes.init.bonus"] = ["", -1];
     for (let abl of Object.keys(daeSystemClass.systemConfig.abilities)) {
       specials["system.abilities.${abl}.dc"] = [0, ACTIVE_EFFECT_MODES.CUSTOM];
     }
@@ -956,11 +959,19 @@ function prepareData(wrapped) {
     const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
     if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
     applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
-    preparePassiveSkills.bind(this)();
+
+    // Allow for changes made by effects
+    preparePassiveSkills.bind(this)(); 
+    const globalBonuses = this.system.bonuses?.abilities ?? {};
+    const rollData = this.getRollData();
+    const checkBonus = simplifyBonus(globalBonuses?.check, rollData);
+    this._prepareInitiative(rollData, checkBonus);
+
     // Fix for dnd5e _prepareSpellcasting overwriting the _source pact.value
     const pact = this.system.spells?.pact;
-    if (pact)
+    /* if (pact)
       pact.value = this._source.system.spells.pact?.value;
+      */
     if (isNewerVersion(game.version, "11.293")) {
       // Apply special statuses that changed to active tokens
       let tokens;
@@ -976,6 +987,18 @@ function prepareData(wrapped) {
     console.error("Could not prepare data ", this.name, err);
   }
 }
+function simplifyBonus(bonus, data={}) {
+  if ( !bonus ) return 0;
+  if ( Number.isNumeric(bonus) ) return Number(bonus);
+  try {
+    const roll = new Roll(bonus, data);
+    return roll.isDeterministic ? Roll.safeEval(roll.formula) : 0;
+  } catch(error) {
+    console.error(error);
+    return 0;
+  }
+}
+
 
 function procAdvantageSkill(actor, abilityId, skillId): number {
   const midiFlags = actor.flags["midi-qol"] ?? {};
