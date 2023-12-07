@@ -1,3 +1,6 @@
+### 11.1.5.1
+* Cleaned up the scrollbars a bit.
+
 ### 11.1.5
 * init.total removed as a target for effects.
   - use init.bonus which will now display on the character sheet.

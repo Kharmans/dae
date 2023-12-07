@@ -113,6 +113,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       template: `./modules/dae/templates/DAEActiveSheetConfig.html`,
       width: 900,
       height: "auto",
+      resizable : true,
       tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }],
       dragDrop: [{ dropSelector: ".value" }],
       scrollY: [".dae-scrollable-list .scrollable"],
