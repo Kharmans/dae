@@ -1,3 +1,6 @@
+### 11.1.6
+* Include merge for sw5e proficiencies values thanks @ikaguia
+
 ### 11.1.5.1
 * Cleaned up the scrollbars a bit.
 

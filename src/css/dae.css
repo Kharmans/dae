@@ -168,3 +168,7 @@
   display: flex;
   justify-content: space-between;
 }
+
+[id^="DAEActiveEffectConfig"]  .active-effect-sheet .dae-scrollable-list {
+    overflow: visible;
+}
