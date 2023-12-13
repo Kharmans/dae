@@ -288,7 +288,9 @@ export class DAESystemSW5E extends DAESystemDND5E {
   }
   public static getOptionsForSpec(spec: any): any {
     if (!spec.key) return undefined;
-    if (spec.key.includes("system.skills") && spec.includes("ability"))
+    if (spec.key.includes("system.skills") && spec.key.includes("value"))
+      return { 0: "Not Proficient", 0.5: "Trained", 1: "Proficient", 2: "Expertise", 3: "Master", 4: "High Master", 5: "Grand Master" };
+    if (spec.key.includes("system.skills") && spec.key.includes("ability"))
       return CONFIG.SW5E.abilities;
     return super.getOptionsForSpec(spec);
   }
