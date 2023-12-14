@@ -169,7 +169,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.macroRepeats = daeMacroRepeats;
     const translations = geti18nTranslations();
     //@ts-expect-error
-    data.stackableOptions = translations.stackableOptions ?? { "noneName": "Effects do not stack by name", "none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1" };
+    data.stackableOptions = translations.stackableOptions ?? { "noneName": "Effects do not stack by name and origin", "noneNameOnly": "Effects do not stack by name", "none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1" };
 
     if (this.object.parent) {
       data.isItemEffect = this.object.parent instanceof CONFIG.Item.documentClass;

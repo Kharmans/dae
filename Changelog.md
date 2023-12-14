@@ -1,3 +1,18 @@
+### 11.1.7
+* Additional stackable option for effects. When dae applies an effect it can check for existing effects and remove them if required. The options for stacking effects are:
+  - multi: No existing effects will be removed when this effect is created.
+  - none: only one effect with the same origin can be created. So if an item can apply different effects only the most recently applied will be present.
+  - noneName: Only one effect with a given name for an origin (item/actor) can exist on an actor. If an existing effect has no origin it **will not** be removed by this option.
+  - noneNameOnly: Only one effect with the given name can exist on actor independent of where it came from. This option **will** remove effects with no origin if the name matches. (Added in this release)
+  - count: dae keeps and displays a count of how many times an effect has been applied, but there is only one effect on the item.
+  - DAE applies the rule for the newly created effect, but **does not** re-examine existing effects for their rules. For example:
+    - If you have an existing effect with noneNameOnly and apply an effect with noneName the effect creation will go through and both effects will be present. 
+    - If you have an existing effect with none and apply an effect with multi, both effects will be present.
+  - The check for existing effects (and their removal) is performed **before** the new effects are created, and will only removes effects already on the actor. If you create 2 effects in the same create effects call they will both be created, even if the stackable options would not allow them if created one after the other.
+  - If no stacking setting exists on an effect when it is created DAE will set the stackable option
+    - Effects whose origin is an actor are set to "multi".
+    - Effects whose origin is an item will be set to "noneName".
+
 ### 11.1.6
 * Include merge for sw5e proficiencies values thanks @ikaguia
 

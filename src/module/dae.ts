@@ -421,28 +421,36 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
 
     options.deleted = false;
     if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return;
-    const stackable = getProperty(this, "flags.dae.stackable") ?? "noneName";
-    if (["noneName", "none"].includes(stackable)) {
+    if (!getProperty(this, "flags.dae.stackable")) {
+      if (effectData.origin === parent?.uuid) this.updateSource({"flags.dae.stackable": "mulit"})
+      else this.updateSource({"flags.dae.stackable": "noneName"})
+    }
+    const stackable = getProperty(this, "flags.dae.stackable" );
+    if (["noneName", "none", "noneNameOnly"].includes(stackable)) {
       if (!parent) return;
       const hasExisting = parent.effects.filter(ef => {
-        // if (ef.id === this.id) return true; - this.id is not well defined here so don't do the check
-        // Added this check so that you can create extra effects by hand on an actor and not have the old ones removed
-        //@ts-expect-error origin - rather than do a fromUuidsSync which could fail just assume that Item. in the origin is enough
-        if (ef.origin && !ef.origin?.includes("Item.")) return false;
+        //@ts-expect-error .origin
+        const efOrigin = ef.origin;
         switch (stackable) {
           case "noneName":
-            //@ts-expect-error origin
-            return this.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === this.origin && (ef.name ?? ef.label) === (this.name ?? this.label);
+            // Effects with no origin are ignored
+            //@ts-expect-error label - label may still be used by some modules
+            return this.origin && efOrigin === this.origin && (ef.name ?? ef.label) === (this.name ?? this.label);
+          case "noneNameOnly":
+            //@ts-expect-error label - label may still be used by some modules
+            return (ef.name ?? ef.label) === (this.name ?? this.label);
           case "none":
-            //@ts-expect-error origin
-            return this.origin && ef.origin !== CECustomEffectsItemUuid && ef.origin === this.origin;
+            // All hand applied CE effects or applied via the interface with no specified origin have a special orign so do not count those.
+            // If the effect has the CE special origin treat it as if there was no origin.
+            if (efOrigin === CECustomEffectsItemUuid) return false;
+            return this.origin && efOrigin !== CECustomEffectsItemUuid && efOrigin === this.origin;
         }
         return false;
       });
       if (hasExisting.length === 0) return;
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
-      await this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id));
+      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id));
     }
   } catch (err) {
     error("removeExistingEffects ", err);
@@ -456,26 +464,18 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
   let result = true;
   try {
     if (options.isUndo) return result = true;
-    const actor: any = candidate.parent;
-    if (!(actor instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return result = true;
+    const parent = candidate.parent;
+    if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return result = true;
 
     // Check if we are trying to create an existing effect - not quite sure how that might happen
-    if (actor.effects?.find(ef => ef.id === data._id && false)) {
-      if (debugEnabled > 0) warn("Blocking creation of duplcate effect", candidate, actor.effects?.find(ef => ef.id === data._idid));
+    if (parent.effects?.find(ef => ef.id === data._id && false)) {
+      if (debugEnabled > 0) warn("Blocking creation of duplcate effect", candidate, parent.effects?.find(ef => ef.id === data._idid));
       return result = false; // "finally" will return the value
     }
     if (!candidate.flags?.dae?.specialDuration) candidate.updateSource({ "flags.dae.specialDuration": [] });
 
-    const stackable = getProperty(candidate, "flags.dae.stackable");
-    const parent = candidate.parent;
-    if (parent && parent instanceof Actor) {
+    if (parent instanceof Actor) {
       let updates: any = {};
-      if (!candidate.origin && !stackable) {
-        // No origin and no stackable flags - probably a CE/CLT effect set stackable to "noneName"
-        candidate.updateSource({ "flags.dae.stackable": "noneName", "origin": actor.uuid });
-      } else if (!stackable) {
-        candidate.updateSource({"flags.dae.stackable": "noneName"})
-      }
       setProperty(updates, "flags.dae.transfer", data.transfer === true ? true : false);
       // Update the duration on the effect if needed
       if (candidate.flags?.dae?.durationExpression && parent instanceof Actor) {
