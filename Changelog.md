@@ -1,3 +1,7 @@
+### 11.1.8
+* in 11.1.7 and earlier any change to an active effect on an actor would run macros with "off" and then "on". In this version the behaviour has been improved so that macros don't always get called with off/on when effects are changed.
+* Fix for typo mulit -> multi thanks @Elwin
+
 ### 11.1.7
 * Additional stackable option for effects. When dae applies an effect it can check for existing effects and remove them if required. The options for stacking effects are:
   - multi: No existing effects will be removed when this effect is created.

@@ -1,5 +1,5 @@
 import { applyActiveEffects, socketlibSocket } from "./GMAction";
-import { warn, error, debug, setDebugLevel, i18n, timelog, changesQueue, daeSpecialDurations } from "../dae";
+import { warn, error, debug, setDebugLevel, i18n, timelog, changesQueue, daeSpecialDurations, debugEnabled } from "../dae";
 import { ActiveEffects } from "./apps/ActiveEffects";
 import { macroActorUpdate } from "./daeMacros";
 import { ValidSpec } from "./Systems/DAESystem";
@@ -19,7 +19,6 @@ export var furnaceActive;
 export var itemacroActive;
 export var midiActive;
 export var statusCounterActive;
-export var debugEnabled;
 // export var useAbilitySave;
 export var activeConditions;
 export var confirmDelete;
@@ -109,7 +108,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSpecs = false, wildCardsInclude = [], wildCardsExclude = [], doStatusEffects = true }) {
   if (disableEffects) return;
   const overrides = {};
-  for (let effect of this.allApplicableEffects()) 
+  for (let effect of this.allApplicableEffects())
     if (effect.determineSuppression) effect.determineSuppression();
   const effects = this.appliedEffects.filter(ef => !ef.disabled && !ef.isSuppressed);
   if (!effects || effects.size === 0) return this.overrides || {};
@@ -408,7 +407,7 @@ function createActiveEffectHook(...args) {
         return true;
       }
     };
-      changeLoop();
+    changeLoop();
   }
   return true;
 }
@@ -422,10 +421,10 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
     options.deleted = false;
     if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return;
     if (!getProperty(this, "flags.dae.stackable")) {
-      if (effectData.origin === parent?.uuid) this.updateSource({"flags.dae.stackable": "mulit"})
-      else this.updateSource({"flags.dae.stackable": "noneName"})
+      if (effectData.origin === parent?.uuid) this.updateSource({ "flags.dae.stackable": "multi" })
+      else this.updateSource({ "flags.dae.stackable": "noneName" })
     }
-    const stackable = getProperty(this, "flags.dae.stackable" );
+    const stackable = getProperty(this, "flags.dae.stackable");
     if (["noneName", "none", "noneNameOnly"].includes(stackable)) {
       if (!parent) return;
       const hasExisting = parent.effects.filter(ef => {
@@ -655,10 +654,40 @@ export function updateActiveEffectHook(...args) {
 
       const tokenMagic = globalThis.TokenMagic;
 
-      // if (context.dae?.active?.disabled !== effect.disabled || context.dae?.active?.isSuppressed !== effect.isSuppressed || updates.changes) {
-      if (effect.disabled || effect.isSuppressed || updates.changes) {
-        const oldChanges = getProperty(context, "dae.active.oldChanges") ?? [];
-        for (let change of oldChanges) {
+      let addedChanges: any[] = [];
+      let removedChanges: any[] = [];
+      let existingChanges: any[] = [];
+      let oldChanges: any[] = [];
+      let newChanges: any[] = [];
+      if (updates.changes) {
+        // const removedChanges = (context.dae?.active?.oldChanges ?? []).filter(change => !effect.changes.some(c => c.key === change.key)); 
+        oldChanges = (getProperty(context, "dae.active.oldChanges") ?? []).sort((a, b) => a.key < b.key ? -1 : 1);
+        newChanges = effect.changes.filter(c => c.key && c.key !== "").sort((a, b) => a.key < b.key ? -1 : 1);
+        removedChanges = oldChanges.filter(change => !newChanges.some(c => c.key === change.key && c.mode === change.mode && c.value === change.value));
+        existingChanges = oldChanges.filter(change => newChanges.some(c => c.key === change.key && c.mode === change.mode && c.value === change.value));
+        addedChanges = newChanges.filter(change => !oldChanges.some(c => c.key === change.key && c.mode === change.mode && c.value === change.value));
+        if (debugEnabled > 0) {
+          warn("updateActor hook | old changes", oldChanges);
+          warn("updateActor hook | new changes", newChanges);
+          warn("updateActor hook | removed Changes ", removedChanges);
+          warn("updateActor hook | added changes ", addedChanges);
+          warn("updateActor hook | existing changes", existingChanges);
+        }
+      } else existingChanges = effect.changes;
+      const wasDisabled = context.dae?.active?.wasDisabled ?? false;
+      const wasSuppressed = context.dae?.active?.wasSuppressed ?? false;
+      const becameDisabled = effect.disabled && !(context.dae?.active.wasDisabled ?? false);
+      const becameSuppressed = effect.isSuppressed && !(context.dae?.active.wasSuppressed ?? false);
+      if (becameSuppressed || becameDisabled || removedChanges.length > 0) {
+        let changesToDisable: any[] = [];
+        if (becameSuppressed || becameDisabled) {
+          // newly disabled disable everything
+          changesToDisable = existingChanges.concat(removedChanges);
+        } else if (!wasDisabled && !wasSuppressed) {
+          // changes being removed were enabled so disable them
+          changesToDisable = removedChanges;
+        }
+        for (let change of changesToDisable) {
           if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
             await removeCubChange(change.value, [token], { warn: false });
           }
@@ -671,34 +700,43 @@ export function updateActiveEffectHook(...args) {
             await removeCreateItemChange(change.value, actor, effect)
           }
         }
-        if (oldChanges.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+        if (changesToDisable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           warn("dae add macro off", actionQueue._queue.length);
           const effectData = effect.toObject(false);
           if (updates.changes) effectData.changes = oldChanges;
           await actionQueue.add(daeMacro, "off", actor, effectData, {});
         }
       }
-      
-      const effectActivated = !(effect.disabled || effect.suppressed) && (context.dae?.active.wasDisabled || context.dae?.active.wasSuppressed);
-      if (updates.changes || effectActivated) {
-          for (let change of effect.changes) {
-            if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
-              await addCubChange(change.value, [token])
-            }
-            if (ceActive && change.key === "macro.CE") {
-              const lastArg = prepareLastArgData(effect, actor)
-              await addConvenientEffectsChange(change.value, actor.uuid, undefined, actor.isToken, lastArg);
-            }
-            if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(actor, change, tokens);
-            if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
-              await addCreateItemChange(change, actor, effect)
-            }
+
+      const becameEnabled = (context.dae?.active.wasDisabled ?? false) && !(effect.disabled ?? false);
+      const becameUnsuppressed = (context.dae?.active.wasSuppressed ?? false) && !(effect.isSuppressed ?? false);
+      if (becameEnabled || becameUnsuppressed || addedChanges.length > 0) {
+        let changesToEnable: any[] = [];
+        if (becameEnabled || becameUnsuppressed) {
+          // newly enabled enable everything
+          changesToEnable = existingChanges.concat(addedChanges);
+        } else if (!effect.disabled && !effect.suppressed) {
+          // changes being added need to be enabled
+          changesToEnable = addedChanges;
+        }
+        for (let change of changesToEnable) {
+          if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
+            await addCubChange(change.value, [token])
           }
-          if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
-            warn("action queue add dae macro on ", actionQueue._queue.length)
-            await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {});
+          if (ceActive && change.key === "macro.CE") {
+            const lastArg = prepareLastArgData(effect, actor)
+            await addConvenientEffectsChange(change.value, actor.uuid, undefined, actor.isToken, lastArg);
+          }
+          if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(actor, change, tokens);
+          if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
+            await addCreateItemChange(change, actor, effect)
           }
         }
+        if (changesToEnable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+          warn("action queue add dae macro on ", actionQueue._queue.length)
+          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {});
+        }
+      }
     } catch (err) {
       console.warn("dae | updating active effect error", err)
     } finally {
@@ -1656,7 +1694,7 @@ export function daeSetupActions() {
 
 export function fetchParams() {
   //@ts-expect-error type string
-  debugEnabled = setDebugLevel(game.settings.get("dae", "ZZDebug"));
+  setDebugLevel(game.settings.get("dae", "ZZDebug"));
   // useAbilitySave = game.settings.get("dae", "useAbilitySave") disabled as of 0.8.74
   confirmDelete = game.settings.get("dae", "confirmDelete")
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");

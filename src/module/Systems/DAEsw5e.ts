@@ -5,7 +5,7 @@ import { ValidSpec, wildcardEffects } from "./DAESystem";
 
 //@ts-ignore
 const CONFIG: any = globalThis.CONFIG;
-const SW5ESystemFlags = [
+const SW5ESystemFlags = [ // TODO comeback and do this properly and take into account starship flags
   "flags.sw5e.advantage.all",
   "flags.sw5e.advantage.attack.all",
   "flags.sw5e.advantage.attack.mwak",

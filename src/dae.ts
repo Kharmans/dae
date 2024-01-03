@@ -86,8 +86,6 @@ Hooks.once('ready', async function () {
       daeSpecialDurations["turnEndSource"] = i18n("dae.turnEndSource");
       daeSpecialDurations["combatEnd"] = i18n("COMBAT.End");
       daeSpecialDurations["joinCombat"] = i18n("COMBAT.CombatantCreate");
-
-      "COMBAT.CombatantCreate"
       daeMacroRepeats = {
         "none": "",
         "startEveryTurn": i18n("dae.startEveryTurn"),
