@@ -274,6 +274,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
     if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete?.filter(ae => ae.id && data.deleteEffects.includes(ae.id))
     if (effectsToDelete && effectsToDelete?.length > 0) {
       try {
+        if (!getProperty(data, "options.expiry-reason")) setProperty(data, "options.expiry-reason", "progammed-removal");
         await actor?.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id ?? "XXX"));
       } catch (err) {
         warn("delete effects failed ", err)
@@ -489,7 +490,8 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
             const actor = actorFromUuid(tokenUuid);
             let removeId = removeEffect._id;
             if (removeId && actor?.effects.get(removeId)) {
-              await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId])
+              //@ts-expect-error
+              await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId], {"expiry-reason": "deprecated real time expiry"})
             }
           }
 

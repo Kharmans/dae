@@ -1,3 +1,8 @@
+### 11.1.9
+* Added expiry reasons for dae initiaited effect removal
+* Pass the expiry reason to macros via the options object.
+* Fix for DAE effects app, enabled filter was broken. Now removes disabled/suppressed effects from the list.
+
 ### 11.1.8
 * in 11.1.7 and earlier any change to an active effect on an actor would run macros with "off" and then "on". In this version the behaviour has been improved so that macros don't always get called with off/on when effects are changed.
 * Fix for typo mulit -> multi thanks @Elwin

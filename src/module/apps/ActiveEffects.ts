@@ -94,10 +94,9 @@ getData(): any {
   };
 
   if (this.filters.has("temporary")) actives = actives.filter(e=>e.isTemporary);
-  if (this.filters.has("enabled")) actives = actives.filter(e=> e.active);
+  if (this.filters.has("enabled")) actives = actives.filter(e=> !e.disabled && !e.isSuppressed);
   actives.sort((a,b) => a.name < b.name ? -1 : 1);
   actives.forEach(e=> {
-    setProperty(e, "flags.dae.active", !e.disabled);
     let id = e.origin?.match(/Actor.*Item\.(.*)/);
     if (id?.length === 2) {
       const item = this.object.items?.get(id[1]);

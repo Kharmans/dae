@@ -704,7 +704,11 @@ export function updateActiveEffectHook(...args) {
           warn("dae add macro off", actionQueue._queue.length);
           const effectData = effect.toObject(false);
           if (updates.changes) effectData.changes = oldChanges;
-          await actionQueue.add(daeMacro, "off", actor, effectData, {});
+          let options = {};
+          if (becameDisabled) options = { "expiry-reason": "effect-disabled" };
+          if(becameSuppressed) options = { "expiry-reason": "effect-suppressed" };
+          else options = { "expiry-reason": "change-deleted" };
+          await actionQueue.add(daeMacro, "off", actor, effectData, options);
         }
       }
 
@@ -822,6 +826,7 @@ export function deleteActiveEffectHook(...args) {
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.origin;
 
         }
+        if (!getProperty(options, "expiry-reason")) setProperty(options, "expiry-reason", "effect-deleted");
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           warn("action queue dae macro add off ", actionQueue._queue.length)
           await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), options);
@@ -967,6 +972,11 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
             continue;
           }
         }
+        //@ts-expect-error - doing this refetch to try and make sure the actor has not been deleted
+        if (!fromUuidSync(actor.uuid)) {
+          error("actor vanished",  actor.name, actor.uuid);
+          return;
+        }
         let lastArg = mergeObject(lastArgOptions, {
           effectId: effectData._id,
           origin: effectData.origin,
@@ -992,6 +1002,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           }
           return true;
         })
+
         return await macro.execute(scope);
 
       } else if (theChange.key === "macro.actorUpdate") {
@@ -1005,6 +1016,10 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           tokenUuid,
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
 
+        //@ts-expect-error try and make sure the actor has not vanished
+        if (!fromUuidSync(actor.uuid)) {
+          error("actor vanished", actor.name, actor.uuid);
+        }
         await macroActorUpdate(action, ...args, lastArg);
         // result = await macroActorUpdate(action, ...args, lastArg);
       }
