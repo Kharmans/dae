@@ -1,5 +1,5 @@
 import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, daeSystemClass } from "./dae";
-import { warn, debug, error } from "../dae";
+import { warn, debug, error, debugEnabled } from "../dae";
 
 export class GMActionMessage {
   action: string;
@@ -263,7 +263,7 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
-async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean }) {
+async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options?: any }) {
   for (let idData of data.targets) {
     const actor = actorFromUuid(idData.uuid);
     if (!actor) {
@@ -274,8 +274,8 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
     if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete?.filter(ae => ae.id && data.deleteEffects.includes(ae.id))
     if (effectsToDelete && effectsToDelete?.length > 0) {
       try {
-        if (!getProperty(data, "options.expiry-reason")) setProperty(data, "options.expiry-reason", "progammed-removal");
-        await actor?.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id ?? "XXX"));
+        if (!getProperty(data, "options.expiry-reason")) setProperty(data, "options.expiry-reason", "programmed-removal");
+        await actor?.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id ?? "XXX"), data.options);
       } catch (err) {
         warn("delete effects failed ", err)
         // TODO can get thrown since more than one thing tries to delete an effect
@@ -321,15 +321,18 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
 
     // TODO check why this is essentially done twice (noName, none)
     if (removeList.length > 0) {
+      if (debugEnabled > 0) warn(`applyActiveEffects removing existing effects from actor ${targetActor?.name} ${toggleEffect}`, removeList);
       if (toggleEffect) {
         removeList = removeList.map(ef => ({ _id: ef.id, disabled: !ef.disabled, "duration.startTime": game.time.worldTime }));
-        await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList);
+        //@ts-expect-error
+        await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList, {"expiry-reason": "toggle-effect"});
         activate = false;
       } else { // remove the effect
         const interval = removeList.some(ef => ef.flags.effectmacro || ef.changes.some(change => change.value.startsWith("macro"))) ? 250 : 1; // for unlinked tokens and effect macros that might create effects need a long delay
         currentStacks = removeList.filter(ae => getProperty(ae, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae, "flags.dae.stacks") ?? 1), 1)
         removeList = removeList.map(ae => ae._id);
-        await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList);
+        //@ts-expect-error expiry-reason
+        await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList, {"expiry-reason": "effect-stacking"});
         if (targetActor.isToken && isNewerVersion("11.293", game.version)) { // need to delay for unliked tokens as there is a timing issue
           await delay(interval);
         }
@@ -467,6 +470,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
       }
 
       if (dupEffects.length > 0) {
+        if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
         // let timedRemoveList = await actionQueue.add(targetActor.createEmbeddedDocuments.bind(targetActor), "ActiveEffect", dupEffects, { metaData });
         let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects,
           //@ts-expect-error metadata

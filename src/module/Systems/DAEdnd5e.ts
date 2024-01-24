@@ -3,7 +3,6 @@ import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectCon
 import { actionQueue, actorFromUuid, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, atlActive, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
-var displayTraits;
 var specialTraitsPatched = false;
 var d20Roll;
 var dice;
@@ -65,16 +64,19 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       `flags.${game.system.id}.meleeCriticalDamageDice`,
       `flags.${game.system.id}.spellCriticalThreshold`].includes(theKey)) {
         delete baseValues[theKey];
-      }
-      else baseValues[theKey] = false;
+      } else if(daeSystemClass.systemConfig.characterFlags[key].type === Boolean) baseValues[theKey] = false;
+        else if (daeSystemClass.systemConfig.characterFlags[key].type === Number) baseValues[theKey] = 0;
+        else if (daeSystemClass.systemConfig.characterFlags[key].type === String) baseValues[theKey] = "";
     });
-    // Need to add spellSniper by hand
-    baseValues[`flags.${game.system.id}.spellSniper`] = false;
     if (game.modules.get("skill-customization-5e")?.active && game.system.id === "dnd5e") {
       Object.keys(daeSystemClass.systemConfig.skills).forEach(skl => {
         baseValues[`flags.skill-customization-5e.${skl}.skill-bonus`] = "";
       })
     }
+    delete baseValues[`flags.${game.system.id}.weaponCriticalThreshold`];
+    delete baseValues[`flags.${game.system.id}.powerCriticalThreshold`];
+    delete baseValues[`flags.${game.system.id}.meleeCriticalDamageDice`];
+    delete baseValues[`flags.${game.system.id}.spellCriticalThreshold`];
 
     //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
     if (characterSpec.system.bonuses) baseValues["system.bonuses.spell.dc"] = 0;
@@ -163,15 +165,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.encumbrance.max"] = [0, -1];
 
     specials["system.traits.di.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.di.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.di.value"] = ["", -1];
     specials["system.traits.di.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dr.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dr.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dr.value"] = ["", -1];
     specials["system.traits.dr.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dr.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dv.value"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dv.value"] = ["", -1];
     specials["system.traits.dv.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.bypasses"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     // specials["system.traits.ci.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
@@ -197,18 +199,18 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     if (characterSpec.system.resources) {
       specials["system.resources.primary.max"] = [0, -1];
-      specials["system.resources.primary.label"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+      specials["system.resources.primary.label"] = ["", -1];
       specials["system.resources.secondary.max"] = [0, -1];
-      specials["system.resources.secondary.label"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+      specials["system.resources.secondary.label"] = ["", -1];
       specials["system.resources.tertiary.max"] = [0, -1];
-      specials["system.resources.tertiary.label"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+      specials["system.resources.tertiary.label"] = ["", -1];
       specials["system.resources.legact.max"] = [0, -1];
       specials["system.resources.legres.max"] = [0, -1];
 
       if (game.modules.get("resourcesplus")?.active) {
         for (let res of ["fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]) {
           specials[`system.resources.${res}.max`] = [0, -1];
-          specials[`system.resources.${res}.label`] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
+          specials[`system.resources.${res}.label`] = ["", -1];
         }
       }
       if (characterSpec.system.spells) {
@@ -239,7 +241,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
     specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
-    specials[`flags.${game.system.id}.DamageBonusMacro`] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials[`flags.${game.system.id}.initiativeDisadv`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
 
     if (game.modules.get("tidy5e-sheet")?.active)
@@ -249,7 +250,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials[`system.attributes.movement.${key}`] = [0, -1];
     }
 
-    // move all the characteer flags to specials so that the can be custom effects only
+    // move all the characteer flags to specials so that they can be custom effects only
     let charFlagKeys = Object.keys(daeSystemClass.systemConfig?.characterFlags ?? {});
     charFlagKeys.forEach(key => {
       let theKey = `flags.${game.system.id}.${key}`;
@@ -304,7 +305,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (spec.includes("system.skills") && spec.includes("ability")) {
       validSpec.forcedMode = ACTIVE_EFFECT_MODES.OVERRIDE;
     }
-
     if (spec.includes("system.bonuses.abilities")) {
       validSpec.forcedMode = -1;
     }
@@ -322,15 +322,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     dice = game[game.system.id].dice
     if (!dice) error("Dice not defined! Many things won't work")
     else d20Roll = dice?.d20Roll;
-    game.settings.register("dae", "displayTraits", {
-      scope: "world",
-      default: false,
-      config: true,
-      type: Boolean,
-      onChange: fetchParams,
-      name: game.i18n.localize("dae.displayTraits.Name"),
-      hint: game.i18n.localize("dae.displayTraits.Hint"),
-    });
 
     // We will call this in prepareData
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", this.applyBaseEffectsFunc, "OVERRIDE");
@@ -359,10 +350,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       const atlFields = Object.keys(CONFIG.Canvas.detectionModes).map(dm => `ATL.detectionModes.${dm}.range`);
       addAutoFields(atlFields);
     }
-    Hooks.on("dae.settingsChanged", () => {
-      patchSpecialTraits();
-    });
-    patchSpecialTraits();
 
     //@ts-expect-error .version
     if (game.system.id === "dnd5e" && isNewerVersion("2.3.0", game.system.version)) {
@@ -439,6 +426,30 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage" },
     };
     daeSystemClass.daeActionTypeKeys = Object.keys(daeSystemClass.systemConfig.itemActionTypes);
+    daeSystemClass.systemConfig.characterFlags["DamageBonusMacro"] = {
+      type: String,
+      name: "Damage Bonus Macro",
+      hint: "Macro to use for damage bonus",
+      section: "Midi QOL"
+    };
+    daeSystemClass.systemConfig.characterFlags["initiativeHalfProficiency"] = {
+      type: Boolean,
+      name: "Half Proficiency for Initiative",
+      hint: "add 1/2 proficiency to initiative",
+      section: "Midi QOL"
+    };
+    daeSystemClass.systemConfig.characterFlags["initiativeDisadv"] = {
+      type: Boolean,
+      name: "Disadvantage on Initiative",
+      hint: "Provided by fears or magical items",
+      section: "Feats"
+    };
+    daeSystemClass.systemConfig.characterFlags["spellSniper"] = {
+      type: Boolean,
+      name: "Spell Sniper",
+      hint: "Provided by fears or magical items",
+      section: "Midi QOL"
+    };
   }
 
   public static effectDisabled(actor, effect, itemData = null) {
@@ -606,12 +617,22 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       setProperty(actor, change.key, current ? `${current},${macroRef}` : macroRef)
       return true;
     }
-    if (change.key.includes(`flags.${game.system.id}`)) {
-      const value = new Boolean(Roll.safeEval(change.value)).valueOf(); // ["1", "true", 1, true].includes(change.value);
-      setProperty(actor, change.key, value);
+    
+    if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type !== String) {
+      const type = daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type;
+      const rollData = actor.getRollData();
+      const flagValue = getProperty(rollData, change.key) || 0;
+      // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
+      setProperty(rollData, change.key, flagValue);
+      let value = this.safeEval(this.safeEvalExpression(change.value, rollData), rollData);
+      if (type === Boolean) setProperty(actor, change.key, value ? true : false);
+      else setProperty(actor, change.key, value);
       return true;
     }
-
+    
+    if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type !== Boolean) {
+      return true;
+    }
     if (change.key.startsWith("system.skills.") && change.key.endsWith(".value")) {
       const currentProf = getProperty(actor, change.key) || 0;
       const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
@@ -955,6 +976,8 @@ function prepareData(wrapped) {
     setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
 
     this.overrides = {};
+    const wildCards = [/flags\.base\.dae\..*/];
+    applyDaeEffects.bind(this)({ specList: {}, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildCards, wildCardsExclude: wildcardEffects, doStatusEffects: false });
     wrapped();
     const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
     if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
@@ -1063,148 +1086,6 @@ function patchPrepareArmorClassAttribution() {
   }
 }
 
-// Patch for actor-flags app to display settings including active effects
-function patchSpecialTraits() {
-  displayTraits = game.settings.get("dae", "displayTraits");
-  if (["dnd5e", "sw5e"].includes(game.system.id)) {
-    log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._updateObject (override=${displayTraits})`);
-    log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getFlags (override=${displayTraits})`);
-    log(`Patching game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getBonuses (override=${displayTraits})`);
-    if (!displayTraits) {
-      if (specialTraitsPatched) {
-        libWrapper.unregister("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._updateObject`);
-        libWrapper.unregister("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getFlags`);
-        libWrapper.unregister("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getBonuses`);
-      }
-    } else {
-      if (!specialTraitsPatched) {
-        libWrapper.register("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._updateObject`, _updateObject, "OVERRIDE");
-        libWrapper.register("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getFlags`, _getFlags[game.system.id], "OVERRIDE");
-        libWrapper.register("dae", `game.${game.system.id}.applications.actor.ActorSheetFlags.prototype._getBonuses`, _getBonuses[game.system.id], "OVERRIDE");
-      }
-    }
-    specialTraitsPatched = displayTraits;
-  }
-}
-
-const _getBonuses = { "dnd5e": _getBonusesdnd5e, "sw5e": _getBonusessw5e };
-const _getFlags = { "dnd5e": _getFlagsdnd5e, "sw5e": _getFlagssw5e };
-
-function _getFlagsdnd5e() {
-  const flags = {};
-  const baseData = this.document;
-  for (let [k, v] of Object.entries(daeSystemClass.systemConfig.characterFlags)) {
-    //@ts-expect-error
-    if (!flags.hasOwnProperty(v.section)) flags[v.section] = {};
-    let flag = duplicate(v);
-    //@ts-expect-error
-    flag.type = v.type.name;
-    //@ts-expect-error
-    flag.isCheckbox = v.type === Boolean;
-    //@ts-expect-error
-    flag.isSelect = v.hasOwnProperty('choices');
-    //@ts-expect-error
-    flag.value = getProperty(baseData.flags, `dnd5e.${k}`);
-    //@ts-expect-error
-    flags[v.section][`flags.dnd5e.${k}`] = flag;
-  }
-  return flags;
-}
-
-function _getFlagssw5e() {
-  const flags = {};
-  const baseData = this.document;
-  for (let [k, v] of Object.entries(daeSystemClass.systemConfig.characterFlags)) {
-    //@ts-expect-error
-    if (!flags.hasOwnProperty(v.section)) flags[v.section] = {};
-    let flag = duplicate(v);
-    //@ts-expect-error
-    flag.type = v.type.name;
-    //@ts-expect-error
-    flag.isCheckbox = v.type === Boolean;
-    //@ts-expect-error
-    flag.isSelect = v.hasOwnProperty('choices');
-    //@ts-expect-error
-    flag.value = getProperty(baseData.flags, `sw5e.${k}`);
-    //@ts-expect-error
-    flags[v.section][`flags.sw5e.${k}`] = flag;
-  }
-  return flags;
-}
-
-function _getBonusesdnd5e() {
-  const bonuses = [
-    { name: "system.bonuses.mwak.attack", label: "DND5E.BonusMWAttack" },
-    { name: "system.bonuses.mwak.damage", label: "DND5E.BonusMWDamage" },
-    { name: "system.bonuses.rwak.attack", label: "DND5E.BonusRWAttack" },
-    { name: "system.bonuses.rwak.damage", label: "DND5E.BonusRWDamage" },
-    { name: "system.bonuses.msak.attack", label: "DND5E.BonusMSAttack" },
-    { name: "system.bonuses.msak.damage", label: "DND5E.BonusMSDamage" },
-    { name: "system.bonuses.rsak.attack", label: "DND5E.BonusRSAttack" },
-    { name: "system.bonuses.rsak.damage", label: "DND5E.BonusRSDamage" },
-    { name: "system.bonuses.abilities.check", label: "DND5E.BonusAbilityCheck" },
-    { name: "system.bonuses.abilities.save", label: "DND5E.BonusAbilitySave" },
-    { name: "system.bonuses.abilities.skill", label: "DND5E.BonusAbilitySkill" },
-    { name: "system.bonuses.spell.dc", label: "DND5E.BonusSpellDC" }
-  ];
-  for (let b of bonuses) {
-    //@ts-expect-error
-    b.value = getProperty(this.object, b.name) || "";
-  }
-  return bonuses;
-}
-
-function _getBonusessw5e() {
-  const bonuses = [
-    { name: "system.bonuses.mwak.attack", label: "SW5E.BonusMWAttack" },
-    { name: "system.bonuses.mwak.damage", label: "SW5E.BonusMWDamage" },
-    { name: "system.bonuses.rwak.attack", label: "SW5E.BonusRWAttack" },
-    { name: "system.bonuses.rwak.damage", label: "SW5E.BonusRWDamage" },
-    { name: "system.bonuses.mpak.attack", label: "SW5E.BonusMPAttack" },
-    { name: "system.bonuses.mpak.damage", label: "SW5E.BonusMPDamage" },
-    { name: "system.bonuses.rpak.attack", label: "SW5E.BonusRPAttack" },
-    { name: "system.bonuses.rpak.damage", label: "SW5E.BonusRPDamage" },
-    { name: "system.bonuses.abilities.check", label: "SW5E.BonusAbilityCheck" },
-    { name: "system.bonuses.abilities.save", label: "SW5E.BonusAbilitySave" },
-    { name: "system.bonuses.abilities.skill", label: "SW5E.BonusAbilitySkill" },
-    { name: "system.bonuses.spell.dc", label: "SW5E.BonusPowerlDC" }
-  ];
-  for (let b of bonuses) {
-    //@ts-expect-error
-    b.value = getProperty(this.object, b.name) || "";
-  }
-  return bonuses;
-}
-
-async function _updateObject(event, formData) {
-  const actor = this.object;
-  let updateData = expandObject(formData);
-  const src = actor.toObject();
-
-  // Unset any flags which are "false"
-  const flags = updateData.flags[game.system.id];
-  for (let [k, v] of Object.entries(flags)) {
-    //@ts-expect-error
-    if ([undefined, null, "", false, 0].includes(v)) {
-      delete flags[k];
-      if (hasProperty(src.flags, `${game.system.id}.${k}`)) {
-        flags[`-=${k}`] = null;
-      }
-    }
-  }
-
-  // Clear any bonuses which are whitespace only
-  for (let b of Object.values(updateData.system.bonuses)) {
-    //@ts-expect-error
-    for (let [k, v] of Object.entries(b)) {
-      //@ts-expect-error
-      b[k] = v.trim();
-    }
-  }
-
-  // Diff the data against any applied overrides and apply
-  await actor.update(diffObject(actor.overrides || {}, updateData), { diff: false });
-}
 
 export function getActorItemForEffect(effect: any /* ActiveEffect */) {
   if (effect.parent instanceof CONFIG.Item.documentClass && effect.parent.isEmbedded) return effect.parent;

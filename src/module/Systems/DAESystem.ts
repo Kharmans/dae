@@ -85,10 +85,7 @@ export class ValidSpec {
 
       // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
       this.specs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
-        let validSpec = new ValidSpec(spec, baseValues[spec][0], baseValues[spec][1], baseValues[spec][2], baseValues[spec][3]);  
-
-        if (spec.includes(`flags.${game.system.id}`))
-          validSpec.forcedMode = ACTIVE_EFFECT_MODES.CUSTOM;
+       let validSpec = new ValidSpec(spec, baseValues[spec][0] ?? baseValues[spec], baseValues[spec][1], baseValues[spec][2], baseValues[spec][3]);  
         validSpec = daeSystemClass.modifyValidSpec(spec, validSpec); // System specific modifations
         this.specs[specKey].baseSpecsObj[spec] = validSpec;
         return validSpec;
@@ -402,6 +399,7 @@ export class DAESystem {
     return eval(output);
   }
   public static safeEvalExpression(input: string, context: any, depth = 0) {
+    input = Roll.replaceFormulaData(input, context);
     let validFunctionName = /^[a-zA-Z_$][0-9a-zA-Z_$.]*$/; // regex for valid JS function name
     if (depth > 20) {
       console.error("It's turtles all the way down....")

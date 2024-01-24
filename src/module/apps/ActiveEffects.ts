@@ -187,7 +187,8 @@ activateListeners(html) {
     const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
     if (object instanceof CONFIG.Actor.documentClass || object instanceof CONFIG.Item.documentClass) {
       confirmAction(confirmDelete || object instanceof CONFIG.Item.documentClass, () => {
-        object.deleteEmbeddedDocuments("ActiveEffect", [effectid]);
+        //@ts-expect-error
+        object.deleteEmbeddedDocuments("ActiveEffect", [effectid], {"expiry-reason": "manual-deletion"});
       })
     } else {
       let effect = object.effects.get(effectid);

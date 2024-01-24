@@ -1,3 +1,9 @@
+### 11.1.10
+* Added more/better expiry reasons.
+* Some cleanup of characterFlags (flags.dnd5e) processing in dae.
+* Removed mode restriction on flags.dnd5e.XXXX in dae effect sheet, to support @Zhell's concentration notifier.
+* Removed display special traits setting - now in line with default dnd5e behaviour.
+
 ### 11.1.9
 * Added expiry reasons for dae initiaited effect removal
 * Pass the expiry reason to macros via the options object.

@@ -193,13 +193,13 @@ export function getTokenFlag(token: Token | any /* TokenDocument*/, flagName: st
   return getProperty(token.document, `flags.dae.${flagName}`);
 }
 
-export async function deleteItemActiveEffects(tokens: Array<string | Token | any /* TokenDocument */>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true) {
+export async function deleteItemActiveEffects(tokens: Array<string | Token | any /* TokenDocument */>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
   const targets = tokens.map(t => ({"uuid": typeof t === "string" ? t : (t.document?.uuid ?? t.uuid)}));
-  return socketlibSocket.executeAsGM("deleteEffects", { targets, origin, ignore, deleteEffects, removeSequencer});
+  return socketlibSocket.executeAsGM("deleteEffects", { targets, origin, ignore, deleteEffects, removeSequencer, options});
 }
 
-export async function deleteActiveEffect(uuid: string, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true) {
-  return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore, deleteEffects, removeSequencer });
+export async function deleteActiveEffect(uuid: string, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
+  return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore, deleteEffects, removeSequencer, options });
 }
 
 export async function setTokenFlag(tokenOrId: Token | string | TokenDocument, flagName: string, flagValue: any) {

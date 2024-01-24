@@ -449,7 +449,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
       if (hasExisting.length === 0) return;
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
-      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id));
+      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), {"expiry-reasion": "effect-stacking"});
     }
   } catch (err) {
     error("removeExistingEffects ", err);
@@ -706,7 +706,7 @@ export function updateActiveEffectHook(...args) {
           if (updates.changes) effectData.changes = oldChanges;
           let options = {};
           if (becameDisabled) options = { "expiry-reason": "effect-disabled" };
-          if(becameSuppressed) options = { "expiry-reason": "effect-suppressed" };
+          else if(becameSuppressed) options = { "expiry-reason": "effect-suppressed" };
           else options = { "expiry-reason": "change-deleted" };
           await actionQueue.add(daeMacro, "off", actor, effectData, options);
         }
@@ -1513,36 +1513,22 @@ export function localDeleteFilters(tokenId: string, filterName: string) {
 
 export var tokenizer;
 
-function daeApply(wrapped, actor, change) { // TODO remains broken in v10
-  //TODO revisit this for item changes, requires setProperty(map, "index", value) to work.
-  // Probably won't ever work since items only has a getter - need to rethink.
-  try {
-    if (change.key?.startsWith("items")) {
-      const fields = change.key.split(".");
-      const name = fields[1];
-      let indices;
-      if (false || daeSystemClass.daeActionTypeKeys.includes(name)) { //TODO multiple changes are a problem
-        const items = actor.items.contents.map((item, index) => item.system.actionType === name ? index : -1)
-        indices = items.filter(index => index !== -1)
-      } else {
-        indices = [actor.items.contents.findIndex(i => i.name === name)];
-      }
-      if (indices.length > 0) { // Only works for a single effect because of overrides
-        for (let index of indices) {
-          fields[1] = `contents.${index}`;
-          if (fields[1] !== -1) {
-            change.key = fields.join(".");
-            var rval = wrapped(actor, change)
-          }
-        }
-        // change.key = originalKey;
-        return rval;
-      }
+function daeApply(wrapped, actor, change) {
+  // Intercept the dnd5e behaviour for custom mode flags.dnd5e boolean flags.
+  if (change.mode !== 0 || !change.key.startsWith("flags.dnd5e.")) return wrapped(actor, change);
+  const { key, value } = change;
+  const data = daeSystemClass.systemConfig.characterFlags[key.replace("flags.dnd5e.", "")];
+  if (data?.type !== Boolean) return wrapped(actor, change);
+    // Set flag to initial value if it isn't present
+    const current = foundry.utils.getProperty(actor, key) ?? null;
+    if ( current === null ) {
+      let initialValue: any = null;
+      if ( data.placeholder ) initialValue = data.placeholder;
+      else initialValue = false;
+      foundry.utils.setProperty(actor, key, initialValue);
     }
-  } catch (err) {
-    console.warn("dae | dae apply error", err)
-  }
-  return wrapped(actor, change)
+    // Need to avoid the dnd5e behaviour of "0" evaluating to true.
+    return Object.getPrototypeOf(Object.getPrototypeOf(this)).apply.bind(this)(actor, change);
 }
 
 // Fix for v11 not adding effects as expected. i.e. token.effects.visible ending up false
@@ -1580,7 +1566,7 @@ export function daeInitActions() {
   libWrapper.register("dae", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER")
 
   // TODO put this back when doing item effects.
-  // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "MIXED");
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
 
   // If updating item effects recreate actor effects for updated item.
