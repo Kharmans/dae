@@ -116,7 +116,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues["flags"];
 
     baseValues["system.traits.ci.all"] = [false, modes.CUSTOM];
-    baseValues["system.traits.ci.value"] = ["", modes.CUSTOM];
+    // baseValues["system.traits.ci.value"] = ["", modes.CUSTOM];
     baseValues["system.traits.ci.custom"] = ["", modes.CUSTOM];
     if (["character", "npc"].includes(actorType) && game.system.id === "dnd5e") {
       if (game.settings.get("dnd5e", "honorScore")) {
@@ -323,6 +323,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!dice) error("Dice not defined! Many things won't work")
     else d20Roll = dice?.d20Roll;
 
+    libWrapper.ignore_conflicts("dae", "ActiveAuras", "CONFIG.ActiveEffect.documentClass.prototype.apply");
+    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "MIXED");
     // We will call this in prepareData
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", this.applyBaseEffectsFunc, "OVERRIDE");
     // Overide prepareData so it can add the extra pass
@@ -340,6 +342,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   public static setupActions(): void {
   }
+
+
 
   public static readyActions(): void {
     // checkArmorDisabled();
@@ -1271,4 +1275,22 @@ async function _onDropActiveEffect(event, data) {
     ...effect.toObject(),
     origin: this.item.uuid
   }, { parent: this.item });
+}
+
+function daeApply(wrapped, actor, change) {
+  // Intercept the dnd5e behaviour for custom mode flags.dnd5e boolean flags.
+  if (change.mode !== 0 || !change.key.startsWith("flags.dnd5e.")) return wrapped(actor, change);
+  const { key, value } = change;
+  const data = daeSystemClass.systemConfig.characterFlags[key.replace("flags.dnd5e.", "")];
+  if (data?.type !== Boolean) return wrapped(actor, change);
+    // Set flag to initial value if it isn't present
+    const current = foundry.utils.getProperty(actor, key) ?? null;
+    if ( current === null ) {
+      let initialValue: any = null;
+      if ( data.placeholder ) initialValue = data.placeholder;
+      else initialValue = false;
+      foundry.utils.setProperty(actor, key, initialValue);
+    }
+    // Need to avoid the dnd5e behaviour of "0" evaluating to true.
+    return ActiveEffect.prototype.apply.bind(this)(actor, change);
 }

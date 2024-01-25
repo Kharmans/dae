@@ -449,7 +449,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
       if (hasExisting.length === 0) return;
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
-      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), {"expiry-reasion": "effect-stacking"});
+      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), {"expiry-reason": "effect-stacking"});
     }
   } catch (err) {
     error("removeExistingEffects ", err);
@@ -1513,23 +1513,6 @@ export function localDeleteFilters(tokenId: string, filterName: string) {
 
 export var tokenizer;
 
-function daeApply(wrapped, actor, change) {
-  // Intercept the dnd5e behaviour for custom mode flags.dnd5e boolean flags.
-  if (change.mode !== 0 || !change.key.startsWith("flags.dnd5e.")) return wrapped(actor, change);
-  const { key, value } = change;
-  const data = daeSystemClass.systemConfig.characterFlags[key.replace("flags.dnd5e.", "")];
-  if (data?.type !== Boolean) return wrapped(actor, change);
-    // Set flag to initial value if it isn't present
-    const current = foundry.utils.getProperty(actor, key) ?? null;
-    if ( current === null ) {
-      let initialValue: any = null;
-      if ( data.placeholder ) initialValue = data.placeholder;
-      else initialValue = false;
-      foundry.utils.setProperty(actor, key, initialValue);
-    }
-    // Need to avoid the dnd5e behaviour of "0" evaluating to true.
-    return Object.getPrototypeOf(Object.getPrototypeOf(this)).apply.bind(this)(actor, change);
-}
 
 // Fix for v11 not adding effects as expected. i.e. token.effects.visible ending up false
 async function drawEffects(wrapped) {
@@ -1565,8 +1548,6 @@ export function daeInitActions() {
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", daeSystemClass.getRollDataFunc(), "WRAPPER");
   libWrapper.register("dae", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER")
 
-  // TODO put this back when doing item effects.
-  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "MIXED");
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
 
   // If updating item effects recreate actor effects for updated item.

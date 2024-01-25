@@ -399,6 +399,7 @@ export class DAESystem {
     return eval(output);
   }
   public static safeEvalExpression(input: string, context: any, depth = 0) {
+    if (typeof input !== "string") return input;
     input = Roll.replaceFormulaData(input, context);
     let validFunctionName = /^[a-zA-Z_$][0-9a-zA-Z_$.]*$/; // regex for valid JS function name
     if (depth > 20) {
