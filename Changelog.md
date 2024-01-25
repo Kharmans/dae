@@ -1,6 +1,7 @@
 ### 11.1.11
 * Corrected an error for flags.dnd5e.xxxx mode CUSTOM.
 * Added libwrapper.ignore_conflict for the ActiveAuras/DAE both wrapping ActiveEffect.apply.
+Change to evaluation of flags.dnd5e.xxxx which are Boolean and CUSTOM. The standard dnd5e evaluation is bypassed and dae's used instead. This means you can have expressions in the field rather than just true/false and also means that unlike dnd5e evaluation a value of 0 will evaluate to false not true.
 
 ### 11.1.10
 * Added more/better expiry reasons.
