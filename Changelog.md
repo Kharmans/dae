@@ -1,3 +1,7 @@
+### 11.1.11
+* Corrected an error for flags.dnd5e.xxxx mode CUSTOM.
+* Added libwrapper.ignore_conflict for the ActiveAuras/DAE both wrapping ActiveEffect.apply.
+
 ### 11.1.10
 * Added more/better expiry reasons.
 * Some cleanup of characterFlags (flags.dnd5e) processing in dae.
