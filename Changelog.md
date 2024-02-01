@@ -1,3 +1,6 @@
+### 11.1.12
+* Change the daeApply to be libwrapper WRAPPED instead of MIXED which will avoid the conflict with Active Auras.
+
 ### 11.1.11
 * Corrected an error for flags.dnd5e.xxxx mode CUSTOM.
 * Added libwrapper.ignore_conflict for the ActiveAuras/DAE both wrapping ActiveEffect.apply.

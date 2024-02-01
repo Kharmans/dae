@@ -366,7 +366,7 @@ function createActiveEffectHook(...args) {
   //@ts-expect-error
   if (!effect.parent || (CONFIG.ActiveEffect.legacyTransferral === true && !(effect.parent instanceof CONFIG.Actor.documentClass))) return true;
   let actor = effect.parent;
-  if (parent instanceof CONFIG.Item.documentClass) actor = effect.parent.parent
+  if (actor instanceof CONFIG.Item.documentClass) actor = effect.parent.parent
   const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
   if (!(tokens[0] instanceof Token)) return;
   const token: Token = tokens[0];

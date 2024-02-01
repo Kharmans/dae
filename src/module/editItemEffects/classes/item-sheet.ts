@@ -22,6 +22,8 @@ export class ItemEffectsItemSheet {
    */
 
   static onManageActiveEffect(event, owner) {
+    //@ts-expect-error
+    const legacyTransferral = CONFIG.ActiveEffect.legacyTransferral;
     event.preventDefault();
     const a = event.currentTarget;
     const li = a.closest("li");
@@ -42,7 +44,7 @@ export class ItemEffectsItemSheet {
         transfer: li.dataset.effectType === "passive",
         disabled: li.dataset.effectType === "inactive"
       }]);
-    } else if (a.dataset.action === "transfer" && owner.parent instanceof Actor) {
+    } else if (a.dataset.action === "transfer" && owner.parent instanceof Actor && legacyTransferral === true) { 
       debug('Attempting to Transfer an effect to an Actor', { effectUuid: effect.uuid, actor: owner.parent });
       return CONFIG.ActiveEffect.documentClass.create({
         ...effect.toObject(),

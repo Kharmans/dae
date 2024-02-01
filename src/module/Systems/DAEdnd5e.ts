@@ -1,3 +1,4 @@
+import { setSourceMapRange } from "typescript";
 import { daeSpecialDurations, debug, error, i18n, log, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
 import { actionQueue, actorFromUuid, addConvenientEffectsChange, addCreateItemChange, addCubChange, addTokenMagicChange, applyDaeEffects, atlActive, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeTokenMagicChange } from "../dae";
@@ -64,9 +65,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       `flags.${game.system.id}.meleeCriticalDamageDice`,
       `flags.${game.system.id}.spellCriticalThreshold`].includes(theKey)) {
         delete baseValues[theKey];
-      } else if(daeSystemClass.systemConfig.characterFlags[key].type === Boolean) baseValues[theKey] = false;
-        else if (daeSystemClass.systemConfig.characterFlags[key].type === Number) baseValues[theKey] = 0;
-        else if (daeSystemClass.systemConfig.characterFlags[key].type === String) baseValues[theKey] = "";
+      } else if (daeSystemClass.systemConfig.characterFlags[key].type === Boolean) baseValues[theKey] = false;
+      else if (daeSystemClass.systemConfig.characterFlags[key].type === Number) baseValues[theKey] = 0;
+      else if (daeSystemClass.systemConfig.characterFlags[key].type === String) baseValues[theKey] = "";
     });
     if (game.modules.get("skill-customization-5e")?.active && game.system.id === "dnd5e") {
       Object.keys(daeSystemClass.systemConfig.skills).forEach(skl => {
@@ -323,8 +324,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!dice) error("Dice not defined! Many things won't work")
     else d20Roll = dice?.d20Roll;
 
-    libWrapper.ignore_conflicts("dae", "ActiveAuras", "CONFIG.ActiveEffect.documentClass.prototype.apply");
-    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "MIXED");
+    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
     // We will call this in prepareData
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", this.applyBaseEffectsFunc, "OVERRIDE");
     // Overide prepareData so it can add the extra pass
@@ -482,18 +482,28 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   // For DAE Editor
   public static configureLists(daeConfig: DAEActiveEffectConfig | null) {
+    //@ts-expect-error
+    const systemVersion = game.system.version;
     // this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
     // this.traitList = duplicate(daeSystemClass.systemConfig.damageTypes);
     // this.traitList = mergeObject(this.traitList, daeSystemClass.systemConfig.healingTypes);
-    this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
-    this.bypassesList = duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
-    const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
     const damageTypes = Object.values(daeSystemClass.systemConfig.damageTypes);
-    this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
-      .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {})
-    Object.keys(this.traitList).forEach(type => {
-      this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageResistanceTypes[type]}`;
-    });
+    if (isNewerVersion(systemVersion, "2.99")) {
+      this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
+      const drTypes = Object.values(daeSystemClass.systemConfig.damageTypes);
+      this.customDamageResistanceList = drTypes.filter((drt: any) => !drTypes.includes(drt.label))
+        .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {});
+    } else {
+      this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
+      const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
+      this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
+        .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {});
+      Object.keys(this.traitList).forEach(type => {
+        this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageResistanceTypes[type]}`;
+      });
+    }
+    this.bypassesList = duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
+
     this.languageList = duplicate(daeSystemClass.systemConfig.languages);
     Object.keys(daeSystemClass.systemConfig.languages).forEach(type => {
       //@ts-expect-error .version
@@ -621,7 +631,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       setProperty(actor, change.key, current ? `${current},${macroRef}` : macroRef)
       return true;
     }
-    
+
     if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type !== String) {
       const type = daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type;
       const rollData = actor.getRollData();
@@ -633,7 +643,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       else setProperty(actor, change.key, value);
       return true;
     }
-    
+
     if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type !== Boolean) {
       return true;
     }
@@ -965,6 +975,8 @@ async function preparePassiveSkills() {
 }
 
 function prepareData(wrapped) {
+  //@ts-expect-error
+  const systemVersion = game.system.version;
   try {
     debug("prepare data: before passes", this.name, this._source);
     const specialStatuses = new Map();
@@ -983,12 +995,17 @@ function prepareData(wrapped) {
     const wildCards = [/flags\.base\.dae\..*/];
     applyDaeEffects.bind(this)({ specList: {}, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildCards, wildCardsExclude: wildcardEffects, doStatusEffects: false });
     wrapped();
+    if (isNewerVersion(systemVersion, "2.99")) {
+      const hasHeavy = this.items.find(i => i.system.equipped && i.system.properties.has("stealthDisadvantage")) !== undefined;
+      if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
+    } else {
     const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
     if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
+    }
     applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
 
     // Allow for changes made by effects
-    preparePassiveSkills.bind(this)(); 
+    preparePassiveSkills.bind(this)();
     const globalBonuses = this.system.bonuses?.abilities ?? {};
     const rollData = this.getRollData();
     const checkBonus = simplifyBonus(globalBonuses?.check, rollData);
@@ -1014,13 +1031,13 @@ function prepareData(wrapped) {
     console.error("Could not prepare data ", this.name, err);
   }
 }
-function simplifyBonus(bonus, data={}) {
-  if ( !bonus ) return 0;
-  if ( Number.isNumeric(bonus) ) return Number(bonus);
+function simplifyBonus(bonus, data = {}) {
+  if (!bonus) return 0;
+  if (Number.isNumeric(bonus)) return Number(bonus);
   try {
     const roll = new Roll(bonus, data);
     return roll.isDeterministic ? Roll.safeEval(roll.formula) : 0;
-  } catch(error) {
+  } catch (error) {
     console.error(error);
     return 0;
   }
@@ -1060,6 +1077,24 @@ function procAdvantageSkill(actor, abilityId, skillId): number {
 }
 
 
+function _prepareActorArmorClassAttribution(wrapped, data) {
+  const attributions = wrapped(data);
+  if (this.object?.effects) {
+    for (let effect of this.appliedEffects) {
+      for (let change of effect.changes) {
+        if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
+          attributions.push({
+            label: `${effect.name} (dae)`,
+            mode: change.mode,
+            value: change.value
+          })
+        }
+      }
+    }
+  }
+  return attributions;
+}
+
 function _prepareArmorClassAttribution(wrapped, data) {
   const attributions = wrapped(data);
   if (this.object?.effects) {
@@ -1079,10 +1114,17 @@ function _prepareArmorClassAttribution(wrapped, data) {
 }
 
 function patchPrepareArmorClassAttribution() {
+  //@ts-expect-error
+  const systemVersion = game.system.version;
   if (game.system.id === "dnd5e") {
-    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['dnd5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+    if (isNewerVersion(systemVersion, "2.99")) {
+      libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
+
+    } else {
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['dnd5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
+    }
   } else if (game.system.id === "sw5e") {
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['sw5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['sw5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
@@ -1278,19 +1320,14 @@ async function _onDropActiveEffect(event, data) {
 }
 
 function daeApply(wrapped, actor, change) {
-  // Intercept the dnd5e behaviour for custom mode flags.dnd5e boolean flags.
-  if (change.mode !== 0 || !change.key.startsWith("flags.dnd5e.")) return wrapped(actor, change);
   const { key, value } = change;
+  let originalReturn = wrapped(actor, change);
+  // Intercept the dnd5e behaviour for custom mode flags.dnd5e boolean flags.
+  if (change.mode !== 0 || !change.key.startsWith("flags.dnd5e.")) return originalReturn;
   const data = daeSystemClass.systemConfig.characterFlags[key.replace("flags.dnd5e.", "")];
-  if (data?.type !== Boolean) return wrapped(actor, change);
-    // Set flag to initial value if it isn't present
-    const current = foundry.utils.getProperty(actor, key) ?? null;
-    if ( current === null ) {
-      let initialValue: any = null;
-      if ( data.placeholder ) initialValue = data.placeholder;
-      else initialValue = false;
-      foundry.utils.setProperty(actor, key, initialValue);
-    }
-    // Need to avoid the dnd5e behaviour of "0" evaluating to true.
-    return ActiveEffect.prototype.apply.bind(this)(actor, change);
+  if (data?.type !== Boolean) return originalReturn;
+  // Need to avoid the dnd5e behaviour of "0" evaluating to true and forcing the change.value to a boolean
+  change.value = value; // restore the original change value since dnd5e will have forced it to boolean.
+  // ActiveEffect.apply will bypass the dnd5e apply
+  return ActiveEffect.prototype.apply.bind(this)(actor, change);
 }
