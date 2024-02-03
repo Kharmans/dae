@@ -2,7 +2,7 @@
 	"id": "dae",
 	"title": "Dynamic effects using Active Effects (DAE)",
 	"description": "Replacement for dynamic effects",
-	"version": "11.1.11",
+	"version": "11.1.12",
 	"authors": [
 	  {
 		"name": "tposney",
@@ -110,7 +110,15 @@
 	"bugs": "https://gitlab.com/tposney/dae/-/issues",
 	"allowBugReporter": true,
 	"relationships": {
-	  "systems": [],
+	  "systems": [
+		  {
+		  	"id": "dnd5e", 
+		  	"type": "system",
+		  	"compatibility": {
+				"maximum": "2.9.99"
+		  }
+	}
+	  ],
 	  "requires": [
 		{
 			"id": "lib-wrapper",
