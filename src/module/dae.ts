@@ -6,6 +6,7 @@ import { ValidSpec } from "./Systems/DAESystem";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e";
 import { DAESystemSW5E } from "./Systems/DAEsw5e";
 import { DIMEditor } from "./apps/DIMEditor";
+import { merge } from "jquery";
 
 let templates = {};
 
@@ -251,14 +252,11 @@ function expandEffectChanges(changes) {
   return returnChanges;
 }
 
-//@ts-expect-error
-export async function addCreateItemChange(change: { key: string, value: string }, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
+export async function addCreateItemChange(change: { key: string, value: string }, actor: Actor, effect: ActiveEffect) {
   await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", { uuid: actor.uuid, itemDetails: change.value, effectUuid: effect.uuid, callItemMacro: change.key === "macro.createItemRunMacro" })
 }
 
-//@ts-expect-error
-export async function removeCreateItemChange(itemId: string, actor: Actor, effect: globalThis.CONFIG.ActiveEffect.documentClass) {
-
+export async function removeCreateItemChange(itemId: string, actor: Actor, effect: ActiveEffect | any) {
   let [uuid, option] = itemId.split(",").map(s => s.trim());
   if (option === "permanent") return; // don't delete permanent items
   if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
@@ -337,6 +335,48 @@ export async function removeCubChange(conditionName, tokens: [Token], options = 
   if (isToken) await delay(1); // let all of the stuff settle down
   if (cubInterface?.enhancedConditions.supported) await actionQueue.add(cubInterface.removeCondition, conditionName, tokens, options);
 }
+export async function addStatusEffectChange(actor, change, tokens, sourceEffect) {
+  const activeEffectImplementation = ActiveEffect.implementation;
+  //@ts-expect-error
+  const fromStatusEffect = activeEffectImplementation.fromStatusEffect;
+  if (change.key !== "StatusEffect") return;
+  // const parent = sourceEffect.parent;
+  // if (!(parent instanceof Actor)) return;
+
+  const statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
+  if (statusEffect) {
+    //@ts-expect-error dfreds
+    const dfreds = game.dfreds;
+    let newEffect;
+    if (dfreds?.effects) {
+      newEffect = dfreds.effects.all.find(ef => ef.statuses.has(statusEffect.id));
+      const lastArg = prepareLastArgData(newEffect, actor);
+      setProperty(newEffect, "flags.dae.transfer", getProperty(sourceEffect, "flags.dae.transfer"));
+      await addConvenientEffectsChange("Convenient Effect: " + statusEffect.label, actor.uuid, sourceEffect.origin, {}, actor.isToken, lastArg);
+    }
+    if (!newEffect && fromStatusEffect) {
+      //@ts-expect-error
+      newEffect = await ActiveEffect.implementation.fromStatusEffect(change.value);
+      setProperty(newEffect, "flags.dae.transfer", getProperty(sourceEffect, "flags.dae.transfer"));
+      newEffect.changes.some(c => {
+        if (["StatusEffectName", "StatusEffectLabel"].includes(c.key)) {
+          newEffect.name = c.value;
+          return true;
+        }
+        else return false;
+      })
+      newEffect.origin = sourceEffect.origin;
+      //@ts-expect-error
+      await activeEffectImplementation.create(newEffect, { parent: actor, keepId: true })
+    }
+  }
+}
+export async function removeStatusEffectChange(actor, change, tokens, effect) {
+  const effectsToRemove = actor.effects.filter(ef => ef.orign === effect.orgin)?.map(ef => ef.id);
+  if (effectsToRemove && effectsToRemove.length > 0)
+    await actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToRemove);
+  // await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeEffect", { actorUuid: actor.uuid, effectIds: effectsToRemove });
+}
 
 export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}) {
   if (!effect.changes) return effect;
@@ -413,6 +453,7 @@ function createActiveEffectHook(...args) {
 }
 
 async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
+  console.warn("preCreateActiveEffectHook", args);
   try {
     let [effectData, options, user] = args;
     if (options.isUndo) return;
@@ -449,7 +490,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
       if (hasExisting.length === 0) return;
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
-      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), {"expiry-reason": "effect-stacking"});
+      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), { "expiry-reason": "effect-stacking" });
     }
   } catch (err) {
     error("removeExistingEffects ", err);
@@ -459,6 +500,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
 }
 
 function preCreateActiveEffectHook(candidate, data, options, user) {
+  console.warn("preCreateActiveEffectHook", candidate, data, options, user);
   // Make changes to the effect data as needed
   let result = true;
   try {
@@ -528,7 +570,8 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
 
             changesChanged = true;
             if (statusEffect.flags) {
-              setProperty(updates, "flags", statusEffect.flags);
+              updates.flags = mergeObject(updates.flags ?? {}, statusEffect.flags, { insertKeys: true, insertValues: true, overwrite: true });
+              // setProperty(updates, "flags", statusEffect.flags); This overwrites the transfer status
             }
             if (isNewerVersion(game.version, "11.0")) {//TODO check in v11
               updates["statuses"] = statusEffect.statuses ?? new Set();
@@ -584,6 +627,7 @@ function evalInline(expression: string, actor: Actor, effect) {
     return "0";
   }
 }
+
 export function preDeleteCombatHook(...args) {
   // This could cause race conditions....
   const [combat, options, user] = args;
@@ -632,12 +676,31 @@ export function updateActiveEffectHook(...args) {
   const parent = effect.parent;
   if (!parent) return true;
   if ((getProperty(updates, "flags.dae.itemsToDelete") ?? []).length > 0) return true;
-  //@ts-expect-error legacyTransferral
-  if (CONFIG.ActiveEffect.legacyTransferral && !(parent instanceof CONFIG.Actor.documentClass)) {
-    // With legacy transferal changes to item effects don't change the actor
-    return true;
-  }
   let actor;
+
+  //@ts-expect-error legacyTransferral
+  if (!CONFIG.ActiveEffect.legacyTransferral && parent instanceof CONFIG.Item.documentClass) {
+    if (!effect.transfer) return;
+    // Suppressed effects are covered by the item update
+    actor = effect.parent?.parent;
+    if (actor instanceof CONFIG.Actor.documentClass) {
+      // if disabled status changed remove dependent effects macro.execute, createItem etc
+      const wasDisabled = context.dae?.active?.wasDisabled ?? false;
+      const becameDisabled = effect.disabled && !(context.dae?.active.wasDisabled ?? false);
+      const becameEnabled = (context.dae?.active.wasDisabled ?? false) && !(effect.disabled ?? false);
+      const item = effect.parent;
+      if (becameDisabled) {
+        for (let change of effect.changes) {
+          removeEffectChange(actor, [], effect, item, change)
+        }
+      } else if (becameEnabled) {
+        for (let change of effect.changes) {
+          addEffectChange(actor, [], effect, item, change)
+        }
+      }
+      return true;
+    }
+  }
   if (parent instanceof CONFIG.Actor.documentClass) actor = parent;
   else if (parent instanceof CONFIG.Item.documentClass) actor = parent.parent;
   // if (effect.disabled === context.dae?.active?.disabled && effect.isSuppressed === context.dae?.active?.isSuppressed) return true;
@@ -706,7 +769,7 @@ export function updateActiveEffectHook(...args) {
           if (updates.changes) effectData.changes = oldChanges;
           let options = {};
           if (becameDisabled) options = { "expiry-reason": "effect-disabled" };
-          else if(becameSuppressed) options = { "expiry-reason": "effect-suppressed" };
+          else if (becameSuppressed) options = { "expiry-reason": "effect-suppressed" };
           else options = { "expiry-reason": "change-deleted" };
           await actionQueue.add(daeMacro, "off", actor, effectData, options);
         }
@@ -822,6 +885,9 @@ export function deleteActiveEffectHook(...args) {
           }
           if (change.key === "flags.dae.deleteUuid" && change.value) {
             await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
+          }
+          if (change.key === "flags.dae.suspendActiveEffect", { uuid: change.value }) {
+            await socketlibSocket.executeAsGM("suspendActiveEffect", { uuid: change.value });
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.origin;
 
@@ -974,7 +1040,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
         }
         //@ts-expect-error - doing this refetch to try and make sure the actor has not been deleted
         if (!fromUuidSync(actor.uuid)) {
-          error("actor vanished",  actor.name, actor.uuid);
+          error("actor vanished", actor.name, actor.uuid);
           return;
         }
         let lastArg = mergeObject(lastArgOptions, {
@@ -1273,6 +1339,92 @@ function preUpdateItemHook(candidate, updates, options, user) {
   return true;
 }
 
+
+export function addEffectChange(actor, tokens, effectToApply, item, change) {
+  console.error("Adding effect change ", actor, change, tokens, effectToApply)
+  const token = tokens[0];
+  switch (change.key) {
+    case "macro.CE":
+      const lastArg = prepareLastArgData(effectToApply, actor);
+      addConvenientEffectsChange(change.value, actor.uuid, effectToApply.origin, {}, actor.isToken, lastArg);
+      break;
+    case "macro.CUB":
+    case "macro.CLT":
+      addCubChange(change.value, [token]);
+      break;
+    case "macro.tokenMagic":
+      addTokenMagicChange(actor, change, tokens);
+      break;
+    case "macro.createItem":
+    case "macro.createItemRunMacro":
+      //@ts-expect-error
+      if (!CONFIG.ActiveEffect.legacyTransferral) {
+        addCreateItemChange(change, actor, effectToApply);
+      } else {
+        for (let effect of actor.allApplicableEffects()) {
+          if (effect.origin === item.uuid && effectIsTransfer(effect)) {
+            addCreateItemChange(change, actor, effect);
+          }
+        }
+      }
+      break;
+    case "StatusEffect":
+      //@ts-expect-error
+      if (CONFIG.ActiveEffect.legacyTransferral === false)
+        addStatusEffectChange(actor, change, token, effectToApply);
+      break;
+    default:
+      if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
+        if (debugEnabled > 0) warn("action queue add dae macro on ", actionQueue._queue.length)
+        actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), {});
+        break;
+      }
+  }
+}
+
+export function removeEffectChange(actor, tokens, effectToApply, item, change) {
+  console.error("removing effect change ", actor, change, tokens, effectToApply)
+
+  const token = tokens[0];
+  switch (change.key) {
+    case "macro.CE":
+      const lastArg = prepareLastArgData(effectToApply, actor);
+      removeConvenientEffectsChange(change.value, actor.uuid, effectToApply.origin, actor.isToken, lastArg);
+      break;
+    case "macro.CUB":
+    case "macro.CLT":
+      removeCubChange(change.value, [token])
+      break;
+    case "macro.tokenMagic":
+      removeTokenMagicChange(actor, change, tokens);
+      break;
+    case "macro.createItem":
+    case "macro.createItemRunMacro":
+      //@ts-expect-error
+      if (CONFIG.ActiveEffect.legacyTransferral === false) {
+        // for non legacy transferral the only effect is the one on the actor
+        removeCreateItemChange(change.value, actor, effectToApply);
+      } else {
+        for (let effect of actor.allApplicableEffects()) {
+          if ((effect.origin === item.uuid || effect.parent.uuid === item.origin) && effectIsTransfer(effect)) {
+            removeCreateItemChange(change.value, actor, effect)
+          }
+        }
+      }
+      break;
+    case "StatusEffect":
+      //@ ts-expect-error
+      // if (CONFIG.ActiveEffect.legacyTransferral === false)
+        removeStatusEffectChange(actor, change, tokens, effectToApply);
+      break;
+    default:
+      if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
+        if (debugEnabled > 0) warn("dae add macro off", actionQueue._queue.length);
+        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), {});
+      }
+      break;
+  }
+}
 // Update the actor active effects when editing an owned item
 function updateItemEffects(candidate, updates, options, user) {
   if (!candidate.isOwned) return true;
@@ -1369,11 +1521,62 @@ export function preCreateItemHook(candidate, data, options, user) {
   if (options.isUndo) return true;
   return true;
 }
-// When an item is created any effects have a source that points to the original item
-// Need to update to refer to the created item
-// Can't do in precreate since the _id is wrong.
-export function createItemHook(candidate, options, user) {
+export async function deleteItemHook(...args) {
+  let [candidateItem, options, user] = args
   if (options.isUndo) return;
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral) return;
+  const actor = candidateItem.parent;
+  if (!(actor instanceof Actor)) return;
+  const token = tokenForActor(actor);
+  for (let effect of candidateItem.effects) {
+    if (!effect.transfer) continue;
+    if (effect.disabled || effect.isSuppressed) continue;
+    try {
+      const selfAuraChange = getProperty(effect, "flags.ActiveAuras.isAura") === true
+        && getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
+        && effect.origin.startsWith(actor.uuid);
+      // don't apply macro or macro like effects if active aura and not targeting self
+      if (selfAuraChange) return;
+      for (let change of effect.changes) {
+        removeEffectChange(actor, [token], effect, candidateItem, change)
+        if (change.key === "StatusEffect") {
+          console.error("disable status effect", change.key, change.value);
+        }
+      }
+    } catch (err) {
+      console.warn("dae | error creating active effect ", err);
+    }
+  }
+  return;
+}
+export async function createItemHook(...args) {
+  let [candidateItem, options, user] = args
+  if (options.isUndo) return;
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral) return;
+  const actor = candidateItem.parent;
+  if (!(actor instanceof Actor)) return;
+  const token = tokenForActor(actor);
+  for (let effect of candidateItem.effects) {
+    if (!effect.transfer) continue;
+    if (effect.disabled || effect.isSuppressed) continue;
+    try {
+      const selfAuraChange = getProperty(effect, "flags.ActiveAuras.isAura") === true
+        && getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
+        && effect.origin.startsWith(actor.uuid);
+      // don't apply macro or macro like effects if active aura and not targeting self
+      if (selfAuraChange) return;
+      for (let change of effect.changes) {
+        addEffectChange(actor, [token], effect, candidateItem, change)
+        if (change.key === "StatusEffect") {
+          console.error("Enable status effect", change.key, change.value);
+        }
+      }
+    } catch (err) {
+      console.warn("dae | error creating active effect ", err);
+    }
+  }
   return;
 }
 
@@ -1558,8 +1761,9 @@ export function daeInitActions() {
 
 
   Hooks.on("preUpdateItem", preUpdateItemHook);
-  // Hooks.on("preCreateItem", preCreateItemHook);
-  // Hooks.on("createItem", createItemHook);
+  Hooks.on("preCreateItem", preCreateItemHook);
+  Hooks.on("createItem", createItemHook);
+  Hooks.on("deleteItem", deleteItemHook);
 
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._preUpdate", preUpdateActor, "WRAPPER");
   // libWrapper.register("dae", "CONFIG.Item.documentClass.prototype._preCreate", _preCreateItem, "WRAPPER");

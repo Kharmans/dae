@@ -1,3 +1,13 @@
+### 11.3.0
+* This release should be compatible with dnd5e v3.0+. I have not tested every possible permutation of possible behaviours so please don't upgrade just before game time.
+* This release should be backwards compatible with dnd5e 2.4 but provides no additional functionality so there is no need to upgrade.
+* In case of problems I have left 11.1.12 available for download for those still on dnd5e 2.4.1
+* Changes in behaviour in 3.0
+  - For StatusEffect changes defined as passive effects on an item, the status effect removed when the effect on source item is toggled to disabled/suspended, rather than disabled.
+* Known issues:
+  - dnd5e 3.0 has done away with damage reistances as a separate entity, it is now just the various damage types. I have not resolved how to back port existing damage resistances. The custom fields will still work.
+
+
 ### 11.1.12
 * Change the daeApply to be libwrapper WRAPPED instead of MIXED which will avoid the conflict with Active Auras.
 

@@ -34,6 +34,7 @@ export let setupSocket = () => {
   socketlibSocket.register("unsetFlag", _unsetFlag);
   socketlibSocket.register("deleteEffects", _deleteEffects);
   socketlibSocket.register("deleteUuid", _deleteUuid);
+  socketlibSocket.register("suspendActiveEffect", _suspendActiveEffect);
   socketlibSocket.register("executeMacro", _executeMacro);
   socketlibSocket.register("createActorItem", _createActorItem);
   socketlibSocket.register("removeActorItem", _removeActorItem);
@@ -150,6 +151,14 @@ async function _executeMacro(data: {
   //@ts-expect-error
   const fn = new AsyncFunction("speaker", "actor", "token", "character", "item", "args", macro.command);
   return fn.call(this, speaker, data.actor, data.token, undefined, data.item, v11args);
+}
+
+async function _suspendActiveEffect(data: { uuid: string }) {
+  const effect = await fromUuid(data.uuid);
+  if (!effect) return;
+  if (effect instanceof CONFIG.ActiveEffect.documentClass) {
+    return effect.update({ disabled: true });
+  }
 }
 
 async function _deleteUuid(data: { uuid: string }) {

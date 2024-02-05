@@ -1,4 +1,4 @@
-import { debug, error, i18n, warn } from "../../dae";
+import { debug, debugEnabled, error, i18n, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
 import { applyDaeEffects, atlActive, actorFromUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
 import { setupSocket } from "../GMAction";
@@ -6,6 +6,9 @@ import { setupSocket } from "../GMAction";
 export let wildcardEffects: RegExp[] = [];
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 
+
+//@ts-expect-error
+export type FieldType = foundry.data.fields.DataField | "number" | "string" | "boolean" | "object" | "Array" | "Set";
 export class ValidSpec {
   //  static specs: {allSpecs: ValidSpec[], allSpecsObj: {}, baseSpecs: ValidSpec[], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: ValidSpec[]}; 
   static specs: {};
@@ -14,9 +17,9 @@ export class ValidSpec {
   get fieldSpec(): string { return this._fieldSpec };
   set fieldSpec(spec: string) { this._fieldSpec = spec }
 
-  _sampleValue: string | number | boolean | any[];
-  get sampleValue(): string | number | boolean | any[] { return this._sampleValue }
-  set sampleValue(value: string | number | boolean | any[]) { this._sampleValue = value }
+  _fieldType:  FieldType; 
+  get fieldType(): FieldType { return this._fieldType }
+  set fieldType(value: FieldType) { this._fieldType = value }
 
   _label: string;
   get label(): string { return this._label }
@@ -30,9 +33,9 @@ export class ValidSpec {
   get options(): any { return this._options }
   set options(options: any) { this._options = options }
 
-  constructor(fs: string, sv: string | number | boolean | any[], forcedMode = -1, label = undefined, options: any = undefined) {
+  constructor(fs: string, sv: FieldType, forcedMode = -1, label = undefined, options: any = undefined) {
     this._fieldSpec = fs;
-    this._sampleValue = sv;
+    this._fieldType = sv;
     this._label = label ?? fs;
     this._forcedMode = forcedMode;
     this._options = options;
@@ -80,6 +83,7 @@ export class ValidSpec {
       specials["flags.dae.onUpdateSource"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
 
       Object.keys(specials).forEach(key => {
+        if (debugEnabled > 0 && baseValues[key]) warn(`DAE | specials ${key} is already defined in baseValues - removing`)
         delete baseValues[key]
       })
 
@@ -110,7 +114,7 @@ export class ValidSpec {
         // and initiative bonus depends on advantage on initiative
         this.specs[specKey].allSpecs.forEach(m => {
           if (["attributes.hp", "attributes.ac"].includes(m._fieldSpec)) {
-            m._sampleValue = 0;
+            m._fieldType = 0;
           }
         });
       }
@@ -143,6 +147,7 @@ export class ValidSpec {
 
   static localizeSpecs() {
     for (let specKey of Object.keys(game.system.model.Actor)) {
+      if (!this.specs[specKey]) continue; // not all of the actor types are defined in the system
       const fieldStart = `flags.${game.system.id}.`;
       this.specs[specKey].allSpecs = this.specs[specKey].allSpecs.map(m => {
         //@ts-ignore replaceAll
@@ -189,7 +194,8 @@ export class DAESystem {
   static detectionModeList: any;
 
   public static get systemConfig() {
-    throw new Error("system class must implement getSystemConfig()")
+    //@ts-expect-error
+    return game.system.config;
   }
 
   public static getRollDataFunc() {
@@ -567,45 +573,45 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
   const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
   if (game.modules.get("ATL")?.active) {
     for (let label of ["dimSight", "brightSight"]) {
-      specials[`ATL.${label}`] = [0, -1];
+      specials[`ATL.${label}`] = ["number", -1];
     }
-    specials["ATL.alpha"] = [0, -1];
-    specials["ATL.elevation"] = [0, -1];
-    specials["ATL.height"] = [0, -1];
-    specials["ATL.width"] = [0, -1];
+    specials["ATL.alpha"] = ["number", -1];
+    specials["ATL.elevation"] = ["number", -1];
+    specials["ATL.height"] = ["number", -1];
+    specials["ATL.width"] = ["number", -1];
     specials["ATL.hidden"] = [false, -1];
-    specials["ATL.rotation"] = [0, -1];
+    specials["ATL.rotation"] = ["number", -1];
 
-    specials["ATL.light.animation"] = ["", -1]; //{intensity: 1:10, reverse: true/false, speed: 1:10, type: "X"}	Light Animation settings, see below for Animation Types
-    specials["ATL.light.alpha"] = [0, -1];
-    specials["ATL.light.angle"] = [0, -1];
-    specials["ATL.light.attenuation"] = [0, -1];
-    specials["ATL.light.bright"] = [0, -1];
-    specials["ATL.light.color"] = [0, -1];
-    specials["ATL.light.coloration"] = [0, -1];
-    specials["ATL.light.contrast"] = [0, -1];
-    specials["ATL.light.dim"] = [0, -1];
-    specials["ATL.light.luminosity"] = [0, -1];
-    specials["ATL.light.saturation"] = [0, -1];
-    specials["ATL.light.shadows"] = [0, -1];
-    specials["ATL.light.darkness.max"] = [0, -1];
-    specials["ATL.light.darkness.min"] = [0, -1];
-    // specials["ATL.detectionModes.basicSight.range"] = [0, -1];
-    // specials["ATL.detectionModes.seeInvisibility.range"] = [0, -1];
-    // specials["ATL.detectionModes.senseInvisibility.range"] = [0, -1];
-    // specials["ATL.detectionModes.feelTremor.range"] = [0, -1];
-    // specials["ATL.detectionModes.seeAll.range"] = [0, -1];
-    // specials["ATL.detectionModes.senseAll.range"] = [0, -1];
+    specials["ATL.light.animation"] = ["", -1]; //{intensity: 1:1"number", reverse: true/false, speed: 1:1"number", type: "X"}	Light Animation settings, see below for Animation Types
+    specials["ATL.light.alpha"] = ["number", -1];
+    specials["ATL.light.angle"] = ["number", -1];
+    specials["ATL.light.attenuation"] = ["number", -1];
+    specials["ATL.light.bright"] = ["number", -1];
+    specials["ATL.light.color"] = ["number", -1];
+    specials["ATL.light.coloration"] = ["number", -1];
+    specials["ATL.light.contrast"] = ["number", -1];
+    specials["ATL.light.dim"] = ["number", -1];
+    specials["ATL.light.luminosity"] = ["number", -1];
+    specials["ATL.light.saturation"] = ["number", -1];
+    specials["ATL.light.shadows"] = ["number", -1];
+    specials["ATL.light.darkness.max"] = ["number", -1];
+    specials["ATL.light.darkness.min"] = ["number", -1];
+    // specials["ATL.detectionModes.basicSight.range"] = ["number", -1];
+    // specials["ATL.detectionModes.seeInvisibility.range"] = ["number", -1];
+    // specials["ATL.detectionModes.senseInvisibility.range"] = ["number", -1];
+    // specials["ATL.detectionModes.feelTremor.range"] = ["number", -1];
+    // specials["ATL.detectionModes.seeAll.range"] = ["number", -1];
+    // specials["ATL.detectionModes.senseAll.range"] = ["number", -1];
     specials["ATL.sight.visionMode"] = ["", 0]; // selection list
     specials["ATL.light.animation"] = ["", -1]; // json string
     specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["ATL.sight.angle"] = [0, -1];
-    specials["ATL.sight.attenuation"] = [0, -1];
-    specials["ATL.sight.brightness"] = [0, -1];
-    specials["ATL.sight.contrast"] = [0, -1];
-    specials["ATL.sight.enabled"] = [0, -1];
-    specials["ATL.sight.range"] = [0, -1];
-    specials["ATL.sight.saturation"] = [0, -1];
+    specials["ATL.sight.angle"] = ["number", -1];
+    specials["ATL.sight.attenuation"] = ["number", -1];
+    specials["ATL.sight.brightness"] = ["number", -1];
+    specials["ATL.sight.contrast"] = ["number", -1];
+    specials["ATL.sight.enabled"] = ["number", -1];
+    specials["ATL.sight.range"] = ["number", -1];
+    specials["ATL.sight.saturation"] = ["number", -1];
     specials["ATL.sight.color"] = ["", 0 - 1];
 
   } else if (game.modules.get("ATL")?.active) {
@@ -613,11 +619,11 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
     //@ts-expect-error .version
     if (isNewerVersion("0.3.04", game.modules.get("ATL")?.version)) {
       for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
-        specials[`ATL.${label}`] = [0, -1];
+        specials[`ATL.${label}`] = ["number", -1];
       }
     } else {
       for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
-        specials[`ATL.${label}`] = [0, -1];
+        specials[`ATL.${label}`] = ["number", -1];
       }
     }
     specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
