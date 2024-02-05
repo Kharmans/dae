@@ -1,3 +1,6 @@
+### 11.1.12
+* A version that won't activate in dnd5e 3.0
+
 ### 11.1.11
 * Corrected an error for flags.dnd5e.xxxx mode CUSTOM.
 * Added libwrapper.ignore_conflict for the ActiveAuras/DAE both wrapping ActiveEffect.apply.
