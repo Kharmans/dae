@@ -456,10 +456,23 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
         daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isCheckDetail")}`;
       })
+      //@ts-expect-error
+      if (isNewerVersion(game.system.version, "2.9.99")) {
+        Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(key => {
+          daeSpecialDurations[`isDamaged.${key}`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.damageTypes[key].label}`;
+        });
+  
+      } else {
       Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dt => {
         daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.damageTypes[dt]}`;
       });
+    }
+    //@ts-expect-error
+    if (isNewerVersion(game.system.version, "2.9.99")) {
+      daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.healingTypes["healing"].label}`;
+    } else {
       daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.healingTypes["healing"]}`;
+    }
       Object.keys(daeSystemClass.systemConfig.skills).forEach(skillId => {
         daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${daeSystemClass.systemConfig.skills[skillId].label}`;
       });

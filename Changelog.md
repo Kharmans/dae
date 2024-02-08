@@ -1,3 +1,6 @@
+### 11.3.1
+* Fix some deprecation warnings about damageTypes and healingTypes.
+
 ### 11.3.0
 * This release should be compatible with dnd5e v3.0+. I have not tested every possible permutation of behaviours so please don't upgrade just before game time.
 * This release is be backwards compatible with dnd5e 2.4 but provides no additional functionality so there is no need to upgrade if on dnd5e 2.4. I have not tested all possible behaviour changes so don't upgrade just before game time.

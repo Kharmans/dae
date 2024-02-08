@@ -453,7 +453,7 @@ function createActiveEffectHook(...args) {
 }
 
 async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
-  console.warn("preCreateActiveEffectHook", args);
+  if (debugEnabled > 0) warn("preCreateActiveEffectHook", args);
   try {
     let [effectData, options, user] = args;
     if (options.isUndo) return;
@@ -500,7 +500,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
 }
 
 function preCreateActiveEffectHook(candidate, data, options, user) {
-  console.warn("preCreateActiveEffectHook", candidate, data, options, user);
+  if (debugEnabled > 0) warn("preCreateActiveEffectHook", candidate, data, options, user);
   // Make changes to the effect data as needed
   let result = true;
   try {
@@ -1263,14 +1263,26 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   let appliedEffects: any[] = [];
   switch (options.selfEffects) {
     case "selfEffectsAlways":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways).map(ae => ae.toObject(false));
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways).map(ae => {
+        const data = ae.toObject(false);
+        setProperty(data, "flags.core.sourceId", ae.uuid);
+        return data
+      });
       break;
     case "selfEffectsAll":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae.selfTarget)).map(ae => ae.toObject(false));
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae.selfTarget)).map(ae => {
+        const data = ae.toObject(false);
+        setProperty(data, "flags.core.sourceId", ae.uuid);
+        return data;
+      });
       break
     case "none":
     default:
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => ae.toObject(false));
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
+        const data = ae.toObject(false);
+        setProperty(data, "flags.core.sourceId", ae.uuid);
+        return data;
+      });
   }
   if (!options.applyAll)
     appliedEffects = appliedEffects.filter(aeData => getProperty(aeData, "flags.dae.dontApply") !== true);
@@ -1305,7 +1317,6 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
 
     activeEffectData.origin = item.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
-
     daeSystemClass.addDAEMetaData(activeEffectData, item, options)
     appliedEffects[aeIndex] = activeEffectData;
   }

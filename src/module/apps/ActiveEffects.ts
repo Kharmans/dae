@@ -203,6 +203,7 @@ activateListeners(html) {
     const object: any = this.object;
     if (object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
     const effectUuid = $(ev.currentTarget).parents(".effect-header").attr("effect-uuid");
+    if (!effectUuid) return
     //@ ts-expect-error fromUuidSync
     let effect: any = await fromUuid(effectUuid);
     
