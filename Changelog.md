@@ -1,4 +1,4 @@
-### 11.3.1
+### 11.3.0.1
 * Fix some deprecation warnings about damageTypes and healingTypes.
 
 ### 11.3.0
