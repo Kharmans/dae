@@ -170,7 +170,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       c.value = c.value.replace("@stackCount", stackCount)
 
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
-      if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType !== "number" && typeof c.value === "string") {
+      if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value);
 
         const rollData = this.getRollData();
