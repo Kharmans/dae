@@ -1352,7 +1352,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
 
 
 export function addEffectChange(actor, tokens, effectToApply, item, change) {
-  console.error("Adding effect change ", actor, change, tokens, effectToApply)
+  if (debugEnabled > 0) warn("addEffectChange ", actor, change, tokens, effectToApply)
   const token = tokens[0];
   switch (change.key) {
     case "macro.CE":
@@ -1394,8 +1394,6 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
 }
 
 export function removeEffectChange(actor, tokens, effectToApply, item, change) {
-  console.error("removing effect change ", actor, change, tokens, effectToApply)
-
   const token = tokens[0];
   switch (change.key) {
     case "macro.CE":
@@ -1551,9 +1549,6 @@ export async function deleteItemHook(...args) {
       if (selfAuraChange) return;
       for (let change of effect.changes) {
         removeEffectChange(actor, [token], effect, candidateItem, change)
-        if (change.key === "StatusEffect") {
-          console.error("disable status effect", change.key, change.value);
-        }
       }
     } catch (err) {
       console.warn("dae | error creating active effect ", err);
@@ -1580,9 +1575,6 @@ export async function createItemHook(...args) {
       if (selfAuraChange) return;
       for (let change of effect.changes) {
         addEffectChange(actor, [token], effect, candidateItem, change)
-        if (change.key === "StatusEffect") {
-          console.error("Enable status effect", change.key, change.value);
-        }
       }
     } catch (err) {
       console.warn("dae | error creating active effect ", err);
