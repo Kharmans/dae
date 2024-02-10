@@ -1,3 +1,6 @@
+### 11.3.0.5
+* Fix for a bad bug with numeric fields introduced in 11.3.0.3
+
 ### 11.3.0.1
 * Fix some deprecation warnings about damageTypes and healingTypes.
 
