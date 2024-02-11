@@ -1,4 +1,4 @@
-### 11.3.0.5
+### 11.3.0.4
 * Fix for a bad bug with numeric fields introduced in 11.3.0.3
 
 ### 11.3.0.1
