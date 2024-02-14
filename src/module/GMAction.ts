@@ -80,7 +80,7 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
     if (isNewerVersion("11.293", game.version)) await delay(250)
   }
 
-  let itemData:any = item?.toObject(false);
+  let itemData:any = item?.toObject(true);
   if (!itemData) return [];
   //@ts-expect-error unsupportedItemTypes
   if ( actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type) || itemData.system.advancement?.length) {

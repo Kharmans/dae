@@ -1,3 +1,6 @@
+### 11.1.13
+* Fix for macro.createItem sometimes failing.
+
 ### 11.1.12
 * A version that won't activate in dnd5e 3.0
 
