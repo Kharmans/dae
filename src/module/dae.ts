@@ -935,7 +935,7 @@ export function getSelfTarget(actor): Token | TokenDocument {
   return new CONFIG.Token.documentClass(tokenData, { actor });
 }
 
-export async function daeMacro(action: string, actor, effectData, lastArgOptions = {}) {
+export async function daeMacro(action: string, actor, effectData, lastArgOptions: any = {}) {
   let result;
   let effects
   let selfTarget;
@@ -962,6 +962,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   }
 
   let theItem;
+  if (lastArgOptions.item) theItem = lastArgOptions.item;
   if (effectData.flags.dae?.itemUuid) {
     //@ts-expect-error fromUuidSync
     theItem = fromUuidSync(effectData.flags.dae.itemUuid);
@@ -1387,7 +1388,7 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
         if (debugEnabled > 0) warn("action queue add dae macro on ", actionQueue._queue.length)
-        actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), {});
+        actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), {item});
         break;
       }
   }
@@ -1429,7 +1430,7 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change) {
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
         if (debugEnabled > 0) warn("dae add macro off", actionQueue._queue.length);
-        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), {});
+        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), {item, origin: item.uuid});
       }
       break;
   }
@@ -1764,7 +1765,6 @@ export function daeInitActions() {
 
 
   Hooks.on("preUpdateItem", preUpdateItemHook);
-  Hooks.on("preCreateItem", preCreateItemHook);
   Hooks.on("createItem", createItemHook);
   Hooks.on("deleteItem", deleteItemHook);
 

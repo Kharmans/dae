@@ -1,3 +1,7 @@
+### 11.3.1
+* Fix for sometimes macro.createItem failing.
+* Add another source for macro.Itemmacro to find the intended macro. Hopefully deals with dodgy uuids when items created.
+
 ### 11.3.0.4
 * Fix for a bad bug with numeric fields introduced in 11.3.0.3
 

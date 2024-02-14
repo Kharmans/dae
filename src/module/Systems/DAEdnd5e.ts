@@ -388,7 +388,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
-
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
     this.configureLists(null);
