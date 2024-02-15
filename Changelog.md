@@ -1,3 +1,9 @@
+### 11.3.2
+* Fix for error thrown when creating effects on unowned items.
+* Fix duplicated passive effects on srd/compndium content for some cases - not all.
+* Fix error for effects having ac.bonus specified.
+* Fix for dr/dv/di active effects throwing an error.
+
 ### 11.3.1
 * Fix for sometimes macro.createItem failing.
 * Add another source for macro.Itemmacro to find the intended macro. Hopefully deals with dodgy uuids when items created.

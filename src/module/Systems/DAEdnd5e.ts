@@ -118,7 +118,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
     if (!baseValues["system.attributes.prof"]) baseValues["system.attributes.prof"] = [0, -1];;
     if (!baseValues["system.details.level"]) baseValues["system.details.level"] = [0, -1];
-    if (!baseValues["system.attributes.ac.bonus"]) baseValues["system.attributes.ac.bonus"] = [0, -1];
+    if (!baseValues["system.attributes.ac.bonus"]) baseValues["system.attributes.ac.bonus"] = ["", -1];
     if (!baseValues["system.attributes.ac.base"]) baseValues["system.attributes.ac.base"] = [0, -1];;
     if (!baseValues["system.attributes.ac.cover"]) baseValues["system.attributes.ac.cover"] = [0, -1];;
     if (!baseValues["system.attributes.ac.calc"]) baseValues["system.attributes.ac.calc"] = [baseValues[baseValues["system.attributes.ac.calc"], modes.OVERRIDE]];
@@ -806,10 +806,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdr.all":
       case "system.traits.sdv.all":
         const key = change.key.replace(".all", ".value")
+        //@ts-expect-error
+        if (isNewerVersion(game.system.version, "2.99")) {
+          // setProperty(actor, key, new Set(Object.keys(systemConfig.damageTypes).filter(k => !["healing", "temphp"].includes(k))));
+        } else {
         if (getProperty(actor, key) instanceof Set)
           setProperty(actor, key, new Set(Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k))));
         else
           setProperty(actor, key, Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
+        }
         return true;
       case "system.traits.di.value":
       case "system.traits.dr.value":
@@ -817,7 +822,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdi.value":
       case "system.traits.sdr.value":
       case "system.traits.sdv.value":
-        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageResistanceTypes));
+        if (isNewerVersion(systemConfig.version, "2.99")) {
+          return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageTypes));
+        } else {
+      return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageResistanceTypes));
+        }
       case "system.traits.di.bypasses":
       case "system.traits.dr.bypasses":
       case "system.traits.dv.bypasses":
@@ -1019,6 +1028,7 @@ function getRollData(wrapped, ...args) {
   data.effects = this.effects;
   data.actorId = this.id;
   data.actorUuid = this.uuid;
+
   if (!data.token) Object.defineProperty(data, "token", {
     get() {
       if (!data._token) {
@@ -1031,6 +1041,7 @@ function getRollData(wrapped, ...args) {
     },
     set(token) { data._token = token; }
   });
+
   if (!data.tokenUuid) Object.defineProperty(data, "tokenUuid", {
     get() { // During initialisation getSelfTarget will return a token document not a token
       if (data._tokenUuid) return data._tokenUuid;
@@ -1347,6 +1358,7 @@ async function _onDropActiveEffect(event, data) {
 }
 
 function daeApply(wrapped, actor, change) {
+  try {
   const { key, value } = change;
   let originalReturn = wrapped(actor, change);
   // Intercept the dnd5e behaviour for custom mode flags.dnd5e boolean flags.
@@ -1357,4 +1369,8 @@ function daeApply(wrapped, actor, change) {
   change.value = value; // restore the original change value since dnd5e will have forced it to boolean.
   // ActiveEffect.apply will bypass the dnd5e apply
   return ActiveEffect.prototype.apply.bind(this)(actor, change);
+  } catch (err) {
+    console.error("dae | daeApply ", err, change, actor)
+    throw err;
+  }
 }

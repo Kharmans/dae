@@ -351,13 +351,13 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect)
     if (dfreds?.effects) {
       newEffect = dfreds.effects.all.find(ef => ef.statuses.has(statusEffect.id));
       const lastArg = prepareLastArgData(newEffect, actor);
-      setProperty(newEffect, "flags.dae.transfer", getProperty(sourceEffect, "flags.dae.transfer"));
+      if (getProperty(sourceEffect, "flags.dae.transfer")) setProperty(newEffect, "flags.dae.transfer", true);
       await addConvenientEffectsChange("Convenient Effect: " + statusEffect.label, actor.uuid, sourceEffect.origin, {}, actor.isToken, lastArg);
     }
     if (!newEffect && fromStatusEffect) {
       //@ts-expect-error
       newEffect = await ActiveEffect.implementation.fromStatusEffect(change.value);
-      setProperty(newEffect, "flags.dae.transfer", getProperty(sourceEffect, "flags.dae.transfer"));
+      if (getProperty(sourceEffect, "flags.dae.transfer")) setProperty(newEffect, "flags.dae.transfer", true);
       newEffect.changes.some(c => {
         if (["StatusEffectName", "StatusEffectLabel"].includes(c.key)) {
           newEffect.name = c.value;
@@ -406,7 +406,11 @@ function createActiveEffectHook(...args) {
   //@ts-expect-error
   if (!effect.parent || (CONFIG.ActiveEffect.legacyTransferral === true && !(effect.parent instanceof CONFIG.Actor.documentClass))) return true;
   let actor = effect.parent;
-  if (actor instanceof CONFIG.Item.documentClass) actor = effect.parent.parent
+  if (actor instanceof CONFIG.Item.documentClass) actor = effect.parent.parent;
+  if (!actor) {
+    // not an effect on an actor so do nothing
+    return;
+  }
   const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
   if (!(tokens[0] instanceof Token)) return;
   const token: Token = tokens[0];
@@ -517,7 +521,10 @@ function preCreateActiveEffectHook(candidate, data, options, user) {
 
     if (parent instanceof Actor) {
       let updates: any = {};
-      setProperty(updates, "flags.dae.transfer", data.transfer === true ? true : false);
+      //@ts-expect-error
+      if (CONFIG.ActiveEffect.legacyTransferral) {
+        setProperty(updates, "flags.dae.transfer", data.transfer === true ? true : false);
+      }
       // Update the duration on the effect if needed
       if (candidate.flags?.dae?.durationExpression && parent instanceof Actor) {
         let sourceActor = parent;
