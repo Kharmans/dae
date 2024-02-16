@@ -391,3 +391,113 @@ export async function fixTransferEffect(actor, item) {
     let items = [item];
     return await _fixTransferEffects(actor, items);
 }
+
+
+async function removeDaePassiveEffectsActor(actor) {
+  if (!actor) return;
+  const effectsToDelete = actor.effects.filter(ef => getProperty(ef, "flags.dae.transfer"));
+  if (effectsToDelete?.length > 0) {
+    console.log("Actor ", actor.name, "removing legacy effects", effectsToDelete.map(ef => ef.name));
+    await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
+  }
+  for (let item of actor.items) {
+    for (let effect of item.effects) {
+      const effectsToUpdate = item.effects.filter(ef => ef.transfer && ef.origin !== item.uuid);
+      if (effectsToUpdate?.length > 0) {
+        console.log("Actor", actor.name, "updating origin for ", item.name, effectsToUpdate.map(ef => ef.name));
+        await item.updateEmbeddedDocuments("ActiveEffect", effectsToUpdate.map(ef => ({ _id: effect.id, origin: item.uuid })))
+      }
+    }
+  }
+}
+export async function removeScenePassiveEffects() {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  for (let token of canvas?.scene?.tokens ?? []) {
+    try {
+      if (token.actor) await removeDaePassiveEffectsActor(token.actor);
+    } catch (err) {
+      console.warn("error when removing legacy passive effects for", token?.actor?.name, err)
+    }
+  }
+  ui.notifications?.notify("Scene Token legacy passive effects removed")
+}
+
+export async function removeActorsPassiveEffects() {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  for (let actor of game.actors ?? []) {
+    try {
+      await removeDaePassiveEffectsActor(actor);
+    } catch (err) {
+      console.warn("error when removing legacy passive effects for", actor?.name, err)
+    }
+  }
+  ui.notifications?.notify("Actor legacy passive effects removed")
+}
+
+export async function migrateCompendium(pack) {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  const documentName = pack.documentName;
+  if (!["Actor"].includes(documentName)) return;
+
+  // Unlock the pack for editing
+  const wasLocked = pack.locked;
+  await pack.configure({ locked: false });
+  //@ts-expect-error
+  game.dnd5e.moduleArt.suppressArt = true;
+
+  const documents = await pack.getDocuments();
+
+  // Iterate over compendium entries - applying fine-tuned migration functions
+  for (let doc of documents) {
+    try {
+      switch (documentName) {
+        case "Actor":
+          console.log(`Checking ${documentName} document ${doc.name} in Compendium ${pack.collection}`);
+          await removeDaePassiveEffectsActor(doc);
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Handle migration failures
+    catch (err) {
+      err.message = `Legacy passive wEffect removal for document ${doc.name} in pack ${pack.collection} failed: ${err.message}`;
+      console.error(err);
+    }
+  }
+  // Apply the original locked status for the pack
+  await pack.configure({ locked: wasLocked });
+  //@ts-expect-error
+  game.dnd5e.moduleArt.suppressArt = false;
+  ui.notifications?.notify(`Removed Passive effects for all ${documentName} documents from Compendium ${pack.collection}`);
+};
+
+export async function removeCompendiaPassiveEffects() {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  // Migrate World Compendium Packs
+  for (let p of game.packs) {
+    //@ts-expect-error
+    if (p.metadata.packageType !== "world") continue;
+    if (!["Actor"].includes(p.documentName)) continue;
+    console.log("doing compendium", p.collection)
+    await migrateCompendium(p);
+  }
+  ui.notifications?.notify("Finsihed compendium clean up")
+}

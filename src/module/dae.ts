@@ -372,7 +372,7 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect)
   }
 }
 export async function removeStatusEffectChange(actor, change, tokens, effect) {
-  const effectsToRemove = actor.effects.filter(ef => ef.orign === effect.orgin)?.map(ef => ef.id);
+  const effectsToRemove = actor.effects.filter(ef => ef.origin === effect.orgin)?.map(ef => ef.id);
   if (effectsToRemove && effectsToRemove.length > 0)
     await actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToRemove);
   // await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeEffect", { actorUuid: actor.uuid, effectIds: effectsToRemove });
@@ -464,7 +464,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
     const parent = this.parent;
 
     options.deleted = false;
-    if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return;
+    if (!(parent instanceof CONFIG.Actor.documentClass)) return;
     if (!getProperty(this, "flags.dae.stackable")) {
       if (effectData.origin === parent?.uuid) this.updateSource({ "flags.dae.stackable": "multi" })
       else this.updateSource({ "flags.dae.stackable": "noneName" })
@@ -484,7 +484,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
             //@ts-expect-error label - label may still be used by some modules
             return (ef.name ?? ef.label) === (this.name ?? this.label);
           case "none":
-            // All hand applied CE effects or applied via the interface with no specified origin have a special orign so do not count those.
+            // All hand applied CE effects or applied via the interface with no specified origin have a special origin so do not count those.
             // If the effect has the CE special origin treat it as if there was no origin.
             if (efOrigin === CECustomEffectsItemUuid) return false;
             return this.origin && efOrigin !== CECustomEffectsItemUuid && efOrigin === this.origin;
@@ -932,7 +932,7 @@ export function deleteActiveEffectHook(...args) {
 }
 
 export function getSelfTarget(actor): Token | TokenDocument {
-  if (actor.token) return actor.token.object;
+  if (actor?.token) return actor.token.object;
   const speaker = ChatMessage.getSpeaker({ actor });
   if (speaker.token) {
     const token = canvas.tokens?.get(speaker.token);
@@ -1493,6 +1493,7 @@ function updateTransferEffectsHook(candidate, updates, options, user) {
   if (user !== game.user?.id) return true;
   //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral === false) { // if not legacy transfer do nothing
+    // TODO consider rewriting the origin for the effect
     return true;
   }
   if (options.isUndo) return true;

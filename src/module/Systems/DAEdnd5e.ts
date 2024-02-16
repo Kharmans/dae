@@ -774,27 +774,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
       return true;
     }
-    /*
-    if (change.key.startsWith("items.")) {
-      let originalKey = duplicate(change.key);
-      const fields = change.key.split("."); // items.contents.index......
-      const index = fields[2];
-      const itemKey = fields.slice(3).join(".")
-      const item = actor.items.contents[index];
-      let value = getProperty(item, itemKey);
-      if (value === undefined) value = change.value;
-      else if (value instanceof Array) {
-        const newEntry = eval(change.value)
-        value = value.concat([newEntry]);
-      } else if (typeof value === "string") value = `${value} + ${change.value}`;
-      //@ts-expect-error
-      else if (typeof value === "boolean") value = Roll.safeEval(change.value);
-      //@ts-expect-error
-      else value = Roll.safeEval(value + change.value);
-      setProperty(item, itemKey, value)
-      return true;
-    }
-    */
+
     switch (change.key) {
       case "system.attributes.movement.hover":
         setProperty(actor, change.key, change.value ? true : false);
@@ -1322,8 +1302,6 @@ function preUpdateItemHook(candidateItem, updates, options, user) {
     for (let effect of actor.effects) {
       //@ts-expect-error .origin
       if (!effectIsTransfer(effect) || effect.origin !== candidateItem.uuid) continue;
-      //if (!effect.transfer && !effect.flags?.dae?.transfer) continue;
-      // if (effect.origin !== candidateItem.uuid) continue;
       //@ts-expect-error .changes
       for (let change of effect.changes) {
         if (isSuppressed) removeEffectChange(actor, tokens, effect, candidateItem, change);

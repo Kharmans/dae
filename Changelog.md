@@ -1,6 +1,20 @@
+### 11.3.3
+* Declares macros that will let you remove duplicated passive effects that dae created after migration to dnd5e 3.0.
+  - DAE: Clear All Actors DAE Passive Effects
+  - DAE: Clear Scene DAE Passive Effects
+  - DAE: Clear All Compendium DAE Passive Effects.
+  These can be run as a GM to clean up the duplicate effects you see on world migration.
+   - Clear All Actors DAE Passive Effects should be run cone and will clean up all actors in the actor side bar.
+  - Clear Scene DAE passive effects should be run for each scene.
+  - Be warned the Clear All Compendium DAE passive effects can take some time to run.
+  The functions the macros call are also available via:
+    - await game.modules.getName("dae").api.removeScenePassiveEffects()
+    - await game.modules.getName("dae").api.removeActorsPassiveEffects()
+    - await game.modules.getName("dae").api.removeCompendiaPassiveEffects()
+
+
 ### 11.3.2
 * Fix for error thrown when creating effects on unowned items.
-* Fix duplicated passive effects on srd/compndium content for some cases - not all.
 * Fix error for effects having ac.bonus specified.
 * Fix for dr/dv/di active effects throwing an error.
 
