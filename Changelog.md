@@ -1,3 +1,6 @@
+### 11.3.5
+* renable DAE for non dnd5e systems. Apoloiges to users that got affected.
+
 ### 11.3.4
 * Added macro to remove passive effects that dae tagged across all actors in all scenes.
 * The remove passive effects macro will now also process compendia and remove dae tagged passive effectss from those. The origin of effects in compendia is not updated.
