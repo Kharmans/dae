@@ -1,3 +1,8 @@
+### 11.3.4
+* Added macro to remove passive effects that dae tagged across all actors in all scenes.
+* The remove passive effects macro will now also process compendia and remove dae tagged passive effectss from those. The origin of effects in compendia is not updated.
+* Fix for dae not dealing with system.bonuses.level.hp correctly.
+
 ### 11.3.3
 * Declares macros that will let you remove duplicated passive effects that dae created after migration to dnd5e 3.0.
   - DAE: Clear All Actors DAE Passive Effects

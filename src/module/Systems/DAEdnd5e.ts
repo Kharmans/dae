@@ -137,6 +137,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.bonuses.abil.damage"]) baseValues["system.bonuses.abil.damage"] = ["", -1];
     if (!baseValues["system.bonuses.other.damage"]) baseValues["system.bonuses.other.damage"] = ["", -1];
     if (!baseValues["system.bonuses.util.damage"]) baseValues["system.bonuses.util.damage"] = ["", -1];
+    if (!baseValues["system.attributes.hp.bonuses.overall"]) baseValues["system.attributes.hp.bonuses.overall"] = ["", -1]; 
+    if (!baseValues["system.attributes.hp.bonuses.level"]) baseValues["system.attributes.hp.bonuses.level"] = ["", -1]; 
+
     delete baseValues["system.traits.toolProf.value"];
     delete baseValues["system.traits.toolProf.custom"];
     delete baseValues["system.traits.toolProf.all"];

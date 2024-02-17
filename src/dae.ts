@@ -152,6 +152,12 @@ const DAEMacros = [
     checkVersion: true,
     version: "11.2.0",
     commandText: `await game.modules.getName("dae").api.removeCompendiaPassiveEffects()`
+  },
+  {
+    name: "DAE: Clear All Scenes DAE Passive Effects",
+    checkVersion: true,
+    version: "11.2.0",
+    commandText: `await game.modules.getName("dae").api.removeAllScenesPassiveEffects()`
   }
 ];
 
@@ -169,7 +175,7 @@ export async function createDAEMacros() {
               continue; // already up to date
             await macro.update({
               command: macroSpec.commandText,
-              "flags.midi-version": macroSpec.version
+              "flags.dae-version": macroSpec.version
             });
           }
         } else {

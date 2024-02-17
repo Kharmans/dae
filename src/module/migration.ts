@@ -365,47 +365,49 @@ export async function tobMapper(iconsPath = "icons/TOBTokens") {
 }
 
 export async function fixTransferEffects(actor) {
-    if(!actor) {
-        return;
-    }
-    let items = actor.items || [];
-    return await _fixTransferEffects(actor, items);
+  if (!actor) {
+    return;
+  }
+  let items = actor.items || [];
+  return await _fixTransferEffects(actor, items);
 }
 
 async function _fixTransferEffects(actor, itemsToCheck) {
-    let items = itemsToCheck.filter(i => i.effects.some(e => effectIsTransfer(e)));
-    let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && e.origin.includes("Item."));
-    console.warn("Deleting effects", transferEffects)
-    await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
-    const toCreate = items.map(i => i.toObject())
-    console.warn("Deleting items ", items.map(i => i.id))
-    await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id));
-    console.warn("Creating items ", toCreate)
-    await actor.createEmbeddedDocuments("Item", toCreate);
-  }
+  let items = itemsToCheck.filter(i => i.effects.some(e => effectIsTransfer(e)));
+  let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && e.origin.includes("Item."));
+  console.warn("Deleting effects", transferEffects)
+  await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
+  const toCreate = items.map(i => i.toObject())
+  console.warn("Deleting items ", items.map(i => i.id))
+  await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id));
+  console.warn("Creating items ", toCreate)
+  await actor.createEmbeddedDocuments("Item", toCreate);
+}
 
 export async function fixTransferEffect(actor, item) {
-    if(!item) {
-        return;
-    }
-    let items = [item];
-    return await _fixTransferEffects(actor, items);
+  if (!item) {
+    return;
+  }
+  let items = [item];
+  return await _fixTransferEffects(actor, items);
 }
 
 
-async function removeDaePassiveEffectsActor(actor) {
+async function removeDaePassiveEffectsActor(actor, skipOrigins = false) {
   if (!actor) return;
   const effectsToDelete = actor.effects.filter(ef => getProperty(ef, "flags.dae.transfer"));
   if (effectsToDelete?.length > 0) {
     console.log("Actor ", actor.name, "removing legacy effects", effectsToDelete.map(ef => ef.name));
     await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
   }
-  for (let item of actor.items) {
-    for (let effect of item.effects) {
-      const effectsToUpdate = item.effects.filter(ef => ef.transfer && ef.origin !== item.uuid);
-      if (effectsToUpdate?.length > 0) {
-        console.log("Actor", actor.name, "updating origin for ", item.name, effectsToUpdate.map(ef => ef.name));
-        await item.updateEmbeddedDocuments("ActiveEffect", effectsToUpdate.map(ef => ({ _id: effect.id, origin: item.uuid })))
+  if (!skipOrigins) {
+    for (let item of actor.items) {
+      for (let effect of item.effects) {
+        const effectsToUpdate = item.effects.filter(ef => ef.transfer && ef.origin !== item.uuid);
+        if (effectsToUpdate?.length > 0) {
+          console.log("Actor", actor.name, "updating origin for ", item.name, effectsToUpdate.map(ef => ef.name));
+          await item.updateEmbeddedDocuments("ActiveEffect", effectsToUpdate.map(ef => ({ _id: effect.id, origin: item.uuid })))
+        }
       }
     }
   }
@@ -418,7 +420,7 @@ export async function removeScenePassiveEffects() {
   }
   for (let token of canvas?.scene?.tokens ?? []) {
     try {
-      if (token.actor) await removeDaePassiveEffectsActor(token.actor);
+      if (token.actor) await removeDaePassiveEffectsActor(token.actor, false);
     } catch (err) {
       console.warn("error when removing legacy passive effects for", token?.actor?.name, err)
     }
@@ -434,7 +436,7 @@ export async function removeActorsPassiveEffects() {
   }
   for (let actor of game.actors ?? []) {
     try {
-      await removeDaePassiveEffectsActor(actor);
+      await removeDaePassiveEffectsActor(actor, false);
     } catch (err) {
       console.warn("error when removing legacy passive effects for", actor?.name, err)
     }
@@ -465,7 +467,7 @@ export async function migrateCompendium(pack) {
       switch (documentName) {
         case "Actor":
           console.log(`Checking ${documentName} document ${doc.name} in Compendium ${pack.collection}`);
-          await removeDaePassiveEffectsActor(doc);
+          await removeDaePassiveEffectsActor(doc, true);
           break;
         default:
           break;
@@ -493,11 +495,23 @@ export async function removeCompendiaPassiveEffects() {
   }
   // Migrate World Compendium Packs
   for (let p of game.packs) {
-    //@ts-expect-error
-    if (p.metadata.packageType !== "world") continue;
+    //@ ts-expect-error
+    // if (p.metadata.packageType !== "world") continue;
     if (!["Actor"].includes(p.documentName)) continue;
     console.log("doing compendium", p.collection)
     await migrateCompendium(p);
   }
   ui.notifications?.notify("Finsihed compendium clean up")
+}
+
+export async function removeAllScenesPassiveEffects() {
+  if (game.scenes)
+    for (let scene of game.scenes) {
+      for (let token of scene.tokens) {
+        //@ts-expect-error .actorLink
+        if (token.actorLink || !token.actor) continue;
+        await removeDaePassiveEffectsActor(token.actor, true);
+      }
+    }
+  ui.notifications?.notify("All Scene Token legacy passive effects removed")
 }

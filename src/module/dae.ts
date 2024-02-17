@@ -166,11 +166,12 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       c.value = daeSystemClass.safeEvalExpression(c.value, this.getRollData())
     }
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
-    if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
+    const sampleValue = getProperty(this, c.key) ?? typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType;
+    if (typeof sampleValue !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
       c.value = c.value.replace("@stackCount", stackCount)
 
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
-      if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType === "number" && typeof c.value === "string") {
+      if (typeof sampleValue === "number" && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value);
 
         const rollData = this.getRollData();
@@ -197,7 +198,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       }
     }
     const currentValue = getProperty(this, c.key);
-    if (typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType === "number" && typeof currentValue !== "number") {
+    if (typeof (currentValue ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType) === "number" && typeof currentValue !== "number") {
       const guess = Number.fromString ? Number.fromString(currentValue || "0") : Number(currentValue) || "0";
       if (!Number.isNaN(guess)) setProperty(this, c.key, guess);
       else setProperty(this, c.key, 0);
@@ -1174,7 +1175,8 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
       case "macro.summonToken":
         break;
       default:
-        if (doRolls && typeof ValidSpec.specs[actor.type].allSpecsObj[change.key]?.fieldType === "number") {
+        const currentValue = this[change.key];
+        if (doRolls && typeof (currentValue ?? ValidSpec.specs[actor.type].allSpecsObj[change.key]?.fieldType) === "number") {
           returnChange.value = new Roll(returnChange.value, context).evaluate({ async: false }).total;
         };
         break;
