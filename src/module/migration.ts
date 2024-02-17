@@ -394,6 +394,11 @@ export async function fixTransferEffect(actor, item) {
 
 
 async function removeDaePassiveEffectsActor(actor, skipOrigins = false) {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
   if (!actor) return;
   const effectsToDelete = actor.effects.filter(ef => getProperty(ef, "flags.dae.transfer"));
   if (effectsToDelete?.length > 0) {
@@ -505,6 +510,11 @@ export async function removeCompendiaPassiveEffects() {
 }
 
 export async function removeAllScenesPassiveEffects() {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
   if (game.scenes)
     for (let scene of game.scenes) {
       for (let token of scene.tokens) {
