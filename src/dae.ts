@@ -138,26 +138,26 @@ const DAEMacros = [
   {
     name: "DAE: Clear Scene DAE Passive Effects",
     checkVersion: true,
-    version: "11.2.0",
-    commandText: `await game.modules.getName("dae").api.removeScenePassiveEffects()`
+    version: "11.2.1",
+    commandText: `await game.modules.get("dae").api.removeScenePassiveEffects()`
   },
   {
     name: "DAE: Clear All Actors DAE Passive Effects",
     checkVersion: true,
-    version: "11.2.0",
-    commandText: `await game.modules.getName("dae").api.removeActorsPassiveEffects()`
+    version: "11.2.1",
+    commandText: `await game.modules.get("dae").api.removeActorsPassiveEffects()`
   },
   {
     name: "DAE: Clear All Compendium DAE Passive Effects",
     checkVersion: true,
-    version: "11.2.0",
-    commandText: `await game.modules.getName("dae").api.removeCompendiaPassiveEffects()`
+    version: "11.2.1",
+    commandText: `await game.modules.get("dae").api.removeCompendiaPassiveEffects()`
   },
   {
     name: "DAE: Clear All Scenes DAE Passive Effects",
     checkVersion: true,
-    version: "11.2.0",
-    commandText: `await game.modules.getName("dae").api.removeAllScenesPassiveEffects()`
+    version: "11.2.1",
+    commandText: `await game.modules.get("dae").api.removeAllScenesPassiveEffects()`
   }
 ];
 

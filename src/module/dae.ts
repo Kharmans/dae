@@ -952,6 +952,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   // Work out what itemdata should be
   warn("Dae macro ", action, actor, effectData, lastArgOptions)
   if (!effectData.changes) return effectData;
+  if (effectData instanceof ActiveEffect) effectData = effectData.toObject(false);
   let tokenUuid;
   if (actor.token) {
     tokenUuid = actor.token.uuid;

@@ -1,3 +1,7 @@
+### 11.3.6
+* get rid of deprecation warning for migration macros
+* Fix for overwriting chage.value in daeMacro.
+
 ### 11.3.5
 * renable DAE for non dnd5e systems. Apoloiges to users that got affected.
 
