@@ -1176,7 +1176,7 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
       case "macro.summonToken":
         break;
       default:
-        const currentValue = this[change.key];
+        const currentValue = getProperty(actor, change.key);
         if (doRolls && typeof (currentValue ?? ValidSpec.specs[actor.type].allSpecsObj[change.key]?.fieldType) === "number") {
           returnChange.value = new Roll(returnChange.value, context).evaluate({ async: false }).total;
         };

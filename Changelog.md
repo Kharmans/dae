@@ -1,3 +1,6 @@
+### 11.3.6.1
+* Fix for error thrown in evalArgs
+
 ### 11.3.6
 * get rid of deprecation warning for migration macros
 * Fix for overwriting chage.value in daeMacro.
