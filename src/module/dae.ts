@@ -36,6 +36,7 @@ export var needStringNumericValues;
 export var actionQueue;
 export var linkedTokens;
 export var CECustomEffectsItemUuid: string | undefined;
+export var rewriteTransferOrigin;
 
 export var allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate"];
 
@@ -321,20 +322,26 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
   returnValue = await actionQueue.add(myAddCEEffectWith, effectData, uuid, origin, false, isToken);
   return returnValue;
 }
-export async function addCubChange(conditionName, tokens: [Token], options = {}) {
-  //@ts-expect-error cub
-  const cubInterface = game?.cub;
-  const isToken = tokens.find(t => t.actor?.isToken);
-  if (isToken) await new Promise(resolve => setTimeout(resolve, 1)); // let all of the stuff settle down
-  if (cubInterface?.enhancedConditions.supported) await actionQueue.add(cubInterface.addCondition, conditionName, tokens);
+export async function addCLTChange(conditionId, tokens: [Token], options = {}) {
+  //@ts-expect-error clt
+  const cltInterface = game?.clt;
+  if (cltInterface) {
+    // const condition = cltInterface.conditions.find(c => conditionId === getProperty(c, "flags.condition-lab-triggler.conditionId"));
+    const condition = cltInterface.conditions.find(c => conditionId === c.id);
+    if (condition) {
+      await actionQueue.add(cltInterface.addCondition, condition.name, tokens, options);
+    }
+  }
 }
 
-export async function removeCubChange(conditionName, tokens: [Token], options = { warn: false }) {
-  //@ts-expect-error cub
-  const cubInterface = game?.cub;
-  const isToken = tokens.find(t => t.actor?.isToken);
-  if (isToken) await delay(1); // let all of the stuff settle down
-  if (cubInterface?.enhancedConditions.supported) await actionQueue.add(cubInterface.removeCondition, conditionName, tokens, options);
+export async function removeCLTChange(conditionId, tokens: [Token], options = { warn: false }) {
+  //@ts-expect-error clt
+  const cltInterface = game?.clt;
+  if (cltInterface) {
+    //const condition = cltInterface.conditions.find(c => conditionId === getProperty(c, "flags.condition-lab-triggler.conditionId"));
+    const condition = cltInterface.conditions.find(c => conditionId === c.id);
+    if (condition) await actionQueue.add(cltInterface.removeCondition, condition.name, tokens, options);
+  }
 }
 export async function addStatusEffectChange(actor, change, tokens, sourceEffect) {
   const activeEffectImplementation = ActiveEffect.implementation;
@@ -426,7 +433,7 @@ function createActiveEffectHook(...args) {
         if (selfAuraChange) return;
         for (let change of effect.changes) {
           if (cltActive && ["macro.CUB", "macro.CLT"].includes(change.key) && token) {
-            await addCubChange(change.value, [token])
+            await addCLTChange(change.value, [token])
           }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor)
@@ -683,7 +690,7 @@ export function updateActiveEffectHook(...args) {
   if (userId !== game.user?.id) return result = true;
   const parent = effect.parent;
   if (!parent) return true;
-  if ((getProperty(updates, "flags.dae.itemsToDelete") ?? []).length > 0) return true;
+  // if ((getProperty(updates, "flags.dae.itemsToDelete") ?? []).length > 0) return true;
   let actor;
 
   //@ts-expect-error legacyTransferral
@@ -760,7 +767,7 @@ export function updateActiveEffectHook(...args) {
         }
         for (let change of changesToDisable) {
           if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
-            await removeCubChange(change.value, [token], { warn: false });
+            await removeCLTChange(change.value, [token], { warn: false });
           }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor);
@@ -796,7 +803,7 @@ export function updateActiveEffectHook(...args) {
         }
         for (let change of changesToEnable) {
           if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
-            await addCubChange(change.value, [token])
+            await addCLTChange(change.value, [token])
           }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor)
@@ -861,9 +868,7 @@ export function deleteActiveEffectHook(...args) {
   let [effect, options, userId] = args;
   if (game.user?.id !== userId) return true;
   if (options.isUndo) return true;
-
   if (!effect.parent) return true;
-
   let actor;
   //@ts-expect-error legacyTransferral
   if (CONFIG.ActiveEffect.legacyTransferral && !(effect.parent instanceof CONFIG.Actor.documentClass)) return true;
@@ -889,7 +894,7 @@ export function deleteActiveEffectHook(...args) {
             await removeConvenientEffectsChange(change.value, actor.uuid, lastArg.origin, actor.isToken, lastArg);
           }
           if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
-            await removeCubChange(change.value, [token], { warn: false });
+            await removeCLTChange(change.value, [token], { warn: false });
           }
           if (change.key === "flags.dae.deleteUuid" && change.value) {
             await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
@@ -1372,7 +1377,7 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
       break;
     case "macro.CUB":
     case "macro.CLT":
-      addCubChange(change.value, [token]);
+      addCLTChange(change.value, [token]);
       break;
     case "macro.tokenMagic":
       addTokenMagicChange(actor, change, tokens);
@@ -1398,14 +1403,15 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
         if (debugEnabled > 0) warn("action queue add dae macro on ", actionQueue._queue.length)
-        actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), {item});
+        actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), { item });
         break;
       }
   }
 }
 
 export function removeEffectChange(actor, tokens, effectToApply, item, change) {
-  const token = tokens[0];
+  let token = tokens[0];
+  if (!token) tokens = [getToken(actor)];
   switch (change.key) {
     case "macro.CE":
       const lastArg = prepareLastArgData(effectToApply, actor);
@@ -1413,7 +1419,7 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change) {
       break;
     case "macro.CUB":
     case "macro.CLT":
-      removeCubChange(change.value, [token])
+      removeCLTChange(change.value, tokens)
       break;
     case "macro.tokenMagic":
       removeTokenMagicChange(actor, change, tokens);
@@ -1435,12 +1441,12 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change) {
     case "StatusEffect":
       //@ ts-expect-error
       // if (CONFIG.ActiveEffect.legacyTransferral === false)
-        removeStatusEffectChange(actor, change, tokens, effectToApply);
+      removeStatusEffectChange(actor, change, tokens, effectToApply);
       break;
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
         if (debugEnabled > 0) warn("dae add macro off", actionQueue._queue.length);
-        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), {item, origin: item.uuid});
+        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), { item, origin: item.uuid });
       }
       break;
   }
@@ -1569,14 +1575,27 @@ export async function deleteItemHook(...args) {
   return;
 }
 export async function createItemHook(...args) {
-  let [candidateItem, options, user] = args
+  let [item, options, user] = args
   if (options.isUndo) return;
+  const actor = item.parent;
+  if (!(actor instanceof Actor)) return;
   //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral) return;
-  const actor = candidateItem.parent;
-  if (!(actor instanceof Actor)) return;
+  // rewrite the origin of passive effects to point to the current item, rather than the world item
+  if (rewriteTransferOrigin) {
+    const updates: any[] = [];
+    for (let effect of item.effects) {
+      if (effect.transfer) {
+        effect.origin = item.uuid;
+        updates.push({ _id: effect._id, origin: item.uuid });
+      }
+    }
+    if (updates.length > 0) {
+      await item.updateEmbeddedDocuments("ActiveEffect", updates);
+    }
+  }
   const token = tokenForActor(actor);
-  for (let effect of candidateItem.effects) {
+  for (let effect of item.effects) {
     if (!effect.transfer) continue;
     if (effect.disabled || effect.isSuppressed) continue;
     try {
@@ -1586,7 +1605,7 @@ export async function createItemHook(...args) {
       // don't apply macro or macro like effects if active aura and not targeting self
       if (selfAuraChange) return;
       for (let change of effect.changes) {
-        addEffectChange(actor, [token], effect, candidateItem, change)
+        addEffectChange(actor, [token], effect, item, change)
       }
     } catch (err) {
       console.warn("dae | error creating active effect ", err);
@@ -1874,7 +1893,7 @@ export function daeSetupActions() {
   //@ts-expect-error .version
   ceActive = game.modules.get("dfreds-convenient-effects")?.active && isNewerVersion(game.modules?.get("dfreds-convenient-effects")?.version ?? "0", "1.6.2");
   //@ts-expect-error .version
-  debug("Condition Lab Triggle Active ", cltActive, " and cub version is ", game.modules.get("condition-lab-triggler")?.version)
+  debug("Condition Lab Triggle Active ", cltActive, " and clt version is ", game.modules.get("condition-lab-triggler")?.version)
 
   atlActive = game.modules.get("ATL")?.active;
   //@ts-expect-error .version
@@ -1903,6 +1922,7 @@ export function fetchParams() {
   DIMETitleBar = game.settings.get("dae", "DIMETitleBar");
   daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
   daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
+  rewriteTransferOrigin = game.settings.get("dae", "rewriteTransferOrigin");
 
   expireRealTime = game.settings.get("dae", "expireRealTime");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;

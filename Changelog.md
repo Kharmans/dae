@@ -1,3 +1,10 @@
+### 11.3.7
+* Support applying CLT changes
+* Added legacy support for rewriting origins on transfer effects when created on an actor - enabled via setting "Rewrite Transfer Origin".
+* Change all references to CUB to CLT
+* Fix for creating an active effect not triggering passive effects.
+
+
 ### 11.3.6.1
 * Fix for error thrown in evalArgs
 

@@ -1,10 +1,9 @@
 
-import { daeSpecialDurations, debug, debugEnabled, error, i18n, log, warn } from "../../dae";
+import { daeSpecialDurations, debug, debugEnabled, error, i18n, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { actionQueue, actorFromUuid, addConvenientEffectsChange, addCreateItemChange, addCubChange, addEffectChange, addTokenMagicChange, applyDaeEffects, atlActive, daeMacro, daeSystemClass, effectIsTransfer, fetchParams, getSelfTarget, libWrapper, noDupDamageMacro, prepareLastArgData, removeConvenientEffectsChange, removeCreateItemChange, removeCubChange, removeEffectChange, removeTokenMagicChange } from "../dae";
+import { actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, getSelfTarget, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
-var specialTraitsPatched = false;
 var d20Roll;
 var dice;
 

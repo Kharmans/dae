@@ -9,8 +9,7 @@
 Replacement for dynamic effects
 
 If you have a problem please read the [Issues section](#issues) before reporting a bug.
-There is a dedicated discord server for my modules where you can get lots of help: https://discord.gg/Xd4NEvw5d7
-
+There is a dedicated discord server for my modules where you can get lots of help: https://discord.gg/BCAYr2D7wE
 ## Installation
 
 It's always easiest to install modules from the in game add-on browser.

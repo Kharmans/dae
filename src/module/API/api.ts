@@ -5,7 +5,7 @@ import { ActiveEffects } from '../apps/ActiveEffects';
 import { DAEActiveEffectConfig, addAutoFields, otherFields } from '../apps/DAEActiveEffectConfig';
 import { DIMEditor } from '../apps/DIMEditor';
 import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid } from '../dae';
-import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorsPassiveEffects, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration';
+import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem';
 
 const API = {

@@ -47,9 +47,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     daeSystemClass.configureLists(this)
     if (cltActive) {
       this.cltConditionList = {}
-      //@ts-expect-error .cub
-      game.cub.conditions?.forEach(cltc => {
-        this.cltConditionList[cltc.name] = cltc.name;
+      //@ts-expect-error .clt
+      game.clt.conditions?.forEach(cltc => {
+        this.cltConditionList[cltc.id] = cltc.name;
       })
     }
 
@@ -58,7 +58,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     efl = efl.filter(se => se.id)
       .map(se => {
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
-        if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
+        if (getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
         return { id: se.id, name: i18n(se.name ?? se.label) };
       })
       .sort((a, b) => a.name < b.name ? -1 : 1);
