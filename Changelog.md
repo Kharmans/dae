@@ -1,3 +1,8 @@
+### 11.3.8
+* Fix for changes to attributes.hp.tempmax not working
+* Fix for dr/di/dv.all not working.
+* Support for field mappings where dae will allow mapping of a field key to a different key. Implemented to support migration from flags.midi-qol.DR.XXX to system.traits.dm.XXX in dnd5e 3.0
+
 ### 11.3.7
 * Support applying CLT changes
 * Added legacy support for rewriting origins on transfer effects when created on an actor - enabled via setting "Rewrite Transfer Origin".

@@ -124,6 +124,11 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
     // TODO find a solution for flags.? perhaps just a generic speclist
     return changes.concat(expandEffectChanges(effect.changes)
       .filter(c => {
+        if (daeSystemClass.fieldMappings[c.key]) {
+          console.warn(`Actor this.name ${c.key} dprecated use ${daeSystemClass.fieldMappings[c.key]} instead`)
+          if (c.key.includes("DR") && c.value?.length > 0) c.value = `-(${c.value})`
+          c.key = daeSystemClass.fieldMappings[c.key];
+        }
         return !completedSpecs[c.key]
           && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null))
           && (!wildCardsExclude.some(re => c.key.match(re) !== null))
@@ -899,7 +904,7 @@ export function deleteActiveEffectHook(...args) {
           if (change.key === "flags.dae.deleteUuid" && change.value) {
             await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
           }
-          if (change.key === "flags.dae.suspendActiveEffect", { uuid: change.value }) {
+          if (change.key === "flags.dae.suspendActiveEffect" && change.value) {
             await socketlibSocket.executeAsGM("suspendActiveEffect", { uuid: change.value });
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.origin;

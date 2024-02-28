@@ -192,6 +192,7 @@ export class DAESystem {
   static bonusSelectors: any;
   static daeActionTypeKeys: string[];
   static detectionModeList: any;
+  public static fieldMappings: any = {};
 
   public static get systemConfig() {
     //@ts-expect-error
@@ -503,12 +504,14 @@ export class DAESystem {
   * add an additional pass after derivfed data
   */
   public static initActions() {
+    Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
     // We will call this in prepareData
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
     // Might have to be tailored to other systems.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // This supplies DAE custom effects
     Hooks.on("applyActiveEffect", daeSystemClass.daeCustomEffect.bind(daeSystemClass));
+
   }
 
   public static readyActions(): void {
