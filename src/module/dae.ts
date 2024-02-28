@@ -1291,7 +1291,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
       });
       break;
     case "selfEffectsAll":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae.selfTarget)).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
         const data = ae.toObject(false);
         setProperty(data, "flags.core.sourceId", ae.uuid);
         return data;
