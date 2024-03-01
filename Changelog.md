@@ -1,3 +1,6 @@
+### 11.3.9
+* Fix for DAE.setFlag/DAE.unsetFlag for unlinked actors/tokens
+
 ### 11.3.8
 * Fix for changes to attributes.hp.tempmax not working
 * Fix for dr/di/dv.all not working.
