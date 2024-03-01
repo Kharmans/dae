@@ -1,3 +1,6 @@
+### 11.1.14
+* Fix for DAE.setFlag/unsetFlag for unlinked tokens
+
 ### 11.1.13
 * Fix for macro.createItem sometimes failing.
 

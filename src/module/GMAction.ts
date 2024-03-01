@@ -210,8 +210,9 @@ async function _setTokenFlag(data: { flagName: string, flagValue: any, tokenUuid
 }
 
 async function _setFlag(data: { actorUuid: string | undefined, actorId: string | undefined, flagId: string, value: any }) {
-  if (data.actorId !== undefined) return await game.actors?.get(data.actorId)?.setFlag("dae", data.flagId, data.value);
-  else return await actorFromUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
+  if (data.actorUuid !== undefined) return await actorFromUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
+  else if (data.actorId !== undefined) return await game.actors?.get(data.actorId)?.setFlag("dae", data.flagId, data.value);
+  return undefined;
 }
 
 async function _unsetFlag(data: { actorUuid: string, flagId: string }) {
