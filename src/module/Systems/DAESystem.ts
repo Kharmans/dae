@@ -150,16 +150,11 @@ export class ValidSpec {
       if (!this.specs[specKey]) continue; // not all of the actor types are defined in the system
       const fieldStart = `flags.${game.system.id}.`;
       this.specs[specKey].allSpecs = this.specs[specKey].allSpecs.map(m => {
-        //@ts-ignore replaceAll
         m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`).replaceAll("dae.", "")).join(" ");
         if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
           const fieldId = m.fieldSpec.replace(fieldStart, "");
-          const characterFlags =
-            //@ts-expect-error .DND5E
-            (game.system.id === "dnd5e") ? CONFIG.DND5E.characterFlags
-              //@ts-expect-error .SW5E
-              : (game.system.id === "sw5e") ? CONFIG.SW5E.characterFlags
-                : {};
+          //@ts-expect-error
+          const characterFlags = game.system.config?.characterFlags ?? {};
           const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
           m._label = `Flags ${localizedString}`;
         }
@@ -199,6 +194,14 @@ export class DAESystem {
     return game.system.config;
   }
 
+  public static getActorDataModelFields(actorType: string): any {
+    //@ts-expect-error
+    const dataModels: any = game.system.dataModels;
+    const actorModel: any = dataModels.actor;
+    let actorModels = { "character": actorModel.CharacterData.schema.fields, "npc": actorModel.NPCData.schema.fields, "group": actorModel.GroupData.schema.fields, "vehicle": actorModel.VehicleData.schema.fields }
+    return actorModels[actorType];
+  }
+  
   public static getRollDataFunc() {
     return getRollData;
   }

@@ -1,3 +1,8 @@
+### 11.3.10
+* Fix for bogus system.abilities options being added to the valid fields list.
+* Fix for various derived specs, such as spell.dc, attributes.hd, system.resources.max, system.spells.spell0.max etc, attributes.movement, toolProficiencies, skills
+* Fix for GMAction deleteEffects throwing an error
+
 ### 11.3.9
 * Fix for DAE.setFlag/DAE.unsetFlag for unlinked actors/tokens
 

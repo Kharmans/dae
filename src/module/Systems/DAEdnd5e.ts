@@ -27,6 +27,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     return game.system.config;
   }
 
+
   public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
     super.modifyBaseValues(actorType, baseValues, characterSpec);
     if (debugEnabled > 0) warn("modifyBaseValues", actorType, baseValues, characterSpec);
@@ -66,11 +67,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //@ts-expect-error
       const dataModels: any = game.system.dataModels;
       const MappingField = dataModels.fields.MappingField;
-      const actorModel: any = dataModels.actor;
-      let actorModels = { "character": actorModel.CharacterData.schema.fields, "npc": actorModel.NPCData.schema.fields, "group": actorModel.GroupData.schema.fields, "vehicle": actorModel.VehicleData.schema.fields }
-      const actorDataModel = actorModels[actorType];
+      const actorDataModel = this.getActorDataModelFields(actorType);
       if (!actorDataModel) {
-        console.warn("Could not find data model for actor type", actorType, actorModels);
+        console.warn("Could not find data model for actor type", actorType);
         return;
       }
       function processMappingField(key, mappingField) {
@@ -165,7 +164,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues[`flags.${game.system.id}.spellCriticalThreshold`];
 
     //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
-    if (characterSpec.system.bonuses) baseValues["system.bonuses.spell.dc"] = 0;
+    if (getProperty(this.getActorDataModelFields(actorType), "bonuses.fields.spell"))
+      baseValues["system.bonuses.spell.dc"] = 0;
     Object.keys(baseValues).forEach(key => {
       // can't modify many spell details.
       if (key.includes("system.spells")) {
@@ -198,13 +198,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //      baseValues["system.traits.armorProf.value"] = ["", -1];
       baseValues["system.traits.armorProf.custom"] = ["", modes.CUSTOM];
       baseValues["system.attributes.hp.tempmax"] = [0, -1];
-
     }
   }
 
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
     super.modifySpecials(actorType, specials, characterSpec);
-
+    const actorModelSchemaFields = this.getActorDataModelFields(actorType);
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     if (actorType === "vehicle") {
       specials["system.attributes.ac.motionless"] = [0, -1];
@@ -248,8 +247,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.ac.EC"] = [0, -1];
     specials["system.attributes.ac.AR"] = [0, -1];
 
-    if (characterSpec.system.attributes?.hd) specials["system.attributes.hd"] = [0, -1];
-
+    specials["system.attributes.hd"] = [0, -1];
     if (daeSystemClass.systemConfig.languages) {
       specials["system.traits.languages.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials["system.traits.languages.value"] = ["", -1];
@@ -270,8 +268,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.traits.damageTypes.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     }
 
-
-    if (characterSpec.system.resources) {
+    if (getProperty(actorModelSchemaFields, "resources")) {
       specials["system.resources.primary.max"] = [0, -1];
       specials["system.resources.primary.label"] = ["", -1];
       specials["system.resources.secondary.max"] = [0, -1];
@@ -287,31 +284,18 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           specials[`system.resources.${res}.label`] = ["", -1];
         }
       }
-      if (characterSpec.system.spells) {
-        for (let spellSpec of Object.keys(characterSpec.system.spells))
-          specials[`system.spells.${spellSpec}.max`] = [0, -1];
-      }
+    }
+    if (getProperty(actorModelSchemaFields, "spells")) {
+      for (let spellSpec of (getProperty(actorModelSchemaFields, "spells.initialKeys") ?? []))
+        specials[`system.spells.${spellSpec}.max`] = [0, -1];
+    }
 
-
-      if (["character", "npc"].includes(actorType) && game.system.id === "dnd5e") {
-        if (game.settings.get("dnd5e", "honorScore")) {
-        }
-        if (game.settings.get("dnd5e", "sanityScore")) {
-          specials["system.abilities.san.value"] = [0, -1];
-        }
+    if (["character", "npc"].includes(actorType) && game.system.id === "dnd5e") {
+      if (game.settings.get("dnd5e", "honorScore")) {
       }
-      /*/
-      if (game.modules.get("resourcesplus")?.active) {
-        const maxResources = Math.min(game.settings.get("resourcesplus", "globalLimit"), game.settings.get("resourcesplus", "localLimit"));
-        if (maxResources > 3)  {
-          const resourceLabels =  ["fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
-          for (let i = 0; i < maxResources - 3; i++) {
-          specials[`system.resources.${resourceLabels[i]}.max`] = [0, -1];
-          specials[`system.resources.${resourceLabels[i]}.label`] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
-          }
-        }
+      if (game.settings.get("dnd5e", "sanityScore")) {
+        specials["system.abilities.san.value"] = [0, -1];
       }
-      /*/
     }
 
     specials[`flags.${game.system.id}.initiativeHalfProf`] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
@@ -320,8 +304,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (game.modules.get("tidy5e-sheet")?.active)
       specials["system.details.maxPreparedSpells"] = [0, -1];
     // change movement effects to be after prepareDerivedData
-    for (let key of Object.keys(daeSystemClass.systemConfig.movementTypes)) {
-      specials[`system.attributes.movement.${key}`] = [0, -1];
+    if (getProperty(actorModelSchemaFields, "attributes.fields.movement")) {
+      for (let key of Object.keys(daeSystemClass.systemConfig.movementTypes)) {
+        specials[`system.attributes.movement.${key}`] = [0, -1];
+      }
     }
 
     // move all the characteer flags to specials so that they can be custom effects only
@@ -339,17 +325,18 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
     super.modifyDerivedSpecs(actorType, derivedSpecs, characterSpec);
+    const actorModelSchemaFields = DAESystem.getActorDataModelFields(actorType);
     //@ts-expect-error
     const systemVersion = game.system.version;
     // Do the system specific part
     // 1. abilities add mod and save to each;
-    if (daeSystemClass.systemConfig.abilities) Object.keys(daeSystemClass.systemConfig).forEach(ablKey => {
+    if (daeSystemClass.systemConfig.abilities && getProperty(actorModelSchemaFields, "abilities")) Object.keys(daeSystemClass.systemConfig.abilities).forEach(ablKey => {
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.mod`, 0, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.save`, 0, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.min`, 0, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.max`, 0, 0))
     })
-    if (daeSystemClass.systemConfig.toolProficiencies) {
+    if (daeSystemClass.systemConfig.toolProficiencies && getProperty(actorModelSchemaFields, "tools")) {
       const toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
       const ids = daeSystemClass.systemConfig[`toolIds`];
       if (ids !== undefined) {
@@ -367,7 +354,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // adjust specs for bonuses - these are strings, @fields are looked up but dice are not rolled.
 
     // Skills add mod, passive and bonus fields
-    if (daeSystemClass.systemConfig.skills) Object.keys(daeSystemClass.systemConfig.skills).forEach(sklKey => {
+    if (daeSystemClass.systemConfig.skill && getProperty(actorModelSchemaFields, "skills")) Object.keys(daeSystemClass.systemConfig.skills).forEach(sklKey => {
       derivedSpecs.push(new ValidSpec(`system.skills.${sklKey}.mod`, 0))
       derivedSpecs.push(new ValidSpec(`system.skills.${sklKey}.passive`, 0))
     })
