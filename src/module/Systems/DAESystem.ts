@@ -534,6 +534,9 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
+  if (!ValidSpec.specs)  {
+    ValidSpec.createValidMods();
+  }
   if (!this.statuses) this.statuses = new Set();
   // Identify which special statuses had been active
   const specialStatuses = new Map();

@@ -303,6 +303,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!data.tint || data.tint === "") data.tint = null;
     // fixed for very old items
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
+    if (data.transfer) data.origin = this.object.parent?.uuid;
+    else delete data.origin;
     setProperty(data, "flags.dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
     return data;
   }

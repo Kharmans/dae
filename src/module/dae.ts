@@ -1555,6 +1555,7 @@ export function preCreateItemHook(candidate, data, options, user) {
 }
 export async function deleteItemHook(...args) {
   let [candidateItem, options, user] = args
+  if (user !== game.user?.id) return;
   if (options.isUndo) return;
   //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral) return;
@@ -1779,7 +1780,6 @@ export function daeInitActions() {
 
   needStringNumericValues = isNewerVersion("9.250", game.version);
 
-  ValidSpec.createValidMods();
   if (game.settings.get("dae", "disableEffects")) {
     ui?.notifications?.warn("DAE effects disabled no DAE effect processing")
     console.warn("DAE active effects disabled.")

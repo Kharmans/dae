@@ -723,21 +723,22 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       setProperty(actor, change.key, current ? `${current},${macroRef}` : macroRef)
       return true;
     }
+    if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]) {
+      if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type !== String) {
+        const type = daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type ?? Boolean;
+        const rollData = actor.getRollData();
+        const flagValue = getProperty(rollData, change.key) || 0;
+        // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
+        setProperty(rollData, change.key, flagValue);
+        let value = this.safeEval(this.safeEvalExpression(change.value, rollData), rollData);
+        if (type === Boolean) setProperty(actor, change.key, value ? true : false);
+        else setProperty(actor, change.key, value);
+        return true;
+      }
 
-    if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type !== String) {
-      const type = daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type;
-      const rollData = actor.getRollData();
-      const flagValue = getProperty(rollData, change.key) || 0;
-      // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
-      setProperty(rollData, change.key, flagValue);
-      let value = this.safeEval(this.safeEvalExpression(change.value, rollData), rollData);
-      if (type === Boolean) setProperty(actor, change.key, value ? true : false);
-      else setProperty(actor, change.key, value);
-      return true;
-    }
-
-    if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()].type !== Boolean) {
-      return true;
+      if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type !== Boolean) {
+        return true;
+      }
     }
     if (change.key.startsWith("system.skills.") && change.key.endsWith(".value")) {
       const currentProf = getProperty(actor, change.key) || 0;
@@ -1060,6 +1061,9 @@ async function preparePassiveSkills() {
 function prepareData(wrapped) {
   //@ts-expect-error
   const systemVersion = game.system.version;
+  if (!ValidSpec.specs) {
+    ValidSpec.createValidMods();
+  }
   try {
     debug("prepare data: before passes", this.name, this._source);
     const specialStatuses = new Map();

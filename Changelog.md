@@ -1,3 +1,9 @@
+### 11.3.11
+* Fix for "item does not exist in collection" when deleting an item which creates an effect via a macro and removes it on deletion.
+* Fix to work with resources plus.
+* Fix for flags.dnd5e which are not characterFlags throwing an error.
+* Set the origin for transfer effects created via the DAE effects editor app.
+
 ### 11.3.10
 * Fix for bogus system.abilities options being added to the valid fields list.
 * Fix for various derived specs, such as spell.dc, attributes.hd, system.resources.max, system.spells.spell0.max etc, attributes.movement, toolProficiencies, skills
@@ -16,7 +22,6 @@
 * Added legacy support for rewriting origins on transfer effects when created on an actor - enabled via setting "Rewrite Transfer Origin".
 * Change all references to CUB to CLT
 * Fix for creating an active effect not triggering passive effects.
-
 
 ### 11.3.6.1
 * Fix for error thrown in evalArgs
