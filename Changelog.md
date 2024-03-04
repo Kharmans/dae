@@ -1,3 +1,6 @@
+### 11.3.12
+* Re-enabled dr/di/dv for healing/tempHealing damage types
+
 ### 11.3.11
 * Fix for "item does not exist in collection" when deleting an item which creates an effect via a macro and removes it on deletion.
 * Fix to work with resources plus.

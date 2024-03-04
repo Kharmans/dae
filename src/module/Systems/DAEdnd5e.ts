@@ -582,7 +582,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       } else this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type]}`;
     });
     if (isNewerVersion(systemVersion, "2.99")) {
-      this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
+      const dt = Object.keys(daeSystemClass.systemConfig.damageTypes).concat(Object.keys(daeSystemClass.systemConfig.healingTypes));
+      this.traitList = dt.reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key]?.label ?? daeSystemClass.systemConfig.healingTypes[key].label; return obj }, {})
       const drTypeKeys = Object.keys(daeSystemClass.systemConfig.damageTypes);
       this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes;
       // come back and see if this can be used to set damage resistance list
