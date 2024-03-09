@@ -1,3 +1,6 @@
+### 11.3.13
+* Fix for not applying some effcts correctly, notably system.attributes.hp.tempmax for example.
+
 ### 11.3.12
 * Re-enabled dr/di/dv for healing/tempHealing damage types
 

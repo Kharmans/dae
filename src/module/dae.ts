@@ -172,7 +172,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       c.value = daeSystemClass.safeEvalExpression(c.value, this.getRollData())
     }
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
-    const sampleValue = getProperty(this, c.key) ?? typeof ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType;
+    const sampleValue = getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
     if (typeof sampleValue !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
       c.value = c.value.replace("@stackCount", stackCount)
 
