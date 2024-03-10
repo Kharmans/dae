@@ -1,6 +1,9 @@
 ![](https://img.shields.io/badge/Foundry-v10-informational)
 ![](https://img.shields.io/badge/Foundry-v11-informational)
 ![Forge Installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2Fdae&colorB=4aa94a)
+
+Discord <a href="https://discord.gg/Xd4NEvw5d7"><img src="https://img.shields.io/discord/915186263609454632?logo=discord" alt="chat on Discord"></a>
+
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/tposney)
 # Dynamic effects using Active Effects (DAE)
 
@@ -19,7 +22,7 @@ To install this module manually:
 2.  Click "Install Module"
 3.  In the "Manifest URL" field, paste the following url:
 
-`https://gitlab.com/tposney/dae/-/raw/v11/src/module.json`
+`https://gitlab.com/tposney/dae/-/raw/dndv3/src/module.json`
 
 4.  Click 'Install' and wait for installation to complete
 5.  Don't forget to enable the module in game using the "Manage Module" button
