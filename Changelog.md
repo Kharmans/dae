@@ -1,3 +1,6 @@
+### 11.3.14
+* Fix for tool.prof/bonuses.check/ability changes via DAE. To avoid dnd5e errors you should enable base proficiency with the tool class before making changes, if not make sure you add a prof setting to the effect for the tool.
+
 ### 11.3.13
 * Fix for not applying some effcts correctly, notably system.attributes.hp.tempmax for example.
 

@@ -145,7 +145,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec.key === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
     if (spec.key === "ATL.preset") return this.ATLPresets;
     if (spec.key === "ATL.sight.visionMode") return this.ATLVisionModes;
-
     return daeSystemClass.getOptionsForSpec(spec);
   }
 

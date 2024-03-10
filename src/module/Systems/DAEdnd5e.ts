@@ -138,9 +138,25 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.attributes.hp.bonuses.overall"]) baseValues["system.attributes.hp.bonuses.overall"] = ["", -1];
     if (!baseValues["system.attributes.hp.bonuses.level"]) baseValues["system.attributes.hp.bonuses.level"] = ["", -1];
 
+    const actorModelSchemaFields = this.getActorDataModelFields(actorType);
     delete baseValues["system.traits.toolProf.value"];
     delete baseValues["system.traits.toolProf.custom"];
     delete baseValues["system.traits.toolProf.all"];
+    if (daeSystemClass.systemConfig.toolProficiencies && getProperty(actorModelSchemaFields, "tools")) {
+      const toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
+      const ids = daeSystemClass.systemConfig[`toolIds`];
+      if (ids !== undefined) {
+        for (const [key, id] of Object.entries(ids)) {
+          // const item = await pack.getDocument(id);
+          toolProfList[key] = key;
+        }
+      }
+      for (let key of Object.keys(toolProfList)) {
+        baseValues[`system.tools.${key}.prof`] = [0, CONST.ACTIVE_EFFECT_MODES.CUSTOM];
+        baseValues[`system.tools.${key}.ability`] = ["", CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+        baseValues[`system.tools.${key}.bonuses.check`] = ["", -1];
+      }
+    }
     // move all the characteer flags to specials so that the can be custom effects only
     let charFlagKeys = Object.keys(daeSystemClass.systemConfig.characterFlags);
     charFlagKeys.forEach(key => {
@@ -336,6 +352,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.min`, 0, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.max`, 0, 0))
     })
+    /*
     if (daeSystemClass.systemConfig.toolProficiencies && getProperty(actorModelSchemaFields, "tools")) {
       const toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
       const ids = daeSystemClass.systemConfig[`toolIds`];
@@ -351,6 +368,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         derivedSpecs.push(new ValidSpec(`system.tools.${key}.bonus`, "", 0));
       }
     }
+    */
     // adjust specs for bonuses - these are strings, @fields are looked up but dice are not rolled.
 
     // Skills add mod, passive and bonus fields
@@ -632,6 +650,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   public static getOptionsForSpec(spec: any): any {
+    const abilitiesList = Object.keys(daeSystemClass.systemConfig.abilities).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.abilities[key].label; return obj }, {});
     if (!spec?.key) return undefined;
     if (spec.key === "system.traits.languages.value")
       return this.languageList;
@@ -640,7 +659,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (spec.key.match(/system.tools..*prof/))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.key.match(/system.tools..*ability/))
-      return daeSystemClass.systemConfig.abilities;
+      return abilitiesList;
     if (spec.key === "system.traits.armorProf.value")
       return this.armorProfList;
     if (spec.key === "system.traits.weaponProf.value")
@@ -659,7 +678,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.key.includes("system.skills") && spec.key.includes("ability")) {
       if (game.system.id === "dnd5e")
-        return daeSystemClass.systemConfig.abilities;
+        return abilitiesList;
     }
     if (spec.key === "system.traits.size") return daeSystemClass.systemConfig?.actorSizes;
     return super.getOptionsForSpec(spec);
