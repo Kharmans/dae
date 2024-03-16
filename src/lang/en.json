@@ -358,5 +358,7 @@
     "dae.DIMEditor.Name": "DIME",
     "dae.IncapacitatedDisabled": "Effect disabled if actor incapacitated",
     "dae.DIMESyncItemacro.Name": "Sync DIME and Itemacro",
-    "dae.DIMESyncItemacro.Hint": "Checked means the DIME macro and Itemacro macro will be kept in sync - you can edit with either. Uncheck DIME editor will take priority."
+    "dae.DIMESyncItemacro.Hint": "Checked means the DIME macro and Itemacro macro will be kept in sync - you can edit with either. Uncheck DIME editor will take priority.",
+    "dae.rewriteTransferOrigin.Name": "Rewrite Transfer Origin",
+    "dae.rewriteTransferOrigin.Hint": "If checked the origin of transfer effect will be rewritten to the actor item uuid when created on an actor"
   }

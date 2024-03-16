@@ -365,29 +365,163 @@ export async function tobMapper(iconsPath = "icons/TOBTokens") {
 }
 
 export async function fixTransferEffects(actor) {
-    if(!actor) {
-        return;
-    }
-    let items = actor.items || [];
-    return await _fixTransferEffects(actor, items);
+  if (!actor) {
+    return;
+  }
+  let items = actor.items || [];
+  return await _fixTransferEffects(actor, items);
 }
 
 async function _fixTransferEffects(actor, itemsToCheck) {
-    let items = itemsToCheck.filter(i => i.effects.some(e => effectIsTransfer(e)));
-    let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && e.origin.includes("Item."));
-    console.warn("Deleting effects", transferEffects)
-    await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
-    const toCreate = items.map(i => i.toObject())
-    console.warn("Deleting items ", items.map(i => i.id))
-    await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id));
-    console.warn("Creating items ", toCreate)
-    await actor.createEmbeddedDocuments("Item", toCreate);
-  }
+  let items = itemsToCheck.filter(i => i.effects.some(e => effectIsTransfer(e)));
+  let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && e.origin.includes("Item."));
+  console.warn("Deleting effects", transferEffects)
+  await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
+  const toCreate = items.map(i => i.toObject())
+  console.warn("Deleting items ", items.map(i => i.id))
+  await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id));
+  console.warn("Creating items ", toCreate)
+  await actor.createEmbeddedDocuments("Item", toCreate);
+}
 
 export async function fixTransferEffect(actor, item) {
-    if(!item) {
-        return;
+  if (!item) {
+    return;
+  }
+  let items = [item];
+  return await _fixTransferEffects(actor, items);
+}
+
+
+async function removeDaePassiveEffectsActor(actor, skipOrigins = false) {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  if (!actor) return;
+  const effectsToDelete = actor.effects.filter(ef => getProperty(ef, "flags.dae.transfer"));
+  if (effectsToDelete?.length > 0) {
+    console.log("Actor ", actor.name, "removing legacy effects", effectsToDelete.map(ef => ef.name));
+    await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));
+  }
+  if (!skipOrigins) {
+    for (let item of actor.items) {
+      for (let effect of item.effects) {
+        const effectsToUpdate = item.effects.filter(ef => ef.transfer && ef.origin !== item.uuid);
+        if (effectsToUpdate?.length > 0) {
+          console.log("Actor", actor.name, "updating origin for ", item.name, effectsToUpdate.map(ef => ef.name));
+          await item.updateEmbeddedDocuments("ActiveEffect", effectsToUpdate.map(ef => ({ _id: effect.id, origin: item.uuid })))
+        }
+      }
     }
-    let items = [item];
-    return await _fixTransferEffects(actor, items);
+  }
+}
+export async function removeScenePassiveEffects() {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  for (let token of canvas?.scene?.tokens ?? []) {
+    try {
+      if (token.actor) await removeDaePassiveEffectsActor(token.actor, false);
+    } catch (err) {
+      console.warn("error when removing legacy passive effects for", token?.actor?.name, err)
+    }
+  }
+  ui.notifications?.notify("Scene Token legacy passive effects removed")
+}
+
+export async function removeActorsPassiveEffects() {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  for (let actor of game.actors ?? []) {
+    try {
+      await removeDaePassiveEffectsActor(actor, false);
+    } catch (err) {
+      console.warn("error when removing legacy passive effects for", actor?.name, err)
+    }
+  }
+  ui.notifications?.notify("Actor legacy passive effects removed")
+}
+
+export async function migrateCompendium(pack) {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  const documentName = pack.documentName;
+  if (!["Actor"].includes(documentName)) return;
+
+  // Unlock the pack for editing
+  const wasLocked = pack.locked;
+  await pack.configure({ locked: false });
+  //@ts-expect-error
+  game.dnd5e.moduleArt.suppressArt = true;
+
+  const documents = await pack.getDocuments();
+
+  // Iterate over compendium entries - applying fine-tuned migration functions
+  for (let doc of documents) {
+    try {
+      switch (documentName) {
+        case "Actor":
+          console.log(`Checking ${documentName} document ${doc.name} in Compendium ${pack.collection}`);
+          await removeDaePassiveEffectsActor(doc, true);
+          break;
+        default:
+          break;
+      }
+    }
+
+    // Handle migration failures
+    catch (err) {
+      err.message = `Legacy passive wEffect removal for document ${doc.name} in pack ${pack.collection} failed: ${err.message}`;
+      console.error(err);
+    }
+  }
+  // Apply the original locked status for the pack
+  await pack.configure({ locked: wasLocked });
+  //@ts-expect-error
+  game.dnd5e.moduleArt.suppressArt = false;
+  ui.notifications?.notify(`Removed Passive effects for all ${documentName} documents from Compendium ${pack.collection}`);
+};
+
+export async function removeCompendiaPassiveEffects() {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  // Migrate World Compendium Packs
+  for (let p of game.packs) {
+    //@ ts-expect-error
+    // if (p.metadata.packageType !== "world") continue;
+    if (!["Actor"].includes(p.documentName)) continue;
+    console.log("doing compendium", p.collection)
+    await migrateCompendium(p);
+  }
+  ui.notifications?.notify("Finsihed compendium clean up")
+}
+
+export async function removeAllScenesPassiveEffects() {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === true) {
+    ui.notifications.error("Must be run in a world with legacy transferral false");
+    return;
+  }
+  if (game.scenes)
+    for (let scene of game.scenes) {
+      for (let token of scene.tokens) {
+        //@ts-expect-error .actorLink
+        if (token.actorLink || !token.actor) continue;
+        await removeDaePassiveEffectsActor(token.actor, true);
+      }
+    }
+  ui.notifications?.notify("All Scene Token legacy passive effects removed")
 }

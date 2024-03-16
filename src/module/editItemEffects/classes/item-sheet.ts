@@ -22,12 +22,15 @@ export class ItemEffectsItemSheet {
    */
 
   static onManageActiveEffect(event, owner) {
+    //@ts-expect-error
+    const legacyTransferral = CONFIG.ActiveEffect.legacyTransferral;
     event.preventDefault();
+    event.stopPropagation();
     const a = event.currentTarget;
     const li = a.closest("li");
     const effect = li.dataset.effectId ? owner.effects.get(li.dataset.effectId) : null;
     if (a.dataset.action === "create") {
-      // event.stopPropagation();
+      event.preventDefault();
       let name = owner.name ?? game.i18n.localize("DND5E.EffectNew");
       let i = 0;
       while (owner.effects.some(ef => ef.name === name)) {
@@ -42,7 +45,8 @@ export class ItemEffectsItemSheet {
         transfer: li.dataset.effectType === "passive",
         disabled: li.dataset.effectType === "inactive"
       }]);
-    } else if (a.dataset.action === "transfer" && owner.parent instanceof Actor) {
+    } else if (a.dataset.action === "transfer" && owner.parent instanceof Actor && legacyTransferral === true) {
+
       debug('Attempting to Transfer an effect to an Actor', { effectUuid: effect.uuid, actor: owner.parent });
       return CONFIG.ActiveEffect.documentClass.create({
         ...effect.toObject(),
@@ -68,10 +72,15 @@ export class ItemEffectsItemSheet {
     }
     // override the listener preventing management of these effects
     // unregister all remaining listeners on the effect controls
-    html.find(".effect-control").unbind('click');
-    // html.find('.effect-control').off("click");
-    html.find('.effect-control').click((ev) => {
-      ItemEffectsItemSheet.onManageActiveEffect(ev, app.item);
-    })
+    const gameSystem = game.system.id;
+    //@ts-expect-error
+    const gameVersion = game.system.version;
+    if (gameSystem === "dnd5e" && isNewerVersion("2.9.99", gameVersion)) {
+      html.find(".effect-control").unbind('click');
+      html.find('.effect-control').off("click");
+      html.find('.effect-control').click((ev) => {
+        ItemEffectsItemSheet.onManageActiveEffect(ev, app.item);
+      })
+    }
   }
 }

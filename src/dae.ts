@@ -93,6 +93,7 @@ Hooks.once('ready', async function () {
       };
     }
     daeReadyActions();
+    createDAEMacros();
     ItemEffectsItemSheet.init();
     // setupDAEMacros();
   } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
@@ -129,4 +130,78 @@ export async function confirmAction(toCheck: boolean, confirmFunction, title = i
   if (toCheck) {
     return Dialog.confirm({title, content: `<p>${i18n("dae.sure")}</p>`, yes: confirmFunction});
   } else return confirmFunction();
+}
+
+
+// Revisit to find out how to set execute as GM
+const DAEMacros = [
+  {
+    name: "DAE: Clear Scene DAE Passive Effects",
+    checkVersion: true,
+    version: "11.2.1",
+    commandText: `await game.modules.get("dae").api.removeScenePassiveEffects()`
+  },
+  {
+    name: "DAE: Clear All Actors DAE Passive Effects",
+    checkVersion: true,
+    version: "11.2.1",
+    commandText: `await game.modules.get("dae").api.removeActorsPassiveEffects()`
+  },
+  {
+    name: "DAE: Clear All Compendium DAE Passive Effects",
+    checkVersion: true,
+    version: "11.2.1",
+    commandText: `await game.modules.get("dae").api.removeCompendiaPassiveEffects()`
+  },
+  {
+    name: "DAE: Clear All Scenes DAE Passive Effects",
+    checkVersion: true,
+    version: "11.2.1",
+    commandText: `await game.modules.get("dae").api.removeAllScenesPassiveEffects()`
+  }
+];
+
+export async function createDAEMacros() {
+  if (game?.user?.isGM) {
+    const daeVersion = "11.2.0";
+    for (let macroSpec of DAEMacros) {
+      try {
+        let existingMacros = game.macros?.filter(m => m.name === macroSpec.name) ?? [];
+        if (existingMacros.length > 0) {
+          for (let macro of existingMacros) {
+            if (macroSpec.checkVersion
+              //@ts-expect-error .flags
+              && !isNewerVersion(macroSpec.version, (macro.flags["dae-version"] ?? "0.0.0")))
+              continue; // already up to date
+            await macro.update({
+              command: macroSpec.commandText,
+              "flags.dae-version": macroSpec.version
+            });
+          }
+        } else {
+          const macroData = {
+            _id: null,
+            name: macroSpec.name,
+            type: "script",
+            author: game.user.id,
+            img: 'icons/svg/dice-target.svg',
+            scope: 'global',
+            command: macroSpec.commandText,
+            folder: null,
+            sort: 0,
+            permission: {
+              default: 1,
+            },
+            flags: { "dae-version": macroSpec.version ?? daeVersion }
+          };
+          //@ts-expect-error
+          await Macro.createDocuments([macroData]);
+          log(`Macro ${macroData.name} created`);
+        }
+      } catch (err) {
+        const message = `createDAEMacros | falied to create macro ${macroSpec.name}`
+        error(err, message);
+      }
+    }
+  }
 }

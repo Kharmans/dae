@@ -12,8 +12,7 @@ Discord <a href="https://discord.gg/Xd4NEvw5d7"><img src="https://img.shields.io
 Replacement for dynamic effects
 
 If you have a problem please read the [Issues section](#issues) before reporting a bug.
-There is a dedicated discord server for my modules where you can get lots of help: https://discord.gg/Xd4NEvw5d7
-
+There is a dedicated discord server for my modules where you can get lots of help: https://discord.gg/BCAYr2D7wE
 ## Installation
 
 It's always easiest to install modules from the in game add-on browser.
@@ -23,7 +22,7 @@ To install this module manually:
 2.  Click "Install Module"
 3.  In the "Manifest URL" field, paste the following url:
 
-`https://gitlab.com/tposney/dae/-/raw/v11/src/module.json`
+`https://gitlab.com/tposney/dae/-/raw/dndv3/src/module.json`
 
 4.  Click 'Install' and wait for installation to complete
 5.  Don't forget to enable the module in game using the "Manage Module" button

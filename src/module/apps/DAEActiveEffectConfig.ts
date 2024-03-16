@@ -47,9 +47,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     daeSystemClass.configureLists(this)
     if (cltActive) {
       this.cltConditionList = {}
-      //@ts-expect-error .cub
-      game.cub.conditions?.forEach(cltc => {
-        this.cltConditionList[cltc.name] = cltc.name;
+      //@ts-expect-error .clt
+      game.clt.conditions?.forEach(cltc => {
+        this.cltConditionList[cltc.id] = cltc.name;
       })
     }
 
@@ -58,7 +58,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     efl = efl.filter(se => se.id)
       .map(se => {
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
-        if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
+        if (getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
         return { id: se.id, name: i18n(se.name ?? se.label) };
       })
       .sort((a, b) => a.name < b.name ? -1 : 1);
@@ -145,7 +145,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec.key === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
     if (spec.key === "ATL.preset") return this.ATLPresets;
     if (spec.key === "ATL.sight.visionMode") return this.ATLVisionModes;
-
     return daeSystemClass.getOptionsForSpec(spec);
   }
 
@@ -303,6 +302,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!data.tint || data.tint === "") data.tint = null;
     // fixed for very old items
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
+    if (data.transfer) data.origin = this.object.parent?.uuid;
+    else delete data.origin;
     setProperty(data, "flags.dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
     return data;
   }

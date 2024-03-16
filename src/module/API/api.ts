@@ -5,7 +5,7 @@ import { ActiveEffects } from '../apps/ActiveEffects';
 import { DAEActiveEffectConfig, addAutoFields, otherFields } from '../apps/DAEActiveEffectConfig';
 import { DIMEditor } from '../apps/DIMEditor';
 import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid } from '../dae';
-import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, tobMapper } from '../migration';
+import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem';
 
 const API = {
@@ -137,8 +137,19 @@ const API = {
     },
     get daeCustomEffect() {
         return daeSystemClass.daeCustomEffect;
+    },
+    async removeScenePassiveEffects() {
+      return removeScenePassiveEffects();
+    },
+    async removeAllScenesPassiveEffects() {
+      return removeAllScenesPassiveEffects();
+    },
+    async removeActorsPassiveEffects() {
+    return removeActorsPassiveEffects()
+    },
+    async removeCompendiaPassiveEffects() {
+      return removeCompendiaPassiveEffects()
     }
-
   };
 
   export default API;

@@ -1,11 +1,94 @@
-### 11.1.14
-* Fix for DAE.setFlag/unsetFlag for unlinked tokens
+### 11.3.14
+* Fix for tool.prof/bonuses.check/ability changes via DAE. To avoid dnd5e errors you should enable base proficiency with the tool class before making changes, if not make sure you add a prof setting to the effect for the tool.
 
-### 11.1.13
-* Fix for macro.createItem sometimes failing.
+### 11.3.13
+* Fix for not applying some effcts correctly, notably system.attributes.hp.tempmax for example.
+
+### 11.3.12
+* Re-enabled dr/di/dv for healing/tempHealing damage types
+
+### 11.3.11
+* Fix for "item does not exist in collection" when deleting an item which creates an effect via a macro and removes it on deletion.
+* Fix to work with resources plus.
+* Fix for flags.dnd5e which are not characterFlags throwing an error.
+* Set the origin for transfer effects created via the DAE effects editor app.
+
+### 11.3.10
+* Fix for bogus system.abilities options being added to the valid fields list.
+* Fix for various derived specs, such as spell.dc, attributes.hd, system.resources.max, system.spells.spell0.max etc, attributes.movement, toolProficiencies, skills
+* Fix for GMAction deleteEffects throwing an error
+
+### 11.3.9
+* Fix for DAE.setFlag/DAE.unsetFlag for unlinked actors/tokens
+
+### 11.3.8
+* Fix for changes to attributes.hp.tempmax not working
+* Fix for dr/di/dv.all not working.
+* Support for field mappings where dae will allow mapping of a field key to a different key. Implemented to support migration from flags.midi-qol.DR.XXX to system.traits.dm.XXX in dnd5e 3.0
+
+### 11.3.7
+* Support applying CLT changes
+* Added legacy support for rewriting origins on transfer effects when created on an actor - enabled via setting "Rewrite Transfer Origin".
+* Change all references to CUB to CLT
+* Fix for creating an active effect not triggering passive effects.
+
+### 11.3.6.1
+* Fix for error thrown in evalArgs
+
+### 11.3.6
+* get rid of deprecation warning for migration macros
+* Fix for overwriting chage.value in daeMacro.
+
+### 11.3.5
+* renable DAE for non dnd5e systems. Apoloiges to users that got affected.
+
+### 11.3.4
+* Added macro to remove passive effects that dae tagged across all actors in all scenes.
+* The remove passive effects macro will now also process compendia and remove dae tagged passive effectss from those. The origin of effects in compendia is not updated.
+* Fix for dae not dealing with system.bonuses.level.hp correctly.
+
+### 11.3.3
+* Declares macros that will let you remove duplicated passive effects that dae created after migration to dnd5e 3.0.
+  - DAE: Clear All Actors DAE Passive Effects
+  - DAE: Clear Scene DAE Passive Effects
+  - DAE: Clear All Compendium DAE Passive Effects.
+  These can be run as a GM to clean up the duplicate effects you see on world migration.
+   - Clear All Actors DAE Passive Effects should be run cone and will clean up all actors in the actor side bar.
+  - Clear Scene DAE passive effects should be run for each scene.
+  - Be warned the Clear All Compendium DAE passive effects can take some time to run.
+  The functions the macros call are also available via:
+    - await game.modules.getName("dae").api.removeScenePassiveEffects()
+    - await game.modules.getName("dae").api.removeActorsPassiveEffects()
+    - await game.modules.getName("dae").api.removeCompendiaPassiveEffects()
+
+
+### 11.3.2
+* Fix for error thrown when creating effects on unowned items.
+* Fix error for effects having ac.bonus specified.
+* Fix for dr/dv/di active effects throwing an error.
+
+### 11.3.1
+* Fix for sometimes macro.createItem failing.
+* Add another source for macro.Itemmacro to find the intended macro. Hopefully deals with dodgy uuids when items created.
+
+### 11.3.0.4
+* Fix for a bad bug with numeric fields introduced in 11.3.0.3
+
+### 11.3.0.1
+* Fix some deprecation warnings about damageTypes and healingTypes.
+
+### 11.3.0
+* This release should be compatible with dnd5e v3.0+. I have not tested every possible permutation of behaviours so please don't upgrade just before game time.
+* This release is be backwards compatible with dnd5e 2.4 but provides no additional functionality so there is no need to upgrade if on dnd5e 2.4. I have not tested all possible behaviour changes so don't upgrade just before game time.
+* In case of problems I have left 11.1.12 available for download for those still on dnd5e 2.4.1
+* Changes in behaviour in 3.0:
+  - For StatusEffect changes defined as passive effects on an item, the status effect is removed when the effect on source item is toggled to disabled/suspended, rather than disabled.
+  I have not tested with Convenient Effects, just the core status effects.
+* Known issues in 3.0:
+  - dnd5e 3.0 has done away with damage reistances as a separate entity, it is now just the various damage types. I have not resolved how to back port existing damage resistances. The custom fields will still work.
 
 ### 11.1.12
-* A version that won't activate in dnd5e 3.0
+* Change the daeApply to be libwrapper WRAPPED instead of MIXED which will avoid the conflict with Active Auras.
 
 ### 11.1.11
 * Corrected an error for flags.dnd5e.xxxx mode CUSTOM.

@@ -34,6 +34,7 @@ export let setupSocket = () => {
   socketlibSocket.register("unsetFlag", _unsetFlag);
   socketlibSocket.register("deleteEffects", _deleteEffects);
   socketlibSocket.register("deleteUuid", _deleteUuid);
+  socketlibSocket.register("suspendActiveEffect", _suspendActiveEffect);
   socketlibSocket.register("executeMacro", _executeMacro);
   socketlibSocket.register("createActorItem", _createActorItem);
   socketlibSocket.register("removeActorItem", _removeActorItem);
@@ -152,6 +153,14 @@ async function _executeMacro(data: {
   return fn.call(this, speaker, data.actor, data.token, undefined, data.item, v11args);
 }
 
+async function _suspendActiveEffect(data: { uuid: string }) {
+  const effect = await fromUuid(data.uuid);
+  if (!effect) return;
+  if (effect instanceof CONFIG.ActiveEffect.documentClass) {
+    return effect.update({ disabled: true });
+  }
+}
+
 async function _deleteUuid(data: { uuid: string }) {
   // don't allow deletion of compendium entries or world Items
   if (data.uuid.startsWith("Compendium") || data.uuid.startsWith("Item")) return false;
@@ -210,8 +219,8 @@ async function _setTokenFlag(data: { flagName: string, flagValue: any, tokenUuid
 }
 
 async function _setFlag(data: { actorUuid: string | undefined, actorId: string | undefined, flagId: string, value: any }) {
-  if (data.actorUuid !== undefined) return await actorFromUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
-  else if (data.actorId !== undefined) return await game.actors?.get(data.actorId)?.setFlag("dae", data.flagId, data.value);
+  if (data.actorUuid) return await actorFromUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
+  else if (data.actorId) return await game.actors?.get(data.actorId)?.setFlag("dae", data.flagId, data.value);
   return undefined;
 }
 
@@ -264,7 +273,8 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
-async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options?: any }) {
+async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options: any}) {
+  if (data.options === undefined) data.options = {};
   for (let idData of data.targets) {
     const actor = actorFromUuid(idData.uuid);
     if (!actor) {
