@@ -1,3 +1,10 @@
+### 11.3.15
+* Fix for expression evaluation involving math expressions in a few odd cases.
+* Removed system.attributes.hp.max as a modification target - use system.attributes.hp.tempmax instead.
+* Fix for system.attributes.hp.bonuses.overall and system.attributes.hp.level not working correctly.
+* If you add an active effect with the status "halfHealth", the hp calculations for the actor with the effect will set hp.max to half of what it would otherwise be.
+* Added a statusEffect halfHealth that will set the status on the actor, config setting to enable the status effect.
+
 ### 11.3.14
 * Fix for tool.prof/bonuses.check/ability changes via DAE. To avoid dnd5e errors you should enable base proficiency with the tool class before making changes, if not make sure you add a prof setting to the effect for the tool.
 

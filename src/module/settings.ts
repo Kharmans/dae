@@ -100,6 +100,18 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
+  game.settings.register("dae", "DAEAddHalfHealthEffect", {
+    name: game.i18n.localize("dae.DAEAddHalfHealthEffect.Name"),
+    hint: game.i18n.localize("dae.DAEAddHalfHealthEffect.Hint"),
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams,
+    //@ts-expect-error
+    requiresReload: true
+  });
+
   game.settings.register("dae", "DAEUntestedSystems", {
     name: game.i18n.localize("dae.DAEUntestedSystems.Name"),
     hint: game.i18n.localize("dae.DAEUntestedSystems.Hint"),

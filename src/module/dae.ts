@@ -216,22 +216,6 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
   // Expand the set of final overrides + merge sincey
   this.overrides = mergeObject(this.overrides || {}, expandObject(overrides) || {}, { inplace: true, overwrite: true });
 }
-function mySafeEval(expression: string, sandbox: any, onErrorReturn: boolean | undefined = undefined) {
-  let result;
-  try {
-
-    const src = 'with (sandbox) { return ' + expression + '}';
-    const evl = new Function('sandbox', src);
-    sandbox = mergeObject(sandbox, Roll.MATH_PROXY);
-    result = evl(sandbox);
-  } catch (err) {
-    console.warn("dae | expression evaluation failed ", expression, err);
-    result = onErrorReturn;
-  }
-  if (Number.isNumeric(result)) return Number(result)
-  return result;
-};
-
 
 function expandEffectChanges(changes) {
   let returnChanges = changes.reduce((list, change) => {
@@ -356,11 +340,14 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect)
   // const parent = sourceEffect.parent;
   // if (!(parent instanceof Actor)) return;
 
-  const statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
+  let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
   if (statusEffect) {
-    //@ts-expect-error dfreds
-    const dfreds = game.dfreds;
-    let newEffect;
+    if (statusEffect.id.startsWith("Convenient Effect:")) statusEffect.id = statusEffect.id.replace("Convenient Effect: ", "CE"); 
+    //@ts-expect-error
+    else statusEffect = ActiveEffect.implementation.fromStatusEffect(change.value, {parent: actor});
+    //@ts-expect-error
+    ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
+/*    
     if (dfreds?.effects) {
       newEffect = dfreds.effects.all.find(ef => ef.statuses.has(statusEffect.id));
       const lastArg = prepareLastArgData(newEffect, actor);
@@ -379,9 +366,12 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect)
         else return false;
       })
       newEffect.origin = sourceEffect.origin;
-      //@ts-expect-error
-      await activeEffectImplementation.create(newEffect, { parent: actor, keepId: true })
+      const token = tokenForActor(actor);
+      await token?.document.toggleActiveEffect(newEffect, { active: true });
+      //@ ts-expect-error
+      // await activeEffectImplementation.create(newEffect, { parent: actor, keepId: true })
     }
+    */
   }
 }
 export async function removeStatusEffectChange(actor, change, tokens, effect) {
@@ -1123,8 +1113,7 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
 
   const itemId = item?.id ?? getProperty(effectData.flags, "dae.itemId");
   const itemUuid = item?.uuid ?? getProperty(effectData.flags, "dae.itemUuid");
-  //@ts-expect-error fromUuidSync
-  if (!item && itemUuid) item = await fromUuidSync(itemUuid);
+  if (!item && itemUuid) item = await fromUuid(itemUuid);
   if (typeof change.value !== 'string')
     return change; // nothing to do
   const returnChange = duplicate(change);
@@ -1764,6 +1753,21 @@ async function drawEffects(wrapped) {
   this.effects.visible = this.effects.visible || tokenEffects.length || actorEffects.length;
   return wrapped();
 }
+Hooks.on("spotlightOmnisearch.indexBuilt", (index, promises) => {
+  return;
+  console.error("DAE | spotlightOmnisearch.indexBuild", index, promises);
+  //@ts-expect-error
+  console.error("Config spotlight", CONFIG.SpotlightOmniseach, CONFIG);
+  //@ts-expect-error
+  index.push(new CONFIG.SpotlightOmniseach.SearchTerm( {
+    data: {name: "system.attributes.hp.value"},
+    icon: ["fas fa-heart"],
+    name: "system.attributes.hp.value",
+    query: "",
+    keywords: ["dae"],
+    type: "DAE attributes"  
+  }))
+})
 
 export function daeInitActions() {
   // Default systtem class is setup, this oeverrides with system specific calss

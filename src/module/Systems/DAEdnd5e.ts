@@ -135,8 +135,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.bonuses.abil.damage"]) baseValues["system.bonuses.abil.damage"] = ["", -1];
     if (!baseValues["system.bonuses.other.damage"]) baseValues["system.bonuses.other.damage"] = ["", -1];
     if (!baseValues["system.bonuses.util.damage"]) baseValues["system.bonuses.util.damage"] = ["", -1];
-    if (!baseValues["system.attributes.hp.bonuses.overall"]) baseValues["system.attributes.hp.bonuses.overall"] = ["", -1];
-    if (!baseValues["system.attributes.hp.bonuses.level"]) baseValues["system.attributes.hp.bonuses.level"] = ["", -1];
+    baseValues["system.attributes.hp.bonuses.overall"] = ["", -1];
+    baseValues["system.attributes.hp.bonuses.level"] = ["", -1];
+    delete baseValues["system.attributes.hp.max"];
+    delete baseValues["system.attributes.hp.min"];
 
     const actorModelSchemaFields = this.getActorDataModelFields(actorType);
     delete baseValues["system.traits.toolProf.value"];
@@ -228,8 +230,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.attributes.ac.value"] = [0, -1];
       specials["system.attributes.ac.min"] = [0, -1];
     }
-    specials["system.attributes.hp.max"] = [0, -1];
-    specials["system.attributes.hp.min"] = [0, -1];
+    // specials["system.attributes.hp.max"] = [0, -1];
+    // specials["system.attributes.hp.min"] = [0, -1];
     // removed - required so that init.bonus can work (prepapreinitiative called after derived effects
     // specials["system.attributes.init.total"] = [0, -1];
     // moved to base values - specials["system.attributes.init.bonus"] = ["", -1];
@@ -416,11 +418,20 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     Hooks.on("preUpdateItem", preUpdateItemHook);
     this.configureLists(null);
     Hooks.once("babel.ready", () => { this.configureLists(null); });
+    //@ts-expect-error
+    const GameSystemConfig = game.system.config;
+    if (GameSystemConfig.conditionEffects && GameSystemConfig.conditionEffects["halfHealth"] && game.settings.get("dae", "DAEAddHalfHealthEffect")) {
+      GameSystemConfig.conditionEffects["halfHealth"].add("halfHealthEffect");
+      CONFIG.statusEffects.push({
+        id: "halfHealthEffect",
+        name: i18n("dae.halfHealthEffectLabel"),
+        icon: "systems/dnd5e/icons/svg/damage/healing.svg",
+        flags: { dnd5e: { halfHealth: true } }
+      });
+    }
   }
   public static setupActions(): void {
   }
-
-
 
   public static readyActions(): void {
     // checkArmorDisabled();
@@ -1031,8 +1042,10 @@ function applyBaseActiveEffectsdnd5e() {
 function getRollData(wrapped, ...args) {
   // Can only have one getRollData wrapper so need call the parent one by hand
   const data = DAESystem.getRollDataFunc().bind(this)(wrapped, ...args);
-  data.flags = this.flags;
-  data.effects = this.effects;
+  if (!data.flags) {
+    data.flags = { ...this.flags };
+  }
+  data.effects = this.appliedEffects;
   data.actorId = this.id;
   data.actorUuid = this.uuid;
 

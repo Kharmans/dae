@@ -314,28 +314,27 @@ export class DAESystem {
     if (options.metaData) mergeObject(activeEffectData, options.metaData);
 
   }
-
-  static MATH_PROXY = new Proxy(Math, {
-    has: () => true, // Include everything
-    get: (t, k) => k === Symbol.unscopables ? undefined : t[k],
-    set: () => { console.error("You may not set properties of the Roll.MATH_PROXY environment"); return false } // No-op
-  });
-
-  public static safeEval(expression: string, sandbox: any = {}, onErrorReturn: any | undefined = undefined) {
+  public static safeEval(expression: string, sandbox: any, onErrorReturn: any | undefined = undefined) {
     let result;
     try {
       const src = 'with (sandbox) { return ' + expression + '}';
       const evl = new Function('sandbox', src);
-      sandbox = mergeObject(sandbox, this.MATH_PROXY);
-      sandbox = mergeObject(sandbox, { Roll });
-      result = evl(sandbox);
+      const sandboxProxy = new Proxy(sandbox, {
+        has: () => true, // Include everything
+        get: (t, k) => k === Symbol.unscopables ? undefined : (t[k] ?? Math[k]),
+        //@ts-expect-error
+        set: () => console.error("You may not set properties of the sandbox environment") // No-op
+      });
+      result = evl(sandboxProxy);
     } catch (err) {
-      console.warn("midi-qol | expression evaluation failed ", expression, err);
+      const message = `dae | safeEval | expression evaluation failed ${expression}`;
+      console.warn(message, err)
       result = onErrorReturn;
     }
     if (Number.isNumeric(result)) return Number(result)
     return result;
   };
+ 
   public static safeEvalExpressionNew(input, context = {}, depth = 0) {
     let stack: any[] = [];
     let output = '';
