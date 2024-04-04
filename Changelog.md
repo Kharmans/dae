@@ -1,3 +1,11 @@
+### 11.3.16
+* Support passing an origin when applying effects via doEffects - required to support dnd5e concentration.
+* Add created effects as dependents of the origin active effect.
+* Fix for initialisation failing if there are no actors in the world.
+* Added system.bonuses.spell.all.damage, which is applied against all spell damage rolls, not just rsak/msak.
+* Evaluate system.scale.XXX.value before calculating derived effects, this means it will appear in item usage counts, but can't reference any derived values like system.abilities.str.mod etc.
+* Fix for tool proficiency active effects to create the tool entry if not already present.
+
 ### 11.3.15
 * Fix for expression evaluation involving math expressions in a few odd cases.
 * Removed system.attributes.hp.max as a modification target - use system.attributes.hp.tempmax instead.

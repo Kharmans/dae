@@ -32,7 +32,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       })
     } else this.tokenMagicEffects["invalid"] = "module not installed"
 
-    let validSpecsToUse = ValidSpec.specs["union"];
+    //@ts-expect-error
+    let validSpecsToUse = ValidSpec.specs?.union;
+    if (!validSpecsToUse) {
+      ui.notifications.error("DAE | No valid specs found");
+      return;
+    }
     if (this.object.parent instanceof CONFIG.Actor.documentClass) {
       validSpecsToUse = ValidSpec.specs[this.object.parent.type]
     }

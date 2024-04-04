@@ -17,7 +17,7 @@ export class ValidSpec {
   get fieldSpec(): string { return this._fieldSpec };
   set fieldSpec(spec: string) { this._fieldSpec = spec }
 
-  _fieldType:  FieldType; 
+  _fieldType: FieldType;
   get fieldType(): FieldType { return this._fieldType }
   set fieldType(value: FieldType) { this._fieldType = value }
 
@@ -89,7 +89,7 @@ export class ValidSpec {
 
       // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
       this.specs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
-       let validSpec = new ValidSpec(spec, baseValues[spec][0] ?? baseValues[spec], baseValues[spec][1], baseValues[spec][2], baseValues[spec][3]);  
+        let validSpec = new ValidSpec(spec, baseValues[spec][0] ?? baseValues[spec], baseValues[spec][1], baseValues[spec][2], baseValues[spec][3]);
         validSpec = daeSystemClass.modifyValidSpec(spec, validSpec); // System specific modifations
         this.specs[specKey].baseSpecsObj[spec] = validSpec;
         return validSpec;
@@ -146,6 +146,13 @@ export class ValidSpec {
   }
 
   static localizeSpecs() {
+    if (!ValidSpec.specs) {
+      ValidSpec.createValidMods();
+    };
+    if (!ValidSpec.specs) {
+      ui.notifications.error("DAE | Initialisation failed - no specs defined");
+      return;
+    }
     for (let specKey of Object.keys(game.system.model.Actor)) {
       if (!this.specs[specKey]) continue; // not all of the actor types are defined in the system
       const fieldStart = `flags.${game.system.id}.`;
@@ -201,7 +208,7 @@ export class DAESystem {
     let actorModels = { "character": actorModel.CharacterData.schema.fields, "npc": actorModel.NPCData.schema.fields, "group": actorModel.GroupData.schema.fields, "vehicle": actorModel.VehicleData.schema.fields }
     return actorModels[actorType];
   }
-  
+
   public static getRollDataFunc() {
     return getRollData;
   }
@@ -334,7 +341,7 @@ export class DAESystem {
     if (Number.isNumeric(result)) return Number(result)
     return result;
   };
- 
+
   public static safeEvalExpressionNew(input, context = {}, depth = 0) {
     let stack: any[] = [];
     let output = '';
@@ -533,7 +540,7 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
-  if (!ValidSpec.specs)  {
+  if (!ValidSpec.specs) {
     ValidSpec.createValidMods();
   }
   if (!this.statuses) this.statuses = new Set();

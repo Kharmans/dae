@@ -81,10 +81,10 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
     if (isNewerVersion("11.293", game.version)) await delay(250)
   }
 
-  let itemData:any = item?.toObject(true);
+  let itemData: any = item?.toObject(true);
   if (!itemData) return [];
   //@ts-expect-error unsupportedItemTypes
-  if ( actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type) || itemData.system.advancement?.length) {
+  if (actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type) || itemData.system.advancement?.length) {
     ui.notifications.warn(game.i18n.format("DND5E.ActorWarningInvalidItem", {
       itemType: game.i18n.localize(CONFIG.Item.typeLabels[itemData.type]),
       actorType: game.i18n.localize(CONFIG.Actor.typeLabels[actor.type])
@@ -273,7 +273,7 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
-async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options: any}) {
+async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options: any }) {
   if (data.options === undefined) data.options = {};
   for (let idData of data.targets) {
     const actor = actorFromUuid(idData.uuid);
@@ -298,7 +298,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = undefined }) {
+export async function applyActiveEffects({ activate, tokenList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = undefined, origin = undefined }) {
   // debug("apply active effect ", activate, tokenList, duplicate(activeEffects), itemDuration)
   for (let tid of tokenList) {
     const token = getToken(tid) || canvas.tokens?.get(tid); // tid might be a uuid
@@ -327,6 +327,8 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
           && (!removeMatchLabel || (new RegExp(`^${escapedLabel}( \\([0-9]+\\))?$`)).test(ae.name ?? ""))
       })
         && getProperty(ae, "flags.dae.transfer") === false
+        //@ts-expect-error
+        && !ae.transfer
         && notMulti;
     });
 
@@ -336,14 +338,14 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
       if (toggleEffect) {
         removeList = removeList.map(ef => ({ _id: ef.id, disabled: !ef.disabled, "duration.startTime": game.time.worldTime }));
         //@ts-expect-error
-        await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList, {"expiry-reason": "toggle-effect"});
+        await targetActor.updateEmbeddedDocuments("ActiveEffect", removeList, { "expiry-reason": "toggle-effect" });
         activate = false;
       } else { // remove the effect
         const interval = removeList.some(ef => ef.flags.effectmacro || ef.changes.some(change => change.value.startsWith("macro"))) ? 250 : 1; // for unlinked tokens and effect macros that might create effects need a long delay
         currentStacks = removeList.filter(ae => getProperty(ae, "flags.dae.stackable") === "count").reduce((acc, ae) => acc + (getProperty(ae, "flags.dae.stacks") ?? 1), 1)
         removeList = removeList.map(ae => ae._id);
         //@ts-expect-error expiry-reason
-        await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList, {"expiry-reason": "effect-stacking"});
+        await targetActor.deleteEmbeddedDocuments("ActiveEffect", removeList, { "expiry-reason": "effect-stacking" });
         if (targetActor.isToken && isNewerVersion("11.293", game.version)) { // need to delay for unliked tokens as there is a timing issue
           await delay(interval);
         }
@@ -431,15 +433,17 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
         aeData.changes = aeData.changes.map(change => {
           if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
             //@ts-expect-error fromUuidSync
-            let originItem = fromUuidSync(aeData.origin);
-            let sourceActor = originItem?.actor;
-            if (!originItem && aeData.flags?.dae?.itemData) { // could not find the item reconstruct it.
-              const originActorUuid = aeData.origin.replace(/.Item.*/, "");
-              sourceActor = actorFromUuid(originActorUuid);
-            } else {
-              const originActorUuid = aeData.origin.replace(/.Item.*/, "");
-              sourceActor = actorFromUuid(originActorUuid);
-            }
+            let originEntity = fromUuidSync(aeData.origin);
+            let originItem;
+            let sourceActor;
+            if (originEntity instanceof Item) {
+              originItem = originEntity;
+              sourceActor = originEntity.actor;
+            } else if (originEntity instanceof Actor) sourceActor = originEntity;
+            //@ts-expect-error
+            else if (originEntity instanceof ActiveEffect && originEntity.transfer) sourceActor = originEntity?.parent?.parent;
+            else if (originEntity instanceof ActiveEffect) sourceActor = originEntity?.parent;
+
             if (change.key === "flags.dae.onUpdateTarget") {
               // for onUpdateTarget effects, put the source actor, the target uuid, the origin and the original change.value
               change.value = `${aeData.origin}, ${token?.document.uuid}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${sourceActor.uuid}, ${change.value}`;
@@ -448,7 +452,14 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
               const newEffectData = duplicate(aeData);
               newEffectData.changes = [duplicate(change)];
               newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
-              sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], { metaData })
+              sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], { metaData }).then(effects => {
+                for (let effect of effects)
+                  if (effect.addDependent) {
+                    //@ts-expect-error
+                    const origin = fromUuidSync(effect.origin);
+                    if (origin instanceof ActiveEffect) effect.addDependent(effect);
+                  }
+              })
               return undefined;
             }
 
@@ -486,7 +497,17 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
         let timedRemoveList = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects,
           //@ts-expect-error metadata
           { metaData });
-
+        for (let effect of timedRemoveList) {
+          //@ts-expect-error
+          if (effect.addDependent) {
+            //@ts-expect-error
+            const origin = fromUuidSync(effect.origin);
+            if (origin instanceof ActiveEffect) {
+              //@ts-expect-error
+              origin.addDependent(effect);
+            }
+          }
+        };
         setTimeout(() => {
           if (globalThis.EffectCounter) {
             for (let effectData of dupEffects) {
@@ -506,7 +527,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
             let removeId = removeEffect._id;
             if (removeId && actor?.effects.get(removeId)) {
               //@ts-expect-error
-              await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId], {"expiry-reason": "deprecated real time expiry"})
+              await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId], { "expiry-reason": "deprecated real time expiry" })
             }
           }
 

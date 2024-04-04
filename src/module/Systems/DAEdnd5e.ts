@@ -127,6 +127,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.bonuses.All-Damage"]) baseValues["system.bonuses.All-Damage"] = ["", -1];
     if (!baseValues["system.bonuses.weapon.damage"]) baseValues["system.bonuses.weapon.damage"] = ["", -1];
     if (!baseValues["system.bonuses.spell.damage"]) baseValues["system.bonuses.spell.damage"] = ["", -1];
+    if (!baseValues["system.bonuses.spell.all.damage"]) baseValues["system.bonuses.spell.all.damage"] = ["", -1];
     // These are for item action types - works by accident.
     if (!baseValues["system.bonuses.heal.damage"]) baseValues["system.bonuses.heal.damage"] = ["", -1];
     if (!baseValues["system.bonuses.heal.attack"]) baseValues["system.bonuses.heal.attack"] = ["", -1];
@@ -398,10 +399,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       wildcardEffects.push(/system\.skills\..*\.value/);
       wildcardEffects.push(/system\.skills\..*\.ability/);
       wildcardEffects.push(/system\.skills\..*\.bonuses/);
-      wildcardEffects.push(/system\.abilities\..*\.value/);
     }
-    dice = game[game.system.id].dice
-    if (!dice) error("Dice not defined! Many things won't work")
+    wildcardEffects.push(/system\.abilities\..*\.value/);
+    wildcardEffects.push(/system\.scale\..*\.value/);
+    //@ts-expect-error
+    dice = game.system.dice;
+    if (!dice) error("game.system.dice not defined! Many things won't work");
     else d20Roll = dice?.d20Roll;
 
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
@@ -799,7 +802,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
       }
       const [_1, _2, tool, key] = change.key.split(".");
-      if (!current[tool]) current[tool] = { value: 1, ability: "int", bonuses: { check: "" } };
+      current[tool] = mergeObject({ value: 1, ability: "int", bonuses: { check: "" } }, current[tool] ?? {})
       if (key === "prof") {
         value = Number(change.value);
         current[tool].value = value;

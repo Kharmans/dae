@@ -6,7 +6,6 @@ import { ValidSpec } from "./Systems/DAESystem";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e";
 import { DAESystemSW5E } from "./Systems/DAEsw5e";
 import { DIMEditor } from "./apps/DIMEditor";
-import { merge } from "jquery";
 
 let templates = {};
 
@@ -122,11 +121,13 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
     }
     if (!effects || effects.size === 0) return this.overrides || {};
     // TODO find a solution for flags.? perhaps just a generic speclist
-    return changes.concat(expandEffectChanges(effect.changes)
+    return changes.concat(expandEffectChanges(duplicate(effect.changes))
       .filter(c => {
         if (daeSystemClass.fieldMappings[c.key]) {
-          console.warn(`Actor this.name ${c.key} dprecated use ${daeSystemClass.fieldMappings[c.key]} instead`)
-          if (c.key.includes("DR") && c.value?.length > 0) c.value = `-(${c.value})`
+          console.warn(`Actor ${this.name} ${c.key} dprecated use ${daeSystemClass.fieldMappings[c.key]} instead`, this)
+          if (c.key.includes("DR") && c.value?.length > 0) c.value = `-(${c.value})`;
+          if (debugEnabled > 0)
+            warn("Doing field mapping mapping ", c.key, daeSystemClass.fieldMappings[c.key]);
           c.key = daeSystemClass.fieldMappings[c.key];
         }
         return !completedSpecs[c.key]
@@ -334,44 +335,13 @@ export async function removeCLTChange(conditionId, tokens: [Token], options = { 
 }
 export async function addStatusEffectChange(actor, change, tokens, sourceEffect) {
   const activeEffectImplementation = ActiveEffect.implementation;
-  //@ts-expect-error
-  const fromStatusEffect = activeEffectImplementation.fromStatusEffect;
   if (change.key !== "StatusEffect") return;
-  // const parent = sourceEffect.parent;
-  // if (!(parent instanceof Actor)) return;
-
   let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
   if (statusEffect) {
-    if (statusEffect.id.startsWith("Convenient Effect:")) statusEffect.id = statusEffect.id.replace("Convenient Effect: ", "CE"); 
     //@ts-expect-error
-    else statusEffect = ActiveEffect.implementation.fromStatusEffect(change.value, {parent: actor});
+    statusEffect = ActiveEffect.implementation.fromStatusEffect(change.value, {parent: actor});
     //@ts-expect-error
     ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
-/*    
-    if (dfreds?.effects) {
-      newEffect = dfreds.effects.all.find(ef => ef.statuses.has(statusEffect.id));
-      const lastArg = prepareLastArgData(newEffect, actor);
-      if (getProperty(sourceEffect, "flags.dae.transfer")) setProperty(newEffect, "flags.dae.transfer", true);
-      await addConvenientEffectsChange("Convenient Effect: " + statusEffect.label, actor.uuid, sourceEffect.origin, {}, actor.isToken, lastArg);
-    }
-    if (!newEffect && fromStatusEffect) {
-      //@ts-expect-error
-      newEffect = await ActiveEffect.implementation.fromStatusEffect(change.value);
-      if (getProperty(sourceEffect, "flags.dae.transfer")) setProperty(newEffect, "flags.dae.transfer", true);
-      newEffect.changes.some(c => {
-        if (["StatusEffectName", "StatusEffectLabel"].includes(c.key)) {
-          newEffect.name = c.value;
-          return true;
-        }
-        else return false;
-      })
-      newEffect.origin = sourceEffect.origin;
-      const token = tokenForActor(actor);
-      await token?.document.toggleActiveEffect(newEffect, { active: true });
-      //@ ts-expect-error
-      // await activeEffectImplementation.create(newEffect, { parent: actor, keepId: true })
-    }
-    */
   }
 }
 export async function removeStatusEffectChange(actor, change, tokens, effect) {
@@ -949,16 +919,21 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   let selfTarget;
   let v11args: any = {};
   let macro;
+  let theItem;
+
   // Work out what itemdata should be
   warn("Dae macro ", action, actor, effectData, lastArgOptions)
   if (!effectData.changes) return effectData;
-  if (effectData instanceof ActiveEffect) effectData = effectData.toObject(false);
+  if (effectData instanceof ActiveEffect) {
+    //@ts-expect-error
+    if (effectData.transfer && effectData.parent instanceof Item) theItem = effectData.parent;
+    effectData = effectData.toObject(false);
+  }
   let tokenUuid;
   if (actor.token) {
     tokenUuid = actor.token.uuid;
     selfTarget = actor.token.object;
-  }
-  else {
+  } else {
     selfTarget = getSelfTarget(actor);
     tokenUuid = selfTarget.uuid ?? selfTarget.document.uuid;
   }
@@ -970,7 +945,6 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     context.itemData = source.toObject(false);
   }
 
-  let theItem;
   if (lastArgOptions.item) theItem = lastArgOptions.item;
   if (effectData.flags.dae?.itemUuid) {
     //@ts-expect-error fromUuidSync
@@ -1257,7 +1231,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
 export async function doEffects(item, activate, targets = undefined, options: any =
   {
     whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,
-    fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false,
+    fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: item.uuid,
     selfEffects: "none"
   }) {
   return await applyNonTransferEffects(item, activate, targets, options)
@@ -1325,7 +1299,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
       activeEffectData.changes[changeIndex] = newChange;
     };
 
-    activeEffectData.origin = item.uuid;
+    activeEffectData.origin = options.origin ?? item.uuid;
     activeEffectData.duration.startTime = game.time.worldTime;
     daeSystemClass.addDAEMetaData(activeEffectData, item, options)
     appliedEffects[aeIndex] = activeEffectData;
@@ -1347,12 +1321,13 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   let gmTargets = targetList.filter(t => (!t.isOwner && macroLocation === "mixed") || macroLocation === "GM").map(
     t => typeof t === "string" ? t : (t.document?.uuid ?? t.uuid)
   );
+
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0) {
     await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: appliedEffects, tokenList: gmTargets, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
   if (localTargets.length > 0) {
-    const result = await applyActiveEffects({ activate, tokenList: localTargets, activeEffects: appliedEffects, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
+    const result = await applyActiveEffects({ activate, tokenList: localTargets, activeEffects: appliedEffects, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
   }
 }
 
@@ -2024,4 +1999,10 @@ export function effectIsTransfer(effect) {
 
 export async function delay(interval: number) {
   await new Promise(resolve => setTimeout(resolve, interval));
+}
+
+export function safeGetGameSetting(moduleName, settingName): any | undefined {
+  if (game.settings.settings.get(`${moduleName}.${settingName}`))
+    return game.settings.get(moduleName, settingName);
+  else return undefined;
 }
