@@ -457,7 +457,8 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
                   if (effect.addDependent) {
                     //@ts-expect-error
                     const origin = fromUuidSync(effect.origin);
-                    if (origin instanceof ActiveEffect) effect.addDependent(effect);
+                    //@ts-expect-error
+                    if (origin instanceof ActiveEffect && effect.addDependent) origin.addDependent(effect);
                   }
               })
               return undefined;
@@ -504,7 +505,7 @@ export async function applyActiveEffects({ activate, tokenList, activeEffects, i
             const origin = fromUuidSync(effect.origin);
             if (origin instanceof ActiveEffect) {
               //@ts-expect-error
-              origin.addDependent(effect);
+              await origin.addDependent(effect);
             }
           }
         };

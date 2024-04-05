@@ -1,3 +1,6 @@
+### 11.3.16.1
+* Fix for typo in a specific case of adding a dependent effect - thanks @Elwin
+
 ### 11.3.16
 * Support passing an origin when applying effects via doEffects - required to support dnd5e concentration.
 * Add created effects as dependents of the origin active effect.
