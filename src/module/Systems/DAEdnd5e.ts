@@ -240,7 +240,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials[`system.abilities.${abl}.dc`] = [0, -1];
     }
     specials["system.attributes.encumbrance.max"] = [0, -1];
+    specials[`system.traits.idi.value`] = ["", -1];
+    specials[`system.traits.idr.value`] = ["", -1];
+    specials[`system.traits.idv.value`] = ["", -1];
+    specials[`system.traits.ida.value`] = ["", -1];
+    specials[`system.traits.idm.value`] = ["", -1];
 
+    specials["system.traits.da.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.da.value"] = ["", -1];
+    specials["system.traits.da.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.value"] = ["", -1];
     specials["system.traits.di.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -678,7 +686,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return this.armorProfList;
     if (spec.key === "system.traits.weaponProf.value")
       return this.weaponProfList;
-    if (["system.traits.di.value", "system.traits.dr.value", "system.traits.dv.value"].includes(spec.key))
+    if (["system.traits.di.value", "system.traits.dr.value", "system.traits.dv.value",
+      "system.traits.da.value",
+      "system.traits.idi.value", "system.traits.idr.value", "system.traits.idv.value",
+      "system.traits.ida.value"].includes(spec.key))
       return this.traitList;
     if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom"].includes(spec.key)) {
       return this.customDamageResistanceList;
@@ -840,9 +851,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.di.value":
       case "system.traits.dr.value":
       case "system.traits.dv.value":
+      case "system.traits.da.value":
       case "system.traits.sdi.value":
       case "system.traits.sdr.value":
       case "system.traits.sdv.value":
+      case "system.traits.idi.value":
+      case "system.traits.idr.value":
+      case "system.traits.idv.value":
+      case "system.traits.ida.value":
         if (isNewerVersion(systemConfig.version, "2.99")) {
           return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageTypes));
         } else {
@@ -1100,7 +1116,15 @@ function prepareData(wrapped) {
   if (!ValidSpec.specs) {
     ValidSpec.createValidMods();
   }
+
   try {
+    if (this.system.traits) {
+      for (let key of ["da", "ida", "idr", "idv", "idi"]) {
+        if (!(this.system.traits[key]?.value instanceof Set)) {
+          this.system.traits[key] = { value: new Set(), bypasses: new Set(), custom: '' };
+        }
+      }
+    }
     debug("prepare data: before passes", this.name, this._source);
     const specialStatuses = new Map();
     if (isNewerVersion(game.version, "11.293")) {

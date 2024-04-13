@@ -1,3 +1,6 @@
+### 11.3.17
+* Support for ignore di/rd/dv/da
+* Fix for absorption mapping
 ### 11.3.16.1
 * Fix for typo in a specific case of adding a dependent effect - thanks @Elwin
 

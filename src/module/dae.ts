@@ -124,11 +124,19 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
     return changes.concat(expandEffectChanges(duplicate(effect.changes))
       .filter(c => {
         if (daeSystemClass.fieldMappings[c.key]) {
+          const mappedField = daeSystemClass.fieldMappings[c.key]
           console.warn(`Actor ${this.name} ${c.key} dprecated use ${daeSystemClass.fieldMappings[c.key]} instead`, this)
-          if (c.key.includes("DR") && c.value?.length > 0) c.value = `-(${c.value})`;
-          if (debugEnabled > 0)
-            warn("Doing field mapping mapping ", c.key, daeSystemClass.fieldMappings[c.key]);
-          c.key = daeSystemClass.fieldMappings[c.key];
+          if (mappedField.startsWith("system.traits.da") && mappedField.endsWith(".value")) {
+            const damageType = c.key.split(".").slice(-1)[0];
+            c.key = mappedField;
+            c.value = damageType;
+            if (c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM) c.mode = CONST.ACTIVE_EFFECT_MODES.ADD;
+          } else {
+            if (c.key.includes("DR") && c.value?.length > 0) c.value = `-(${c.value})`;
+            if (debugEnabled > 0)
+              warn("Doing field mapping mapping ", c.key, daeSystemClass.fieldMappings[c.key]);
+            c.key = daeSystemClass.fieldMappings[c.key];
+          }
         }
         return !completedSpecs[c.key]
           && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null))
@@ -339,7 +347,7 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect)
   let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
   if (statusEffect) {
     //@ts-expect-error
-    statusEffect = ActiveEffect.implementation.fromStatusEffect(change.value, {parent: actor});
+    statusEffect = ActiveEffect.implementation.fromStatusEffect(change.value, { parent: actor });
     //@ts-expect-error
     ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
   }
@@ -1734,13 +1742,13 @@ Hooks.on("spotlightOmnisearch.indexBuilt", (index, promises) => {
   //@ts-expect-error
   console.error("Config spotlight", CONFIG.SpotlightOmniseach, CONFIG);
   //@ts-expect-error
-  index.push(new CONFIG.SpotlightOmniseach.SearchTerm( {
-    data: {name: "system.attributes.hp.value"},
+  index.push(new CONFIG.SpotlightOmniseach.SearchTerm({
+    data: { name: "system.attributes.hp.value" },
     icon: ["fas fa-heart"],
     name: "system.attributes.hp.value",
     query: "",
     keywords: ["dae"],
-    type: "DAE attributes"  
+    type: "DAE attributes"
   }))
 })
 

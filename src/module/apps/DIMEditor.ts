@@ -12,7 +12,6 @@ export class DIMEditor extends FormApplication {
 
   render(force, options = {}) {
     Hooks.once("renderDIMEditor", (app, html, data) => {
-      console.log("renderDIMEditor");
       Hooks.callAll("renderMacroConfig", app, html, data)
     });
     return super.render(force, options)
