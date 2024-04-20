@@ -199,7 +199,7 @@
   "dae.removingEffects": "Retrait des effets",
   "dae.tokenMagic": "TokenMagic",
   "dae.transfer.Name": "Transférer l'effet à l'acteur sur l'équipement de l'objet",
-  "dae.transfer.Hint": "Transférer l'effet à l'acteur sur l'équipement de l'objet",
+  "dae.transfer.Hint": "Activé signifie que l'effet s'applique au propriétaire de l'objet lorsque celui-ci est équipé. Désactiver si vous souhaitez que l'effet s'applique à une cible lorsque l'objet est utilisé",
   "dae.effectName": "Nom de l'effet",
   "dae.readOnly": "EFFET EN LECTURE SEULE",
   "dae.legact": "Actions légendaires",
@@ -347,5 +347,6 @@
   "dae.DAEUntestedSystems.Hint": "Si cette case est cochée, le DAE se chargera pour tout système non marqué compatible. Si cette case n'est pas cochée, le DAE ne se chargera que pour les systèmes marqués compatibles. Requiert un rechargement",
   "dae.SelfTarget.Name": "S'applique à soi lorsque l'objet applique des effets de cible",
   "dae.SelfTarget.Hint": "L'effet est appliqué à l'utilisateur de l'objet, et non aux cibles si l'objet applique des effets aux cibles",
-  "dae.SelfTargetAlways.Name": "S'applique à soi-même lorsque l'objet est lancé"
+  "dae.SelfTargetAlways.Name": "S'applique à soi-même lorsque l'objet est lancé",
+  "dae.isHealed": "est guéri : expire si le personnage est guéri"
 }
