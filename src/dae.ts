@@ -26,7 +26,6 @@ export function i18n(key) {
   return game.i18n.localize(key);
 };
 export let daeAlternateStatus;
-export let changesQueue;
 export var gameSystemCompatible = "maybe"; // no, yes, partial, maybe
 export var daeUntestedSystems: boolean;
 
@@ -60,8 +59,6 @@ Hooks.once('init', async function () {
 
       // Preload Handlebars templates
       await preloadTemplates();
-
-      changesQueue = new window.Semaphore(1);
     }
   };
 });
@@ -79,7 +76,7 @@ Hooks.once('ready', async function () {
     debug("ready setup actions")
     daeSpecialDurations = { "None": "" };
     //@ts-expect-error .version
-    if (game.modules.get("times-up")?.active && isNewerVersion(game.modules.get("times-up")?.version ?? "0", "0.0.9")) {
+    if (game.modules.get("times-up")?.active && foundry.utils.isNewerVersion(game.modules.get("times-up")?.version ?? "0", "0.0.9")) {
       daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
       daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
       daeSpecialDurations["turnStartSource"] = i18n("dae.turnStartSource");
@@ -171,7 +168,7 @@ export async function createDAEMacros() {
           for (let macro of existingMacros) {
             if (macroSpec.checkVersion
               //@ts-expect-error .flags
-              && !isNewerVersion(macroSpec.version, (macro.flags["dae-version"] ?? "0.0.0")))
+              && !foundry.utils.isNewerVersion(macroSpec.version, (macro.flags["dae-version"] ?? "0.0.0")))
               continue; // already up to date
             await macro.update({
               command: macroSpec.commandText,

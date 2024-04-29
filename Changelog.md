@@ -1,6 +1,22 @@
+### 11.3.18
+* Some clean up on requiring tokens to apply changes in doEffects which now works with actors.
+* Change.value of statusEffect - this is now the preferred way to apply status effects to targets. 
+  - Macro.CE/Macro.CLT remain for non status effects being applied (like spell effects).
+  - Fix for statusEffect and core statuses not correctly setting the _id so they toggle on the character sheet.
+  - Actor and Item effects with a change of StatusEffect now work in the same way as non-transfer effects statusEffects.
+  - effects in CONFIG.statusEffects are required to have an _id (which CE and possible other added effects don't) - when creating a status Effect dae will assign a random _id if it does not have one so that creation of the status effect can work.
+* First pass of v12 changes
+  - Lots of deprecation warnings removed.
+  - Effect handling. Moved from hook to _preCreateActiveEffect to allow dice roll expressions for duration/inline expressions.
+  - Flag dice expressions that will not be supported in v12.
+    - direct active effects cannot have dice expressions any more - due to the changes in v12 dice roll handling. Generally this is dice expressions in numeric fields. ie. system.abilities.str.mod OVERRIDE 3 + 1d4
+  - Change use of CONFIG.DOCUMENT_PERMISSION_LEVELS to CONFIG.DOCUMENT_OWNERSHIP_LEVELS
+  - so far I've not come up with a solution to support dae.roll in v12, so it will generate a warning in v11 and fail in v12.
+
 ### 11.3.17
 * Support for ignore di/rd/dv/da
 * Fix for absorption mapping
+
 ### 11.3.16.1
 * Fix for typo in a specific case of adding a dependent effect - thanks @Elwin
 

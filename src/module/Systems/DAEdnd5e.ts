@@ -38,7 +38,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         if (debugEnabled > 0) warn("Could not find data model for actor type", actorType, actorModels);
         return;
       }
-      const actorDataModel = flattenObject(actorModels[actorType].schema.initial());
+      const actorDataModel = foundry.utils.flattenObject(actorModels[actorType].schema.initial());
       Object.keys(actorDataModel).forEach(key => {
         const value = actorDataModel[key];
         let fieldType;
@@ -145,8 +145,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues["system.traits.toolProf.value"];
     delete baseValues["system.traits.toolProf.custom"];
     delete baseValues["system.traits.toolProf.all"];
-    if (daeSystemClass.systemConfig.toolProficiencies && getProperty(actorModelSchemaFields, "tools")) {
-      const toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
+    if (daeSystemClass.systemConfig.toolProficiencies && foundry.utils.getProperty(actorModelSchemaFields, "tools")) {
+      const toolProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.toolProficiencies);
       const ids = daeSystemClass.systemConfig[`toolIds`];
       if (ids !== undefined) {
         for (const [key, id] of Object.entries(ids)) {
@@ -183,7 +183,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues[`flags.${game.system.id}.spellCriticalThreshold`];
 
     //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
-    if (getProperty(this.getActorDataModelFields(actorType), "bonuses.fields.spell"))
+    if (foundry.utils.getProperty(this.getActorDataModelFields(actorType), "bonuses.fields.spell"))
       baseValues["system.bonuses.spell.dc"] = 0;
     Object.keys(baseValues).forEach(key => {
       // can't modify many spell details.
@@ -207,12 +207,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // baseValues["system.traits.ci.value"] = ["", modes.CUSTOM];
     baseValues["system.traits.ci.custom"] = ["", modes.CUSTOM];
 
-    if (daeSystemClass.systemConfig.weaponProficiencies) {
+    if (baseValues["system.traits.weaponProf.value"]) {
       baseValues["system.traits.weaponProf.all"] = [false, modes.CUSTOM];
       //      baseValues["system.traits.weaponProf.value"] = [[], -1];
       baseValues["system.traits.weaponProf.custom"] = ["", modes.CUSTOM];
     }
-    if (daeSystemClass.systemConfig.armorProficiencies) {
+    if (baseValues["system.traits.armorProf.value"]) {
       baseValues["system.traits.armorProf.all"] = [false, modes.CUSTOM];
       //      baseValues["system.traits.armorProf.value"] = ["", -1];
       baseValues["system.traits.armorProf.custom"] = ["", modes.CUSTOM];
@@ -295,7 +295,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.traits.damageTypes.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     }
 
-    if (getProperty(actorModelSchemaFields, "resources")) {
+    if (foundry.utils.getProperty(actorModelSchemaFields, "resources")) {
       specials["system.resources.primary.max"] = [0, -1];
       specials["system.resources.primary.label"] = ["", -1];
       specials["system.resources.secondary.max"] = [0, -1];
@@ -312,8 +312,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         }
       }
     }
-    if (getProperty(actorModelSchemaFields, "spells")) {
-      for (let spellSpec of (getProperty(actorModelSchemaFields, "spells.initialKeys") ?? []))
+    if (foundry.utils.getProperty(actorModelSchemaFields, "spells")) {
+      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") ?? []))
         specials[`system.spells.${spellSpec}.max`] = [0, -1];
     }
 
@@ -331,7 +331,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (game.modules.get("tidy5e-sheet")?.active)
       specials["system.details.maxPreparedSpells"] = [0, -1];
     // change movement effects to be after prepareDerivedData
-    if (getProperty(actorModelSchemaFields, "attributes.fields.movement")) {
+    if (foundry.utils.getProperty(actorModelSchemaFields, "attributes.fields.movement")) {
       for (let key of Object.keys(daeSystemClass.systemConfig.movementTypes)) {
         specials[`system.attributes.movement.${key}`] = [0, -1];
       }
@@ -357,15 +357,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const systemVersion = game.system.version;
     // Do the system specific part
     // 1. abilities add mod and save to each;
-    if (daeSystemClass.systemConfig.abilities && getProperty(actorModelSchemaFields, "abilities")) Object.keys(daeSystemClass.systemConfig.abilities).forEach(ablKey => {
+    if (daeSystemClass.systemConfig.abilities && foundry.utils.getProperty(actorModelSchemaFields, "abilities")) Object.keys(daeSystemClass.systemConfig.abilities).forEach(ablKey => {
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.mod`, 0, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.save`, 0, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.min`, 0, 0))
       derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.max`, 0, 0))
     })
     /*
-    if (daeSystemClass.systemConfig.toolProficiencies && getProperty(actorModelSchemaFields, "tools")) {
-      const toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
+    if (daeSystemClass.systemConfig.toolProficiencies && foundry.utils.getProperty(actorModelSchemaFields, "tools")) {
+      const toolProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.toolProficiencies);
       const ids = daeSystemClass.systemConfig[`toolIds`];
       if (ids !== undefined) {
         for (const [key, id] of Object.entries(ids)) {
@@ -383,7 +383,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // adjust specs for bonuses - these are strings, @fields are looked up but dice are not rolled.
 
     // Skills add mod, passive and bonus fields
-    if (daeSystemClass.systemConfig.skill && getProperty(actorModelSchemaFields, "skills")) Object.keys(daeSystemClass.systemConfig.skills).forEach(sklKey => {
+    if (daeSystemClass.systemConfig.skill && foundry.utils.getProperty(actorModelSchemaFields, "skills")) Object.keys(daeSystemClass.systemConfig.skills).forEach(sklKey => {
       derivedSpecs.push(new ValidSpec(`system.skills.${sklKey}.mod`, 0))
       derivedSpecs.push(new ValidSpec(`system.skills.${sklKey}.passive`, 0))
     })
@@ -455,7 +455,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
     //@ts-expect-error .version
-    if (game.system.id === "dnd5e" && isNewerVersion("2.3.0", game.system.version)) {
+    if (game.system.id === "dnd5e" && foundry.utils.isNewerVersion("2.3.0", game.system.version)) {
       Object.keys(CONFIG.Item.sheetClasses.base).forEach(sheetId => {
         libWrapper.register("dae", `CONFIG.Item.sheetClasses.base['${sheetId}'].cls.prototype._onDropActiveEffect`, _onDropActiveEffect, "OVERRIDE");
       })
@@ -493,7 +493,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
       Object.keys(daeSystemClass.systemConfig.abilities).forEach(abl => {
         //@ts-expect-error .version
-        let ablString = isNewerVersion(game.system.version, "2.1.5")
+        let ablString = foundry.utils.isNewerVersion(game.system.version, "2.1.5")
           ? daeSystemClass.systemConfig.abilities[abl].label
           : daeSystemClass.systemConfig.abilities[abl];
         daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}`;
@@ -502,7 +502,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isCheckDetail")}`;
       })
       //@ts-expect-error
-      if (isNewerVersion(game.system.version, "2.9.99")) {
+      if (foundry.utils.isNewerVersion(game.system.version, "2.9.99")) {
         Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(key => {
           daeSpecialDurations[`isDamaged.${key}`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.damageTypes[key].label}`;
         });
@@ -513,7 +513,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         });
       }
       //@ts-expect-error
-      if (isNewerVersion(game.system.version, "2.9.99")) {
+      if (foundry.utils.isNewerVersion(game.system.version, "2.9.99")) {
         daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.healingTypes["healing"].label}`;
       } else {
         daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.healingTypes["healing"]}`;
@@ -596,15 +596,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   public static configureLists(daeConfig: DAEActiveEffectConfig | null) {
     //@ts-expect-error
     const systemVersion = game.system.version;
-    // this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
-    // this.traitList = duplicate(daeSystemClass.systemConfig.damageTypes);
-    // this.traitList = mergeObject(this.traitList, daeSystemClass.systemConfig.healingTypes);
+    // this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
+    // this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageTypes);
+    // this.traitList = foundry.utils.mergeObject(this.traitList, daeSystemClass.systemConfig.healingTypes);
 
     const damageTypes = Object.values(daeSystemClass.systemConfig.damageTypes);
-    if (isNewerVersion(systemVersion, "2.99")) {
+    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
     } else {
-      this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
+      this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
       const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
       this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
         .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {});
@@ -612,23 +612,23 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageResistanceTypes[type]}`;
       });
     }
-    this.bypassesList = duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
+    this.bypassesList = foundry.utils.duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
 
-    this.languageList = duplicate(daeSystemClass.systemConfig.languages);
+    this.languageList = foundry.utils.duplicate(daeSystemClass.systemConfig.languages);
     Object.keys(daeSystemClass.systemConfig.languages).forEach(type => {
       //@ts-expect-error .version
-      if (isNewerVersion(game.system.version, "2.3.9")) {
+      if (foundry.utils.isNewerVersion(game.system.version, "2.3.9")) {
         this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
       } else this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type]}`;
     });
-    if (isNewerVersion(systemVersion, "2.99")) {
+    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       const dt = Object.keys(daeSystemClass.systemConfig.damageTypes).concat(Object.keys(daeSystemClass.systemConfig.healingTypes));
       this.traitList = dt.reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key]?.label ?? daeSystemClass.systemConfig.healingTypes[key].label; return obj }, {})
       const drTypeKeys = Object.keys(daeSystemClass.systemConfig.damageTypes);
       this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes;
       // come back and see if this can be used to set damage resistance list
     } else {
-      this.traitList = duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
+      this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
       const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
       this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
         .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {});
@@ -636,7 +636,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageResistanceTypes[type]}`;
       });
     }
-    this.bypassesList = duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
+    this.bypassesList = foundry.utils.duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
     this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
 
     this.armorClassCalcList = {};
@@ -645,7 +645,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
     this.conditionList = {};
-    if (isNewerVersion(systemVersion, "2.99")) {
+    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(ct => {
         this.conditionList[ct] = daeSystemClass.systemConfig.conditionTypes[ct].label;
       });
@@ -655,17 +655,17 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       });
     }
 
-    this.toolProfList = duplicate(daeSystemClass.systemConfig.toolProficiencies);
+    this.toolProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.toolProficiencies);
     Object.keys(daeSystemClass.systemConfig.toolProficiencies).forEach(type => {
       this.toolProfList[`-${type}`] = `-${daeSystemClass.systemConfig.toolProficiencies[type]}`;
     });
 
-    this.armorProfList = duplicate(daeSystemClass.systemConfig.armorProficiencies);
+    this.armorProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.armorProficiencies);
     Object.keys(daeSystemClass.systemConfig.armorProficiencies).forEach(type => {
       this.armorProfList[`-${type}`] = `-${daeSystemClass.systemConfig.armorProficiencies[type]}`;
     });
 
-    this.weaponProfList = duplicate(daeSystemClass.systemConfig.weaponProficiencies);
+    this.weaponProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.weaponProficiencies);
     Object.keys(daeSystemClass.systemConfig.weaponProficiencies).forEach(type => {
       this.weaponProfList[`-${type}`] = `-${daeSystemClass.systemConfig.weaponProficiencies[type]}`;
     });
@@ -752,7 +752,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   public static daeCustomEffect(actor, change, current, delta, changes) {
     if (!super.daeCustomEffect(actor, change)) return;
     const systemConfig = daeSystemClass.systemConfig;
-    // const current = getProperty(actor, change.key);
+    // const current = foundry.utils.getProperty(actor, change.key);
     var validValues;
     var value;
     if (typeof change?.key !== "string") return true;
@@ -762,22 +762,22 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       if (change.value === "ItemMacro" && change.effect?.origin?.includes("Item.")) { // rewrite the ItemMacro if there is an origin
         macroRef = `ItemMacro.${change.effect.origin}`;
       }
-      const current = getProperty(actor, change.key);
+      const current = foundry.utils.getProperty(actor, change.key);
       // includes wont work for macro names that are subsets of other macro names
       if (noDupDamageMacro && current?.split(",").some(macro => macro === macroRef)) return true;
-      setProperty(actor, change.key, current ? `${current},${macroRef}` : macroRef)
+      foundry.utils.setProperty(actor, change.key, current ? `${current},${macroRef}` : macroRef)
       return true;
     }
     if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]) {
       if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type !== String) {
         const type = daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type ?? Boolean;
         const rollData = actor.getRollData();
-        const flagValue = getProperty(rollData, change.key) || 0;
+        const flagValue = foundry.utils.getProperty(rollData, change.key) || 0;
         // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
-        setProperty(rollData, change.key, flagValue);
+        foundry.utils.setProperty(rollData, change.key, flagValue);
         let value = this.safeEval(this.safeEvalExpression(change.value, rollData), rollData);
-        if (type === Boolean) setProperty(actor, change.key, value ? true : false);
-        else setProperty(actor, change.key, value);
+        if (type === Boolean) foundry.utils.setProperty(actor, change.key, value ? true : false);
+        else foundry.utils.setProperty(actor, change.key, value);
         return true;
       }
 
@@ -786,21 +786,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     }
     if (change.key.startsWith("system.skills.") && change.key.endsWith(".value")) {
-      const currentProf = getProperty(actor, change.key) || 0;
+      const currentProf = foundry.utils.getProperty(actor, change.key) || 0;
       const profValues = { "0.5": 0.5, "1": 1, "2": 2 };
       const upgrade = profValues[change.value]
       if (upgrade === undefined) return;
       let newProf = Number(currentProf) + upgrade;
       if (newProf > 1 && newProf < 2) newProf = 1;
       if (newProf > 2) newProf = 2;
-      return setProperty(actor, change.key, newProf);
+      return foundry.utils.setProperty(actor, change.key, newProf);
     }
 
     if (change.key.startsWith("system.abilities") && (change.key.endsWith("bonuses.save") || change.key.endsWith("bonuses.check"))) {
       value = change.value;
-      if (!current) return setProperty(actor, change.key, value)
+      if (!current) return foundry.utils.setProperty(actor, change.key, value)
       value = current + ((change.value.startsWith("+") || change.value.startsWith("-")) ? change.value : "+" + change.value);
-      return setProperty(actor, change.key, value)
+      return foundry.utils.setProperty(actor, change.key, value)
     }
 
     if (change.key.startsWith("system.tools")) {
@@ -813,7 +813,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
       }
       const [_1, _2, tool, key] = change.key.split(".");
-      current[tool] = mergeObject({ value: 1, ability: "int", bonuses: { check: "" } }, current[tool] ?? {})
+      current[tool] = foundry.utils.mergeObject({ value: 1, ability: "int", bonuses: { check: "" } }, current[tool] ?? {})
       if (key === "prof") {
         value = Number(change.value);
         current[tool].value = value;
@@ -822,14 +822,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         current[tool].ability = change.value;
       }
       if (key === "bonus") {
-        setProperty(current[tool], "bonuses.check", change.value);
+        foundry.utils.setProperty(current[tool], "bonuses.check", change.value);
       }
       return true;
     }
 
     switch (change.key) {
       case "system.attributes.movement.hover":
-        setProperty(actor, change.key, change.value ? true : false);
+        foundry.utils.setProperty(actor, change.key, change.value ? true : false);
         return true;
       case "system.traits.di.all":
       case "system.traits.dr.all":
@@ -839,13 +839,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdv.all":
         const key = change.key.replace(".all", ".value")
         //@ts-expect-error
-        if (isNewerVersion(game.system.version, "2.99")) {
-          setProperty(actor, key, new Set(Object.keys(systemConfig.damageTypes).filter(k => !["healing", "temphp"].includes(k))));
+        if (foundry.utils.isNewerVersion(game.system.version, "2.99")) {
+          foundry.utils.setProperty(actor, key, new Set(Object.keys(systemConfig.damageTypes).filter(k => !["healing", "temphp"].includes(k))));
         } else {
-          if (getProperty(actor, key) instanceof Set)
-            setProperty(actor, key, new Set(Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k))));
+          if (foundry.utils.getProperty(actor, key) instanceof Set)
+            foundry.utils.setProperty(actor, key, new Set(Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k))));
           else
-            setProperty(actor, key, Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
+            foundry.utils.setProperty(actor, key, Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
         }
         return true;
       case "system.traits.di.value":
@@ -859,7 +859,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.idr.value":
       case "system.traits.idv.value":
       case "system.traits.ida.value":
-        if (isNewerVersion(systemConfig.version, "2.99")) {
+        if (foundry.utils.isNewerVersion(systemConfig.version, "2.99")) {
           return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageTypes));
         } else {
           return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageResistanceTypes));
@@ -879,7 +879,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         const traitSet = new Set(value);
         traitSet.add(change.value);
         value = Array.from(traitSet).join("; ");
-        setProperty(actor, change.key, value)
+        foundry.utils.setProperty(actor, change.key, value)
         return true;
       case "system.traits.languages.custom":
       case "system.traits.armorProf.custom":
@@ -888,39 +888,44 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         const setValue = new Set(value);
         setValue.add(change.value);
         value = Array.from(setValue).join("; ");
-        setProperty(actor, change.key, value)
+        foundry.utils.setProperty(actor, change.key, value)
         return true;
       case "system.traits.languages.all":
         if (actor.system.traits.languages.value instanceof Set)
-          setProperty(actor, "system.traits.languages.value", new Set(Object.keys(systemConfig.languages)))
+          foundry.utils.setProperty(actor, "system.traits.languages.value", new Set(Object.keys(systemConfig.languages)))
         else
-          setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
+          foundry.utils.setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
         return true;
       case "system.traits.languages.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(this.languageList));
       case "system.traits.ci.all":
         if (actor.system.traits.ci.value instanceof Set)
-          setProperty(actor, "system.traits.ci.value", new Set(Object.keys(systemConfig.conditionTypes)))
+          foundry.utils.setProperty(actor, "system.traits.ci.value", new Set(Object.keys(systemConfig.conditionTypes)))
         else
-          setProperty(actor, "system.traits.ci.value", Object.keys(systemConfig.conditionTypes))
+          foundry.utils.setProperty(actor, "system.traits.ci.value", Object.keys(systemConfig.conditionTypes))
         return true;
       case "system.traits.ci.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.conditionTypes))
       case "system.traits.armorProf.value":
         return super.doCustomArrayValue(actor, current, change, undefined)
       case "system.traits.armorProf.all":
-        if (actor.system.traits.armorProf.value instanceof Set)
-          setProperty(actor, "system.traits.armorProf.value", new Set(Object.keys(this.armorProfList).filter(k => !k.startsWith("-"))));
-        else
-          setProperty(actor, "system.traits.armorProf.value", Object.keys(this.armorProfList).filter(k => !k.startsWith("-")));
+        if (actor.system.traits.armorProf?.value) {
+          if (actor.system.traits.armorProf?.value instanceof Set)
+            foundry.utils.setProperty(actor, "system.traits.armorProf.value", new Set(Object.keys(this.armorProfList).filter(k => !k.startsWith("-"))));
+          else
+            foundry.utils.setProperty(actor, "system.traits.armorProf.value", Object.keys(this.armorProfList).filter(k => !k.startsWith("-")));
+        }
         return true;
+
       case "system.traits.weaponProf.value": // TODO v10 armor and weapon proiciencies
         return super.doCustomArrayValue(actor, current, change, undefined)
       case "system.traits.weaponProf.all":
-        if (actor.system.traits.weaponProf.value instanceof Set)
-          setProperty(actor, "system.traits.weaponProf.value", new Set(Object.keys(this.weaponProfList).filter(k => !k.startsWith("-"))));
-        else
-          setProperty(actor, "system.traits.weaponProf.value", Object.keys(this.weaponProfList).filter(k => !k.startsWith("-")));
+        if (actor.system.traits.weaponProf?.value) {
+          if (actor.system.traits.weaponProf.value instanceof Set)
+            foundry.utils.setProperty(actor, "system.traits.weaponProf.value", new Set(Object.keys(this.weaponProfList).filter(k => !k.startsWith("-"))));
+          else
+            foundry.utils.setProperty(actor, "system.traits.weaponProf.value", Object.keys(this.weaponProfList).filter(k => !k.startsWith("-")));
+        }
         return true;
       case "system.bonuses.weapon.damage":
         value = this.attackDamageBonusEval(change.value, actor)
@@ -960,7 +965,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         value = result;
         if (current)
           value = (result.startsWith("+") || result.startsWith("-")) ? result : "+" + result;
-        setProperty(actor, change.key, (current || "") + value);
+        foundry.utils.setProperty(actor, change.key, (current || "") + value);
         return true;
 
       case "system.attributes.movement.all":
@@ -980,7 +985,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
             valueString = `${movement[key]} ${change.value}`;
           }
           try {
-            let result = (new Roll(valueString, actor.getRollData())).evaluate({ async: false }).total
+            const roll = new Roll(valueString, actor.getRollData());
+            let result;
+            //@ts-expect-error
+            if (roll.evaluateSync) { // V12
+              if (!roll.isDeterministic) {
+                error(`Error evaluating system.attributes.movement.all = ${valueString}. Roll is not deterministic for ${actor.name} ${actor.uuid} dice terms ignored`)
+              }
+              //@ts-expect-error
+              result = roll.evaluateSync({ strict: false }).total;
+            } else {
+              if (!roll.isDeterministic) {
+                console.warn(`%c ae | Error evaluating system.attributes.movement.all = ${valueString}: Roll is not deterministic for ${actor.name} ${actor.uuid} dice terms will be ignored in V12`, "color: red;")
+              }
+              result = roll.evaluate({ async: false }).total
+            }
             movement[key] = Math.floor(Math.max(0, result) + 0.5);
           } catch (err) {
             console.warn(`dae | Error evaluating custom movement.all = ${valueString}`, key, err)
@@ -1004,11 +1023,24 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           value = parseInt(change.value);
         } else {
           try {
-            value = (new Roll(change.value, actor.getRollData())).evaluate({ async: false }).total;
+            const roll = new Roll(change.value, actor.getRollData());
+            //@ts-expect-error
+            if (roll.evaluateSync) {
+              if (!roll.isDeterministic) {
+                error(`Error evaluating ${change.key} = ${change.value}`, `Roll is not deterministic for ${actor.name} dice terms ignored`)
+              }
+              //@ts-expect-error
+              value = roll.evaluateSync({ strict: false }).total;
+            } else {
+              if (!roll.isDeterministic) {
+                console.warn(`%c dae | Error evaluating ${change.key} = ${change.value}. Roll is not deterministic for ${actor.name} ${actor.uuid} dice terms will be ignored in V12`, "color: red")
+              }
+              value = roll.evaluate({ async: false }).total;
+            }
           } catch (err) { };
         }
         if (value !== undefined) {
-          setProperty(actor, change.key, Number(current) + value);
+          foundry.utils.setProperty(actor, change.key, Number(current) + value);
         } else return;
 
         // Spellcasting DC
@@ -1029,11 +1061,24 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         const flagName = list[0];
         let formula = list.splice(1).join(" ")
         const rollData = actor.getRollData();
-        const flagValue = getProperty(rollData.flags, `dae.${flagName}`) || 0;
+        const flagValue = foundry.utils.getProperty(rollData.flags, `dae.${flagName}`) || 0;
         // ensure the flag is not undefined when doing the roll, supports flagName @flags.dae.flagName + 1
-        setProperty(rollData, `flags.dae.${flagName}`, flagValue);
-        value = new Roll(formula, rollData).evaluate({ async: false }).total;
-        setProperty(actor, `flags.dae.${flagName}`, value);
+        foundry.utils.setProperty(rollData, `flags.dae.${flagName}`, flagValue);
+        let roll = new Roll(formula, rollData);
+        //@ts-expect-error
+        if (roll.evaluateSync) {
+          if (!roll.isDeterministic) {
+            error(`dae | Error evaluating flags.dae.${flagName} = ${formula}. Roll is not deterministic for ${actor.name} ${actor.uuid} dice terms ignored`)
+          }
+          //@ts-expect-error
+          value = roll.evaluateSync({ strict: false }).total;
+        } else {
+          if (!roll.isDeterministic) {
+            console.warn(`%c Error evaluating flags.dae.${flagName} = ${formula}. Roll is not deterministic for ${actor.name} ${actor.uuid} dice terms will be ignored in V12`, "color: red;")
+          }
+          value = roll.evaluate({ async: false }).total;
+        }
+        foundry.utils.setProperty(actor, `flags.dae.${flagName}`, value);
         return true;
     }
   }
@@ -1055,7 +1100,7 @@ function applyBaseActiveEffectsdnd5e() {
   traitsCI["system.traits.ci.value"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.value"];
   applyDaeEffects.bind(this)({ specList: traitsCI, completedSpecs: {}, allowAllSpecs: false, wildeCardsInclude: [], wildCardsExclude: [], doStatusEffects: false })
   this.effects.forEach(e => e.determineSuppression());
-  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclue: [], doStatusEffects: true });
+  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclue: [], doStatusEffects: false });
 }
 
 function getRollData(wrapped, ...args) {
@@ -1125,29 +1170,19 @@ function prepareData(wrapped) {
         }
       }
     }
-    debug("prepare data: before passes", this.name, this._source);
-    const specialStatuses = new Map();
-    if (isNewerVersion(game.version, "11.293")) {
-      this.statuses = this.statuses ?? new Set();
-      // Identify which special statuses had been active
 
-      for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
-        specialStatuses.set(statusId, this.statuses.has(statusId));
-      }
-      this.statuses.clear();
-    }
-    setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
+    foundry.utils.setProperty(this, "flags.dae.onUpdateTarget", foundry.utils.getProperty(this._source, "flags.dae.onUpdateTarget"));
 
     this.overrides = {};
-    const wildCards = [/flags\.base\.dae\..*/];
-    applyDaeEffects.bind(this)({ specList: {}, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildCards, wildCardsExclude: wildcardEffects, doStatusEffects: false });
+    // const wildCards = [/flags\.base\.dae\..*/];
+    // applyDaeEffects.bind(this)({ specList: {}, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildCards, wildCardsExclude: wildcardEffects, doStatusEffects: false });
     wrapped();
-    if (isNewerVersion(systemVersion, "2.99")) {
+    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       const hasHeavy = this.items.find(i => i.system.equipped && i.system.properties.has("stealthDisadvantage")) !== undefined;
-      if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
+      if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
     } else {
       const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
-      if (hasHeavy) setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
+      if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
     }
     applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
 
@@ -1157,22 +1192,6 @@ function prepareData(wrapped) {
     const rollData = this.getRollData();
     const checkBonus = simplifyBonus(globalBonuses?.check, rollData);
     this._prepareInitiative(rollData, checkBonus);
-
-    // Fix for dnd5e _prepareSpellcasting overwriting the _source pact.value
-    const pact = this.system.spells?.pact;
-    /* if (pact)
-      pact.value = this._source.system.spells.pact?.value;
-      */
-    if (isNewerVersion(game.version, "11.293")) {
-      // Apply special statuses that changed to active tokens
-      let tokens;
-      for (const [statusId, wasActive] of specialStatuses) {
-        const isActive = this.statuses.has(statusId);
-        if (isActive === wasActive) continue;
-        tokens = tokens ?? this.getActiveTokens();
-        for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
-      }
-    }
     debug("prepare data: after passes", this);
   } catch (err) {
     console.error("Could not prepare data ", this.name, err);
@@ -1264,7 +1283,7 @@ function patchPrepareArmorClassAttribution() {
   //@ts-expect-error
   const systemVersion = game.system.version;
   if (game.system.id === "dnd5e") {
-    if (isNewerVersion(systemVersion, "2.99")) {
+    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
 
     } else {
@@ -1311,7 +1330,7 @@ function determineSuppression() {
   // DND5e currently does not work with unlinked tokens and suppression determination so this is overtide
   // TODO make this a WRAPPER when dnd5e fixes the unlinked token bug
 
-  if (globalThis.MidiQOL && getProperty(this, "flags.dae.disableIncapacitated")) {
+  if (globalThis.MidiQOL && foundry.utils.getProperty(this, "flags.dae.disableIncapacitated")) {
     let actor;
     if (this.parent instanceof CONFIG.Actor.documentClass) actor = this.parent;
     else if (this.parent instanceof CONFIG.Item.documentClass) actor = this.parent.parent;
@@ -1332,8 +1351,8 @@ function determineSuppression() {
   if (this.parent?.system.traits) {
     let customStats: Array<string> = this.parent.system.traits.ci?.custom?.split(';').map(s => s.trim().toLocaleLowerCase());
     const ci = new Set([...(this.parent.system.traits?.ci?.value ?? []), ...customStats]);
-    const statusId = duplicate(this.name ?? "no effect").toLocaleLowerCase();
-    const capStatusId = duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
+    const statusId = foundry.utils.duplicate(this.name ?? "no effect").toLocaleLowerCase();
+    const capStatusId = foundry.utils.duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
     const ciSuppressed = ci?.has(statusId) || ci?.has(`Convenient Effect: ${capStatusId}`);
     if (Boolean(ciSuppressed)) this.isSuppressed = true;
   }
@@ -1380,7 +1399,7 @@ function preUpdateItemHook(candidateItem, updates, options, user) {
       /*
       // Toggle macro.XX effects
       if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
-        setProperty(effect, "flags.dae.itemUuid", candidateItem.uuid);
+        foundry.utils.setProperty(effect, "flags.dae.itemUuid", candidateItem.uuid);
       */
       warn("action queue add suppressed ", actionQueue._queue.length)
     }
@@ -1392,7 +1411,7 @@ function preUpdateItemHook(candidateItem, updates, options, user) {
 }
 
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
-setProperty(globalThis.daeSystems, "dnd5e", DAESystemDND5E);
+foundry.utils.setProperty(globalThis.daeSystems, "dnd5e", DAESystemDND5E);
 
 async function _onDropActiveEffect(event, data) {
   //@ts-expect-error

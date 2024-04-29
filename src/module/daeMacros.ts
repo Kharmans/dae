@@ -190,7 +190,7 @@ export let macroReadySetup = () => {
 
 export function getTokenFlag(token: Token | any /* TokenDocument*/, flagName: string) {
   const tokenDocument = token.document ? token.document: token;
-  return getProperty(token.document, `flags.dae.${flagName}`);
+  return foundry.utils.getProperty(token.document, `flags.dae.${flagName}`);
 }
 
 export async function deleteItemActiveEffects(tokens: Array<string | Token | any /* TokenDocument */>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
@@ -232,8 +232,8 @@ export function getFlag(entity: Actor | Token | string, flagId: string) {
       theActor = entity.actor;
   }
   if (!theActor) return error(`dae.getFlag: actor not defined`)
-  warn("dae get flag ", entity, theActor, getProperty(theActor, `flags.dae.${flagId}`))
-  return getProperty(theActor, `flags.dae.${flagId}`)
+  warn("dae get flag ", entity, theActor, foundry.utils.getProperty(theActor, `flags.dae.${flagId}`))
+  return foundry.utils.getProperty(theActor, `flags.dae.${flagId}`)
 }
 
 export async function setFlag(tactor: Actor | Token | string, flagId: string, value: any) {
@@ -291,10 +291,10 @@ export async function macroActorUpdate(...args) {
   actor = tactor.actor ? tactor.actor : tactor;
   // const fieldDef = `flags.dae.save.${targetField}`;
   const fieldDef = `flags.dae.actorUpdate.${targetField}`;
-  let actorValue = getProperty(actor, targetField);
+  let actorValue = foundry.utils.getProperty(actor, targetField);
   if (args[0] === "each") {
     // for subsequent executions we have to recover the origianl actor value from the saved value.
-    const fieldValue = getProperty(actor, fieldDef);
+    const fieldValue = foundry.utils.getProperty(actor, fieldDef);
     actorValue = fieldValue.actorValue;
   }
   const rollContext = actor.getRollData();
@@ -325,7 +325,7 @@ export async function macroActorUpdate(...args) {
     if (actor.isOwner) return await actor.update(update);
     else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update});
   } else if (args[0] === "off") {
-    const {oldValue = undefined, updateValue} = getProperty(actor, fieldDef);
+    const {oldValue = undefined, updateValue} = foundry.utils.getProperty(actor, fieldDef);
     let restoreValue;
     if (undo === undefined) undo = true;
     if (typeof undo === "string") undo = undo.replace(/(\*\*(.+?)\*\*)/g, "@$2");

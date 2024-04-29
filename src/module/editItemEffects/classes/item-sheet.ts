@@ -75,7 +75,7 @@ export class ItemEffectsItemSheet {
     const gameSystem = game.system.id;
     //@ts-expect-error
     const gameVersion = game.system.version;
-    if (gameSystem === "dnd5e" && isNewerVersion("2.9.99", gameVersion)) {
+    if (gameSystem === "dnd5e" && foundry.utils.isNewerVersion("2.9.99", gameVersion)) {
       html.find(".effect-control").unbind('click');
       html.find('.effect-control').off("click");
       html.find('.effect-control').click((ev) => {

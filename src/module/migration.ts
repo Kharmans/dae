@@ -104,9 +104,9 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
         else replaceData = findDAEItem(item, [midiFeatsPack, daeFeatsPack]);
         if (replaceData) console.warn("migrating", actor.name, replaceData.name, replaceData)
         if (replaceData) {
-          setProperty(replaceData, "equipped", item.equipped)
-          setProperty(replaceData, "attunement", item.attunement)
-          setProperty(replaceData.flags, "dae.migrated", true);
+          foundry.utils.setProperty(replaceData, "equipped", item.equipped)
+          foundry.utils.setProperty(replaceData, "attunement", item.attunement)
+          foundry.utils.setProperty(replaceData.flags, "dae.migrated", true);
           replaceItems.push(replaceData.toObject());
           count++;
         }
@@ -117,8 +117,8 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
         else replaceData = findDAEItem(item, [midiSpellPack, daeSpellPack]);
         if (replaceData) console.warn("migrating ", actor.name, replaceData.name, replaceData)
         if (replaceData) {
-          setProperty(replaceData, "prepared", item.prepared)
-          setProperty(replaceData.flags, "dae.migrated", true);
+          foundry.utils.setProperty(replaceData, "prepared", item.prepared)
+          foundry.utils.setProperty(replaceData.flags, "dae.migrated", true);
           replaceItems.push(replaceData.toObject());
           count++;
         }
@@ -134,9 +134,9 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
         else replaceData = findDAEItem(item, [midiItemPack, daeItemPack, magicItemsPack]);
         if (replaceData) console.warn("migrated", actor.name, replaceData.name, replaceData)
         if (replaceData) {
-          setProperty(replaceData, "data.equipped", item.equipped)
-          setProperty(replaceData, "data.attunement", item.attunement)
-          setProperty(replaceData.flags, "dae.migrated", true);
+          foundry.utils.setProperty(replaceData, "data.equipped", item.equipped)
+          foundry.utils.setProperty(replaceData, "data.attunement", item.attunement)
+          foundry.utils.setProperty(replaceData.flags, "dae.migrated", true);
           replaceItems.push(replaceData.toObject());
           count++;
         }
@@ -164,7 +164,7 @@ function removeDynamiceffects(actor) {
 
 export function checkLibWrapperVersion() {
   //@ts-expect-error .version
-  if (isNewerVersion("1.8.0", game.modules.get("lib-wrapper")?.version)) {
+  if (foundry.utils.isNewerVersion("1.8.0", game.modules.get("lib-wrapper")?.version)) {
     let d = new Dialog({
       // localize this text
       title: i18n("dae.confirm"),
@@ -313,7 +313,7 @@ export async function tobMapper(iconsPath = "icons/TOBTokens") {
   if (!pack) return;
   //@ts-expect-error ._source
   let details: any[] = pack?.contents.map(a => a._source);
-  let detailNames = duplicate(details).map(detail => {
+  let detailNames = foundry.utils.duplicate(details).map(detail => {
     let name = detail.name
       .replace(/[_\-,'"]/g, "")
       .replace(" of", "")
@@ -400,7 +400,7 @@ async function removeDaePassiveEffectsActor(actor, skipOrigins = false) {
     return;
   }
   if (!actor) return;
-  const effectsToDelete = actor.effects.filter(ef => getProperty(ef, "flags.dae.transfer"));
+  const effectsToDelete = actor.effects.filter(ef => foundry.utils.getProperty(ef, "flags.dae.transfer"));
   if (effectsToDelete?.length > 0) {
     console.log("Actor ", actor.name, "removing legacy effects", effectsToDelete.map(ef => ef.name));
     await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id));

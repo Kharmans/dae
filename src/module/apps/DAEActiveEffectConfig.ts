@@ -63,7 +63,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     efl = efl.filter(se => se.id)
       .map(se => {
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
-        if (getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
+        if (foundry.utils.getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
         return { id: se.id, name: i18n(se.name ?? se.label) };
       })
       .sort((a, b) => a.name < b.name ? -1 : 1);
@@ -112,7 +112,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /** @override */
   static get defaultOptions() {
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ["sheet", "active-effect-sheet window-app"],
       title: "EFFECT.ConfigTitle",
       template: `./modules/dae/templates/DAEActiveSheetConfig.html`,
@@ -155,12 +155,17 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /** @override */
   async getData(options) {
-    if (getProperty(this.object, "flags.dae.specialDuration") === undefined)
-      setProperty(this.object, "flags.dae.specialDuration", []);
-    if (getProperty(this.object, "flags.dae.stackable") === undefined)
-      setProperty(this.object, "flags.dae.stackable", "noneName");
+    if (foundry.utils.getProperty(this.object, "flags.dae.specialDuration") === undefined)
+      foundry.utils.setProperty(this.object, "flags.dae.specialDuration", []);
+    if (foundry.utils.getProperty(this.object, "flags.dae.stackable") === undefined)
+      foundry.utils.setProperty(this.object, "flags.dae.stackable", "noneName");
     const data: any = await super.getData(options);
-    let validSpecsToUse = ValidSpec.specs["union"]; // TODO this needs to be thought about
+    let validSpecsToUse;
+    if (!this.object.parent || !(this.object.parent instanceof CONFIG.Actor.documentClass)) {
+      validSpecsToUse = ValidSpec.specs["union"];
+    } else {
+      validSpecsToUse = ValidSpec.specs[this.object.parent.type];
+    }
     await daeSystemClass.editConfig();
 
     const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)
@@ -210,12 +215,14 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         data.durationString = duration.date + " " + duration.time;
       }
     }
-    setProperty(data.effect, "flags.dae.durationExpression", this.object.flags?.dae?.durationExpression);
+    foundry.utils.setProperty(data.effect, "flags.dae.durationExpression", this.object.flags?.dae?.durationExpression);
     if (!data.effect.flags?.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
-      setProperty(data.effect.flags, "dae.specialDuration", []);
+      foundry.utils.setProperty(data.effect.flags, "dae.specialDuration", []);
     data.sourceName = await this.object.sourceName;
     data.fieldsList = this.fieldsList;
     data.midiActive = globalThis.MidiQOL !== undefined;
+    //@ts-expect-error
+    data.useIcon = game.release.generation < 12;
     return data;
   }
 
@@ -278,7 +285,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   _addSpecDuration() {
     const idx = this.object.flags?.dae.specialDuration?.length ?? 0;
-    if (idx === 0) setProperty(this.object, "flags.dae.specialDuration", []);
+    if (idx === 0) foundry.utils.setProperty(this.object, "flags.dae.specialDuration", []);
     return this.submit({
       preventClose: true, updateData: {
         [`flags.dae.specialDuration.${idx}`]: ""
@@ -309,7 +316,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
     if (data.transfer) data.origin = this.object.parent?.uuid;
     else delete data.origin;
-    setProperty(data, "flags.dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
+    foundry.utils.setProperty(data, "flags.dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
     return data;
   }
   /* ----------------------------------------- */

@@ -49,10 +49,12 @@ export class ValidSpec {
     //@ts-ignore
     const system = globalThis.CONFIG.DAE.systemClass;
 
-    for (let specKey of Object.keys(game.system.model.Actor)) {
+    // for (let specKey of Object.keys(game.system.model.Actor)) {
+    //@ts-expect-error dataModels
+    for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
       this.specs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
-      _characterSpec["system"] = duplicate(game.system.model.Actor[specKey]);
-      let baseValues = flattenObject(_characterSpec);
+      _characterSpec["system"] = game.system.model ? foundry.utils.duplicate(game.system.model.Actor[specKey]) : {};
+      let baseValues = foundry.utils.flattenObject(_characterSpec);
       for (let prop in baseValues) {
         baseValues[prop] = [baseValues[prop], -1];
       }
@@ -128,7 +130,8 @@ export class ValidSpec {
     let allSpecsObj = {};
     let baseSpecsObj = {}
     let derivedSpecsObj = {};
-    for (let specKey of Object.keys(game.system.model.Actor)) {
+    //@ts-expect-error
+    for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
       Object.keys(this.specs[specKey].allSpecsObj).forEach(key => allSpecsObj[key] = this.specs[specKey].allSpecsObj[key]);
       Object.keys(this.specs[specKey].baseSpecsObj).forEach(key => baseSpecsObj[key] = this.specs[specKey].baseSpecsObj[key]);
       Object.keys(this.specs[specKey].derivedSpecsObj).forEach(key => derivedSpecsObj[key] = this.specs[specKey].derivedSpecsObj[key]);
@@ -153,7 +156,8 @@ export class ValidSpec {
       ui.notifications.error("DAE | Initialisation failed - no specs defined");
       return;
     }
-    for (let specKey of Object.keys(game.system.model.Actor)) {
+    //@ts-expect-error dataModels
+    for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
       if (!this.specs[specKey]) continue; // not all of the actor types are defined in the system
       const fieldStart = `flags.${game.system.id}.`;
       this.specs[specKey].allSpecs = this.specs[specKey].allSpecs.map(m => {
@@ -203,10 +207,13 @@ export class DAESystem {
 
   public static getActorDataModelFields(actorType: string): any {
     //@ts-expect-error
+    return CONFIG.Actor.dataModels[actorType]?.schema?.fields;
+    /*
     const dataModels: any = game.system.dataModels;
     const actorModel: any = dataModels.actor;
     let actorModels = { "character": actorModel.CharacterData.schema.fields, "npc": actorModel.NPCData.schema.fields, "group": actorModel.GroupData.schema.fields, "vehicle": actorModel.VehicleData.schema.fields }
     return actorModels[actorType];
+    */
   }
 
   public static getRollDataFunc() {
@@ -270,39 +277,39 @@ export class DAESystem {
   public static doCustomValue(actor, current, change, validValues) {
     if ((current || []).includes(change.value)) return true;
     if (!validValues.includes(change.value)) return true;
-    setProperty(actor, change.key, current.concat([change.value]))
+    foundry.utils.setProperty(actor, change.key, current.concat([change.value]))
     return true;
   }
 
   public static doCustomArrayValue(actor, current, change, validValues: string[] | undefined) {
     if (current instanceof Array) {
-      if (getType(change.value) === "string" && change.value[0] === "-") {
+      if (foundry.utils.getType(change.value) === "string" && change.value[0] === "-") {
         const checkValue = change.value.slice(1);
         const currentIndex = (current ?? []).indexOf(checkValue)
         if (currentIndex === -1) return true;
         if (!validValues?.includes(checkValue)) return true;
-        const returnValue = duplicate(current);
+        const returnValue = foundry.utils.duplicate(current);
         returnValue.splice(currentIndex, 1)
-        setProperty(actor, change.key, returnValue);
+        foundry.utils.setProperty(actor, change.key, returnValue);
       } else {
         if ((current ?? []).includes(change.value)) return true;
         if (!validValues?.includes(change.value)) return true;
-        setProperty(actor, change.key, current.concat([change.value]))
+        foundry.utils.setProperty(actor, change.key, current.concat([change.value]))
       }
     } else if (current instanceof Set) {
-      if (getType(change.value) === "string" && change.value[0] === "-") {
+      if (foundry.utils.getType(change.value) === "string" && change.value[0] === "-") {
         const checkValue = change.value.slice(1);
         if (!current.has(checkValue)) return true;
         if (validValues && !validValues.includes(checkValue)) return true;
-        const returnValue = deepClone(current);
+        const returnValue = foundry.utils.deepClone(current);
         returnValue.delete(checkValue);
-        setProperty(actor, change.key, returnValue);
+        foundry.utils.setProperty(actor, change.key, returnValue);
       } else {
         if ((current ?? new Set()).has(change.value)) return true;
         if (validValues && !validValues.includes(change.value)) return true;
-        let returnValue = deepClone(current);
+        let returnValue = foundry.utils.deepClone(current);
         returnValue.add(change.value);
-        setProperty(actor, change.key, returnValue);
+        foundry.utils.setProperty(actor, change.key, returnValue);
       }
     }
     return true;
@@ -316,9 +323,9 @@ export class DAESystem {
     this.daeActionTypeKeys = [];
   }
   public static addDAEMetaData(activeEffectData, item, options) {
-    setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
-    setProperty(activeEffectData, "flags.dae.transfer", false);
-    if (options.metaData) mergeObject(activeEffectData, options.metaData);
+    foundry.utils.setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
+    foundry.utils.setProperty(activeEffectData, "flags.dae.transfer", false);
+    if (options.metaData) foundry.utils.mergeObject(activeEffectData, options.metaData);
 
   }
   public static safeEval(expression: string, sandbox: any, onErrorReturn: any | undefined = undefined) {
@@ -326,6 +333,8 @@ export class DAESystem {
     try {
       const src = 'with (sandbox) { return ' + expression + '}';
       const evl = new Function('sandbox', src);
+      //@ts-expect-error
+      sandbox = foundry.utils.mergeObject(sandbox, { Roll, fromUuidSync: foundry.utils.fromUuidSync });
       const sandboxProxy = new Proxy(sandbox, {
         has: () => true, // Include everything
         get: (t, k) => k === Symbol.unscopables ? undefined : (t[k] ?? Math[k]),
@@ -342,78 +351,7 @@ export class DAESystem {
     return result;
   };
 
-  public static safeEvalExpressionNew(input, context = {}, depth = 0) {
-    let stack: any[] = [];
-    let output = '';
-    let temp;
-    let functionStack: any[] = []; // additional stack for function name
-    let newStack: any[] = []; // stack for new keyword
-    let validFunctionName = /^([a-zA-Z_$][0-9a-zA-Z_$]*.)*[a-zA-Z_$][0-9a-zA-Z_$]*$/; // regex for valid JS function name
 
-    for (let char of input) {
-      if (char === " " && stack[stack.length - 1] === " ") continue;
-      if (char === '(') {
-        let funcName = '';
-        let isNew = false;
-        while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
-          funcName = stack.pop() + funcName;
-        }
-        if (stack.slice(-4).join("") === "new ") {
-          isNew = true;
-          stack = stack.slice(0, -4);
-        } else {
-          if (Math[funcName]) funcName = `Math.${funcName}`;
-        }
-
-        if (!validFunctionName.test(funcName) && funcName.length > 0) {
-          throw new Error(`Invalid function name: ${funcName}`);
-        }
-
-        functionStack.push(funcName);
-        newStack.push(isNew);
-        stack.push('(');
-      } else if (char === ')') {
-        temp = '';
-        let poppedChar;
-
-        // Pop elements from the stack until we find the matching opening parenthesis
-        while ((poppedChar = stack.pop()) !== '(') {
-          temp = poppedChar + temp;
-        }
-
-        // Pop the function name and the new flag
-        let funcName = functionStack.pop();
-        let isNew = newStack.pop();
-
-        // Evaluate the function call
-        if (funcName === "dae.eval") {
-          stack.push(`${this.safeEval(this.safeEvalExpression(temp, context, depth + 1), context)}`);
-        } if (funcName.length > 0) {
-          const expression =
-            `${isNew ? "new " : ""}${funcName}(${this.safeEvalExpression(temp, context, depth + 1)})`;
-          if (depth) stack.push(this.safeEval(expression, context));
-          else stack.push(expression);
-        } else {
-          stack.push('(');
-          for (let t of temp) stack.push(t);
-          stack.push(')');
-        }
-      } else stack.push(char);
-
-    }
-
-    // Evaluate any remaining alphanumeric sequences
-    let value = '';
-    while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
-      value = stack.pop() + value;
-    }
-    if (value.length > 0) {
-      stack.push(eval(value).toString());
-    }
-
-    output = stack.join('');
-    return eval(output);
-  }
   public static safeEvalExpression(input: string, context: any, depth = 0) {
     if (typeof input !== "string") return input;
     input = Roll.replaceFormulaData(input, context);
@@ -459,9 +397,16 @@ export class DAESystem {
           stack.push(`${this.safeEval(this.safeEvalExpression(temp, context, depth + 1), context)}`);
         else if (funcName === "dae.roll") {
           try {
-            const rollExpression = `new Roll(${temp}).evaluate({async: false}).total`;
-            stack.push(this.safeEval(rollExpression, context));
-            // stack.push(new Roll(temp, context).evaluate({async: false}).total);
+            //@ts-expect-error
+            if (game.release.generation > 11) {
+              error(`%c dae.roll in ${input} is not supported in expression ${input} in foundry version 12 and has been discarded`, "color: red", context.name, context.actorUuid)
+              stack.push(this.safeEval("0", context)); // v12 does not support synchronous dice rolling)
+            } else {
+              console.warn(`%c dae.roll in ${input} is not supported in foundry version 12 and will be discarded`, "color: red", context.name, context.actorUuid)
+              const rollExpression = `new Roll(${temp}).evaluate({async: false}).total`;
+              stack.push(this.safeEval(rollExpression, context));
+  
+            }
           } catch (err) {
             console.warn(`dae | dae.roll bad dice expression ${temp}`, err)
             stack.push(0);
@@ -484,7 +429,7 @@ export class DAESystem {
       const context = actor.getRollData();
       context.actor = actor;
       change.value = this.safeEvalExpression(change.value, context, 0);
-      setProperty(actor, change.key, change.value);
+      foundry.utils.setProperty(actor, change.key, change.value);
     }
     if (change.key === "flags.dae.onUpdateTarget" && change.value?.includes(",")) {
       const values = change.value.split(",").map(str => str.trim());
@@ -500,9 +445,9 @@ export class DAESystem {
       const macroName = ["none", ""].includes(values[5] ?? "") ? "" : values[5];
       const filter = ["none", ""].includes(values[6] ?? "") ? "system" : values[6];;
       const args = values.slice(7);
-      let flagValue = getProperty(actor, "flags.dae.onUpdateTarget") ?? [];
+      let flagValue = foundry.utils.getProperty(actor, "flags.dae.onUpdateTarget") ?? [];
       flagValue.push({ flagName, macroName, origin, sourceTokenUuid, args, targetTokenUuid, filter, sourceActorUuid })
-      setProperty(actor, "flags.dae.onUpdateTarget", flagValue);
+      foundry.utils.setProperty(actor, "flags.dae.onUpdateTarget", flagValue);
     }
     return true;
   }
@@ -546,20 +491,20 @@ function prepareData(wrapped) {
   if (!this.statuses) this.statuses = new Set();
   // Identify which special statuses had been active
   const specialStatuses = new Map();
-  if (isNewerVersion(game.version, "11.293")) {
+  if (foundry.utils.isNewerVersion(game.version, "11.293")) {
     //@ts-expect-error specialStatusEffects
     for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
       specialStatuses.set(statusId, this.statuses.has(statusId));
     }
     this.statuses.clear();
   }
-  setProperty(this, "flags.dae.onUpdateTarget", getProperty(this._source, "flags.dae.onUpdateTarget"));
+  foundry.utils.setProperty(this, "flags.dae.onUpdateTarget", foundry.utils.getProperty(this._source, "flags.dae.onUpdateTarget"));
   debug("prepare data: before passes", this.name, this._source);
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
   applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
-  if (isNewerVersion(game.version, "11.293")) {
+  if (foundry.utils.isNewerVersion(game.version, "11.293")) {
     // Apply special statuses that changed to active tokens
     let tokens;
     for (const [statusId, wasActive] of specialStatuses) {
@@ -579,7 +524,7 @@ function applyBaseActiveEffects() {
   applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
 }
 
-setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
+foundry.utils.setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
 
 Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
   // Prelim support for ATE v10 - need some more detail.
@@ -632,7 +577,7 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
   } else if (game.modules.get("ATL")?.active) {
     // support new version of ATL
     //@ts-expect-error .version
-    if (isNewerVersion("0.3.04", game.modules.get("ATL")?.version)) {
+    if (foundry.utils.isNewerVersion("0.3.04", game.modules.get("ATL")?.version)) {
       for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
         specials[`ATL.${label}`] = ["number", -1];
       }

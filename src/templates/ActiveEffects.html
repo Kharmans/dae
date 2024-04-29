@@ -34,7 +34,11 @@
         {{#each actives as |effect iid|}}
         <li class="flexrow effect-header" effect-id="{{effect._id}}" effect-uuid="{{effect.uuid}}">
           <div class="effect-label">
+            {{#if ../useIcon}}
             <img src="{{effect.icon}}" style="height:20px">
+            {{else}}
+            <img src="{{effect.img}}" style="height:20px">
+            {{/if}}
             {{effect.name}}
             {{effect.sourceName}}
           </div>

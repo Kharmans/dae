@@ -248,17 +248,17 @@ export class DAESystemSW5E extends DAESystemDND5E {
     }
   }
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
-    daeSystemClass.traitList = duplicate(CONFIG.SW5E.damageResistanceTypes);
+    daeSystemClass.traitList = foundry.utils.duplicate(CONFIG.SW5E.damageResistanceTypes);
     Object.keys(CONFIG.SW5E.damageResistanceTypes).forEach(type => {
       daeSystemClass.traitList[`-${type}`] = `-${CONFIG.SW5E.damageResistanceTypes[type]}`;
     });
 
-    daeSystemClass.languageList = duplicate(CONFIG.SW5E.languages);
+    daeSystemClass.languageList = foundry.utils.duplicate(CONFIG.SW5E.languages);
     Object.keys(CONFIG.SW5E.languages).forEach(type => {
       daeSystemClass.languageList[`-${type}`] = `-${CONFIG.SW5E.languages[type]}`;
     });
 
-    daeSystemClass.conditionList = duplicate(CONFIG.SW5E.conditionTypes);
+    daeSystemClass.conditionList = foundry.utils.duplicate(CONFIG.SW5E.conditionTypes);
     Object.keys(CONFIG.SW5E.conditionTypes).forEach(type => {
       daeSystemClass.conditionList[`-${type}`] = `-${CONFIG.SW5E.conditionTypes[type]}`;
     });
@@ -267,17 +267,17 @@ export class DAESystemSW5E extends DAESystemDND5E {
       daeSystemClass.armorProfList = daeSystemClass.armorProfList;
       daeSystemClass.weaponProfList = daeSystemClass.weaponProfList;
     } else {
-      daeSystemClass.toolProfList = duplicate(CONFIG.SW5E.toolProficiencies);
+      daeSystemClass.toolProfList = foundry.utils.duplicate(CONFIG.SW5E.toolProficiencies);
       Object.keys(CONFIG.SW5E.toolProficiencies).forEach(type => {
         daeSystemClass.toolProfList[`-${type}`] = `-${CONFIG.SW5E.toolProficiencies[type]}`;
       });
 
-      daeSystemClass.armorProfList = duplicate(CONFIG.SW5E.armorProficiencies);
+      daeSystemClass.armorProfList = foundry.utils.duplicate(CONFIG.SW5E.armorProficiencies);
       Object.keys(CONFIG.SW5E.armorProficiencies).forEach(type => {
         daeSystemClass.armorProfList[`-${type}`] = `-${CONFIG.SW5E.armorProficiencies[type]}`;
       });
 
-      daeSystemClass.weaponProfList = duplicate(CONFIG.SW5E.weaponProficiencies);
+      daeSystemClass.weaponProfList = foundry.utils.duplicate(CONFIG.SW5E.weaponProficiencies);
       Object.keys(CONFIG.SW5E.weaponProficiencies).forEach(type => {
         daeSystemClass.weaponProfList[`-${type}`] = `-${CONFIG.SW5E.weaponProficiencies[type]}`;
       });
@@ -319,5 +319,5 @@ function applyBaseActiveEffectssw5e() {
   applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpes: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
 }
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
-setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);
+foundry.utils.setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);
 

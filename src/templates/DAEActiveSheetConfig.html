@@ -2,7 +2,11 @@
 
   <!-- Effect Header -->
   <header class="sheet-header">
+    {{#if useIcon}}
     <img class="effect-icon" src="{{ effect.icon }}" data-edit="icon">
+    {{else}}
+    <img class="effect-icon" src="{{ effect.img }}" data-edit="icon">
+    {{/if}}
     <h1 class="effect-title">
       <input name="name" type="text" value="{{data.name}}" placeholder="{{ localize 'Name' }}" />
     </h1>
