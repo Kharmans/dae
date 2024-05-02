@@ -1012,7 +1012,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
       if (!allMacroEffects.includes(change.key)) continue;
       context.stackCount = effectData.flags?.dae?.stacks ?? effectData.flags?.dae?.statuscounter?.counter.value ?? 1;
       let functionMatch;
-      if (typeof change.value === "string" && change.key.startsWith("macro.execute")) change.value = change.value.trim();
+      if (typeof change.value === "string") change.value = change.value.trim();
       if (change.value.startsWith("function.")) {
         const paramRe = /function\.\w+(\.\w+)*\("[^"]*"(?:\s*,\s*"[^"]*")+?\)/;
         const paramMatch = change.value.match(paramRe);
@@ -1087,7 +1087,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           args = args.slice(1);
         let macroArgs: any[] = [action];
         macroArgs = macroArgs.concat(args).concat(lastArg);
-        const scope: any = { actor, token: selfTarget, lastArgValue: lastArg, item: theItem };
+        const scope: any = { actor, token: selfTarget, lastArgValue: lastArg, item: theItem, macroItem: theItem };
 
         scope.args = macroArgs.filter(arg => {
           if (typeof arg === "string") {
@@ -1253,7 +1253,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
       macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
     }
     if (!macroCommand) {
-      const itemOrMacro = await fromUuid(change.value);
+      const itemOrMacro = await fromUuid(name);
       if (itemOrMacro instanceof Macro) macroCommand = foundry.utils.getProperty(itemOrMacro, "command");
       if (itemOrMacro instanceof Item) {
         const macro = foundry.utils.getProperty(itemOrMacro, "flags.dae.macro") ?? foundry.utils.getProperty(itemOrMacro, "flags.itemacro.macro");
@@ -1377,7 +1377,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
 
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0) {
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: appliedEffects, tokenList: gmTargets, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: appliedEffects, targetList: gmTargets, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
   if (localTargets.length > 0) {
     const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: appliedEffects, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })

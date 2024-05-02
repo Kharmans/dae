@@ -190,10 +190,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       if (key.includes("system.spells")) {
         delete baseValues[key];
       }
-      if (key.includes("system.spells") && key.includes("override")) {
-        baseValues[key] = 0;
-      }
     });
+    if (foundry.utils.getProperty(actorModelSchemaFields, "spells")) {
+      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") ?? []))
+        baseValues[`system.spells.${spellSpec}.override`] = [0, -1];
+    }
 
 
     // removed - required so that init.bonus can work (prepapreinitiative called after derived effects

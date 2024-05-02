@@ -1,3 +1,6 @@
+### 11.3.19
+* Fix for system.spells.spellN.override not working.
+
 ### 11.3.18
 * Some clean up on requiring tokens to apply changes in doEffects which now works with actors.
 * Change.value of statusEffect - this is now the preferred way to apply status effects to targets. 
