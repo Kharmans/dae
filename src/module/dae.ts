@@ -1571,7 +1571,7 @@ export function preCreateItemHook(candidate, data, options, user) {
   return true;
 }
 export async function deleteItemHook(...args) {
-  let [candidateItem, options, user] = args
+  let [candidateItem, options, user] = args;
   if (user !== game.user?.id) return;
   if (options.isUndo) return;
   //@ts-expect-error
@@ -1600,6 +1600,7 @@ export async function deleteItemHook(...args) {
 export async function createItemHook(...args) {
   let [item, options, user] = args
   if (options.isUndo) return;
+  if (user !== game.user?.id) return;
   const actor = item.parent;
   if (!(actor instanceof Actor)) return;
   //@ts-expect-error
