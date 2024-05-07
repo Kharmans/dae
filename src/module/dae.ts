@@ -246,6 +246,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
     Object.assign(overrides, result);
 
   }
+
   if (foundry.utils.isNewerVersion(game.version, "11.293")) {
     // Apply special statuses that changed to active tokens
     let tokens;

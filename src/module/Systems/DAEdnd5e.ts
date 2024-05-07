@@ -241,12 +241,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials[`system.abilities.${abl}.dc`] = [0, -1];
     }
     specials["system.attributes.encumbrance.max"] = [0, -1];
-    specials[`system.traits.idi.value`] = ["", -1];
-    specials[`system.traits.idr.value`] = ["", -1];
-    specials[`system.traits.idv.value`] = ["", -1];
-    specials[`system.traits.ida.value`] = ["", -1];
-    specials[`system.traits.idm.value`] = ["", -1];
-
     specials["system.traits.da.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.da.value"] = ["", -1];
     specials["system.traits.da.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -1099,9 +1093,9 @@ function applyBaseActiveEffectsdnd5e() {
   const traitsCI = {};
   traitsCI["system.traits.ci.all"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.all"];
   traitsCI["system.traits.ci.value"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.value"];
-  applyDaeEffects.bind(this)({ specList: traitsCI, completedSpecs: {}, allowAllSpecs: false, wildeCardsInclude: [], wildCardsExclude: [], doStatusEffects: false })
+  applyDaeEffects.bind(this)({ specList: traitsCI, completedSpecs: {}, allowAllSpecs: false, wildeCardsInclude: [], wildCardsExclude: [], doStatusEffects: true })
   this.effects.forEach(e => e.determineSuppression());
-  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclue: [], doStatusEffects: false });
+  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclue: [], doStatusEffects: true });
 }
 
 function getRollData(wrapped, ...args) {

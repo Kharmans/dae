@@ -1,3 +1,7 @@
+### 11.3.20
+* removed definition of system.traits.idi/idv etc if midi-qol is not active.
+* Fix for encumbered/exhaustion processing not working with DAE installed in dnd5e 3.x
+
 ### 11.3.19
 * Fix for system.spells.spellN.override not working.
 
