@@ -48,9 +48,10 @@ const API = {
         //@ts-expect-error fromUuidSync
         return fromUuidSync(uuid);
     },
-    async daeMacro(action: string, actor, effectData, lastArgOptions = {}) {
+    async daeMacro(action: string, actor, effectData, lastArgOptions: any = {}) {
+      if (effectData instanceof ActiveEffect && !lastArgOptions.effectUuid) lastArgOptions.effectUuid = effectData.uuid;
         return await daeMacro(action, actor, effectData, lastArgOptions);
-    } ,
+    },
     daeSpecialDurations() {
         return daeSpecialDurations;
     },

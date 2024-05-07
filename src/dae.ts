@@ -86,7 +86,9 @@ Hooks.once('ready', async function () {
       daeMacroRepeats = {
         "none": "",
         "startEveryTurn": i18n("dae.startEveryTurn"),
-        "endEveryTurn": i18n("dae.endEveryTurn")
+        "endEveryTurn": i18n("dae.endEveryTurn"),
+        "startEveryTurnAny": i18n("dae.startEveryTurnAny"),
+        "endEveryTurnAny": i18n("dae.endEveryTurnAny"),
       };
     }
     daeReadyActions();

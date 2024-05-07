@@ -458,7 +458,7 @@ function createActiveEffectHook(...args) {
             await addTokenMagicChange(actor, change, tokens); //TODO check disabled
         }
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
-          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {}); // TODO revisit to see if passing the effect is ok
+          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {effectUuid: effect.uuid}); // TODO revisit to see if passing the effect is ok
         }
       } catch (err) {
         const message = "dae | createActiveEffectHook | create effect error";
@@ -792,10 +792,11 @@ export function updateActiveEffectHook(...args) {
           warn("dae add macro off", actionQueue._queue.length);
           const effectData = effect.toObject(false);
           if (updates.changes) effectData.changes = oldChanges;
-          let options = {};
+          let options: any = {};
           if (becameDisabled) options = { "expiry-reason": "effect-disabled" };
           else if (becameSuppressed) options = { "expiry-reason": "effect-suppressed" };
           else options = { "expiry-reason": "change-deleted" };
+          options.effectUuid = effect.uuid;
           await actionQueue.add(daeMacro, "off", actor, effectData, options);
         }
       }
@@ -829,7 +830,7 @@ export function updateActiveEffectHook(...args) {
         }
         if (changesToEnable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           warn("action queue add dae macro on ", actionQueue._queue.length)
-          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {});
+          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {effectUuid: effect.uuid});
         }
       }
     } catch (err) {
@@ -920,6 +921,7 @@ export function deleteActiveEffectHook(...args) {
         }
         if (!foundry.utils.getProperty(options, "expiry-reason")) foundry.utils.setProperty(options, "expiry-reason", "effect-deleted");
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+          options.effectUuid = effect.uuid;
           warn("action queue dae macro add off ", actionQueue._queue.length)
           await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), options);
         }
@@ -1082,13 +1084,16 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           actorId: actor.id,
           actorUuid: actor.uuid,
           tokenId: selfTarget.id,
+          effectUuid: lastArgOptions.effectUuid,
           tokenUuid,
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
         if (theChange.key.includes("macro.execute"))
           args = args.slice(1);
         let macroArgs: any[] = [action];
         macroArgs = macroArgs.concat(args).concat(lastArg);
-        const scope: any = { actor, token: selfTarget, lastArgValue: lastArg, item: theItem, macroItem: theItem };
+        //@ts-expect-error
+        const effect = fromUuidSync(lastArgOptions.effectUuid);
+        const scope: any = { actor, token: selfTarget, lastArgValue: lastArg, item: theItem, macroItem: theItem, effect };
 
         scope.args = macroArgs.filter(arg => {
           if (typeof arg === "string") {
@@ -1426,7 +1431,7 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
         if (debugEnabled > 0) warn("action queue add dae macro on ", actionQueue._queue.length)
-        actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), { item });
+        actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), { item, effectUuid: effectToApply.uuid });
         break;
       }
   }
@@ -1469,7 +1474,7 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change) {
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
         if (debugEnabled > 0) warn("dae add macro off", actionQueue._queue.length);
-        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), { item, origin: item.uuid });
+        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), { item, origin: item.uuid, effectUuid: effectToApply.uuid });
       }
       break;
   }
