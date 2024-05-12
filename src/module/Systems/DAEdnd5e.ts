@@ -32,88 +32,69 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     super.modifyBaseValues(actorType, baseValues, characterSpec);
     if (debugEnabled > 0) warn("modifyBaseValues", actorType, baseValues, characterSpec);
     const modes = CONST.ACTIVE_EFFECT_MODES;
-    if (false) {
-      const actorModels = CONFIG.Actor.dataModels;
-      if (!actorModels[actorType]) {
-        if (debugEnabled > 0) warn("Could not find data model for actor type", actorType, actorModels);
-        return;
-      }
-      const actorDataModel = foundry.utils.flattenObject(actorModels[actorType].schema.initial());
-      Object.keys(actorDataModel).forEach(key => {
-        const value = actorDataModel[key];
-        let fieldType;
-        if (value instanceof Array) {
-          if (value.length) fieldType = 0
-          else fieldType = [];
+    let schema: any;
+    //@ts-expect-error
+    const ArrayField = foundry.data.fields.ArrayField;
+    //@ts-expect-error
+    const ObjectField = foundry.data.fields.ObjectField
+    //@ts-expect-error
+    const BooleanField = foundry.data.fields.BooleanField;
+    //@ts-expect-error
+    const NumberField = foundry.data.fields.NumberField;
+    //@ts-expect-error
+    const StringField = foundry.data.fields.StringField;
+    //@ts-expect-error
+    const SchemaField = foundry.data.fields.SchemaField;
+    //@ts-expect-error
+    const dataModels: any = game.system.dataModels;
+    const MappingField = dataModels.fields.MappingField;
+    const actorDataModel = this.getActorDataModelFields(actorType);
+    if (!actorDataModel) {
+      console.warn("Could not find data model for actor type", actorType);
+      return;
+    }
+    function processMappingField(key, mappingField) {
+      const fields = mappingField.initialKeys;
+      if (!fields) return;
+      for (let fieldKey of Object.keys(fields)) {
+        if (mappingField.model instanceof SchemaField) {
+          processSchemaField(`${key}.${fieldKey}`, mappingField.model);
+        } else if (mappingField.model instanceof MappingField) {
+          processMappingField(`${key}.${fieldKey}`, mappingField.model);
         } else {
-          fieldType = value ?? 0;
+          // TODO come back and see how favorites might be supported.
+          if (fieldKey.includes("favorites")) return;
+          baseValues[`${key}.${fieldKey}`] = [mappingField.model.initial, -1];
+          // console.error(`final field is ${key}.${fieldKey}`, mappingField.model);
         }
-        baseValues[`system.${key}`] = [fieldType, -1];
-      });
-    } else {
-      let schema: any;
-      //@ts-expect-error
-      const ArrayField = foundry.data.fields.ArrayField;
-      //@ts-expect-error
-      const ObjectField = foundry.data.fields.ObjectField
-      //@ts-expect-error
-      const BooleanField = foundry.data.fields.BooleanField;
-      //@ts-expect-error
-      const NumberField = foundry.data.fields.NumberField;
-      //@ts-expect-error
-      const StringField = foundry.data.fields.StringField;
-      //@ts-expect-error
-      const SchemaField = foundry.data.fields.SchemaField;
-      //@ts-expect-error
-      const dataModels: any = game.system.dataModels;
-      const MappingField = dataModels.fields.MappingField;
-      const actorDataModel = this.getActorDataModelFields(actorType);
-      if (!actorDataModel) {
-        console.warn("Could not find data model for actor type", actorType);
-        return;
-      }
-      function processMappingField(key, mappingField) {
-        const fields = mappingField.initialKeys;
-        if (!fields) return;
-        for (let fieldKey of Object.keys(fields)) {
-          if (mappingField.model instanceof SchemaField) {
-            processSchemaField(`${key}.${fieldKey}`, mappingField.model);
-          } else if (mappingField.model instanceof MappingField) {
-            processMappingField(`${key}.${fieldKey}`, mappingField.model);
-          } else {
-            // TODO come back and see how favorites might be supported.
-            if (fieldKey.includes("favorites")) return;
-            baseValues[`${key}.${fieldKey}`] = [mappingField.model.initial, -1];
-            // console.error(`final field is ${key}.${fieldKey}`, mappingField.model);
-          }
-        }
-      }
-      function processSchemaField(key, schemaField) {
-        const fields = schemaField.fields;
-        for (let fieldKey of Object.keys(fields)) {
-          if (fields[fieldKey] instanceof SchemaField) {
-            processSchemaField(`${key}.${fieldKey}`, fields[fieldKey]);
-          }
-          else if (fields[fieldKey] instanceof MappingField) {
-            processMappingField(`${key}.${fieldKey}`, fields[fieldKey]);
-          } else {
-            if (fieldKey.includes("favorites")) return; //TODO see above
-            baseValues[`${key}.${fieldKey}`] = [fields[fieldKey].initial ?? 0, -1];
-            // console.error(`final field is ${key}.${fieldKey}`, fields[fieldKey])
-          }
-        }
-      }
-      for (let key of Object.keys(actorDataModel)) {
-        const modelField = actorDataModel[key]
-        if (modelField instanceof SchemaField) {
-          processSchemaField(`system.${key}`, modelField);
-        } else if (modelField instanceof MappingField) {
-          processMappingField(`system.${key}`, modelField);
-        } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => modelField instanceof fieldType)) {
-          baseValues[`system.${key}`] = [modelField.iniital, -1];
-        } else console.error("Unexpected field ", key, modelField)
       }
     }
+    function processSchemaField(key, schemaField) {
+      const fields = schemaField.fields;
+      for (let fieldKey of Object.keys(fields)) {
+        if (fields[fieldKey] instanceof SchemaField) {
+          processSchemaField(`${key}.${fieldKey}`, fields[fieldKey]);
+        }
+        else if (fields[fieldKey] instanceof MappingField) {
+          processMappingField(`${key}.${fieldKey}`, fields[fieldKey]);
+        } else {
+          if (fieldKey.includes("favorites")) return; //TODO see above
+          baseValues[`${key}.${fieldKey}`] = [fields[fieldKey].initial ?? 0, -1];
+          // console.error(`final field is ${key}.${fieldKey}`, fields[fieldKey])
+        }
+      }
+    }
+    for (let key of Object.keys(actorDataModel)) {
+      const modelField = actorDataModel[key]
+      if (modelField instanceof SchemaField) {
+        processSchemaField(`system.${key}`, modelField);
+      } else if (modelField instanceof MappingField) {
+        processMappingField(`system.${key}`, modelField);
+      } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => modelField instanceof fieldType)) {
+        baseValues[`system.${key}`] = [modelField.iniital, -1];
+      } else console.error("Unexpected field ", key, modelField)
+    }
+
     if (!baseValues["system.attributes.prof"]) baseValues["system.attributes.prof"] = [0, -1];;
     if (!baseValues["system.details.level"]) baseValues["system.details.level"] = [0, -1];
     if (!baseValues["system.attributes.ac.bonus"]) baseValues["system.attributes.ac.bonus"] = ["", -1];
@@ -225,6 +206,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     super.modifySpecials(actorType, specials, characterSpec);
     const actorModelSchemaFields = this.getActorDataModelFields(actorType);
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
+    //@ts-expect-error
+    const GameSystemConfig = game.system.config;
     if (actorType === "vehicle") {
       specials["system.attributes.ac.motionless"] = [0, -1];
       specials["system.attributes.ac.flat"] = [0, -1];
@@ -270,12 +253,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.ac.AR"] = [0, -1];
 
     specials["system.attributes.hd"] = [0, -1];
-    if (daeSystemClass.systemConfig.languages) {
+    if (GameSystemConfig.languages) {
       specials["system.traits.languages.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials["system.traits.languages.value"] = ["", -1];
       specials["system.traits.languages.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     }
-    if (daeSystemClass.systemConfig.damageTypes) {
+    if (GameSystemConfig.damageTypes) {
       specials[`system.traits.dm.midi.all`] = ["", -1];
       Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dType => {
         specials[`system.traits.dm.amount.${dType}`] = ["", -1]
@@ -289,6 +272,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.traits.damageTypes.value"] = ["", -1];
       specials["system.traits.damageTypes.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     }
+
+    /*
+    if (actorModelSchemaFields.attributes?.fields?.senses) {
+      Object.keys(GameSystemConfig.senses).forEach(sense => {
+        specials[`system.senses.${sense}.value`] = [0, -1];
+      })
+    }
+    */
 
     if (foundry.utils.getProperty(actorModelSchemaFields, "resources")) {
       specials["system.resources.primary.max"] = [0, -1];
@@ -1002,7 +993,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         };
         return true;
 
-      //TODO review this for 1.5
       case "system.abilities.str.dc":
       case "system.abilities.dex.dc":
       case "system.abilities.int.dc":
@@ -1186,7 +1176,8 @@ function prepareData(wrapped) {
     const globalBonuses = this.system.bonuses?.abilities ?? {};
     const rollData = this.getRollData();
     const checkBonus = simplifyBonus(globalBonuses?.check, rollData);
-    this._prepareInitiative(rollData, checkBonus);
+    if (this._prepareInitiative && this.system?.attributes) 
+      this._prepareInitiative(rollData, checkBonus);
     debug("prepare data: after passes", this);
   } catch (err) {
     console.error("Could not prepare data ", this.name, err);

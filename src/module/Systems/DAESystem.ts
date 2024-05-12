@@ -53,7 +53,7 @@ export class ValidSpec {
     //@ts-expect-error dataModels
     for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
       this.specs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
-      _characterSpec["system"] = game.system.model ? foundry.utils.duplicate(game.system.model.Actor[specKey]) : {};
+      _characterSpec["system"] = game.system.model ? foundry.utils.duplicate(game.system.model.Actor[specKey] ?? {}) : {};
       let baseValues = foundry.utils.flattenObject(_characterSpec);
       for (let prop in baseValues) {
         baseValues[prop] = [baseValues[prop], -1];

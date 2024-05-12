@@ -1,3 +1,7 @@
+### 1.3.22
+* Some fixes to support Kingdoms and Warefar module.
+* A little change to how items are fecthed when rolling an item macro.
+
 ### 11.3.21
 * Added support for times up start/end every turn macro repeat for disabled/suppressed effects.
 * Passes lastArg.effectUuid, where known and sets scope.effect to that effect.

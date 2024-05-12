@@ -979,24 +979,14 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     if (effectData.transfer && effectData.parent instanceof Item) theItem = effectData.parent;
     effectData = effectData.toObject(false);
   }
-  let tokenUuid;
-  if (actor.token) {
-    tokenUuid = actor.token.uuid;
-    selfTarget = actor.token.object;
-  } else {
-    selfTarget = getSelfTarget(actor);
-    tokenUuid = selfTarget.uuid ?? selfTarget.document.uuid;
-  }
-  //@ts-expect-error fromUuidSync
-  let source = effectData.origin ? fromUuidSync(effectData.origin) : undefined;
-  let context = actor.getRollData();
-  if (source instanceof CONFIG.Item.documentClass) {
-    context.item = source;
-    context.itemData = source.toObject(false);
-  }
-
   if (lastArgOptions.item) theItem = lastArgOptions.item;
-  if (effectData.flags.dae?.itemUuid) {
+  if (!theItem) {
+    //@ts-expect-error fromUuidSync
+    let source = effectData.origin ? fromUuidSync(effectData.origin) : undefined;
+    if (source instanceof CONFIG.Item.documentClass) theItem = source;
+    }
+
+  if (!theItem && effectData.flags.dae?.itemUuid) {
     //@ts-expect-error fromUuidSync
     theItem = fromUuidSync(effectData.flags.dae.itemUuid);
   }
@@ -1007,9 +997,21 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     const origin = await fromUuid(effectData.origin);
     if (origin instanceof Item) theItem = origin
   }
+  let context = actor.getRollData();
+  if (theItem) {
+    context.item = theItem;
+    context.itemData = theItem.toObject(false);
+    if (theItem) foundry.utils.setProperty(effectData, "flags.dae.itemData", theItem.toObject());
+  }
 
-  if (theItem) foundry.utils.setProperty(effectData, "flags.dae.itemData", theItem.toObject());
-
+  let tokenUuid;
+  if (actor.token) {
+    tokenUuid = actor.token.uuid;
+    selfTarget = actor.token.object;
+  } else {
+    selfTarget = getSelfTarget(actor);
+    tokenUuid = selfTarget.uuid ?? selfTarget.document.uuid;
+  }
   for (let change of effectData.changes) {
     try {
       if (!allMacroEffects.includes(change.key)) continue;
