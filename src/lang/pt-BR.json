@@ -236,7 +236,7 @@
   "dae.isAttacked": "Atacado: Expira se o personagem for atacado",
   "dae.isMoved": "Movido: Expira quando o token é movido",
   "dae.isDamaged": "Sofrer Dano: Expira se o personagem sofrer dano",
-  "dae.isHealed": "Curado: Expira se o personaggem for curado",
+  "dae.isHealed": "Curado: Expira se o personagem for curado",
   "dae.ZeroHP": "PV Zero: expira se o personagem chegar a 0 PV",
   "dae.isHit": "Atingido: Expira se o personagem for atingido por qualquer arma/magia, mesmo se a arma/magia não causar dano",
   "dae.isRollBase": "Expira se o personagem rolar: ",
