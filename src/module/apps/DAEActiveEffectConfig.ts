@@ -144,6 +144,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       return this.tokenMagicEffects;
     if (spec.key === "macro.CUB") return this.cltConditionList;
     if (spec.key === "macro.CE") return this.ceEffectList;
+    if (spec.key === "macro.StatusEffect") return this.statusEffectList;
     if (spec.key === "macro.CLT") return this.cltConditionList;
     if (spec.key === "StatusEffect") return this.statusEffectList;
     if (spec.key === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;

@@ -1,3 +1,7 @@
+### 11.3.23
+* Fix for system.abilities.str/dex/etc.max/.min. Supports all modes and will work with advancement.
+* Added macro.StatusEffect which adds a status effect as a dependent condition of the effect having the change. Deleting the effect will also delete the dependent condition. macro.StatusEffect will work with both core status effects and DAE status effects.
+
 ### 11.3.22
 * Some fixes to support Kingdoms and Warfare module.
 * A little change to how items are fetched when rolling an item macro.

@@ -337,7 +337,6 @@ export async function removeConvenientEffectsChange(effectName: string, uuid: st
 }
 
 async function myAddCEEffectWith(effectData: any, uuid: string, origin, overlay: boolean, isToken: boolean) {
-
   //@ts-expect-error dfreds
   const ceInterface = game?.dfreds?.effectInterface;
   let interval = 1;
@@ -355,6 +354,38 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
   returnValue = await actionQueue.add(myAddCEEffectWith, effectData, uuid, origin, false, isToken);
   return returnValue;
 }
+export async function addConditionChange(actor, change, token, effect) {
+  const condition: any = CONFIG.statusEffects.find(se => se.id === change.value);
+  //@ts-expect-error
+  const effectInterface = game.dfreds?.effectInterface;
+  if (change.value.startsWith("Convenient Effect") && effectInterface) {
+    const effectName = change.value.split("Convenient Effect: ")[1];
+    //@ts-expect-error
+    await game.dfreds.effectInterface.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
+  } else {
+    if (condition.statuses?.length > 1 && !condition?._id) {
+      condition._id = condition.id.replaceAll(/[ :,.\+\-\*\&\^\%\$\#\@\!\[\]{}\(\)]/g, "").padEnd(16, "x").slice(-16);
+    }
+    if (condition) {
+      //@ts-expect-error
+      const status = await ActiveEffect.implementation.fromStatusEffect(condition.id, { parent: actor });
+      status.origin = effect.uuid;
+      let returnValue = await (actionQueue.add(actor.createEmbeddedDocuments.bind(actor), "ActiveEffect", [status], { parent: actor, keepId: true }));
+      if (effect.addDependents) effect.addDependents(returnValue);
+      return returnValue;
+    }
+  }
+}
+export async function removeConditionChange(actor, change, token, effect) {
+  if (change.value.startsWith("Convenient Effect")) {
+    const effectName = change.value.split("Convenient Effect: ")[1];
+    //@ts-expect-error
+    await game.dfreds?.effectInterface.removeEffect({ effectName, uuid: actor.uuid, origin: effect.uuid});
+  }
+  const condition = actor.effects.find(ef => ef.origin === effect.uuid && ef.statuses.has(change.value));
+  if (condition) await (actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", [condition.id]));
+}
+
 export async function addCLTChange(conditionId, tokens: [Token], options = {}) {
   //@ts-expect-error clt
   const cltInterface = game?.clt;
@@ -385,7 +416,7 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect)
     }
     //@ts-expect-error
     statusEffect = await ActiveEffect.implementation.fromStatusEffect(change.value, { parent: actor });
-    statusEffect.updateSource({origin: sourceEffect.uuid});
+    statusEffect.updateSource({ origin: sourceEffect.uuid });
     //@ts-expect-error
     await ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
   }
@@ -453,12 +484,15 @@ function createActiveEffectHook(...args) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await addCreateItemChange(change, actor, effect)
           }
+          if (change.key === "macro.StatusEffect") {
+            await addConditionChange(actor, change, token, effect)
+          }
           const tokenMagic = globalThis.TokenMagic;
           if (tokenMagic && change.key === "macro.tokenMagic" && token)
             await addTokenMagicChange(actor, change, tokens); //TODO check disabled
         }
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
-          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {effectUuid: effect.uuid}); // TODO revisit to see if passing the effect is ok
+          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid }); // TODO revisit to see if passing the effect is ok
         }
       } catch (err) {
         const message = "dae | createActiveEffectHook | create effect error";
@@ -784,9 +818,12 @@ export function updateActiveEffectHook(...args) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await removeCreateItemChange(change.value, actor, effect)
           }
+          if (change.key === "macro.StatusEffect") {
+            await removeConditionChange(actor, change, token, effect)
+          }
           if (change.key === "StatusEffect") {
             await removeStatusEffectChange(actor, change, tokens, effect);
-          } 
+          }
         }
         if (changesToDisable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           warn("dae add macro off", actionQueue._queue.length);
@@ -824,13 +861,16 @@ export function updateActiveEffectHook(...args) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await addCreateItemChange(change, actor, effect)
           }
+          if (change.key === "macro.StatusEffect") {
+            await addConditionChange(actor, change, token, effect)
+          }
           if (change.key === "StatusEffect") {
             await addStatusEffectChange(actor, change, tokens, effect);
           }
         }
         if (changesToEnable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           warn("action queue add dae macro on ", actionQueue._queue.length)
-          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), {effectUuid: effect.uuid});
+          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid });
         }
       }
     } catch (err) {
@@ -902,6 +942,9 @@ export function deleteActiveEffectHook(...args) {
           if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await removeCreateItemChange(change.value, actor, effect)
+          }
+          if (change.key === "macro.StatusEffect") {
+            await removeConditionChange(actor, change, token, effect); // TODO this is not right
           }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor);
@@ -984,7 +1027,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     //@ts-expect-error fromUuidSync
     let source = effectData.origin ? fromUuidSync(effectData.origin) : undefined;
     if (source instanceof CONFIG.Item.documentClass) theItem = source;
-    }
+  }
 
   if (!theItem && effectData.flags.dae?.itemUuid) {
     //@ts-expect-error fromUuidSync
@@ -1198,6 +1241,7 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
       case "macro.CE":
       case "macro.CUB":
       case "macro.CLT":
+      case "macro.StatusEffect":
       case "macro.tokenMagic":
       case "macro.createItem":
       case "macro.createItemRunMacro":
@@ -1409,6 +1453,11 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
     case "macro.CLT":
       addCLTChange(change.value, [token]);
       break;
+    case "macro.StatusEffect":
+      //@ts-expect-error
+      if (CONFIG.ActiveEffect.legacyTransferral === false)
+        addConditionChange(actor, change, token, effectToApply);
+      break;
     case "macro.tokenMagic":
       addTokenMagicChange(actor, change, tokens);
       break;
@@ -1472,6 +1521,11 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change) {
       //@ ts-expect-error
       // if (CONFIG.ActiveEffect.legacyTransferral === false)
       removeStatusEffectChange(actor, change, tokens, effectToApply);
+      break;
+    case "macro.StatusEffect":
+      //@ts-expect-error
+      if (CONFIG.ActiveEffect.legacyTransferral === false)
+        removeConditionChange(actor, change, tokens, effectToApply);
       break;
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {

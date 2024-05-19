@@ -28,6 +28,7 @@ export function i18n(key) {
 export let daeAlternateStatus;
 export var gameSystemCompatible = "maybe"; // no, yes, partial, maybe
 export var daeUntestedSystems: boolean;
+export const MODULE_ID = "dae";
 
 /* ------------------------------------ */
 /* Initialize module					*/

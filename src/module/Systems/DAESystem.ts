@@ -72,6 +72,7 @@ export class ValidSpec {
       specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CLT"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffectLabel"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffectName"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -335,6 +336,7 @@ export class DAESystem {
       const evl = new Function('sandbox', src);
       //@ts-expect-error
       sandbox = foundry.utils.mergeObject(sandbox, { Roll, fromUuidSync: foundry.utils.fromUuidSync });
+      sandbox = foundry.utils.mergeObject(sandbox, {MidiQOL: globalThis.MidiDAEEval ?? {}})
       const sandboxProxy = new Proxy(sandbox, {
         has: () => true, // Include everything
         get: (t, k) => k === Symbol.unscopables ? undefined : (t[k] ?? Math[k]),

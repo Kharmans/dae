@@ -1,5 +1,5 @@
 
-import { daeSpecialDurations, debug, debugEnabled, error, i18n, warn } from "../../dae";
+import { MODULE_ID, daeSpecialDurations, debug, debugEnabled, error, i18n, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
 import { actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, getSelfTarget, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
@@ -26,7 +26,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     //@ts-expect-error
     return game.system.config;
   }
-
 
   public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
     super.modifyBaseValues(actorType, baseValues, characterSpec);
@@ -334,6 +333,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         specials[theKey] = [0, -1];
       }
     });
+        // Do the system specific part
+    // 1. abilities add mod and save to each;
+    if (daeSystemClass.systemConfig.abilities && foundry.utils.getProperty(actorModelSchemaFields, "abilities")) Object.keys(daeSystemClass.systemConfig.abilities).forEach(ablKey => {
+      specials[`system.abilities.${ablKey}.mod`] = [0, -1];
+      specials[`system.abilities.${ablKey}.save`] = [0, -1];
+      // specials[`system.abilities.${ablKey}.min`] = [0, -1]; There is no min attribute yet
+      specials[`system.abilities.${ablKey}.max`] = [0, -1];
+    })
   }
 
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
@@ -341,38 +348,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const actorModelSchemaFields = DAESystem.getActorDataModelFields(actorType);
     //@ts-expect-error
     const systemVersion = game.system.version;
-    // Do the system specific part
-    // 1. abilities add mod and save to each;
-    if (daeSystemClass.systemConfig.abilities && foundry.utils.getProperty(actorModelSchemaFields, "abilities")) Object.keys(daeSystemClass.systemConfig.abilities).forEach(ablKey => {
-      derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.mod`, 0, 0))
-      derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.save`, 0, 0))
-      derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.min`, 0, 0))
-      derivedSpecs.push(new ValidSpec(`system.abilities.${ablKey}.max`, 0, 0))
-    })
-    /*
-    if (daeSystemClass.systemConfig.toolProficiencies && foundry.utils.getProperty(actorModelSchemaFields, "tools")) {
-      const toolProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.toolProficiencies);
-      const ids = daeSystemClass.systemConfig[`toolIds`];
-      if (ids !== undefined) {
-        for (const [key, id] of Object.entries(ids)) {
-          // const item = await pack.getDocument(id);
-          toolProfList[key] = key;
-        }
-      }
-      for (let key of Object.keys(toolProfList)) {
-        derivedSpecs.push(new ValidSpec(`system.tools.${key}.prof`, 0, 0));
-        derivedSpecs.push(new ValidSpec(`system.tools.${key}.ability`, "", 0));
-        derivedSpecs.push(new ValidSpec(`system.tools.${key}.bonus`, "", 0));
-      }
-    }
-    */
-    // adjust specs for bonuses - these are strings, @fields are looked up but dice are not rolled.
 
-    // Skills add mod, passive and bonus fields
-    if (daeSystemClass.systemConfig.skill && foundry.utils.getProperty(actorModelSchemaFields, "skills")) Object.keys(daeSystemClass.systemConfig.skills).forEach(sklKey => {
-      derivedSpecs.push(new ValidSpec(`system.skills.${sklKey}.mod`, 0))
-      derivedSpecs.push(new ValidSpec(`system.skills.${sklKey}.passive`, 0))
-    })
   }
 
   static modifyValidSpec(spec, validSpec: ValidSpec): ValidSpec {
@@ -426,7 +402,40 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         flags: { dnd5e: { halfHealth: true } }
       });
     }
+    if (true) {
+      const effectClass: any = CONFIG.ActiveEffect.documentClass;
+      //@ts-expect-error .version
+      if (foundry.utils.isNewerVersion(game.system.version, "3.0.99")) {
+        const classStrings = [
+          "CONFIG.Actor.documentClass",
+          "CONFIG.Item.documentClass",
+          "CONFIG.Token.documentClass",
+          "CONFIG.MeasuredTemplate.documentClass",
+          "CONFIG.Tile.documentClass",
+          "CONFIG.AmbientLight.documentClass",
+          "CONFIG.AmbientSound.documentClass",
+          "CONFIG.Wall.documentClass",
+          "CONFIG.ActiveEffect.documentClass",
+        ];
+        const addDependent = effectClass.prototype.addDependent ?? _addDependent;
+        const getDependents = effectClass.prototype.getDependents ?? _getDependents;
+        for (let classString of classStrings) {
+          const docClass = eval(classString)
+          if (!docClass) continue;
+          if (!docClass.prototype.addDependent) libWrapper.register(MODULE_ID, `${classString}.prototype._onDelete`, _onDelete, "WRAPPER");
+          if (!docClass.prototype.addDependent) docClass.prototype.addDependent = addDependent;
+          if (!docClass.prototype.addDependents) docClass.prototype.addDependents = addDependents;
+          if (!docClass.prototype.getDependents) docClass.prototype.getDependents = getDependents;
+          if (!docClass.prototype.setDependents) docClass.prototype.setDependents = setDependents;
+          if (!docClass.prototype.removeDependent) docClass.prototype.removeDependent = removeDependent;
+          if (!docClass.prototype.clearDependents) docClass.prototype.clearDependents = clearDependents;
+          if (!docClass.prototype.deleteAllDependents) docClass.prototype.deleteAllDependents = deleteAllDependents;
+        }
+      }
+    }
   }
+
+  
   public static setupActions(): void {
   }
 
@@ -1229,8 +1238,10 @@ function procAdvantageSkill(actor, abilityId, skillId): number {
 }
 
 
-function _prepareActorArmorClassAttribution(wrapped, data) {
-  const attributions = wrapped(data);
+// This is broken
+async function _prepareActorArmorClassAttribution(wrapped, data) {
+  let attributionHtml = await wrapped(data);
+  const attributions: any[] = [];
   if (this.object?.effects) {
     for (let effect of this.appliedEffects) {
       for (let change of effect.changes) {
@@ -1244,7 +1255,11 @@ function _prepareActorArmorClassAttribution(wrapped, data) {
       }
     }
   }
-  return attributions;
+  if (attributions.length > 0) {
+    const extraHtml = new PopertyAttributions(this, attributions, "attributions.ac", {title: ""}).renderTooltipe();
+    attributionHtml += extraHtml;
+  }
+  return attributionHtml;
 }
 
 function _prepareArmorClassAttribution(wrapped, data) {
@@ -1270,7 +1285,7 @@ function patchPrepareArmorClassAttribution() {
   const systemVersion = game.system.version;
   if (game.system.id === "dnd5e") {
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
+      // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
 
     } else {
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
@@ -1426,4 +1441,65 @@ function daeApply(wrapped, actor, change) {
     console.error("dae | daeApply ", err, change, actor)
     throw err;
   }
+}
+
+function addDependents(dependents: any[]) {
+  const id = game.system.id ?? MODULE_ID;
+  const current = this.getFlag(id, "dependents") || [];
+  dependents = dependents.filter(d => d?.uuid).map(d => ({ uuid: d.uuid }))
+  return this.setFlag(id, "dependents", current.concat(dependents));
+}
+
+function removeDependent(dependent: any) {
+  const id = game.system.id ?? MODULE_ID;
+  const dependents = (this.getFlag(id, "dependents") || []).filter(dep => dep.uuid !== dependent.uuid);
+  if (dependents.length === 0) return this.unsetFlag(id, "dependents");
+  return this.setFlag(id, "dependents", dependents);
+}
+function setDependents(dependents) {
+  const id = game.system.id ?? MODULE_ID;
+  return this.setFlag(id, "dependents", dependents);
+}
+function clearDependents() {
+  const id = game.system.id ?? MODULE_ID;
+  return this.unsetFlag(id, "dependents");
+}
+
+async function deleteAllDependents() {
+  if (!game.user?.isGM) return;
+  for (let dep of this.getDependents()) {
+    await dep.delete();
+  }
+  return this.clearDependents();
+}
+/**
+ * Record another effect as a dependent of this one.
+ * @param {ActiveEffect5e} dependent  The dependent effect.
+ * @returns {Promise<Document>}
+ */
+async function _addDependent(dependent) {
+  const id = game.system.id ?? MODULE_ID;
+  const dependents = this.getFlag(id, "dependents") ?? [];
+  dependents.push({ uuid: dependent.uuid });
+  return this.setFlag(id, "dependents", dependents);
+}
+
+/**
+ * Retrieve a list of dependent effects.
+ * @returns {Document[]}
+ */
+function _getDependents() {
+  const id = game.system.id ?? MODULE_ID;
+  return (this.getFlag(id, "dependents") || []).reduce((arr, { uuid }) => {
+    //@ts-expect-error
+    const effect = fromUuidSync(uuid);
+    if (effect) arr.push(effect);
+    return arr;
+  }, []);
+}
+
+async function _onDelete(wrapped, options, userId) {
+  wrapped(options, userId);
+  //@ts-expect-error
+  if (game.user === game.users?.activeGM) this.getDependents().forEach(d => d.delete());
 }
