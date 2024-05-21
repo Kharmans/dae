@@ -1,3 +1,7 @@
+### 11.3.24
+* Fix for ci/di/dr/dv to support -piercing/-blinded etc to remove an existing trait.
+* 11.3.25 Some fixes for dnd5e 3.2
+
 ### 11.3.23
 * Fix for system.abilities.str/dex/etc.max/.min. Supports all modes and will work with advancement.
 * Added macro.StatusEffect which adds a status effect as a dependent condition of the effect having the change. Deleting the effect will also delete the dependent condition. macro.StatusEffect will work with both core status effects and DAE status effects.

@@ -214,8 +214,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.attributes.ac.value"] = [0, -1];
       specials["system.attributes.ac.min"] = [0, -1];
     }
-    // specials["system.attributes.hp.max"] = [0, -1];
-    // specials["system.attributes.hp.min"] = [0, -1];
     // removed - required so that init.bonus can work (prepapreinitiative called after derived effects
     // specials["system.attributes.init.total"] = [0, -1];
     // moved to base values - specials["system.attributes.init.bonus"] = ["", -1];
@@ -591,13 +589,19 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   public static configureLists(daeConfig: DAEActiveEffectConfig | null) {
     //@ts-expect-error
     const systemVersion = game.system.version;
-    // this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
-    // this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageTypes);
-    // this.traitList = foundry.utils.mergeObject(this.traitList, daeSystemClass.systemConfig.healingTypes);
-
-    const damageTypes = Object.values(daeSystemClass.systemConfig.damageTypes);
+    const damageTypes = [...Object.values(daeSystemClass.systemConfig.damageTypes), ...Object.values(daeSystemClass.systemConfig.healingTypes)];
+  
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
+      Object.keys(this.traitList).forEach(type => {
+        this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageTypes[type].label}`;
+      });
+      /*
+      this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes;
+      Object.keys(this.customDamageResistanceList).forEach(type => {
+        this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
+      });
+      */
     } else {
       this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
       const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
@@ -607,7 +611,17 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageResistanceTypes[type]}`;
       });
     }
-    this.bypassesList = foundry.utils.duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
+    if (foundry.utils.isNewerVersion(systemVersion, "3.1.99")) {
+      this.bypassesList = Object.keys(daeSystemClass.systemConfig.damageTypes)
+        .filter(key => daeSystemClass.systemConfig.damageTypes[key].isPhysical)
+       .map(key => {
+        const returnValue = {}; 
+        returnValue[key] = i18n(daeSystemClass.systemConfig.damageTypes[key].label);
+        return returnValue;
+       });
+    } else if (daeSystemClass.systemConfig.damageTypes) {
+      this.bypassesList = foundry.utils.duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
+    }
 
     this.languageList = foundry.utils.duplicate(daeSystemClass.systemConfig.languages);
     Object.keys(daeSystemClass.systemConfig.languages).forEach(type => {
@@ -616,23 +630,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
       } else this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type]}`;
     });
-    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      const dt = Object.keys(daeSystemClass.systemConfig.damageTypes).concat(Object.keys(daeSystemClass.systemConfig.healingTypes));
-      this.traitList = dt.reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key]?.label ?? daeSystemClass.systemConfig.healingTypes[key].label; return obj }, {})
-      const drTypeKeys = Object.keys(daeSystemClass.systemConfig.damageTypes);
-      this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes;
-      // come back and see if this can be used to set damage resistance list
-    } else {
-      this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
-      const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
-      this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
-        .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {});
-      Object.keys(this.traitList).forEach(type => {
-        this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageResistanceTypes[type]}`;
-      });
-    }
-    this.bypassesList = foundry.utils.duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
-    this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
 
     this.armorClassCalcList = {};
     for (let acCalc in daeSystemClass.systemConfig.armorClasses) {
@@ -643,6 +640,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(ct => {
         this.conditionList[ct] = daeSystemClass.systemConfig.conditionTypes[ct].label;
+      });
+      Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
+        this.conditionList[`-${type}`] = `-${daeSystemClass.systemConfig.conditionTypes[type]}`;
       });
     } else {
       Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
@@ -1204,7 +1204,6 @@ function simplifyBonus(bonus, data = {}) {
   }
 }
 
-
 function procAdvantageSkill(actor, abilityId, skillId): number {
   const midiFlags = actor.flags["midi-qol"] ?? {};
   const advantage = midiFlags.advantage ?? {};
@@ -1221,7 +1220,6 @@ function procAdvantageSkill(actor, abilityId, skillId): number {
   if (advantage.skill) {
     withAdvantage = withAdvantage || advantage.skill.all || advantage.skill[skillId];
   }
-
 
   if (disadvantage.ability) {
     withDisadvantage = withDisadvantage || disadvantage.all || disadvantage.ability.all || disadvantage.ability.check?.all;
@@ -1256,7 +1254,8 @@ async function _prepareActorArmorClassAttribution(wrapped, data) {
     }
   }
   if (attributions.length > 0) {
-    const extraHtml = new PopertyAttributions(this, attributions, "attributions.ac", {title: ""}).renderTooltipe();
+    //@ts-expect-error
+    const extraHtml = new game.system.application.PopertyAttribution(this, attributions, "attributions.ac", {title: ""}).renderTooltip();
     attributionHtml += extraHtml;
   }
   return attributionHtml;
@@ -1285,8 +1284,7 @@ function patchPrepareArmorClassAttribution() {
   const systemVersion = game.system.version;
   if (game.system.id === "dnd5e") {
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
-
+      libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
     } else {
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
       libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
@@ -1298,7 +1296,6 @@ function patchPrepareArmorClassAttribution() {
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['sw5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
   }
 }
-
 
 export function getActorItemForEffect(effect: any /* ActiveEffect */) {
   if (effect.parent instanceof CONFIG.Item.documentClass && effect.parent.isEmbedded) return effect.parent;
@@ -1324,6 +1321,7 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
   }
   return item;
 }
+
 function determineSuppression() {
   this.isSuppressed = false;
   if (this.disabled) return;
