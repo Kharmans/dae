@@ -331,7 +331,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         specials[theKey] = [0, -1];
       }
     });
-        // Do the system specific part
+    // Do the system specific part
     // 1. abilities add mod and save to each;
     if (daeSystemClass.systemConfig.abilities && foundry.utils.getProperty(actorModelSchemaFields, "abilities")) Object.keys(daeSystemClass.systemConfig.abilities).forEach(ablKey => {
       specials[`system.abilities.${ablKey}.mod`] = [0, -1];
@@ -433,7 +433,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
   }
 
-  
+
   public static setupActions(): void {
   }
 
@@ -590,7 +590,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     //@ts-expect-error
     const systemVersion = game.system.version;
     const damageTypes = [...Object.values(daeSystemClass.systemConfig.damageTypes), ...Object.values(daeSystemClass.systemConfig.healingTypes)];
-  
+
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
       Object.keys(this.traitList).forEach(type => {
@@ -612,13 +612,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       });
     }
     if (foundry.utils.isNewerVersion(systemVersion, "3.1.99")) {
-      this.bypassesList = Object.keys(daeSystemClass.systemConfig.damageTypes)
-        .filter(key => daeSystemClass.systemConfig.damageTypes[key].isPhysical)
-       .map(key => {
-        const returnValue = {}; 
-        returnValue[key] = i18n(daeSystemClass.systemConfig.damageTypes[key].label);
-        return returnValue;
-       });
+      this.bypassesList = Object.keys(daeSystemClass.systemConfig.itemProperties)
+        .filter(key => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
+        .map(key => {
+          const returnValue = {};
+          returnValue[key] = i18n(daeSystemClass.systemConfig.itemProperties[key].label);
+          return returnValue;
+        });
     } else if (daeSystemClass.systemConfig.damageTypes) {
       this.bypassesList = foundry.utils.duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
     }
@@ -862,7 +862,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.di.bypasses":
       case "system.traits.dr.bypasses":
       case "system.traits.dv.bypasses":
-        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.physicalWeaponProperties));
+        if (foundry.utils.isNewerVersion(systemConfig.version, "3.1.99")) {
+          const validKeys: string[]  = Object.keys(daeSystemClass.systemConfig.itemProperties)
+          .filter(key => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
+          return super.doCustomArrayValue(actor, current, change, validKeys);
+        } else 
+          return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.physicalWeaponProperties));
       case "system.traits.di.custom":
       case "system.traits.dr.custom":
       case "system.traits.dv.custom":
@@ -1185,7 +1190,7 @@ function prepareData(wrapped) {
     const globalBonuses = this.system.bonuses?.abilities ?? {};
     const rollData = this.getRollData();
     const checkBonus = simplifyBonus(globalBonuses?.check, rollData);
-    if (this._prepareInitiative && this.system?.attributes) 
+    if (this._prepareInitiative && this.system?.attributes)
       this._prepareInitiative(rollData, checkBonus);
     debug("prepare data: after passes", this);
   } catch (err) {
@@ -1255,7 +1260,7 @@ async function _prepareActorArmorClassAttribution(wrapped, data) {
   }
   if (attributions.length > 0) {
     //@ts-expect-error
-    const extraHtml = new game.system.application.PopertyAttribution(this, attributions, "attributions.ac", {title: ""}).renderTooltip();
+    const extraHtml = new game.system.application.PopertyAttribution(this, attributions, "attributions.ac", { title: "" }).renderTooltip();
     attributionHtml += extraHtml;
   }
   return attributionHtml;
@@ -1441,13 +1446,6 @@ function daeApply(wrapped, actor, change) {
   }
 }
 
-function addDependents(dependents: any[]) {
-  const id = game.system.id ?? MODULE_ID;
-  const current = this.getFlag(id, "dependents") || [];
-  dependents = dependents.filter(d => d?.uuid).map(d => ({ uuid: d.uuid }))
-  return this.setFlag(id, "dependents", current.concat(dependents));
-}
-
 function removeDependent(dependent: any) {
   const id = game.system.id ?? MODULE_ID;
   const dependents = (this.getFlag(id, "dependents") || []).filter(dep => dep.uuid !== dependent.uuid);
@@ -1470,17 +1468,28 @@ async function deleteAllDependents() {
   }
   return this.clearDependents();
 }
+
 /**
  * Record another effect as a dependent of this one.
- * @param {ActiveEffect5e} dependent  The dependent effect.
- * @returns {Promise<Document>}
+ * @param {...ActiveEffect5e} dependent  One or more dependent effects.
+ * @returns {Promise<ActiveEffect5e>}
  */
-async function _addDependent(dependent) {
+async function _addDependent(...dependent) {
   const id = game.system.id ?? MODULE_ID;
   const dependents = this.getFlag(id, "dependents") ?? [];
-  dependents.push({ uuid: dependent.uuid });
+  dependents.push(...dependent.map(d => ({ uuid: d.uuid })));
   return this.setFlag(id, "dependents", dependents);
 }
+
+async function addDependents(...dependents) {
+  //@ts-expect-error
+  if (isNewerVersion(game.system.version, "3.1.99")) {
+    return this.addDependent(...dependents);
+  } else {
+    return _addDependent.bind(this)(...dependents);
+  }
+}
+
 
 /**
  * Retrieve a list of dependent effects.

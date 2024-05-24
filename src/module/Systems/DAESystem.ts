@@ -335,7 +335,7 @@ export class DAESystem {
       const src = 'with (sandbox) { return ' + expression + '}';
       const evl = new Function('sandbox', src);
       //@ts-expect-error
-      sandbox = foundry.utils.mergeObject(sandbox, { Roll, fromUuidSync: foundry.utils.fromUuidSync });
+      sandbox = foundry.utils.mergeObject(sandbox, { Roll, fromUuidSync });
       sandbox = foundry.utils.mergeObject(sandbox, {MidiQOL: globalThis.MidiDAEEval ?? {}})
       const sandboxProxy = new Proxy(sandbox, {
         has: () => true, // Include everything
@@ -351,8 +351,7 @@ export class DAESystem {
     }
     if (Number.isNumeric(result)) return Number(result)
     return result;
-  };
-
+  }
 
   public static safeEvalExpression(input: string, context: any, depth = 0) {
     if (typeof input !== "string") return input;

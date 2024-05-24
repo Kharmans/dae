@@ -371,7 +371,7 @@ export async function addConditionChange(actor, change, token, effect) {
       const status = await ActiveEffect.implementation.fromStatusEffect(condition.id, { parent: actor });
       status.origin = effect.uuid;
       let returnValue = await (actionQueue.add(actor.createEmbeddedDocuments.bind(actor), "ActiveEffect", [status], { parent: actor, keepId: true }));
-      if (effect.addDependents) effect.addDependents(returnValue);
+      if (effect.addDependent) effect.addDependents(returnValue);
       return returnValue;
     }
   }
@@ -1360,14 +1360,14 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
     case "selfEffectsAlways":
       appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways).map(ae => {
         const data = ae.toObject(false);
-        foundry.utils.setProperty(data, "flags.core.sourceId", ae.uuid);
+        foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data
       });
       break;
     case "selfEffectsAll":
       appliedEffects = item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
         const data = ae.toObject(false);
-        foundry.utils.setProperty(data, "flags.core.sourceId", ae.uuid);
+        foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data;
       });
       break
@@ -1375,7 +1375,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
     default:
       appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
         const data = ae.toObject(false);
-        foundry.utils.setProperty(data, "flags.core.sourceId", ae.uuid);
+        foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data;
       });
   }
@@ -1399,14 +1399,13 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
       rollData.stackCount = activeEffectData.flags?.dae?.stacks ?? activeEffectData.flags?.dae?.statuscounter?.counter.value ?? 1;
       const evalArgsOptions: any = foundry.utils.mergeObject(options, {
         effectData: activeEffectData,
-        context: rollData,
         change,
         doRolls
       })
+      evalArgsOptions.context = rollData,
       evalArgsOptions.item = item;
       if (item.actor) evalArgsOptions.actor = item.actor;
       let newChange = await evalArgs(evalArgsOptions)
-
       activeEffectData.changes[changeIndex] = newChange;
     };
 

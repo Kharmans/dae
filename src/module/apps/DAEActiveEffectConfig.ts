@@ -22,6 +22,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLPresets;
   ATLVisionModes;
   validFields;
+  bypassesList;
   // object: any; Patch 4535992 Why ???
   constructor(object: any = {}, options = {}) {
     super(object, options);
@@ -151,6 +152,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec.key === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
     if (spec.key === "ATL.preset") return this.ATLPresets;
     if (spec.key === "ATL.sight.visionMode") return this.ATLVisionModes;
+    if ([`system.traits.di.bypasses`, `system.traits.dr.bypasses`, `system.traits.dv.bypasses`].includes(spec.key)) 
+      return this.bypassesList;
     return daeSystemClass.getOptionsForSpec(spec);
   }
 

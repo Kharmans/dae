@@ -1,3 +1,9 @@
+### 11.3.26
+* Process item subtypes for ammunition selector. The current solution using name will till work but throw a warning. Eventually it will be disabled.
+
+### 11.3.25
+* More changes for dnd5e 3.2
+
 ### 11.3.24
 * Fix for ci/di/dr/dv to support -piercing/-blinded etc to remove an existing trait.
 * 11.3.25 Some fixes for dnd5e 3.2
