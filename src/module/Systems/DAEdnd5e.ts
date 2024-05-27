@@ -45,6 +45,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     //@ts-expect-error
     const SchemaField = foundry.data.fields.SchemaField;
     //@ts-expect-error
+    const FormulaField = game.system.dataModels.fields.FormulaField;
+    //@ts-expect-error
     const dataModels: any = game.system.dataModels;
     const MappingField = dataModels.fields.MappingField;
     const actorDataModel = this.getActorDataModelFields(actorType);
@@ -99,7 +101,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.attributes.ac.bonus"]) baseValues["system.attributes.ac.bonus"] = ["", -1];
     if (!baseValues["system.attributes.ac.base"]) baseValues["system.attributes.ac.base"] = [0, -1];;
     if (!baseValues["system.attributes.ac.cover"]) baseValues["system.attributes.ac.cover"] = [0, -1];;
-    if (!baseValues["system.attributes.ac.calc"]) baseValues["system.attributes.ac.calc"] = [baseValues[baseValues["system.attributes.ac.calc"], modes.OVERRIDE]];
+    if (!baseValues["system.attributes.ac.calc"]) baseValues["system.attributes.ac.calc"] = ["", modes.OVERRIDE];
     // system.attributes.prof/system.details.level and system.attributes.hd are all calced in prepareBaseData
     if (!baseValues["system.bonuses.All-Attacks"]) baseValues["system.bonuses.All-Attacks"] = ["", -1];
     if (!baseValues["system.bonuses.weapon.attack"]) baseValues["system.bonuses.weapon.attack"] = ["", -1];
@@ -118,9 +120,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.bonuses.util.damage"]) baseValues["system.bonuses.util.damage"] = ["", -1];
     baseValues["system.attributes.hp.bonuses.overall"] = ["", -1];
     baseValues["system.attributes.hp.bonuses.level"] = ["", -1];
-    delete baseValues["system.attributes.hp.max"];
-    delete baseValues["system.attributes.hp.min"];
-
+    if (!baseValues["system.attributes.hd.max"]) baseValues["system.attributes.hd.max"] = [0, -1];
     const actorModelSchemaFields = this.getActorDataModelFields(actorType);
     delete baseValues["system.traits.toolProf.value"];
     delete baseValues["system.traits.toolProf.custom"];
@@ -249,7 +249,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.ac.EC"] = [0, -1];
     specials["system.attributes.ac.AR"] = [0, -1];
 
-    specials["system.attributes.hd"] = [0, -1];
     if (GameSystemConfig.languages) {
       specials["system.traits.languages.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
       specials["system.traits.languages.value"] = ["", -1];
@@ -593,9 +592,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
+      Object.keys(daeSystemClass.systemConfig.healingTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.healingTypes[key].label; return obj }, this.traitList)
       Object.keys(this.traitList).forEach(type => {
-        this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageTypes[type].label}`;
+        this.traitList[`-${type}`] = `-${this.traitList[type]}`;
       });
+
       /*
       this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes;
       Object.keys(this.customDamageResistanceList).forEach(type => {

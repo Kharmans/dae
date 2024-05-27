@@ -1,5 +1,7 @@
 ### 11.3.26
-* Process item subtypes for ammunition selector. The current solution using name will till work but throw a warning. Eventually it will be disabled.
+* Added healing types back into di/dr/dv
+* Fix for using an enchanted item throwing an error.
+* Fix for system.attributes.hp.max effects not working.
 
 ### 11.3.25
 * More changes for dnd5e 3.2

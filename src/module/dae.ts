@@ -192,7 +192,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       c.value = daeSystemClass.safeEvalExpression(c.value, this.getRollData())
     }
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
-    const sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
+    let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
     if (typeof sampleValue !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
       c.value = c.value.replace("@stackCount", stackCount)
 
@@ -1358,14 +1358,14 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   let appliedEffects: any[] = [];
   switch (options.selfEffects) {
     case "selfEffectsAlways":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.dae?.selfTargetAlways).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.isAppliedEnchantment && ae.flags?.dae?.selfTargetAlways).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data
       });
       break;
     case "selfEffectsAll":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.isAppliedEnchantment && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data;
@@ -1373,7 +1373,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
       break
     case "none":
     default:
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.isAppliedEnchantment && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data;
