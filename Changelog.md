@@ -1,3 +1,8 @@
+
+### 11.3.27
+* Anothr fix for enchantments not being dealt with correctly.
+* Fix for effects trying to target system.traits.size display invalid options.
+
 ### 11.3.26
 * Added healing types back into di/dr/dv
 * Fix for using an enchanted item throwing an error.

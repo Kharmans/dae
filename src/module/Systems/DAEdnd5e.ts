@@ -701,7 +701,17 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       if (game.system.id === "dnd5e")
         return abilitiesList;
     }
-    if (spec.key === "system.traits.size") return daeSystemClass.systemConfig?.actorSizes;
+    if (spec.key === "system.traits.size") {
+      //@ts-expect-error
+      if (foundry.utils.isNewerVersion(game.system.version, "3.1")) {
+        return Object.keys(daeSystemClass.systemConfig?.actorSizes).reduce((sizes, size) => {
+          sizes[size] = daeSystemClass.systemConfig.actorSizes[size].label;
+          return sizes;
+        }, {});
+      } else {
+        return daeSystemClass.systemConfig?.actorSizes;
+      }
+    }
     return super.getOptionsForSpec(spec);
   }
 
