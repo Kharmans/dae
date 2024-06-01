@@ -1378,12 +1378,13 @@ function preUpdateItemHook(candidateItem, updates, options, user) {
   if (game.user?.id !== user) return true;
   const actor: Actor = candidateItem.parent;
   if (!(actor instanceof Actor)) return true;
-  if (updates.system?.equipped === undefined && updates.system?.attunement === undefined) return true;
+  if (updates.system?.equipped === undefined && updates.system?.attunement === undefined && updates.system.attuned === undefined) return true;
   try {
     const wasSuppressed = candidateItem.areEffectsSuppressed;
     const updatedItem = candidateItem.clone({
       "system.equipped": updates.system?.equipped ?? candidateItem.system.equipped,
-      "system.attunement": updates.system?.attunement ?? candidateItem.system.attunement
+      "system.attunement": updates.system?.attunement ?? candidateItem.system.attunement,
+      "system.attuned": updates.system?.attuned ?? candidateItem.system.attuned
     });
     const isSuppressed = updatedItem.areEffectsSuppressed;
     if (wasSuppressed === isSuppressed) return true;

@@ -1358,14 +1358,14 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   let appliedEffects: any[] = [];
   switch (options.selfEffects) {
     case "selfEffectsAlways":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.isAppliedEnchantment && ae.flags?.dnd5e?.type !== "enchantment" && ae.flags?.dae?.selfTargetAlways).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.[game.system.id]?.type !== "enchantment" && ae.flags?.dae?.selfTargetAlways).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data
       });
       break;
     case "selfEffectsAll":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.isAppliedEnchantment && ae.flags?.dnd5e?.type !== "enchantment" && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.[game.system.id]?.type !== "enchantment" && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data;
@@ -1373,7 +1373,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
       break
     case "none":
     default:
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !ae.isAppliedEnchantment && ae.flags?.dnd5e?.type !== "enchantment" && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.[game.system.id]?.type !== "enchantment" && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data;
@@ -1382,7 +1382,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   if (!options.applyAll)
     appliedEffects = appliedEffects.filter(aeData => foundry.utils.getProperty(aeData, "flags.dae.dontApply") !== true);
   else
-    appliedEffects.forEach(aeData => foundry.utils.setProperty(aeData.flags, "dae.dontApply", false));
+    appliedEffects.forEach(aeData => foundry.utils.setProperty(aeData, "flags.dae.dontApply", false));
   if (options.effectsToApply?.length > 0) appliedEffects = appliedEffects.filter(aeData => options.effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = item.getRollData(); //TODO if not caster eval move to evalArgs call
@@ -1543,9 +1543,9 @@ function updateItemEffects(candidate, updates, options, user) {
     return true;
   }
   if (options.isUndo) return true;
-  if (updates.system?.equipped !== undefined || updates.system?.attuned !== undefined) {
+  if (updates.system?.equipped !== undefined || updates.system?.attuned !== undefined || updates.system?.attunement !== undefined ) {
     // equipped / attuned updated.
-    const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && (updates.system.attuned ?? candidate.system.attuned) !== daeSystemClass.systemConfig.REQUIRED;
+    const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && ((updates.system.attuned ?? candidate.system.attuned) || (updates.system?.attunment ?? candidate.system.attunment) !== "");
     const effects = candidate.effects.filter(ef => ef.transfer || ef.flags.dae.transfer)
   }
   if (options.isAdvancement) {
@@ -1593,8 +1593,6 @@ function updateTransferEffectsHook(candidate, updates, options, user) {
   const item = candidate.parent;
   if (!item.isOwned) return true;
   const actor = item.parent;
-  // const isEnabled = item.system.equipped && item.system.attuned !== daeSystemClass.systemConfig?.attunementTypes?.REQUIRED;
-  // const effects = candidate.effects.filter(ef => ef.transfer || ef.flags.dae.transfer)
   if (options.isAdvancement) {
     console.warn(`Dae | Skipping effect re-creation for class advancement ${candidate.parent?.name ?? ""} item ${candidate.name}`)
     return;

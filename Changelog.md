@@ -1,3 +1,5 @@
+### 11.3.28
+* Fix for new attunement data in dnd5e v3.2
 
 ### 11.3.27
 * Anothr fix for enchantments not being dealt with correctly.

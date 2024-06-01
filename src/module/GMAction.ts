@@ -586,7 +586,7 @@ export function convertDuration(itemDuration: { units: string, value: number }, 
       case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
       case "spec": return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
       default:
-        console.warn("dae | unknown time unit found", itemDuration.units);
+        warn("dae | unknown time unit found", itemDuration.units);
         return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
     }
   } else {
