@@ -41,12 +41,13 @@
       </div>
 
       {{#if midiActive}}
+      {{#unless isEnchantment}}
       <div class="form-group">
         <label>{{ localize "dae.IncapacitatedDisabled" }}</label>
         <input type="checkbox" name="flags.dae.disableIncapacitated" {{ checked effect.flags.dae.disableIncapacitated
           }} />
       </div>
-
+      {{/unless}}
       {{/if}}
       {{#if isActorEffect}}
       <div class="form-group">
@@ -66,6 +67,7 @@
         {{ localize "dae.transfer.Hint" }}
       </p>
 
+      {{#unless isEnchantment}}
       <div class="form-group">
         <label>{{ localize "dae.SelfTarget.Name" }}</label>
         <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
@@ -89,6 +91,7 @@
       <p class="notes" style="margin-bottom:1em">
         {{ localize "dae.DontApply.Hint" }}
       </p>
+      {{/unless}}
 
       {{/if}}
 

@@ -227,6 +227,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.midiActive = globalThis.MidiQOL !== undefined;
     //@ts-expect-error
     data.useIcon = game.release.generation < 12;
+    data.isEnchantment = foundry.utils.getProperty(this.object, "flags.dnd5e.enchantment") !== undefined;
     return data;
   }
 

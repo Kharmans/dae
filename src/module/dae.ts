@@ -371,7 +371,8 @@ export async function addConditionChange(actor, change, token, effect) {
       const status = await ActiveEffect.implementation.fromStatusEffect(condition.id, { parent: actor });
       status.origin = effect.uuid;
       let returnValue = await (actionQueue.add(actor.createEmbeddedDocuments.bind(actor), "ActiveEffect", [status], { parent: actor, keepId: true }));
-      if (effect.addDependent) effect.addDependents(returnValue);
+      if (effect.addDependents) effect.addDependents(returnValue);
+      else if (effect.addDependent) effect.addDependent(...returnValue);
       return returnValue;
     }
   }
@@ -428,6 +429,36 @@ export async function removeStatusEffectChange(actor, change, tokens, effect) {
     await actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToRemove);
 }
 
+export async function expireEffects(actor, effects: ActiveEffect[], options: any): Promise<any> {
+  if (!effects) return {};
+  const actorEffectsToDelete: string[] = [];
+  const effectsToDelete: ActiveEffect[] = [];
+  const effectsToDisable: ActiveEffect[] = [];
+  for (let effect of effects) {
+    if (!effect.id) continue;
+    //@ts-expect-error
+    if (!fromUuidSync(effect.uuid)) continue;
+    //@ts-expect-error
+    if (effect.transfer)
+      effectsToDisable.push(effect);
+    else if (effect.parent instanceof Actor)
+      actorEffectsToDelete.push(effect.id);
+    else if (effect.parent instanceof Item) // this should be enchantments
+      effectsToDelete.push(effect);
+  }
+  if (actorEffectsToDelete.length > 0) await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete, options);
+  if (effectsToDisable.length > 0) {
+    for (let effect of effectsToDisable) {
+      await effect.update({ "disabled": true })
+    }
+  }
+  if (effectsToDelete.length > 0) {
+    for (let effect of effectsToDelete)
+      await effect.delete();
+  }
+  return { deleted: actorEffectsToDelete, disabled: effectsToDisable, itemEffects: effectsToDelete };
+}
+
 export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}) {
   if (!effect.changes) return effect;
   let tokenUuid;
@@ -452,14 +483,17 @@ export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}
 function createActiveEffectHook(...args) {
   let [effect, context, userId] = args;
   if (userId !== game.user?.id) return true;
-  if (context.isUndo) return;
+  if (context.isUndo) return true;
   //@ts-expect-error
   if (!effect.parent || (CONFIG.ActiveEffect.legacyTransferral === true && !(effect.parent instanceof CONFIG.Actor.documentClass))) return true;
   let actor = effect.parent;
-  if (actor instanceof CONFIG.Item.documentClass) actor = effect.parent.parent;
+  if (actor instanceof CONFIG.Item.documentClass) {
+    if (!effect.transfer) return true; // non-transfer effects on items should not be applied to the actor
+    actor = effect.parent.parent;
+  }
   if (!actor) {
     // not an effect on an actor so do nothing
-    return;
+    return true;
   }
   const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
   if (!(tokens[0] instanceof Token)) return;
@@ -690,15 +724,8 @@ export function preDeleteCombatHook(...args) {
   for (let combatant of combat.combatants) {
     const actor = combatant.actor;
     if (!actor) continue;
-    const effectsToDelete = actor.effects.filter(ef => ef.flags.dae?.specialDuration?.includes("combatEnd")).map(ef => ef.id);
-    actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToDelete);
-    const effectsToDisable = actor.appliedEffects.filter(ef => ef.flags.dae?.specialDuration?.includes("combatEnd") && ef.transfer);
-    if (effectsToDisable.length === 0) continue;
-    const effectUpdates: any[] = [];
-    for (let effect of effectsToDisable) {
-      effectUpdates.push({ _id: effect.id, disabled: true });
-    }
-    actionQueue.add(actor.updateEmbeddedDocuments.bind(actor), "ActiveEffect", effectUpdates);
+    const effects = getApplicableEffects(actor, {includeEnchantments: true}).filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd"));
+    actionQueue.add(expireEffects,actor, effects, { "expiry-reason": "combat-end" }); 
   }
 }
 
@@ -706,16 +733,8 @@ export function preCreateCombatantHook(...args) {
   const [combatant, data, options, user] = args;
   const actor = combatant.actor;
   if (!actor) return;
-  const effectsToDelete = actor.effects.filter(ef => ef.flags.dae?.specialDuration?.includes("joinCombat")).map(ef => ef.id);
-  actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToDelete);
-  const effectsToDisable = actor.appliedEffects.filter(ef => ef.flags.dae?.specialDuration?.includes("joinCombat") && ef.transfer);
-  if (effectsToDisable.length > 0) {
-    const effectUpdates: any[] = [];
-    for (let effect of effectsToDisable) {
-      effectUpdates.push({ _id: effect.id, disabled: true });
-    }
-    actionQueue.add(actor.updateEmbeddedDocuments.bind(actor), "ActiveEffect", effectUpdates);
-  }
+  const effects = getApplicableEffects(actor, {includeEnchantments: true}).filter(ef => ef.flags?.dae?.specialDuration?.includes("joinCombat"));
+  actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "join-combat" }); 
 }
 function recordDisabledSuppressedHook(...args) {
   let [effect, updates, context, userId] = args;
@@ -1343,7 +1362,7 @@ export async function doEffects(item, activate, targets = undefined, options: an
   {
     whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,
     fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: item.uuid,
-    selfEffects: "none"
+    selfEffects: "none", context: {}
   }) {
   return await applyNonTransferEffects(item, activate, targets, options)
 }
@@ -1402,7 +1421,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
         change,
         doRolls
       })
-      evalArgsOptions.context = rollData,
+      evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, {recursive: false});
       evalArgsOptions.item = item;
       if (item.actor) evalArgsOptions.actor = item.actor;
       let newChange = await evalArgs(evalArgsOptions)
@@ -2128,4 +2147,15 @@ export function safeGetGameSetting(moduleName, settingName): any | undefined {
   if (game.settings.settings.get(`${moduleName}.${settingName}`))
     return game.settings.get(moduleName, settingName);
   else return undefined;
+}
+
+export function getApplicableEffects(actor, {includeEnchantments}) {
+  if (!actor) return [];
+  let effects: any[] = [];
+  for (let effect of actor.allApplicableEffects()) effects.push(effect);
+  if (includeEnchantments) {
+    const enchantments = actor.items.contents.flatMap(i => i.effects.contents).filter(ae => ae.isAppliedEnchantment);
+    effects = effects.concat(enchantments);
+  }
+  return effects;
 }

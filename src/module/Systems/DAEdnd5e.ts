@@ -399,7 +399,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         flags: { dnd5e: { halfHealth: true } }
       });
     }
-    if (true) {
+    if (false) {
       const effectClass: any = CONFIG.ActiveEffect.documentClass;
       //@ts-expect-error .version
       if (foundry.utils.isNewerVersion(game.system.version, "3.0.99")) {
@@ -429,6 +429,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           if (!docClass.prototype.deleteAllDependents) docClass.prototype.deleteAllDependents = deleteAllDependents;
         }
       }
+    }
+
+    // enchantments don't seem to get their world time set when applied to an item
+    //@ts-expect-error
+    if (foundry.utils.isNewerVersion(game.system.version, "3.1.99")) {
+      Hooks.on("preCreateActiveEffect", (candidate, data, options, user) => {
+        if (candidate.isAppliedEnchantment && (candidate.duration.seconds || candidate.duration.rounds || candidate.duration.turns)) {
+          if (!candidate.duration.startTime && candidate.duration.seconds) 
+            candidate.updateSource({ duration: { startTime: game.time.worldTime } });
+          else if (!Number.isNumeric(candidate.duration.startRound) && !Number.isNumeric(candidate.duration.startTurn) && game.combat) {
+            candidate.updateSource({ duration: { startRound: game.combat?.round, startTurn: game.combat?.turn } });
+          }
+        }
+        return true;
+      })
     }
   }
 
@@ -874,10 +889,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.dr.bypasses":
       case "system.traits.dv.bypasses":
         if (foundry.utils.isNewerVersion(systemConfig.version, "3.1.99")) {
-          const validKeys: string[]  = Object.keys(daeSystemClass.systemConfig.itemProperties)
-          .filter(key => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
+          const validKeys: string[] = Object.keys(daeSystemClass.systemConfig.itemProperties)
+            .filter(key => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
           return super.doCustomArrayValue(actor, current, change, validKeys);
-        } else 
+        } else
           return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.physicalWeaponProperties));
       case "system.traits.di.custom":
       case "system.traits.dr.custom":
@@ -1378,7 +1393,7 @@ function preUpdateItemHook(candidateItem, updates, options, user) {
   if (game.user?.id !== user) return true;
   const actor: Actor = candidateItem.parent;
   if (!(actor instanceof Actor)) return true;
-  if (updates.system?.equipped === undefined && updates.system?.attunement === undefined && updates.system.attuned === undefined) return true;
+  if (updates.system?.equipped === undefined && updates.system?.attunement === undefined && updates.system?.attuned === undefined) return true;
   try {
     const wasSuppressed = candidateItem.areEffectsSuppressed;
     const updatedItem = candidateItem.clone({

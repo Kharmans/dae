@@ -1,3 +1,9 @@
+### 11.3.29
+* Enchantments with a duration do not get the startTime/startRound/startTurn set by dnd5e 3.2. Dae will now set that if required so that enchantments can expire.
+* Enchantments with special durations of join-combat/end-combat will now expire appropriately.
+* Fix for incorrectly applying macro.XXX effects to actor when they are enchantments on an item.
+* Fix for not passing through some data from midi-qol to dae.doEffects
+
 ### 11.3.28
 * Fix for new attunement data in dnd5e v3.2
 
