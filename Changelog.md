@@ -1,3 +1,6 @@
+### 11.3.30
+* fix for system.attributes.hp.max. In practice you should not modify hp.max since it interacts with all of the level advancement stuff with odd results, rather go through the bonus fields for characters.
+
 ### 11.3.29
 * Enchantments with a duration do not get the startTime/startRound/startTurn set by dnd5e 3.2. Dae will now set that if required so that enchantments can expire.
 * Enchantments with special durations of join-combat/end-combat will now expire appropriately.

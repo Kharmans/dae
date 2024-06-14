@@ -272,7 +272,7 @@
     "dae.HandleEquip.Name": "Handle Equip/Unequip item active effects",
     "dae.HandleEquip.Hint": "If set DAE will handle equip/unequip enabling/disabling active effects and toggling active will toggle equip/unequip",
     "dae.DAETitleBar.Name": "DAE Title Bar",
-    "dae.DAETitleBar.Hint": "Display DAE effect editor button in Title Bar. (You don't need this anymore - just edit from the effects tab)",
+    "dae.DAETitleBar.Hint": "Display DAE effect editor button in Title Bar",
     "dae.DIMETitleBar.Name": "DIME Title Bar",
     "dae.DIMETitleBar.Hint": "Display DAE Item Macro Eitor in Title Bar",
     "dae.DAEColorTitleBar.Name": "DAE Colorful Title Bar",
