@@ -413,7 +413,7 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect)
   let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
   if (statusEffect) {
     if (!statusEffect._id) { // fiddle for CE effects - since it doesn't set it can presmuably be anyting;
-      statusEffect._id = randomID();
+      statusEffect._id = foundry.utils.randomID();
     }
     //@ts-expect-error
     statusEffect = await ActiveEffect.implementation.fromStatusEffect(change.value, { parent: actor });
@@ -1687,7 +1687,7 @@ export async function createItemHook(...args) {
   if (rewriteTransferOrigin) {
     const updates: any[] = [];
     for (let effect of item.effects) {
-      if (effect.transfer) {
+      if (effect.transfer && effect.getFlag(game.system.id, "type") !== "enchantment") {
         effect.origin = item.uuid;
         updates.push({ _id: effect._id, origin: item.uuid });
       }
@@ -2134,6 +2134,8 @@ export function tokenForActor(actor): Token | undefined {
 }
 
 export function effectIsTransfer(effect) {
+  //@ts-expect-error
+  if (CONFIG.ActiveEffect.legacyTransferral === false) return effect.transfer === true;
   if (effect.flags.dae?.transfer !== undefined) return effect.flags.dae.transfer;
   if (effect.transfer !== undefined) return effect.transfer;
   return false;

@@ -7,7 +7,6 @@ import { daeReadyActions } from "./module/dae";
 import { setupSocket } from './module/GMAction';
 import { checkLibWrapperVersion } from './module/migration';
 import { setupPatching, initPatching } from './module/patching';
-import { ItemEffectsItemSheet } from './module/editItemEffects/classes/item-sheet';
 import API from './module/API/api';
 
 export let setDebugLevel = (debugText: string) => {
@@ -94,7 +93,6 @@ Hooks.once('ready', async function () {
     }
     daeReadyActions();
     createDAEMacros();
-    ItemEffectsItemSheet.init();
     // setupDAEMacros();
   } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
     ui.notifications.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);

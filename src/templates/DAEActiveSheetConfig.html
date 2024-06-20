@@ -59,7 +59,7 @@
       {{/if}}
 
       {{#if isItemEffect}}
-      <div class="form-group">
+      <div class="form-group effectTransfer">
         <label>{{ localize "dae.transfer.Name" }}</label>
         <input type="checkbox" name="transfer" {{ checked effect.transfer }} />
       </div>
@@ -68,6 +68,7 @@
       </p>
 
       {{#unless isEnchantment}}
+      {{#unless effect.transfer}}
       <div class="form-group">
         <label>{{ localize "dae.SelfTarget.Name" }}</label>
         <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
@@ -92,20 +93,9 @@
         {{ localize "dae.DontApply.Hint" }}
       </p>
       {{/unless}}
-
+      {{/unless}}
       {{/if}}
 
-      <!--
-    <div class="form-group">
-      <label>{{ localize "dae.forceToHud.Name" }}</label>
-      <div class="form-fields">
-        <input type="text" name="flags.core.statusId" value="{{ effect.flags.core.statusId }}" />
-      </div>
-    </div>
-    <p class="notes" style="margin-bottom:1em"> 
-    {{ localize "dae.forceToHud.Hint" }}
-    </p>
-    -->
       {{#if isItemEffect}}
       <div class="form-group">
         <label>{{localize "dae.Stackable"}}</label>
@@ -116,6 +106,18 @@
         </div>
       </div>
       {{/if}}
+      {{#unless preV12}}
+      <div class="form-group">
+        <label>Status Conditions</label>
+        <div class="form-fields">
+            <multi-select name="statuses">
+                {{#each statuses as |status|}}
+                <option value="{{status.id}}" {{status.selected}}>{{status.label}}</option>
+                {{/each}}
+            </multi-select>
+        </div>
+    </div>
+    {{/unless}}
       <div class="form-group">
         <label>{{ localize "dae.ShowIcon.Name" }}</label>
         <input type="checkbox" name="flags.dae.showIcon" {{ checked effect.flags.dae.showIcon }} />

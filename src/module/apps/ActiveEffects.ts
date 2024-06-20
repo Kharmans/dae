@@ -221,12 +221,21 @@ export class ActiveEffects extends FormApplication {
       //@ts-expect-error
       let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
       if (effect_name === "new") {
+        if (false && object.system.enchantment) { // I think just creating a simple effect, rather than an enchantment is right
+          //@ts-expect-error .create
+          return await ActiveEffect.implementation.create({
+            name: object.name,
+            icon: object.img,
+            "flags.dnd5e.type": "enchantment",
+          }, {parent: object});
+        };
         AEDATA = {
           name: object.name,
           changes: [],
           transfer: false,
         }
         const img = object.img || "icons/svg/mystery-man.svg";
+
         //@ts-expect-error
         if (game.release.generation < 12) AEDATA.icon = img;
         else AEDATA.img = img;
@@ -251,7 +260,7 @@ export class ActiveEffects extends FormApplication {
             object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
           } else {
             if (!statusEffect._id) { // fiddle for CE effects
-              statusEffect._id = randomID();
+              statusEffect._id = foundry.utils.randomID();
             };
             //@ts-expect-error
             let effect = await ActiveEffect.implementation.fromStatusEffect(id, { parent: object, keepId: true });

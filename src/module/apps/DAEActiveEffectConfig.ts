@@ -119,7 +119,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       template: `./modules/dae/templates/DAEActiveSheetConfig.html`,
       width: 900,
       height: "auto",
-      resizable : true,
+      resizable: true,
       tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }],
       dragDrop: [{ dropSelector: ".value" }],
       scrollY: [".dae-scrollable-list .scrollable"],
@@ -152,7 +152,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec.key === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
     if (spec.key === "ATL.preset") return this.ATLPresets;
     if (spec.key === "ATL.sight.visionMode") return this.ATLVisionModes;
-    if ([`system.traits.di.bypasses`, `system.traits.dr.bypasses`, `system.traits.dv.bypasses`].includes(spec.key)) 
+    if ([`system.traits.di.bypasses`, `system.traits.dr.bypasses`, `system.traits.dv.bypasses`].includes(spec.key))
       return this.bypassesList;
     return daeSystemClass.getOptionsForSpec(spec);
   }
@@ -164,6 +164,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (foundry.utils.getProperty(this.object, "flags.dae.stackable") === undefined)
       foundry.utils.setProperty(this.object, "flags.dae.stackable", "noneName");
     const data: any = await super.getData(options);
+    //@ts-expect-error
+    data.preV12 = game.release.generation <= 11;
     let validSpecsToUse;
     if (!this.object.parent || !(this.object.parent instanceof CONFIG.Actor.documentClass)) {
       validSpecsToUse = ValidSpec.specs["union"];
@@ -172,6 +174,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
     await daeSystemClass.editConfig();
 
+    if (data.effect.flags?.dnd5e?.type === "enchantment") data.effect.transfer = false;
     const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)
       .reduce((obj, e) => {
         obj[e[1]] = game.i18n.localize("EFFECT.MODE_" + e[0]);
@@ -227,8 +230,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.midiActive = globalThis.MidiQOL !== undefined;
     //@ts-expect-error
     data.useIcon = game.release.generation < 12;
-    data.isEnchantment = foundry.utils.getProperty(this.object, "flags.dnd5e.enchantment") !== undefined;
-    return data;
+    data.isEnchantment = this.object.getFlag(game.system.id, "type") === "enchantment";
+     return data;
   }
 
   _keySelected(event) {
@@ -244,6 +247,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     super.activateListeners(html);
     html.find(".keylist").change(this._keySelected.bind(this))
     html.find(".awesomplete").on("awesomplete-selectcomplete", this._textSelected.bind(this));
+    html.find(".effectTransfer").on("click", event => {
+      this.object.transfer = !this.object.transfer;
+      this.render(true);
+    })
   }
 
   /* ----------------------------------------- */
@@ -319,8 +326,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!data.tint || data.tint === "") data.tint = null;
     // fixed for very old items
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
-    if (data.transfer) data.origin = this.object.parent?.uuid;
+    if (data.transfer && this.object.getFlag(game.system.id, "type") !== "enchantment") data.origin = this.object.parent?.uuid;
     else delete data.origin;
+    data.statuses ??= [];
+
     foundry.utils.setProperty(data, "flags.dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
     return data;
   }
@@ -337,6 +346,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         }
       } else if (this.object.parent.isOwned) formData.duration.startTime = null;
     }
+    if (getProperty(formData, `flags.${game.system.id}.type`) === "enchantment") formData.transfer = false;
     await this.object.update(formData);
   }
 }
@@ -349,15 +359,15 @@ export function geti18nTranslations() {
 }
 
 Hooks.once("setup", () => {
-    DocumentSheetConfig.registerSheet(
-      CONFIG.ActiveEffect.documentClass,
-      "core",
-      DAEActiveEffectConfig,
-      {
-        label: i18n("dae.EffectSheetLabel"),
-        makeDefault: true,
-        //@ts-expect-error canBeDefault missing
-        canBeDefault: true,
-        canConfigure: true
-      });
+  DocumentSheetConfig.registerSheet(
+    CONFIG.ActiveEffect.documentClass,
+    "core",
+    DAEActiveEffectConfig,
+    {
+      label: i18n("dae.EffectSheetLabel"),
+      makeDefault: true,
+      //@ts-expect-error canBeDefault missing
+      canBeDefault: true,
+      canConfigure: true
+    });
 })

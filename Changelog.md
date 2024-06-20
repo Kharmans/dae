@@ -1,3 +1,6 @@
+### 11.3.31
+* fix for creating enchantments via dae editor.
+
 ### 11.3.30
 * fix for system.attributes.hp.max. In practice you should not modify hp.max since it interacts with all of the level advancement stuff with odd results, rather go through the bonus fields for characters.
 

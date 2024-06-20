@@ -513,34 +513,6 @@ export async function applyActiveEffects({ activate, targetList, activeEffects, 
             }
           }
         }, 1000);
-
-        //TODO remove this when timesup is in the wild.
-        if (!timesUpInstalled) { // do the kludgey old form removal
-          let doRemoveEffect = async (tokenUuid, removeEffect) => {
-            const actor = actorFromUuid(tokenUuid);
-            let removeId = removeEffect._id;
-            if (removeId && actor?.effects.get(removeId)) {
-              //@ts-expect-error
-              await actor?.deleteEmbeddedDocuments("ActiveEffect", [removeId], { "expiry-reason": "deprecated real time expiry" })
-            }
-          }
-
-          if (!Array.isArray(timedRemoveList)) timedRemoveList = [timedRemoveList];
-          timedRemoveList.forEach((ae: any) => {
-            // need to do separately as they might have different durations
-            let duration = ae.duration?.seconds || 0;
-            if (!duration) {
-              duration = ((ae.duration.rounds ?? 0) + ((ae.duration.turns > 0) ? 1 : 0)) * CONFIG.time.roundTime;
-            }
-            warn("removing effect ", ae.toObject, " in ", duration, " seconds ")
-            if (duration && aboutTimeInstalled) {
-              //@ts-expect-error .Gametime
-              game.Gametime.doIn({ seconds: duration }, doRemoveEffect, tokenUuid, ae.toObject())
-            } else if (duration && expireRealTime) { //TODO decide what to do for token magic vs macros
-              setTimeout(doRemoveEffect, duration * 1000 || 6000, targetActor.uuid, ae.toObject());
-            }
-          })
-        }
       }
     };
   };
