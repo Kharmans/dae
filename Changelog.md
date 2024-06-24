@@ -1,3 +1,6 @@
+### 11.3.32
+* Fix for summoning linked actors with classes defined not setting hp.max correctly.
+
 ### 11.3.31
 * fix for creating enchantments via dae editor.
 

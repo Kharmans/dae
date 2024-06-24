@@ -120,7 +120,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.bonuses.util.damage"]) baseValues["system.bonuses.util.damage"] = ["", -1];
     baseValues["system.attributes.hp.bonuses.overall"] = ["", -1];
     baseValues["system.attributes.hp.bonuses.level"] = ["", -1];
-    delete baseValues["system.attributes.hp.max"]; // should not be able to modify hp.max because it causes problems
+    // Don't do anything with system.attributes.hp.max - it will be set by parsing the actor schema as needed
     if (!baseValues["system.attributes.hd.max"]) baseValues["system.attributes.hd.max"] = [0, -1];
     const actorModelSchemaFields = this.getActorDataModelFields(actorType);
     delete baseValues["system.traits.toolProf.value"];
