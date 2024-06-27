@@ -1,3 +1,6 @@
+### 11.3.33
+* Fix for accessing Math.function in dae.eval. Correct syntax is dae.eval(max(1,2)), i.e. do not precede the name with Math.
+
 ### 11.3.32
 * Fix for summoning linked actors with classes defined not setting hp.max correctly.
 

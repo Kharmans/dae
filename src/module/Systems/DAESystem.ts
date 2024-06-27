@@ -373,8 +373,7 @@ export class DAESystem {
         while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
           funcName = stack.pop() + funcName;
         }
-        if (Math[funcName]) funcName = funcName = `Math.${funcName}`;
-
+        // if (Math[funcName]) funcName = funcName = `Math.${funcName}`; - the proxy will look in Math if not found elsewhere
         if (!validFunctionName.test(funcName) && funcName.length > 0) {
           throw new Error(`Invalid function name: ${funcName}`);
         }
