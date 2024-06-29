@@ -1,3 +1,7 @@
+### 11.3.34
+* Fix for breaking vision-5e detection modes.
+* Fix for changes to system.attributes.ac.cover/shield not working as expected with dae installed. (Affects Robe of the Archmage).
+
 ### 11.3.33
 * Fix for accessing Math.function in dae.eval. Correct syntax is dae.eval(max(1,2)), i.e. do not precede the name with Math.
 

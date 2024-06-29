@@ -485,10 +485,11 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
+  console.error("dae system prepare data");
   if (!ValidSpec.specs) {
     ValidSpec.createValidMods();
   }
-  if (!this.statuses) this.statuses = new Set();
+  this.statuses ??= new Set();
   // Identify which special statuses had been active
   const specialStatuses = new Map();
   if (foundry.utils.isNewerVersion(game.version, "11.293")) {
@@ -496,7 +497,7 @@ function prepareData(wrapped) {
     for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
       specialStatuses.set(statusId, this.statuses.has(statusId));
     }
-    this.statuses.clear();
+    this.statuses.clear(); // need to do this here since core foundry does this in applyActiveEffects, but we do multiple calls to applyEffects
   }
   foundry.utils.setProperty(this, "flags.dae.onUpdateTarget", foundry.utils.getProperty(this._source, "flags.dae.onUpdateTarget"));
   debug("prepare data: before passes", this.name, this._source);

@@ -96,11 +96,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       } else console.error("Unexpected field ", key, modelField)
     }
 
-    if (!baseValues["system.attributes.prof"]) baseValues["system.attributes.prof"] = [0, -1];;
+    if (!baseValues["system.attributes.prof"]) baseValues["system.attributes.prof"] = [0, -1];
     if (!baseValues["system.details.level"]) baseValues["system.details.level"] = [0, -1];
     if (!baseValues["system.attributes.ac.bonus"]) baseValues["system.attributes.ac.bonus"] = ["", -1];
-    if (!baseValues["system.attributes.ac.base"]) baseValues["system.attributes.ac.base"] = [0, -1];;
-    if (!baseValues["system.attributes.ac.cover"]) baseValues["system.attributes.ac.cover"] = [0, -1];;
+    if (!baseValues["system.attributes.ac.base"]) baseValues["system.attributes.ac.base"] = [0, -1];
+    if (!baseValues["system.attributes.ac.armor"]) baseValues["system.attributes.ac.armor"] = [0, -1];
+    if (!baseValues["system.attributes.ac.shield"]) baseValues["system.attributes.ac.shield"] = [0, -1];
+    if (!baseValues["system.attributes.ac.cover"]) baseValues["system.attributes.ac.cover"] = [0, -1];
     if (!baseValues["system.attributes.ac.calc"]) baseValues["system.attributes.ac.calc"] = ["", modes.OVERRIDE];
     // system.attributes.prof/system.details.level and system.attributes.hd are all calced in prepareBaseData
     if (!baseValues["system.bonuses.All-Attacks"]) baseValues["system.bonuses.All-Attacks"] = ["", -1];
@@ -120,7 +122,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.bonuses.util.damage"]) baseValues["system.bonuses.util.damage"] = ["", -1];
     baseValues["system.attributes.hp.bonuses.overall"] = ["", -1];
     baseValues["system.attributes.hp.bonuses.level"] = ["", -1];
-    // Don't do anything with system.attributes.hp.max - it will be set by parsing the actor schema as needed
+    // Don't do anything with system.attributes.hp.max - it will be set by parsing the actor schema
     if (!baseValues["system.attributes.hd.max"]) baseValues["system.attributes.hd.max"] = [0, -1];
     const actorModelSchemaFields = this.getActorDataModelFields(actorType);
     delete baseValues["system.traits.toolProf.value"];
@@ -437,7 +439,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (foundry.utils.isNewerVersion(game.system.version, "3.1.99")) {
       Hooks.on("preCreateActiveEffect", (candidate, data, options, user) => {
         if (candidate.isAppliedEnchantment && (candidate.duration.seconds || candidate.duration.rounds || candidate.duration.turns)) {
-          if (!candidate.duration.startTime && candidate.duration.seconds) 
+          if (!candidate.duration.startTime && candidate.duration.seconds)
             candidate.updateSource({ duration: { startTime: game.time.worldTime } });
           else if (!Number.isNumeric(candidate.duration.startRound) && !Number.isNumeric(candidate.duration.startTurn) && game.combat) {
             candidate.updateSource({ duration: { startRound: game.combat?.round, startTurn: game.combat?.turn } });
@@ -1189,6 +1191,15 @@ function prepareData(wrapped) {
   }
 
   try {
+    this.statuses ??= new Set();
+    // Identify which special statuses had been active
+    const specialStatuses = new Map();
+    if (foundry.utils.isNewerVersion(game.version, "11.293")) {
+      for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
+        specialStatuses.set(statusId, this.statuses.has(statusId));
+      }
+      this.statuses.clear(); // need to do this here since core foundry does this in applyActiveEffects, but we do multiple calls to applyEffects
+    }
     if (this.system.traits) {
       for (let key of ["da", "ida", "idr", "idv", "idi"]) {
         if (!(this.system.traits[key]?.value instanceof Set)) {
@@ -1219,6 +1230,16 @@ function prepareData(wrapped) {
     const checkBonus = simplifyBonus(globalBonuses?.check, rollData);
     if (this._prepareInitiative && this.system?.attributes)
       this._prepareInitiative(rollData, checkBonus);
+    if (foundry.utils.isNewerVersion(game.version, "11.293")) {
+      // Apply special statuses that changed to active tokens
+      let tokens;
+      for (const [statusId, wasActive] of specialStatuses) {
+        const isActive = this.statuses.has(statusId);
+        if (isActive === wasActive) continue;
+        if (!tokens) tokens = this.getActiveTokens();
+        for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
+      }
+    }
     debug("prepare data: after passes", this);
   } catch (err) {
     console.error("Could not prepare data ", this.name, err);

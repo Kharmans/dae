@@ -110,16 +110,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
   if (disableEffects) return;
   const overrides = {};
   debug("prepare data: before passes", this.name, this._source);
-  const specialStatuses = new Map();
-  if (foundry.utils.isNewerVersion(game.version, "11.293")) {
-    this.statuses = this.statuses ?? new Set();
-    // Identify which special statuses had been active
-    //@ts-expect-error
-    for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
-      specialStatuses.set(statusId, this.statuses.has(statusId));
-    }
-    this.statuses.clear();
-  }
+
   for (let effect of this.allApplicableEffects())
     if (effect.determineSuppression) effect.determineSuppression();
   const effects = this.appliedEffects.filter(ef => !ef.disabled && !ef.isSuppressed);
@@ -247,16 +238,6 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
 
   }
 
-  if (foundry.utils.isNewerVersion(game.version, "11.293")) {
-    // Apply special statuses that changed to active tokens
-    let tokens;
-    for (const [statusId, wasActive] of specialStatuses) {
-      const isActive = this.statuses.has(statusId);
-      if (isActive === wasActive) continue;
-      tokens = tokens ?? this.getActiveTokens();
-      for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
-    }
-  }
   // Expand the set of final overrides + merge sincey
   this.overrides = foundry.utils.mergeObject(this.overrides || {}, foundry.utils.expandObject(overrides) || {}, { inplace: true, overwrite: true });
 }
@@ -1905,7 +1886,7 @@ export function daeInitActions() {
 
   // Augment actor get rollData with actorUuid, actorId, tokenId, tokenUuid
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.getRollData", daeSystemClass.getRollDataFunc(), "WRAPPER");
-  libWrapper.register("dae", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER")
+  // libWrapper.register("dae", "CONFIG.Token.objectClass.prototype.drawEffects", drawEffects, "WRAPPER")
 
   // libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseActiveEffects, "OVERRIDE");
 
