@@ -485,7 +485,6 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
-  console.error("dae system prepare data");
   if (!ValidSpec.specs) {
     ValidSpec.createValidMods();
   }

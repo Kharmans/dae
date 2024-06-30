@@ -612,13 +612,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
       Object.keys(daeSystemClass.systemConfig.healingTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.healingTypes[key].label; return obj }, this.traitList)
       Object.keys(this.traitList).forEach(type => {
-        this.traitList[`-${type}`] = `-${this.traitList[type]}`;
+        this.traitList[`-${type}`] = `- ${i18n(this.traitList[type])}`;
       });
 
       /*
       this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes;
       Object.keys(this.customDamageResistanceList).forEach(type => {
-        this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
+        this.traitList[`-${type}`] = `- ${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
       });
       */
     } else {
@@ -627,7 +627,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
         .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {});
       Object.keys(this.traitList).forEach(type => {
-        this.traitList[`-${type}`] = `-${daeSystemClass.systemConfig.damageResistanceTypes[type]}`;
+        this.traitList[`-${type}`] = `- ${this.traitList[type]}`;
       });
     }
     if (foundry.utils.isNewerVersion(systemVersion, "3.1.99")) {
@@ -647,7 +647,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //@ts-expect-error .version
       if (foundry.utils.isNewerVersion(game.system.version, "2.3.9")) {
         this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
-      } else this.languageList[`-${type}`] = `-${daeSystemClass.systemConfig.languages[type]}`;
+      } else this.languageList[`-${type}`] = `- ${daeSystemClass.systemConfig.languages[type]}`;
     });
 
     this.armorClassCalcList = {};
@@ -661,27 +661,27 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         this.conditionList[ct] = daeSystemClass.systemConfig.conditionTypes[ct].label;
       });
       Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
-        this.conditionList[`-${type}`] = `-${daeSystemClass.systemConfig.conditionTypes[type]}`;
+        this.conditionList[`-${type}`] = `- ${daeSystemClass.systemConfig.conditionTypes[type].label}`;
       });
     } else {
       Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
-        this.conditionList[`-${type}`] = `-${daeSystemClass.systemConfig.conditionTypes[type]}`;
+        this.conditionList[`-${type}`] = `- ${daeSystemClass.systemConfig.conditionTypes[type]}`;
       });
     }
 
     this.toolProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.toolProficiencies);
     Object.keys(daeSystemClass.systemConfig.toolProficiencies).forEach(type => {
-      this.toolProfList[`-${type}`] = `-${daeSystemClass.systemConfig.toolProficiencies[type]}`;
+      this.toolProfList[`-${type}`] = `- ${daeSystemClass.systemConfig.toolProficiencies[type]}`;
     });
 
     this.armorProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.armorProficiencies);
     Object.keys(daeSystemClass.systemConfig.armorProficiencies).forEach(type => {
-      this.armorProfList[`-${type}`] = `-${daeSystemClass.systemConfig.armorProficiencies[type]}`;
+      this.armorProfList[`-${type}`] = `- ${daeSystemClass.systemConfig.armorProficiencies[type]}`;
     });
 
     this.weaponProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.weaponProficiencies);
     Object.keys(daeSystemClass.systemConfig.weaponProficiencies).forEach(type => {
-      this.weaponProfList[`-${type}`] = `-${daeSystemClass.systemConfig.weaponProficiencies[type]}`;
+      this.weaponProfList[`-${type}`] = `- ${daeSystemClass.systemConfig.weaponProficiencies[type]}`;
     });
   }
 

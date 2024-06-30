@@ -1,3 +1,6 @@
+### 11.3.35
+* Fix for condition immunity list not displaying disable options correctly.
+
 ### 11.3.34
 * Fix for breaking vision-5e detection modes.
 * Fix for changes to system.attributes.ac.cover/shield not working as expected with dae installed. (Affects Robe of the Archmage).
