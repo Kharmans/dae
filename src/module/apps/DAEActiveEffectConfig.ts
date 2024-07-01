@@ -346,7 +346,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         }
       } else if (this.object.parent.isOwned) formData.duration.startTime = null;
     }
-    if (getProperty(formData, `flags.${game.system.id}.type`) === "enchantment") formData.transfer = false;
+    if (foundry.utils.getProperty(formData, `flags.${game.system.id}.type`) === "enchantment") formData.transfer = false;
     await this.object.update(formData);
   }
 }
