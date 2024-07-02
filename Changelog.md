@@ -1,3 +1,6 @@
+### 11.3.36
+* Added special durations to expire based on item activation type: Bonus Action, Reaction and Action
+
 ### 11.3.35
 * Fix for condition immunity list not displaying disable options correctly.
 
