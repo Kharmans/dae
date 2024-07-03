@@ -1,3 +1,6 @@
+### 11.3.36.1
+* Correct Turn Action display string
+
 ### 11.3.36
 * Added special durations to expire based on item activation type: Bonus Action, Reaction and Action
 

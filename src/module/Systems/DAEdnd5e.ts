@@ -475,7 +475,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["1Action"] = i18n("dae.1Action");
       daeSpecialDurations["Bonus Action"] = i18n("dae.BonusAction");
       daeSpecialDurations["Reaction"] = i18n("dae.Reaction");
-      daeSpecialDurations["Turn Action"] = i18n("dae.1Action");
+      daeSpecialDurations["Turn Action"] = i18n("dae.Turn Action");
       daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
       daeSpecialDurations["1Attack"] = game.i18n.format("dae.1Attack", { type: `${i18n("dae.spell")}/${i18n("dae.weapon")} ${i18n("dae.attack")}` });
       daeSpecialDurations["1Hit"] = game.i18n.format("dae.1Hit", { type: `${i18n("dae.spell")}/${i18n("dae.weapon")}` });
