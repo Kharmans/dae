@@ -1,3 +1,10 @@
+### 11.3.38
+* Fix type for dae.BonusAction display in special durations
+
+### 11.3.37
+* Added start and end of turn to the macro repeat options. requires times-up update as well.
+* Correct typo for bonus action special duration expiry.
+
 ### 11.3.36.1
 * Correct Turn Action display string
 

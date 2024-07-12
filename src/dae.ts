@@ -87,8 +87,10 @@ Hooks.once('ready', async function () {
         "none": "",
         "startEveryTurn": i18n("dae.startEveryTurn"),
         "endEveryTurn": i18n("dae.endEveryTurn"),
+        "startEndEveryTurn": i18n("dae.startEndEveryTurn"),
         "startEveryTurnAny": i18n("dae.startEveryTurnAny"),
         "endEveryTurnAny": i18n("dae.endEveryTurnAny"),
+        "startEndEveryTurnAny": i18n("dae.startEndEveryTurnAny")
       };
     }
     daeReadyActions();

@@ -473,7 +473,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     if (game.modules.get("midi-qol")?.active) {
       daeSpecialDurations["1Action"] = i18n("dae.1Action");
-      daeSpecialDurations["Bonus Action"] = i18n("dae.BonusAction");
+      daeSpecialDurations["Bonus Action"] = i18n("dae.Bonus Action");
       daeSpecialDurations["Reaction"] = i18n("dae.Reaction");
       daeSpecialDurations["Turn Action"] = i18n("dae.Turn Action");
       daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
@@ -662,9 +662,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
       Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(ct => {
         this.conditionList[ct] = daeSystemClass.systemConfig.conditionTypes[ct].label;
-      });
-      Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
-        this.conditionList[`-${type}`] = `- ${daeSystemClass.systemConfig.conditionTypes[type].label}`;
+        this.conditionList[`-${ct}`] = `- ${daeSystemClass.systemConfig.conditionTypes[ct].label}`;
       });
     } else {
       Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
