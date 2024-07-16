@@ -187,19 +187,15 @@ export class ActiveEffects extends FormApplication {
     html.find('.effect-delete').click(async ev => {
       const object = this.object;
       const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
+      let effect = object.effects.get(effectid);
+      if (effect) { // this will mean deleting item transfer effects won't work unless the item is being edited
       if (object instanceof CONFIG.Actor.documentClass || object instanceof CONFIG.Item.documentClass) {
         confirmAction(confirmDelete || object instanceof CONFIG.Item.documentClass, () => {
           //@ts-expect-error
           object.deleteEmbeddedDocuments("ActiveEffect", [effectid], { "expiry-reason": "manual-deletion" });
-        })
-      } else {
-        let effect = object.effects.get(effectid);
-        // effect =  new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
-        // effect = new CONFIG.ActiveEffect.documentClass(effect.toObjct(), effect.parent);
-        confirmAction(confirmDelete, () => {
-          effect.delete({});
-        })
+        });
       }
+    }
     });
     html.find('.effect-edit').click(async ev => {
       const object: any = this.object;

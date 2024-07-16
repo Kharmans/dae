@@ -272,14 +272,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.traits.damageTypes.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
     }
 
-    /*
-    if (actorModelSchemaFields.attributes?.fields?.senses) {
-      Object.keys(GameSystemConfig.senses).forEach(sense => {
-        specials[`system.senses.${sense}.value`] = [0, -1];
-      })
-    }
-    */
-
     if (foundry.utils.getProperty(actorModelSchemaFields, "resources")) {
       specials["system.resources.primary.max"] = [0, -1];
       specials["system.resources.primary.label"] = ["", -1];
@@ -348,7 +340,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const actorModelSchemaFields = DAESystem.getActorDataModelFields(actorType);
     //@ts-expect-error
     const systemVersion = game.system.version;
-
   }
 
   static modifyValidSpec(spec, validSpec: ValidSpec): ValidSpec {
@@ -395,42 +386,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const GameSystemConfig = game.system.config;
     if (GameSystemConfig.conditionEffects && GameSystemConfig.conditionEffects["halfHealth"] && game.settings.get("dae", "DAEAddHalfHealthEffect")) {
       GameSystemConfig.conditionEffects["halfHealth"].add("halfHealthEffect");
-      CONFIG.statusEffects.push({
-        id: "halfHealthEffect",
-        name: i18n("dae.halfHealthEffectLabel"),
-        icon: "systems/dnd5e/icons/svg/damage/healing.svg",
-        flags: { dnd5e: { halfHealth: true } }
-      });
-    }
-    if (false) {
-      const effectClass: any = CONFIG.ActiveEffect.documentClass;
-      //@ts-expect-error .version
-      if (foundry.utils.isNewerVersion(game.system.version, "3.0.99")) {
-        const classStrings = [
-          "CONFIG.Actor.documentClass",
-          "CONFIG.Item.documentClass",
-          "CONFIG.Token.documentClass",
-          "CONFIG.MeasuredTemplate.documentClass",
-          "CONFIG.Tile.documentClass",
-          "CONFIG.AmbientLight.documentClass",
-          "CONFIG.AmbientSound.documentClass",
-          "CONFIG.Wall.documentClass",
-          "CONFIG.ActiveEffect.documentClass",
-        ];
-        const addDependent = effectClass.prototype.addDependent ?? _addDependent;
-        const getDependents = effectClass.prototype.getDependents ?? _getDependents;
-        for (let classString of classStrings) {
-          const docClass = eval(classString)
-          if (!docClass) continue;
-          if (!docClass.prototype.addDependent) libWrapper.register(MODULE_ID, `${classString}.prototype._onDelete`, _onDelete, "WRAPPER");
-          if (!docClass.prototype.addDependent) docClass.prototype.addDependent = addDependent;
-          if (!docClass.prototype.addDependents) docClass.prototype.addDependents = addDependents;
-          if (!docClass.prototype.getDependents) docClass.prototype.getDependents = getDependents;
-          if (!docClass.prototype.setDependents) docClass.prototype.setDependents = setDependents;
-          if (!docClass.prototype.removeDependent) docClass.prototype.removeDependent = removeDependent;
-          if (!docClass.prototype.clearDependents) docClass.prototype.clearDependents = clearDependents;
-          if (!docClass.prototype.deleteAllDependents) docClass.prototype.deleteAllDependents = deleteAllDependents;
-        }
+      //@ts-expect-error
+      if (game.version >= 12) {
+        CONFIG.statusEffects.push({
+          id: "halfHealthEffect",
+          name: i18n("dae.halfHealthEffectLabel"),
+          img: "systems/dnd5e/icons/svg/damage/healing.svg",
+          flags: { dnd5e: { halfHealth: true } }
+        });
+      } else {
+        CONFIG.statusEffects.push({
+          id: "halfHealthEffect",
+          name: i18n("dae.halfHealthEffectLabel"),
+          icon: "systems/dnd5e/icons/svg/damage/healing.svg",
+          flags: { dnd5e: { halfHealth: true } }
+        });
       }
     }
 
