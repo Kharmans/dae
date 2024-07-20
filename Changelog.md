@@ -1,6 +1,6 @@
 ### 11.3.39
 * Added option for silent inline rolls, [[[1d4]]] instead of [[1d4]]. The latter will obey the DAE config options and the former will never generate a chat message.
-* Check effect application fields to only display midi-qol specfic fields if midi-qol is enabled.
+* Check effect application fields to only display midi-qol specific fields if midi-qol is enabled in effect editor.
 
 ### 11.3.38
 * Fix typo for dae.BonusAction display in special durations
