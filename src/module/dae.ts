@@ -653,12 +653,13 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
         } else if (["StatusEffectLabel", "StatusEffectName"].includes(change.key)) {
           updates["name"] = change.value;
         } else if (inline) {
-          const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
+          const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
+          const silentInline = change.value.includes("[[[");
           const newChange = foundry.utils.duplicate(change);
           changesChanged = true;
           for (let match of change.value.matchAll(rgx)) {
             if (!match[1]) {
-              const newValue = await evalInline(match[2], parent, this);
+              const newValue = await evalInline(match[2], parent, this, silentInline);
               newChange.value = newChange.value.replace(match[0], `${newValue}`);
             }
           }
@@ -683,12 +684,12 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
   }
 }
 
-async function evalInline(expression: string, actor: Actor, effect) {
+async function evalInline(expression: string, actor: Actor, effect, silent) {
   try {
     warn("Doing inlinve eval", expression)
     expression = expression.replaceAll("@data.", "@");
     const roll = await (new Roll(expression, actor?.getRollData())).evaluate();
-    if (showInline) {
+    if (showInline && !silent) {
       roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effect.name ?? effect.label} ${expression}`, chatMessage: true })
     }
     return `${roll.total}`;
@@ -896,15 +897,16 @@ export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options,
   else if (parent instanceof CONFIG.Item.documentClass && effectIsTransfer(candidate)) actor = parent.parent;
   if (!actor) return true;
   try {
-    const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
+    // const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
     for (let change of candidate.changes ?? []) {
+      let silentInline = typeof change.value === "string" && change.value.includes("[[[");
       let inline = typeof change.value === "string" && change.value.includes("[[");
-      if (inline) {
-        const rgx = /\[\[(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
+      if (inline || silentInline) {
+        const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
         let newChangeValue = foundry.utils.duplicate(change.value);
         for (let match of change.value.matchAll(rgx)) {
           if (!match[1]) {
-            const newValue = evalInline(match[2], actor, candidate);
+            const newValue = evalInline(match[2], actor, candidate, silentInline);
             newChangeValue = newChangeValue.replace(match[0], `${newValue}`);
           }
         }

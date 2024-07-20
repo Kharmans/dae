@@ -69,6 +69,7 @@
 
       {{#unless isEnchantment}}
       {{#unless effect.transfer}}
+      {{#if midiActive}}
       <div class="form-group">
         <label>{{ localize "dae.SelfTarget.Name" }}</label>
         <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
@@ -92,6 +93,7 @@
       <p class="notes" style="margin-bottom:1em">
         {{ localize "dae.DontApply.Hint" }}
       </p>
+      {{/if}}
       {{/unless}}
       {{/unless}}
       {{/if}}
