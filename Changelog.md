@@ -1,3 +1,6 @@
+### 11.3.40
+* Special durations for transfer (passive) effects now cause an expiry reason to be added to the update/macro call
+
 ### 11.3.39
 * Added option for silent inline rolls, [[[1d4]]] instead of [[1d4]]. The latter will obey the DAE config options and the former will never generate a chat message.
 * Check effect application fields to only display midi-qol specific fields if midi-qol is enabled in effect editor.

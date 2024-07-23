@@ -51,16 +51,16 @@ async function _itemReplaceEffects(data) {
 
 async function _updateActor(data) {
   const actor = await fromUuid(data.actorUuid);
-  return actor?.update(data.update)
+  return actor?.update(data.update, data.context)
 }
 
-async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuids: string[] }) {
-  const { uuid, itemUuid, itemUuids } = data;
+async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuids: string[], context: any }) {
+  const { uuid, itemUuid, itemUuids, context } = data;
 
   for (let itemUuid of itemUuids ?? []) {
     const item: any = await fromUuid(itemUuid);
     if (!(item instanceof Item) || !item?.isOwned) continue; // Just in case we are trying to delete a world/compendium item
-    await item.delete();
+    await item.delete(context);
   }
 }
 

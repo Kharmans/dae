@@ -202,6 +202,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       baseValues["system.traits.armorProf.custom"] = ["", modes.CUSTOM];
       baseValues["system.attributes.hp.tempmax"] = [0, -1];
     }
+    baseValues["system.attributes.encumbrance.bonuses.encumbered"] = ["",-1];
+    baseValues["system.attributes.encumbrance.bonuses.heavilyEncumbered"] = ["",-1];
+    baseValues["system.attributes.encumbrance.bonuses.maximum"] = ["",-1];
+    baseValues["system.attributes.encumbrance.bonuses.overall"] = ["",-1];
+    baseValues["system.attributes.encumbrance.multipliers.encumbered"] = ["",-1];
+    baseValues["system.attributes.encumbrance.multipliers.heavilyEncumbered"] = ["",-1];
+    baseValues["system.attributes.encumbrance.multipliers.maximum"] = ["",-1];
+    baseValues["system.attributes.encumbrance.multipliers.overall"] = ["",-1];
   }
 
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
@@ -223,7 +231,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     for (let abl of Object.keys(daeSystemClass.systemConfig.abilities)) {
       specials[`system.abilities.${abl}.dc`] = [0, -1];
     }
-    specials["system.attributes.encumbrance.max"] = [0, -1];
+    
     specials["system.traits.da.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.da.value"] = ["", -1];
     specials["system.traits.da.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -1381,7 +1389,7 @@ function determineSuppression() {
   }
 }
 
-function preUpdateItemHook(candidateItem, updates, options, user) {
+function preUpdateItemHook(candidateItem, updates, context, user) {
   if (!candidateItem.isOwned) return true;
   if (game.user?.id !== user) return true;
   const actor: Actor = candidateItem.parent;
@@ -1404,9 +1412,9 @@ function preUpdateItemHook(candidateItem, updates, options, user) {
         const actor = candidateItem.parent;
         for (let change of effect.changes) {
           if (isSuppressed) {
-            removeEffectChange(actor, tokens, effect, candidateItem, change);
+            removeEffectChange(actor, tokens, effect, candidateItem, change, context);
           } else {
-            addEffectChange(actor, tokens, effect, candidateItem, change);
+            addEffectChange(actor, tokens, effect, candidateItem, change, context);
           }
         }
       }
@@ -1417,8 +1425,8 @@ function preUpdateItemHook(candidateItem, updates, options, user) {
       if (!effectIsTransfer(effect) || effect.origin !== candidateItem.uuid) continue;
       //@ts-expect-error .changes
       for (let change of effect.changes) {
-        if (isSuppressed) removeEffectChange(actor, tokens, effect, candidateItem, change);
-        else addEffectChange(actor, tokens, effect, candidateItem, change);
+        if (isSuppressed) removeEffectChange(actor, tokens, effect, candidateItem, change, context);
+        else addEffectChange(actor, tokens, effect, candidateItem, change, context);
       }
       /*
       // Toggle macro.XX effects

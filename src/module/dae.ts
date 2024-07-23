@@ -268,15 +268,15 @@ function expandEffectChanges(changes) {
   return returnChanges;
 }
 
-export async function addCreateItemChange(change: { key: string, value: string }, actor: Actor, effect: ActiveEffect) {
+export async function addCreateItemChange(change: { key: string, value: string }, actor: Actor, effect: ActiveEffect, context) {
   await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", { uuid: actor.uuid, itemDetails: change.value, effectUuid: effect.uuid, callItemMacro: change.key === "macro.createItemRunMacro" })
 }
 
-export async function removeCreateItemChange(itemId: string, actor: Actor, effect: ActiveEffect | any) {
+export async function removeCreateItemChange(itemId: string, actor: Actor, effect: ActiveEffect | any, context: any = {}) {
   let [uuid, option] = itemId.split(",").map(s => s.trim());
   if (option === "permanent") return; // don't delete permanent items
   if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
-  await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete })
+  await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete, context })
 }
 
 export async function addTokenMagicChange(actor, change, tokens) {
@@ -291,7 +291,7 @@ export async function addTokenMagicChange(actor, change, tokens) {
   }
 }
 
-export async function removeTokenMagicChange(actor, change, tokens) {
+export async function removeTokenMagicChange(actor, change, tokens, context: any = {}) {
   const tokenMagic = globalThis.TokenMagic;
   if (!tokenMagic) return;
   for (let token of tokens) {
@@ -358,7 +358,7 @@ export async function addConditionChange(actor, change, token, effect) {
     }
   }
 }
-export async function removeConditionChange(actor, change, token, effect) {
+export async function removeConditionChange(actor, change, token, effect, context: any = {}) {
   if (change.value.startsWith("Convenient Effect")) {
     const effectName = change.value.split("Convenient Effect: ")[1];
     //@ts-expect-error
@@ -368,28 +368,29 @@ export async function removeConditionChange(actor, change, token, effect) {
   if (condition) await (actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", [condition.id]));
 }
 
-export async function addCLTChange(conditionId, tokens: [Token], options = {}) {
+export async function addCLTChange(conditionId, tokens: [Token], context = {}) {
   //@ts-expect-error clt
   const cltInterface = game?.clt;
   if (cltInterface) {
     // const condition = cltInterface.conditions.find(c => conditionId === foundry.utils.getProperty(c, "flags.condition-lab-triggler.conditionId"));
     const condition = cltInterface.conditions.find(c => conditionId === c.id);
     if (condition) {
-      await actionQueue.add(cltInterface.addCondition, condition.name, tokens, options);
+      await actionQueue.add(cltInterface.addCondition, condition.name, tokens, context);
     }
   }
 }
 
-export async function removeCLTChange(conditionId, tokens: [Token], options = { warn: false }) {
+export async function removeCLTChange(conditionId, tokens: [Token], context = { warn: false }) {
+  if (context.warn === undefined) context.warn = false;
   //@ts-expect-error clt
   const cltInterface = game?.clt;
   if (cltInterface) {
     //const condition = cltInterface.conditions.find(c => conditionId === foundry.utils.getProperty(c, "flags.condition-lab-triggler.conditionId"));
     const condition = cltInterface.conditions.find(c => conditionId === c.id);
-    if (condition) await actionQueue.add(cltInterface.removeCondition, condition.name, tokens, options);
+    if (condition) await actionQueue.add(cltInterface.removeCondition, condition.name, tokens, context);
   }
 }
-export async function addStatusEffectChange(actor, change, tokens, sourceEffect) {
+export async function addStatusEffectChange(actor, change, tokens, sourceEffect, context: any = {}) {
   if (change.key !== "StatusEffect") return;
   let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
   if (statusEffect) {
@@ -403,14 +404,14 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect)
     await ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
   }
 }
-export async function removeStatusEffectChange(actor, change, tokens, effect) {
+export async function removeStatusEffectChange(actor, change, tokens, effect, context: any = {}) {
   // TODO this might remove too many effects
   const effectsToRemove = actor.effects.filter(ef => ef.origin === effect.uuid)?.map(ef => ef.id);
   if (effectsToRemove && effectsToRemove.length > 0)
-    await actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToRemove);
+    await actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToRemove, context);
 }
 
-export async function expireEffects(actor, effects: ActiveEffect[], options: any): Promise<any> {
+export async function expireEffects(actor, effects: ActiveEffect[], context: any): Promise<any> {
   if (!effects) return {};
   const actorEffectsToDelete: string[] = [];
   const effectsToDelete: ActiveEffect[] = [];
@@ -427,7 +428,7 @@ export async function expireEffects(actor, effects: ActiveEffect[], options: any
     else if (effect.parent instanceof Item) // this should be enchantments
       effectsToDelete.push(effect);
   }
-  if (actorEffectsToDelete.length > 0) await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete, options);
+  if (actorEffectsToDelete.length > 0) await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete, context);
   if (effectsToDisable.length > 0) {
     for (let effect of effectsToDisable) {
       await effect.update({ "disabled": true })
@@ -497,7 +498,7 @@ function createActiveEffectHook(...args) {
             await addConvenientEffectsChange(change.value, actor.uuid, effect.origin, context, actor.isToken, lastArg);
           }
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
-            await addCreateItemChange(change, actor, effect)
+            await addCreateItemChange(change, actor, effect, context)
           }
           if (change.key === "macro.StatusEffect") {
             await addConditionChange(actor, change, token, effect)
@@ -527,11 +528,11 @@ function createActiveEffectHook(...args) {
 async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
   if (debugEnabled > 0) warn("preCreateActiveEffectRemoveExisting", args);
   try {
-    let [effectData, options, user] = args;
-    if (options.isUndo) return;
+    let [effectData, context, user] = args;
+    if (context.isUndo) return;
     const parent = this.parent;
 
-    options.deleted = false;
+    context.deleted = false;
     if (!(parent instanceof CONFIG.Actor.documentClass)) return;
     if (!foundry.utils.getProperty(this, "flags.dae.stackable")) {
       if (effectData.origin === parent?.uuid) this.updateSource({ "flags.dae.stackable": "multi" })
@@ -562,7 +563,8 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
       if (hasExisting.length === 0) return;
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
-      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), { "expiry-reason": "effect-stacking" });
+      context["existing"] = "effect-stacking" ;
+      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), context);
     }
   } catch (err) {
     error("removeExistingEffects ", err);
@@ -747,11 +749,11 @@ export function updateActiveEffectHook(...args) {
       const item = effect.parent;
       if (becameDisabled) {
         for (let change of effect.changes) {
-          removeEffectChange(actor, [], effect, item, change)
+          removeEffectChange(actor, [], effect, item, change, context)
         }
       } else if (becameEnabled) {
         for (let change of effect.changes) {
-          addEffectChange(actor, [], effect, item, change)
+          addEffectChange(actor, [], effect, item, change, context)
         }
       }
       return true;
@@ -809,33 +811,34 @@ export function updateActiveEffectHook(...args) {
         }
         for (let change of changesToDisable) {
           if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
-            await removeCLTChange(change.value, [token], { warn: false });
+            context.warn = false;
+            await removeCLTChange(change.value, [token], context);
           }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor);
+            lastArg["expiry-reason"] = context["expiry-reason"];
             await removeConvenientEffectsChange(change.value, actor.uuid, undefined, actor.isToken, lastArg);
           }
-          if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(actor, change, tokens);
+          if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(actor, change, tokens, context);
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
-            await removeCreateItemChange(change.value, actor, effect)
+            await removeCreateItemChange(change.value, actor, effect, context)
           }
           if (change.key === "macro.StatusEffect") {
-            await removeConditionChange(actor, change, token, effect)
+            await removeConditionChange(actor, change, token, effect, context)
           }
           if (change.key === "StatusEffect") {
-            await removeStatusEffectChange(actor, change, tokens, effect);
+            await removeStatusEffectChange(actor, change, tokens, effect, context);
           }
         }
         if (changesToDisable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           warn("dae add macro off", actionQueue._queue.length);
           const effectData = effect.toObject(false);
           if (updates.changes) effectData.changes = oldChanges;
-          let options: any = {};
-          if (becameDisabled) options = { "expiry-reason": "effect-disabled" };
-          else if (becameSuppressed) options = { "expiry-reason": "effect-suppressed" };
-          else options = { "expiry-reason": "change-deleted" };
-          options.effectUuid = effect.uuid;
-          await actionQueue.add(daeMacro, "off", actor, effectData, options);
+          if (becameDisabled) context["expiry-reason"] = "effect-disabled" ;
+          else if (becameSuppressed) context["expiry-reason"] = { "expiry-reason": "effect-suppressed" };
+          else context["expiry-reason"] = { "expiry-reason": "change-deleted" };
+          context.effectUuid = effect.uuid;
+          await actionQueue.add(daeMacro, "off", actor, effectData, context);
         }
       }
 
@@ -860,7 +863,7 @@ export function updateActiveEffectHook(...args) {
           }
           if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(actor, change, tokens);
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
-            await addCreateItemChange(change, actor, effect)
+            await addCreateItemChange(change, actor, effect, context)
           }
           if (change.key === "macro.StatusEffect") {
             await addConditionChange(actor, change, token, effect)
@@ -921,9 +924,9 @@ export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options,
 }
 
 export function deleteActiveEffectHook(...args) {
-  let [effect, options, userId] = args;
+  let [effect, context, userId] = args;
   if (game.user?.id !== userId) return true;
-  if (options.isUndo) return true;
+  if (context.isUndo) return true;
   if (!effect.parent) return true;
   let actor;
   //@ts-expect-error legacyTransferral
@@ -943,13 +946,14 @@ export function deleteActiveEffectHook(...args) {
         for (let change of effect.changes) {
           if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
-            await removeCreateItemChange(change.value, actor, effect)
+            await removeCreateItemChange(change.value, actor, effect, context)
           }
           if (change.key === "macro.StatusEffect") {
-            await removeConditionChange(actor, change, token, effect); // TODO this is not right
+            await removeConditionChange(actor, change, token, effect, context); // TODO this is not right
           }
           if (ceActive && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor);
+            lastArg["expiry-reason"] = context["expiry-reason"];
             await removeConvenientEffectsChange(change.value, actor.uuid, lastArg.origin, actor.isToken, lastArg);
           }
           if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
@@ -964,11 +968,11 @@ export function deleteActiveEffectHook(...args) {
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.origin;
 
         }
-        if (!foundry.utils.getProperty(options, "expiry-reason")) foundry.utils.setProperty(options, "expiry-reason", "effect-deleted");
+        if (!foundry.utils.getProperty(context, "expiry-reason")) foundry.utils.setProperty(context, "expiry-reason", "effect-deleted");
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
-          options.effectUuid = effect.uuid;
+          context.effectUuid = effect.uuid;
           warn("action queue dae macro add off ", actionQueue._queue.length)
-          await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), options);
+          await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), context);
         }
 
         if (entityToDelete) await socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
@@ -1441,8 +1445,7 @@ function preUpdateItemHook(candidate, updates, options, user) {
   return true;
 }
 
-
-export function addEffectChange(actor, tokens, effectToApply, item, change) {
+export function addEffectChange(actor, tokens, effectToApply, item, change, context) {
   if (debugEnabled > 0) warn("addEffectChange ", actor, change, tokens, effectToApply)
   const token = tokens[0];
   switch (change.key) {
@@ -1466,11 +1469,11 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
     case "macro.createItemRunMacro":
       //@ts-expect-error
       if (!CONFIG.ActiveEffect.legacyTransferral) {
-        addCreateItemChange(change, actor, effectToApply);
+        addCreateItemChange(change, actor, effectToApply, context);
       } else {
         for (let effect of actor.allApplicableEffects()) {
           if (effect.origin === item.uuid && effectIsTransfer(effect)) {
-            addCreateItemChange(change, actor, effect);
+            addCreateItemChange(change, actor, effect, context);
           }
         }
       }
@@ -1478,7 +1481,7 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
     case "StatusEffect":
       //@ts-expect-error
       if (CONFIG.ActiveEffect.legacyTransferral === false)
-        addStatusEffectChange(actor, change, token, effectToApply);
+        addStatusEffectChange(actor, change, token, effectToApply, context);
       break;
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
@@ -1489,31 +1492,32 @@ export function addEffectChange(actor, tokens, effectToApply, item, change) {
   }
 }
 
-export function removeEffectChange(actor, tokens, effectToApply, item, change) {
+export function removeEffectChange(actor, tokens, effectToApply, item, change, context) {
   let token = tokens[0];
   if (!token) tokens = [getToken(actor)];
   switch (change.key) {
     case "macro.CE":
       const lastArg = prepareLastArgData(effectToApply, actor);
+      lastArg["expiry-reason"] = context["expiry-reason"];
       removeConvenientEffectsChange(change.value, actor.uuid, effectToApply.origin, actor.isToken, lastArg);
       break;
     case "macro.CUB":
     case "macro.CLT":
-      removeCLTChange(change.value, tokens)
+      removeCLTChange(change.value, tokens, context)
       break;
     case "macro.tokenMagic":
-      removeTokenMagicChange(actor, change, tokens);
+      removeTokenMagicChange(actor, change, tokens, context);
       break;
     case "macro.createItem":
     case "macro.createItemRunMacro":
       //@ts-expect-error
       if (CONFIG.ActiveEffect.legacyTransferral === false) {
         // for non legacy transferral the only effect is the one on the actor
-        removeCreateItemChange(change.value, actor, effectToApply);
+        removeCreateItemChange(change.value, actor, effectToApply, context);
       } else {
         for (let effect of actor.allApplicableEffects()) {
           if ((effect.origin === item.uuid || effect.parent.uuid === item.origin) && effectIsTransfer(effect)) {
-            removeCreateItemChange(change.value, actor, effect)
+            removeCreateItemChange(change.value, actor, effect, context)
           }
         }
       }
@@ -1521,17 +1525,17 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change) {
     case "StatusEffect":
       //@ ts-expect-error
       // if (CONFIG.ActiveEffect.legacyTransferral === false)
-      removeStatusEffectChange(actor, change, tokens, effectToApply);
+      removeStatusEffectChange(actor, change, tokens, effectToApply, context);
       break;
     case "macro.StatusEffect":
       //@ts-expect-error
       if (CONFIG.ActiveEffect.legacyTransferral === false)
-        removeConditionChange(actor, change, tokens, effectToApply);
+        removeConditionChange(actor, change, tokens, effectToApply, context);
       break;
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
         if (debugEnabled > 0) warn("dae add macro off", actionQueue._queue.length);
-        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), { item, origin: item.uuid, effectUuid: effectToApply.uuid });
+        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), { item, origin: item.uuid, effectUuid: effectToApply.uuid, "expiry-reason": context["expiry-reason"] });
       }
       break;
   }
@@ -1632,9 +1636,9 @@ export function preCreateItemHook(candidate, data, options, user) {
   return true;
 }
 export async function deleteItemHook(...args) {
-  let [candidateItem, options, user] = args;
+  let [candidateItem, context, user] = args;
   if (user !== game.user?.id) return;
-  if (options.isUndo) return;
+  if (context.isUndo) return;
   //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral) return;
   const actor = candidateItem.parent;
@@ -1650,7 +1654,7 @@ export async function deleteItemHook(...args) {
       // don't apply macro or macro like effects if active aura and not targeting self
       if (selfAuraChange) return;
       for (let change of effect.changes) {
-        removeEffectChange(actor, [token], effect, candidateItem, change)
+        removeEffectChange(actor, [token], effect, candidateItem, change, context)
       }
     } catch (err) {
       console.warn("dae | error creating active effect ", err);
@@ -1659,8 +1663,8 @@ export async function deleteItemHook(...args) {
   return;
 }
 export async function createItemHook(...args) {
-  let [item, options, user] = args
-  if (options.isUndo) return;
+  let [item, context, user] = args
+  if (context.isUndo) return;
   if (user !== game.user?.id) return;
   const actor = item.parent;
   if (!(actor instanceof Actor)) return;
@@ -1690,7 +1694,7 @@ export async function createItemHook(...args) {
       // don't apply macro or macro like effects if active aura and not targeting self
       if (selfAuraChange) return;
       for (let change of effect.changes) {
-        addEffectChange(actor, [token], effect, item, change)
+        addEffectChange(actor, [token], effect, item, change, context)
       }
     } catch (err) {
       console.warn("dae | error creating active effect ", err);
@@ -1911,9 +1915,9 @@ export function daeInitActions() {
 
   // wrap so we can remove the existing effect before the new one is created
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", preCreateActiveEffect, "WRAPPER");
-  async function preCreateActiveEffect(wrapped, data, options, user) {
-    await _preCreateActiveEffectRemoveExisting.bind(this)(wrapped, data, user);
-    return await _preCreateActiveEffect.bind(this)(wrapped, data, options, user);
+  async function preCreateActiveEffect(wrapped, data, context, user) {
+    await _preCreateActiveEffectRemoveExisting.bind(this)(wrapped, data, user, context);
+    return await _preCreateActiveEffect.bind(this)(wrapped, data, context, user);
   };
   // Hooks.on("createActiveEffect", removeExistingEffectsHook) - this fires too late
 
