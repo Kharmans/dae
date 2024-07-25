@@ -1,3 +1,6 @@
+### 11.3.41
+* Fix for error thrown when removing an existing effect.
+
 ### 11.3.40
 * Special durations for transfer (passive) effects now cause an expiry reason to be added to the update/macro call
 

@@ -596,12 +596,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         this.traitList[`-${type}`] = `- ${i18n(this.traitList[type])}`;
       });
 
-      /*
-      this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes;
+      this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes ?? {};
       Object.keys(this.customDamageResistanceList).forEach(type => {
+        this.traitList[`${type}`] = `${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
         this.traitList[`-${type}`] = `- ${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
       });
-      */
+      
     } else {
       this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
       const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
@@ -685,7 +685,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       "system.traits.ida.value"].includes(spec.key))
       return this.traitList;
     if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom"].includes(spec.key)) {
-      return this.customDamageResistanceList;
+      return daeSystemClass.systemConfig.customDamageResistanceTypes ?? {};
     }
     if (spec.key === "system.attributes.ac.calc") {
       return this.armorClassCalcList;

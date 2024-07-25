@@ -1916,7 +1916,7 @@ export function daeInitActions() {
   // wrap so we can remove the existing effect before the new one is created
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", preCreateActiveEffect, "WRAPPER");
   async function preCreateActiveEffect(wrapped, data, context, user) {
-    await _preCreateActiveEffectRemoveExisting.bind(this)(wrapped, data, user, context);
+    await _preCreateActiveEffectRemoveExisting.bind(this)(wrapped, data, context, user);
     return await _preCreateActiveEffect.bind(this)(wrapped, data, context, user);
   };
   // Hooks.on("createActiveEffect", removeExistingEffectsHook) - this fires too late
