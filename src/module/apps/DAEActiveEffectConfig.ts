@@ -1,6 +1,7 @@
 import { confirmDelete, cltActive, ceActive, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
+import { TriniumEffectFlagBrowser } from "./Browser";
 
 export var otherFields: any[] = [];
 
@@ -23,6 +24,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLVisionModes;
   validFields;
   bypassesList;
+  triniumBrowser: TriniumEffectFlagBrowser;
+
   // object: any; Patch 4535992 Why ???
   constructor(object: any = {}, options = {}) {
     super(object, options);
@@ -109,6 +112,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     for (let field of otherFields) {
       this.validFields[field] = field;
     }
+
+
+    this.triniumBrowser = new TriniumEffectFlagBrowser();
+    this.triniumBrowser.init();
   }
 
   /** @override */
@@ -251,6 +258,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       this.object.transfer = !this.object.transfer;
       this.render(true);
     })
+    
+    // Add Trinium Effect Flag Browser buttons
+    this.triniumBrowser.addFieldButtons();
   }
 
   /* ----------------------------------------- */
