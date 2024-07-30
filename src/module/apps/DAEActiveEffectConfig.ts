@@ -24,7 +24,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLVisionModes;
   validFields;
   bypassesList;
-  triniumBrowser: DAEFieldBrowser;
+  daeFieldBrowser: DAEFieldBrowser;
 
   // object: any; Patch 4535992 Why ???
   constructor(object: any = {}, options = {}) {
@@ -114,8 +114,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
 
 
-    this.triniumBrowser = new DAEFieldBrowser(this.validFields);
-    this.triniumBrowser.init();
+    this.daeFieldBrowser = new DAEFieldBrowser(this.validFields);
+    this.daeFieldBrowser.init();
   }
 
   /** @override */
@@ -258,19 +258,14 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       this.render(true);
     });
 
-    // New browser listeners
-    html.find(".keyinput").on("focus", this._onKeyInputFocus.bind(this));
-    html.find(".keyinput").on("input", this._onKeyInputInput.bind(this));
+    
+    html.find(".keyinput").on("click input", this._onKeyInputInteraction.bind(this));
   }
 
-  private _onKeyInputFocus(event: JQuery.FocusEvent): void {
+  private _onKeyInputInteraction(event: JQuery.TriggeredEvent): void {
     const input = event.currentTarget as HTMLInputElement;
-    this.triniumBrowser.showBrowser(input);
-  }
-
-  private _onKeyInputInput(event: JQuery.TriggeredEvent): void {
-    const input = event.currentTarget as HTMLInputElement;
-    this.triniumBrowser.updateBrowser(input.value);
+    this.daeFieldBrowser.setInput(input);
+    this.daeFieldBrowser.updateBrowser();
   }
 
   _textSelected(event) {
