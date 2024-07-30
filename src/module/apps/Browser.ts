@@ -109,7 +109,10 @@ export class TriniumEffectFlagBrowser {
   }
 
   public updateBrowser(query: string): void {
-    if (!this.browserElement || this.browserElement.style.display === 'none') return;
+    if (!this.browserElement || (this.browserElement.style.display === 'none' && this.currentInput)) {
+      this.showBrowser(this.currentInput!);
+    }
+    
     log(`TriniumEffectFlagBrowser | Updating browser with query: ${query}`);
     const lowercaseQuery = query.toLowerCase();
     this.filteredFields = this.mergedFields!.filter(field => 

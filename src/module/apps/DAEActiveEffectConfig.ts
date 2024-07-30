@@ -274,6 +274,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
 
   _textSelected(event) {
+    if (document.activeElement instanceof HTMLElement) {document.activeElement.blur();}
     return this.submit({ preventClose: true }).then(() => this.render());
   }
 
