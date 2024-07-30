@@ -251,11 +251,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-
-    html.find(".keyinput").on("focus click", this._onKeyInputFocus.bind(this));
-    html.find(".keyinput").on("input", this._onKeyInputInput.bind(this));
-
-    html.find(".keylist").change(this._keySelected.bind(this));
     html.find(".keyinput").on("change", this._textSelected.bind(this));
     
     html.find(".effectTransfer").on("click", event => {
@@ -263,22 +258,18 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       this.render(true);
     });
 
-    // Add input event listener for real-time browser updates
+    // New browser listeners
+    html.find(".keyinput").on("focus", this._onKeyInputFocus.bind(this));
     html.find(".keyinput").on("input", this._onKeyInputInput.bind(this));
   }
 
-  private _onKeyInputFocus(event: JQuery.FocusEvent | JQuery.ClickEvent): void {
+  private _onKeyInputFocus(event: JQuery.FocusEvent): void {
     const input = event.currentTarget as HTMLInputElement;
-    if (this.triniumBrowser.browserElement!.style.display === 'none') {
-      this.triniumBrowser.showBrowser(input);
-    }
+    this.triniumBrowser.showBrowser(input);
   }
 
   private _onKeyInputInput(event: JQuery.TriggeredEvent): void {
     const input = event.currentTarget as HTMLInputElement;
-    if (this.triniumBrowser.browserElement!.style.display === 'none') {
-      this.triniumBrowser.showBrowser(input, false);
-    }
     this.triniumBrowser.updateBrowser(input.value);
   }
 

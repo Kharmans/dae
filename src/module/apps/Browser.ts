@@ -1,8 +1,17 @@
 import { log } from "../../dae";
 
+
+interface FieldData {
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+}
+
 export class TriniumEffectFlagBrowser {
-  private fieldDataArray: any[] = [];
-  private mergedFields: any[] | null = null;
+  private fieldDataArray: FieldData[] = [];
+  private mergedFields: FieldData[] | null = null;
+  private filteredFields: FieldData[] = [];
   private selectedIndex: number = 0;
   private currentTab: string = 'All';
   private tabs: string[] = [];
@@ -10,6 +19,8 @@ export class TriniumEffectFlagBrowser {
   private validFields: Record<string, any>;
   private currentInput: HTMLInputElement | null = null;
   private isFullBrowser: boolean = false;
+  private contentElement: HTMLElement | null = null;
+  private eventsSetup: boolean = false;
 
   constructor(validFields: Record<string, any>) {
     this.validFields = validFields;
@@ -18,49 +29,75 @@ export class TriniumEffectFlagBrowser {
 
   async init(): Promise<void> {
     log("TriniumEffectFlagBrowser | Fetching field data");
-    const fieldData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/field-data.json');
-    this.fieldDataArray = this.createFieldDataObjects(fieldData);
-    log(`TriniumEffectFlagBrowser | Loaded ${this.fieldDataArray.length} field data objects`);
-    this.mergedFields = this.mergeFields(this.getFieldObjects(), this.fieldDataArray);
-    this.tabs = ['All', ...new Set(this.mergedFields.map(field => field.category || 'Other'))];
-    this.createBrowserElement();
+    try {
+      const fieldData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/field-data.json');
+      this.fieldDataArray = this.createFieldDataObjects(fieldData);
+      log(`TriniumEffectFlagBrowser | Loaded ${this.fieldDataArray.length} field data objects`);
+      this.mergedFields = this.mergeFields(this.getFieldObjects(), this.fieldDataArray);
+      this.filteredFields = this.mergedFields;
+      this.tabs = ['All', ...new Set(this.mergedFields.map(field => field.category || 'Other'))];
+    } catch (error) {
+      log("TriniumEffectFlagBrowser | Failed to initialize:", error);
+    }
   }
 
-private createBrowserElement(): void {
-  this.browserElement = document.createElement('div');
-  this.browserElement.id = 'tefb-browser';
-  this.browserElement.className = 'tefb-browser';
-  this.browserElement.innerHTML = `
-    <div class="tefb-tabs"></div>
-    <div class="tefb-content"></div>
-    <div class="tefb-toggle-container">
-      <button class="tefb-toggle-button" title="Switch between compact and full browser views">
-        <i class="fas fa-expand-arrows-alt"></i> Toggle Full Browser
-      </button>
-    </div>
-  `;
-  this.createTabButtons();
-  this.setupEventListeners();
-  document.body.appendChild(this.browserElement);
-  this.browserElement.style.display = 'none';
-}
+  private createBrowser(): void {
+    if (this.browserElement) return;
+    log("TriniumEffectFlagBrowser | Creating browser element");
+    
+    this.browserElement = document.createElement('div');
+    this.browserElement.id = 'tefb-browser';
+    this.browserElement.className = 'tefb-browser';
+    this.browserElement.innerHTML = `
+      <div class="tefb-tabs"></div>
+      <div class="tefb-content"></div>
+      <div class="tefb-toggle-container">
+        <button class="tefb-toggle-button" title="Switch between compact and full browser views">
+          <i class="fas fa-expand-arrows-alt"></i> Toggle Full Browser
+        </button>
+      </div>
+    `;
+    this.contentElement = this.browserElement.querySelector('.tefb-content');
+    this.createTabButtons();
+    this.setupEventListeners();
+    document.body.appendChild(this.browserElement);
+  }
 
   private createTabButtons(): void {
     const tabsContainer = this.browserElement!.querySelector('.tefb-tabs');
     if (tabsContainer) {
-      tabsContainer.innerHTML = this.tabs.map(tab =>
-        `<button class="tefb-tab-button" data-tab="${tab}">${tab}</button>`
-      ).join('');
+      const fragment = document.createDocumentFragment();
+      this.tabs.forEach(tab => {
+        const button = document.createElement('button');
+        button.className = 'tefb-tab-button';
+        button.dataset.tab = tab;
+        button.textContent = tab;
+        fragment.appendChild(button);
+      });
+      tabsContainer.appendChild(fragment);
     }
   }
 
+  private setupEventListeners(): void {
+    if (this.eventsSetup) return;
+    log("TriniumEffectFlagBrowser | Setting up event listeners");
+
+    document.addEventListener('click', this.handleDocumentClick.bind(this));
+    document.addEventListener('keydown', this.handleKeyDown.bind(this));
+    this.browserElement!.addEventListener('click', this.handleBrowserClick.bind(this));
+    this.browserElement!.querySelector('.tefb-toggle-button')?.addEventListener('click', this.toggleFullBrowser.bind(this));
+
+    this.eventsSetup = true;
+  }
+
   public showBrowser(input: HTMLInputElement): void {
+    log("TriniumEffectFlagBrowser | Showing browser");
+    this.createBrowser();
     this.currentInput = input;
     this.browserElement!.classList.toggle('tefb-full-browser', this.isFullBrowser);
     this.browserElement!.style.display = 'block';
     this.positionBrowser(input);
     this.updateBrowser(input.value);
-    this.selectField(0);
   }
 
   private positionBrowser(input: HTMLInputElement): void {
@@ -72,40 +109,74 @@ private createBrowserElement(): void {
   }
 
   public updateBrowser(query: string): void {
+    if (!this.browserElement || this.browserElement.style.display === 'none') return;
+    log(`TriniumEffectFlagBrowser | Updating browser with query: ${query}`);
     const lowercaseQuery = query.toLowerCase();
-    const filteredFields = this.mergedFields!.filter(field => 
+    this.filteredFields = this.mergedFields!.filter(field => 
       field.key.toLowerCase().includes(lowercaseQuery) ||
       (this.isFullBrowser && (
         (field.name && field.name.toLowerCase().includes(lowercaseQuery)) ||
         (field.description && field.description.toLowerCase().includes(lowercaseQuery))
       ))
     );
-    this.populateFields(filteredFields);
+    this.renderFields();
     this.selectField(0);
   }
 
-  private setupEventListeners(): void {
-    this.browserElement!.addEventListener('click', this.handleClick.bind(this));
-    document.addEventListener('keydown', this.handleKeyDown.bind(this));
-    document.addEventListener('click', this.handleOutsideClick.bind(this));
-    
-    const toggleButton = this.browserElement!.querySelector('.tefb-toggle-button');
-    toggleButton!.addEventListener('click', this.toggleFullBrowser.bind(this));
+  private renderFields(): void {
+    if (!this.contentElement) return;
+    log("TriniumEffectFlagBrowser | Rendering fields");
+
+    const fragment = document.createDocumentFragment();
+    this.filteredFields.forEach((field, index) => {
+      const element = this.createFieldElement(field, index);
+      fragment.appendChild(element);
+    });
+
+    this.contentElement.innerHTML = '';
+    this.contentElement.appendChild(fragment);
   }
 
-  private handleClick(event: MouseEvent): void {
+  private createFieldElement(field: FieldData, index: number): HTMLElement {
+    const element = document.createElement('div');
+    element.className = `tefb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
+    element.dataset.key = field.key;
+
+    if (this.isFullBrowser) {
+      const name = field.name !== field.key ? `<strong>${field.name}</strong> - ` : '';
+      const description = field.description ? `<br><small>${field.description}</small>` : '';
+      element.innerHTML = `${name}${field.key}${description}`;
+    } else {
+      element.textContent = field.key;
+    }
+
+    return element;
+  }
+
+  private handleBrowserClick(event: MouseEvent): void {
+    log("TriniumEffectFlagBrowser | Browser clicked");
     const target = event.target as HTMLElement;
-    if (target.classList.contains('tefb-tab-button')) {
-      this.switchTab(target.dataset.tab as string);
-    } else if (target.classList.contains('tefb-field-option')) {
-      this.selectField(Array.from(target.parentElement!.children).indexOf(target));
+    if (target.closest('.tefb-tab-button')) {
+      this.switchTab((target.closest('.tefb-tab-button') as HTMLElement).dataset.tab as string);
+    } else if (target.closest('.tefb-field-option')) {
+      const fieldOption = target.closest('.tefb-field-option') as HTMLElement;
+      const index = Array.from(this.contentElement!.children).indexOf(fieldOption);
+      this.selectField(index);
       this.applySelectedField();
     }
   }
 
-  private handleKeyDown(event: KeyboardEvent): void {
-    if (!this.browserElement!.style.display || this.browserElement!.style.display === 'none') return;
+  private handleDocumentClick(event: MouseEvent): void {
+    if (this.browserElement && 
+        !this.browserElement.contains(event.target as Node) && 
+        event.target !== this.currentInput) {
+      this.hideBrowser();
+    }
+  }
 
+  private handleKeyDown(event: KeyboardEvent): void {
+    if (!this.browserElement || this.browserElement.style.display === 'none') return;
+    log(`TriniumEffectFlagBrowser | Key pressed: ${event.key}`);
     switch (event.key) {
       case 'ArrowUp':
         event.preventDefault();
@@ -133,103 +204,69 @@ private createBrowserElement(): void {
     }
   }
 
-  private handleOutsideClick(event: MouseEvent): void {
-    if (this.browserElement && 
-        !this.browserElement.contains(event.target as Node) && 
-        event.target !== this.currentInput) {
-      this.hideBrowser();
-    }
-  }
-
   private toggleFullBrowser(): void {
+    log("TriniumEffectFlagBrowser | Toggling full browser");
     this.isFullBrowser = !this.isFullBrowser;
     this.browserElement!.classList.toggle('tefb-full-browser', this.isFullBrowser);
     this.currentInput!.focus();
     this.updateBrowser(this.currentInput!.value);
   }
 
-  private hideBrowser(): void {
-    this.browserElement!.style.display = 'none';
-  }
-
-  private populateFields(fields?: any[]): void {
-    const content = this.browserElement!.querySelector('.tefb-content');
-    if (!content) return;
-  
-    const fieldsToUse = fields || this.mergedFields;
-    content.innerHTML = fieldsToUse.map(field => {
-      const name = this.isFullBrowser && field.name !== field.key ? `<strong>${field.name}</strong> - ` : '';
-      const description = this.isFullBrowser && field.description ? `<br><small>${field.description}</small>` : '';
-      return `<div class="tefb-field-option" data-key="${field.key}">
-                ${name}${field.key}${description}
-              </div>`;
-    }).join('');
-  
-    if (this.isFullBrowser) {
-      this.switchTab(this.currentTab);
+  public hideBrowser(): void {
+    log("TriniumEffectFlagBrowser | Hiding browser");
+    if (this.browserElement) {
+      this.browserElement.style.display = 'none';
     }
   }
 
   private switchTab(tab: string): void {
+    log(`TriniumEffectFlagBrowser | Switching to tab: ${tab}`);
     this.currentTab = tab;
     const tabButtons = this.browserElement!.querySelectorAll('.tefb-tab-button');
     tabButtons.forEach(button => button.classList.toggle('active', (button as HTMLElement).dataset.tab === tab));
 
-    const options = this.browserElement!.querySelectorAll('.tefb-field-option');
-    options.forEach(option => {
-      const field = this.mergedFields!.find(f => f.key === (option as HTMLElement).dataset.key);
-      (option as HTMLElement).style.display = (tab === 'All' || field?.category === tab) ? '' : 'none';
-    });
+    this.filteredFields = tab === 'All' ? this.mergedFields! : this.mergedFields!.filter(field => field.category === tab);
+    this.renderFields();
     this.selectField(0);
   }
 
   private navigateFields(direction: number): void {
-    const options = Array.from(this.browserElement!.querySelectorAll('.tefb-field-option'))
-      .filter(option => (option as HTMLElement).style.display !== 'none');
-    let newIndex = this.selectedIndex + direction;
-
-    if (newIndex < 0) newIndex = options.length - 1;
-    if (newIndex >= options.length) newIndex = 0;
-
+    const newIndex = (this.selectedIndex + direction + this.filteredFields.length) % this.filteredFields.length;
     this.selectField(newIndex);
   }
 
   private navigateTabs(direction: number): void {
     const currentTabIndex = this.tabs.indexOf(this.currentTab);
-    let newTabIndex = currentTabIndex + direction;
-
-    if (newTabIndex < 0) newTabIndex = this.tabs.length - 1;
-    if (newTabIndex >= this.tabs.length) newTabIndex = 0;
-
+    const newTabIndex = (currentTabIndex + direction + this.tabs.length) % this.tabs.length;
     this.switchTab(this.tabs[newTabIndex]);
   }
 
   private selectField(index: number): void {
-    const options = Array.from(this.browserElement!.querySelectorAll('.tefb-field-option'))
-      .filter(option => (option as HTMLElement).style.display !== 'none');
-    options.forEach((option, i) => {
-      option.classList.toggle('selected', i === index);
-    });
+    log(`TriniumEffectFlagBrowser | Selecting field at index: ${index}`);
+    const previousSelected = this.contentElement!.querySelector('.tefb-field-option.selected');
+    if (previousSelected) {
+      previousSelected.classList.remove('selected');
+    }
+
     this.selectedIndex = index;
-    const selectedOption = options[index] as HTMLElement;
-    if (selectedOption) {
-      selectedOption.scrollIntoView({ block: 'nearest' });
+    const newSelected = this.contentElement!.children[index] as HTMLElement;
+    if (newSelected) {
+      newSelected.classList.add('selected');
+      newSelected.scrollIntoView({ block: 'nearest' });
     }
   }
 
-  private applySelectedField(): void {
-    const selectedOption = this.browserElement!.querySelector('.tefb-field-option.selected') as HTMLElement;
-    if (selectedOption && this.currentInput) {
-      const key = selectedOption.dataset.key;
-      if (key) {
-        this.currentInput.value = key;
-        this.currentInput.dispatchEvent(new Event('change', { bubbles: true }));
-        this.hideBrowser();
-      }
+  public applySelectedField(): void {
+    log("TriniumEffectFlagBrowser | Applying selected field");
+    const selectedField = this.filteredFields[this.selectedIndex];
+    if (selectedField && this.currentInput) {
+      this.currentInput.value = selectedField.key;
+      this.currentInput.dispatchEvent(new Event('change', { bubbles: true }));
+      this.hideBrowser();
     }
   }
 
-  private getFieldObjects(): any[] {
+  private getFieldObjects(): FieldData[] {
     return Object.entries(this.validFields).map(([key, spec]) => ({
       key,
       name: spec || '',
@@ -238,7 +275,7 @@ private createBrowserElement(): void {
     }));
   }
 
-  private createFieldDataObjects(fieldData: any): any[] {
+  private createFieldDataObjects(fieldData: any): FieldData[] {
     return Object.entries(fieldData).flatMap(([category, fields]: [string, any]) =>
       Object.entries(fields).map(([key, { name, description }]: [string, any]) => ({
         key,
@@ -249,7 +286,7 @@ private createBrowserElement(): void {
     );
   }
 
-  private mergeFields(fieldObjects: any[], newFieldObjects: any[]): any[] {
+  private mergeFields(fieldObjects: FieldData[], newFieldObjects: FieldData[]): FieldData[] {
     const fieldMap = new Map(fieldObjects.map(field => [field.key, field]));
 
     for (const field of newFieldObjects) {
