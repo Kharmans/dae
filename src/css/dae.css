@@ -173,114 +173,44 @@
     overflow: visible;
 }
 
+/*/ New Styles for the Changes tab /*/
 
-.tefb-floating-div {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  padding: 8px;;
-  width: 1000px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgb(0 0 0 / 75%);
-}
-
-
-.tefb-search-container .tefb-search-box {
+.dae-effects-table {
   width: 100%;
-  height: 30px;
-  line-height: 40px;
-  padding: 5px;
-  border-radius: 0;
-
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid rgb(0 0 0 / 25%);
 }
 
-.tefb-field-option {
-  font-size: 12px;
-  padding: 4px 8px;
-  cursor: pointer;
-  border-bottom: 1px solid #ddd;
-}
-
-.tefb-field-option.selected {
-  background-color: #ffffff;
-  border: 1px solid #bd4848;
-}
-
-.tefb-field-option:hover {
-  background-color: #e0e0e0;
-}
-
-
-
-.tefb-relative-position {
-  position: relative;
-}
-
-.tefb-fill-button {
-  background: none;
-  border: none;
-  position: absolute;
-  width: 60px;
-  line-height: 26px;
-  height: 26px;
-  right: 40px;
-  top: 0;
-}
-
-.tefb-tabs {
-  display: flex;
-  overflow-x: auto;
+.dae-effects-table th {
   white-space: nowrap;
-  margin: .5em -1px;
-
-  scrollbar-width: thin;
-  scrollbar-color: rgb(207 207 207) transparent;
+  box-sizing: border-box;
+  background-color: #343434;
+  font-weight: normal;
 }
 
-.tefb-tabs::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+.dae-effects-table .flexrow {
+  display: table-row;
 }
 
-.tefb-tabs::-webkit-scrollbar-track {
-  background: transparent;
+.dae-effect-row td {
+  padding: 10px 6px;
 }
 
-.tefb-tabs::-webkit-scrollbar-thumb {
-  background-color: white;
-  border-radius: 6px;
-  border: 3px solid transparent;
-  background-clip: content-box;
+.key.dae-key {
+  width: 410px;
 }
 
-.tefb-tabs::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(207 207 207);
+.dae-key-select select[name="selectedKey"] {
+  margin-top: 4px;
+  max-width: 400px;
 }
 
-.tefb-tab-button {
-  flex: 1;
-  padding: 0 .5em;
-  cursor: pointer;
-  border: none;
-  background-color: #e0e0e0;
-  border-bottom: 2px solid #bbb;
+.dae-mode {
+  width: 105px;
 }
 
-.tefb-tab-button.active {
-  background-color: #fff;
-  border-bottom: 2px solid #000;
-}
-
-.tefb-tab-pane {
-  display: none;
-}
-
-.tefb-tab-content {
-  border: 1px solid rgb(0 0 0 / 10%);
-  height: 700px;
-  overflow-y: auto;
+.dae-value-textarea textarea {
+  resize: vertical;
+  margin: 10px 0;
 }

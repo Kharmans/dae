@@ -228,66 +228,63 @@
 
   <!-- Effects Tab -->
   <section class="tab" data-tab="effects">
-    <header class="effect-change effects-header flexrow">
-      <div class="key" style="width:280px">{{ localize "EFFECT.ChangeKey" }}</div>
-      <div class="mode" style="width:80px">{{ localize "EFFECT.ChangeMode" }}</div>
-      <div class="value" style="width:250px">{{ localize "EFFECT.ChangeValue" }}</div>
-      <div class="priority" style="width:80px">{{ localize "dae.Priority" }}</div>
-
-      <div class="effect-controls">
-        <a class="effect-control" data-action="add"><i class="far fa-plus-square"></i></a>
-      </div>
-    </header>
-    <ol class="changes-list dae-scrollable-list scrollable" style="min-height: 300px;">
-      {{#each effect.changes as |change i|}}
-      <li class="effect-change flexrow" data-index="{{i}}">
-        <div class="formgroup">
-          <div class="key">
-            <div>
-              <input class="awesomplete keyinput" style="width:280px" type="text" name="changes.{{i}}.key"
-                value="{{change.key}}" data-list="{{../fieldsList}}" />
+    <table class="dae-effects-table">
+      <thead>
+        <tr class="effect-change effects-header flexrow dae-effects-header">
+          <th class="key dae-key" style="width:280px">{{ localize "EFFECT.ChangeKey" }}</th>
+          <th class="mode dae-mode" style="width:80px">{{ localize "EFFECT.ChangeMode" }}</th>
+          <th class="value dae-value" style="width:250px">{{ localize "EFFECT.ChangeValue" }}</th>
+          <th class="priority dae-priority" style="width:80px">{{ localize "dae.Priority" }}</th>
+          <th class="effect-controls dae-controls">
+            <a class="effect-control" data-action="add"><i class="far fa-plus-square"></i></a>
+          </th>
+        </tr>
+      </thead>
+      <tbody class="changes-list dae-scrollable-list scrollable dae-effects-list" style="min-height: 300px;">
+        {{#each effect.changes as |change i|}}
+        <tr class="effect-change flexrow dae-effect-row" data-index="{{i}}">
+          <td class="key dae-key">
+            <div class="formgroup dae-key-wrapper">
+              <div class="key dae-key-input">
+                <input class="keyinput dae-keyinput" type="text" name="changes.{{i}}.key" value="{{change.key}}" />
+              </div>
+              <div class="keylist dae-key-select">
+                <select name="selectedKey" data-dtype="String">
+                  {{selectOptions ../validFields selected=change.key}}
+                </select>
+              </div>
             </div>
-          </div>
-          <div class="keylist">
-            <select name="selectedKey" data-dtype="String">
-              {{selectOptions ../validFields selected=change.key}}
+          </td>
+          <td class="mode dae-mode">
+            <select name="changes.{{i}}.mode" data-dtype="Number">
+              {{#if change.modes}}
+                {{selectOptions change.modes selected=change.mode}}
+              {{else}}
+                {{selectOptions ../modes selected=change.mode}}
+              {{/if}}
             </select>
-          </div>
-        </div>
-        {{#if change.modes}}
-        <div class="mode" style="width:80px">
-          <select name="changes.{{i}}.mode" data-dtype="Number" style="width:80px">
-            {{selectOptions change.modes selected=change.mode}}
-          </select>
-        </div>
-        {{else}}
-        <div class="mode" style="width:80px">
-          <select name="changes.{{i}}.mode" data-dtype="Number" style="width:80px">
-            {{selectOptions ../modes selected=change.mode}}
-          </select>
-        </div>
-        {{/if}}
-        {{#if change.options}}
-        <div class="value">
-          <select name="changes.{{i}}.value" data-dtype="String">
-            {{selectOptions change.options selected=change.value localize=false}}
-          </select>
-        </div>
-        {{else}}
-        <div class="value flex-grow">
-          <textarea rows="1" name="changes.{{i}}.value">{{change.value}}</textarea>
-        </div>
-
-        {{/if}}
-        <div class="priority">
-          <input type="text" name="changes.{{i}}.priority" value="{{ change.priority }}" />
-        </div>
-        <div class="effect-controls">
-          <a class="effect-control" data-action="delete"><i class="fas fa-trash"></i></a>
-        </div>
-      </li>
-      {{/each}}
-    </ol>
+          </td>
+          <td class="value dae-value">
+            {{#if change.options}}
+              <select name="changes.{{i}}.value" data-dtype="String">
+                {{selectOptions change.options selected=change.value localize=false}}
+              </select>
+            {{else}}
+              <div class="value flex-grow dae-value-textarea">
+                <textarea name="changes.{{i}}.value" rows="1">{{change.value}}</textarea>
+              </div>
+            {{/if}}
+          </td>
+          <td class="priority dae-priority">
+            <input type="text" name="changes.{{i}}.priority" value="{{ change.priority }}" />
+          </td>
+          <td class="effect-controls dae-controls">
+            <a class="effect-control" data-action="delete"><i class="fas fa-trash"></i></a>
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
   </section>
 
   <footer class="sheet-footer">

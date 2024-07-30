@@ -95,6 +95,7 @@
   ],
   "styles": [
     "css/dae.css",
+    "css/flag-browser.css",
     "css/awesomplete.css"
   ],
   "flags": {

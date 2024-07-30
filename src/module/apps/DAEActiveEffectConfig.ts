@@ -114,7 +114,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
 
 
-    this.triniumBrowser = new TriniumEffectFlagBrowser();
+    this.triniumBrowser = new TriniumEffectFlagBrowser(this.validFields);
     this.triniumBrowser.init();
   }
 
@@ -244,30 +244,50 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   _keySelected(event) {
     const target = event.target;
     if (target.selectedIndex === 0) return; // Account for dummy element 0
-    $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(target.value)
+    $(target.closest('.effect-change')).find(".keyinput").val(target.value).trigger('change');
     return this.submit({ preventClose: true })?.then(() => this.render());
   }
-  /* ----------------------------------------- */
 
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-    html.find(".keylist").change(this._keySelected.bind(this))
-    html.find(".awesomplete").on("awesomplete-selectcomplete", this._textSelected.bind(this));
+
+    html.find(".keyinput").on("focus click", this._onKeyInputFocus.bind(this));
+    html.find(".keyinput").on("input", this._onKeyInputInput.bind(this));
+
+    html.find(".keylist").change(this._keySelected.bind(this));
+    html.find(".keyinput").on("change", this._textSelected.bind(this));
+    
     html.find(".effectTransfer").on("click", event => {
       this.object.transfer = !this.object.transfer;
       this.render(true);
-    })
-    
-    // Add Trinium Effect Flag Browser buttons
-    this.triniumBrowser.addFieldButtons();
+    });
+
+    // Add input event listener for real-time browser updates
+    html.find(".keyinput").on("input", this._onKeyInputInput.bind(this));
+  }
+
+  private _onKeyInputFocus(event: JQuery.FocusEvent | JQuery.ClickEvent): void {
+    const input = event.currentTarget as HTMLInputElement;
+    if (this.triniumBrowser.browserElement!.style.display === 'none') {
+      this.triniumBrowser.showBrowser(input);
+    }
+  }
+
+  private _onKeyInputInput(event: JQuery.TriggeredEvent): void {
+    const input = event.currentTarget as HTMLInputElement;
+    if (this.triniumBrowser.browserElement!.style.display === 'none') {
+      this.triniumBrowser.showBrowser(input, false);
+    }
+    this.triniumBrowser.updateBrowser(input.value);
+  }
+
+  _textSelected(event) {
+    return this.submit({ preventClose: true }).then(() => this.render());
   }
 
   /* ----------------------------------------- */
-  _textSelected(event) {
-    //@ts-expect-error
-    return this.submit({ preventClose: true }).then(() => this.render());
-  }
+
   _onDragStart(ev) { }
 
   async _onDrop(ev) {
