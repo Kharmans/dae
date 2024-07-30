@@ -108,9 +108,23 @@ export class DAEFieldBrowser {
 
   private positionBrowser(input: HTMLInputElement): void {
     const rect = input.getBoundingClientRect();
-    this.browserElement!.style.position = 'absolute';
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+  
+    const maxBrowserWidth = DAEFieldBrowser.isFullBrowser ? 880 : 400;
+    const maxContentHeight = DAEFieldBrowser.isFullBrowser ? 700 : 400;
+  
+    const browserWidth = Math.min(maxBrowserWidth, viewportWidth - rect.left - 10);
+    const contentHeight = Math.min(maxContentHeight, viewportHeight - rect.bottom - 100);
+  
+    const contentElement = this.browserElement!.querySelector('.dae-fb-content') as HTMLElement;
+    if (contentElement) {
+      contentElement.style.height = `${contentHeight}px`;
+    }
+
+    this.browserElement!.style.width = `${browserWidth}px`;
+    this.browserElement!.style.left = `${rect.left}px`;
     this.browserElement!.style.top = `${rect.bottom + window.scrollY}px`;
-    this.browserElement!.style.left = `${rect.left + window.scrollX}px`;
   }
 
   public updateBrowser(query: string): void {
