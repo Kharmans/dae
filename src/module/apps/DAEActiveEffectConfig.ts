@@ -1,7 +1,7 @@
 import { confirmDelete, cltActive, ceActive, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
-import { DAEFieldBrowser } from "./Browser";
+import { DAEFieldBrowser } from "./FieldBrowser";
 
 export var otherFields: any[] = [];
 
