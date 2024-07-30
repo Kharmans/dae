@@ -8,7 +8,7 @@ interface FieldData {
   category: string;
 }
 
-export class TriniumEffectFlagBrowser {
+export class DAEFieldBrowser {
   private fieldDataArray: FieldData[] = [];
   private mergedFields: FieldData[] | null = null;
   private filteredFields: FieldData[] = [];
@@ -24,52 +24,52 @@ export class TriniumEffectFlagBrowser {
 
   constructor(validFields: Record<string, any>) {
     this.validFields = validFields;
-    log("TriniumEffectFlagBrowser | Initializing");
+    log("DaeFieldBrowser | Initializing");
   }
 
   async init(): Promise<void> {
-    log("TriniumEffectFlagBrowser | Fetching field data");
+    log("DaeFieldBrowser | Fetching field data");
     try {
       const fieldData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/field-data.json');
       this.fieldDataArray = this.createFieldDataObjects(fieldData);
-      log(`TriniumEffectFlagBrowser | Loaded ${this.fieldDataArray.length} field data objects`);
+      log(`DaeFieldBrowser | Loaded ${this.fieldDataArray.length} field data objects`);
       this.mergedFields = this.mergeFields(this.getFieldObjects(), this.fieldDataArray);
       this.filteredFields = this.mergedFields;
       this.tabs = ['All', ...new Set(this.mergedFields.map(field => field.category || 'Other'))];
     } catch (error) {
-      log("TriniumEffectFlagBrowser | Failed to initialize:", error);
+      log("DaeFieldBrowser | Failed to initialize:", error);
     }
   }
 
   private createBrowser(): void {
     if (this.browserElement) return;
-    log("TriniumEffectFlagBrowser | Creating browser element");
+    log("DaeFieldBrowser | Creating browser element");
     
     this.browserElement = document.createElement('div');
-    this.browserElement.id = 'tefb-browser';
-    this.browserElement.className = 'tefb-browser';
+    this.browserElement.id = 'dae-fb-browser';
+    this.browserElement.className = 'dae-fb-browser';
     this.browserElement.innerHTML = `
-      <div class="tefb-tabs"></div>
-      <div class="tefb-content"></div>
-      <div class="tefb-toggle-container">
-        <button class="tefb-toggle-button" title="Switch between compact and full browser views">
+      <div class="dae-fb-tabs"></div>
+      <div class="dae-fb-content"></div>
+      <div class="dae-fb-toggle-container">
+        <button class="dae-fb-toggle-button" title="Switch between compact and full browser views">
           <i class="fas fa-expand-arrows-alt"></i> Toggle Full Browser
         </button>
       </div>
     `;
-    this.contentElement = this.browserElement.querySelector('.tefb-content');
+    this.contentElement = this.browserElement.querySelector('.dae-fb-content');
     this.createTabButtons();
     this.setupEventListeners();
     document.body.appendChild(this.browserElement);
   }
 
   private createTabButtons(): void {
-    const tabsContainer = this.browserElement!.querySelector('.tefb-tabs');
+    const tabsContainer = this.browserElement!.querySelector('.dae-fb-tabs');
     if (tabsContainer) {
       const fragment = document.createDocumentFragment();
       this.tabs.forEach(tab => {
         const button = document.createElement('button');
-        button.className = 'tefb-tab-button';
+        button.className = 'dae-fb-tab-button';
         button.dataset.tab = tab;
         button.textContent = tab;
         fragment.appendChild(button);
@@ -80,21 +80,21 @@ export class TriniumEffectFlagBrowser {
 
   private setupEventListeners(): void {
     if (this.eventsSetup) return;
-    log("TriniumEffectFlagBrowser | Setting up event listeners");
+    log("DaeFieldBrowser | Setting up event listeners");
 
     document.addEventListener('click', this.handleDocumentClick.bind(this));
     document.addEventListener('keydown', this.handleKeyDown.bind(this));
     this.browserElement!.addEventListener('click', this.handleBrowserClick.bind(this));
-    this.browserElement!.querySelector('.tefb-toggle-button')?.addEventListener('click', this.toggleFullBrowser.bind(this));
+    this.browserElement!.querySelector('.dae-fb-toggle-button')?.addEventListener('click', this.toggleFullBrowser.bind(this));
 
     this.eventsSetup = true;
   }
 
   public showBrowser(input: HTMLInputElement): void {
-    log("TriniumEffectFlagBrowser | Showing browser");
+    log("DaeFieldBrowser | Showing browser");
     this.createBrowser();
     this.currentInput = input;
-    this.browserElement!.classList.toggle('tefb-full-browser', this.isFullBrowser);
+    this.browserElement!.classList.toggle('dae-fb-full-browser', this.isFullBrowser);
     this.browserElement!.style.display = 'block';
     this.positionBrowser(input);
     this.updateBrowser(input.value);
@@ -113,7 +113,7 @@ export class TriniumEffectFlagBrowser {
       this.showBrowser(this.currentInput!);
     }
     
-    log(`TriniumEffectFlagBrowser | Updating browser with query: ${query}`);
+    log(`DaeFieldBrowser | Updating browser with query: ${query}`);
     const lowercaseQuery = query.toLowerCase();
     this.filteredFields = this.mergedFields!.filter(field => 
       field.key.toLowerCase().includes(lowercaseQuery) ||
@@ -128,7 +128,7 @@ export class TriniumEffectFlagBrowser {
 
   private renderFields(): void {
     if (!this.contentElement) return;
-    log("TriniumEffectFlagBrowser | Rendering fields");
+    log("DaeFieldBrowser | Rendering fields");
 
     const fragment = document.createDocumentFragment();
     this.filteredFields.forEach((field, index) => {
@@ -142,7 +142,7 @@ export class TriniumEffectFlagBrowser {
 
   private createFieldElement(field: FieldData, index: number): HTMLElement {
     const element = document.createElement('div');
-    element.className = `tefb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
+    element.className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
     element.dataset.key = field.key;
 
     if (this.isFullBrowser) {
@@ -157,12 +157,12 @@ export class TriniumEffectFlagBrowser {
   }
 
   private handleBrowserClick(event: MouseEvent): void {
-    log("TriniumEffectFlagBrowser | Browser clicked");
+    log("DaeFieldBrowser | Browser clicked");
     const target = event.target as HTMLElement;
-    if (target.closest('.tefb-tab-button')) {
-      this.switchTab((target.closest('.tefb-tab-button') as HTMLElement).dataset.tab as string);
-    } else if (target.closest('.tefb-field-option')) {
-      const fieldOption = target.closest('.tefb-field-option') as HTMLElement;
+    if (target.closest('.dae-fb-tab-button')) {
+      this.switchTab((target.closest('.dae-fb-tab-button') as HTMLElement).dataset.tab as string);
+    } else if (target.closest('.dae-fb-field-option')) {
+      const fieldOption = target.closest('.dae-fb-field-option') as HTMLElement;
       const index = Array.from(this.contentElement!.children).indexOf(fieldOption);
       this.selectField(index);
       this.applySelectedField();
@@ -179,7 +179,7 @@ export class TriniumEffectFlagBrowser {
 
   private handleKeyDown(event: KeyboardEvent): void {
     if (!this.browserElement || this.browserElement.style.display === 'none') return;
-    log(`TriniumEffectFlagBrowser | Key pressed: ${event.key}`);
+    log(`DaeFieldBrowser | Key pressed: ${event.key}`);
     switch (event.key) {
       case 'ArrowUp':
         event.preventDefault();
@@ -208,24 +208,24 @@ export class TriniumEffectFlagBrowser {
   }
 
   private toggleFullBrowser(): void {
-    log("TriniumEffectFlagBrowser | Toggling full browser");
+    log("DaeFieldBrowser | Toggling full browser");
     this.isFullBrowser = !this.isFullBrowser;
-    this.browserElement!.classList.toggle('tefb-full-browser', this.isFullBrowser);
+    this.browserElement!.classList.toggle('dae-fb-full-browser', this.isFullBrowser);
     this.currentInput!.focus();
     this.updateBrowser(this.currentInput!.value);
   }
 
   public hideBrowser(): void {
-    log("TriniumEffectFlagBrowser | Hiding browser");
+    log("DaeFieldBrowser | Hiding browser");
     if (this.browserElement) {
       this.browserElement.style.display = 'none';
     }
   }
 
   private switchTab(tab: string): void {
-    log(`TriniumEffectFlagBrowser | Switching to tab: ${tab}`);
+    log(`DaeFieldBrowser | Switching to tab: ${tab}`);
     this.currentTab = tab;
-    const tabButtons = this.browserElement!.querySelectorAll('.tefb-tab-button');
+    const tabButtons = this.browserElement!.querySelectorAll('.dae-fb-tab-button');
     tabButtons.forEach(button => button.classList.toggle('active', (button as HTMLElement).dataset.tab === tab));
 
     this.filteredFields = tab === 'All' ? this.mergedFields! : this.mergedFields!.filter(field => field.category === tab);
@@ -245,8 +245,8 @@ export class TriniumEffectFlagBrowser {
   }
 
   private selectField(index: number): void {
-    log(`TriniumEffectFlagBrowser | Selecting field at index: ${index}`);
-    const previousSelected = this.contentElement!.querySelector('.tefb-field-option.selected');
+    log(`DaeFieldBrowser | Selecting field at index: ${index}`);
+    const previousSelected = this.contentElement!.querySelector('.dae-fb-field-option.selected');
     if (previousSelected) {
       previousSelected.classList.remove('selected');
     }
@@ -260,7 +260,7 @@ export class TriniumEffectFlagBrowser {
   }
 
   public applySelectedField(): void {
-    log("TriniumEffectFlagBrowser | Applying selected field");
+    log("DaeFieldBrowser | Applying selected field");
     const selectedField = this.filteredFields[this.selectedIndex];
     if (selectedField && this.currentInput) {
       this.currentInput.value = selectedField.key;

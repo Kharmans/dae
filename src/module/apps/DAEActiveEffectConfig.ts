@@ -1,7 +1,7 @@
 import { confirmDelete, cltActive, ceActive, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
-import { TriniumEffectFlagBrowser } from "./Browser";
+import { DAEFieldBrowser } from "./Browser";
 
 export var otherFields: any[] = [];
 
@@ -24,7 +24,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLVisionModes;
   validFields;
   bypassesList;
-  triniumBrowser: TriniumEffectFlagBrowser;
+  triniumBrowser: DAEFieldBrowser;
 
   // object: any; Patch 4535992 Why ???
   constructor(object: any = {}, options = {}) {
@@ -114,7 +114,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
 
 
-    this.triniumBrowser = new TriniumEffectFlagBrowser(this.validFields);
+    this.triniumBrowser = new DAEFieldBrowser(this.validFields);
     this.triniumBrowser.init();
   }
 

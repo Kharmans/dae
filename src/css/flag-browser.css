@@ -1,4 +1,4 @@
-.tefb-browser {
+.dae-fb-browser {
   background-color: #f0f0f0;
   border: 1px solid #ccc;
   padding: 8px;
@@ -12,11 +12,11 @@
   overflow: auto;
 }
 
-.tefb-browser.tefb-full-browser {
+.dae-fb-browser.dae-fb-full-browser {
   width: min(880px, 95vw)!important;
 }
 
-.tefb-toggle-button {
+.dae-fb-toggle-button {
   background: none;
   border: none;
   cursor: pointer;
@@ -25,31 +25,31 @@
   font-size: 14px;
 }
 
-.tefb-toggle-button:hover {
+.dae-fb-toggle-button:hover {
   color: #666;
 }
 
-.tefb-browser:not(.tefb-full-browser) .tefb-tabs {
+.dae-fb-browser:not(.dae-fb-full-browser) .dae-fb-tabs {
   display: none;
 }
 
-.tefb-field-option {
+.dae-fb-field-option {
   font-size: 12px;
   padding: 4px 8px;
   cursor: pointer;
   border-bottom: 1px solid #ddd;
 }
 
-.tefb-field-option.selected {
+.dae-fb-field-option.selected {
   background-color: #ffffff;
   border: 1px solid #bd4848;
 }
 
-.tefb-field-option:hover {
+.dae-fb-field-option:hover {
   background-color: #e0e0e0;
 }
 
-.tefb-tabs {
+.dae-fb-tabs {
   display: flex;
   overflow-x: auto;
   white-space: nowrap;
@@ -58,27 +58,27 @@
   scrollbar-color: rgb(207 207 207) transparent;
 }
 
-.tefb-tabs::-webkit-scrollbar {
+.dae-fb-tabs::-webkit-scrollbar {
   width: 12px;
   height: 12px;
 }
 
-.tefb-tabs::-webkit-scrollbar-track {
+.dae-fb-tabs::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.tefb-tabs::-webkit-scrollbar-thumb {
+.dae-fb-tabs::-webkit-scrollbar-thumb {
   background-color: white;
   border-radius: 6px;
   border: 3px solid transparent;
   background-clip: content-box;
 }
 
-.tefb-tabs::-webkit-scrollbar-thumb:hover {
+.dae-fb-tabs::-webkit-scrollbar-thumb:hover {
   background-color: rgb(207 207 207);
 }
 
-.tefb-tab-button {
+.dae-fb-tab-button {
   flex: 1;
   padding: 0 .5em;
   cursor: pointer;
@@ -87,18 +87,18 @@
   border-bottom: 2px solid #bbb;
 }
 
-.tefb-tab-button.active {
+.dae-fb-tab-button.active {
   background-color: #fff;
   border-bottom: 2px solid #000;
 }
 
-.tefb-content {
+.dae-fb-content {
   border: 1px solid rgb(0 0 0 / 10%);
   max-height: 400px;
   overflow-y: auto;
 }
 
-.tefb-browser.tefb-full-browser .tefb-content {
+.dae-fb-browser.dae-fb-full-browser .dae-fb-content {
   max-height: 700px;
 }
 
