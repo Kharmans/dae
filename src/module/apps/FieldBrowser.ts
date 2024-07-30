@@ -20,7 +20,6 @@ export class DAEFieldBrowser {
   public browserElement: HTMLElement | null = null;
   private validFields: Record<string, any>;
   private currentInput: HTMLInputElement | null = null;
-  private isFullBrowser: boolean = false;
   private contentElement: HTMLElement | null = null;
   private eventsSetup: boolean = false;
 
@@ -119,7 +118,7 @@ export class DAEFieldBrowser {
   
     const contentElement = this.browserElement!.querySelector('.dae-fb-content') as HTMLElement;
     if (contentElement) {
-      contentElement.style.height = `${contentHeight}px`;
+      contentElement.style.maxHeight = `${contentHeight}px`;
     }
 
     this.browserElement!.style.width = `${browserWidth}px`;
@@ -191,7 +190,8 @@ export class DAEFieldBrowser {
   private handleDocumentClick(event: MouseEvent): void {
     if (this.browserElement && 
         !this.browserElement.contains(event.target as Node) && 
-        event.target !== this.currentInput) {
+        event.target !== this.currentInput &&
+        !(this.currentInput && this.currentInput.classList.contains('keyinput') && event.target === this.currentInput)) {
       this.hideBrowser();
     }
   }
@@ -310,20 +310,22 @@ export class DAEFieldBrowser {
 
   private mergeFields(fieldObjects: FieldData[], newFieldObjects: FieldData[]): FieldData[] {
     const fieldMap = new Map(fieldObjects.map(field => [field.key, field]));
-
+  
     for (const field of newFieldObjects) {
-      if (fieldMap.has(field.key)) {
+      if (field.category === 'Hidden') {
+        fieldMap.delete(field.key);
+      } else if (fieldMap.has(field.key)) {
         const existingField = fieldMap.get(field.key)!;
         existingField.description = field.description;
         existingField.category = field.category;
-        if (existingField.name === existingField.key) {
+        if (existingField.name === existingField.key && field.name != '') {
           existingField.name = field.name;
         }
       } else {
         fieldMap.set(field.key, field);
       }
     }
-
+  
     return Array.from(fieldMap.values());
   }
 }

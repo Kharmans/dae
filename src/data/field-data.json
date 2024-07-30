@@ -1,13 +1,7 @@
 {
-  "Uncategorized": {
+  "Hidden": {
     "data": { "name": "", "description": "" },
-    "system": { "name": "", "description": "" },
-    "StatusEffect": { "name": "", "description": "" },
-    "StatusEffectLabel": { "name": "", "description": "" },
-    "StatusEffectName": { "name": "", "description": "" },
-    "flags.dae": { "name": "", "description": "" },
-    "flags.dae.onUpdateSource": { "name": "", "description": "" },
-    "flags.dae.onUpdateTarget": { "name": "", "description": "" }
+    "__": { "name": "", "description": "" }
   },
   "D&D5E": {
     "flags.dnd5e.DamageBonusMacro": { "name": "", "description": "" },
@@ -970,6 +964,14 @@
     "system.traits.weaponProf.value": { "name": "Weapon Proficiency Value", "description": "" }
   },
   "Other": {
+    "system": { "name": "", "description": "" },
+    "StatusEffect": { "name": "", "description": "" },
+    "StatusEffectLabel": { "name": "", "description": "" },
+    "StatusEffectName": { "name": "", "description": "" },
+    "flags.dae": { "name": "", "description": "" },
+    "flags.dae.onUpdateSource": { "name": "", "description": "" },
+    "flags.dae.onUpdateTarget": { "name": "", "description": "" },
+    
     "system.favorites": { "name": "Favorites", "description": "" },
     "system.attributes.movement.air": { "name": "Air Movement", "description": "" },
     "system.attributes.movement.land": { "name": "Land Movement", "description": "" },
