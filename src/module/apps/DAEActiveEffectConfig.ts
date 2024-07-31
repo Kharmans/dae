@@ -1,6 +1,7 @@
 import { confirmDelete, cltActive, ceActive, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
+import { DAEFieldBrowser } from "./FieldBrowser";
 
 export var otherFields: any[] = [];
 
@@ -23,6 +24,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLVisionModes;
   validFields;
   bypassesList;
+  daeFieldBrowser: DAEFieldBrowser;
+
   // object: any; Patch 4535992 Why ???
   constructor(object: any = {}, options = {}) {
     super(object, options);
@@ -109,6 +112,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     for (let field of otherFields) {
       this.validFields[field] = field;
     }
+
+
+    this.daeFieldBrowser = new DAEFieldBrowser(this.validFields);
+    this.daeFieldBrowser.init();
   }
 
   /** @override */
@@ -237,27 +244,37 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   _keySelected(event) {
     const target = event.target;
     if (target.selectedIndex === 0) return; // Account for dummy element 0
-    $(target.parentElement.parentElement.parentElement.children[0]).find(".awesomplete").val(target.value)
+    $(target.closest('.effect-change')).find(".keyinput").val(target.value).trigger('change');
     return this.submit({ preventClose: true })?.then(() => this.render());
   }
-  /* ----------------------------------------- */
 
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-    html.find(".keylist").change(this._keySelected.bind(this))
-    html.find(".awesomplete").on("awesomplete-selectcomplete", this._textSelected.bind(this));
+    html.find(".keyinput").on("change", this._textSelected.bind(this));
+    
     html.find(".effectTransfer").on("click", event => {
       this.object.transfer = !this.object.transfer;
       this.render(true);
-    })
+    });
+
+    
+    html.find(".keyinput").on("click input", this._onKeyInputInteraction.bind(this));
+  }
+
+  private _onKeyInputInteraction(event: JQuery.TriggeredEvent): void {
+    const input = event.currentTarget as HTMLInputElement;
+    this.daeFieldBrowser.setInput(input);
+    this.daeFieldBrowser.updateBrowser();
+  }
+
+  _textSelected(event) {
+    if (document.activeElement instanceof HTMLElement) {document.activeElement.blur();}
+    return this.submit({ preventClose: true }).then(() => this.render());
   }
 
   /* ----------------------------------------- */
-  _textSelected(event) {
-    //@ts-expect-error
-    return this.submit({ preventClose: true }).then(() => this.render());
-  }
+
   _onDragStart(ev) { }
 
   async _onDrop(ev) {

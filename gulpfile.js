@@ -300,7 +300,7 @@ const recursiveFileSearch = (dir, callback) => {
 };
 
 const copyFiles = async () => {
-	const statics = [`lang`, `languages`, `fonts`, `assets`, `icons`, `templates`, `packs`, `module.json`, `system.json`, `template.json`];
+	const statics = [`lang`, `languages`, `fonts`, `assets`, `icons`, `templates`, `packs`, `module.json`, `system.json`, `template.json`, `data`];
 
 
 	console.log(`files:` + statics);
@@ -422,6 +422,7 @@ const clean = async () => {
 		`template.json`,
 		`module.js`,
 		`module.js.map`,
+		`data`,
 	);
 	// Attempt to remove the files
 	try {
