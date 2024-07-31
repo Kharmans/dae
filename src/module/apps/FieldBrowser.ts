@@ -1,4 +1,5 @@
 import { log, debug, error } from "../../dae";
+import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 
 interface FieldData {
   key: string;
@@ -21,10 +22,17 @@ export class DAEFieldBrowser {
   private currentInput: HTMLInputElement;
   private contentElement: HTMLElement | null = null;
   private eventsSetup: boolean = false;
+  private effectConfig: DAEActiveEffectConfig;
+  public debouncedUpdateBrowser: () => void;
 
-  constructor(validFields: Record<string, any>) {
+  constructor(validFields: Record<string, any>, effectConfig: DAEActiveEffectConfig) {
     this.validFields = validFields;
+    this.effectConfig = effectConfig;
     log("DaeFieldBrowser | Initializing");
+
+    this.debouncedUpdateBrowser = foundry.utils.debounce(() => {
+      this.updateBrowser();
+    }, 50);
   }
 
   async init(): Promise<void> {
@@ -83,7 +91,7 @@ export class DAEFieldBrowser {
   }
 
   public setInput(input: HTMLInputElement): void {
-    log("DAEFieldBrowser | Setting input");
+    debug("DAEFieldBrowser | Setting input");
     this.currentInput = input;
   }
 
@@ -111,7 +119,7 @@ export class DAEFieldBrowser {
   public updateBrowser(): void {
     if (!this.browserElement) {
       this.createBrowser();
-      this.positionBrowser();
+
     }
     
     if (this.browserElement!.style.display === 'none') {
@@ -121,6 +129,7 @@ export class DAEFieldBrowser {
     this.browserElement!.classList.toggle('dae-fb-full-browser', DAEFieldBrowser.isFullBrowser);
     
     debug(`DaeFieldBrowser | Updating browser with query: ${this.currentInput.value}`);
+    this.positionBrowser();
     this.applyFilters();
     this.renderFields();
     this.selectField(0);
@@ -148,29 +157,29 @@ export class DAEFieldBrowser {
     debug("DaeFieldBrowser | Rendering fields");
 
     const fragment = document.createDocumentFragment();
-    this.filteredFields.forEach((field, index) => {
-      const element = this.createFieldElement(field, index);
-      fragment.appendChild(element);
-    });
+    const templateElement = document.createElement('template');
+    
+    const fieldsHTML = this.filteredFields.map((field, index) => 
+      this.createFieldElementHTML(field, index)
+    ).join('');
+
+    templateElement.innerHTML = fieldsHTML;
+    fragment.appendChild(templateElement.content);
 
     this.contentElement.innerHTML = '';
     this.contentElement.appendChild(fragment);
   }
 
-  private createFieldElement(field: FieldData, index: number): HTMLElement {
-    const element = document.createElement('div');
-    element.className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
-    element.dataset.key = field.key;
-
+  private createFieldElementHTML(field: FieldData, index: number): string {
+    const className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
+    
     if (DAEFieldBrowser.isFullBrowser) {
       const name = field.name !== field.key ? `<strong>${field.name}</strong> - ` : '';
       const description = field.description ? `<br><small>${field.description}</small>` : '';
-      element.innerHTML = `${name}${field.key}${description}`;
+      return `<div class="${className}" data-key="${field.key}">${name}${field.key}${description}</div>`;
     } else {
-      element.textContent = field.key;
+      return `<div class="${className}" data-key="${field.key}">${field.key}</div>`;
     }
-
-    return element;
   }
 
   private setupEventListeners(): void {
@@ -214,7 +223,6 @@ export class DAEFieldBrowser {
 
   private handleKeyDown(event: KeyboardEvent): void {
     if (!this.browserElement || this.browserElement.style.display === 'none') return;
-    debug(`DaeFieldBrowser | Key pressed: ${event.key}`);
     switch (event.key) {
       case 'ArrowUp':
         event.preventDefault();
@@ -238,6 +246,9 @@ export class DAEFieldBrowser {
           event.preventDefault();
           this.navigateTabs(event.key === 'ArrowLeft' ? -1 : 1);
         }
+        break;
+      case 'Tab':
+        this.hideBrowser();
         break;
     }
   }
@@ -289,8 +300,9 @@ export class DAEFieldBrowser {
     const selectedField = this.filteredFields[this.selectedIndex];
     if (selectedField && this.currentInput) {
       this.currentInput.value = selectedField.key;
-      this.currentInput.dispatchEvent(new Event('change', { bubbles: true }));
+      this.currentInput.blur();
       this.hideBrowser();
+      this.effectConfig.onFieldSelected();
     }
   }
 

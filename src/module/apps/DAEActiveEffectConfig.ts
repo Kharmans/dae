@@ -114,7 +114,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
 
 
-    this.daeFieldBrowser = new DAEFieldBrowser(this.validFields);
+    this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
     this.daeFieldBrowser.init();
   }
 
@@ -241,36 +241,42 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
      return data;
   }
 
-  _keySelected(event) {
-    const target = event.target;
-    if (target.selectedIndex === 0) return; // Account for dummy element 0
-    $(target.closest('.effect-change')).find(".keyinput").val(target.value).trigger('change');
-    return this.submit({ preventClose: true })?.then(() => this.render());
-  }
-
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-    html.find(".keyinput").on("change", this._textSelected.bind(this));
+
+    html.find(".keylist select").on("change", this._keySelected.bind(this));
     
     html.find(".effectTransfer").on("click", event => {
       this.object.transfer = !this.object.transfer;
       this.render(true);
     });
 
-    
-    html.find(".keyinput").on("click input", this._onKeyInputInteraction.bind(this));
+    const keyInputs = html.find(".keyinput");
+    keyInputs.off("focus input");
+    keyInputs.on("focus input", this._onKeyInputInteraction.bind(this));
   }
 
   private _onKeyInputInteraction(event: JQuery.TriggeredEvent): void {
     const input = event.currentTarget as HTMLInputElement;
     this.daeFieldBrowser.setInput(input);
-    this.daeFieldBrowser.updateBrowser();
+    
+    if (event.type === "focus") {
+      this.daeFieldBrowser.updateBrowser();
+    } else if (event.type === "input") {
+      this.daeFieldBrowser.debouncedUpdateBrowser();
+    }
   }
 
-  _textSelected(event) {
-    if (document.activeElement instanceof HTMLElement) {document.activeElement.blur();}
-    return this.submit({ preventClose: true }).then(() => this.render());
+  _keySelected(event) {
+    const target = event.target;
+    if (target.selectedIndex === 0) return; // Account for dummy element 0
+    $(target.closest('.effect-change')).find(".keyinput").val(target.value);
+    return this.submit({ preventClose: true })?.then(() => this.render());
+  }
+
+  public onFieldSelected(): void {
+    this.submit({ preventClose: true })?.then(() => this.render());    
   }
 
   /* ----------------------------------------- */
