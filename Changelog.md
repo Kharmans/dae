@@ -1,3 +1,10 @@
+* Added a new field browser to replace the old autocomplete.
+  * Shows all fields when the input is empty and can be used as search instead of just autocomplete.
+  * Can be toggled to Browser Mode. A larger mode where fields are organized into categories and given a name and description, if more is known about them.
+  * Searching in Browser Mode also searches name and description.
+  * Categories, names and descriptions are maintaned by the dae community, contributions are welcome: Please see /data/field-data.json 
+  * Full keyboard navigation with arrow keys is supported.
+
 ### 11.3.41
 * Fix for error thrown when removing an existing effect.
 
