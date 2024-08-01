@@ -11,6 +11,7 @@ interface FieldData {
 export class DAEFieldBrowser {
   private static fieldDataArray: FieldData[] = [];
   private static isFullBrowser: boolean = false;
+  private static showDescriptions: boolean = false;
   private static fieldDataInitialized: boolean = false;
   private mergedFields: FieldData[] = [];
   private filteredFields: FieldData[] = [];
@@ -41,7 +42,7 @@ export class DAEFieldBrowser {
   private memoize<T extends (...args: any[]) => any>(fn: T, maxSize = 100) {
     const cache = new Map<string, ReturnType<T>>();
     return ((...args: Parameters<T>): ReturnType<T> => {
-      const key = args.join('|');
+      const key = `${args.join('|')}|${DAEFieldBrowser.isFullBrowser}|${DAEFieldBrowser.showDescriptions}`;
       if (cache.has(key)) return cache.get(key)!;
       const result = fn(...args);
       if (cache.size >= maxSize) cache.delete(cache.keys().next().value);
@@ -51,20 +52,20 @@ export class DAEFieldBrowser {
 
   private filterFields(query: string, tab: string): FieldData[] {
     const lowercaseQuery = query.toLowerCase();
+    const isAllTab = tab === 'All';
+    
     return this.mergedFields.filter(field => {
-      const matchesTab = DAEFieldBrowser.isFullBrowser ? 
-        (tab === 'All' || field.category === tab) : true;
-      
-      const matchesSearch = field.key.toLowerCase().includes(lowercaseQuery) ||
-        (DAEFieldBrowser.isFullBrowser && (
-          (field.name && field.name.toLowerCase().includes(lowercaseQuery)) ||
-          (field.description && field.description.toLowerCase().includes(lowercaseQuery))
-        ));
-
-      return matchesTab && matchesSearch;
+      if (DAEFieldBrowser.isFullBrowser && !isAllTab && field.category !== tab) {
+        return false;
+      }
+  
+      return field.key.toLowerCase().includes(lowercaseQuery) ||
+             field.name.toLowerCase().includes(lowercaseQuery) ||
+             (DAEFieldBrowser.showDescriptions && 
+              field.description && 
+              field.description.toLowerCase().includes(lowercaseQuery));
     });
   }
-
   async init(): Promise<void> {
     log("DAEFieldBrowser | Fetching field data");
     try {
@@ -94,8 +95,11 @@ export class DAEFieldBrowser {
       <div class="dae-fb-tabs"></div>
       <div class="dae-fb-content"></div>
       <div class="dae-fb-toggle-container">
-        <button class="dae-fb-toggle-button" title="Switch between compact and full browser views">
+        <button class="dae-fb-toggle-button" data-action="toggle-full" title="Switch between compact and full browser views">
           <i class="fas fa-expand-arrows-alt"></i> Toggle Full Browser
+        </button>
+        <button class="dae-fb-toggle-button" data-action="toggle-descriptions" title="Toggle field descriptions">
+          <i class="fas fa-align-left"></i> Toggle Descriptions
         </button>
       </div>
     `;
@@ -112,6 +116,7 @@ export class DAEFieldBrowser {
       this.tabs.forEach(tab => {
         const button = document.createElement('button');
         button.className = 'dae-fb-tab-button';
+        button.dataset.action = 'switch-tab';
         button.dataset.tab = tab;
         button.textContent = tab;
         fragment.appendChild(button);
@@ -130,8 +135,13 @@ export class DAEFieldBrowser {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
   
-    const maxBrowserWidth = DAEFieldBrowser.isFullBrowser ? 880 : 400;
-    const maxContentHeight = DAEFieldBrowser.isFullBrowser ? 700 : 400;
+    let maxBrowserWidth = DAEFieldBrowser.isFullBrowser ? 880 : 400;
+    let maxContentHeight = DAEFieldBrowser.isFullBrowser ? 700 : 400;
+
+    if (!DAEFieldBrowser.isFullBrowser && DAEFieldBrowser.showDescriptions) {
+      maxBrowserWidth += 200;
+      maxContentHeight += 200;
+    }
   
     const browserWidth = Math.min(maxBrowserWidth, viewportWidth - rect.left - 10);
     const contentHeight = Math.min(maxContentHeight, viewportHeight - rect.bottom - 100);
@@ -188,16 +198,22 @@ export class DAEFieldBrowser {
   private createFieldElement(field: FieldData, index: number): HTMLElement {
     const fieldElement = document.createElement('div');
     fieldElement.className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
+    fieldElement.dataset.action = 'select-field';
     fieldElement.dataset.key = field.key;
-    
+  
     if (DAEFieldBrowser.isFullBrowser) {
-      const name = field.name !== field.key ? `<strong>${field.name}</strong> - ` : '';
-      const description = field.description ? `<br><small>${field.description}</small>` : '';
-      fieldElement.innerHTML = `${name}${field.key}${description}`;
+      fieldElement.innerHTML = `<strong>${field.name}</strong> - ${field.key}${
+        DAEFieldBrowser.showDescriptions && field.description 
+          ? `<br><small>${field.description}</small>` 
+          : ''
+      }`;
     } else {
       fieldElement.textContent = field.key;
+      if (DAEFieldBrowser.showDescriptions && field.description) {
+        fieldElement.insertAdjacentHTML('beforeend', `<br><small>${field.description}</small>`);
+      }
     }
-
+  
     return fieldElement;
   }
 
@@ -215,22 +231,41 @@ export class DAEFieldBrowser {
   private handleBrowserClick(event: MouseEvent): void {
     debug("DaeFieldBrowser | Browser clicked");
     const target = event.target as HTMLElement;
-    if (target.closest('.dae-fb-tab-button')) {
-      this.switchTab((target.closest('.dae-fb-tab-button') as HTMLElement).dataset.tab as string);
-    } else if (target.closest('.dae-fb-field-option')) {
-      const fieldOption = target.closest('.dae-fb-field-option') as HTMLElement;
-      const index = Array.from(this.contentElement!.children).indexOf(fieldOption);
-      this.selectField(index);
-      this.applySelectedField();
-    } else if (target.closest('.dae-fb-toggle-button')) {
-      DAEFieldBrowser.isFullBrowser = !DAEFieldBrowser.isFullBrowser;
-      this.browserElement!.classList.toggle('dae-fb-full-browser', DAEFieldBrowser.isFullBrowser);
-      this.switchTab('All');
-      this.positionBrowser();
+    const actionElement = target.closest('[data-action]') as HTMLElement | null;
+    const action = actionElement?.dataset.action;
+  
+    switch (action) {
+      case 'toggle-full':
+        DAEFieldBrowser.isFullBrowser = !DAEFieldBrowser.isFullBrowser;
+        this.browserElement!.classList.toggle('dae-fb-full-browser', DAEFieldBrowser.isFullBrowser);
+        this.switchTab('All');
+        this.positionBrowser();
+        break;
+      case 'toggle-descriptions':
+        DAEFieldBrowser.showDescriptions = !DAEFieldBrowser.showDescriptions;
+        this.updateBrowser();
+        break;
+      case 'select-field':
+        const fieldOption = target.closest('.dae-fb-field-option') as HTMLElement;
+        if (fieldOption) {
+          const index = Array.from(this.contentElement!.children).indexOf(fieldOption);
+          this.selectField(index);
+          this.applySelectedField();
+        }
+        break;
+      case 'switch-tab':
+        const tab = actionElement?.dataset.tab;
+        if (tab) {
+          this.switchTab(tab);
+        }
+        break;
+      default:
+        // Do nothing for unhandled actions
+        break;
     }
+  
     this.currentInput.focus();
   }
-
   private handleDocumentClick(event: MouseEvent): void {
     if (this.browserElement && 
         !this.browserElement.contains(event.target as Node) && 

@@ -14,17 +14,26 @@
   overflow: auto;
 }
 
+.dae-fb-toggle-container {
+  display: flex;
+  margin-top:.5em;
+  gap: .5em;
+}
+
 .dae-fb-toggle-button {
+  border-radius: 0;
   background: none;
   border: none;
   cursor: pointer;
   line-height: 18px;
-  margin-top: .5em;
   font-size: 14px;
+  border: 1px solid rgb(0 0 0 / 10%);
 }
 
 .dae-fb-toggle-button:hover {
-  color: #666;
+  font-weight: bold;
+  border-color: black;
+  box-shadow: none;
 }
 
 .dae-fb-browser:not(.dae-fb-full-browser) .dae-fb-tabs {
