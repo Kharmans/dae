@@ -24,6 +24,8 @@ export class DAEFieldBrowser {
   private eventsSetup: boolean = false;
   private effectConfig: DAEActiveEffectConfig;
   public debouncedUpdateBrowser: () => void;
+  private memoizedFilterFields: (query: string, tab: string) => FieldData[];
+
 
   constructor(validFields: Record<string, any>, effectConfig: DAEActiveEffectConfig) {
     this.validFields = validFields;
@@ -33,6 +35,34 @@ export class DAEFieldBrowser {
     this.debouncedUpdateBrowser = foundry.utils.debounce(() => {
       this.updateBrowser();
     }, 50);
+    this.memoizedFilterFields = this.memoize(this.filterFields.bind(this));
+  }
+
+  private memoize<T extends (...args: any[]) => any>(fn: T, maxSize = 100) {
+    const cache = new Map<string, ReturnType<T>>();
+    return ((...args: Parameters<T>): ReturnType<T> => {
+      const key = args.join('|');
+      if (cache.has(key)) return cache.get(key)!;
+      const result = fn(...args);
+      if (cache.size >= maxSize) cache.delete(cache.keys().next().value);
+      return cache.set(key, result).get(key)!;
+    }) as T;
+  }
+
+  private filterFields(query: string, tab: string): FieldData[] {
+    const lowercaseQuery = query.toLowerCase();
+    return this.mergedFields.filter(field => {
+      const matchesTab = DAEFieldBrowser.isFullBrowser ? 
+        (tab === 'All' || field.category === tab) : true;
+      
+      const matchesSearch = field.key.toLowerCase().includes(lowercaseQuery) ||
+        (DAEFieldBrowser.isFullBrowser && (
+          (field.name && field.name.toLowerCase().includes(lowercaseQuery)) ||
+          (field.description && field.description.toLowerCase().includes(lowercaseQuery))
+        ));
+
+      return matchesTab && matchesSearch;
+    });
   }
 
   async init(): Promise<void> {
@@ -137,19 +167,7 @@ export class DAEFieldBrowser {
   }
 
   private applyFilters(): void {
-    const lowercaseQuery = this.currentInput.value.toLowerCase();
-    this.filteredFields = this.mergedFields.filter(field => {
-      const matchesTab = DAEFieldBrowser.isFullBrowser ? 
-        (this.currentTab === 'All' || field.category === this.currentTab) : true;
-      
-      const matchesSearch = field.key.toLowerCase().includes(lowercaseQuery) ||
-        (DAEFieldBrowser.isFullBrowser && (
-          (field.name && field.name.toLowerCase().includes(lowercaseQuery)) ||
-          (field.description && field.description.toLowerCase().includes(lowercaseQuery))
-        ));
-
-      return matchesTab && matchesSearch;
-    });
+    this.filteredFields = this.memoizedFilterFields(this.currentInput.value, this.currentTab);
   }
 
   private renderFields(): void {
@@ -157,29 +175,30 @@ export class DAEFieldBrowser {
     debug("DaeFieldBrowser | Rendering fields");
 
     const fragment = document.createDocumentFragment();
-    const templateElement = document.createElement('template');
     
-    const fieldsHTML = this.filteredFields.map((field, index) => 
-      this.createFieldElementHTML(field, index)
-    ).join('');
-
-    templateElement.innerHTML = fieldsHTML;
-    fragment.appendChild(templateElement.content);
+    this.filteredFields.forEach((field, index) => {
+      const fieldElement = this.createFieldElement(field, index);
+      fragment.appendChild(fieldElement);
+    });
 
     this.contentElement.innerHTML = '';
     this.contentElement.appendChild(fragment);
   }
 
-  private createFieldElementHTML(field: FieldData, index: number): string {
-    const className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
+  private createFieldElement(field: FieldData, index: number): HTMLElement {
+    const fieldElement = document.createElement('div');
+    fieldElement.className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
+    fieldElement.dataset.key = field.key;
     
     if (DAEFieldBrowser.isFullBrowser) {
       const name = field.name !== field.key ? `<strong>${field.name}</strong> - ` : '';
       const description = field.description ? `<br><small>${field.description}</small>` : '';
-      return `<div class="${className}" data-key="${field.key}">${name}${field.key}${description}</div>`;
+      fieldElement.innerHTML = `${name}${field.key}${description}`;
     } else {
-      return `<div class="${className}" data-key="${field.key}">${field.key}</div>`;
+      fieldElement.textContent = field.key;
     }
+
+    return fieldElement;
   }
 
   private setupEventListeners(): void {
