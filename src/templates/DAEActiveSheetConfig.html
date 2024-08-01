@@ -227,20 +227,20 @@
   </section>
 
   <!-- Effects Tab -->
-  <section class="tab" data-tab="effects">
+  <section class="tab dae-effects-tab" data-tab="effects">
     <table class="dae-effects-table">
       <thead>
         <tr class="effect-change effects-header flexrow dae-effects-header">
-          <th class="key dae-key" style="width:280px">{{ localize "EFFECT.ChangeKey" }}</th>
-          <th class="mode dae-mode" style="width:80px">{{ localize "EFFECT.ChangeMode" }}</th>
-          <th class="value dae-value" style="width:250px">{{ localize "EFFECT.ChangeValue" }}</th>
-          <th class="priority dae-priority" style="width:80px">{{ localize "dae.Priority" }}</th>
+          <th class="key dae-key" >{{ localize "EFFECT.ChangeKey" }}</th>
+          <th class="mode dae-mode" >{{ localize "EFFECT.ChangeMode" }}</th>
+          <th class="value dae-value" >{{ localize "EFFECT.ChangeValue" }}</th>
+          <th class="priority dae-priority" >{{ localize "dae.Priority" }}</th>
           <th class="effect-controls dae-controls">
             <a class="effect-control" data-action="add"><i class="far fa-plus-square"></i></a>
           </th>
         </tr>
       </thead>
-      <tbody class="changes-list dae-scrollable-list scrollable dae-effects-list" style="min-height: 300px;">
+      <tbody class="changes-list dae-scrollable-list scrollable dae-effects-list">
         {{#each effect.changes as |change i|}}
         <tr class="effect-change flexrow dae-effect-row" data-index="{{i}}">
           <td class="key dae-key">
