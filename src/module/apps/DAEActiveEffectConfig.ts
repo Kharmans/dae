@@ -253,15 +253,15 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     });
 
     const keyInputs = html.find(".keyinput");
-    keyInputs.off("focus input");
-    keyInputs.on("focus input", this._onKeyInputInteraction.bind(this));
+    keyInputs.off("click input");
+    keyInputs.on("click input", this._onKeyInputInteraction.bind(this));
   }
 
   private _onKeyInputInteraction(event: JQuery.TriggeredEvent): void {
     const input = event.currentTarget as HTMLInputElement;
     this.daeFieldBrowser.setInput(input);
     
-    if (event.type === "focus") {
+    if (event.type === "click") {
       this.daeFieldBrowser.updateBrowser();
     } else if (event.type === "input") {
       this.daeFieldBrowser.debouncedUpdateBrowser();
@@ -372,6 +372,16 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (foundry.utils.getProperty(formData, `flags.${game.system.id}.type`) === "enchantment") formData.transfer = false;
     await this.object.update(formData);
   }
+
+    /** @override */
+    async close(options = {}): Promise<void> {
+      if (this.daeFieldBrowser && this.daeFieldBrowser.browserElement) {
+        this.daeFieldBrowser.browserElement.remove();
+        this.daeFieldBrowser.browserElement = null;
+      }
+  
+      return super.close(options);
+    }
 }
 
 export function geti18nTranslations() {
