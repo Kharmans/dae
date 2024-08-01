@@ -248,10 +248,9 @@
               <div class="key dae-key-input">
                 <input class="keyinput dae-keyinput" type="text" name="changes.{{i}}.key" value="{{change.key}}" />
               </div>
-              <div class="keylist dae-key-select">
-                <select name="selectedKey" data-dtype="String">
-                  {{selectOptions ../validFields selected=change.key}}
-                </select>
+              <div class="dae-field-info">
+                <div class="dae-field-name">{{change.fieldName}}</div>
+                <div class="dae-field-description">{{change.fieldDescription}}</div>
               </div>
             </div>
           </td>

@@ -197,13 +197,18 @@
   padding: 10px 6px;
 }
 
-.key.dae-key {
-  width: 410px;
+.tab[data-tab="effects"] .dae-key-wrapper {
+  width: 400px;
 }
 
-.dae-key-select select[name="selectedKey"] {
-  margin-top: 4px;
-  max-width: 400px;
+.tab[data-tab="effects"] .dae-field-name {
+  padding-bottom: 1px;
+  
+  font-weight: bold;
+}
+
+.tab[data-tab="effects"] .dae-field-info {
+  padding: 4px 2px;
 }
 
 .dae-mode {

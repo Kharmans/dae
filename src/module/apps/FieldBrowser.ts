@@ -78,6 +78,8 @@ export class DAEFieldBrowser {
       this.mergedFields = this.mergeFields(this.getFieldObjects(), DAEFieldBrowser.fieldDataArray);
       this.filteredFields = this.mergedFields;
       this.tabs = ['All', ...new Set(this.mergedFields.map(field => field.category || 'Other'))];
+
+      this.effectConfig.updateFieldInfo();
     } catch (error) {
       error("DAEFieldBrowser | Failed to initialize:", error);
     }
@@ -395,5 +397,14 @@ export class DAEFieldBrowser {
     }
   
     return Array.from(fieldMap.values());
+  }
+
+  getFieldInfo(key: string): FieldData {
+    return this.mergedFields?.find(f => f.key === key) || {
+      key: key,
+      name: key,
+      description: "",
+      category: ""
+    };
   }
 }

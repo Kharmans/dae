@@ -14,7 +14,7 @@ export function addAutoFields(fields: string[]) {
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
-  fieldsList;
+  fieldsList; // This could be removed now
   cltConditionList;
   ceEffectList;
   statusEffectList;
@@ -166,6 +166,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /** @override */
   async getData(options) {
+    
     if (foundry.utils.getProperty(this.object, "flags.dae.specialDuration") === undefined)
       foundry.utils.setProperty(this.object, "flags.dae.specialDuration", []);
     if (foundry.utils.getProperty(this.object, "flags.dae.stackable") === undefined)
@@ -202,6 +203,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (data.isActorEffect) validSpecsToUse = ValidSpec.specs[this.object.parent.type];
     data.validFields = this.validFields;
     data.submitText = "EFFECT.Submit";
+    
     data.effect.changes.forEach(change => {
       if ([-1, undefined].includes(validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
         change.modes = allModes;
@@ -218,6 +220,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       else
         change.options = this.getOptionsForSpec(change);
       if (!change.priority) change.priority = change.mode * 10;
+
+      const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
+      change.fieldName = fieldInfo.name;
+      change.fieldDescription = fieldInfo.description;
     });
 
     const simpleCalendar = globalThis.SimpleCalendar?.api;
@@ -241,11 +247,23 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
      return data;
   }
 
+  updateFieldInfo() {
+    if (!this.element) return;
+  
+    const changes = this.object.changes;
+    changes.forEach((change, index) => {
+      const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
+      const row = this.element.find(`.effect-change[data-index="${index}"]`);
+      if (row.length) {
+        row.find('.dae-field-name').text(fieldInfo.name);
+        row.find('.dae-field-description').text(fieldInfo.description);
+      }
+    });
+  }
+
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-
-    html.find(".keylist select").on("change", this._keySelected.bind(this));
     
     html.find(".effectTransfer").on("click", event => {
       this.object.transfer = !this.object.transfer;
@@ -266,13 +284,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     } else if (event.type === "input") {
       this.daeFieldBrowser.debouncedUpdateBrowser();
     }
-  }
-
-  _keySelected(event) {
-    const target = event.target;
-    if (target.selectedIndex === 0) return; // Account for dummy element 0
-    $(target.closest('.effect-change')).find(".keyinput").val(target.value);
-    return this.submit({ preventClose: true })?.then(() => this.render());
   }
 
   public onFieldSelected(): void {
