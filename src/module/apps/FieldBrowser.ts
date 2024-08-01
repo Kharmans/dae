@@ -22,7 +22,6 @@ export class DAEFieldBrowser {
   private validFields: Record<string, any>;
   private currentInput: HTMLInputElement;
   private contentElement: HTMLElement | null = null;
-  private eventsSetup: boolean = false;
   private effectConfig: DAEActiveEffectConfig;
   public debouncedUpdateBrowser: () => void;
   private memoizedFilterFields: (query: string, tab: string) => FieldData[];
@@ -218,14 +217,11 @@ export class DAEFieldBrowser {
   }
 
   private setupEventListeners(): void {
-    if (this.eventsSetup) return;
     debug("DaeFieldBrowser | Setting up event listeners");
 
     document.addEventListener('click', this.handleDocumentClick.bind(this));
     document.addEventListener('keydown', this.handleKeyDown.bind(this));
     this.browserElement!.addEventListener('click', this.handleBrowserClick.bind(this));
-
-    this.eventsSetup = true;
   }
 
   private handleBrowserClick(event: MouseEvent): void {

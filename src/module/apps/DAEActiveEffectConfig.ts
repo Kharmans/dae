@@ -375,6 +375,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
     /** @override */
     async close(options = {}): Promise<void> {
+      // Though it seems right to do it this way, if there's any issue with overriding close, the closeDAEActiveEffectConfig hook can be used.
       if (this.daeFieldBrowser && this.daeFieldBrowser.browserElement) {
         this.daeFieldBrowser.browserElement.remove();
         this.daeFieldBrowser.browserElement = null;
