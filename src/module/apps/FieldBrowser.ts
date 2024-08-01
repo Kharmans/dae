@@ -11,7 +11,7 @@ interface FieldData {
 export class DAEFieldBrowser {
   private static fieldDataArray: FieldData[] = [];
   private static isFullBrowser: boolean = false;
-  private static showDescriptions: boolean = false;
+  private static showDescriptions: boolean = true;
   private static fieldDataInitialized: boolean = false;
   private mergedFields: FieldData[] = [];
   private filteredFields: FieldData[] = [];
@@ -36,6 +36,7 @@ export class DAEFieldBrowser {
       this.updateBrowser();
     }, 50);
     this.memoizedFilterFields = this.memoize(this.filterFields.bind(this));
+    
   }
 
   private memoize<T extends (...args: any[]) => any>(fn: T, maxSize = 100) {
@@ -99,7 +100,7 @@ export class DAEFieldBrowser {
         <button class="dae-fb-toggle-button" data-action="toggle-full" title="Switch between compact and full browser views">
           <i class="fas fa-expand-arrows-alt"></i> Toggle Full Browser
         </button>
-        <button class="dae-fb-toggle-button" data-action="toggle-descriptions" title="Toggle field descriptions">
+        <button class="dae-fb-toggle-button active" data-action="toggle-descriptions" title="Toggle field descriptions">
           <i class="fas fa-align-left"></i> Toggle Descriptions
         </button>
       </div>
@@ -236,11 +237,13 @@ export class DAEFieldBrowser {
       case 'toggle-full':
         DAEFieldBrowser.isFullBrowser = !DAEFieldBrowser.isFullBrowser;
         this.browserElement!.classList.toggle('dae-fb-full-browser', DAEFieldBrowser.isFullBrowser);
+        actionElement?.classList.toggle('active', DAEFieldBrowser.isFullBrowser);
         this.switchTab('All');
         this.positionBrowser();
         break;
       case 'toggle-descriptions':
         DAEFieldBrowser.showDescriptions = !DAEFieldBrowser.showDescriptions;
+        actionElement?.classList.toggle('active', DAEFieldBrowser.showDescriptions);
         this.updateBrowser();
         break;
       case 'select-field':
@@ -264,6 +267,7 @@ export class DAEFieldBrowser {
   
     this.currentInput.focus();
   }
+
   private handleDocumentClick(event: MouseEvent): void {
     if (this.browserElement && 
         !this.browserElement.contains(event.target as Node) && 
