@@ -227,7 +227,7 @@
 
 .dae-effects-tab .dae-field-description {
   font-size: smaller;
-  max-height: 26px;
+  max-height: 36px;
   overflow: auto;
   margin-top: 1px;
   padding-top: 2px;
@@ -236,7 +236,7 @@
 
 .dae-effects-tab .dae-field-name {
   padding-bottom: 1px;
-  
+
   font-weight: bold;
 }
 

@@ -90,22 +90,27 @@ export class DAEFieldBrowser {
     if (this.browserElement) return;
     debug("DaeFieldBrowser | Creating browser element");
     
+    const fullBrowserClass = DAEFieldBrowser.isFullBrowser ? 'active' : '';
+    const descriptionsClass = DAEFieldBrowser.showDescriptions ? 'active' : '';
+    const browserClass = DAEFieldBrowser.isFullBrowser ? 'dae-fb-browser dae-fb-full-browser' : 'dae-fb-browser';
+  
     this.browserElement = document.createElement('div');
     this.browserElement.id = 'dae-fb-browser';
-    this.browserElement.className = 'dae-fb-browser';
+    this.browserElement.className = browserClass;
     this.browserElement.innerHTML = `
       <div class="dae-fb-tabs"></div>
       <div class="dae-fb-content"></div>
       <div class="dae-fb-toggle-container">
-        <button class="dae-fb-toggle-button" data-action="toggle-full" title="Switch between compact and full browser views">
+        <button class="dae-fb-toggle-button ${fullBrowserClass}" data-action="toggle-full" title="Switch between compact and full browser views">
           <i class="fas fa-expand-arrows-alt"></i> Toggle Full Browser
         </button>
-        <button class="dae-fb-toggle-button active" data-action="toggle-descriptions" title="Toggle field descriptions">
+        <button class="dae-fb-toggle-button ${descriptionsClass}" data-action="toggle-descriptions" title="Toggle field descriptions">
           <i class="fas fa-align-left"></i> Toggle Descriptions
         </button>
       </div>
     `;
     this.contentElement = this.browserElement.querySelector('.dae-fb-content');
+    
     this.createTabButtons();
     this.setupEventListeners();
     document.body.appendChild(this.browserElement);
@@ -140,10 +145,10 @@ export class DAEFieldBrowser {
     let maxBrowserWidth = DAEFieldBrowser.isFullBrowser ? 880 : 400;
     let maxContentHeight = DAEFieldBrowser.isFullBrowser ? 700 : 400;
 
-    if (!DAEFieldBrowser.isFullBrowser && DAEFieldBrowser.showDescriptions) {
-      maxBrowserWidth += 200;
-      maxContentHeight += 200;
-    }
+    // if (!DAEFieldBrowser.isFullBrowser && DAEFieldBrowser.showDescriptions) {
+    //   maxBrowserWidth += 200;
+    //   maxContentHeight += 200;
+    // }
   
     const browserWidth = Math.min(maxBrowserWidth, viewportWidth - rect.left - 10);
     const contentHeight = Math.min(maxContentHeight, viewportHeight - rect.bottom - 100);
