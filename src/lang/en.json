@@ -376,5 +376,6 @@
     "dae.halfHealthEffectLabel": "Half Health",
     "dae.DAEAddHalfHealthEffect.Name": "Add Half Health Effect",
     "dae.DAEAddHalfHealthEffect.Hint": "Add a half health status effect to set the actor's max hit points to half its normal max",
+    "dae.IconTint": "Icon Tint",
     "dae.TabChanges": "Changes"
   }
