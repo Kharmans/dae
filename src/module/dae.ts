@@ -1990,14 +1990,14 @@ function updateSheetHeaderButton(app, [elem], options) {
       hasEffects = app.document.effects?.size > 0;
     if (!!hasEffects) {
       const sheetButtonToUpdate = !!daeActorSheetButton ? daeActorSheetButton : daeItemSheetButton;
-      sheetButtonToUpdate.style.color = 'green';  //that could be added in another setting
+      sheetButtonToUpdate.style.color = '#36ba36';  //that could be added in another setting
     }
   }
   if (elem?.querySelector('.dae-dimeditor')) {
     const daeSheetButton = elem.closest('.window-app').querySelector('.dae-dimeditor');
     const hasMacro = !!(foundry.utils.getProperty(app.object, "flags.dae.macro.command") ?? foundry.utils.getProperty(app.object, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(app.object, "flags.itemacro.macro.data.command"));
     if (hasMacro)
-      daeSheetButton.style.color = 'green';  //that could be added in another setting
+      daeSheetButton.style.color = '#36ba36';  //that could be added in another setting
   }
 }
 
