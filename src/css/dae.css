@@ -125,6 +125,9 @@
   color: #606060;
 }
 
+
+/* Other */
+
 .dae-green-text {
   color: green
 }
@@ -174,7 +177,130 @@
     overflow: visible;
 }
 
-/*/ New Styles for the Changes tab /*/
+
+/* ------------------------------------ */
+/*  	 DAE ACTIVE EFFECT EDITOR		*/
+/* ------------------------------------ */
+
+.dae-sheet-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 4px;;
+}
+
+.dae-sheet-header .dae-effect-icon {
+  height: 64px !important;
+  margin-right: 16px;
+  border-color: var(--color-border-light-tertiary);
+  background-color: rgb(0 0 0 / 5%);
+  padding: 4px;
+  border-radius: 4px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.dae-sheet-header .dae-effect-icon:hover {
+  transform: scale(1.05);
+}
+
+.dae-sheet-header .dae-effect-title input {
+  width: 100% !important;
+  height: 64px !important;
+  margin: 0 !important;
+  padding: 8px 12px;
+  color: #333;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--color-border-light-tertiary);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.dae-sheet-header .dae-effect-title input::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.dae-form-group {
+  padding: 1px 4px;
+}
+
+/*/ Details Tab /*/
+
+.dae-notes{
+  padding: 0 4px 10px;
+}
+
+.dae-prosemirror .editor .editor-container {
+  border: 2px groove #eeede0;
+  height: 100%;
+  margin: 0;
+  background-color: rgb(0 0 0 / 5%);
+}
+
+.dae-prosemirror .editor .editor-container .editor-content {
+  padding: 0 6px;
+}
+
+.dae-prosemirror .editor {
+  margin-bottom: 5px;
+}
+
+.dae-prosemirror label {
+  padding: 2px;
+  font-weight: bold;
+}
+
+.dae-prosemirror menu {
+  border-radius: 0;
+  border: 2px groove #eeede0;
+  border-bottom: none;
+}
+
+/*/ Duration Tab /*/
+
+.dae-special-duration-container {
+  border: 2px groove #eeede0;
+  padding: 6px;
+  margin: 8px 0 !important;
+  text-align: center;
+}
+.dae-special-duration-container .dae-special-duration-title {
+  text-align: left;
+  height: 24px; 
+  line-height: 24px;
+  vertical-align: center;
+  padding-left: 4px;
+}
+
+.dae-special-duration-container .dae-effect-control {
+  width: 120px;
+  border: 2px groove #eeede0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  margin-right: 27px
+}
+
+.dae-special-duration-container .special-duration-list {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+.dae-special-duration-container .special-duration-list .formgroup {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dae-special-duration-container .special-duration-list select {
+  flex-grow: 1;
+  margin-right: 4px;
+}
+
+
+/*/ Changes tab /*/
 
 .dae-effects-table {
   width: 100% ;
