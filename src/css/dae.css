@@ -19,11 +19,12 @@
   cursor: pointer;
   min-width: 220px;
 }
+
 .dae-scrollable-list {
   list-style: none;
   margin: 0.5em 0;
   padding: 0;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   border: 1px solid var(--color-border-dark-5);
   border-radius: 2px;
   max-height: 600px;
@@ -176,41 +177,104 @@
 /*/ New Styles for the Changes tab /*/
 
 .dae-effects-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid rgb(0 0 0 / 25%);
+  width: 100% ;
+  border-collapse: separate ;
+  border-spacing: 0 ;
+  border: 1px solid rgb(0 0 0 / 25%) ;
+  min-height: 144px;
 }
 
 .dae-effects-table th {
-  white-space: nowrap;
-  box-sizing: border-box;
-  background-color: #343434;
-  font-weight: normal;
+  white-space: nowrap ;
+  box-sizing: border-box ;
+  background-color: #343434 ;
+  font-weight: normal ;
 }
 
 .dae-effects-table .flexrow {
-  display: table-row;
+  display: table-row ;
 }
 
-.dae-effect-row td {
-  padding: 10px 6px;
+.dae-effects-tab[data-tab="effects"] .dae-effects-table td {
+  vertical-align: top ;
+  padding: 10px 6px 8px 6px;
+  border-bottom: 1px dashed rgb(0 0 0 / 20%);
+  min-height: 200px !important;
 }
 
-.key.dae-key {
-  width: 410px;
+.dae-effects-tab .dae-effects-table tr:last-child td {
+  border-bottom: none;
 }
 
-.dae-key-select select[name="selectedKey"] {
-  margin-top: 4px;
-  max-width: 400px;
+.dae-effects-tab .dae-effects-table input,
+.dae-effects-tab .dae-effects-table select,
+.dae-effects-tab .dae-value-textarea textarea{
+  border: 1px solid rgb(0 0 0 / 70%);
+  background-color: rgb(255 255 255 / 10%);
 }
 
-.dae-mode {
-  width: 105px;
+.dae-effects-tab .dae-effects-table input:focus,
+.dae-effects-tab .dae-effects-table select:focus,
+.dae-effects-tab .dae-value-textarea textarea:focus{
+  border: 1px solid rgb(0 0 0 / 100%);
+  background-color: rgb(255 255 255 / 40%);
 }
 
-.dae-value-textarea textarea {
+.dae-effects-tab .dae-key-wrapper, .dae-key {
+  width: 400px;
+  min-height: 66px;
+}
+
+.dae-effects-tab .dae-field-description {
+  font-size: smaller;
+  max-height: 36px;
+  overflow: auto;
+  margin-top: 1px;
+  padding-top: 2px;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.dae-effects-tab .dae-field-name {
+  padding-bottom: 1px;
+
+  font-weight: bold;
+}
+
+.dae-effects-tab .dae-field-info {
+  padding: 4px 2px 0;
+}
+
+.dae-effects-tab .dae-mode select, .dae-mode {
+  width: 110px;
+}
+
+.dae-effects-tab .dae-value-textarea textarea{
   resize: vertical;
-  margin: 10px 0;
+  margin: 0;
+}
+
+.dae-effects-tab .dae-value-textarea textarea, .dae-value {
+  min-width: 250px;
+}
+
+.dae-priority {
+  width: 60px;
+}
+
+.priority.dae-priority {
+  text-align: center;
+}
+
+.dae-priority input {
+  text-align: center;
+  max-width: 60px;
+}
+
+.dae-effects-tab .dae-priority {
+  align-content: center;
+}
+
+.dae-controls
+{
+  width: 50px;
 }
