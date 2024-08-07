@@ -13,7 +13,7 @@ export class DAEFieldBrowser {
   private static isFullBrowser: boolean = false;
   private static showDescriptions: boolean = true;
   private static fieldDataInitialized: boolean = false;
-  private mergedFields: FieldData[] = [];
+  public mergedFields: FieldData[] = [];
   private filteredFields: FieldData[] = [];
   private selectedIndex: number = 0;
   private currentTab: string = 'All';
@@ -58,7 +58,6 @@ export class DAEFieldBrowser {
       if (DAEFieldBrowser.isFullBrowser && !isAllTab && field.category !== tab) {
         return false;
       }
-  
       return field.key.toLowerCase().includes(lowercaseQuery) ||
              field.name.toLowerCase().includes(lowercaseQuery) ||
              (DAEFieldBrowser.showDescriptions && 
@@ -166,7 +165,6 @@ export class DAEFieldBrowser {
   public updateBrowser(): void {
     if (!this.browserElement) {
       this.createBrowser();
-
     }
     
     if (this.browserElement!.style.display === 'none') {
@@ -326,8 +324,7 @@ export class DAEFieldBrowser {
     this.currentTab = tab;
     const tabButtons = this.browserElement!.querySelectorAll('.dae-fb-tab-button');
     tabButtons.forEach(button => button.classList.toggle('active', (button as HTMLElement).dataset.tab === tab));
-  
-    this.updateBrowser();
+      this.updateBrowser();
   }
 
   private navigateFields(direction: number): void {
@@ -359,6 +356,7 @@ export class DAEFieldBrowser {
   public applySelectedField(): void {
     debug("DaeFieldBrowser | Applying selected field");
     const selectedField = this.filteredFields[this.selectedIndex];
+    console.log(selectedField, this.currentInput);
     if (selectedField && this.currentInput) {
       this.currentInput.value = selectedField.key;
       this.currentInput.blur();

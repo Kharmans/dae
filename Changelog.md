@@ -1,9 +1,43 @@
-* Added a new field browser to replace the old autocomplete.
+### 11.3.42
+* Added a new field browser to replace the old autocomplete. (all due to and many thanks to @angometry)
   * Shows all fields when the input is empty and can be used as search instead of just autocomplete.
   * Can be toggled to Browser Mode. A larger mode where fields are organized into categories and given a name and description, if more is known about them.
   * Searching in Browser Mode also searches name and description.
-  * Categories, names and descriptions are maintaned by the dae community, contributions are welcome: Please see /data/field-data.json 
+  * Categories, names and descriptions are maintanied by the dae community, contributions are welcome: Please see /data/field-data.json 
   * Full keyboard navigation with arrow keys is supported.
+
+* Added effect enable condition to non-transfer active effects. As long as the condition is true the effect will remain on the actor. If false the effect will be deleted from the actor.
+ -the expression has access to the effect's parent's rollData, plus the effect itself, so fromUuidSync(effect.orgin) instanceof Actor will work. Useful if the effect was applied via using an item.
+  - if the effect's parent is an item the item data will also be available via item.....
+  * You can have an expression like "MidiQOL.computeDistance(token, effect.origin) <= 15", which means the effect will remain on the actor until the token moves more 15 feet from the source actor.
+
+* Added effect disable conditions. If true the effect will be disabled false and the effect is enabled, works with all effects.
+  - The effect is not removed, only marked as disabled.
+  - This will override setting the disabled flag by hand.
+
+* The new conditions are evaluated whenever the actor with the effect is updated or the token for the actor is updated. It is not checked if the effect source is updated/moved.
+
+* Added a new conditional active effect item. Whenever an actor/token is updated the effects on this item are checked and if the enable conditon is true the effect is added to the actor.
+ Conditional effects are stored in world item DAEConditionalEffects which can be freely edited to add/remove such effects.
+  * The enable condition is available in the effect editor.
+  * Any statuses specified in the details section and any StatusEffect changes will be applied as separate effects to the token/actor.
+  * If there is exactly 1 status applied it will be added as an overlay.
+  * dae ships with a macro to create a sample DAEConditionalEffects item so you can get a head start on the sorts of things you can do.
+  * One of the functions this is meant to upport is a more flexible wounded/dead/unconscious setup where the triggers can be arbitraty condition expression and a finer granularity of effects is possible. The sample DAEConditionalEffects item includes replacements for midi-qols wounded/dead/unconscious processing.
+
+* Fix for changes with type StatusEffect throwing a duplicate item error when applied to targets.
+* Fix for condition immunities not stopping dependent statuses being applied, for example immunity to paralyzed will stop incapacitated being applied to the target.
+
+* Some support for item active effects.
+  - You can reference actor/item data in the effects. 
+  - A change to when item effects are applied (later in the prepare data stage).
+  - Actor values referenced via @abilities.dex.mod and item values via @item.damages.parts.0.1 (to get the damage type of the first damage item).
+  - examples :
+    - system.magicalBonus add @abilities.str.mod
+    - system.damage.parts add [["1d6", "@item.damage.parts.0.1"]]
+    - system.properties add mgc
+
+
 
 ### 11.3.41
 * Fix for error thrown when removing an existing effect.
@@ -1119,7 +1153,7 @@ will end up setting the int spell dc to 30 and the overall character spell dc to
 * Tweaking of creating/deleting effects. Result is macro.execute/args[0]==="on" may executate AFTER midi-qol.RollComplete is sent.
 
 ## 0.8.51
-* Turns out I don't like the dnd5e suppression mechanic. Added a new config option - handle equipped which overrides the supression mechanic in DND5E and uses the DAE one of enable/disable on equip/unequip and vice versa.
+* Turns out I don't like the dnd5e suppression mechanic. Added a new config option - handle equipped which overrides the suppression mechanic in DND5E and uses the DAE one of enable/disable on equip/unequip and vice versa.
 * Short term patch for ATL equip/unequip
 * Support for midi-qol OverTime effects named/unnamed (avoids a bug when mixing named and unnamed overtime effects).
 * [POSSIBLY BREAKING] bonuses.anything no longer have values replaced by DAE - it is left for the actual roll to do that. This should fix a long standing issue with bonuses and derived values. Any problems ping me @tposney since it touches lots of possible areas.
