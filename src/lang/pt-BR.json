@@ -376,7 +376,7 @@
   "dae.DAEAddHalfHealthEffect.Name": "Adicionar Efeito de Metade da Vida",
   "dae.DAEAddHalfHealthEffect.Hint": "Adiciona um efeito de status de metade da vida para definir os pontos de vida máximos do ator para metade do máximo normal.",
   "dae.TabChanges": "Mudanças",
-  "dae.DisableCondition": "Uma expressão que seja verdadeira irá desabilitar o efeito.",
-  "dae.EnableCondition": "Uma expressão que seja falsa irá remover o efeito do autor.",
+  "dae.DisableCondition": "Uma expressão verdadeira irá desabilitar o efeito",
+  "dae.EnableCondition": "Uma expressão falsa irá remover o efeito do autor",
   "dae.ConditionalEffectsItem": "DAEConditionalEffects"
 }
