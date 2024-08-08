@@ -2266,7 +2266,7 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
   }
   const token = tokenDocument?.object;
   //@ts-expect-error
-  if (game.release.generation === 12) {
+  if (game.release.generation >= 12) {
     while (token?.animationContexts?.get(token.animationName)?.to) await delay(100);
     //@ts-expect-error
   } else if (game.release.generation === 11) {

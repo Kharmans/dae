@@ -1,9 +1,13 @@
+### 11.3.42.1
+* Fix for hasHeavy check - thanks @Elwin
+* system.traits.size moved to before prepare data, so that load multiplier will be set correctly
+
 ### 11.3.42
 * Added a new field browser to replace the old autocomplete. (all due to and many thanks to @angometry)
   * Shows all fields when the input is empty and can be used as search instead of just autocomplete.
   * Can be toggled to Browser Mode. A larger mode where fields are organized into categories and given a name and description, if more is known about them.
   * Searching in Browser Mode also searches name and description.
-  * Categories, names and descriptions are maintanied by the dae community, contributions are welcome: Please see /data/field-data.json 
+  * Categories, names and descriptions are maintained by the dae community, contributions are welcome: Please see /data/field-data.json
   * Full keyboard navigation with arrow keys is supported.
 
 * Added effect enable condition to non-transfer active effects. As long as the condition is true the effect will remain on the actor. If false the effect will be deleted from the actor.
@@ -24,6 +28,7 @@
   * If there is exactly 1 status applied it will be added as an overlay.
   * dae ships with a macro to create a sample DAEConditionalEffects item so you can get a head start on the sorts of things you can do.
   * One of the functions this is meant to upport is a more flexible wounded/dead/unconscious setup where the triggers can be arbitraty condition expression and a finer granularity of effects is possible. The sample DAEConditionalEffects item includes replacements for midi-qols wounded/dead/unconscious processing.
+    - This can replace the midi-qol application of bleeding/unconscious/dead if you so desire. It's advisable to have just one active at a time.
 
 * Fix for changes with type StatusEffect throwing a duplicate item error when applied to targets.
 * Fix for condition immunities not stopping dependent statuses being applied, for example immunity to paralyzed will stop incapacitated being applied to the target.
@@ -36,8 +41,6 @@
     - system.magicalBonus add @abilities.str.mod
     - system.damage.parts add [["1d6", "@item.damage.parts.0.1"]]
     - system.properties add mgc
-
-
 
 ### 11.3.41
 * Fix for error thrown when removing an existing effect.

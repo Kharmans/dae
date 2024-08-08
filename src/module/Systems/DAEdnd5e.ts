@@ -71,6 +71,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     }
     function processSchemaField(key, schemaField) {
+      const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
       const fields = schemaField.fields;
       for (let fieldKey of Object.keys(fields)) {
         if (fields[fieldKey] instanceof SchemaField) {
@@ -210,6 +211,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     baseValues["system.attributes.encumbrance.multipliers.heavilyEncumbered"] = ["", -1];
     baseValues["system.attributes.encumbrance.multipliers.maximum"] = ["", -1];
     baseValues["system.attributes.encumbrance.multipliers.overall"] = ["", -1];
+    baseValues["system.traits.size"] = ["", CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+
   }
 
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
@@ -250,7 +253,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // specials["system.traits.ci.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     // specials["system.traits.ci.value"] = ["", -1];
     // specials["system.traits.ci.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.size"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
 
     specials["system.spells.pact.level"] = [0, -1];
     specials["flags.dae"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -1239,10 +1241,10 @@ function prepareData(wrapped) {
     // Call the original prepare data - with foundry's apply effects replaced by dae's
     wrapped();
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      const hasHeavy = this.items.some(i => i.system.equipped && i.system.properties.has("stealthDisadvantage")) !== undefined;
+      const hasHeavy = this.items.some(i => i.system.equipped && i.system.properties.has("stealthDisadvantage"));
       if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
     } else {
-      const hasHeavy = this.items.some(i => i.system.equipped && i.system.stealth) !== undefined;
+      const hasHeavy = this.items.some(i => i.system.equipped && i.system.stealth);
       if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
     }
     // Extra pass of applying effects after prepare data has run to support referencing derived data
