@@ -1,4 +1,4 @@
-### 11.3.42
+### 11.3.43
 * Updated it.json
 * Updated pt-br.json
 
