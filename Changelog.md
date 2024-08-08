@@ -1,3 +1,7 @@
+### 11.3.42
+* Updated it.json
+* Updated pt-br.json
+
 ### 11.3.42.1
 * Fix for hasHeavy check - thanks @Elwin
 * system.traits.size moved to before prepare data, so that load multiplier will be set correctly
@@ -18,7 +22,7 @@
 * Added effect disable conditions. If true the effect will be disabled false and the effect is enabled, works with all effects.
   - The effect is not removed, only marked as disabled.
   - This will override setting the disabled setting (Effect Suspended) by hand.
-  
+
 * The new conditions are evaluated whenever the actor with the effect is updated or the token for the actor is updated. It is not checked if the effect source is updated/moved.
 
 * Added a new conditional active effect item. Whenever an actor/token is updated the effects on this item are checked and if the enable conditon is true the effect is added to the actor.
