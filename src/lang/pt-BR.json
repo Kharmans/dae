@@ -224,8 +224,6 @@
   "dae.confirm": "Diálogo de Confirmação",
   "dae.sure": "Tem certeza?",
   "dae.dae": "DAE",
-  "dae.confirmDelete.Name": "Confirmar Exclusão de Efeito",
-  "dae.confirmDelete.Hint": "Confirma a exclusão dos efeitos ativos antes de excluir.",
   "dae.movement": "Deslocamento",
   "dae.burrow": "Escavação",
   "dae.climb": "Escalada",
@@ -248,6 +246,7 @@
   "dae.isSaveDetail": "salvaguarda",
   "dae.isCheckDetail": "teste de atributo",
   "dae.isSkillDetail": "teste de perícia",
+  "dae.isConcentrationSave": "aalvaguarda de concentração",
   "dae.isInitiativeDetail": "iniciativa",
   "dae.1Action": "1 Ação: Expira na próxima ação (rolagem de item) do personagem",
   "dae.Bonus Action": "Expira no próximo item usado com uma Ação Bônus",
@@ -376,5 +375,8 @@
   "dae.halfHealthEffectLabel": "Metade da Vida",
   "dae.DAEAddHalfHealthEffect.Name": "Adicionar Efeito de Metade da Vida",
   "dae.DAEAddHalfHealthEffect.Hint": "Adiciona um efeito de status de metade da vida para definir os pontos de vida máximos do ator para metade do máximo normal.",
-  "dae.TabChanges": "Mudanças"
+  "dae.TabChanges": "Mudanças",
+  "dae.DisableCondition": "Uma expressão verdadeira irá desabilitar o efeito",
+  "dae.EnableCondition": "Uma expressão falsa irá remover o efeito do autor",
+  "dae.ConditionalEffectsItem": "DAEConditionalEffects"
 }
