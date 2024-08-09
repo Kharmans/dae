@@ -1,5 +1,9 @@
+### 11.3.46
+* Fix for incorrect processing if there is no DAEConditionEffects item in the world. Thanks @Elwin.
+* Added actor.statuses to getRollData as actor,getRollData().statuses.
+
 ### 11.3.45
-* Fix for dnd5e 3.1.x breakage with 11.3.42+
+* Fix for dnd5e 3.1.x breakage (this.allApplicableEffects is not a function) with 11.3.42+
 
 ### 11.3.44
 * Fix for a bad effect evaluation bug - thanks @Pakki Sukibe

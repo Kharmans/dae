@@ -2277,36 +2277,37 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
   //@ts-expect-error
   if (game.user !== game.users?.activeGM) return;
   const effectItem = game.items?.getName(i18n("dae.ConditionalEffectsItem"));
-  if (!effectItem) return;
-  for (let ce of effectItem.effects) {
-    let enableCondition = foundry.utils.getProperty(ce, "flags.dae.enableCondition");
-    if (!enableCondition) continue;
-    const conditionalEffect = ce.toObject(false);
-    const expression = Roll.replaceFormulaData(enableCondition, rollData);
-    const result = daeSystemClass.safeEval(expression, rollData);
-    let overlay = false;
-    const statusEffects: Set<string> = new Set();
+  if (effectItem) {
+    for (let ce of effectItem.effects) {
+      let enableCondition = foundry.utils.getProperty(ce, "flags.dae.enableCondition");
+      if (!enableCondition) continue;
+      const conditionalEffect = ce.toObject(false);
+      const expression = Roll.replaceFormulaData(enableCondition, rollData);
+      const result = daeSystemClass.safeEval(expression, rollData);
+      let overlay = false;
+      const statusEffects: Set<string> = new Set();
 
-    for (let change of conditionalEffect.changes) {
-      if (change.key === "StatusEffect" && CONFIG.statusEffects.some(se => change.value === se.id)) {
-        statusEffects.add(change.value);
+      for (let change of conditionalEffect.changes) {
+        if (change.key === "StatusEffect" && CONFIG.statusEffects.some(se => change.value === se.id)) {
+          statusEffects.add(change.value);
+        }
       }
-    }
-    conditionalEffect.changes = conditionalEffect.changes.filter(change => change.key !== "StatusEffect");
-    //@ts-expect-error
-    for (let status of conditionalEffect.statuses) {
-      statusEffects.add(status);
-    }
-    if (statusEffects.size === 1) overlay = true;
+      conditionalEffect.changes = conditionalEffect.changes.filter(change => change.key !== "StatusEffect");
+      //@ts-expect-error
+      for (let status of conditionalEffect.statuses) {
+        statusEffects.add(status);
+      }
+      if (statusEffects.size === 1) overlay = true;
 
-    if (result) {
-      for (let status of statusEffects) {
-        await toggleActorStatusEffect(actor, status, { active: true, overlay, enableCondition: enableCondition });
-      }
-      if (conditionalEffect.changes.length > 0 || statusEffects.size === 0) {
-        if (actor.effects.some(ef => ef.id === conditionalEffect._id)) continue;
-        if (debugEnabled > 0) console.warn(`dae | creating conditional effect on ${actor.name} ${actor.uuid}`, conditionalEffect)
-        await actor.createEmbeddedDocuments("ActiveEffect", [conditionalEffect], { keepId: true });
+      if (result) {
+        for (let status of statusEffects) {
+          await toggleActorStatusEffect(actor, status, { active: true, overlay, enableCondition: enableCondition });
+        }
+        if (conditionalEffect.changes.length > 0 || statusEffects.size === 0) {
+          if (actor.effects.some(ef => ef.id === conditionalEffect._id)) continue;
+          if (debugEnabled > 0) console.warn(`dae | creating conditional effect on ${actor.name} ${actor.uuid}`, conditionalEffect)
+          await actor.createEmbeddedDocuments("ActiveEffect", [conditionalEffect], { keepId: true });
+        }
       }
     }
   }

@@ -1167,6 +1167,8 @@ function getRollData(wrapped, ...args) {
   data.effects = this.appliedEffects;
   data.actorId = this.id;
   data.actorUuid = this.uuid;
+  data.statuses = this.statuses;
+  // TODO see what config can be safely added without breaking item/actor sheets. data.config = CONFIG.DND5E;
 
   if (!data.token) Object.defineProperty(data, "token", {
     get() {
