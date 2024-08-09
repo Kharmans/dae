@@ -1,3 +1,6 @@
+### 11.3.44
+* Fix for a bad effect evaluation bug - thanks @Pakki Sukibe
+
 ### 11.3.43
 * Updated it.json
 * Updated pt-br.json

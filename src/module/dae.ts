@@ -193,7 +193,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       : this.schema.getField(c.key);
     //@ts-expect-error
     if (field instanceof foundry.data.fields.NumberField) {
-      fieldType === "number";
+      fieldType = "number";
     }
     //@ts-expect-error
     else if (field instanceof foundry.data.fields.BooleanField) fieldType === "boolean";
