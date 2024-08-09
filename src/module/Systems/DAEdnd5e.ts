@@ -1129,8 +1129,8 @@ function _itemApplyActiveEffects() {
 
   // Organize non-disabled effects by their application priority
   const changes: any[] = [];
-  for ( const effect of this.allApplicableEffects() ) {
-    if ( !effect.active ) continue;
+  for (const effect of this.allApplicableEffects()) {
+    if (!effect.active) continue;
     changes.push(...effect.changes.map(change => {
       const c = foundry.utils.deepClone(change);
       if (typeof c.value === "string") {
@@ -1148,8 +1148,8 @@ function _itemApplyActiveEffects() {
   changes.sort((a, b) => a.priority - b.priority);
 
   // Apply all changes
-  for ( const change of changes ) {
-    if ( !change.key ) continue;
+  for (const change of changes) {
+    if (!change.key) continue;
     const changes = change.effect.apply(this, change);
     Object.assign(overrides, changes);
   }
@@ -1269,15 +1269,18 @@ function prepareData(wrapped) {
     }
     if (debugEnabled > 1) debug("prepare data: after passes", this);
 
-    // Apply effects to items - moved after the rest of actor prepare data instead of default dnd5e behaviour
-    for (let item of this.items) {
-      _itemApplyActiveEffects.bind(item)();
+    //@ts-expect-error
+    if (foundry.utils.isNewerVersion(game.system.version, "3.2.0")) {
+      // Apply effects to items - moved after the rest of actor prepare data instead of default dnd5e behaviour
+      for (let item of this.items) {
+        _itemApplyActiveEffects.bind(item)();
+      }
     }
     //@ts-expect-error Apply condition immunities
-    if ( game.release.generation >= 12 ) {
+    if (game.release.generation >= 12) {
       const conditionImmunities = this.system.traits?.ci?.value;
-      if ( conditionImmunities ) {
-        for ( const condition of conditionImmunities ) this.statuses.delete(condition);
+      if (conditionImmunities) {
+        for (const condition of conditionImmunities) this.statuses.delete(condition);
       }
     }
   } catch (err) {
@@ -1418,7 +1421,7 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
 function determineSuppression() {
   this.isSuppressed = false;
   // if (this.disabled) return; dnd5e does not do this check
-  if ( this.getFlag("dnd5e", "type") === "enchantment" ) return;
+  if (this.getFlag("dnd5e", "type") === "enchantment") return;
 
   // DND5e currently does not work with unlinked tokens and suppression determination so this is overtide
   // TODO make this a WRAPPER when dnd5e fixes the unlinked token bug
@@ -1427,7 +1430,7 @@ function determineSuppression() {
   if (this.parent instanceof CONFIG.Actor.documentClass) actor = this.parent;
   else if (this.parent instanceof CONFIG.Item.documentClass) actor = this.parent.parent;
   if (!actor) return;
-  
+
   if (globalThis.MidiQOL && foundry.utils.getProperty(this, "flags.dae.disableIncapacitated")) {
     if (actor) this.isSuppressed = globalThis.MidiQOL.checkIncapacitated(actor);
   }

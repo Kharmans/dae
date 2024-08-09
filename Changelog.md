@@ -1,3 +1,6 @@
+### 11.3.45
+* Fix for dnd5e 3.1.x breakage with 11.3.42+
+
 ### 11.3.44
 * Fix for a bad effect evaluation bug - thanks @Pakki Sukibe
 

@@ -2350,5 +2350,5 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
       }
     }
   }
-  await token.drawEffects();
+  await token?.drawEffects();
 }
