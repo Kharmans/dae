@@ -1,7 +1,7 @@
 
 import { MODULE_ID, daeSpecialDurations, debug, debugEnabled, error, i18n, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, getSelfTarget, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae";
+import { DAESetupComplete, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, getSelfTarget, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var d20Roll;
@@ -71,6 +71,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     }
     function processSchemaField(key, schemaField) {
+      const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
       const fields = schemaField.fields;
       for (let fieldKey of Object.keys(fields)) {
         if (fields[fieldKey] instanceof SchemaField) {
@@ -188,7 +189,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues["flags"];
 
     baseValues["system.traits.ci.all"] = [false, modes.CUSTOM];
-    // baseValues["system.traits.ci.value"] = ["", modes.CUSTOM];
+    if (!baseValues["system.traits.ci.value"]) baseValues["system.traits.ci.value"] = ["", -1];
     baseValues["system.traits.ci.custom"] = ["", modes.CUSTOM];
 
     if (baseValues["system.traits.weaponProf.value"]) {
@@ -202,14 +203,16 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       baseValues["system.traits.armorProf.custom"] = ["", modes.CUSTOM];
       baseValues["system.attributes.hp.tempmax"] = [0, -1];
     }
-    baseValues["system.attributes.encumbrance.bonuses.encumbered"] = ["",-1];
-    baseValues["system.attributes.encumbrance.bonuses.heavilyEncumbered"] = ["",-1];
-    baseValues["system.attributes.encumbrance.bonuses.maximum"] = ["",-1];
-    baseValues["system.attributes.encumbrance.bonuses.overall"] = ["",-1];
-    baseValues["system.attributes.encumbrance.multipliers.encumbered"] = ["",-1];
-    baseValues["system.attributes.encumbrance.multipliers.heavilyEncumbered"] = ["",-1];
-    baseValues["system.attributes.encumbrance.multipliers.maximum"] = ["",-1];
-    baseValues["system.attributes.encumbrance.multipliers.overall"] = ["",-1];
+    baseValues["system.attributes.encumbrance.bonuses.encumbered"] = ["", -1];
+    baseValues["system.attributes.encumbrance.bonuses.heavilyEncumbered"] = ["", -1];
+    baseValues["system.attributes.encumbrance.bonuses.maximum"] = ["", -1];
+    baseValues["system.attributes.encumbrance.bonuses.overall"] = ["", -1];
+    baseValues["system.attributes.encumbrance.multipliers.encumbered"] = ["", -1];
+    baseValues["system.attributes.encumbrance.multipliers.heavilyEncumbered"] = ["", -1];
+    baseValues["system.attributes.encumbrance.multipliers.maximum"] = ["", -1];
+    baseValues["system.attributes.encumbrance.multipliers.overall"] = ["", -1];
+    baseValues["system.traits.size"] = ["", CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+
   }
 
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
@@ -231,7 +234,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     for (let abl of Object.keys(daeSystemClass.systemConfig.abilities)) {
       specials[`system.abilities.${abl}.dc`] = [0, -1];
     }
-    
+
     specials["system.traits.da.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.da.value"] = ["", -1];
     specials["system.traits.da.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -250,7 +253,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // specials["system.traits.ci.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     // specials["system.traits.ci.value"] = ["", -1];
     // specials["system.traits.ci.custom"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.size"] = ["", ACTIVE_EFFECT_MODES.OVERRIDE];
 
     specials["system.spells.pact.level"] = [0, -1];
     specials["flags.dae"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
@@ -360,6 +362,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
     return validSpec;
   }
+
   // Any actions to be called on init Hook 
   public static initActions() {
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
@@ -381,9 +384,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", this.applyBaseEffectsFunc, "OVERRIDE");
     // Overide prepareData so it can add the extra pass
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
-    // Fix for dnd5e broken determine suppression (does not work for unlinked actors) + support condition immunity
+    // support other things that can suppress an effect, like condition immunity
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "OVERRIDE");
-
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
     // done here as it references some .system data
@@ -424,7 +426,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         }
         return true;
-      })
+      });
+      // It's more convenient for enchantment effects to be applied after actor preprpareDerivedData has run
+      //   to support system.abilities.dex.mod for example
+      // This wrapper just makes the dnd5e call to item.applyActiveEffects null
+      // _itemApplyActiveEffects is called in actor prepareData instead.
+      libWrapper.register("dae", "CONFIG.Item.documentClass.prototype.applyActiveEffects", _nullItemApplyEffects, "OVERRIDE");
     }
   }
 
@@ -474,6 +481,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["isSave"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}`;
       daeSpecialDurations["isSaveSuccess"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
       daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
+      daeSpecialDurations["isConcentrationSave"] = i18n("dae.isConcentrationSave");
+      daeSpecialDurations["isConcentrationSaveFail"] = `${i18n("dae.isConcentrationSave")}: ${i18n("dae.failure")}`;
+      daeSpecialDurations["isConcentrationSaveSuccess"] = `${i18n("dae.isConcentrationSave")}: ${i18n("dae.success")}`;
       daeSpecialDurations["isCheck"] = `${i18n("dae.isRollBase")} ${i18n("dae.isCheckDetail")}`;
       daeSpecialDurations["isSkill"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")}`;
       daeSpecialDurations["isInitiative"] = `${i18n("dae.isRollBase")} ${i18n("dae.isInitiativeDetail")}`;
@@ -596,12 +606,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         this.traitList[`-${type}`] = `- ${i18n(this.traitList[type])}`;
       });
 
+      /* This has no effect since only customDamageResistanceTypes is looked at
       this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes ?? {};
       Object.keys(this.customDamageResistanceList).forEach(type => {
         this.traitList[`${type}`] = `${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
         this.traitList[`-${type}`] = `- ${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
       });
-      
+      */
+
     } else {
       this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
       const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
@@ -1099,15 +1111,51 @@ function applyBaseActiveEffectsdnd5e() {
   if (this.system?.prepareEmbeddedData instanceof Function) this.system.prepareEmbeddedData();
 
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
-  // determine whether they are suppressed or not.
 
-  // Handle traits.ci specially - they can disable other effects so need to be done at the very start.
+  // Handle traits.ci specially
+  // CI disable other effects so need to be processed before other effects
   const traitsCI = {};
-  traitsCI["system.traits.ci.all"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.all"];
-  traitsCI["system.traits.ci.value"] = ValidSpec.specs[this.type].baseSpecsObj["system.traits.ci.value"];
-  applyDaeEffects.bind(this)({ specList: traitsCI, completedSpecs: {}, allowAllSpecs: false, wildeCardsInclude: [], wildCardsExclude: [], doStatusEffects: true })
-  this.effects.forEach(e => e.determineSuppression());
+  traitsCI["system.traits.ci.all"] = ValidSpec.specs[this.type].allSpecsObj["system.traits.ci.all"];
+  traitsCI["system.traits.ci.value"] = ValidSpec.specs[this.type].allSpecsObj["system.traits.ci.value"];
+  applyDaeEffects.bind(this)({ specList: traitsCI, completedSpecs: {}, allowAllSpecs: false, wildeCardsInclude: [], wildCardsExclude: [], doStatusEffects: false });
   applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclue: [], doStatusEffects: true });
+}
+
+function _nullItemApplyEffects() {
+  return;
+}
+function _itemApplyActiveEffects() {
+  const overrides = {};
+
+  // Organize non-disabled effects by their application priority
+  const changes: any[] = [];
+  for (const effect of this.allApplicableEffects()) {
+    if (!effect.active) continue;
+    changes.push(...effect.changes.map(change => {
+      const c = foundry.utils.deepClone(change);
+      if (typeof c.value === "string") {
+        const rollData = this.getRollData();
+        let expressionpre = Roll.replaceFormulaData(c.value, rollData);
+        const expression = daeSystemClass.safeEvalExpression(expressionpre, rollData);
+        const result = daeSystemClass.safeEval(expression, rollData) ?? expression;
+        c.value = JSON.stringify(result);
+      }
+      c.effect = effect;
+      c.priority ??= c.mode * 10;
+      return c;
+    }));
+  }
+  changes.sort((a, b) => a.priority - b.priority);
+
+  // Apply all changes
+  for (const change of changes) {
+    if (!change.key) continue;
+    const changes = change.effect.apply(this, change);
+    Object.assign(overrides, changes);
+  }
+
+  // Expand the set of final overrides
+  this.overrides = foundry.utils.expandObject(overrides);
 }
 
 function getRollData(wrapped, ...args) {
@@ -1119,6 +1167,8 @@ function getRollData(wrapped, ...args) {
   data.effects = this.appliedEffects;
   data.actorId = this.id;
   data.actorUuid = this.uuid;
+  data.statuses = this.statuses;
+  // TODO see what config can be safely added without breaking item/actor sheets. data.config = CONFIG.DND5E;
 
   if (!data.token) Object.defineProperty(data, "token", {
     get() {
@@ -1190,16 +1240,16 @@ function prepareData(wrapped) {
     foundry.utils.setProperty(this, "flags.dae.onUpdateTarget", foundry.utils.getProperty(this._source, "flags.dae.onUpdateTarget"));
 
     this.overrides = {};
-    // const wildCards = [/flags\.base\.dae\..*/];
-    // applyDaeEffects.bind(this)({ specList: {}, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildCards, wildCardsExclude: wildcardEffects, doStatusEffects: false });
+    // Call the original prepare data - with foundry's apply effects replaced by dae's
     wrapped();
     if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      const hasHeavy = this.items.find(i => i.system.equipped && i.system.properties.has("stealthDisadvantage")) !== undefined;
+      const hasHeavy = this.items.some(i => i.system.equipped && i.system.properties.has("stealthDisadvantage"));
       if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
     } else {
-      const hasHeavy = this.items.find(i => i.system.equipped && i.system.stealth) !== undefined;
+      const hasHeavy = this.items.some(i => i.system.equipped && i.system.stealth);
       if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
     }
+    // Extra pass of applying effects after prepare data has run to support referencing derived data
     applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
 
     // Allow for changes made by effects
@@ -1219,7 +1269,22 @@ function prepareData(wrapped) {
         for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
       }
     }
-    debug("prepare data: after passes", this);
+    if (debugEnabled > 1) debug("prepare data: after passes", this);
+
+    //@ts-expect-error
+    if (foundry.utils.isNewerVersion(game.system.version, "3.2.0")) {
+      // Apply effects to items - moved after the rest of actor prepare data instead of default dnd5e behaviour
+      for (let item of this.items) {
+        _itemApplyActiveEffects.bind(item)();
+      }
+    }
+    //@ts-expect-error Apply condition immunities
+    if (game.release.generation >= 12) {
+      const conditionImmunities = this.system.traits?.ci?.value;
+      if (conditionImmunities) {
+        for (const condition of conditionImmunities) this.statuses.delete(condition);
+      }
+    }
   } catch (err) {
     console.error("Could not prepare data ", this.name, err);
   }
@@ -1342,7 +1407,8 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
   }
   // Case 2: effect is a synthetic actor on the scene - only if the token ids match
   else if (parentType === "Scene") {
-    const [parentType, parentId, tokeyType, tokenId, syntheticActor, sntheticActorId, syntheticItem, syntheticItemId] = parts;
+    const itemUuid = effect.origin.replaces(/\.ActiveEffect\..*$/, "");
+    const [parentType, parentId, tokeyType, tokenId, syntheticActor, y, syntheticItem, syntheticItemId] = parts;
     if ((tokenId === effect.parent.token?.id) && (syntheticItem === "Item"))
       item = effect.parent.items.get(syntheticItemId);
   }
@@ -1356,17 +1422,21 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
 
 function determineSuppression() {
   this.isSuppressed = false;
-  if (this.disabled) return;
+  // if (this.disabled) return; dnd5e does not do this check
+  if (this.getFlag("dnd5e", "type") === "enchantment") return;
 
   // DND5e currently does not work with unlinked tokens and suppression determination so this is overtide
   // TODO make this a WRAPPER when dnd5e fixes the unlinked token bug
 
+  let actor;
+  if (this.parent instanceof CONFIG.Actor.documentClass) actor = this.parent;
+  else if (this.parent instanceof CONFIG.Item.documentClass) actor = this.parent.parent;
+  if (!actor) return;
+
   if (globalThis.MidiQOL && foundry.utils.getProperty(this, "flags.dae.disableIncapacitated")) {
-    let actor;
-    if (this.parent instanceof CONFIG.Actor.documentClass) actor = this.parent;
-    else if (this.parent instanceof CONFIG.Item.documentClass) actor = this.parent.parent;
     if (actor) this.isSuppressed = globalThis.MidiQOL.checkIncapacitated(actor);
   }
+
   if (this.parent instanceof CONFIG.Item.documentClass && effectIsTransfer(this)) {
     // If the parent of the effect is an item then supressed is based on the item
     this.isSuppressed = this.isSuppressed || this.parent.areEffectsSuppressed;
@@ -1385,7 +1455,10 @@ function determineSuppression() {
     const statusId = foundry.utils.duplicate(this.name ?? "no effect").toLocaleLowerCase();
     const capStatusId = foundry.utils.duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
     const ciSuppressed = ci?.has(statusId) || ci?.has(`Convenient Effect: ${capStatusId}`);
-    if (Boolean(ciSuppressed)) this.isSuppressed = true;
+    if (Boolean(ciSuppressed)) {
+      this.isSuppressed = true;
+      this.disabled = true;
+    }
   }
 }
 

@@ -42,15 +42,6 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "confirmDelete", {
-    name: game.i18n.localize("dae.confirmDelete.Name"),
-    hint: game.i18n.localize("dae.confirmDelete.Hint"),
-    scope: "world",
-    default: false,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
   game.settings.register("dae", "DAETitleBar", {
     name: game.i18n.localize("dae.DAETitleBar.Name"),
     hint: game.i18n.localize("dae.DAETitleBar.Hint"),

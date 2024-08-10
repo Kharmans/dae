@@ -1,4 +1,4 @@
-import { confirmDelete, cltActive, ceActive, atlActive, daeSystemClass } from "../dae";
+import { cltActive, ceActive, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
 import { DAEFieldBrowser } from "./FieldBrowser";
@@ -90,7 +90,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
       //@ts-expect-error
       Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
-        otherFields.push([`ATL.detectionModes.${dm}.range`]);
+        otherFields.push(`ATL.detectionModes.${dm}.range`);
       });
 
       this.ATLVisionModes = {};
@@ -128,7 +128,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       height: "auto",
       resizable: true,
       tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }],
-      dragDrop: [{ dropSelector: ".value" }],
+      dragDrop: [{ dropSelector: ".value" }, { dropSelector: ".key" }],
       scrollY: [".dae-scrollable-list .scrollable"],
       //@ts-expect-error DOCUMENT_OWNERSHIP_LEVELS
       viewPermission: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,
@@ -165,8 +165,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
 
   /** @override */
-  async getData(options) {
-    
+  async getData(options?): Promise<any> {
     if (foundry.utils.getProperty(this.object, "flags.dae.specialDuration") === undefined)
       foundry.utils.setProperty(this.object, "flags.dae.specialDuration", []);
     if (foundry.utils.getProperty(this.object, "flags.dae.stackable") === undefined)
@@ -174,6 +173,18 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     const data: any = await super.getData(options);
     //@ts-expect-error
     data.preV12 = game.release.generation <= 11;
+    if (data.preV12) {
+      data.statuses = data.effect._source.statuses;
+      // Status Conditions
+      data.statuses = CONFIG.statusEffects.map(s => {
+        return {
+          id: s.id,
+          //@ts-expect-error
+          label: game.i18n.localize(s.name ?? /** @deprecated since v12 */ s.label),
+          selected: data.statuses.includes(s.id) ? "selected" : ""
+        };
+      });
+    }
     let validSpecsToUse;
     if (!this.object.parent || !(this.object.parent instanceof CONFIG.Actor.documentClass)) {
       validSpecsToUse = ValidSpec.specs["union"];
@@ -203,7 +214,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (data.isActorEffect) validSpecsToUse = ValidSpec.specs[this.object.parent.type];
     data.validFields = this.validFields;
     data.submitText = "EFFECT.Submit";
-    
+
     data.effect.changes.forEach(change => {
       if ([-1, undefined].includes(validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
         change.modes = allModes;
@@ -239,17 +250,22 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!data.effect.flags?.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       foundry.utils.setProperty(data.effect.flags, "dae.specialDuration", []);
     data.sourceName = await this.object.sourceName;
-    data.fieldsList = this.fieldsList;
+    // data.fieldsList = this.fieldsList;
     data.midiActive = globalThis.MidiQOL !== undefined;
     //@ts-expect-error
     data.useIcon = game.release.generation < 12;
     data.isEnchantment = this.object.getFlag(game.system.id, "type") === "enchantment";
-     return data;
+    data.isConditionalActivationEffect = this.object.parent.name === i18n("dae.ConditionalEffectsItem");
+    if (data.isConditionalActivationEffect) {
+      data.transfer = false;
+      data.effect.transfer = false;
+    }
+   return data;
   }
 
   updateFieldInfo() {
     if (!this.element) return;
-  
+
     const changes = this.object.changes;
     changes.forEach((change, index) => {
       const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
@@ -264,7 +280,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   activateListeners(html) {
     super.activateListeners(html);
-    
+
     html.find(".effectTransfer").on("click", event => {
       this.object.transfer = !this.object.transfer;
       this.render(true);
@@ -278,7 +294,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   private _onKeyInputInteraction(event: JQuery.TriggeredEvent): void {
     const input = event.currentTarget as HTMLInputElement;
     this.daeFieldBrowser.setInput(input);
-    
+
     if (event.type === "click") {
       this.daeFieldBrowser.updateBrowser();
     } else if (event.type === "input") {
@@ -287,7 +303,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
 
   public onFieldSelected(): void {
-    this.submit({ preventClose: true })?.then(() => this.render());    
+    this.submit({ preventClose: true })?.then(() => this.render());
   }
 
   /* ----------------------------------------- */
@@ -301,6 +317,11 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     const item = await fromUuid(data.uuid);
     const targetValue = ev.target.value?.split(",")[1];
     if (data.uuid) ev.target.value = data.uuid + (targetValue ? `, ${targetValue}` : "");
+    if (data.fieldName) {
+      ev.target.value = data.fieldName;
+      this.daeFieldBrowser.debouncedUpdateBrowser();
+      // TODO need to update the description when selected.
+    }
   }
 
   /* ----------------------------------------- */
@@ -311,21 +332,17 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       case "add":
         return this._addEffectChange();
       case "delete":
-        return confirmAction(confirmDelete, () => {
-          button.closest(".effect-change").remove();
-          //@ts-expect-error
-          this.submit({ preventClose: true }).then(() => this.render());
-        });
+        button.closest(".effect-change").remove();
+        //@ts-expect-error
+        return this.submit({ preventClose: true }).then(() => this.render());
       case "add-specDur":
         this._addSpecDuration();
         //@ts-expect-error
         return this.submit({ preventClose: true }).then(() => this.render());
       case "delete-specDur":
-        return confirmAction(confirmDelete, () => {
-          button.closest(".effect-special-duration").remove();
-          //@ts-expect-error
-          this.submit({ preventClose: true }).then(() => this.render());
-        });
+        button.closest(".effect-special-duration").remove();
+        //@ts-expect-error
+        return this.submit({ preventClose: true }).then(() => this.render());
     }
   }
 
@@ -360,6 +377,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!data.tint || data.tint === "") data.tint = null;
     // fixed for very old items
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
+    if (data.flags?.dae?.enableCondition?.length > 0) data.transfer = false;
     if (data.transfer && this.object.getFlag(game.system.id, "type") !== "enchantment") data.origin = this.object.parent?.uuid;
     else delete data.origin;
     data.statuses ??= [];
@@ -384,16 +402,16 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     await this.object.update(formData);
   }
 
-    /** @override */
-    async close(options = {}): Promise<void> {
-      // Though it seems right to do it this way, if there's any issue with overriding close, the closeDAEActiveEffectConfig hook can be used.
-      if (this.daeFieldBrowser && this.daeFieldBrowser.browserElement) {
-        this.daeFieldBrowser.browserElement.remove();
-        this.daeFieldBrowser.browserElement = null;
-      }
-  
-      return super.close(options);
+  /** @override */
+  async close(options = {}): Promise<void> {
+    // Though it seems right to do it this way, if there's any issue with overriding close, the closeDAEActiveEffectConfig hook can be used.
+    if (this.daeFieldBrowser && this.daeFieldBrowser.browserElement) {
+      this.daeFieldBrowser.browserElement.remove();
+      this.daeFieldBrowser.browserElement = null;
     }
+
+    return super.close(options);
+  }
 }
 
 export function geti18nTranslations() {

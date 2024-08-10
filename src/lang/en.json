@@ -224,8 +224,6 @@
     "dae.confirm": "Confirmation Dialog",
     "dae.sure": "Are you sure?",
     "dae.dae": "DAE",
-    "dae.confirmDelete.Name": "Confirm effect deletions",
-    "dae.confirmDelete.Hint": "Confirm active effect deletion before deleting",
     "dae.movement": "Movement",
     "dae.burrow": "Burrow",
     "dae.climb": "Climb",
@@ -248,6 +246,7 @@
     "dae.isSaveDetail": "saving throw",
     "dae.isCheckDetail": "ability check",
     "dae.isSkillDetail": "skill check",
+    "dae.isConcentrationSave": "Concentration saving throw",
     "dae.isInitiativeDetail": "initiative",
     "dae.1Action": "1 Action: Expires on the next action (item roll) of the character",
     "dae.Bonus Action": "Expires on the next items use has an activation type Bonus Action",
@@ -376,6 +375,8 @@
     "dae.halfHealthEffectLabel": "Half Health",
     "dae.DAEAddHalfHealthEffect.Name": "Add Half Health Effect",
     "dae.DAEAddHalfHealthEffect.Hint": "Add a half health status effect to set the actor's max hit points to half its normal max",
-    "dae.IconTint": "Icon Tint",
-    "dae.TabChanges": "Changes"
+    "dae.TabChanges": "Changes",
+    "dae.DisableCondition": "An expression which if true will disable the effect",
+    "dae.EnableCondition": "An expression which if false will remove the effect from the actor",
+    "dae.ConditionalEffectsItem": "DAEConditionalEffects"
   }

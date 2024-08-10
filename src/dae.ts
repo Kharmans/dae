@@ -8,6 +8,8 @@ import { setupSocket } from './module/GMAction';
 import { checkLibWrapperVersion } from './module/migration';
 import { setupPatching, initPatching } from './module/patching';
 import API from './module/API/api';
+import { FormBuilder } from './libs/FormBuilder';
+import { AutoEffects } from './module/apps/AutoEffects';
 
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = { "none": 0, "warn": 1, "debug": 2, "all": 3 }[debugText] || 0;
@@ -95,7 +97,6 @@ Hooks.once('ready', async function () {
     }
     daeReadyActions();
     createDAEMacros();
-    // setupDAEMacros();
   } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
     ui.notifications.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);
    } else {
@@ -158,7 +159,14 @@ const DAEMacros = [
     checkVersion: true,
     version: "11.2.1",
     commandText: `await game.modules.get("dae").api.removeAllScenesPassiveEffects()`
-  }
+  },
+  {
+    name: "DAE: Create Sample DAEConditionalEffects",
+    checkVersion: true,
+    version: "11.3.41",
+    commandText: `itemData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/DAEConditionalEffects.json');
+        CONFIG.Item.documentClass.create([itemData]);`
+    }
 ];
 
 export async function createDAEMacros() {

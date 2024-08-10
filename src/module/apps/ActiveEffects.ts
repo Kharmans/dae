@@ -1,4 +1,4 @@
-import { confirmDelete, effectIsTransfer, simpleCalendarInstalled } from "../dae"
+import { effectIsTransfer, simpleCalendarInstalled } from "../dae"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
 
@@ -190,10 +190,8 @@ export class ActiveEffects extends FormApplication {
       let effect = object.effects.get(effectid);
       if (effect) { // this will mean deleting item transfer effects won't work unless the item is being edited
       if (object instanceof CONFIG.Actor.documentClass || object instanceof CONFIG.Item.documentClass) {
-        confirmAction(confirmDelete || object instanceof CONFIG.Item.documentClass, () => {
-          //@ts-expect-error
-          object.deleteEmbeddedDocuments("ActiveEffect", [effectid], { "expiry-reason": "manual-deletion" });
-        });
+        //@ts-expect-error
+        object.deleteEmbeddedDocuments("ActiveEffect", [effectid], { "expiry-reason": "manual-deletion" });
       }
     }
     });

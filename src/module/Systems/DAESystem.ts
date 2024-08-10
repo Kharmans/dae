@@ -1,7 +1,6 @@
 import { debug, debugEnabled, error, i18n, warn } from "../../dae";
-import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, atlActive, actorFromUuid, daeSystemClass, getSelfTarget, libWrapper } from "../dae";
-import { setupSocket } from "../GMAction";
+import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
+import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAESetupComplete, DAEReadyComplete } from "../dae";
 
 export let wildcardEffects: RegExp[] = [];
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
@@ -331,12 +330,16 @@ export class DAESystem {
   }
   public static safeEval(expression: string, sandbox: any, onErrorReturn: any | undefined = undefined) {
     let result;
+    const preSetupError = "MidiQOL or fromUuidSync used before setup complete";
     try {
       const src = 'with (sandbox) { return ' + expression + '}';
       const evl = new Function('sandbox', src);
+      sandbox = foundry.utils.mergeObject(sandbox, { Roll });
       //@ts-expect-error
-      sandbox = foundry.utils.mergeObject(sandbox, { Roll, fromUuidSync });
-      sandbox = foundry.utils.mergeObject(sandbox, {MidiQOL: globalThis.MidiDAEEval ?? {}})
+      sandbox = foundry.utils.mergeObject(sandbox, {fromUuidSync, getToken, MidiQOL: globalThis.MidiDAEEval ?? {}})
+      if (!DAEReadyComplete && typeof expression === "string" && (expression.includes("fromUuidSync") || expression.includes("MidiQOL"))) {
+        throw new Error(preSetupError)
+      }
       const sandboxProxy = new Proxy(sandbox, {
         has: () => true, // Include everything
         get: (t, k) => k === Symbol.unscopables ? undefined : (t[k] ?? Math[k]),
@@ -346,7 +349,11 @@ export class DAESystem {
       result = evl(sandboxProxy);
     } catch (err) {
       const message = `dae | safeEval | expression evaluation failed ${expression}`;
-      console.warn(message, err)
+      if (err.message === preSetupError) {
+        warn(message, preSetupError);
+      } else {
+        console.warn(message, err)
+      }
       result = onErrorReturn;
     }
     if (Number.isNumeric(result)) return Number(result)
@@ -533,45 +540,45 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
   const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
   if (game.modules.get("ATL")?.active) {
     for (let label of ["dimSight", "brightSight"]) {
-      specials[`ATL.${label}`] = ["number", -1];
+      specials[`ATL.${label}`] = [0, -1];
     }
-    specials["ATL.alpha"] = ["number", -1];
-    specials["ATL.elevation"] = ["number", -1];
-    specials["ATL.height"] = ["number", -1];
-    specials["ATL.width"] = ["number", -1];
+    specials["ATL.alpha"] = [0, -1];
+    specials["ATL.elevation"] = [0, -1];
+    specials["ATL.height"] = [0, -1];
+    specials["ATL.width"] = [0, -1];
     specials["ATL.hidden"] = [false, -1];
-    specials["ATL.rotation"] = ["number", -1];
+    specials["ATL.rotation"] = [0, -1];
 
-    specials["ATL.light.animation"] = ["", -1]; //{intensity: 1:1"number", reverse: true/false, speed: 1:1"number", type: "X"}	Light Animation settings, see below for Animation Types
-    specials["ATL.light.alpha"] = ["number", -1];
-    specials["ATL.light.angle"] = ["number", -1];
-    specials["ATL.light.attenuation"] = ["number", -1];
-    specials["ATL.light.bright"] = ["number", -1];
-    specials["ATL.light.color"] = ["number", -1];
-    specials["ATL.light.coloration"] = ["number", -1];
-    specials["ATL.light.contrast"] = ["number", -1];
-    specials["ATL.light.dim"] = ["number", -1];
-    specials["ATL.light.luminosity"] = ["number", -1];
-    specials["ATL.light.saturation"] = ["number", -1];
-    specials["ATL.light.shadows"] = ["number", -1];
-    specials["ATL.light.darkness.max"] = ["number", -1];
-    specials["ATL.light.darkness.min"] = ["number", -1];
-    // specials["ATL.detectionModes.basicSight.range"] = ["number", -1];
-    // specials["ATL.detectionModes.seeInvisibility.range"] = ["number", -1];
-    // specials["ATL.detectionModes.senseInvisibility.range"] = ["number", -1];
-    // specials["ATL.detectionModes.feelTremor.range"] = ["number", -1];
-    // specials["ATL.detectionModes.seeAll.range"] = ["number", -1];
-    // specials["ATL.detectionModes.senseAll.range"] = ["number", -1];
+    specials["ATL.light.animation"] = ["", -1]; //{intensity: 1:10, reverse: true/false, speed: 1:10, type: "X"}	Light Animation settings, see below for Animation Types
+    specials["ATL.light.alpha"] = [0, -1];
+    specials["ATL.light.angle"] = [0, -1];
+    specials["ATL.light.attenuation"] = [0, -1];
+    specials["ATL.light.bright"] = [0, -1];
+    specials["ATL.light.color"] = [0, -1];
+    specials["ATL.light.coloration"] = [0, -1];
+    specials["ATL.light.contrast"] = [0, -1];
+    specials["ATL.light.dim"] = [0, -1];
+    specials["ATL.light.luminosity"] = [0, -1];
+    specials["ATL.light.saturation"] = [0, -1];
+    specials["ATL.light.shadows"] = [0, -1];
+    specials["ATL.light.darkness.max"] = [0, -1];
+    specials["ATL.light.darkness.min"] = [0, -1];
+    // specials["ATL.detectionModes.basicSight.range"] = [0, -1];
+    // specials["ATL.detectionModes.seeInvisibility.range"] = [0, -1];
+    // specials["ATL.detectionModes.senseInvisibility.range"] = [0, -1];
+    // specials["ATL.detectionModes.feelTremor.range"] = [0, -1];
+    // specials["ATL.detectionModes.seeAll.range"] = [0, -1];
+    // specials["ATL.detectionModes.senseAll.range"] = [0, -1];
     specials["ATL.sight.visionMode"] = ["", 0]; // selection list
     specials["ATL.light.animation"] = ["", -1]; // json string
     specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["ATL.sight.angle"] = ["number", -1];
-    specials["ATL.sight.attenuation"] = ["number", -1];
-    specials["ATL.sight.brightness"] = ["number", -1];
-    specials["ATL.sight.contrast"] = ["number", -1];
-    specials["ATL.sight.enabled"] = ["number", -1];
-    specials["ATL.sight.range"] = ["number", -1];
-    specials["ATL.sight.saturation"] = ["number", -1];
+    specials["ATL.sight.angle"] = [0, -1];
+    specials["ATL.sight.attenuation"] = [0, -1];
+    specials["ATL.sight.brightness"] = [0, -1];
+    specials["ATL.sight.contrast"] = [0, -1];
+    specials["ATL.sight.enabled"] = [0, -1];
+    specials["ATL.sight.range"] = [0, -1];
+    specials["ATL.sight.saturation"] = [0, -1];
     specials["ATL.sight.color"] = ["", 0 - 1];
 
   } else if (game.modules.get("ATL")?.active) {
@@ -579,11 +586,11 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
     //@ts-expect-error .version
     if (foundry.utils.isNewerVersion("0.3.04", game.modules.get("ATL")?.version)) {
       for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
-        specials[`ATL.${label}`] = ["number", -1];
+        specials[`ATL.${label}`] = [0, -1];
       }
     } else {
       for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
-        specials[`ATL.${label}`] = ["number", -1];
+        specials[`ATL.${label}`] = [0, -1];
       }
     }
     specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];

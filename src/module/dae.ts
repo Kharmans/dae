@@ -6,6 +6,8 @@ import { ValidSpec } from "./Systems/DAESystem";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e";
 import { DAESystemSW5E } from "./Systems/DAEsw5e";
 import { DIMEditor } from "./apps/DIMEditor";
+import { otherFields } from "./apps/DAEActiveEffectConfig";
+import { get } from "jquery";
 
 let templates = {};
 
@@ -21,7 +23,6 @@ export var midiActive;
 export var statusCounterActive;
 // export var useAbilitySave;
 export var activeConditions;
-export var confirmDelete;
 export var ehnanceStatusEffects;
 export var expireRealTime
 export var noDupDamageMacro;
@@ -36,6 +37,8 @@ export var actionQueue;
 export var linkedTokens;
 export var CECustomEffectsItemUuid: string | undefined;
 export var rewriteTransferOrigin;
+export var DAESetupComplete;
+export var DAEReadyComplete;
 
 export var allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate"];
 
@@ -114,7 +117,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
   for (let effect of this.allApplicableEffects())
     if (effect.determineSuppression) effect.determineSuppression();
   const effects = this.appliedEffects.filter(ef => !ef.disabled && !ef.isSuppressed);
-  if (!effects || effects.size === 0) return this.overrides || {};
+  if (!effects || effects.size === 0) return this.overrides ?? {};
   const changes = effects.reduce((changes, effect) => {
     if (doStatusEffects) {
       for (const statusId of effect.statuses) {
@@ -183,29 +186,40 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       c.value = daeSystemClass.safeEvalExpression(c.value, this.getRollData())
     }
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
-    let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
-    if (typeof sampleValue !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
+    // let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
+    let fieldType = "string";
+    let field = c.key.startsWith("system.")
+      ? this.system.schema.getField(c.key.slice(7))
+      : this.schema.getField(c.key);
+    //@ts-expect-error
+    if (field instanceof foundry.data.fields.NumberField) {
+      fieldType = "number";
+    }
+    //@ts-expect-error
+    else if (field instanceof foundry.data.fields.BooleanField) fieldType === "boolean";
+    else if (field === undefined) {
+      const sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
+      fieldType = typeof sampleValue;
+    }
+
+    if (fieldType !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
       c.value = c.value.replace("@stackCount", stackCount)
 
     if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
-      if (typeof sampleValue === "number" && typeof c.value === "string") {
+      if ((fieldType === "number" || fieldType === "boolean") && typeof c.value === "string") {
         debug("appplyDaeEffects: Doing eval of ", c, c.value);
 
         const rollData = this.getRollData();
-
         rollData.stackCount = stackCount;
         c.value = c.value.replace("@item.level", "@itemLevel");
+
         //@ts-expect-error replaceFormulaData
         let value = Roll.replaceFormulaData(c.value, rollData, { missing: 0, warn: false });
         try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
-          if (needStringNumericValues) {
-            c.value = `${Roll.safeEval(value)}`;
-          } else {
-            c.value = Roll.safeEval(value);
-          }
+          c.value = `${daeSystemClass.safeEval(value, rollData)}`;
         } catch (err) { // safeEval failed try a roll
           try {
-            let roll = new Roll(value);
+            let roll = new Roll(c.value, rollData);
             //@ts-expect-error
             if (game.release.generation < 12) {
               if (!roll.isDeterministic) {
@@ -228,10 +242,8 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       }
     }
     const currentValue = foundry.utils.getProperty(this, c.key);
-    if (typeof (currentValue ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType) === "number" && typeof currentValue !== "number") {
-      const guess = Number.fromString ? Number.fromString(currentValue || "0") : Number(currentValue) || "0";
-      if (!Number.isNaN(guess)) foundry.utils.setProperty(this, c.key, guess);
-      else foundry.utils.setProperty(this, c.key, 0);
+    if (ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType === "number" && typeof currentValue !== "number") {
+      foundry.utils.setProperty(this, c.key, 0);
     }
     const result = c.effect.apply(this, c);
     Object.assign(overrides, result);
@@ -325,6 +337,7 @@ async function myAddCEEffectWith(effectData: any, uuid: string, origin, overlay:
   if (interval) await delay(interval);
   return await ceInterface.addEffectWith({ effectData, uuid, origin, overlay: false });
 }
+
 export async function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, isToken: boolean, CEmetaData: {} = {}) {
   //@ts-expect-error dfreds
   let ceEffect = game.dfreds.effects.all.find(e => (e.name ?? e.label) === effectName);
@@ -335,6 +348,7 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
   returnValue = await actionQueue.add(myAddCEEffectWith, effectData, uuid, origin, false, isToken);
   return returnValue;
 }
+
 export async function addConditionChange(actor, change, token, effect) {
   const condition: any = CONFIG.statusEffects.find(se => se.id === change.value);
   //@ts-expect-error
@@ -345,9 +359,9 @@ export async function addConditionChange(actor, change, token, effect) {
     await game.dfreds.effectInterface.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
   } else {
     if (condition.statuses?.length > 1 && !condition?._id) {
-      condition._id = condition.id.replaceAll(/[ :,.\+\-\*\&\^\%\$\#\@\!\[\]{}\(\)]/g, "").padEnd(16, "x").slice(-16);
+      condition._id = condition.id.replaceAll(/[ :,.\+\-\*\&\^\%\$\#\@\!\[\]{}\(\)]/g, "").padEnd(16, "0").slice(-16);
     }
-    if (condition) {
+    if (condition && !actor.effects.some(ef => ef.id === condition._id)) {
       //@ts-expect-error
       const status = await ActiveEffect.implementation.fromStatusEffect(condition.id, { parent: actor });
       status.origin = effect.uuid;
@@ -358,11 +372,12 @@ export async function addConditionChange(actor, change, token, effect) {
     }
   }
 }
+
 export async function removeConditionChange(actor, change, token, effect, context: any = {}) {
   if (change.value.startsWith("Convenient Effect")) {
     const effectName = change.value.split("Convenient Effect: ")[1];
     //@ts-expect-error
-    await game.dfreds?.effectInterface.removeEffect({ effectName, uuid: actor.uuid, origin: effect.uuid});
+    await game.dfreds?.effectInterface.removeEffect({ effectName, uuid: actor.uuid, origin: effect.uuid });
   }
   const condition = actor.effects.find(ef => ef.origin === effect.uuid && ef.statuses.has(change.value));
   if (condition) await (actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", [condition.id]));
@@ -400,8 +415,10 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect,
     //@ts-expect-error
     statusEffect = await ActiveEffect.implementation.fromStatusEffect(change.value, { parent: actor });
     statusEffect.updateSource({ origin: sourceEffect.uuid });
-    //@ts-expect-error
-    await ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
+    if (!actor.effects.some(ef => ef.id === statusEffect._id)) {
+      //@ts-expect-error
+      await ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
+    }
   }
 }
 export async function removeStatusEffectChange(actor, change, tokens, effect, context: any = {}) {
@@ -563,7 +580,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
       if (hasExisting.length === 0) return;
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
-      context["existing"] = "effect-stacking" ;
+      context["existing"] = "effect-stacking";
       this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), context);
     }
   } catch (err) {
@@ -639,6 +656,8 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
             else updates["img"] = statusEffect.img ?? statusEffect.icon;
             updates["name"] = i18n(statusEffect.name ?? statusEffect.label);
             if (statusEffect._id) { // if there is an _id make sure we use it - e.g. for dnd5e statuses
+              const exisitingEffect = parent.effects.find(ef => ef.id === statusEffect._id);
+              if (exisitingEffect) await exisitingEffect.delete()
               updates._id = statusEffect._id;
               options.keepId = true;
             }
@@ -708,8 +727,8 @@ export function preDeleteCombatHook(...args) {
   for (let combatant of combat.combatants) {
     const actor = combatant.actor;
     if (!actor) continue;
-    const effects = getApplicableEffects(actor, {includeEnchantments: true}).filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd"));
-    actionQueue.add(expireEffects,actor, effects, { "expiry-reason": "combat-end" }); 
+    const effects = getApplicableEffects(actor, { includeEnchantments: true }).filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd"));
+    actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "combat-end" });
   }
 }
 
@@ -717,8 +736,8 @@ export function preCreateCombatantHook(...args) {
   const [combatant, data, options, user] = args;
   const actor = combatant.actor;
   if (!actor) return;
-  const effects = getApplicableEffects(actor, {includeEnchantments: true}).filter(ef => ef.flags?.dae?.specialDuration?.includes("joinCombat"));
-  actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "join-combat" }); 
+  const effects = getApplicableEffects(actor, { includeEnchantments: true }).filter(ef => ef.flags?.dae?.specialDuration?.includes("joinCombat"));
+  actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "join-combat" });
 }
 function recordDisabledSuppressedHook(...args) {
   let [effect, updates, context, userId] = args;
@@ -834,7 +853,7 @@ export function updateActiveEffectHook(...args) {
           warn("dae add macro off", actionQueue._queue.length);
           const effectData = effect.toObject(false);
           if (updates.changes) effectData.changes = oldChanges;
-          if (becameDisabled) context["expiry-reason"] = "effect-disabled" ;
+          if (becameDisabled) context["expiry-reason"] = "effect-disabled";
           else if (becameSuppressed) context["expiry-reason"] = { "expiry-reason": "effect-suppressed" };
           else context["expiry-reason"] = { "expiry-reason": "change-deleted" };
           context.effectUuid = effect.uuid;
@@ -1188,7 +1207,6 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
 }
 
 export async function evalArgs({ effectData, item, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null }) {
-
   const itemId = item?.id ?? foundry.utils.getProperty(effectData.flags, "dae.itemId");
   const itemUuid = item?.uuid ?? foundry.utils.getProperty(effectData.flags, "dae.itemUuid");
   if (!item && itemUuid) item = await fromUuid(itemUuid);
@@ -1408,7 +1426,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
         change,
         doRolls
       })
-      evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, {recursive: false});
+      evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, { recursive: false });
       evalArgsOptions.item = item;
       if (item.actor) evalArgsOptions.actor = item.actor;
       let newChange = await evalArgs(evalArgsOptions)
@@ -1549,7 +1567,7 @@ function updateItemEffects(candidate, updates, options, user) {
     return true;
   }
   if (options.isUndo) return true;
-  if (updates.system?.equipped !== undefined || updates.system?.attuned !== undefined || updates.system?.attunement !== undefined ) {
+  if (updates.system?.equipped !== undefined || updates.system?.attuned !== undefined || updates.system?.attunement !== undefined) {
     // equipped / attuned updated.
     const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && ((updates.system.attuned ?? candidate.system.attuned) || (updates.system?.attunment ?? candidate.system.attunment) !== "");
     const effects = candidate.effects.filter(ef => ef.transfer || ef.flags.dae.transfer)
@@ -1812,6 +1830,7 @@ export function preUpdateActorHook(candidate, updates, options, user) {
 }
 
 export function daeReadyActions() {
+  DAEReadyComplete = true;
   ValidSpec.localizeSpecs();
   // initSheetTab();
   if (game.settings.get("dae", "disableEffects")) {
@@ -1853,20 +1872,54 @@ async function drawEffects(wrapped) {
   return wrapped();
 }
 
-Hooks.on("spotlightOmnisearch.indexBuilt", (index, promises) => {
-  return;
-  console.error("DAE | spotlightOmnisearch.indexBuild", index, promises);
-  //@ts-expect-error
-  console.error("Config spotlight", CONFIG.SpotlightOmniseach, CONFIG);
-  //@ts-expect-error
-  index.push(new CONFIG.SpotlightOmniseach.SearchTerm({
-    data: { name: "system.attributes.hp.value" },
-    icon: ["fas fa-heart"],
-    name: "system.attributes.hp.value",
-    query: "",
-    keywords: ["dae"],
-    type: "DAE attributes"
-  }))
+Hooks.on("spotlightOmnisearch.indexBuilt", async (index, promises) => {
+  const fieldData: any = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/field-data.json');
+  const entries = Object.entries(fieldData).flatMap(([category, fields]: [string, any]) =>
+    Object.entries(fields).map(([key, { name, description }]: [string, any]) => ({
+      key,
+      name,
+      description,
+      category
+    }))
+  );
+  for (let entry of entries) {
+    //@ts-expect-error
+    index.push(new CONFIG.SpotlightOmnisearch.SearchTerm({
+      icon: ["fas fa-heart"],
+      dragData: { fieldName: entry.key },
+      name: entry.key,
+      description: entry.description,
+      query: "",
+      keywords: ["dae", entry.category],
+      type: "DAE attributes"
+    }));
+  }
+  /*
+    for (let spec of ValidSpec.specs["character"].allSpecs) {
+      //@ts-expect-error
+      index.push(new CONFIG.SpotlightOmnisearch.SearchTerm({
+        dragData: { fieldName: spec._fieldSpec },
+        icon: ["fas fa-heart"],
+        name: spec._fieldSpec,
+        description: "this is a description",
+        query: "",
+        keywords: ["dae"],
+        type: "DAE attributes"
+      }))
+    }
+    for (let otherField of otherFields) {
+      //@ts-expect-error
+      index.push(new CONFIG.SpotlightOmnisearch.SearchTerm({
+        icon: ["fas fa-heart"],
+        dragData: { fieldName: otherField },
+        name: otherField,
+        description: "this is a description",
+        query: "midi",
+        keywords: ["dae"],
+        type: "DAE attributes"
+      }))
+    }
+    */
 })
 
 export function daeInitActions() {
@@ -1913,6 +1966,10 @@ export function daeInitActions() {
   // process onUpdateTarget flags
   Hooks.on("preUpdateActor", preUpdateActorHook);
 
+  Hooks.on("updateActor", processConditionalEffects)
+  Hooks.on("updateToken", (tokenDocument, update, diff, userId) => {
+    processConditionalEffects(tokenDocument, update, diff, userId);
+  });
   // wrap so we can remove the existing effect before the new one is created
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", preCreateActiveEffect, "WRAPPER");
   async function preCreateActiveEffect(wrapped, data, context, user) {
@@ -2028,7 +2085,6 @@ export function fetchParams() {
   //@ts-expect-error type string
   setDebugLevel(game.settings.get("dae", "ZZDebug"));
   // useAbilitySave = game.settings.get("dae", "useAbilitySave") disabled as of 0.8.74
-  confirmDelete = game.settings.get("dae", "confirmDelete")
   noDupDamageMacro = game.settings.get("dae", "noDupDamageMacro");
   disableEffects = game.settings.get("dae", "disableEffects");
   daeTitleBar = game.settings.get("dae", "DAETitleBar");
@@ -2065,27 +2121,23 @@ export function getTokenDocument(tokenRef: Token | TokenDocument | string | Acto
 }
 
 export function getToken(tokenRef: Token | TokenDocument | string | Actor): Token | undefined {
+  if (!tokenRef) return undefined;
+  if (tokenRef instanceof Token) return tokenRef;
+  //@ts-expect-error return cast
+  if (tokenRef instanceof TokenDocument) return tokenRef.object ?? undefined;
+  let entity: any = tokenRef;
   if (typeof tokenRef === "string") {
     //@ts-expect-error fromUuidSync
-    const entity = fromUuidSync(tokenRef);
-    if (entity instanceof Token) return entity;
-    //@ts-expect-error object type
-    if (entity instanceof TokenDocument) return entity.object ?? undefined;
-    if (entity instanceof Actor) {
-      //@ts-expect-error object type entity.token returns a tokenDocument
-      if (entity.isToken) return entity.token?.object ?? undefined;
-      else return entity.getActiveTokens()[0];
-    }
-    return undefined;
+    entity = fromUuidSync(tokenRef);
   }
-  if (tokenRef instanceof Token) return tokenRef;
-  //@ts-expect-error object type
-  if (tokenRef instanceof TokenDocument) return tokenRef.object ?? undefined;
-  if (tokenRef instanceof Actor) {
-    //@ts-expect-error object type
-    if (tokenRef.isToken) return tokenRef.token?.object ?? undefined;
-    else return tokenRef.getActiveTokens()[0];
-  }
+  if (entity instanceof Token) return entity;
+  //@ts-expect-error return cast
+  if (entity instanceof TokenDocument) return entity.object ?? undefined;
+  if (entity instanceof Actor) return tokenForActor(entity);
+  if (entity instanceof Item && entity.parent instanceof Actor) return tokenForActor(entity.parent);
+  if (entity instanceof ActiveEffect && entity.parent instanceof Actor) return tokenForActor(entity.parent);
+  if (entity instanceof ActiveEffect && entity.parent instanceof Item) return tokenForActor(entity.parent?.parent);
+  return undefined;
 }
 
 export function actorFromUuid(uuid): Actor | null {
@@ -2113,11 +2165,28 @@ export function replaceFormulaData(wrapped, formula, data, { missing, warn = fal
   return result;
 }
 
-export function tokenForActor(actor): Token | undefined {
-  const tokens = actor.getActiveTokens();
+
+export function tokensForActor(actorRef: Actor | string | undefined | null): Token[] | undefined {
+  let actor: Actor;
+  if (!actorRef) return undefined
+  //@ts-expect-error
+  if (typeof actorRef === "string") actor = fromUuidSync(actorRef);
+  else actor = actorRef;
+  //@ts-expect-error
+  if (actor.token) return [actor.token.object];
+  if (!(actor instanceof Actor)) return undefined;
+
+  const tokens: Token[] = actor.getActiveTokens();
   if (!tokens.length) return undefined;
-  const controlled = tokens.filter(t => t._controlled);
-  return controlled.length ? controlled.shift() : tokens.shift();
+  //@ts-expect-error .controlled
+  const controlled = tokens.filter(t => t.controlled);
+  return controlled.length ? controlled : tokens;
+}
+
+export function tokenForActor(actor: Actor | string | undefined | null): Token | undefined {
+  const tokens = tokensForActor(actor);
+  if (!tokens) return undefined;
+  return tokens[0];
 }
 
 export function effectIsTransfer(effect) {
@@ -2138,7 +2207,7 @@ export function safeGetGameSetting(moduleName, settingName): any | undefined {
   else return undefined;
 }
 
-export function getApplicableEffects(actor, {includeEnchantments}) {
+export function getApplicableEffects(actor, { includeEnchantments }) {
   if (!actor) return [];
   let effects: any[] = [];
   for (let effect of actor.allApplicableEffects()) effects.push(effect);
@@ -2147,4 +2216,140 @@ export function getApplicableEffects(actor, {includeEnchantments}) {
     effects = effects.concat(enchantments);
   }
   return effects;
+}
+
+async function toggleActorStatusEffect(actor, statusId, options: { active: boolean, overlay: boolean, enableCondition?: string | undefined } = { active: true, overlay: false, enableCondition: undefined }) {
+  const status = CONFIG.statusEffects.find(e => e.id === statusId);
+  if (!status) throw new Error(`Invalid status ID "${statusId}" provided to Actor#toggleStatusEffect`);
+  const existing: string[] = [];
+
+  // Find the effect with the static _id of the status effect
+  if (status._id) {
+    const effect: ActiveEffect = actor.effects.get(status._id);
+    if (effect?.id) existing.push(effect.id);
+  }
+
+  // If no static _id, find all single-status effects that have actor status
+  else {
+    for (const effect of actor.effects) {
+      const statuses = effect.statuses;
+      if ((statuses.size === 1) && statuses.has(status.id)) existing.push(effect.id);
+    }
+  }
+
+  // Remove the existing effects unless the status effect is forced active
+  if (existing.length) {
+    if (options.active) return true;
+    await actor.deleteEmbeddedDocuments("ActiveEffect", existing);
+    return false;
+  }
+
+  // Create a new effect unless the status effect is forced inactive
+  if (!options.active && (options.active !== undefined)) return;
+  //@ts-expect-error
+  const effect = await ActiveEffect.implementation.fromStatusEffect(statusId);
+  if (options.enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": options.enableCondition });
+  if (options.overlay) effect.updateSource({ "flags.core.overlay": true });
+  //@ts-expect-error
+  return ActiveEffect.implementation.create(effect, { parent: actor, keepId: true });
+}
+
+export async function processConditionalEffects(actorRef: TokenDocument | Actor, updates, user, options) {
+  let actor;
+  let tokenDocument;
+  if (actorRef instanceof Actor) {
+    actor = actorRef;
+    tokenDocument = tokenForActor(actor)?.document;
+  } else {
+    tokenDocument = actorRef;
+    actor = tokenDocument?.actor
+  }
+  const token = tokenDocument?.object;
+  //@ts-expect-error
+  if (game.release.generation >= 12) {
+    while (token?.animationContexts?.get(token.animationName)?.to) await delay(100);
+    //@ts-expect-error
+  } else if (game.release.generation === 11) {
+    while (token?._animation) await delay(100);
+  }
+  if (!actor) return;
+  const rollData = actor.getRollData();
+  //@ts-expect-error
+  if (game.user !== game.users?.activeGM) return;
+  const effectItem = game.items?.getName(i18n("dae.ConditionalEffectsItem"));
+  if (effectItem) {
+    for (let ce of effectItem.effects) {
+      let enableCondition = foundry.utils.getProperty(ce, "flags.dae.enableCondition");
+      if (!enableCondition) continue;
+      const conditionalEffect = ce.toObject(false);
+      const expression = Roll.replaceFormulaData(enableCondition, rollData);
+      const result = daeSystemClass.safeEval(expression, rollData);
+      let overlay = false;
+      const statusEffects: Set<string> = new Set();
+
+      for (let change of conditionalEffect.changes) {
+        if (change.key === "StatusEffect" && CONFIG.statusEffects.some(se => change.value === se.id)) {
+          statusEffects.add(change.value);
+        }
+      }
+      conditionalEffect.changes = conditionalEffect.changes.filter(change => change.key !== "StatusEffect");
+      //@ts-expect-error
+      for (let status of conditionalEffect.statuses) {
+        statusEffects.add(status);
+      }
+      if (statusEffects.size === 1) overlay = true;
+
+      if (result) {
+        for (let status of statusEffects) {
+          await toggleActorStatusEffect(actor, status, { active: true, overlay, enableCondition: enableCondition });
+        }
+        if (conditionalEffect.changes.length > 0 || statusEffects.size === 0) {
+          if (actor.effects.some(ef => ef.id === conditionalEffect._id)) continue;
+          if (debugEnabled > 0) console.warn(`dae | creating conditional effect on ${actor.name} ${actor.uuid}`, conditionalEffect)
+          await actor.createEmbeddedDocuments("ActiveEffect", [conditionalEffect], { keepId: true });
+        }
+      }
+    }
+  }
+
+  for (let effect of actor.effects) {
+    let condition = effect?.flags?.dae?.enableCondition;
+    if (condition) {
+      // add other things to rollData
+      rollData.combat = game.combat;
+      rollData.time = game.time;
+      rollData.effect = effect.toObject();
+      const expression = Roll.replaceFormulaData(condition, rollData);
+      //@ ts-expect-error
+      // rollData.origin = fromUuidSync(effect.origin);
+      const result = daeSystemClass.safeEval(expression, rollData);
+      if (!result) {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", [effect.id]);
+      }
+    }
+  }
+
+  for (let effect of actor.allApplicableEffects()) {
+    const disableCondition = foundry.utils.getProperty(effect, "flags.dae.disableCondition");
+    if (typeof disableCondition === "string" && disableCondition.trim() !== "") {
+      const rollData = effect.parent.getRollData();
+      rollData.effect = effect.toObject();
+      //@ts-expect-error
+      let value = Roll.replaceFormulaData(disableCondition, rollData, { missing: 0, warn: false });
+      try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
+        let disabled: any;
+        if (value.includes("dae.eval(") || value.includes("dae.roll(")) {
+          disabled = daeSystemClass.safeEvalExpression(value, rollData);
+          disabled = daeSystemClass.safeEval(disabled, rollData);
+        } else disabled = daeSystemClass.safeEval(value, rollData);
+        if (!!disabled !== effect.disabled) {
+          if (debugEnabled > 0) console.warn("dae | setting disabled effect", effect, disabled)
+          await effect.update({ disabled: !!disabled })
+        }
+      } catch (err) {
+        console.warn("dae | diabledCondition error", err)
+      }
+    }
+  }
+  await token?.drawEffects();
 }
