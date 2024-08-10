@@ -35,12 +35,12 @@
       collaborate=false}}
     </div>
 
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "EFFECT.Disabled" }}</label>
       <input type="checkbox" name="disabled" {{ checked effect.disabled }} />
     </div>
     {{#if (and isItemEffect (not isConditionalActivationEffect))}}
-    <div class="form-group effectTransfer">
+    <div class="form-group dae-form-group effectTransfer">
       <label>{{ localize "dae.transfer.Name" }}</label>
       <input type="checkbox" name="transfer" {{ checked effect.transfer }} />
     </div>
@@ -50,7 +50,7 @@
     {{/if}}
 
     {{#unless effect.transfer}}
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "dae.EnableCondition" }}</label>
       <div class="value flex-grow">
         <textarea rows="1" name="flags.dae.enableCondition">{{effect.flags.dae.enableCondition}}</textarea>
@@ -58,7 +58,7 @@
     </div>
     {{/unless}}
 
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "dae.DisableCondition" }}</label>
       <div class="value flex-grow">
         <textarea rows="1" name="flags.dae.disableCondition">{{effect.flags.dae.disableCondition}}</textarea>
@@ -67,7 +67,7 @@
 
     {{#if midiActive }}
     {{#unless isEnchantment}}
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "dae.IncapacitatedDisabled" }}</label>
       <input type="checkbox" name="flags.dae.disableIncapacitated" {{ checked effect.flags.dae.disableIncapacitated
         }} />
@@ -75,7 +75,7 @@
     {{/unless}}
     {{/if}}
     {{#if isActorEffect}}
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "EFFECT.Origin" }}</label>
       <div class="form-fields">
         <input type="text" name="origin" value="{{ data.origin }}" disabled />
@@ -87,7 +87,7 @@
     {{#unless isEnchantment}}
     {{#unless effect.transfer}}
     {{#if midiActive}}
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "dae.SelfTarget.Name" }}</label>
       <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
     </div>
@@ -95,7 +95,7 @@
       {{ localize "dae.SelfTarget.Hint" }}
     </p>
 
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "dae.SelfTargetAlways.Name" }}</label>
       <input type="checkbox" name="flags.dae.selfTargetAlways" {{ checked effect.flags.dae.selfTargetAlways }} />
     </div>
@@ -103,7 +103,7 @@
       {{ localize "dae.SelfTargetAlways.Hint" }}
     </p>
 
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "dae.DontApply.Name" }}</label>
       <input type="checkbox" name="flags.dae.dontApply" {{ checked effect.flags.dae.dontApply }} />
     </div>
@@ -116,7 +116,7 @@
     {{/if}}
 
     {{#if isItemEffect}}
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{localize "dae.Stackable"}}</label>
       <div class="form-fields">
         <select name="flags.dae.stackable" data-dtype="String">
@@ -126,7 +126,7 @@
     </div>
     {{/if}}
     {{#unless (and preV12 false)}}
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>Status Conditions</label>
       <div class="form-fields">
         <multi-select name="statuses">
@@ -137,7 +137,7 @@
       </div>
     </div>
     {{/unless}}
-    <div class="form-group">
+    <div class="form-group dae-form-group">
       <label>{{ localize "dae.ShowIcon.Name" }}</label>
       <input type="checkbox" name="flags.dae.showIcon" {{ checked effect.flags.dae.showIcon }} />
     </div>
