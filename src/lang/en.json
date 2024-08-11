@@ -378,5 +378,6 @@
     "dae.TabChanges": "Changes",
     "dae.DisableCondition": "An expression which if true will disable the effect",
     "dae.EnableCondition": "An expression which if false will remove the effect from the actor",
-    "dae.ConditionalEffectsItem": "DAEConditionalEffects"
+    "dae.ConditionalEffectsItem": "DAEConditionalEffects",
+    "dae.IconTint": "Icon Tint"
   }

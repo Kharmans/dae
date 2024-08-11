@@ -24,8 +24,8 @@ export class ActiveEffects extends FormApplication {
     options.title = game.i18n.localize("dae.ActiveEffectName");
     options.template = "./modules/dae/templates/ActiveEffects.html";
     options.submitOnClose = true;
-    options.height = 400;
-    options.width = 600;
+    options.height = 500;
+    options.width = 650;
     options.resizable = true;
     return options;
   }
