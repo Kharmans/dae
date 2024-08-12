@@ -1,3 +1,7 @@
+### 11.3.46.1
+* Fix for item effects having extra "" around fields.
+* Fix for item effects now working for some fields, like system.armor.magicalBonus
+
 ### 11.3.46
 * Fix for incorrect processing if there is no DAEConditionEffects item in the world. Thanks @Elwin.
 * Added actor.statuses to getRollData as actor,getRollData().statuses.

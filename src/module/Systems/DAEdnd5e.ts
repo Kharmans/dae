@@ -431,7 +431,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //   to support system.abilities.dex.mod for example
       // This wrapper just makes the dnd5e call to item.applyActiveEffects null
       // _itemApplyActiveEffects is called in actor prepareData instead.
-      libWrapper.register("dae", "CONFIG.Item.documentClass.prototype.applyActiveEffects", _nullItemApplyEffects, "OVERRIDE");
+      libWrapper.register("dae", "CONFIG.Item.documentClass.prototype.applyActiveEffects", _itemApplyActiveEffects, "OVERRIDE");
     }
   }
 
@@ -1138,7 +1138,8 @@ function _itemApplyActiveEffects() {
         let expressionpre = Roll.replaceFormulaData(c.value, rollData);
         const expression = daeSystemClass.safeEvalExpression(expressionpre, rollData);
         const result = daeSystemClass.safeEval(expression, rollData) ?? expression;
-        c.value = JSON.stringify(result);
+        if (typeof result === "string") c.value = result;
+        else c.value = JSON.stringify(result);
       }
       c.effect = effect;
       c.priority ??= c.mode * 10;
@@ -1275,7 +1276,7 @@ function prepareData(wrapped) {
     if (foundry.utils.isNewerVersion(game.system.version, "3.2.0")) {
       // Apply effects to items - moved after the rest of actor prepare data instead of default dnd5e behaviour
       for (let item of this.items) {
-        _itemApplyActiveEffects.bind(item)();
+        // _itemApplyActiveEffects.bind(item)();
       }
     }
     //@ts-expect-error Apply condition immunities
