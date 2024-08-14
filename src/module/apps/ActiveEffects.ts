@@ -78,9 +78,9 @@ export class ActiveEffects extends FormApplication {
       }
       newAe.changes.map(change => {
         if (this.object instanceof CONFIG.Item.documentClass)
-          change.label = ValidSpec.specs["union"].allSpecsObj[change.key]?.label || change.key;
+          change.label = ValidSpec.actorSpecs["union"].allSpecsObj[change.key]?.label || change.key;
         else
-          change.label = ValidSpec.specs[this.object.type].allSpecsObj[change.key]?.label || change.key;
+          change.label = ValidSpec.actorSpecs[this.object.type].allSpecsObj[change.key]?.label || change.key;
         if (typeof change.value === "string" && change.value.length > 40) {
           change.value = change.value.substring(0, 30) + " ... ";
         } else if (Array.isArray(change.value)) {
@@ -131,7 +131,7 @@ export class ActiveEffects extends FormApplication {
       isOwned: this.object.isOwned,
       flags: this.object.flags,
       modes: modeKeys,
-      validSpecs: isItem ? ValidSpec.specs["union"].allSpecsObj : ValidSpec.specs[this.object.type],
+      validSpecs: isItem ? ValidSpec.actorSpecs["union"].allSpecsObj : ValidSpec.actorSpecs[this.object.type],
       // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
       canEdit: true,
       // showEffects: playersCanSeeEffects !== "none" || game.user.isGM,

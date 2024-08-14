@@ -1,3 +1,14 @@
+### 11.3.47
+* Added field data for items - i.e. when editing enchantments (first cut - has lots of fields some of which are not relevant to the enchantment).
+* Incorporates merges from @angomety and @michael - thanks.
+* Bug fix for fetching item macros - thanks @Elwin
+* Major rewrite to dae field handling - now uses system schema Field objects.
+* It turns out foundy has support for making effect status icons (on the token) overlays or not. Dae now exposes that flag for you to set when creating effects.
+  - Conditional Effects now use the overlay flag, rather than choosing to overlay if there is just one status to be applied.
+  - Sample DAEConditionalEffects updated to use overlay flag.
+* Support for Dfreds Convenient Effects(version 7+) in **v12**.
+  - StatusEffect now allows you to choose any CE effect for application. Should allow you to deal with CE effects not appearing in CONFIG.statusEffects anymore. For example when applying the wounded condition in midi-qol mechanics.
+
 ### 11.3.46.1
 * Fix for item effects having extra "" around fields.
 * Fix for item effects now working for some fields, like system.armor.magicalBonus

@@ -2,7 +2,7 @@
   "id": "dae",
   "title": "Dynamic effects using Active Effects (DAE)",
   "description": "Replacement for dynamic effects",
-  "version": "11.3.46.1",
+  "version": "11.3.47",
   "authors": [
     {
       "name": "tposney",
@@ -16,20 +16,7 @@
       "email": ""
     }
   ],
-  "type": "module",
   "socket": true,
-  "includes": [
-    "./assets/**",
-    "./languages/**",
-    "./languages/**",
-    "./scripts/**",
-    "./styles/**",
-    "./templates/**",
-    "./module.json",
-    "./README.md",
-    "./icons/**",
-    "./packs/**"
-  ],
   "media": [
     {
       "type": "icon",
@@ -105,7 +92,8 @@
     "incompatible": [
       "pf2e"
     ],
-    "partial": []
+    "partial": [],
+    "allowBugReporter": true
   },
   "compatibility": {
     "minimum": "11.313",
@@ -114,11 +102,10 @@
   },
   "url": "https://gitlab.com/tposney/dae",
   "manifest": "https://gitlab.com/tposney/dae/raw/dndv3/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/dndv3/package/dae-v11.3.46.1.zip",
+  "download": "https://gitlab.com/tposney/dae/raw/dndv3/package/dae-v11.3.47.zip",
   "readme": "https://gitlab.com/tposney/dae/-/blob/dndv3/Readme.md",
   "changelog": "https://gitlab.com/tposney/dae/-/blob/dndv3/Changelog.md",
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
-  "allowBugReporter": true,
   "relationships": {
     "systems": [
       {

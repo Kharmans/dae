@@ -379,5 +379,7 @@
     "dae.DisableCondition": "An expression which if true will disable the effect",
     "dae.EnableCondition": "An expression which if false will remove the effect from the actor",
     "dae.ConditionalEffectsItem": "DAEConditionalEffects",
-    "dae.IconTint": "Icon Tint"
+    "dae.IconTint": "Icon Tint",
+    "dae.IconOverlay.Name": "Icon Overlay",
+    "dae.IconOverlay.Hint": "Display the effect staus icon as an overlay"
   }

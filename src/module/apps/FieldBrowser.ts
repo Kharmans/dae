@@ -387,7 +387,7 @@ export class DAEFieldBrowser {
 
   private mergeFields(fieldObjects: FieldData[], newFieldObjects: FieldData[]): FieldData[] {
     const fieldMap = new Map(fieldObjects.map(field => [field.key, field]));
-  
+
     for (const field of newFieldObjects) {
       if (field.category === 'Hidden') {
         fieldMap.delete(field.key);
@@ -399,7 +399,7 @@ export class DAEFieldBrowser {
           existingField.name = field.name;
         }
       } else {
-        fieldMap.set(field.key, field);
+        // fieldMap.set(field.key, field);
       }
     }
   

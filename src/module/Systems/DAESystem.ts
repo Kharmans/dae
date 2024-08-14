@@ -1,6 +1,6 @@
-import { debug, debugEnabled, error, i18n, warn } from "../../dae";
+import { ArrayField, BooleanField, NumberField, StringField, debug, debugEnabled, error, i18n, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAESetupComplete, DAEReadyComplete } from "../dae";
+import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAESetupComplete, DAEReadyComplete, enumerateBaseValues } from "../dae";
 
 export let wildcardEffects: RegExp[] = [];
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
@@ -10,7 +10,8 @@ export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
 export type FieldType = foundry.data.fields.DataField | "number" | "string" | "boolean" | "object" | "Array" | "Set";
 export class ValidSpec {
   //  static specs: {allSpecs: ValidSpec[], allSpecsObj: {}, baseSpecs: ValidSpec[], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: ValidSpec[]}; 
-  static specs: {};
+  static actorSpecs: {};
+  static itemSpecs: {};
 
   _fieldSpec: string;
   get fieldSpec(): string { return this._fieldSpec };
@@ -42,7 +43,7 @@ export class ValidSpec {
 
   static createValidMods() {
     //@ts-ignore
-    this.specs = {};
+    this.actorSpecs = {};
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     //@ts-ignore
@@ -51,7 +52,7 @@ export class ValidSpec {
     // for (let specKey of Object.keys(game.system.model.Actor)) {
     //@ts-expect-error dataModels
     for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
-      this.specs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
+      this.actorSpecs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
       _characterSpec["system"] = game.system.model ? foundry.utils.duplicate(game.system.model.Actor[specKey] ?? {}) : {};
       let baseValues = foundry.utils.flattenObject(_characterSpec);
       for (let prop in baseValues) {
@@ -59,115 +60,161 @@ export class ValidSpec {
       }
       daeSystemClass.modifyBaseValues(specKey, baseValues, _characterSpec);
       Hooks.callAll("dae.modifyBaseValues", specKey, baseValues, _characterSpec);
+      for (let key of Object.keys(baseValues)) {
+        const baseValue = baseValues[key];
+        if (typeof baseValue[0] === "string") {
+          console.warn("wrong baseValue", key, baseValue[0]);
+          baseValue[0] = new StringField({ initial: baseValues[0] });
+        }
+        if (typeof baseValue[0] === "number") {
+          console.warn("wrong baseValue", key, baseValue[0]);
+          baseValue[0] = new NumberField({ initial: baseValues[0] });
+        }
+        if (typeof baseValue[0] === "boolean") {
+          console.warn("wrong baseValue", key, baseValue[0]);
+          baseValue[0] = new BooleanField({ initial: baseValues[0] });
+        }
+        if (baseValue[0] instanceof Array) {
+          console.warn("wrong baseValue", key, baseValue[0]);
+          baseValue[0] = new ArrayField({ initial: baseValues[0] });
+        }
+      }
 
       // baseValues["items"] = ""; // TODO one day work this out.
       if (game.modules.get("gm-notes")?.active) {
-        baseValues["flags.gm-notes.notes"] = ["", -1];
+        baseValues["flags.gm-notes.notes"] = [new StringField(), -1];
         baseValues["system.att"]
       }
 
       var specials: any = {};
       //@ts-ignore
-      specials["macro.CUB"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["macro.CLT"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["macro.CE"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["macro.StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["StatusEffect"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["StatusEffectLabel"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["StatusEffectName"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.CUB"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.CLT"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["macro.StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["StatusEffectLabel"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["StatusEffectName"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       daeSystemClass.modifySpecials(specKey, specials, _characterSpec);
       Hooks.callAll("dae.modifySpecials", specKey, specials, _characterSpec)
+      for (let key of Object.keys(specials)) {
+        const special = specials[key];
+        if (typeof special[0] === "string") {
+          console.warn("wrong special", key, special[0]);
+          special[0] = new StringField({ initial: specials[0] });
+        }
+        if (typeof special[0] === "number") {
+          console.warn("wrong special", key, special[0]);
+          special[0] = new NumberField({ initial: specials[0] });
+        }
+        if (typeof special[0] === "boolean") {
+          console.warn("wrong special", key, special[0]);
+          special[0] = new BooleanField({ initial: specials[0] });
+        }
+        if (special[0] instanceof Array) {
+          console.warn("wrong special", key, special[0]);
+          special[0] = new ArrayField({ initial: specials[0] });
+        }
+      }
 
       // TODO reactivate when cond vis is v10 ready
-      // specials["macro.ConditionalVisibility"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      // specials["macro.ConditionalVisibilityVision"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["flags.dae.onUpdateTarget"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["flags.dae.onUpdateSource"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+      // specials["macro.ConditionalVisibility"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      // specials["macro.ConditionalVisibilityVision"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["flags.dae.onUpdateTarget"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["flags.dae.onUpdateSource"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
       Object.keys(specials).forEach(key => {
+        if (baseValues[key]) console.log(`DAE | specials ${key} is already defined in baseValues - removing from baseValues`)
         if (debugEnabled > 0 && baseValues[key]) warn(`DAE | specials ${key} is already defined in baseValues - removing`)
         delete baseValues[key]
       })
 
       // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
-      this.specs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
+      this.actorSpecs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
         let validSpec = new ValidSpec(spec, baseValues[spec][0] ?? baseValues[spec], baseValues[spec][1], baseValues[spec][2], baseValues[spec][3]);
         validSpec = daeSystemClass.modifyValidSpec(spec, validSpec); // System specific modifations
-        this.specs[specKey].baseSpecsObj[spec] = validSpec;
+        this.actorSpecs[specKey].baseSpecsObj[spec] = validSpec;
         return validSpec;
       });
       //@ts-ignore
       if (game.modules.get("tokenmagic")?.active) {
-        specials["macro.tokenMagic"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+        specials["macro.tokenMagic"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       }
 
-      daeSystemClass.modifyDerivedSpecs(specKey, this.specs[specKey].derivedSpecs, _characterSpec)
-      Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.specs[specKey].derivedSpecs, _characterSpec);
+      daeSystemClass.modifyDerivedSpecs(specKey, this.actorSpecs[specKey].derivedSpecs, _characterSpec)
+      Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.actorSpecs[specKey].derivedSpecs, _characterSpec);
       Object.entries(specials).forEach(special => {
         //@ts-expect-error
         let validSpec = new ValidSpec(special[0], special[1][0], special[1][1], special[1][2], special[1][3]);
-        this.specs[specKey].derivedSpecs.push(validSpec);
+        this.actorSpecs[specKey].derivedSpecs.push(validSpec);
       })
-      this.specs[specKey].allSpecs = this.specs[specKey].baseSpecs.concat(this.specs[specKey].derivedSpecs);
+      this.actorSpecs[specKey].allSpecs = this.actorSpecs[specKey].baseSpecs.concat(this.actorSpecs[specKey].derivedSpecs);
 
       // TDO come back and clean this up
       if (["dnd5e", "sw5e"].includes(game.system.id)) {
         // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
         // and initiative bonus depends on advantage on initiative
-        this.specs[specKey].allSpecs.forEach(m => {
+        this.actorSpecs[specKey].allSpecs.forEach(m => {
           if (["attributes.hp", "attributes.ac"].includes(m._fieldSpec)) {
             m._fieldType = 0;
           }
         });
       }
-      this.specs[specKey].allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-      this.specs[specKey].baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-      this.specs[specKey].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-      this.specs[specKey].allSpecs.forEach(ms => this.specs[specKey].allSpecsObj[ms._fieldSpec] = ms);
-      this.specs[specKey].baseSpecs.forEach(ms => this.specs[specKey].baseSpecsObj[ms._fieldSpec] = ms);
-      this.specs[specKey].derivedSpecs.forEach(ms => this.specs[specKey].derivedSpecsObj[ms._fieldSpec] = ms);
+      this.actorSpecs[specKey].allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+      this.actorSpecs[specKey].baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+      this.actorSpecs[specKey].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+      this.actorSpecs[specKey].allSpecs.forEach(ms => this.actorSpecs[specKey].allSpecsObj[ms._fieldSpec] = ms);
+      this.actorSpecs[specKey].baseSpecs.forEach(ms => this.actorSpecs[specKey].baseSpecsObj[ms._fieldSpec] = ms);
+      this.actorSpecs[specKey].derivedSpecs.forEach(ms => this.actorSpecs[specKey].derivedSpecsObj[ms._fieldSpec] = ms);
     }
     let allSpecsObj = {};
     let baseSpecsObj = {}
     let derivedSpecsObj = {};
     //@ts-expect-error
     for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
-      Object.keys(this.specs[specKey].allSpecsObj).forEach(key => allSpecsObj[key] = this.specs[specKey].allSpecsObj[key]);
-      Object.keys(this.specs[specKey].baseSpecsObj).forEach(key => baseSpecsObj[key] = this.specs[specKey].baseSpecsObj[key]);
-      Object.keys(this.specs[specKey].derivedSpecsObj).forEach(key => derivedSpecsObj[key] = this.specs[specKey].derivedSpecsObj[key]);
+      Object.keys(this.actorSpecs[specKey].allSpecsObj).forEach(key => allSpecsObj[key] = this.actorSpecs[specKey].allSpecsObj[key]);
+      Object.keys(this.actorSpecs[specKey].baseSpecsObj).forEach(key => baseSpecsObj[key] = this.actorSpecs[specKey].baseSpecsObj[key]);
+      Object.keys(this.actorSpecs[specKey].derivedSpecsObj).forEach(key => derivedSpecsObj[key] = this.actorSpecs[specKey].derivedSpecsObj[key]);
     }
-    this.specs["union"] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
-    this.specs["union"].allSpecsObj = allSpecsObj
-    this.specs["union"].baseSpecsObj = baseSpecsObj;
-    this.specs["union"].derivedSpecsObj = derivedSpecsObj;
-    this.specs["union"].allSpecs = Object.keys(this.specs["union"].allSpecsObj).map(k => this.specs["union"].allSpecsObj[k])
-    this.specs["union"].baseSpecs = Object.keys(this.specs["union"].baseSpecsObj).map(k => this.specs["union"].baseSpecsObj[k])
-    this.specs["union"].derivedSpecs = Object.keys(this.specs["union"].derivedSpecsObj).map(k => this.specs["union"].derivedSpecsObj[k])
-    this.specs["union"].allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-    this.specs["union"].baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-    this.specs["union"].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+    this.actorSpecs["union"] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
+    this.actorSpecs["union"].allSpecsObj = allSpecsObj
+    this.actorSpecs["union"].baseSpecsObj = baseSpecsObj;
+    this.actorSpecs["union"].derivedSpecsObj = derivedSpecsObj;
+    this.actorSpecs["union"].allSpecs = Object.keys(this.actorSpecs["union"].allSpecsObj).map(k => this.actorSpecs["union"].allSpecsObj[k])
+    this.actorSpecs["union"].baseSpecs = Object.keys(this.actorSpecs["union"].baseSpecsObj).map(k => this.actorSpecs["union"].baseSpecsObj[k])
+    this.actorSpecs["union"].derivedSpecs = Object.keys(this.actorSpecs["union"].derivedSpecsObj).map(k => this.actorSpecs["union"].derivedSpecsObj[k])
+    this.actorSpecs["union"].allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+    this.actorSpecs["union"].baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+    this.actorSpecs["union"].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
+    this.itemSpecs = daeSystemClass?.getItemSpecs() ?? {};
   }
 
+
   static localizeSpecs() {
-    if (!ValidSpec.specs) {
+    if (!ValidSpec.actorSpecs) {
       ValidSpec.createValidMods();
     };
-    if (!ValidSpec.specs) {
+    if (!ValidSpec.actorSpecs) {
       ui.notifications.error("DAE | Initialisation failed - no specs defined");
       return;
     }
     //@ts-expect-error dataModels
     for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
-      if (!this.specs[specKey]) continue; // not all of the actor types are defined in the system
+      if (!this.actorSpecs[specKey]) continue; // not all of the actor types are defined in the system
       const fieldStart = `flags.${game.system.id}.`;
-      this.specs[specKey].allSpecs = this.specs[specKey].allSpecs.map(m => {
-        m._label = m._label.replace("data.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`).replaceAll("dae.", "")).join(" ");
-        if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
-          const fieldId = m.fieldSpec.replace(fieldStart, "");
-          //@ts-expect-error
-          const characterFlags = game.system.config?.characterFlags ?? {};
-          const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
-          m._label = `Flags ${localizedString}`;
+      this.actorSpecs[specKey].allSpecs = this.actorSpecs[specKey].allSpecs.map(m => {
+        // Turns out the dnd5e field labels are not all that good.
+        if (false && (m.fieldType?.label ?? "") !== "") m._label = i18n(m.fieldType.label);
+        else {
+          m._label = m._label.replace("data.", "").replace("system.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`).replaceAll("dae.", "")).join(" ");
+
+          if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
+            const fieldId = m.fieldSpec.replace(fieldStart, "");
+            //@ts-expect-error
+            const characterFlags = game.system.config?.characterFlags ?? {};
+            const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
+            m._label = `Flags ${localizedString}`;
+          }
         }
         const saveBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).save/);
         const checkBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).mod/);
@@ -179,11 +226,54 @@ export class ValidSpec {
         else if (skillPassive) m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "StatusEffectLabel") m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "system.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
-        else if (this.specs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`;
+        else if (this.actorSpecs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`;
         return m;
       });
     }
+    for (let specKey of Object.keys(this.itemSpecs)) {
+      for (let m of this.itemSpecs[specKey].allSpecs) {
+        const fieldStart = `flags.${game.system.id}.`;
+        // Turns out the dnd5e field labels are not all that good.
+        if ((m.fieldType?.label ?? "") !== "") m.label = i18n(m.fieldType.label);
+        else {
+          m.label = m.label.replace("data.", "").replace("system.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => game.i18n.localize(`dae.${str}`).replaceAll("dae.", "")).join(" ");
+
+          if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
+            const fieldId = m.fieldSpec.replace(fieldStart, "");
+            //@ts-expect-error
+            const characterFlags = game.system.config?.characterFlags ?? {};
+            const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
+            m.label = `Flags ${localizedString}`;
+          }
+        }
+        const saveBonus = m.fieldSpec.match(/system.abilities.(\w\w\w).save/);
+        const checkBonus = m.fieldSpec.match(/system.abilities.(\w\w\w).mod/);
+        const skillMod = m.fieldSpec.match(/system.skills.(\w\w\w).mod/);
+        const skillPassive = m.fieldSpec.match(/system.skills.(\w\w\w).passive/);
+        if (saveBonus) m.label = `${m.label} (Deprecated)`;
+        else if (checkBonus) m.label = `${m.label} (Deprecated)`;
+        else if (skillMod) m.label = `${m.label} (Deprecated)`;
+        else if (skillPassive) m.label = `${m.label} (Deprecated)`;
+        else if (m.fieldSpec === "StatusEffectLabel") m.label = `${m.label} (Deprecated)`;
+        else if (m.fieldSpec === "system.attributes.ac.value") m.label = `${m.label} (Deprecated)`;
+        else if (this.itemSpecs[specKey].derivedSpecsObj[m.fieldSpec]) m.label = `${m.label} (*)`;
+        let newOptions = m.options;
+        if (typeof m.options === "string") newOptions = geti18nOptions(m.options);
+        if (!newOptions && typeof m.options === "string") newOptions = i18n(m.options);
+        m.options = newOptions;
+        m.label = i18n(m.label ?? "");
+      }
+    }
   }
+}
+export function geti18nOptions(key) {
+  const moduleId = key.split(".")[0];
+  key = key.split(".").slice(-1).join(".");
+  const translations = game.i18n.translations[moduleId] ?? {};
+  //@ts-ignore _fallback not accessible
+  const fallback = game.i18n._fallback[moduleId] ?? {};
+  let translation = foundry.utils.mergeObject(fallback[key] ?? {}, translations[key] ?? {}, { overwrite: true, inplace: false });
+  return translation;
 }
 
 function getRollData(wrapped, ...args): any {
@@ -252,16 +342,16 @@ export class DAESystem {
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
     //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-    specials["macro.execute"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.execute.local"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.execute.GM"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.itemMacro"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.itemMacro.local"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.itemMacro.GM"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.actorUpdate"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.createItem"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.createItemRunMacro"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    // specials["macro.createToken"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.execute"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.execute.local"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.execute.GM"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.itemMacro"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.itemMacro.local"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.itemMacro.GM"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.actorUpdate"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.createItem"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.createItemRunMacro"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    // specials["macro.createToken"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
   };
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
   }
@@ -336,7 +426,7 @@ export class DAESystem {
       const evl = new Function('sandbox', src);
       sandbox = foundry.utils.mergeObject(sandbox, { Roll });
       //@ts-expect-error
-      sandbox = foundry.utils.mergeObject(sandbox, {fromUuidSync, getToken, MidiQOL: globalThis.MidiDAEEval ?? {}})
+      sandbox = foundry.utils.mergeObject(sandbox, { fromUuidSync, getToken, MidiQOL: globalThis.MidiDAEEval ?? {} })
       if (!DAEReadyComplete && typeof expression === "string" && (expression.includes("fromUuidSync") || expression.includes("MidiQOL"))) {
         throw new Error(preSetupError)
       }
@@ -350,13 +440,16 @@ export class DAESystem {
     } catch (err) {
       const message = `dae | safeEval | expression evaluation failed ${expression}`;
       if (err.message === preSetupError) {
+        console.warn(message, err)
+
         warn(message, preSetupError);
       } else {
         console.warn(message, err)
       }
       result = onErrorReturn;
     }
-    if (Number.isNumeric(result)) return Number(result)
+    if (Number.isNumeric(result)) return Number(result);
+    if (Number.isNaN(result)) result = onErrorReturn;
     return result;
   }
 
@@ -412,7 +505,7 @@ export class DAESystem {
               console.warn(`%c dae.roll in ${input} is not supported in foundry version 12 and will be discarded`, "color: red", context.name, context.actorUuid)
               const rollExpression = `new Roll(${temp}).evaluate({async: false}).total`;
               stack.push(this.safeEval(rollExpression, context));
-  
+
             }
           } catch (err) {
             console.warn(`dae | dae.roll bad dice expression ${temp}`, err)
@@ -492,7 +585,7 @@ export class DAESystem {
 * add an additional pass after derivfed data
 */
 function prepareData(wrapped) {
-  if (!ValidSpec.specs) {
+  if (!ValidSpec.actorSpecs) {
     ValidSpec.createValidMods();
   }
   this.statuses ??= new Set();
@@ -510,7 +603,7 @@ function prepareData(wrapped) {
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
-  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.specs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
+  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.actorSpecs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
   if (foundry.utils.isNewerVersion(game.version, "11.293")) {
     // Apply special statuses that changed to active tokens
     let tokens;
@@ -528,7 +621,7 @@ function prepareData(wrapped) {
 
 // this function replaces applyActiveEffects in Actor
 function applyBaseActiveEffects() {
-  applyDaeEffects.bind(this)({ specList: ValidSpec.specs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
+  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
 }
 
 foundry.utils.setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
@@ -540,59 +633,59 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
   const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
   if (game.modules.get("ATL")?.active) {
     for (let label of ["dimSight", "brightSight"]) {
-      specials[`ATL.${label}`] = [0, -1];
+      specials[`ATL.${label}`] = [new NumberField(), -1];
     }
-    specials["ATL.alpha"] = [0, -1];
-    specials["ATL.elevation"] = [0, -1];
-    specials["ATL.height"] = [0, -1];
-    specials["ATL.width"] = [0, -1];
-    specials["ATL.hidden"] = [false, -1];
-    specials["ATL.rotation"] = [0, -1];
+    specials["ATL.alpha"] = [new NumberField(), -1];
+    specials["ATL.elevation"] = [new NumberField(), -1];
+    specials["ATL.height"] = [new NumberField(), -1];
+    specials["ATL.width"] = [new NumberField(), -1];
+    specials["ATL.hidden"] = [new BooleanField(), -1];
+    specials["ATL.rotation"] = [new NumberField(), -1];
 
-    specials["ATL.light.animation"] = ["", -1]; //{intensity: 1:10, reverse: true/false, speed: 1:10, type: "X"}	Light Animation settings, see below for Animation Types
-    specials["ATL.light.alpha"] = [0, -1];
-    specials["ATL.light.angle"] = [0, -1];
-    specials["ATL.light.attenuation"] = [0, -1];
-    specials["ATL.light.bright"] = [0, -1];
-    specials["ATL.light.color"] = [0, -1];
-    specials["ATL.light.coloration"] = [0, -1];
-    specials["ATL.light.contrast"] = [0, -1];
-    specials["ATL.light.dim"] = [0, -1];
-    specials["ATL.light.luminosity"] = [0, -1];
-    specials["ATL.light.saturation"] = [0, -1];
-    specials["ATL.light.shadows"] = [0, -1];
-    specials["ATL.light.darkness.max"] = [0, -1];
-    specials["ATL.light.darkness.min"] = [0, -1];
-    // specials["ATL.detectionModes.basicSight.range"] = [0, -1];
-    // specials["ATL.detectionModes.seeInvisibility.range"] = [0, -1];
-    // specials["ATL.detectionModes.senseInvisibility.range"] = [0, -1];
-    // specials["ATL.detectionModes.feelTremor.range"] = [0, -1];
-    // specials["ATL.detectionModes.seeAll.range"] = [0, -1];
-    // specials["ATL.detectionModes.senseAll.range"] = [0, -1];
-    specials["ATL.sight.visionMode"] = ["", 0]; // selection list
-    specials["ATL.light.animation"] = ["", -1]; // json string
-    specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["ATL.sight.angle"] = [0, -1];
-    specials["ATL.sight.attenuation"] = [0, -1];
-    specials["ATL.sight.brightness"] = [0, -1];
-    specials["ATL.sight.contrast"] = [0, -1];
-    specials["ATL.sight.enabled"] = [0, -1];
-    specials["ATL.sight.range"] = [0, -1];
-    specials["ATL.sight.saturation"] = [0, -1];
-    specials["ATL.sight.color"] = ["", 0 - 1];
+    specials["ATL.light.animation"] = [new StringField(), -1]; //{intensity: 1:10, reverse: true/false, speed: 1:10, type: "X"}	Light Animation settings, see below for Animation Types
+    specials["ATL.light.alpha"] = [new NumberField(), -1];
+    specials["ATL.light.angle"] = [new NumberField(), -1];
+    specials["ATL.light.attenuation"] = [new NumberField(), -1];
+    specials["ATL.light.bright"] = [new NumberField(), -1];
+    specials["ATL.light.color"] = [new NumberField(), -1];
+    specials["ATL.light.coloration"] = [new NumberField(), -1];
+    specials["ATL.light.contrast"] = [new NumberField(), -1];
+    specials["ATL.light.dim"] = [new NumberField(), -1];
+    specials["ATL.light.luminosity"] = [new NumberField(), -1];
+    specials["ATL.light.saturation"] = [new NumberField(), -1];
+    specials["ATL.light.shadows"] = [new NumberField(), -1];
+    specials["ATL.light.darkness.max"] = [new NumberField(), -1];
+    specials["ATL.light.darkness.min"] = [new NumberField(), -1];
+    // specials["ATL.detectionModes.basicSight.range"] = [new NumberField(), -1];
+    // specials["ATL.detectionModes.seeInvisibility.range"] = [new NumberField(), -1];
+    // specials["ATL.detectionModes.senseInvisibility.range"] = [new NumberField(), -1];
+    // specials["ATL.detectionModes.feelTremor.range"] = [new NumberField(), -1];
+    // specials["ATL.detectionModes.seeAll.range"] = [new NumberField(), -1];
+    // specials["ATL.detectionModes.senseAll.range"] = [new NumberField(), -1];
+    specials["ATL.sight.visionMode"] = [new StringField(), 0]; // selection list
+    specials["ATL.light.animation"] = [new StringField(), -1]; // json string
+    specials["ATL.preset"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["ATL.sight.angle"] = [new NumberField(), -1];
+    specials["ATL.sight.attenuation"] = [new NumberField(), -1];
+    specials["ATL.sight.brightness"] = [new NumberField(), -1];
+    specials["ATL.sight.contrast"] = [new NumberField(), -1];
+    specials["ATL.sight.enabled"] = [new NumberField(), -1];
+    specials["ATL.sight.range"] = [new NumberField(), -1];
+    specials["ATL.sight.saturation"] = [new NumberField(), -1];
+    specials["ATL.sight.color"] = [new StringField(), 0 - 1];
 
   } else if (game.modules.get("ATL")?.active) {
     // support new version of ATL
     //@ts-expect-error .version
     if (foundry.utils.isNewerVersion("0.3.04", game.modules.get("ATL")?.version)) {
       for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
-        specials[`ATL.${label}`] = [0, -1];
+        specials[`ATL.${label}`] = [new NumberField(), -1];
       }
     } else {
       for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
-        specials[`ATL.${label}`] = [0, -1];
+        specials[`ATL.${label}`] = [new NumberField(), -1];
       }
     }
-    specials["ATL.preset"] = ["", ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["ATL.preset"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
   }
 });

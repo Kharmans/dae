@@ -11,6 +11,21 @@ import API from './module/API/api';
 import { FormBuilder } from './libs/FormBuilder';
 import { AutoEffects } from './module/apps/AutoEffects';
 
+// @ts-expect-error
+export const CONFIG: any = globalThis.CONFIG;
+//@ts-expect-error
+export const ArrayField = foundry.data.fields.ArrayField;
+//@ts-expect-error
+export const ObjectField = foundry.data.fields.ObjectField
+//@ts-expect-error
+export const BooleanField = foundry.data.fields.BooleanField;
+//@ts-expect-error
+export const NumberField = foundry.data.fields.NumberField;
+//@ts-expect-error
+export const StringField = foundry.data.fields.StringField;
+//@ts-expect-error
+export const SchemaField = foundry.data.fields.SchemaField;
+
 export let setDebugLevel = (debugText: string) => {
   debugEnabled = { "none": 0, "warn": 1, "debug": 2, "all": 3 }[debugText] || 0;
   // 0 = none, warnings = 1, debug = 2, all = 3

@@ -14,7 +14,6 @@ export function addAutoFields(fields: string[]) {
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
-  fieldsList; // This could be removed now
   cltConditionList;
   ceEffectList;
   statusEffectList;
@@ -23,6 +22,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLPresets;
   ATLVisionModes;
   validFields;
+  validSpecsToUse;
   bypassesList;
   daeFieldBrowser: DAEFieldBrowser;
 
@@ -37,22 +37,11 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     } else this.tokenMagicEffects["invalid"] = "module not installed"
 
     //@ts-expect-error
-    let validSpecsToUse = ValidSpec.specs?.union;
-    if (!validSpecsToUse) {
+    this.validSpecsToUse = ValidSpec.actorSpecs?.union;
+    if (!this.validSpecsToUse) {
       ui.notifications.error("DAE | No valid specs found");
       return;
     }
-    if (this.object.parent instanceof CONFIG.Actor.documentClass) {
-      validSpecsToUse = ValidSpec.specs[this.object.parent.type]
-    }
-    this.fieldsList = Object.keys(validSpecsToUse.allSpecsObj);
-    this.fieldsList = this.fieldsList.concat(otherFields)
-    // if (window.MidiQOL?.midiFlags)  this.fieldsList = this.fieldsList.concat(window.MidiQOL.midiFlags);
-    this.fieldsList.sort();
-    //@ts-expect-error
-    log(`There are ${this.fieldsList.length} fields to choose from of which ${window.MidiQOL?.midiFlags?.length || 0} come from midi-qol and ${validSpecsToUse.allSpecs.length} from dae`);
-    this.fieldsList = this.fieldsList.join(", ");
-
     daeSystemClass.configureLists(this)
     if (cltActive) {
       this.cltConditionList = {}
@@ -69,8 +58,18 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
         if (foundry.utils.getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
         return { id: se.id, name: i18n(se.name ?? se.label) };
-      })
-      .sort((a, b) => a.name < b.name ? -1 : 1);
+      });
+    //@ts-expect-error
+    if (game.dfreds?.effectInterface?.findEffects) {
+      //@ts-expect-error
+      const ceList = game.dfreds.effectInterface.findEffects().map(ce => ({ id: `z${ce.flags["dfreds-convenient-effects"].ceEffectId}`, name: `${ce.name} (CE)` }));
+      efl = efl.concat(ceList);
+    }
+    //@ts-expect-error
+    if (foundry.utils.isNewerVersion(game.modules.get("dfreds-convenient-effects")?.version, "7.0"))
+      efl = efl.sort((a, b) => a.id < b.id  ? -1 : 1);
+    else 
+      efl = efl.sort((a, b) => a.name < b.name ? -1 : 1);
     efl.forEach(se => {
       this.statusEffectList[se.id] = se.name;
     });
@@ -83,7 +82,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       })
     }
 
-    if (atlActive) {
+    if (atlActive && object.flags?.dnd5e?.type !== "enchantment") {
       this.ATLPresets = {};
       //@ts-expect-error
       game.settings.get("ATL", "presets")?.forEach(preset => this.ATLPresets[preset.name] = preset.name);
@@ -103,17 +102,17 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     }
 
     this.validFields = { "__": "" }
-    this.validFields = validSpecsToUse.allSpecs
+    this.validFields = this.validSpecsToUse.allSpecs
       .filter(e => e._fieldSpec.includes(""))
       .reduce((mods, em) => {
         mods[em._fieldSpec] = em._label;
         return mods;
       }, this.validFields);
-    for (let field of otherFields) {
-      this.validFields[field] = field;
+    if (this.object.flags.dnd5e?.type !== "enchantment") {
+      for (let field of otherFields) {
+        this.validFields[field] = field;
+      }
     }
-
-
     this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
     this.daeFieldBrowser.init();
   }
@@ -139,11 +138,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   get id() {
     return `${this.constructor.name}-${this.document.uuid.replace(/\./g, "-")}`;
-
-    const object = this.object;
-    let id = `ActiveEffectsConfig-${object?.id}`;
-    if (object?.isToken) id += `-${object.token.id}`;
-    return id;
   }
   /* ----------------------------------------- */
   getOptionsForSpec(spec) {
@@ -166,6 +160,42 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   /** @override */
   async getData(options?): Promise<any> {
+    if (this.object.parent instanceof CONFIG.Actor.documentClass || this.object instanceof CONFIG.Actor.documentClass) {
+      this.validSpecsToUse = ValidSpec.actorSpecs[this.object.parent.type]
+    }
+    if (this.object.flags?.dnd5e?.type === "enchantment") {
+      this.object.transfer = false;
+      if (this.object.isAppliedEnchantment) {
+        this.validSpecsToUse = ValidSpec.itemSpecs[this.object.parent.type] ?? ValidSpec.itemSpecs["union"];
+      } else {
+        let restrictionType = "union";
+        if (this.object.parent instanceof CONFIG.Item.documentClass) {
+          if ((foundry.utils.getProperty(this.object.parent, "system.enchantment.restrictions.type") ?? "") !== "") {
+            restrictionType = foundry.utils.getProperty(this.object.parent, "system.enchantment.restrictions.type")
+          }
+          this.validSpecsToUse = ValidSpec.itemSpecs[restrictionType];
+        }
+      }
+    }
+    if (!this.validSpecsToUse) {
+      ui.notifications.error("DAE | No valid specs found");
+      return;
+    }
+    this.validFields = { "__": "" }
+    this.validFields = this.validSpecsToUse.allSpecs
+      .filter(e => e._fieldSpec.includes(""))
+      .reduce((mods, em) => {
+        mods[em._fieldSpec] = em._label;
+        return mods;
+      }, this.validFields);
+    if (this.object.flags.dnd5e?.type !== "enchantment") {
+      for (let field of otherFields) {
+        this.validFields[field] = field;
+      }
+    }
+
+    this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
+    this.daeFieldBrowser.init();
     if (foundry.utils.getProperty(this.object, "flags.dae.specialDuration") === undefined)
       foundry.utils.setProperty(this.object, "flags.dae.specialDuration", []);
     if (foundry.utils.getProperty(this.object, "flags.dae.stackable") === undefined)
@@ -185,15 +215,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         };
       });
     }
-    let validSpecsToUse;
-    if (!this.object.parent || !(this.object.parent instanceof CONFIG.Actor.documentClass)) {
-      validSpecsToUse = ValidSpec.specs["union"];
-    } else {
-      validSpecsToUse = ValidSpec.specs[this.object.parent.type];
-    }
+
     await daeSystemClass.editConfig();
 
-    if (data.effect.flags?.dnd5e?.type === "enchantment") data.effect.transfer = false;
     const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)
       .reduce((obj, e) => {
         obj[e[1]] = game.i18n.localize("EFFECT.MODE_" + e[0]);
@@ -210,24 +234,22 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       data.isItemEffect = this.object.parent instanceof CONFIG.Item.documentClass;
       data.isActorEffrect = this.object.parent instanceof CONFIG.Actor.documentClass;
     }
-    if (data.isItemEffect) validSpecsToUse = ValidSpec.specs["union"]; // TODO think about what it means to edit an item effect
-    if (data.isActorEffect) validSpecsToUse = ValidSpec.specs[this.object.parent.type];
     data.validFields = this.validFields;
     data.submitText = "EFFECT.Submit";
 
     data.effect.changes.forEach(change => {
-      if ([-1, undefined].includes(validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
+      if ([-1, undefined].includes(this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
         change.modes = allModes;
-      } else if (validSpecsToUse.allSpecsObj[change.key]) {
+      } else if (this.validSpecsToUse.allSpecsObj[change.key]) {
         const mode = {};
-        mode[validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
+        mode[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
         change.modes = mode;
-      } else if (!validSpecsToUse.allSpecsObjchange.key.startsWith("flags.midi-qol")) {
+      } else if (!this.validSpecsToUse.allSpecsObjchange.key.startsWith("flags.midi-qol")) {
         change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
       }
 
-      if (validSpecsToUse.allSpecsObj[change.key]?.options)
-        change.options = validSpecsToUse.allSpecsObj[change.key]?.options;
+      if (this.validSpecsToUse.allSpecsObj[change.key]?.options)
+        change.options = this.validSpecsToUse.allSpecsObj[change.key]?.options;
       else
         change.options = this.getOptionsForSpec(change);
       if (!change.priority) change.priority = change.mode * 10;
@@ -235,6 +257,11 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
       change.fieldName = fieldInfo.name;
       change.fieldDescription = fieldInfo.description;
+      if (fieldInfo.name === change.key && !change.key.startsWith("flags")) {
+        // Could not find the key so set the name to <INVALID>
+        change.fieldName = "<INVALID>";
+      }
+
     });
 
     const simpleCalendar = globalThis.SimpleCalendar?.api;
@@ -250,7 +277,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (!data.effect.flags?.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       foundry.utils.setProperty(data.effect.flags, "dae.specialDuration", []);
     data.sourceName = await this.object.sourceName;
-    // data.fieldsList = this.fieldsList;
     data.midiActive = globalThis.MidiQOL !== undefined;
     //@ts-expect-error
     data.useIcon = game.release.generation < 12;
@@ -260,7 +286,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       data.transfer = false;
       data.effect.transfer = false;
     }
-   return data;
+    return data;
   }
 
   updateFieldInfo() {

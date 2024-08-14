@@ -7,6 +7,7 @@ import { DIMEditor } from '../apps/DIMEditor';
 import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid } from '../dae';
 import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem';
+import { enumerateBaseValues } from '../dae';
 
 const API = {
     ActiveEffects(object: any = {}, options:any = {}) {
@@ -70,6 +71,9 @@ const API = {
         }) {
         return await doEffects(item, activate, targets, options);
     },
+    enumerateBaseValues(dataModels: any){
+        return enumerateBaseValues(dataModels);
+    },
     async fixTransferEffects(actor)  {
         return await fixTransferEffects(actor);
     },
@@ -130,7 +134,7 @@ const API = {
     get ValidSpec() {return ValidSpec},
     get otherValidSpecKeys() { return otherFields},
     get allValidSpecKeys() {
-      return otherFields.concat(Object.keys(ValidSpec.specs["union"].allSpecsObj))
+      return otherFields.concat(Object.keys(ValidSpec.actorSpecs["union"].allSpecsObj))
     },
     get actionQueue() {return actionQueue},
     get wildcardBaseEffects(): RegExp[] {
