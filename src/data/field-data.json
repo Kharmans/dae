@@ -24,7 +24,7 @@
     "flags.dnd5e.tavernBrawlerFeat": { "name": "", "description": "" },
     "flags.dnd5e.weaponCriticalThreshold": { "name": "", "description": "" }
   },
-  "Midi-QOL": {
+  "MidiQOL": {
     "flags.midi-qol.absorption.acid": { "name": "Absorption Acid", "description": "Converts Acid Damage taken to healing." },
     "flags.midi-qol.absorption.bludgeoning": { "name": "Absorption Bludgeoning", "description": "Converts Bludgeoning Damage taken to healing." },
     "flags.midi-qol.absorption.cold": { "name": "Absorption Cold", "description": "Converts Cold Damage taken to healing." },
@@ -630,7 +630,7 @@
     "macro.itemMacro.local": { "name": "", "description": "" },
     "macro.StatusEffect": { "name": "", "description": "" }
   },
-  "Sys: Abilities": {
+  "SystemAbilities": {
     "system.abilities.cha.bonuses.check": { "name": "Charisma Check Bonus", "description": "" },
     "system.abilities.cha.bonuses.save": { "name": "Charisma Save Bonus", "description": "" },
     "system.abilities.cha.dc": { "name": "Charisma Save DC", "description": "" },
@@ -680,7 +680,7 @@
     "system.abilities.wis.save": { "name": "Wisdom Save Mod", "description": "" },
     "system.abilities.wis.value": { "name": "Wisdom Score", "description": "" }
   },
-  "System Skills": {
+  "SystemSkills": {
     "system.skills.acr.ability": { "name": "", "description": "" },
     "system.skills.acr.bonuses.check": { "name": "", "description": "" },
     "system.skills.acr.bonuses.passive": { "name": "", "description": "" },
@@ -808,7 +808,7 @@
     "system.skills.sur.roll.mode": { "name": "", "description": "" },
     "system.skills.sur.value": { "name": "", "description": "" }
   },
-  "Sys: Attributes": {
+  "SystemAttributes": {
     "system.attributes.ac.AR": { "name": "", "description": "" },
     "system.attributes.ac.armor": { "name": "", "description": "" },
     "system.attributes.ac.base": { "name": "", "description": "" },
@@ -873,7 +873,7 @@
     "system.attributes.senses.units": { "name": "", "description": "" },
     "system.attributes.spellcasting": { "name": "", "description": "" }
   },
-  "Sys: Bonuses": {
+  "SystemBonuses": {
     "system.bonuses.abil.damage": { "name": "", "description": "" },
     "system.bonuses.abilities.check": { "name": "", "description": "" },
     "system.bonuses.abilities.save": { "name": "", "description": "" },
@@ -901,7 +901,7 @@
     "system.bonuses.weapon.attack": { "name": "", "description": "" },
     "system.bonuses.weapon.damage": { "name": "", "description": "" }
   },
-  "Sys: Traits": {
+  "SystemTraits": {
     "system.traits.armorProf.all": { "name": "All Armor Proficiency", "description": "" },
     "system.traits.armorProf.custom": { "name": "Custom Armor Proficiency", "description": "" },
     "system.traits.armorProf.value": { "name": "Armor Proficiency Value", "description": "" },
