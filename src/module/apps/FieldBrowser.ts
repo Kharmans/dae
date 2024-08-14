@@ -1,4 +1,4 @@
-import { log, debug, error } from "../../dae";
+import { log, debug } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 
 interface FieldData {
@@ -9,11 +9,13 @@ interface FieldData {
 }
 
 export class DAEFieldBrowser {
-  private static fieldDataArray: FieldData[] = [];
+  private static knownFieldData: Record<string, { category: string }> = {};
+  private static fieldDataInitialized: boolean = false;
+
   private static isFullBrowser: boolean = false;
   private static showDescriptions: boolean = true;
-  private static fieldDataInitialized: boolean = false;
-  public mergedFields: FieldData[] = [];
+
+  public enrichedFields: FieldData[] = [];
   private filteredFields: FieldData[] = [];
   private selectedIndex: number = 0;
   private currentTab: string = 'All';
@@ -54,7 +56,7 @@ export class DAEFieldBrowser {
     const lowercaseQuery = query.toLowerCase();
     const isAllTab = tab === 'All';
     
-    return this.mergedFields.filter(field => {
+    return this.enrichedFields.filter(field => {
       if (DAEFieldBrowser.isFullBrowser && !isAllTab && field.category !== tab) {
         return false;
       }
@@ -65,24 +67,62 @@ export class DAEFieldBrowser {
               field.description.toLowerCase().includes(lowercaseQuery));
     });
   }
-  async init(): Promise<void> {
+
+    async init(): Promise<void> {
     log("DAEFieldBrowser | Fetching field data");
     try {
       if (!DAEFieldBrowser.fieldDataInitialized) {
+        // fetch data to save known category-field pairings.
         const fieldData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/field-data.json');
-        DAEFieldBrowser.fieldDataArray = this.createFieldDataObjects(fieldData);
+        
+        for (const [category, keys] of Object.entries(fieldData as Record<string, string[]>)) {
+          for (const key of keys) {
+            DAEFieldBrowser.knownFieldData[key] = { category };
+          }
+        }
+        
         DAEFieldBrowser.fieldDataInitialized = true;
-        debug(`DAEFieldBrowser | Loaded ${DAEFieldBrowser.fieldDataArray.length} field data objects`);
       }
 
-      this.mergedFields = this.mergeFields(this.getFieldObjects(), DAEFieldBrowser.fieldDataArray);
-      this.filteredFields = this.mergedFields;
-      this.tabs = ['All', ...new Set(this.mergedFields.map(field => field.category || 'Other'))];
+      //TODO cache this to avoid rebuilding if a new browser is opened with the same validFields
+      this.enrichedFields = this.enrichValidFields();
+      this.filteredFields = this.enrichedFields;
+
+      this.tabs = ['All', ...new Set(this.enrichedFields.map(field => field.category))];
 
       this.effectConfig.updateFieldInfo();
     } catch (error) {
       error("DAEFieldBrowser | Failed to initialize:", error);
     }
+  }
+
+  private enrichValidFields(): FieldData[] {
+    return Object.entries(this.validFields)
+      .map(([key, name]): FieldData => {
+        const nameLocalizationPath = `dae.fieldData.${key}.name`;
+        const descriptionLocalizationPath = `dae.fieldData.${key}.description`;
+        
+        const localizedName = game.i18n.localize(nameLocalizationPath);
+        const localizedDescription = game.i18n.localize(descriptionLocalizationPath);
+
+        const finalName = 
+        // If the field already has a name, use it, otherwise attempt to localize or use the key itself
+        // Logic looks a bit weird because DAE already sets the value of the validFields kvp to its key if missing.
+          (typeof name === 'string' && name !== '' && name !== key) ? name :
+          (localizedName !== nameLocalizationPath ? localizedName : key);
+
+        // For descriptions, simply check if the localization string is present.
+        const finalDescription = 
+        localizedDescription !== descriptionLocalizationPath ? localizedDescription : '';
+        
+        return {
+          key,
+          name: finalName,
+          description: finalDescription,
+          category: DAEFieldBrowser.knownFieldData[key]?.category || 'Other'
+        };
+      })
+      .filter(field => field.category !== 'Hidden');
   }
 
   private createBrowser(): void {
@@ -124,7 +164,7 @@ export class DAEFieldBrowser {
         button.className = 'dae-fb-tab-button';
         button.dataset.action = 'switch-tab';
         button.dataset.tab = tab;
-        button.textContent = tab;
+        button.textContent = game.i18n.localize(`dae.fieldData.fieldCategories.${tab}`);
         fragment.appendChild(button);
       });
       tabsContainer.appendChild(fragment);
@@ -365,49 +405,8 @@ export class DAEFieldBrowser {
     }
   }
 
-  private getFieldObjects(): FieldData[] {
-    return Object.entries(this.validFields).map(([key, spec]) => ({
-      key,
-      name: spec || '',
-      description: '',
-      category: ''
-    }));
-  }
-
-  private createFieldDataObjects(fieldData: any): FieldData[] {
-    return Object.entries(fieldData).flatMap(([category, fields]: [string, any]) =>
-      Object.entries(fields).map(([key, { name, description }]: [string, any]) => ({
-        key,
-        name,
-        description,
-        category
-      }))
-    );
-  }
-
-  private mergeFields(fieldObjects: FieldData[], newFieldObjects: FieldData[]): FieldData[] {
-    const fieldMap = new Map(fieldObjects.map(field => [field.key, field]));
-
-    for (const field of newFieldObjects) {
-      if (field.category === 'Hidden') {
-        fieldMap.delete(field.key);
-      } else if (fieldMap.has(field.key)) {
-        const existingField = fieldMap.get(field.key)!;
-        existingField.description = field.description;
-        existingField.category = field.category;
-        if (existingField.name === existingField.key && field.name != '') {
-          existingField.name = field.name;
-        }
-      } else {
-        // fieldMap.set(field.key, field);
-      }
-    }
-  
-    return Array.from(fieldMap.values());
-  }
-
   getFieldInfo(key: string): FieldData {
-    return this.mergedFields?.find(f => f.key === key) || {
+    return this.enrichedFields?.find(f => f.key === key) || {
       key: key,
       name: key,
       description: "",
