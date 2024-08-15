@@ -1,6 +1,3 @@
-### 11.3.49
-* Fix for not being able to edit effects when CE installed in v11.
-
 ### 11.3.48
 * Fix for not being able to choose effects in the macro.CE drop down.
 * Fix for DAE.blindToken, DAE.restoreVision.
