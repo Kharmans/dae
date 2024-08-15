@@ -1,9 +1,17 @@
+### 11.3.49
+* Fix for not being able to edit effects when CE installed in v11.
+
+### 11.3.48
+* Fix for not being able to choose effects in the macro.CE drop down.
+* Fix for DAE.blindToken, DAE.restoreVision.
+* Some typo fixes - thanks @Elwin
+
 ### 11.3.47
 * Added field data for items - i.e. when editing enchantments (first cut - has lots of fields some of which are not relevant to the enchantment).
-* Incorporates merges from @angomety and @michael - thanks.
+* Incorporates merges from @angometry and @michael - thanks.
 * Bug fix for fetching item macros - thanks @Elwin
 * Major rewrite to dae field handling - now uses system schema Field objects.
-* It turns out foundy has support for making effect status icons (on the token) overlays or not. Dae now exposes that flag for you to set when creating effects.
+* It turns out foundry has support for making effect status icons (on the token) overlays or not. Dae now exposes that flag for you to set when creating effects.
   - Conditional Effects now use the overlay flag, rather than choosing to overlay if there is just one status to be applied.
   - Sample DAEConditionalEffects updated to use overlay flag.
 * Support for Dfreds Convenient Effects(version 7+) in **v12**.

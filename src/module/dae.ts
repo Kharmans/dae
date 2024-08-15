@@ -14,7 +14,7 @@ export var aboutTimeInstalled: any = false;
 export var timesUpInstalled: any = false;
 export var simpleCalendarInstalled: any = false;
 export var cltActive;
-export var ceActive;
+export var ceInterface;
 export var atlActive;
 export var furnaceActive;
 export var itemacroActive;
@@ -333,12 +333,10 @@ export async function removeTokenMagicChange(actor, change, tokens, context: any
 }
 
 async function myRemoveCEEffect(effectName: string, uuid: string, origin, isToken: boolean, metaData: any) {
-  //@ts-expect-error game.dfreds
-  const ceInterface = game?.dfreds?.effectInterface;
   let interval = 1;
   if (foundry.utils.isNewerVersion("11.294", game.version)) interval = isToken ? 250 : 1;
   await delay(interval); // let all of the stuff settle down
-  return await ceInterface.removeEffect({ effectName, uuid, origin, metaData });
+  return await ceInterface?.removeEffect({ effectName, uuid, origin, metaData });
 }
 export async function removeConvenientEffectsChange(effectName: string, uuid: string, origin, isToken: boolean, metaData: {} = {}) {
   if (isToken) await delay(1); // let all of the stuff settle down
@@ -347,26 +345,27 @@ export async function removeConvenientEffectsChange(effectName: string, uuid: st
 }
 
 async function myAddCEEffectWith(effectData: any, uuid: string, origin, overlay: boolean, isToken: boolean) {
-  //@ts-expect-error dfreds
-  const ceInterface = game?.dfreds?.effectInterface;
+  if (!ceInterface) return;
   let interval = 1;
   if (foundry.utils.isNewerVersion("11.294", game.version)) interval = isToken ? 250 : 0;
   if (interval) await delay(interval);
   //@ts-expect-error
   if (foundry.utils.isNewerVersion("6.9", game.modules.get("dfreds-convenientEfgfects")?.version)) {
-    return await ceInterface?.addEffectWith({ effectData, uuid, origin, overlay: false });
+    return await ceInterface.addEffectWith({ effectData, uuid, origin, overlay: false });
   } else {
     return await ceInterface.addEffect({ effectName: effectData.name, uuid, origin, effectData });
   }
 }
 
 export async function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, isToken: boolean, CEmetaData: {} = {}) {
-  //@ts-expect-error dfreds
-  const dfreds = game.dfreds;
+  if (!ceInterface) return;
   let ceEffect;
-  if (dfreds?.effectInterface.findEffect)
-    ceEffect = dfreds.effectInterface.findEffect({ effectName });
-  else ceEffect = dfreds?.effects.all.find(e => (e.name ?? e.label) === effectName);
+  if (ceInterface.findEffect)
+    ceEffect = ceInterface.findEffect({ effectName });
+  else {
+    //@ts-expect-error
+    ceEffect = game.dfreds.effects.all.find(e => (e.name ?? e.label) === effectName);
+  }
   if (!ceEffect) return;
   let effectData = foundry.utils.mergeObject(ceEffect.toObject(), context.metaData);
   let returnValue;
@@ -378,14 +377,12 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
 export async function addConditionChange(actor, change, token, effect) {
   // This is from macro.statusEffect
   const condition: any = CONFIG.statusEffects.find(se => se.id === change.value);
-  //@ts-expect-error
-  const effectInterface = game.dfreds?.effectInterface;
-  if (change.value.startsWith("Convenient Effect") && effectInterface) {
+  if (change.value.startsWith("Convenient Effect") ) {
     const effectName = change.value.split("Convenient Effect: ")[1];
-    return await effectInterface.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
-  } else if (change.value.startsWith("zce-") && effectInterface) {
+    return await ceInterface?.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
+  } else if (change.value.startsWith("zce-")) {
     const effectId = change.value.replace("zce-", "ce-");
-    return await effectInterface.addEffect({ effectId, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
+    return await ceInterface?.addEffect({ effectId, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
   }
   if (condition.statuses?.length > 1 && !condition?._id) {
     condition._id = condition.id.replaceAll(/[ :,.\+\-\*\&\^\%\$\#\@\!\[\]{}\(\)]/g, "").padEnd(16, "0").slice(-16);
@@ -402,14 +399,12 @@ export async function addConditionChange(actor, change, token, effect) {
 }
 
 export async function removeConditionChange(actor, change, token, effect, context: any = {}) {
-  //@ts-expect-error
-  const effectInterface = game.dfreds.effectInterface;
   if (change.value.startsWith("Convenient Effect")) {
     const effectName = change.value.split("Convenient Effect: ")[1];
-    return await effectInterface?.removeEffect({ effectName, uuid: actor.uuid, origin: effect.uuid });
-  } else if (change.value.startsWith("zce-")) {
+    return await ceInterface?.removeEffect({ effectName, uuid: actor.uuid, origin: effect.uuid });
+  } else if (change.value.startsWith("zce-") && ceInterface) {
     const effectId = change.value.replace("zce-", "ce-");
-    return await effectInterface?.removeEffect({ effectId, uuid: actor.uuid, origin: effect.uuid });
+    return await ceInterface?.removeEffect({ effectId, uuid: actor.uuid, origin: effect.uuid });
   }
   const condition = actor.effects.find(ef => ef.origin === effect.uuid && ef.statuses.has(change.value));
   if (condition) await (actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", [condition.id]));
@@ -438,16 +433,13 @@ export async function removeCLTChange(conditionId, tokens: [Token], context = { 
   }
 }
 export async function addStatusEffectChange(actor, change, tokens, sourceEffect, context: any = {}) {
-  if (change.key !== "StatusEffect") return;
-  //@ts-expect-error
-  const effectInterface = game.dfreds?.effectInterface;
-  if (change.value.startsWith("cze-") && effectInterface) {
-    const effectId = change.value.replace("cze-", "ce-")
-    const effect = effectInterface.findEffect({ effectId });
+  if (change.key !== "StatusEffect") return undefined;
+
+  if (change.value.startsWith("zce-")) {
+    const effectId = change.value.replace("zce-", "ce-")
+    const effect = ceInterface?.findEffect && ceInterface.findEffect({ effectId });
     if (effect) {
-      const effectData = effect.toObject();
-      effectData.origin = sourceEffect.uuid;
-      return await effectInterface.addEffectWith({ effectId, effectData, uuid: actor.uuid, origin: sourceEffect.uuid, overlay: false });
+      return await ceInterface.addEffect({ effectId, uuid: actor.uuid, origin: sourceEffect.uuid, overlay: false });
     }
   } else {
     let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
@@ -460,11 +452,13 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect,
       statusEffect.updateSource({ origin: sourceEffect.uuid });
       if (!actor.effects.some(ef => ef.id === statusEffect._id)) {
         //@ts-expect-error
-        await ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
+        return await ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
       }
     }
   }
+  return undefined;
 }
+
 export async function removeStatusEffectChange(actor, change, tokens, effect, context: any = {}) {
   // TODO this might remove too many effects
   const effectsToRemove = actor.effects.filter(ef => ef.origin === effect.uuid)?.map(ef => ef.id);
@@ -553,7 +547,7 @@ function createActiveEffectHook(...args) {
           if (cltActive && ["macro.CUB", "macro.CLT"].includes(change.key) && token) {
             await addCLTChange(change.value, [token])
           }
-          if (ceActive && change.key === "macro.CE") {
+          if (ceInterface && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor)
             await addConvenientEffectsChange(change.value, actor.uuid, effect.origin, context, actor.isToken, lastArg);
           }
@@ -688,11 +682,10 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
         const inline = typeof change.value === "string" && change.value.includes("[[");
         if (change.key === "StatusEffect") {
           let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
-          //@ts-expect-error
-          const effectInterface = game.dfreds?.effectInterface;
-          if (change.value.startsWith("zce-") && effectInterface) {
+
+          if (change.value.startsWith("zce-")) {
             const effectId = change.value.replace("zce-", "ce-")
-            const effect = effectInterface.findEffect({ effectId });
+            const effect = ceInterface?.findEffect && ceInterface.findEffect({ effectId });
             if (effect) {
               statusEffect = effect.toObject();
             }
@@ -881,7 +874,7 @@ export function updateActiveEffectHook(...args) {
             context.warn = false;
             await removeCLTChange(change.value, [token], context);
           }
-          if (ceActive && change.key === "macro.CE") {
+          if (ceInterface && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor);
             lastArg["expiry-reason"] = context["expiry-reason"];
             await removeConvenientEffectsChange(change.value, actor.uuid, undefined, actor.isToken, lastArg);
@@ -924,7 +917,7 @@ export function updateActiveEffectHook(...args) {
           if (token && cltActive && ["macro.CUB", "macro.CLT"].includes(change.key)) {
             await addCLTChange(change.value, [token])
           }
-          if (ceActive && change.key === "macro.CE") {
+          if (ceInterface && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor)
             await addConvenientEffectsChange(change.value, actor.uuid, undefined, actor.isToken, lastArg);
           }
@@ -1016,7 +1009,7 @@ export function deleteActiveEffectHook(...args) {
           if (change.key === "macro.StatusEffect") {
             await removeConditionChange(actor, change, token, effect, context); // TODO this is not right
           }
-          if (ceActive && change.key === "macro.CE") {
+          if (ceInterface && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor);
             lastArg["expiry-reason"] = context["expiry-reason"];
             await removeConvenientEffectsChange(change.value, actor.uuid, lastArg.origin, actor.isToken, lastArg);
@@ -1866,6 +1859,9 @@ export function preUpdateActorHook(candidate, updates, options, user) {
 
 export function daeReadyActions() {
   DAEReadyComplete = true;
+  //@ts-expect-error 
+  ceInterface = game.modules.get("dfreds-convenient-effects")?.active ? game.dfreds.effectInterface : undefined;
+
   ValidSpec.localizeSpecs();
   // initSheetTab();
   if (game.settings.get("dae", "disableEffects")) {
@@ -1958,6 +1954,11 @@ Hooks.on("spotlightOmnisearch.indexBuilt", async (index, promises) => {
 })
 
 export function daeInitActions() {
+  Hooks.once("dfreds-convenient-effects.createEffects", () => {
+    //@ts-expect-error 
+    ceInterface = game.modules.get("dfreds-convenient-effects")?.active ? game.dfreds.effectInterface : undefined;
+  });
+
   // Default systtem class is setup, this oeverrides with system specific calss
   const dnd5esystem = DAESystemDND5E; // force reference so they are installed?
   const sw5eSystem = DAESystemSW5E;
@@ -1967,6 +1968,7 @@ export function daeInitActions() {
   else
     //@ts-expect-error
     daeSystemClass = globalThis.CONFIG.DAE.systemClass;
+
   daeSystemClass.initActions();
   daeSystemClass.initSystemData();
 
@@ -2095,8 +2097,6 @@ function updateSheetHeaderButton(app, [elem], options) {
 
 export function daeSetupActions() {
   cltActive = game.modules.get("condition-lab-triggler")?.active;
-  //@ts-expect-error .version
-  ceActive = game.modules.get("dfreds-convenient-effects")?.active && foundry.utils.isNewerVersion(game.modules?.get("dfreds-convenient-effects")?.version ?? "0", "1.6.2");
   //@ts-expect-error .version
   debug("Condition Lab Triggle Active ", cltActive, " and clt version is ", game.modules.get("condition-lab-triggler")?.version)
 
@@ -2441,7 +2441,7 @@ export function enumerateBaseValues(objectDataModels: any[]) {
     } else if (schema instanceof MappingField) {
       processMappingField(`system`, schema, baseValues[key]);
     } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => schema instanceof fieldType)) {
-      baseValues[key][`system`] = [schema.iniital, -1];
+      baseValues[key][`system`] = [schema.initial, -1];
     } else console.error("Unexpected field ", key, schema)
   }
   return baseValues;

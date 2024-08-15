@@ -1,4 +1,4 @@
-import { cltActive, ceActive, atlActive, daeSystemClass } from "../dae";
+import { cltActive, ceInterface, atlActive, daeSystemClass } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
 import { DAEFieldBrowser } from "./FieldBrowser";
@@ -59,27 +59,27 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         if (foundry.utils.getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
         return { id: se.id, name: i18n(se.name ?? se.label) };
       });
-    //@ts-expect-error
-    if (game.dfreds?.effectInterface?.findEffects) {
-      //@ts-expect-error
-      const ceList = game.dfreds.effectInterface.findEffects().map(ce => ({ id: `z${ce.flags["dfreds-convenient-effects"].ceEffectId}`, name: `${ce.name} (CE)` }));
+    if (ceInterface?.findEffects) {
+      const ceList = ceInterface.findEffects().map(ce => ({ id: `z${ce.flags["dfreds-convenient-effects"].ceEffectId}`, name: `${ce.name} (CE)` }));
       efl = efl.concat(ceList);
     }
     //@ts-expect-error
     if (foundry.utils.isNewerVersion(game.modules.get("dfreds-convenient-effects")?.version, "7.0"))
-      efl = efl.sort((a, b) => a.id < b.id  ? -1 : 1);
-    else 
+      efl = efl.sort((a, b) => a.id < b.id ? -1 : 1);
+    else
       efl = efl.sort((a, b) => a.name < b.name ? -1 : 1);
     efl.forEach(se => {
       this.statusEffectList[se.id] = se.name;
     });
 
-    if (ceActive) {
+    if (ceInterface) {
       this.ceEffectList = {};
-      //@ts-expect-error /dfreds
-      game.dfreds?.effects?.all.forEach(ceEffect => {
-        this.ceEffectList[ceEffect.name] = ceEffect.name;
-      })
+      if (ceInterface.findEffects)
+        ceInterface.findEffects().forEach(ceEffect => { this.ceEffectList[ceEffect.name] = ceEffect.name; });
+      else {
+        //@ts-expect-error
+        game.dfreds.effects.all.forEach(ceEffect => { this.ceEffectList[ceEffect.name] = ceEffect.name; });
+      }
     }
 
     if (atlActive && object.flags?.dnd5e?.type !== "enchantment") {

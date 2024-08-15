@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, daeSystemClass } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, daeSystemClass, ceInterface } from "./dae";
 import { warn, debug, error, debugEnabled } from "../dae";
 
 export class GMActionMessage {
@@ -232,13 +232,24 @@ async function _blindToken(data: { tokenUuid: string }) {
   const tokenDocument = getTokenDocument(data.tokenUuid);
   //@ts-expect-error .dfreds
   const dfreds = game.dfreds;
-  if (!tokenDocument) return;
-  if (tokenDocument.actor && dfreds?.effects?._blinded) {
-    dfreds.effectInterface?.addEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor?.uuid })
+  if (!tokenDocument?.actor) return;
+  if (dfreds?.effects?._blinded) {
+    ceInterface.addEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor?.uuid })
+  } else if (ceInterface.findEffect && ceInterface.findEffect({ effectId: "ce-blinded" })) {
+    if (!ceInterface.hasEffectApplied({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid }))
+      ceInterface.addEffect({ effectId: "ce-blinded", uuid: tokenDocument.actor?.uuid })
   } else {
     //@ts-expect-error .specialStatusEffects
     const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
-    return await getToken(tokenDocument)?.toggleEffect(blind, { overlay: false, active: false })
+    if (blind) {
+      //@ts-expect-error
+      if (game.release.generation < 12)
+        return await getToken(tokenDocument)?.toggleEffect(blind, { overlay: false, active: true })
+      else {
+        //@ts-expect-error
+        return await tokenDocument.actor.toggleStatusEffect(blind.id, { active: true });
+      }
+    }
   }
 }
 
@@ -246,13 +257,24 @@ async function _restoreVision(data: { tokenUuid: string }) {
   const tokenDocument = getTokenDocument(data.tokenUuid);
   //@ts-expect-error .dfreds
   const dfreds = game.dfreds;
-  if (!tokenDocument) return;
-  if (dfreds?.effects?._blinded && tokenDocument.actor) {
+  if (!tokenDocument?.actor) return;
+  if (dfreds?.effects?._blinded) {
     dfreds.effectInterface?.removeEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor.uuid })
+  } else if (ceInterface.findEffect && ceInterface.findEffect({ effectId: "ce-blinded" })) {
+    if (ceInterface.hasEffectApplied({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid }))
+      ceInterface.removeEffect({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid })
   } else {
     //@ts-expect-error .specialStatusEffects
     const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
-    return await getToken(tokenDocument)?.toggleEffect(blind, { overlay: false, active: false })
+    if (blind) {
+      //@ts-expect-error
+      if (game.release.generation < 12)
+        return await getToken(tokenDocument)?.toggleEffect(blind, { overlay: false, active: false })
+      else {
+        //@ts-expect-error
+        return await tokenDocument.actor.toggleStatusEffect(blind.id, { active: false });
+      }
+    }
   }
 }
 
