@@ -378,5 +378,6 @@
   "dae.TabChanges": "Mudanças",
   "dae.DisableCondition": "Uma expressão verdadeira irá desabilitar o efeito",
   "dae.EnableCondition": "Uma expressão falsa irá remover o efeito do autor",
-  "dae.ConditionalEffectsItem": "DAEConditionalEffects"
+  "dae.ConditionalEffectsItem": "DAEConditionalEffects",
+  "dae.IconTint": "Tonalidade do Ícone"
 }
