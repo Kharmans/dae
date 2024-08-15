@@ -1,4 +1,4 @@
-import { log, debug, error } from "../../dae";
+import { log, debug } from "../../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 
 interface FieldData {
@@ -9,11 +9,13 @@ interface FieldData {
 }
 
 export class DAEFieldBrowser {
-  private static fieldDataArray: FieldData[] = [];
+  private static knownFieldData: Record<string, { category: string }> = {};
+  private static fieldDataInitialized: boolean = false;
+
   private static isFullBrowser: boolean = false;
   private static showDescriptions: boolean = true;
-  private static fieldDataInitialized: boolean = false;
-  public mergedFields: FieldData[] = [];
+
+  public enrichedFields: FieldData[] = [];
   private filteredFields: FieldData[] = [];
   private selectedIndex: number = 0;
   private currentTab: string = 'All';
@@ -26,7 +28,11 @@ export class DAEFieldBrowser {
   public debouncedUpdateBrowser: () => void;
   private memoizedFilterFields: (query: string, tab: string) => FieldData[];
 
-
+  /**
+   * Creates an instance of DAEFieldBrowser.
+   * @param {Record<string, any>} validFields - The valid fields for the browser.
+   * @param {DAEActiveEffectConfig} effectConfig - The effect configuration class.
+   */
   constructor(validFields: Record<string, any>, effectConfig: DAEActiveEffectConfig) {
     this.validFields = validFields;
     this.effectConfig = effectConfig;
@@ -36,53 +42,88 @@ export class DAEFieldBrowser {
       this.updateBrowser();
     }, 50);
     this.memoizedFilterFields = this.memoize(this.filterFields.bind(this));
-    
   }
 
-  private memoize<T extends (...args: any[]) => any>(fn: T, maxSize = 100) {
-    const cache = new Map<string, ReturnType<T>>();
-    return ((...args: Parameters<T>): ReturnType<T> => {
-      const key = `${args.join('|')}|${DAEFieldBrowser.isFullBrowser}|${DAEFieldBrowser.showDescriptions}`;
-      if (cache.has(key)) return cache.get(key)!;
-      const result = fn(...args);
-      if (cache.size >= maxSize) cache.delete(cache.keys().next().value);
-      return cache.set(key, result).get(key)!;
-    }) as T;
-  }
-
-  private filterFields(query: string, tab: string): FieldData[] {
-    const lowercaseQuery = query.toLowerCase();
-    const isAllTab = tab === 'All';
-    
-    return this.mergedFields.filter(field => {
-      if (DAEFieldBrowser.isFullBrowser && !isAllTab && field.category !== tab) {
-        return false;
-      }
-      return field.key.toLowerCase().includes(lowercaseQuery) ||
-             field.name.toLowerCase().includes(lowercaseQuery) ||
-             (DAEFieldBrowser.showDescriptions && 
-              field.description && 
-              field.description.toLowerCase().includes(lowercaseQuery));
-    });
-  }
   async init(): Promise<void> {
     log("DAEFieldBrowser | Fetching field data");
     try {
       if (!DAEFieldBrowser.fieldDataInitialized) {
+        // fetch data to save known category-field pairings.
         const fieldData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/field-data.json');
-        DAEFieldBrowser.fieldDataArray = this.createFieldDataObjects(fieldData);
+        
+        for (const [category, keys] of Object.entries(fieldData as Record<string, string[]>)) {
+          for (const key of keys) {
+            DAEFieldBrowser.knownFieldData[key] = { category };
+          }
+        }
+        
         DAEFieldBrowser.fieldDataInitialized = true;
-        debug(`DAEFieldBrowser | Loaded ${DAEFieldBrowser.fieldDataArray.length} field data objects`);
       }
 
-      this.mergedFields = this.mergeFields(this.getFieldObjects(), DAEFieldBrowser.fieldDataArray);
-      this.filteredFields = this.mergedFields;
-      this.tabs = ['All', ...new Set(this.mergedFields.map(field => field.category || 'Other'))];
+      //TODO cache this to avoid rebuilding if a new browser is opened with the same validFields
+      this.enrichedFields = this.enrichValidFields();
+      this.filteredFields = this.enrichedFields;
+
+      this.tabs = ['All', ...new Set(this.enrichedFields.map(field => field.category))];
 
       this.effectConfig.updateFieldInfo();
     } catch (error) {
       error("DAEFieldBrowser | Failed to initialize:", error);
     }
+  }
+
+  /**
+ * Enriches the valid fields with name and description if present.
+ * @returns {FieldData[]} The enriched fields.
+ */
+  private enrichValidFields(): FieldData[] {
+    return Object.entries(this.validFields)
+      .map(([key, name]): FieldData => {
+        const nameLocalizationPath = `dae.fieldData.${key}.name`;
+        const descriptionLocalizationPath = `dae.fieldData.${key}.description`;
+        
+        const localizedName = game.i18n.localize(nameLocalizationPath);
+        const localizedDescription = game.i18n.localize(descriptionLocalizationPath);
+
+        const finalName = 
+        // If the field already has a name, use it, otherwise attempt to localize or use the key itself
+        // Logic looks a bit weird because DAE already sets the value of the validFields kvp to its key if missing.
+          (typeof name === 'string' && name !== '' && name !== key) ? name :
+          (localizedName !== nameLocalizationPath ? localizedName : key);
+
+        // For descriptions, simply check if the localization string is present.
+        const finalDescription = 
+        localizedDescription !== descriptionLocalizationPath ? localizedDescription : '';
+        
+        return {
+          key,
+          name: finalName,
+          description: finalDescription,
+          category: DAEFieldBrowser.knownFieldData[key]?.category || 'Other'
+        };
+      })
+      .filter(field => field.category !== 'Hidden');
+  }
+
+  public updateBrowser(): void {
+    if (!this.browserElement) {
+      this.createBrowser();
+    }
+    
+    if (this.browserElement!.style.display === 'none') {
+      this.browserElement!.style.display = 'block';
+    }
+    
+    this.browserElement!.classList.toggle('dae-fb-full-browser', DAEFieldBrowser.isFullBrowser);
+    
+    debug(`DaeFieldBrowser | Updating browser with query: ${this.currentInput.value}`);
+    
+    this.filteredFields = this.memoizedFilterFields(this.currentInput.value, this.currentTab);
+    this.renderFields();
+    this.selectField(0);
+
+    this.positionBrowser();
+    this.currentInput.focus();
   }
 
   private createBrowser(): void {
@@ -124,18 +165,62 @@ export class DAEFieldBrowser {
         button.className = 'dae-fb-tab-button';
         button.dataset.action = 'switch-tab';
         button.dataset.tab = tab;
-        button.textContent = tab;
+        button.textContent = game.i18n.localize(`dae.fieldData.fieldCategories.${tab}`);
         fragment.appendChild(button);
       });
       tabsContainer.appendChild(fragment);
     }
   }
 
-  public setInput(input: HTMLInputElement): void {
-    debug("DAEFieldBrowser | Setting input");
-    this.currentInput = input;
+  /**
+   * Renders filtered field elements.
+   */
+  private renderFields(): void {
+    if (!this.contentElement) return;
+    debug("DaeFieldBrowser | Rendering fields");
+
+    const fragment = document.createDocumentFragment();
+    
+    this.filteredFields.forEach((field, index) => {
+      const fieldElement = this.createFieldElement(field, index);
+      fragment.appendChild(fieldElement);
+    });
+
+    this.contentElement.innerHTML = '';
+    this.contentElement.appendChild(fragment);
   }
 
+  /**
+   * Creates a field element.
+   * @param {FieldData} field - The field data.
+   * @param {number} index - The index of the field.
+   * @returns {HTMLElement} The created field element.
+   */
+  private createFieldElement(field: FieldData, index: number): HTMLElement {
+    const fieldElement = document.createElement('div');
+    fieldElement.className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
+    fieldElement.dataset.action = 'select-field';
+    fieldElement.dataset.key = field.key;
+  
+    if (DAEFieldBrowser.isFullBrowser) {
+      fieldElement.innerHTML = `<strong>${field.name}</strong> - ${field.key}${
+        DAEFieldBrowser.showDescriptions && field.description 
+          ? `<br><small>${field.description}</small>` 
+          : ''
+      }`;
+    } else {
+      fieldElement.textContent = field.key;
+      if (DAEFieldBrowser.showDescriptions && field.description) {
+        fieldElement.insertAdjacentHTML('beforeend', `<br><small>${field.description}</small>`);
+      }
+    }
+  
+    return fieldElement;
+  }
+
+  /**
+ * Positions the browser element based on selected input field and browser settings.
+ */
   private positionBrowser(): void {
     const rect = this.currentInput.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
@@ -160,67 +245,8 @@ export class DAEFieldBrowser {
     this.browserElement!.style.width = `${browserWidth}px`;
     this.browserElement!.style.left = `${rect.left}px`;
     this.browserElement!.style.top = `${rect.bottom + window.scrollY}px`;
-  }
+  } 
 
-  public updateBrowser(): void {
-    if (!this.browserElement) {
-      this.createBrowser();
-    }
-    
-    if (this.browserElement!.style.display === 'none') {
-      this.browserElement!.style.display = 'block';
-    }
-    
-    this.browserElement!.classList.toggle('dae-fb-full-browser', DAEFieldBrowser.isFullBrowser);
-    
-    debug(`DaeFieldBrowser | Updating browser with query: ${this.currentInput.value}`);
-    this.positionBrowser();
-    this.applyFilters();
-    this.renderFields();
-    this.selectField(0);
-    this.currentInput.focus();
-  }
-
-  private applyFilters(): void {
-    this.filteredFields = this.memoizedFilterFields(this.currentInput.value, this.currentTab);
-  }
-
-  private renderFields(): void {
-    if (!this.contentElement) return;
-    debug("DaeFieldBrowser | Rendering fields");
-
-    const fragment = document.createDocumentFragment();
-    
-    this.filteredFields.forEach((field, index) => {
-      const fieldElement = this.createFieldElement(field, index);
-      fragment.appendChild(fieldElement);
-    });
-
-    this.contentElement.innerHTML = '';
-    this.contentElement.appendChild(fragment);
-  }
-
-  private createFieldElement(field: FieldData, index: number): HTMLElement {
-    const fieldElement = document.createElement('div');
-    fieldElement.className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
-    fieldElement.dataset.action = 'select-field';
-    fieldElement.dataset.key = field.key;
-  
-    if (DAEFieldBrowser.isFullBrowser) {
-      fieldElement.innerHTML = `<strong>${field.name}</strong> - ${field.key}${
-        DAEFieldBrowser.showDescriptions && field.description 
-          ? `<br><small>${field.description}</small>` 
-          : ''
-      }`;
-    } else {
-      fieldElement.textContent = field.key;
-      if (DAEFieldBrowser.showDescriptions && field.description) {
-        fieldElement.insertAdjacentHTML('beforeend', `<br><small>${field.description}</small>`);
-      }
-    }
-  
-    return fieldElement;
-  }
 
   private setupEventListeners(): void {
     debug("DaeFieldBrowser | Setting up event listeners");
@@ -230,6 +256,10 @@ export class DAEFieldBrowser {
     this.browserElement!.addEventListener('click', this.handleBrowserClick.bind(this));
   }
 
+  /**
+   * Handles mouse click events for buttons, tab switching and field selection.
+   * @param {MouseEvent} event - The mouse event.
+   */
   private handleBrowserClick(event: MouseEvent): void {
     debug("DaeFieldBrowser | Browser clicked");
     const target = event.target as HTMLElement;
@@ -271,6 +301,10 @@ export class DAEFieldBrowser {
     this.currentInput.focus();
   }
 
+  /**
+   * Handles document click events to close the browser if clicking outside.
+   * @param {MouseEvent} event - The mouse event.
+   */
   private handleDocumentClick(event: MouseEvent): void {
     if (this.browserElement && 
         !this.browserElement.contains(event.target as Node) && 
@@ -280,6 +314,10 @@ export class DAEFieldBrowser {
     }
   }
 
+  /**
+   * Handles keydown events for navigation.
+   * @param {KeyboardEvent} event - The keyboard event.
+   */
   private handleKeyDown(event: KeyboardEvent): void {
     if (!this.browserElement || this.browserElement.style.display === 'none') return;
     switch (event.key) {
@@ -319,25 +357,74 @@ export class DAEFieldBrowser {
     }
   }
 
+  /**
+   * Switches to the specified tab.
+   * @param {string} tab - The tab to switch to.
+   */
   private switchTab(tab: string): void {
     debug(`DaeFieldBrowser | Switching to tab: ${tab}`);
     this.currentTab = tab;
     const tabButtons = this.browserElement!.querySelectorAll('.dae-fb-tab-button');
     tabButtons.forEach(button => button.classList.toggle('active', (button as HTMLElement).dataset.tab === tab));
-      this.updateBrowser();
+    this.updateBrowser();
   }
 
+  /**
+   * Navigates through fields.
+   * @param {number} direction - The direction to navigate (-1 for up, 1 for down).
+   */
   private navigateFields(direction: number): void {
     const newIndex = (this.selectedIndex + direction + this.filteredFields.length) % this.filteredFields.length;
     this.selectField(newIndex);
   }
 
+  /**
+   * Navigates through tabs.
+   * @param {number} direction - The direction to navigate (-1 for left, 1 for right).
+   */
   private navigateTabs(direction: number): void {
     const currentTabIndex = this.tabs.indexOf(this.currentTab);
     const newTabIndex = (currentTabIndex + direction + this.tabs.length) % this.tabs.length;
     this.switchTab(this.tabs[newTabIndex]);
   }
 
+  private memoize<T extends (...args: any[]) => any>(fn: T, maxSize = 100) {
+    const cache = new Map<string, ReturnType<T>>();
+    return ((...args: Parameters<T>): ReturnType<T> => {
+      const key = `${args.join('|')}|${DAEFieldBrowser.isFullBrowser}|${DAEFieldBrowser.showDescriptions}`;
+      if (cache.has(key)) return cache.get(key)!;
+      const result = fn(...args);
+      if (cache.size >= maxSize) cache.delete(cache.keys().next().value);
+      return cache.set(key, result).get(key)!;
+    }) as T;
+  }
+
+  /**
+ * Filters the fields based on query and tab.
+ * @param {string} query - The search query.
+ * @param {string} tab - The current tab.
+ * @returns {FieldData[]} The filtered fields.
+ */
+  private filterFields(query: string, tab: string): FieldData[] {
+    const lowercaseQuery = query.toLowerCase();
+    const isAllTab = tab === 'All';
+    
+    return this.enrichedFields.filter(field => {
+      if (DAEFieldBrowser.isFullBrowser && !isAllTab && field.category !== tab) {
+        return false;
+      }
+      return field.key.toLowerCase().includes(lowercaseQuery) ||
+              field.name.toLowerCase().includes(lowercaseQuery) ||
+              (DAEFieldBrowser.showDescriptions && 
+              field.description && 
+              field.description.toLowerCase().includes(lowercaseQuery));
+    });
+  }
+
+  /**
+   * Selects a field at the specified index.
+   * @param {number} index - The index of the field to select.
+   */
   private selectField(index: number): void {
     debug(`DaeFieldBrowser | Selecting field at index: ${index}`);
     const previousSelected = this.contentElement!.querySelector('.dae-fb-field-option.selected');
@@ -353,6 +440,9 @@ export class DAEFieldBrowser {
     }
   }
 
+  /**
+ * Applies the selected field to the DAEActiveEffectConfig input.
+ */
   public applySelectedField(): void {
     debug("DaeFieldBrowser | Applying selected field");
     const selectedField = this.filteredFields[this.selectedIndex];
@@ -365,49 +455,23 @@ export class DAEFieldBrowser {
     }
   }
 
-  private getFieldObjects(): FieldData[] {
-    return Object.entries(this.validFields).map(([key, spec]) => ({
-      key,
-      name: spec || '',
-      description: '',
-      category: ''
-    }));
+  /**
+ * Sets the current input element to the selected one. Called by event listeners in DAEActiveEffectConfig.
+ * @param {HTMLInputElement} input - The input element to set.
+ */
+  public setInput(input: HTMLInputElement): void {
+    debug("DAEFieldBrowser | Setting input");
+    this.currentInput = input;
   }
 
-  private createFieldDataObjects(fieldData: any): FieldData[] {
-    return Object.entries(fieldData).flatMap(([category, fields]: [string, any]) =>
-      Object.entries(fields).map(([key, { name, description }]: [string, any]) => ({
-        key,
-        name,
-        description,
-        category
-      }))
-    );
-  }
-
-  private mergeFields(fieldObjects: FieldData[], newFieldObjects: FieldData[]): FieldData[] {
-    const fieldMap = new Map(fieldObjects.map(field => [field.key, field]));
-
-    for (const field of newFieldObjects) {
-      if (field.category === 'Hidden') {
-        fieldMap.delete(field.key);
-      } else if (fieldMap.has(field.key)) {
-        const existingField = fieldMap.get(field.key)!;
-        existingField.description = field.description;
-        existingField.category = field.category;
-        if (existingField.name === existingField.key && field.name != '') {
-          existingField.name = field.name;
-        }
-      } else {
-        // fieldMap.set(field.key, field);
-      }
-    }
-  
-    return Array.from(fieldMap.values());
-  }
-
+  /**
+   * Gets the field information for a given key.
+   * Used by DAEActiveEffectConfig to populate names and descriptions below the input field.
+   * @param {string} key - The key to get field information for.
+   * @returns {FieldData} The field information.
+   */
   getFieldInfo(key: string): FieldData {
-    return this.mergedFields?.find(f => f.key === key) || {
+    return this.enrichedFields?.find(f => f.key === key) || {
       key: key,
       name: key,
       description: "",
