@@ -418,6 +418,19 @@ export class DAESystem {
     if (options.metaData) foundry.utils.mergeObject(activeEffectData, options.metaData);
 
   }
+  public static getAttributeValue(tokenOrActorRef: string, attribute: string) {
+    let actor;
+    let value = "";   //what should be the default? null ?
+    //discussion: Needed or not?
+    //if (tokenOrActorRef instanceof Token) actor = tokenOrActorRef.actor; 
+    //if (tokenOrActorRef instanceof Actor) actor = tokenOrActorRef;
+    if (typeof(tokenOrActorRef) == 'string') {
+        const doc = /*game.version > 12 ? foundry.utils.fromUuidSync(tokenOrActorRef) : */fromUuidSync(tokenOrActorRef);
+        actor = doc.actor ?? doc;
+        if (actor) value = foundry.utils.getProperty(actor, `system.${attribute}`) ?? null;
+    }
+    return value;
+  }
   public static safeEval(expression: string, sandbox: any, onErrorReturn: any | undefined = undefined) {
     let result;
     const preSetupError = "MidiQOL or fromUuidSync used before setup complete";
@@ -426,7 +439,7 @@ export class DAESystem {
       const evl = new Function('sandbox', src);
       sandbox = foundry.utils.mergeObject(sandbox, { Roll });
       //@ts-expect-error
-      sandbox = foundry.utils.mergeObject(sandbox, { fromUuidSync, getToken, MidiQOL: globalThis.MidiDAEEval ?? {} })
+      sandbox = foundry.utils.mergeObject(sandbox, { fromUuidSync, getToken, getAttributeValue: this.getAttributeValue, MidiQOL: globalThis.MidiDAEEval ?? {} })
       if (!DAEReadyComplete && typeof expression === "string" && (expression.includes("fromUuidSync") || expression.includes("MidiQOL"))) {
         throw new Error(preSetupError)
       }
