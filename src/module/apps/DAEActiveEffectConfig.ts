@@ -193,7 +193,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         this.validFields[field] = field;
       }
     }
-
     this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
     this.daeFieldBrowser.init();
     if (foundry.utils.getProperty(this.object, "flags.dae.specialDuration") === undefined)

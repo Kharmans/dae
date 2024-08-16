@@ -1,3 +1,7 @@
+### 11.3.49
+* New improvement to field editor thanks @angometry @michael
+* Some bits and pieces to support midi 11.6.0
+
 ### 11.3.48
 * Fix for not being able to choose effects in the macro.CE drop down.
 * Fix for DAE.blindToken, DAE.restoreVision.

@@ -37,81 +37,80 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const allSpecs = {};
     let unionSpecs = {};
     try {
-    for (let k of ["weapon", /*"spell", "feat",*/ "consumable", "equipment", "loot", /*"class",*/ "tool", /*"vehicle",*/ "container"]) {
-      unionSpecs = foundry.utils.mergeObject(unionSpecs, itemSpecs[k], { insertValues: true, insertKeys: true, inplace: false, overwrite: false });
+      for (let k of ["weapon", /*"spell", "feat",*/ "consumable", "equipment", "loot", /*"class",*/ "tool", /*"vehicle",*/ "container"]) {
+        unionSpecs = foundry.utils.mergeObject(unionSpecs, itemSpecs[k], { insertValues: true, insertKeys: true, inplace: false, overwrite: false });
+      }
+      itemSpecs["union"] = unionSpecs;
+
+      for (let k of Object.keys(itemSpecs)) {
+        let theSpecs = itemSpecs[k]
+        theSpecs = foundry.utils.flattenObject(theSpecs);
+        theSpecs["name"] = [new StringField({ label: "Name" }), -1];
+        theSpecs["img"] = [new StringField({ label: "Image" }), -1];
+        if (game.modules.get("midi-qol")?.active && ["union", "spell", "feat", "consumable", "equipment", "spell", "weapon"].includes(k)) {
+          for (let [s, label] of [
+            ["itemCondition", "midi-qol.ItemActivationCondition.Name"],
+            ["reactionCondition", "midi-qol.ReactionActivationCondition.Name"],
+            ["otherCondition", "midi-qol.OtherActivationCondition.Name"],
+            ["effectCondition", "midi-qol.EffectActivationCondition.Name"]]) {
+            theSpecs[`flags.midi-qol.${s}`] = [new StringField({ label: i18n(label) }), -1];
+          }
+          for (let s of ["autoFailFriendly", "autoSaveFriendly", "critOther", "ida", "idi", "idv", "idr", "ignoreTotalCover", "magicDam", "magicEffect", "noConcentrationEffect", "offHandWeapon", "toggleEffect"]) {
+            theSpecs[`flags.midiProperties.${s}`] = [new BooleanField({ label: i18n(gameConfig.midiProperties?.[s] ?? s) }), -1];
+          }
+          theSpecs["flags.midiProperties.bonusSaveDamage"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["bonusSaveDamage"] ?? "Bonus Damage Save") }), -1];
+          theSpecs["flags.midiProperties.confirmtargets"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["confirmTargets"] ?? "Confirm Targets") }), -1];
+          theSpecs["flags.midiProperties.otherSaveDamage"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["otherSaveDamage"] ?? "Other Damage Save") }), -1];
+          theSpecs["flags.midiProperties.saveDamage"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["saveDamage"] ?? "Base Damage Save") }), -1];
+        }
+        for (let k1 of Object.keys(theSpecs)) {
+          theSpecs[k1] = new ValidSpec(k1, theSpecs[k1][0], theSpecs[k1][1], theSpecs[k1][0].label, theSpecs[k1][3]);
+        }
+        for (let k2 of Object.keys(theSpecs)) {
+          switch (k2) {
+            case "system.duration.units": theSpecs[k2].options = { "": null, ...gameConfig.timePeriods }; break;
+            case "system.target.type": theSpecs[k2].options = { "": null, ...gameConfig.targetTypes }; break;
+            case "system.actionType": theSpecs[k2].options = { "": null, ...gameConfig.itemActionTypes }; break;
+            case "system.uses.per": theSpecs[k2].options = { "": null, ...gameConfig.limitedUsePeriods }; break;
+            case "system.consume.type": theSpecs[k2].options = { "": null, ...gameConfig.abilityConsumptionTypes }; break;
+            case "system.attunement": theSpecs[k2].options = { "": "", ...gameConfig.attunementTypes }; break;
+          }
+        }
+
+        const baseSpecsObj = {};
+        for (let k4 of Object.keys(theSpecs)) {
+          if (k4.startsWith("system.armor")) {
+            baseSpecsObj[k4] = theSpecs[k4];
+          }
+          if (k4.startsWith("system.properties")) {
+            baseSpecsObj[k4] = theSpecs[k4];
+          }
+          if (k4.startsWith("system.duration")) {
+            baseSpecsObj[k4] = theSpecs[k4];
+          }
+          if (theSpecs[k4]._fieldType instanceof FormulaField) {
+            baseSpecsObj[k4] = theSpecs[k4];
+          }
+        }
+        const derivedSpecsObj = {};
+        for (let k5 of Object.keys(theSpecs)) {
+          if (baseSpecsObj[k5]) continue;
+          derivedSpecsObj[k5] = theSpecs[k5];
+        }
+
+        allSpecs[k] = {
+          allSpecsObj: theSpecs,
+          baseSpecsObj,
+          derivedSpecsObj,
+          allSpecs: Object.keys(theSpecs).map(k => theSpecs[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
+          baseSpecs: Object.keys(baseSpecsObj).map(k => baseSpecsObj[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
+          derivedSpecs: Object.keys(derivedSpecsObj).map(k => derivedSpecsObj[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
+          allSpecKeys: Object.keys(theSpecs).sort(),
+          baseSpecKeys: Object.keys(baseSpecsObj).sort(),
+          derivedSpecKeys: Object.keys(derivedSpecsObj).sort()
+        }
+      }
     }
-    itemSpecs["union"] = unionSpecs;
-
-    for (let k of Object.keys(itemSpecs)) {
-      console.warn("Starting itemSpecs", k);
-      let theSpecs = itemSpecs[k]
-      theSpecs = foundry.utils.flattenObject(theSpecs);
-      theSpecs["name"] = [new StringField({label: "Name"}), -1];
-      theSpecs["img"] = [new StringField({label: "Image"}), -1];
-      if (game.modules.get("midi-qol")?.active && ["union", "spell", "feat", "consumable", "equipment", "spell", "weapon"].includes(k)) {
-        for (let [s, label] of [
-          ["itemCondition","midi-qol.ItemActivationCondition.Name"], 
-          ["reactionCondition", "midi-qol.ReactionActivationCondition.Name"],  
-          ["otherCondition", "midi-qol.OtherActivationCondition.Name"], 
-          ["effectCondition", "midi-qol.EffectActivationCondition.Name"]]) {
-          theSpecs[`flags.midi-qol.${s}`] = [new StringField({label: i18n(label)}), -1];
-        }
-        for (let s of ["autoFailFriendly", "autoSaveFriendly", "critOther", "ida", "idi", "idv", "idr", "ignoreTotalCover", "magicDam", "magicEffect", "noConcentrationEffect", "offHandWeapon", "toggleEffect"]) {
-          theSpecs[`flags.midiProperties.${s}`] = [new BooleanField({label: i18n(gameConfig.midiProperties?.[s] ?? s)}), -1];
-        }
-        theSpecs["flags.midiProperties.bonusSaveDamage"] = [new StringField({label: i18n(gameConfig.midiProperties?.["bonusSaveDamage"] ?? "Bonus Damage Save")}), -1];  
-        theSpecs["flags.midiProperties.confirmtargets"] = [new StringField({label: i18n(gameConfig.midiProperties?.["confirmTargets"] ?? "Confirm Targets")}), -1];
-        theSpecs["flags.midiProperties.otherSaveDamage"] = [new StringField({label: i18n(gameConfig.midiProperties?.["otherSaveDamage"] ?? "Other Damage Save")}), -1];  
-        theSpecs["flags.midiProperties.saveDamage"] = [new StringField({label: i18n(gameConfig.midiProperties?.["saveDamage"] ?? "Base Damage Save")}), -1];
-      }
-      for (let k1 of Object.keys(theSpecs)) {
-        theSpecs[k1] = new ValidSpec(k1, theSpecs[k1][0], theSpecs[k1][1], theSpecs[k1][0].label, theSpecs[k1][3]); 
-      }
-      for (let k2 of Object.keys(theSpecs)) {
-        switch (k2) {
-          case "system.duration.units": theSpecs[k2].options = {"": null, ...gameConfig.timePeriods}; break;
-          case "system.target.type": theSpecs[k2].options = {"": null, ...gameConfig.targetTypes}; break;
-          case "system.actionType": theSpecs[k2].options = {"": null, ...gameConfig.itemActionTypes}; break;
-          case "system.uses.per": theSpecs[k2].options = {"": null, ...gameConfig.limitedUsePeriods}; break;
-          case "system.consume.type": theSpecs[k2].options = {"": null, ...gameConfig.abilityConsumptionTypes}; break;
-          case "system.attunement": theSpecs[k2].options = {"": "", ...gameConfig.attunementTypes}; break;
-        }
-      }
-
-      const baseSpecsObj = {};
-      for (let k4 of Object.keys(theSpecs)) {
-        if (k4.startsWith("system.armor")) {
-          baseSpecsObj[k4] = theSpecs[k4];
-        }
-        if (k4.startsWith("system.properties")) {
-          baseSpecsObj[k4] = theSpecs[k4];
-        }
-        if (k4.startsWith("system.duration")) {
-          baseSpecsObj[k4] = theSpecs[k4];
-        }
-        if (theSpecs[k4]._fieldType instanceof FormulaField) {
-          baseSpecsObj[k4] = theSpecs[k4];
-        }
-      }
-      const derivedSpecsObj = {};
-      for (let k5 of Object.keys(theSpecs)) {
-        if (baseSpecsObj[k5]) continue;
-        derivedSpecsObj[k5] = theSpecs[k5];
-      }
-
-      allSpecs[k] = {
-        allSpecsObj: theSpecs,
-        baseSpecsObj,
-        derivedSpecsObj,
-        allSpecs: Object.keys(theSpecs).map(k => theSpecs[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
-        baseSpecs: Object.keys(baseSpecsObj).map(k => baseSpecsObj[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
-        derivedSpecs: Object.keys(derivedSpecsObj).map(k => derivedSpecsObj[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
-        allSpecKeys: Object.keys(theSpecs).sort(),
-        baseSpecKeys: Object.keys(baseSpecsObj).sort(),
-        derivedSpecKeys: Object.keys(derivedSpecsObj).sort()
-      }
-      console.warn("Completed itemSpecs", k);
-    }}
     catch (err) {
       console.error("Error in getItemSpecs", err);
     }
@@ -231,6 +230,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         baseValues[`system.tools.${key}.ability`] = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
         baseValues[`system.tools.${key}.bonuses.check`] = [new StringField(), -1];
       }
+      for (let vehicleKey of Object.keys(CONFIG.DND5E.vehicleTypes)) {
+        baseValues[`system.tools.${vehicleKey}.value`] = [new NumberField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+      }
     }
     // move all the characteer flags to specials so that the can be custom effects only
     let charFlagKeys = Object.keys(daeSystemClass.systemConfig.characterFlags);
@@ -326,6 +328,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.traits.da.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.da.value"] = [new StringField(), -1];
     specials["system.traits.da.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    // specials["system.traits.da.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.value"] = [new StringField(), -1];
     specials["system.traits.di.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -515,12 +518,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         }
         return true;
       });
-      // It's more convenient for enchantment effects to be applied after actor preprpareDerivedData has run
-      //   to support system.abilities.dex.mod for example
-      // This wrapper just makes the dnd5e call to item.applyActiveEffects null
-      // _itemApplyActiveEffects is called in actor prepareData instead.
       libWrapper.register("dae", "CONFIG.Item.documentClass.prototype.applyActiveEffects", _baseItemApplyEffects, "OVERRIDE");
-      // libWrapper.register("dae", "CONFIG.Item.documentClass.prototype.applyActiveEffects", _itemApplyActiveEffects, "OVERRIDE");
     }
 
   }
@@ -694,15 +692,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       Object.keys(this.traitList).forEach(type => {
         this.traitList[`-${type}`] = `- ${i18n(this.traitList[type])}`;
       });
-
-      /* This has no effect since only customDamageResistanceTypes is looked at
-      this.customDamageResistanceList = daeSystemClass.systemConfig.customDamageResistanceTypes ?? {};
-      Object.keys(this.customDamageResistanceList).forEach(type => {
-        this.traitList[`${type}`] = `${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
-        this.traitList[`-${type}`] = `- ${daeSystemClass.systemConfig.customDamageResistanceTypes[type]}`;
-      });
-      */
-
     } else {
       this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
       const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
@@ -787,13 +776,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       "system.traits.idi.value", "system.traits.idr.value", "system.traits.idv.value",
       "system.traits.ida.value"].includes(spec.key))
       return this.traitList;
-    if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom"].includes(spec.key)) {
+    if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom", "system.traits.da.custom"].includes(spec.key)) {
       return daeSystemClass.systemConfig.customDamageResistanceTypes ?? {};
     }
     if (spec.key === "system.attributes.ac.calc") {
       return this.armorClassCalcList;
     }
-    if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses"].includes(spec.key.key))
+    if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses", "system.traits.da.bypasses"].includes(spec.key.key))
       return this.bypassesList;
     if (spec.key.includes("system.skills") && spec.key.includes("value"))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
@@ -939,6 +928,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
       case "system.traits.di.all":
       case "system.traits.dr.all":
+      case "system.traits.da.all":
       case "system.traits.dv.all":
       case "system.traits.sdi.all":
       case "system.traits.sdr.all":
@@ -973,12 +963,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.di.bypasses":
       case "system.traits.dr.bypasses":
       case "system.traits.dv.bypasses":
+      case "system.traits.da.bypasses":
         if (foundry.utils.isNewerVersion(systemConfig.version, "3.1.99")) {
           const validKeys: string[] = Object.keys(daeSystemClass.systemConfig.itemProperties)
             .filter(key => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
           return super.doCustomArrayValue(actor, current, change, validKeys);
         } else
           return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.physicalWeaponProperties));
+      case "system.traits.da.custom":
       case "system.traits.di.custom":
       case "system.traits.dr.custom":
       case "system.traits.dv.custom":

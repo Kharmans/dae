@@ -424,10 +424,11 @@ export class DAESystem {
     //discussion: Needed or not?
     //if (tokenOrActorRef instanceof Token) actor = tokenOrActorRef.actor; 
     //if (tokenOrActorRef instanceof Actor) actor = tokenOrActorRef;
-    if (typeof(tokenOrActorRef) == 'string') {
-        const doc = /*game.version > 12 ? foundry.utils.fromUuidSync(tokenOrActorRef) : */fromUuidSync(tokenOrActorRef);
-        actor = doc.actor ?? doc;
-        if (actor) value = foundry.utils.getProperty(actor, `system.${attribute}`) ?? null;
+    if (typeof (tokenOrActorRef) == 'string') {
+      //@ts-expect-error
+      const doc = foundry.utils.fromUuidSync(tokenOrActorRef);
+      actor = doc.actor ?? doc;
+      if (actor) value = foundry.utils.getProperty(actor, `system.${attribute}`) ?? null;
     }
     return value;
   }
