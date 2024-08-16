@@ -1239,7 +1239,7 @@ function doItemApplyEffects(changeKeys: string[], overrides) {
       const c = foundry.utils.deepClone(change);
       if (typeof c.value === "string") {
         const rollData = this.getRollData();
-        let expressionpre = Roll.replaceFormulaData(c.value, rollData);
+        let expressionpre = Roll.replaceFormulaData(c.value, rollData, {missing: "0"});
         const expression = daeSystemClass.safeEvalExpression(expressionpre, rollData);
         let result = expression;
         if (targetType && ["boolean", "number"].includes(targetType)) {
