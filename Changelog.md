@@ -1,3 +1,10 @@
+### 11.3.50
+* conditional effect application now only applies effects that are not disabled.
+* StatusEffect now works correctly and mimics applying a status effect from the token hud.
+* When an active effect is applied to an actor any of the effect's status conditions, specified in the effect details, are also applied to the actor. So if you spell has the condition paralyzed selected in the active effect paralyzed will be applied to the actor.
+  - A bonus for this is that when an effect applies paralyzed it will also apply incapacitated since the paralyzed effect species incapacitated as one of it's statuses.
+  - Due to an incompatibility betwee convenient effects and midi this does not apply to CE effects applied via the CE interface (the hand icon) or via effects with statusEffect a CE effect, but does work with macro.ce effects. You will see duplicates of the effects when using CE since it applies it's own effect plus the system effects.
+
 ### 11.3.49
 * New improvement to field editor thanks @angometry @michael
 * Some bits and pieces to support midi 11.6.0

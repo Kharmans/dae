@@ -377,7 +377,7 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
 export async function addConditionChange(actor, change, token, effect) {
   // This is from macro.statusEffect
   const condition: any = CONFIG.statusEffects.find(se => se.id === change.value);
-  if (change.value.startsWith("Convenient Effect") ) {
+  if (change.value.startsWith("Convenient Effect")) {
     const effectName = change.value.split("Convenient Effect: ")[1];
     return await ceInterface?.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
   } else if (change.value.startsWith("zce-")) {
@@ -444,16 +444,7 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect,
   } else {
     let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
     if (statusEffect) {
-      if (!statusEffect._id) { // fiddle for CE effects - since it doesn't set it can presmuably be anyting;
-        statusEffect._id = foundry.utils.randomID();
-      }
-      //@ts-expect-error
-      statusEffect = await ActiveEffect.implementation.fromStatusEffect(change.value, { parent: actor });
-      statusEffect.updateSource({ origin: sourceEffect.uuid });
-      if (!actor.effects.some(ef => ef.id === statusEffect._id)) {
-        //@ts-expect-error
-        return await ActiveEffect.implementation.create(statusEffect, { parent: actor, keepId: true });
-      }
+      return toggleActorStatusEffect(actor, statusEffect.id, { active: true, origin: sourceEffect.uuid });
     }
   }
   return undefined;
@@ -564,6 +555,17 @@ function createActiveEffectHook(...args) {
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid }); // TODO revisit to see if passing the effect is ok
         }
+        if (!foundry.utils.getProperty(effect, "flags.dfreds-convenient-effects.ceEffectId")) {
+          // Dfreds effectts do not apply sequentially so can have more than one effect applied
+          for (let status of effect.statuses) {
+            const randomId = foundry.utils.randomID();
+            if (["concentrating", "reaction", "bonusaction"].includes(status)) continue;
+            const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
+            if (actor.effects.get(statusEffect._id)) continue;
+            const createdEffect = await toggleActorStatusEffect(actor, status, { active: true, overlay: effect.flags?.core?.overly, origin: effect.uuid, randomId });
+            if (effect.addDependent) await effect.addDependent(createdEffect);
+          }
+        }
       } catch (err) {
         const message = "dae | createActiveEffectHook | create effect error";
         if (globalThis.MidiQOL?.TroubleShooter) {
@@ -615,7 +617,7 @@ async function _preCreateActiveEffectRemoveExisting(wrapped, ...args) {
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
       context["existing"] = "effect-stacking";
-      this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), context);
+      await this.parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), context);
     }
   } catch (err) {
     error("removeExistingEffects ", err);
@@ -680,7 +682,12 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
           }
         }
         const inline = typeof change.value === "string" && change.value.includes("[[");
-        if (change.key === "StatusEffect") {
+        if (change.key === "StatusEffect") {/*
+          const createdEffect = await addStatusEffectChange(parent, change, undefined, this);
+          const dependents = foundry.utils.getProperty(this, "flags.dnd5e.dependents") ?? [];
+          dependents.push({ uuid: createdEffect.uuid });
+          this.updateSource({ "flags.dnd5e.dependents": dependents });
+          */
           let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
 
           if (change.value.startsWith("zce-")) {
@@ -690,29 +697,29 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
               statusEffect = effect.toObject();
             }
           }
-          if (statusEffect) {
-            newChanges = newChanges.concat(statusEffect.changes ?? []);
-            //@ts-expect-error
-            if (game.release.generation < 12) updates["icon"] = statusEffect.icon;
-            else updates["img"] = statusEffect.img ?? statusEffect.icon;
-            updates["name"] = i18n(statusEffect.name ?? statusEffect.label);
-            if (statusEffect._id) { // if there is an _id make sure we use it - e.g. for dnd5e statuses
-              const exisitingEffect = parent.effects.find(ef => ef.id === statusEffect._id);
-              if (exisitingEffect) await exisitingEffect.delete()
-              updates._id = statusEffect._id;
-              options.keepId = true;
-            }
-            changesChanged = true;
-            if (statusEffect.flags) {
-              updates.flags = foundry.utils.mergeObject(updates.flags ?? {}, statusEffect.flags, { insertKeys: true, insertValues: true, overwrite: true });
-            }
-            if (foundry.utils.isNewerVersion(game.version, "11.0")) {
-              if (!updates.statuses) updates["statuses"] = new Set();
-              if (statusEffect.statuses) updates["statuses"] = new Set(statusEffect.statuses);
-              if (statusEffect.id) updates.statuses.add(statusEffect.id);
-              updates.statuses = Array.from(updates.statuses);
-            } else updates["flags.core.statusId"] = statusEffect.id;
+
+          newChanges = newChanges.concat(statusEffect.changes ?? []);
+          //@ts-expect-error
+          if (game.release.generation < 12) updates["icon"] = statusEffect.icon;
+          else updates["img"] = statusEffect.img ?? statusEffect.icon;
+          updates["name"] = i18n(statusEffect.name ?? statusEffect.label);
+          if (statusEffect._id) { // if there is an _id make sure we use it - e.g. for dnd5e statuses
+            const exisitingEffect = parent.effects.find(ef => ef.id === statusEffect._id);
+            if (exisitingEffect) await exisitingEffect.delete()
+            updates._id = statusEffect._id;
+            options.keepId = true;
           }
+          changesChanged = true;
+          if (statusEffect.flags) {
+            updates.flags = foundry.utils.mergeObject(updates.flags ?? {}, statusEffect.flags, { insertKeys: true, insertValues: true, overwrite: true });
+          }
+          if (foundry.utils.isNewerVersion(game.version, "11.0")) {
+            if (!updates.statuses) updates["statuses"] = new Set();
+            if (statusEffect.statuses) updates["statuses"] = new Set(statusEffect.statuses);
+            if (statusEffect.id) updates.statuses.add(statusEffect.id);
+            updates.statuses = Array.from(updates.statuses);
+          } else updates["flags.core.statusId"] = statusEffect.id;
+
         } else if (["StatusEffectLabel", "StatusEffectName"].includes(change.key)) {
           updates["name"] = change.value;
         } else if (inline) {
@@ -741,7 +748,7 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
     }
 
   } catch (err) {
-    console.warn("dae | preCreateActiveEffectHook", err)
+    console.warn("dae | _preCreateActiveEffect", err)
   } finally {
     return wrapped(data, options, user);
   }
@@ -929,12 +936,18 @@ export function updateActiveEffectHook(...args) {
             await addConditionChange(actor, change, token, effect)
           }
           if (change.key === "StatusEffect") {
-            await addStatusEffectChange(actor, change, tokens, effect);
+            const changes = await addStatusEffectChange(actor, change, tokens, effect);
+            if (changes) await effect.addDependent(changes);
           }
         }
         if (changesToEnable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           warn("action queue add dae macro on ", actionQueue._queue.length)
           await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid });
+        }
+      }
+      for (let dependent of effect.getDependents()) {
+        if (dependent.disabled !== undefined && (dependent.disabled !== effect.disabled || dependent.isSuppressed !== effect.isSuppressed)) {
+          await dependent.update({ "disabled": effect.disabled || effect.isSuppressed });
         }
       }
     } catch (err) {
@@ -2252,7 +2265,8 @@ export function getApplicableEffects(actor, { includeEnchantments }) {
   return effects;
 }
 
-async function toggleActorStatusEffect(actor, statusId, options: { active: boolean, overlay: boolean, enableCondition?: string | undefined } = { active: true, overlay: false, enableCondition: undefined }) {
+// TODO once v12 only get rid of this since it is in core.
+async function toggleActorStatusEffect(actor, statusId, options: { active?: boolean, overlay?: boolean, enableCondition?: string | undefined, origin?: string | undefined, randomId?: string | undefined } = { active: true, overlay: false, enableCondition: undefined, origin: undefined, randomId: undefined }) {
   const status = CONFIG.statusEffects.find(e => e.id === statusId);
   if (!status) throw new Error(`Invalid status ID "${statusId}" provided to Actor#toggleStatusEffect`);
   const existing: string[] = [];
@@ -2282,15 +2296,19 @@ async function toggleActorStatusEffect(actor, statusId, options: { active: boole
   if (!options.active && (options.active !== undefined)) return;
   //@ts-expect-error
   const effect = await ActiveEffect.implementation.fromStatusEffect(statusId);
+  if (options.origin) effect.updateSource({ origin: options.origin });
   if (options.enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": options.enableCondition });
   if (options.overlay) effect.updateSource({ "flags.core.overlay": true });
   //@ts-expect-error
-  return ActiveEffect.implementation.create(effect, { parent: actor, keepId: true });
+  const returnEffect = await ActiveEffect.implementation.create(effect, { parent: actor, keepId: true });
+  return returnEffect;
+
 }
 
 export async function processConditionalEffects(actorRef: TokenDocument | Actor, updates, user, options) {
   let actor;
   let tokenDocument;
+  if (actorRef instanceof TokenDocument && !(updates.x !== undefined || updates.y === undefined)) return;
   if (actorRef instanceof Actor) {
     actor = actorRef;
     tokenDocument = tokenForActor(actor)?.document;
@@ -2298,6 +2316,7 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
     tokenDocument = actorRef;
     actor = tokenDocument?.actor
   }
+  if (!actor) return;
   const token = tokenDocument?.object;
   //@ts-expect-error
   if (game.release.generation >= 12) {
@@ -2306,7 +2325,6 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
   } else if (game.release.generation === 11) {
     while (token?._animation) await delay(100);
   }
-  if (!actor) return;
   const rollData = actor.getRollData();
   //@ts-expect-error
   if (game.user !== game.users?.activeGM) return;
@@ -2314,7 +2332,8 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
   if (effectItem) {
     for (let ce of effectItem.effects) {
       let enableCondition = foundry.utils.getProperty(ce, "flags.dae.enableCondition");
-      if (!enableCondition) continue;
+      //@ts-expect-error
+      if (!enableCondition || ce.disabled) continue;
       const conditionalEffect = ce.toObject(false);
       const expression = Roll.replaceFormulaData(enableCondition, rollData);
       const result = daeSystemClass.safeEval(expression, rollData);
@@ -2334,8 +2353,9 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
         statusEffects.add(status);
       }
 
-      for (let status of statusEffects) {
-        await toggleActorStatusEffect(actor, status, { active: true, overlay, enableCondition: enableCondition });
+      for (let statusEffect of statusEffects) {
+        // Once v12 only change to actor.toggleStatusEffect
+        await toggleActorStatusEffect(actor, statusEffect, { active: true, overlay, enableCondition: enableCondition });
       }
       if (conditionalEffect.changes.length > 0 || statusEffects.size === 0) {
         if (actor.effects.some(ef => ef.id === conditionalEffect._id)) continue;
