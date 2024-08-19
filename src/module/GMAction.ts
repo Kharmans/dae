@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, daeSystemClass, ceInterface } from "./dae";
+import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, daeSystemClass, ceInterface, toggleActorStatusEffect } from "./dae";
 import { warn, debug, error, debugEnabled } from "../dae";
 
 export class GMActionMessage {
@@ -529,7 +529,7 @@ export async function applyActiveEffects({ activate, targetList, activeEffects, 
             for (let effectData of dupEffects) {
               let flags = effectData.flags;
               if (flags?.dae?.stackable === "count" && flags?.dae?.stacks) {
-                const counter = globalThis.EffectCounter.findCounter(getToken(targetActor), effectData.icon);
+                const counter = globalThis.EffectCounter.findCounter(getTokenDocument(targetActor), effectData.img ?? effectData.icon);
                 counter.setValue(flags.dae.stacks);
               }
             }

@@ -1,3 +1,11 @@
+### 11.3.51
+* Renabled support for status icon counters.
+* Added new option for stacking effects, flags.dae.decrementDelete, which if true means deleting the effect will decrement the number of stacks by 1 rather than deleting the effect. If the count reaches 0 the effect is deleted.
+* Also support activeEffect.delete({forceDelete: true}) to override that setting.
+* The application of status conditions now uses dae stacking so that if more than one effect causes (for example) incapcitated all of the effects have to be removed before incapacitated is removed.
+  - if status icon counters is enabled the number of times a status has been applied to an actor is reflected in the status icon count.
+* Fix for wrong update checks when testing conditional effects vs token updates - thanks @Elwin
+
 ### 11.3.50
 * conditional effect application now only applies effects that are not disabled.
 * StatusEffect now works correctly and mimics applying a status effect from the token hud.

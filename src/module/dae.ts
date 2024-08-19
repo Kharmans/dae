@@ -561,9 +561,13 @@ function createActiveEffectHook(...args) {
             const randomId = foundry.utils.randomID();
             if (["concentrating", "reaction", "bonusaction"].includes(status)) continue;
             const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
-            if (actor.effects.get(statusEffect._id)) continue;
+            if (effect.id === statusEffect._id) continue;
+            // Since we are doing a count of these we can call more than once
+            // if (actor.effects.get(statusEffect._id)) continue;
             const createdEffect = await toggleActorStatusEffect(actor, status, { active: true, overlay: effect.flags?.core?.overly, origin: effect.uuid, randomId });
-            if (effect.addDependent) await effect.addDependent(createdEffect);
+            if (effect.addDependent && createdEffect) {
+              await effect.addDependent(createdEffect);
+            }
           }
         }
       } catch (err) {
@@ -993,6 +997,19 @@ export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options,
   } finally {
     return true;
   }
+}
+
+function preDeleteActiveEffectHook(...args) {
+  let [ effect, context, userId ] = args;
+  if (context.forceDelete || !(effect.parent instanceof Actor)) return true;
+  if (!foundry.utils.getProperty(effect, "flags.dae.decrementDelete") 
+    || foundry.utils.getProperty(effect, "flags.dae.stackable")!== "count"
+    || (foundry.utils.getProperty(effect, "flags.dae.stacks") ?? 0) < 2) return true;
+  const stacks = foundry.utils.getProperty(effect, "flags.dae.stacks") ?? 0;
+  effect.update({ "flags.dae.stacks": stacks - 1 });
+  const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(effect.parent), effect.img ?? effect.icon);
+  counter?.setValue(1);
+  return false;
 }
 
 export function deleteActiveEffectHook(...args) {
@@ -2030,6 +2047,7 @@ export function daeInitActions() {
 
   Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
+  Hooks.on("preDeleteActiveEffect", preDeleteActiveEffectHook);
   Hooks.on("preUpdateActiveEffect", preUpdateActiveEffectEvalInlineHook);
   Hooks.on("preUpdateActiveEffect", recordDisabledSuppressedHook);
   Hooks.on("updateActiveEffect", updateActiveEffectHook);
@@ -2266,32 +2284,53 @@ export function getApplicableEffects(actor, { includeEnchantments }) {
 }
 
 // TODO once v12 only get rid of this since it is in core.
-async function toggleActorStatusEffect(actor, statusId, options: { active?: boolean, overlay?: boolean, enableCondition?: string | undefined, origin?: string | undefined, randomId?: string | undefined } = { active: true, overlay: false, enableCondition: undefined, origin: undefined, randomId: undefined }) {
+export async function toggleActorStatusEffect(actor: Actor, statusId: string, options: { active?: boolean, overlay?: boolean, enableCondition?: string | undefined, origin?: string | undefined, randomId?: string | undefined } = { active: true, overlay: false, enableCondition: undefined, origin: undefined, randomId: undefined }) {
   const status = CONFIG.statusEffects.find(e => e.id === statusId);
   if (!status) throw new Error(`Invalid status ID "${statusId}" provided to Actor#toggleStatusEffect`);
-  const existing: string[] = [];
+  const existing: ActiveEffect[] = [];
 
   // Find the effect with the static _id of the status effect
   if (status._id) {
-    const effect: ActiveEffect = actor.effects.get(status._id);
-    if (effect?.id) existing.push(effect.id);
+    const effect: ActiveEffect| undefined = actor.effects.get(status._id);
+    if (effect?.id) existing.push(effect);
   }
 
   // If no static _id, find all single-status effects that have actor status
   else {
     for (const effect of actor.effects) {
+      //@ts-expect-error
       const statuses = effect.statuses;
-      if ((statuses.size === 1) && statuses.has(status.id)) existing.push(effect.id);
+      if ((statuses.size === 1) && statuses.has(status.id)) existing.push(effect);
     }
   }
 
   // Remove the existing effects unless the status effect is forced active
   if (existing.length) {
-    if (options.active) return true;
-    await actor.deleteEmbeddedDocuments("ActiveEffect", existing);
-    return false;
+    if (options.active) {
+      for (let effect of existing) {
+        //@ts-expect-error
+        const stacks = effect.flags?.dae?.stacks ?? 1;
+        await effect.update({"flags.dae.stacks": stacks + 1, "flags.dae.decrementDelete": true, "flags.dae.stackable": "count"});
+        //@ts-expect-error
+        const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(actor), effect.img ?? effect.icon);
+        counter?.setValue(stacks + 1);
+        return effect;
+      }
+    } else { // remove a stack
+      for (let effect of existing) {
+        //@ts-expect-error
+        const stacks = effect.flags?.dae?.stacks ?? 1;
+        if (stacks > 1) {
+          await effect.update({"flags.dae.stacks": stacks - 1});
+          //@ts-expect-error
+          console.error("effect flags ", duplicate(effect.flags));
+          return effect;
+        } else 
+          await effect.delete();
+      }
+    }
+    return undefined;
   }
-
   // Create a new effect unless the status effect is forced inactive
   if (!options.active && (options.active !== undefined)) return;
   //@ts-expect-error
@@ -2299,8 +2338,11 @@ async function toggleActorStatusEffect(actor, statusId, options: { active?: bool
   if (options.origin) effect.updateSource({ origin: options.origin });
   if (options.enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": options.enableCondition });
   if (options.overlay) effect.updateSource({ "flags.core.overlay": true });
+  effect.updateSource({"flags.dae.stackable": "count", "flags.dae.stacks": 1, "flags.dae.decrementDelete": true});
   //@ts-expect-error
   const returnEffect = await ActiveEffect.implementation.create(effect, { parent: actor, keepId: true });
+  const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(actor), effect.img ?? effect.icon);
+  counter?.setValue(1);
   return returnEffect;
 
 }
@@ -2308,7 +2350,7 @@ async function toggleActorStatusEffect(actor, statusId, options: { active?: bool
 export async function processConditionalEffects(actorRef: TokenDocument | Actor, updates, user, options) {
   let actor;
   let tokenDocument;
-  if (actorRef instanceof TokenDocument && !(updates.x !== undefined || updates.y === undefined)) return;
+  if (actorRef instanceof TokenDocument && updates.x === undefined && updates.y === undefined) return;
   if (actorRef instanceof Actor) {
     actor = actorRef;
     tokenDocument = tokenForActor(actor)?.document;
@@ -2318,7 +2360,7 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
   }
   if (!actor) return;
   const token = tokenDocument?.object;
-  //@ts-expect-error
+  //@ts-expect-error - need to wait for the animation of any token movement to complete else the token x/y will be an intermediate state.
   if (game.release.generation >= 12) {
     while (token?.animationContexts?.get(token.animationName)?.to) await delay(100);
     //@ts-expect-error
