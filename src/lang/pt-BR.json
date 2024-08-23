@@ -290,12 +290,13 @@
   "dae.CUB": "Combat Utility Belt",
   "dae.ShowInline.Name": "Exibir Resultados Inline",
   "dae.ShowInline.Hint": "Se habilitado, efeitos com uma rolagem inline exibirão os resultados da rolagem.",
-  "dae.stackableOptions": {
+  "dae.StackableOptions": {
     "noneName": "Efeitos não se acumulam por nome e/ou origem",
     "noneNameOnly": "Efeitos não se acumulam por nome",
     "none": "Efeitos não se acumulam por origem",
     "multi": "Efeitos cumulativos se aplicam várias vezes",
-    "count": "Cada efeito aumenta o acúmulo em 1"
+    "count": "Cada efeito aumenta o acúmulo em 1",
+    "countDeleteDecrement": "Aplicar aumenta o acúmulo em 1, detelar diminui o acúmulo em 1, removendo com 0 acúmulos"
   },
   "dae.SW5EHint": "Note For Translators - The following strings are ONLY required for the SW5E system",
   "dae.SW5E": "sw5e",
@@ -382,6 +383,9 @@
   "dae.IconTint": "Tonalidade do Ícone",
   "dae.IconOverlay.Name": "Sobreposição de Ícones",
   "dae.IconOverlay.Hint": "Exibe o ícone de status do efeito como uma sobreposição.",
+  "dae.StackableConditions.Name": "Condições Acumuláveis",
+  "dae.StackableConditions.Hint": "Os efeitos de status (envenenado/paralisado) contarão quantas vezes forem adicionados e deverão ser removidos o número de vezes correspondente.",
+  "__Comment__": "As strings a seguir são para o sistema DAE. A tradução é opcional",
   "dae.fieldData": {
     "fieldCategories.All": "Todas",
 
