@@ -32,6 +32,16 @@ export const registerSettings = function () {
     onChange: fetchParams
   });
 
+  game.settings.register("dae", "stackableConditions", {
+    name: "dae.StackableConditions.Name",
+    hint: "dae.StackableConditions.Hint",
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
   game.settings.register("dae", "showInline", {
     scope: "client",
     name: game.i18n.localize("dae.ShowInline.Name"),

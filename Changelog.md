@@ -1,8 +1,35 @@
+### 11.3.52
+* Added setting to enable/disable stackable conditions. (Defaults to on and is probaly recommended). When enabled conditions applied to the actor will be counted - so paralyed and petrified will result in 2 stacks of inacpacitated and both must be removed before incapacitated is removed.
+  - Lots of edge cases in combining stackable/non-stackable conditions have been cleaned up, but there will no dobut be some I've missed.
+  - Be aware, removing a condition from the character sheet removes 1 stack of the condition, not all of them, so you may need to push the remove condition button a few times.
+* Removed flag flags.dae.decrementDelete and made it an option on the effect definition.
+* If you have effects that apply conditions multiple times and enable stackable conditions in dae it is suggested that you enable the module "Status Icon Counters", as this will give better management of multiple effects applying incapacitated (for example).
+
+* Change to enchantment effects applied to items
+  - by default all effects are evaluated before actor prepareData has run, which means no accessing actor derived values in those, with the exception of formula fields (like damage and others).
+  - These are the fields that are specifically evaluated after actor prepareData.
+    "name"
+    "system.attack.bonus"
+    "system.magicalBonus"
+    "system.formula"
+    "system.damage"
+    - plus the flags.midiProperties, and flags.midi-qol.conditions.
+  - It is quite likely that some others should be moved to the later phase but this is a safer this way. Please highlight any candidates for later evaluation to me.
+  - A side effect of this is that you can freely use any field, like flags.midi-qol.test and they will be evaluated and applied. So any module custom fields will be supported.
+  - If a field references an item/actor field you can force it to be defered by using the ##notation,
+    - system.attack.bonus ADD @abilities.str.mod, will add 6 (For a strength of 23) to the magical bonus.
+    - system.attack.bonus ADD ##abilities.str.mod will insert the string "
+    + @abilities.str.mod" into the field.
+    For formula fields the difference is cosmetic only, since the result will be the same.
+  - If the target field is a number or boolean, the ##value will be looked up and evaluated since it can't be deferred
+    - system.magicalBonus is a numeric field (no formula) so
+    - system.magicalBonus OVERRIDE @abilities.str.mod and system.magicalBonus OVERRIDE ##abilities.str.mod will both set the bonus to 6
+
 ### 11.3.51
 * Renabled support for status icon counters.
 * Added new option for stacking effects, flags.dae.decrementDelete, which if true means deleting the effect will decrement the number of stacks by 1 rather than deleting the effect. If the count reaches 0 the effect is deleted.
 * Also support activeEffect.delete({forceDelete: true}) to override that setting.
-* The application of status conditions now uses dae stacking so that if more than one effect causes (for example) incapcitated all of the effects have to be removed before incapacitated is removed.
+* The application of status conditions now uses dae stacking so that if more than one effect causes (for example) incapcitated all of the effects have to be removed before incapacitated is removed - requires stackable conditions to be set in the config options.
   - if status icon counters is enabled the number of times a status has been applied to an actor is reflected in the status icon count.
 * Fix for wrong update checks when testing conditional effects vs token updates - thanks @Elwin
 

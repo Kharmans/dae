@@ -1,7 +1,7 @@
 
 import { ArrayField, BooleanField, MODULE_ID, NumberField, ObjectField, SchemaField, StringField, daeSpecialDurations, debug, debugEnabled, error, i18n, warn } from "../../dae";
 import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { DAESetupComplete, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, enumerateBaseValues, getSelfTarget, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae";
+import { DAESetupComplete, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, enumerateBaseValues, getSelfTarget, geti18nOptions, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
 var d20Roll;
@@ -58,44 +58,52 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           for (let s of ["autoFailFriendly", "autoSaveFriendly", "critOther", "ida", "idi", "idv", "idr", "ignoreTotalCover", "magicDam", "magicEffect", "noConcentrationEffect", "offHandWeapon", "toggleEffect"]) {
             theSpecs[`flags.midiProperties.${s}`] = [new BooleanField({ label: i18n(gameConfig.midiProperties?.[s] ?? s) }), -1];
           }
+
           theSpecs["flags.midiProperties.bonusSaveDamage"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["bonusSaveDamage"] ?? "Bonus Damage Save") }), -1];
-          theSpecs["flags.midiProperties.confirmtargets"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["confirmTargets"] ?? "Confirm Targets") }), -1];
           theSpecs["flags.midiProperties.otherSaveDamage"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["otherSaveDamage"] ?? "Other Damage Save") }), -1];
           theSpecs["flags.midiProperties.saveDamage"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["saveDamage"] ?? "Base Damage Save") }), -1];
+          theSpecs["flags.midiProperties.confirmTargets"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["confirmTargets"] ?? "Confirm Targets") }), -1];
+
         }
         for (let k1 of Object.keys(theSpecs)) {
           theSpecs[k1] = new ValidSpec(k1, theSpecs[k1][0], theSpecs[k1][1], theSpecs[k1][0].label, theSpecs[k1][3]);
         }
-        for (let k2 of Object.keys(theSpecs)) {
-          switch (k2) {
-            case "system.duration.units": theSpecs[k2].options = { "": null, ...gameConfig.timePeriods }; break;
-            case "system.target.type": theSpecs[k2].options = { "": null, ...gameConfig.targetTypes }; break;
-            case "system.actionType": theSpecs[k2].options = { "": null, ...gameConfig.itemActionTypes }; break;
-            case "system.uses.per": theSpecs[k2].options = { "": null, ...gameConfig.limitedUsePeriods }; break;
-            case "system.consume.type": theSpecs[k2].options = { "": null, ...gameConfig.abilityConsumptionTypes }; break;
-            case "system.attunement": theSpecs[k2].options = { "": "", ...gameConfig.attunementTypes }; break;
+        for (let k1 of Object.keys(theSpecs)) {
+          switch (k1) {
+            case "system.duration.units": theSpecs[k1].options = { "": null, ...gameConfig.timePeriods }; break;
+            case "system.target.type": theSpecs[k1].options = { "": null, ...gameConfig.targetTypes }; break;
+            case "system.actionType": theSpecs[k1].options = { "": null, ...gameConfig.itemActionTypes }; break;
+            case "system.uses.per": theSpecs[k1].options = { "": null, ...gameConfig.limitedUsePeriods }; break;
+            case "system.consume.type": theSpecs[k1].options = { "": null, ...gameConfig.abilityConsumptionTypes }; break;
+            case "system.attunement": theSpecs[k1].options = { "": "", ...gameConfig.attunementTypes }; break;
+            case "flags.midiProperties.bonusSaveDamage": theSpecs[k1].options = geti18nOptions("SaveDamageOptions", "midi-qol"); break;
+            case "flags.midiProperties.otherSaveDamage": theSpecs[k1].options = geti18nOptions("SaveDamageOptions", "midi-qol"); break;
+            case "flags.midiProperties.saveDamage": theSpecs[k1].options = geti18nOptions("SaveDamageOptions", "midi-qol"); break;
+            case "flags.midiProperties.confirmTargets": theSpecs[k1].options = geti18nOptions("ConfirmTargetOptions", "midi-qol"); break;
           }
+        }
+        const derivedSpecsObj = {
+          "name": theSpecs["name"],
+          "system.attack.bonus": theSpecs["system.attack.bonus"],
+          "system.magicalBonus": theSpecs["system.magicalBonus"],
+          "system.formula": theSpecs["system.formula"],
+          "system.damage": theSpecs["system.damage"],
+          "flags.midi-qol.itemCondition": theSpecs["flags.midi-qol.itemCondition"],
+          "flags.midi-qol.reactionCondition": theSpecs["flags.midi-qol.reactionCondition"],
+          "flags.midi-qol.otherCondition": theSpecs["flags.midi-qol.otherCondition"],
+          "flags.midi-qol.effectCondition": theSpecs["flags.midi-qol.effectCondition"],
+          "flags.midiProperties.bonusSaveDamage": theSpecs["flags.midiProperties.bonusSaveDamage"],
+          "flags.midiProperties.confirmTargets": theSpecs["flags.midiProperties.confirmTargets"],
+          "flags.midiProperties.otherSaveDamage": theSpecs["flags.midiProperties.otherSaveDamage"],
+          "flags.midiProperties.saveDamage": theSpecs["flags.midiProperties.saveDamage"],
+        };
+        for (let s of ["autoFailFriendly", "autoSaveFriendly", "critOther", "ida", "idi", "idv", "idr", "ignoreTotalCover", "magicDam", "magicEffect", "noConcentrationEffect", "offHandWeapon", "toggleEffect"]) {
+          derivedSpecsObj[`flags.midiProperties.${s}`] = theSpecs[`flags.midiProperties.${s}`];
         }
 
         const baseSpecsObj = {};
-        for (let k4 of Object.keys(theSpecs)) {
-          if (k4.startsWith("system.armor")) {
-            baseSpecsObj[k4] = theSpecs[k4];
-          }
-          if (k4.startsWith("system.properties")) {
-            baseSpecsObj[k4] = theSpecs[k4];
-          }
-          if (k4.startsWith("system.duration")) {
-            baseSpecsObj[k4] = theSpecs[k4];
-          }
-          if (theSpecs[k4]._fieldType instanceof FormulaField) {
-            baseSpecsObj[k4] = theSpecs[k4];
-          }
-        }
-        const derivedSpecsObj = {};
-        for (let k5 of Object.keys(theSpecs)) {
-          if (baseSpecsObj[k5]) continue;
-          derivedSpecsObj[k5] = theSpecs[k5];
+        for (let k1 of Object.keys(theSpecs)) {
+          if (!derivedSpecsObj[k1]) baseSpecsObj[k1] = theSpecs[k1];
         }
 
         allSpecs[k] = {
@@ -110,6 +118,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           derivedSpecKeys: Object.keys(derivedSpecsObj).sort()
         }
       }
+      allSpecs["union"].excludeKeys = [
+        "system.currency.cp",
+        "system.currency.sp",
+        "system.currency.ep",
+        "system.currency.gp",
+        "system.currency.pp",
+        "system.currency.weight",
+      ]
     }
     catch (err) {
       console.error("Error in getItemSpecs", err);
@@ -1220,18 +1236,22 @@ const getTargetType = field => {
 };
 
 function _baseItemApplyEffects() {
-  return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].baseSpecKeys, {});
+  return doItemApplyEffects.bind(this)(undefined, [...ValidSpec.itemSpecs["union"].derivedSpecKeys, ...ValidSpec.itemSpecs["union"].excludeKeys], {});
 }
 function _itemApplyActiveEffects() {
-  return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].derivedSpecKeys, this.overrides ?? {});
+  return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].derivedSpecKeys, ValidSpec.itemSpecs["union"].excludeKeys, this.overrides ?? {});
 }
 
-function doItemApplyEffects(changeKeys: string[], overrides) {
+function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: string[] | undefined, overrides: any) {
   // Organize non-disabled effects by their application priority
   let changes: any[] = [];
+
   for (const effect of this.allApplicableEffects()) {
     if (!effect.active) continue;
-    changes.push(...effect.changes.map(change => {
+    let possibleChanges = effect.changes;
+    if (includeKeys) possibleChanges = possibleChanges.filter(c => includeKeys.includes(c.key));
+    if (excludeKeys) possibleChanges = possibleChanges.filter(c => !excludeKeys.includes(c.key));
+    changes.push(...possibleChanges.map(change => {
       let field = change.key.startsWith("system.")
         ? this.system.schema.getField(change.key.slice(7))
         : this.schema.getField(change.key);
@@ -1239,9 +1259,12 @@ function doItemApplyEffects(changeKeys: string[], overrides) {
       const c = foundry.utils.deepClone(change);
       if (typeof c.value === "string") {
         const rollData = this.getRollData();
-        let expressionpre = Roll.replaceFormulaData(c.value, rollData, {missing: "0"});
+        if (targetType !== "formula") 
+          c.value = c.value.replaceAll("##", "@"); // can't defer this evaluation
+        // c.value = Roll.replaceFormulaData(c.value, rollData, { missing: "0" });
+        let expressionpre = Roll.replaceFormulaData(c.value, rollData, { missing: "0" });
         const expression = daeSystemClass.safeEvalExpression(expressionpre, rollData);
-        let result = expression;
+        let result = expression.replaceAll("##", "@");
         if (targetType && ["boolean", "number"].includes(targetType)) {
           result = daeSystemClass.safeEval(expression, rollData, expression) ?? expression;
         }
@@ -1252,7 +1275,6 @@ function doItemApplyEffects(changeKeys: string[], overrides) {
       return c;
     }));
   }
-  changes = changes.filter(c => changeKeys.includes(c.key));
   changes.sort((a, b) => a.priority - b.priority);
 
   // Apply all changes
@@ -1371,7 +1393,7 @@ function prepareData(wrapped) {
       // Apply special statuses that changed to active tokens
       let tokens;
       for (const [statusId, wasActive] of specialStatuses) {
-        const isActive = this.statuses.has(statusId);
+        const isActive = this.statuses.has(statusId) && !this.system.traits.ci.value.has(statusId);
         if (isActive === wasActive) continue;
         if (!tokens) tokens = this.getActiveTokens();
         for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
@@ -1542,6 +1564,7 @@ function determineSuppression() {
   if (!actor) return;
 
   if (globalThis.MidiQOL && foundry.utils.getProperty(this, "flags.dae.disableIncapacitated")) {
+    // if (actor) this.isSuppressed = actor.statuses.has("incapacitated");
     if (actor) this.isSuppressed = globalThis.MidiQOL.checkIncapacitated(actor);
   }
 

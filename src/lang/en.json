@@ -290,12 +290,13 @@
     "dae.CUB": "Combat Utility Belt",
     "dae.ShowInline.Name": "Display results of inline rolls",
     "dae.ShowInline.Hint": "Effects with an inline roll will display the roll results if set",
-    "dae.stackableOptions": {
+    "dae.StackableOptions": {
       "noneName": "Effects do not stack by effect name and effect origin", 
       "noneNameOnly": "Effects do not stack by effect name",
       "none": "Effects do not stack by effect origin", 
       "multi": "Stacking effects apply the effect multiple times", 
-      "count": "each stack increase stack count by 1"
+      "count": "each stack increase stack count by 1",
+      "countDeleteDecrement": "apply increase stacks by 1, delete decrease stcks by 1, removed on 0 stacks"
     },
     "dae.SW5EHint": "Note For Translators - The following strings are ONLY required for the SW5E system",
     "dae.SW5E": "sw5e",
@@ -382,6 +383,10 @@
     "dae.IconTint": "Icon Tint",
     "dae.IconOverlay.Name": "Icon Overlay",
     "dae.IconOverlay.Hint": "Display the effect staus icon as an overlay",
+    "dae.StackableConditions.Name": "Stackable Conditions",
+    "dae.StackableConditions.Hint": "Status effects (poisoned/paralyed) will count how many time they are added and must be removed the corresponding number of times",
+
+    "__Comment__": "The following strings are for the DAE system. Translation is optional",
     "dae.fieldData": {
       "fieldCategories.All": "All",
 

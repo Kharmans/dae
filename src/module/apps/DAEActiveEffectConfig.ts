@@ -1,4 +1,4 @@
-import { cltActive, ceInterface, atlActive, daeSystemClass } from "../dae";
+import { cltActive, ceInterface, atlActive, daeSystemClass, geti18nOptions } from "../dae";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
 import { ValidSpec } from "../Systems/DAESystem";
 import { DAEFieldBrowser } from "./FieldBrowser";
@@ -55,9 +55,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     let efl: any = CONFIG.statusEffects;
     efl = efl.filter(se => se.id)
       .map(se => {
-        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name ?? se.label} (CE)` };
-        if (foundry.utils.getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name ?? se.label} (CLT)` };
-        return { id: se.id, name: i18n(se.name ?? se.label) };
+        if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name} (CE)` };
+        if (foundry.utils.getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name} (CLT)` };
+        return { id: se.id, name: i18n(se.name) };
       });
     if (ceInterface?.findEffects) {
       const ceList = ceInterface.findEffects().map(ce => ({ id: `z${ce.flags["dfreds-convenient-effects"].ceEffectId}`, name: `${ce.name} (CE)` }));
@@ -209,7 +209,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         return {
           id: s.id,
           //@ts-expect-error
-          label: game.i18n.localize(s.name ?? /** @deprecated since v12 */ s.label),
+          label: game.i18n.localize(s.name),
           selected: data.statuses.includes(s.id) ? "selected" : ""
         };
       });
@@ -225,9 +225,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.modes = allModes;
     data.specialDuration = daeSpecialDurations;
     data.macroRepeats = daeMacroRepeats;
-    const translations = geti18nTranslations();
-    //@ts-expect-error
-    data.stackableOptions = translations.stackableOptions ?? { "noneName": "Effects do not stack by name and origin", "noneNameOnly": "Effects do not stack by name", "none": "Effects do not stack", "multi": "Stacking effects apply the effect multiple times", "count": "each stack increase stack count by 1" };
+    data.stackableOptions = geti18nOptions("StackableOptions", "dae");
 
     if (this.object.parent) {
       data.isItemEffect = this.object.parent instanceof CONFIG.Item.documentClass;

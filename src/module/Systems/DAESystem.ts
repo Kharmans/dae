@@ -1,6 +1,6 @@
-import { ArrayField, BooleanField, NumberField, StringField, debug, debugEnabled, error, i18n, warn } from "../../dae";
+import { ArrayField, BooleanField, MODULE_ID, NumberField, StringField, debug, debugEnabled, error, i18n, warn } from "../../dae";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAESetupComplete, DAEReadyComplete, enumerateBaseValues } from "../dae";
+import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAESetupComplete, DAEReadyComplete, enumerateBaseValues, geti18nOptions } from "../dae";
 
 export let wildcardEffects: RegExp[] = [];
 export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
@@ -258,22 +258,13 @@ export class ValidSpec {
         else if (m.fieldSpec === "system.attributes.ac.value") m.label = `${m.label} (Deprecated)`;
         else if (this.itemSpecs[specKey].derivedSpecsObj[m.fieldSpec]) m.label = `${m.label} (*)`;
         let newOptions = m.options;
-        if (typeof m.options === "string") newOptions = geti18nOptions(m.options);
+        if (typeof m.options === "string") newOptions = geti18nOptions(m.options, MODULE_ID);
         if (!newOptions && typeof m.options === "string") newOptions = i18n(m.options);
         m.options = newOptions;
         m.label = i18n(m.label ?? "");
       }
     }
   }
-}
-export function geti18nOptions(key) {
-  const moduleId = key.split(".")[0];
-  key = key.split(".").slice(-1).join(".");
-  const translations = game.i18n.translations[moduleId] ?? {};
-  //@ts-ignore _fallback not accessible
-  const fallback = game.i18n._fallback[moduleId] ?? {};
-  let translation = foundry.utils.mergeObject(fallback[key] ?? {}, translations[key] ?? {}, { overwrite: true, inplace: false });
-  return translation;
 }
 
 function getRollData(wrapped, ...args): any {
