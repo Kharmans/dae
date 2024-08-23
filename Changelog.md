@@ -1,5 +1,5 @@
 ### 11.3.52
-* Added setting to enable/disable stackable conditions. (Defaults to on and is probaly recommended). When enabled conditions applied to the actor will be counted - so paralyed and petrified will result in 2 stacks of inacpacitated and both must be removed before incapacitated is removed.
+* Added setting to enable/disable stackable conditions. (Defaults to on and is probably recommended). When enabled conditions applied to the actor will be counted - so paralyed and petrified will result in 2 stacks of inacapacitated and both must be removed before incapacitated is removed.
   - Lots of edge cases in combining stackable/non-stackable conditions have been cleaned up, but there will no dobut be some I've missed.
   - Be aware, removing a condition from the character sheet removes 1 stack of the condition, not all of them, so you may need to push the remove condition button a few times.
 * Removed flag flags.dae.decrementDelete and made it an option on the effect definition.
