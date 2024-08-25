@@ -772,10 +772,10 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
             data.statuses = Array.from(statuses);
           } else data["flags.core.statusId"] = statusEffect.id;
           data.changes = data.changes.concat(statusEffect.effectData?.changes ?? []).concat(statusEffect.changes ?? []);
-          const label = data.changes.find(c => c.key === "StatusEffectLabel" || c.key === "StatusEffectname")?.value;
+          const label = data.changes.find(c => c.key === "StatusEffectLabel" || c.key === "StatusEffectName")?.value;
           data.changes = data.changes.filter(c => ["StatusEffectLabel", "StatusEffectName", "StatusEffect"].includes(c.key) === false);
           if (label) data.name = label;
-          if (["count", "countDeleteDecrement"].includes(data.flags?.dae?.stackable) === false) {
+          if (!["count", "countDeleteDecrement"].includes(data.flags?.dae?.stackable)) {
             options.keepId = false;
           }
           await parent.createEmbeddedDocuments("ActiveEffect", [data], options);
@@ -1052,12 +1052,11 @@ export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options,
     return true;
   }
 }
-
 async function _preDeleteActiveEffect(wrapped, ...args) {
   let [options, userId] = args;
-  if (options.forceDelete || !(this.parent instanceof Actor)) return true; // TODO see if this is required.
+  if (options.forceDelete || !(this.parent instanceof Actor)) return wrapped(...args); // TODO see if this is required.
   if (this.flags.dae?.stackable !== "countDeleteDecrement" || (this.flags.dae.stacks ?? 0) < 2)
-    return wrapped(args);
+    return wrapped(...args);
   const stacks = this.flags.dae.stacks;
   foundry.utils.setProperty(this, "flags.dae.stacks", stacks - 1);
   await this.update({ "flags.dae.stacks": stacks - 1, name: `${effectBaseName(this)} (${stacks - 1})` });
@@ -1067,7 +1066,30 @@ async function _preDeleteActiveEffect(wrapped, ...args) {
   if (this.getDependents()) for (let dependent of this.getDependents()) {
     //@ts-expect-error
     if (fromUuidSync(dependent.uuid))
-      await dependent.delete();
+      await dependent.delete(options);
+  }
+  return false;
+}
+async function _preDeleteActiveEffectBeta(wrapped, ...args) {
+  let [options, userId] = args;
+  if (options.forceDelete || !(this.parent instanceof Actor) ||!["countDeleteDecrement", "count"].includes(this.flags.dae?.stackable))
+    return wrapped(...args);
+  const stacks = this.flags.dae.stacks;
+  if (stacks === 1) {
+    options.removeStacks = 1;
+    return wrapped(...args);
+  }
+  if (this.flags.dae.stackable === "count") options.removeStacks = stacks;
+  else options.removeStacks = 1;
+  foundry.utils.setProperty(this, "flags.dae.stacks", stacks - 1);
+  await this.update({ "flags.dae.stacks": stacks - 1, name: `${effectBaseName(this)} (${stacks - 1})` });
+  const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
+  counter?.setValue(stacks - 1);
+  debug("decrementing complete", this.name, stacks);
+  if (this.getDependents()) for (let dependent of this.getDependents()) {
+    //@ts-expect-error
+    if (fromUuidSync(dependent.uuid))
+      await dependent.delete(...args);
   }
   return false;
 }

@@ -1,3 +1,6 @@
+### 11.3.52.1
+* FIx for a couple of typos.
+
 ### 11.3.52
 * Added setting to enable/disable stackable conditions. (Defaults to on and is probably recommended). When enabled conditions applied to the actor will be counted - so paralyed and petrified will result in 2 stacks of inacapacitated and both must be removed before incapacitated is removed.
   - Lots of edge cases in combining stackable/non-stackable conditions have been cleaned up, but there will no dobut be some I've missed.
