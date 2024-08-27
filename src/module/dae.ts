@@ -2119,17 +2119,6 @@ export function daeInitActions() {
   Hooks.on("preUpdateActor", preUpdateActorHook);
 
   Hooks.on("updateActor", processConditionalEffects)
-  Hooks.on("createActiveEffect", (...args) => {
-    let [effect, context, userId] = args;
-    if (!(effect.parent instanceof Actor)) return;
-    processConditionalEffects(effect.parent, {}, context, userId);
-  });
-  
-  Hooks.on("deleteActiveEffect", (...args) => {
-    let [effect, context, userId] = args;
-    if (!(effect.parent instanceof Actor)) return;
-    processConditionalEffects(effect.parent, {}, context, userId);
-  });
   
   Hooks.on("updateToken", (tokenDocument, update, diff, userId) => {
     // processConditionalEffects(tokenDocument, update, diff, userId);
@@ -2467,7 +2456,6 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
     while (token?._animation) await delay(100);
   }
   const rollData = actor.getRollData();
-
   const effectItem = game.items?.getName(i18n("dae.ConditionalEffectsItem"));
   if (effectItem) {
     for (let conditionalEffect of effectItem.effects) {
