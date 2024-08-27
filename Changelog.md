@@ -1,3 +1,9 @@
+### 11.3.53
+* Fix for evaluating conditional effects on non-gm clients.
+* Fix for deleting effect with stackable "count" not deleting dependent effects correctly.
+* Effect applied via the DAEConditionalEffects item will show the item as the source of the effect.
+* Allow conditional effects to react to status changes on the actor. e.g. statuses.has("incapacitated") or MidiQOL.hasCondition(actorUuid, "incapacitated")
+
 ### 11.3.52.1
 * FIx for a couple of typos.
 
