@@ -1,3 +1,6 @@
+### 11.3.54
+* Re-enable the midi toggleEffect property on items.
+
 ### 11.3.53.1
 * Change to support status changes, the only supported way is statuses.has("incapacitated"). Check like MidiQOL.hasCondition will be evaluated before the status active effect is applied, but statuses.has will work.
 

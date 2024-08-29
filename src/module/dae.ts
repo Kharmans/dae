@@ -308,14 +308,22 @@ function expandEffectChanges(changes) {
 }
 
 export async function addCreateItemChange(change: { key: string, value: string }, actor: Actor, effect: ActiveEffect, context) {
-  await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", { uuid: actor.uuid, itemDetails: change.value, effectUuid: effect.uuid, callItemMacro: change.key === "macro.createItemRunMacro" })
+  let itemDetails = change.value
+  if (itemDetails.startsWith("@"))  {
+    itemDetails = Roll.replaceFormulaData(change.value, actor.getRollData(), { missing: "", warn: false });
+  }
+  await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", { uuid: actor.uuid, itemDetails, effectUuid: effect.uuid, callItemMacro: change.key === "macro.createItemRunMacro" })
 }
 
 export async function removeCreateItemChange(itemId: string, actor: Actor, effect: ActiveEffect | any, context: any = {}) {
+  if (itemId.startsWith("@"))  {
+    itemId = Roll.replaceFormulaData(itemId, actor.getRollData(), { missing: "", warn: false });
+  }
   let [uuid, option] = itemId.split(",").map(s => s.trim());
   if (option === "permanent") return; // don't delete permanent items
   if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
   await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete, context })
+  await effect.update({ "flags.dae.itemsToDelete": [] });
 }
 
 export async function addTokenMagicChange(actor, change, tokens) {
@@ -609,6 +617,7 @@ function createActiveEffectHook(...args) {
 
 async function _preCreateActiveEffectRemoveExisting(...args) {
   if (debugEnabled > 0) warn("preCreateActiveEffectRemoveExisting", args);
+  let result = true;
   try {
     let [effectData, context, user] = args;
     if (context.isUndo) return;
@@ -622,14 +631,19 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
     }
     const stackable = foundry.utils.getProperty(this, "flags.dae.stackable");
     if (["noneName", "none", "noneNameOnly"].includes(stackable)) {
-      if (!parent) return;
+      if (!parent) return result = true;
       const hasExisting = parent.effects.filter(ef => {
         const efOrigin = ef.origin;
         switch (stackable) {
           case "noneName":
             // Effects with no origin are ignored
             return this.origin && efOrigin === this.origin && ef.name === this.name;
-          case "noneNameOnly":
+            case "count":
+            case "countDeleteDecrement":
+              if (context.toggleEffect)
+              return this.origin && efOrigin === this.origin && ef.name === this.name;
+              break;
+            case "noneNameOnly":
             return ef.name === this.name;
           case "none":
             // All hand applied CE effects or applied via the interface with no specified origin have a special origin so do not count those.
@@ -639,7 +653,12 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
         }
         return false;
       });
-      if (hasExisting.length === 0) return;
+      if (hasExisting.length === 0) return result = true;
+      if (context.toggleEffect) {
+        const updates = hasExisting.map(ef => ({_id: ef.id, disabled: !ef.disabled}));
+        await parent.updateEmbeddedDocuments("ActiveEffect", updates, context);
+        return result = false;
+      }
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
       context["existing"] = "effect-stacking";
@@ -654,7 +673,9 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
     }
   } catch (err) {
     error("removeExistingEffects ", err);
+    result = true;
   } finally {
+    return result;
   }
 }
 
@@ -695,11 +716,11 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
             const deps = existingEffect.getDependents().filter(ef => ["count", "countDeleteDecrement"].includes(ef.flags?.dae?.stackable));
             await parent.createEmbeddedDocuments("ActiveEffect", deps.map(ef => ef.toObject()), { keepId: true });
           }
-          return false;
+          return result = false;
         }
       } else if (!stackableConditions && CONFIG.statusEffects.find(se => se._id === this.id) && parent.effects.find(ef => ef.id === this._id)) {
         console.warn(`dae | Attempting to add ${this.id} when already presnt - ignoring`);
-        return false;
+        return result = false;
       }
       let updates: any = {};
       if (CONFIG.ActiveEffect.legacyTransferral) {
@@ -805,7 +826,7 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
   } catch (err) {
     console.warn("dae | _preCreateActiveEffect", err)
   } finally {
-    // return wrapped(data, options, user);
+    return result
   }
 }
 
@@ -1562,6 +1583,8 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   if (options.effectsToApply?.length > 0) appliedEffects = appliedEffects.filter(aeData => options.effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = item.getRollData(); //TODO if not caster eval move to evalArgs call
+  options.toggleEffect = item.flags?.midiProperties?.toggleEffect === true;
+
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     for (let [changeIndex, change] of activeEffectData.changes.entries()) {
       const doRolls = allMacroEffects.includes(change.key);
@@ -2118,15 +2141,19 @@ export function daeInitActions() {
   // process onUpdateTarget flags
   Hooks.on("preUpdateActor", preUpdateActorHook);
 
+  // Hooks for condtional effects
   Hooks.on("updateActor", processConditionalEffects)
-  
-  Hooks.on("updateToken", (tokenDocument, update, diff, userId) => {
-    // processConditionalEffects(tokenDocument, update, diff, userId);
+    Hooks.on("updateToken", (tokenDocument, updates, diff, userId) => {
+    if (updates.x || updates.y)
+    processConditionalEffects(tokenDocument.actor, updates, diff, userId);
   });
+  Hooks.on("updateItem", (item, updates, options, userId) => {
+    if (item.parent instanceof Actor) processConditionalEffects(item.parent, updates, options, userId)
+    });
   // wrap so we can remove the existing effect before the new one is created
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", preCreateActiveEffect, "MIXED");
   async function preCreateActiveEffect(wrapped, data, context, user) {
-    await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
+    if (!(await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user))) return false;
     return _preCreateActiveEffect.bind(this)(wrapped, data, context, user);
   };
   // Hooks.on("createActiveEffect", removeExistingEffectsHook) - this fires too late

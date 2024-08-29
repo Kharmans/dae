@@ -320,14 +320,15 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate, targetList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = undefined, origin = undefined }) {
+export async function applyActiveEffects({ activate, targetList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
   // debug("apply active effect ", activate, tokenList, foundry.utils.duplicate(activeEffects), itemDuration)
   for (let targetId of targetList) {
     //@ts-expect-error
     let targetActor = fromUuidSync(targetId);
     if (!targetActor) continue;
-    // Remove any existing effects. DAE will handle the various stacking options
 
+    // Removal of existing is now handled by _preCreateActiveEffect override.
+    // TODO workout what to do if activate is false? does not seem to be used anywhere to force delete effects
     if (activate) {
       let dupEffects = foundry.utils.duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true); // .filter(aeData => !aeData.selfTarget));
       for (let aeData of dupEffects) {
@@ -460,7 +461,7 @@ export async function applyActiveEffects({ activate, targetList, activeEffects, 
 
       if (dupEffects.length > 0) {
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
-        let createdEffects = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { metaData });
+        let createdEffects = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData });
         for (let effect of createdEffects) {
           //@ts-expect-error
           const origin = fromUuidSync(effect.origin);
