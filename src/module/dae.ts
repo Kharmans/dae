@@ -37,6 +37,7 @@ export var linkedTokens;
 export var CECustomEffectsItemUuid: string | undefined;
 export var rewriteTransferOrigin;
 export var stackableConditions
+export var stackableConditionsv12: { enabled: boolean, stackable: string[] } = { enabled: true, stackable: [] };
 export var DAESetupComplete;
 export var DAEReadyComplete;
 
@@ -309,14 +310,14 @@ function expandEffectChanges(changes) {
 
 export async function addCreateItemChange(change: { key: string, value: string }, actor: Actor, effect: ActiveEffect, context) {
   let itemDetails = change.value
-  if (itemDetails.startsWith("@"))  {
+  if (itemDetails.startsWith("@")) {
     itemDetails = Roll.replaceFormulaData(change.value, actor.getRollData(), { missing: "", warn: false });
   }
   await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", { uuid: actor.uuid, itemDetails, effectUuid: effect.uuid, callItemMacro: change.key === "macro.createItemRunMacro" })
 }
 
 export async function removeCreateItemChange(itemId: string, actor: Actor, effect: ActiveEffect | any, context: any = {}) {
-  if (itemId.startsWith("@"))  {
+  if (itemId.startsWith("@")) {
     itemId = Roll.replaceFormulaData(itemId, actor.getRollData(), { missing: "", warn: false });
   }
   let [uuid, option] = itemId.split(",").map(s => s.trim());
@@ -579,7 +580,7 @@ function createActiveEffectHook(...args) {
           await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid }); // TODO revisit to see if passing the effect is ok
         }
         if (!foundry.utils.getProperty(effect, "flags.dfreds-convenient-effects.ceEffectId")) {
-          // Dfreds effectts do not apply sequentially so can have more than one effect applied
+          // Dfreds effects do not apply sequentially so can have more than one effect applied
           for (let status of effect.statuses) {
             const randomId = foundry.utils.randomID();
             if (["concentrating", "reaction", "bonusaction"].includes(status)) continue;
@@ -638,12 +639,12 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
           case "noneName":
             // Effects with no origin are ignored
             return this.origin && efOrigin === this.origin && ef.name === this.name;
-            case "count":
-            case "countDeleteDecrement":
-              if (context.toggleEffect)
+          case "count":
+          case "countDeleteDecrement":
+            if (context.toggleEffect)
               return this.origin && efOrigin === this.origin && ef.name === this.name;
-              break;
-            case "noneNameOnly":
+            break;
+          case "noneNameOnly":
             return ef.name === this.name;
           case "none":
             // All hand applied CE effects or applied via the interface with no specified origin have a special origin so do not count those.
@@ -655,7 +656,7 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
       });
       if (hasExisting.length === 0) return result = true;
       if (context.toggleEffect) {
-        const updates = hasExisting.map(ef => ({_id: ef.id, disabled: !ef.disabled}));
+        const updates = hasExisting.map(ef => ({ _id: ef.id, disabled: !ef.disabled }));
         await parent.updateEmbeddedDocuments("ActiveEffect", updates, context);
         return result = false;
       }
@@ -703,10 +704,9 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
         //@ts-expect-error
         existingEffect = parent.effects.find(ef => ef.origin === this.origin && effectBaseName(ef) === effectBaseName(this));
       }
-      if (stackableConditions && !existingEffect && CONFIG.statusEffects.find(se => se._id === this.id)) {
-        this.updateSource({ "flags.dae.stackable": "countDeleteDecrement" });
-      }
-      else if (["count", "countDeleteDecrement"].includes(this.flags?.dae?.stackable)) {
+      if (stackableConditionsv12.enabled && !existingEffect && CONFIG.statusEffects.find(se => se._id === this.id) && stackableConditionsv12.stackable.includes(this.id)) {
+        this.updateSource({ "flags.dae.stackable": "countDeleteDecrement", "flags.dae.stacks": 1 });
+      } else if (["count", "countDeleteDecrement"].includes(this.flags?.dae?.stackable)) {
         if (existingEffect) {
           const stacks = (existingEffect.flags.dae.stacks ?? 1) + 1;
           const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
@@ -718,7 +718,7 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
           }
           return result = false;
         }
-      } else if (!stackableConditions && CONFIG.statusEffects.find(se => se._id === this.id) && parent.effects.find(ef => ef.id === this._id)) {
+      } else if (!(stackableConditionsv12.enabled && stackableConditionsv12.stackable.includes(this.id)) && CONFIG.statusEffects.find(se => se._id === this.id) && parent.effects.find(ef => ef.id === this._id)) {
         console.warn(`dae | Attempting to add ${this.id} when already presnt - ignoring`);
         return result = false;
       }
@@ -1077,7 +1077,7 @@ async function _preDeleteActiveEffect(wrapped, ...args) {
   if (options.forceDelete || !(this.parent instanceof Actor)) return wrapped(...args); // TODO see if this is required.
   const stacks = Math.max(0, this.flags?.dae?.stacks ?? 1);
   const newStacks = Math.max(1, stacks - options.removeStacks)
-  if (stacks <=  options.removeStacks) {
+  if (stacks <= options.removeStacks) {
     options.removeStacks = Math.max(1, stacks);
     return wrapped(options, userId);
   }
@@ -2143,13 +2143,13 @@ export function daeInitActions() {
 
   // Hooks for condtional effects
   Hooks.on("updateActor", processConditionalEffects)
-    Hooks.on("updateToken", (tokenDocument, updates, diff, userId) => {
+  Hooks.on("updateToken", (tokenDocument, updates, diff, userId) => {
     if (updates.x || updates.y)
-    processConditionalEffects(tokenDocument.actor, updates, diff, userId);
+      processConditionalEffects(tokenDocument.actor, updates, diff, userId);
   });
   Hooks.on("updateItem", (item, updates, options, userId) => {
     if (item.parent instanceof Actor) processConditionalEffects(item.parent, updates, options, userId)
-    });
+  });
   // wrap so we can remove the existing effect before the new one is created
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", preCreateActiveEffect, "MIXED");
   async function preCreateActiveEffect(wrapped, data, context, user) {
@@ -2273,10 +2273,19 @@ export function fetchParams() {
   daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
   daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
   rewriteTransferOrigin = game.settings.get("dae", "rewriteTransferOrigin");
-  stackableConditions = game.settings.get("dae", "stackableConditions");
   expireRealTime = game.settings.get("dae", "expireRealTime");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   showInline = game.settings.get("dae", "showInline") ?? false;
+  stackableConditions = game.settings.get("dae", "stackableConditions");
+  //@ts-expect-error
+  if (game.release.generation < 12) {
+    if (stackableConditions === undefined || stackableConditions === true) stackableConditionsv12 = { enabled: true, stackable: CONFIG.DAE.defaultStackableConditions };
+    if (stackableConditions === false) stackableConditionsv12 = { enabled: false, stackable: [] };
+  } else {
+    //@ts-expect-error
+    stackableConditionsv12 = game.settings.get("dae", "stackableConditionsv12");
+  }
+  if (globalThis.DAE) globalThis.DAE.stackableConditions = stackableConditionsv12;
   Hooks.callAll("dae.settingsChanged")
 }
 
@@ -2421,7 +2430,7 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
 
   // Remove the existing effects unless the status effect is forced active
   if (existing.length) {
-    if (!stackableConditions) {
+    if (!stackableConditionsv12.enabled || !stackableConditionsv12.stackable.includes(statusId)) {
       if (options.active) return true;
       await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(e => e.id ?? ""));
       return false;
@@ -2453,8 +2462,9 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
   if (options.origin) effect.updateSource({ origin: options.origin });
   if (options.enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": options.enableCondition });
   if (options.overlay) effect.updateSource({ "flags.core.overlay": true });
-  if (stackableConditions)
+  if (stackableConditionsv12.enabled && stackableConditionsv12.stackable.includes(statusId)) {
     effect.updateSource({ "flags.dae.stackable": "countDeleteDecrement", "flags.dae.stacks": 1 });
+  }
   //@ts-expect-error
   const returnEffect = await ActiveEffect.implementation.create(effect, { parent: actor, keepId: true });
   return returnEffect ? [returnEffect] : false;

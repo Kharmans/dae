@@ -2,14 +2,12 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings';
 import { preloadTemplates } from './module/preloadTemplates';
-import { daeSetupActions, daeInitActions, fetchParams } from "./module/dae";
+import { daeSetupActions, daeInitActions, fetchParams, stackableConditionsv12 } from "./module/dae";
 import { daeReadyActions } from "./module/dae";
 import { setupSocket } from './module/GMAction';
 import { checkLibWrapperVersion } from './module/migration';
 import { setupPatching, initPatching } from './module/patching';
 import API from './module/API/api';
-import { FormBuilder } from './libs/FormBuilder';
-import { AutoEffects } from './module/apps/AutoEffects';
 
 // @ts-expect-error
 export const CONFIG: any = globalThis.CONFIG;
@@ -60,6 +58,7 @@ Hooks.once('init', async function () {
   const systemDaeFlag = game.system.flags?.daeCompatible;
   if (daeFlags.compatible?.includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
   else if (daeFlags.incompatible?.includes(game.system.id) || systemDaeFlag === false) gameSystemCompatible = "no";
+  CONFIG.DAE.defaultStackableConditions = ['dead', 'bleeding', 'blinded', 'burrowing', 'charmed', 'cursed', 'deafened', 'diseased', 'ethereal', 'flying', 'frightened', 'grappled', 'halfHealthEffect', 'hiding', 'hovering', 'incapacitated', 'invisible', 'marked', 'paralyzed', 'petrified', 'poisoned', 'restrained', 'silenced', 'sleeping', 'stunned', 'surprised', 'transformed', 'unconscious']
 
   if (gameSystemCompatible === "no") {
     //@ts-expect-error .title
@@ -136,6 +135,7 @@ Hooks.once('setup', function () {
     data.api = API;
     //@ts-expect-error .api
     globalThis.DAE = game.modules.get("dae")?.api;
+    globalThis.DAE.stackableConditions = stackableConditionsv12;
 
     setupSocket();
     Hooks.callAll("DAE.setupComplete");

@@ -87,7 +87,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           "system.attack.bonus": theSpecs["system.attack.bonus"],
           "system.magicalBonus": theSpecs["system.magicalBonus"],
           "system.formula": theSpecs["system.formula"],
-          "system.damage": theSpecs["system.damage"],
           "flags.midi-qol.itemCondition": theSpecs["flags.midi-qol.itemCondition"],
           "flags.midi-qol.reactionCondition": theSpecs["flags.midi-qol.reactionCondition"],
           "flags.midi-qol.otherCondition": theSpecs["flags.midi-qol.otherCondition"],
@@ -1222,7 +1221,8 @@ function applyBaseActiveEffectsdnd5e() {
 const getTargetType = field => {
   //@ts-expect-error
   const FormulaField = game.system.dataModels.fields.FormulaField;
-  if ((field instanceof FormulaField) /*|| ActiveEffect5e.FORMULA_FIELDS.has(change.key)*/) return "formula";
+  const ActiveEffect5eFormulaFields: Set<string> = CONFIG.ActiveEffect.documentClass.FORMULA_FIELDS
+  if ((field instanceof FormulaField) || ActiveEffect5eFormulaFields.has(field)) return "formula";
   //@ts-expect-error
   else if (field instanceof foundry.data.fields.ArrayField) return "Array";
   //@ts-expect-error
@@ -1259,16 +1259,18 @@ function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: stri
       const c = foundry.utils.deepClone(change);
       if (typeof c.value === "string") {
         const rollData = this.getRollData();
-        if (targetType !== "formula") 
+        rollData.mod = rollData.abilities[this.abilityMod]?.mod ?? 0;
+        if (targetType !== "formula")
           c.value = c.value.replaceAll("##", "@"); // can't defer this evaluation
-        // c.value = Roll.replaceFormulaData(c.value, rollData, { missing: "0" });
-        let expressionpre = Roll.replaceFormulaData(c.value, rollData, { missing: "0" });
-        const expression = daeSystemClass.safeEvalExpression(expressionpre, rollData);
-        let result = expression.replaceAll("##", "@");
-        if (targetType && ["boolean", "number"].includes(targetType)) {
-          result = daeSystemClass.safeEval(expression, rollData, expression) ?? expression;
+        if (!["Array", "Object", "formula", undefined].includes(targetType)) {
+          let expressionpre = Roll.replaceFormulaData(c.value, rollData, { missing: "0" });
+          const expression = daeSystemClass.safeEvalExpression(expressionpre, rollData);
+          let result = expression.replaceAll("##", "@");
+          if (targetType && ["boolean", "number"].includes(targetType)) {
+            result = daeSystemClass.safeEval(expression, rollData, expression) ?? expression;
+          }
+          c.value = typeof result === "string" ? result : JSON.stringify(result);
         }
-        c.value = typeof result === "string" ? result : JSON.stringify(result);
       }
       c.effect = effect;
       c.priority ??= c.mode * 10;

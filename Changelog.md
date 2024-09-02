@@ -1,3 +1,7 @@
+### 11.3.55
+* Fix for @mod being replaced by 0 in some item enchantment effects
+* Allow editing of stackable conditions in v12.
+
 ### 11.3.54
 * Re-enable the midi toggleEffect property on items.
 
