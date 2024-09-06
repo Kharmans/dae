@@ -61,7 +61,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       });
     if (ceInterface?.findEffects) {
       const ceList = ceInterface.findEffects().map(ce => ({ id: `z${ce.flags["dfreds-convenient-effects"].ceEffectId}`, name: `${ce.name} (CE)` }));
-      efl = efl.concat(ceList);
+      // efl = efl.concat(ceList);
     }
     //@ts-expect-error
     if (foundry.utils.isNewerVersion(game.modules.get("dfreds-convenient-effects")?.version, "7.0"))

@@ -396,29 +396,23 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
 export async function addConditionChange(actor, change, token, effect) {
   // This is from macro.statusEffect
   const condition: any = CONFIG.statusEffects.find(se => se.id === change.value);
+  const overlay = getProperty(effect, "flags.core.overlay")
   if (change.value.startsWith("Convenient Effect")) {
+    console.warn("Convenient Effect change detected in macro.SatusEffect which is deprecated use macro.CE instead");
+    console.warn(`Actor: ${actor.name} Change: ${change.value} Token: ${token.name} Effect: ${effect.name} ${effect.uuid}`);
     const effectName = change.value.split("Convenient Effect: ")[1];
-    return await ceInterface?.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
+    return await ceInterface?.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, overlay, metaData: {} });
   } else if (change.value.startsWith("zce-")) {
+    console.warn("Convenient Effect change detected in macro.SatusEffect which is deprecated use macro.CE instead");
+    console.warn(`Actor: ${actor.name} Change: ${change.value} Token: ${token.name} Effect: ${effect.name} ${effect.uuid}`);
     const effectId = change.value.replace("zce-", "ce-");
-    return await ceInterface?.addEffect({ effectId, uuid: actor.uuid, origin: effect.uuid, metaData: {} });
+    return await ceInterface?.addEffect({ effectId, uuid: actor.uuid, origin: effect.uuid, overlay, metaData: {} });
   }
   if (condition.statuses?.length > 1 && !condition?._id) {
     condition._id = condition.id.replaceAll(/[ :,.\+\-\*\&\^\%\$\#\@\!\[\]{}\(\)]/g, "").padEnd(16, "0").slice(-16);
   }
   const effects: boolean | any[] = await toggleActorStatusEffect(actor, condition.id, { active: true, origin: effect.uuid });
   if (effect.addDependent && effects instanceof Array) effect.addDependent(...effects)
-  /*
-  if (condition && !actor.effects.some(ef => ef.id === condition._id)) {
-    //@ts-expect-error
-    const status = await ActiveEffect.implementation.fromStatusEffect(condition.id, { parent: actor });
-    status.origin = effect.uuid;
-    let returnValue = await (actionQueue.add(actor.createEmbeddedDocuments.bind(actor), "ActiveEffect", [status], { parent: actor, keepId: true }));
-    if (effect.addDependents) effect.addDependents(returnValue);
-    else if (effect.addDependent) effect.addDependent(...returnValue);
-    return returnValue;
-  }
-  */
 }
 
 export async function removeConditionChange(actor, change, token, effect, context: any = {}) {
@@ -458,7 +452,6 @@ export async function removeCLTChange(conditionId, tokens: [Token], context = { 
 }
 export async function addStatusEffectChange(actor, change, tokens, sourceEffect, context: any = {}): Promise<ActiveEffect[] | boolean> {
   if (change.key !== "StatusEffect") return false;
-
   if (change.value.startsWith("zce-")) {
     const effectId = change.value.replace("zce-", "ce-")
     const effect = ceInterface?.findEffect && ceInterface.findEffect({ effectId });
@@ -534,6 +527,7 @@ export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}
 
 function createActiveEffectHook(...args) {
   let [effect, context, userId] = args;
+  const rid = foundry.utils.randomID();
   if (userId !== game.user?.id) return true;
   if (context.isUndo) return true;
   if (!effect.parent || (CONFIG.ActiveEffect.legacyTransferral === true && !(effect.parent instanceof CONFIG.Actor.documentClass))) return true;
@@ -569,7 +563,7 @@ function createActiveEffectHook(...args) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await addCreateItemChange(change, actor, effect, context)
           }
-          if (change.key === "macro.StatusEffect") {
+          if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
             await addConditionChange(actor, change, token, effect)
           }
           const tokenMagic = globalThis.TokenMagic;
@@ -579,13 +573,16 @@ function createActiveEffectHook(...args) {
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
           await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid }); // TODO revisit to see if passing the effect is ok
         }
+        //if (!foundry.utils.getProperty(effect, "flags.dfreds-convenient-effects")) {
         if (!foundry.utils.getProperty(effect, "flags.dfreds-convenient-effects.ceEffectId")) {
           // Dfreds effects do not apply sequentially so can have more than one effect applied
           for (let status of effect.statuses) {
             const randomId = foundry.utils.randomID();
             if (["concentrating", "reaction", "bonusaction"].includes(status)) continue;
             const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
-            if (effect.id === statusEffect._id) continue;
+            if (effect.id === statusEffect._id) {
+              continue;
+            }
             //@ts-expect-error
             if (game.release.generation < 12) {
               // status condition counters does not preserve the _id of the status efect in v11 so need to fiddle
@@ -762,42 +759,8 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
         }
         const inline = typeof change.value === "string" && change.value.includes("[[");
         if (change.key === "StatusEffect") {
-          let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
-          if (change.value.startsWith("zce-")) {
-            const effectId = change.value.replace("zce-", "ce-")
-            const effect = ceInterface?.findEffect && ceInterface.findEffect({ effectId });
-            if (effect) {
-              statusEffect = effect.toObject();
-            }
-          }
-
-          //@ts-expect-error
-          if (game.release.generation < 12) data["icon"] = statusEffect.icon;
-          else data["img"] = statusEffect.img ?? statusEffect.icon;
-          data["name"] = i18n(statusEffect.name);
-          if (statusEffect._id) { // if there is an _id make sure we use it - e.g. for dnd5e statuses
-            data._id = statusEffect._id;
-            options.keepId = true;
-          }
-          if (statusEffect.flags) {
-            data.flags = foundry.utils.mergeObject(data.flags ?? {}, statusEffect.flags, { insertKeys: true, insertValues: true, overwrite: true });
-          }
-          if (foundry.utils.isNewerVersion(game.version, "11.0")) {
-            let statuses: Set<any> = new Set(data.statuses ?? []);
-            // data.add(statusEffect.id);
-            //@ts-expect-error
-            statuses = statuses.union(new Set(statusEffect.statuses ?? []));
-            data.statuses = Array.from(statuses);
-          } else data["flags.core.statusId"] = statusEffect.id;
-          data.changes = data.changes.concat(statusEffect.effectData?.changes ?? []).concat(statusEffect.changes ?? []);
-          const label = data.changes.find(c => c.key === "StatusEffectLabel" || c.key === "StatusEffectName")?.value;
-          data.changes = data.changes.filter(c => ["StatusEffectLabel", "StatusEffectName", "StatusEffect"].includes(c.key) === false);
-          if (label) data.name = label;
-          if (!["count", "countDeleteDecrement"].includes(data.flags?.dae?.stackable)) {
-            options.keepId = false;
-          }
-          await parent.createEmbeddedDocuments("ActiveEffect", [data], options);
-          return false;
+            console.warn("ActiveEffect | StatusEffect is not supported in v12 and above");
+            continue;
         } else if (inline) {
           const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
           const silentInline = change.value.includes("[[[");
@@ -931,11 +894,11 @@ export function updateActiveEffectHook(...args) {
         existingChanges = oldChanges.filter(change => newChanges.some(c => c.key === change.key && c.mode === change.mode && c.value === change.value));
         addedChanges = newChanges.filter(change => !oldChanges.some(c => c.key === change.key && c.mode === change.mode && c.value === change.value));
         if (debugEnabled > 0) {
-          warn("updateActor hook | old changes", oldChanges);
-          warn("updateActor hook | new changes", newChanges);
-          warn("updateActor hook | removed Changes ", removedChanges);
-          warn("updateActor hook | added changes ", addedChanges);
-          warn("updateActor hook | existing changes", existingChanges);
+          warn("updateActiveEffect hook | old changes", oldChanges);
+          warn("updateActiveEffect hook | new changes", newChanges);
+          warn("updateActiveEffect hook | removed Changes ", removedChanges);
+          warn("updateActiveEffect hook | added changes ", addedChanges);
+          warn("updateActiveEffect hook | existing changes", existingChanges);
         }
       } else existingChanges = effect.changes;
       const wasDisabled = context.dae?.active?.wasDisabled ?? false;
@@ -966,11 +929,8 @@ export function updateActiveEffectHook(...args) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await removeCreateItemChange(change.value, actor, effect, context)
           }
-          if (change.key === "macro.StatusEffect") {
+          if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
             await removeConditionChange(actor, change, token, effect, context)
-          }
-          if (change.key === "StatusEffect") {
-            await removeStatusEffectChange(actor, change, tokens, effect, context);
           }
         }
         if (changesToDisable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
@@ -1008,12 +968,8 @@ export function updateActiveEffectHook(...args) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await addCreateItemChange(change, actor, effect, context)
           }
-          if (change.key === "macro.StatusEffect") {
+          if (change.key === "macro.StatusEffect"  || change.key === "StatusEffect") {
             await addConditionChange(actor, change, token, effect)
-          }
-          if (change.key === "StatusEffect") {
-            const changes = await addStatusEffectChange(actor, change, tokens, effect);
-            if (changes instanceof Array) await effect.addDependent(...changes);
           }
         }
         if (changesToEnable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
@@ -1651,6 +1607,7 @@ export function addEffectChange(actor, tokens, effectToApply, item, change, cont
       addCLTChange(change.value, [token]);
       break;
     case "macro.StatusEffect":
+    case "StatusEffect":
       if (CONFIG.ActiveEffect.legacyTransferral === false)
         addConditionChange(actor, change, token, effectToApply);
       break;
@@ -1668,10 +1625,6 @@ export function addEffectChange(actor, tokens, effectToApply, item, change, cont
           }
         }
       }
-      break;
-    case "StatusEffect":
-      if (CONFIG.ActiveEffect.legacyTransferral === false)
-        addStatusEffectChange(actor, change, token, effectToApply, context);
       break;
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
@@ -1711,12 +1664,8 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change, c
         }
       }
       break;
-    case "StatusEffect":
-      //@ ts-expect-error
-      // if (CONFIG.ActiveEffect.legacyTransferral === false)
-      removeStatusEffectChange(actor, change, tokens, effectToApply, context);
-      break;
     case "macro.StatusEffect":
+    case "StatusEffect":
       if (CONFIG.ActiveEffect.legacyTransferral === false)
         removeConditionChange(actor, change, tokens, effectToApply, context);
       break;
@@ -2157,7 +2106,7 @@ export function daeInitActions() {
     return _preCreateActiveEffect.bind(this)(wrapped, data, context, user);
   };
   // Hooks.on("createActiveEffect", removeExistingEffectsHook) - this fires too late
-
+libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.toggleStatusEffect", _toggleActorStatusEffect, "MIXED");
   Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "MIXED");
@@ -2406,13 +2355,17 @@ export function getApplicableEffects(actor, { includeEnchantments }) {
   }
   return effects;
 }
-
+export async function _toggleActorStatusEffect(wrapped, ...args) {
+  if (!stackableConditions.enabled) return wrapped(...args);
+  //@ts-expect-error
+  else return toggleActorStatusEffect(this, ...args);
+}
 // TODO once v12 only get rid of this since it is in core.
 export async function toggleActorStatusEffect(actor: Actor, statusId: string, options: { active?: boolean, overlay?: boolean, enableCondition?: string | undefined, origin?: string | undefined, randomId?: string | undefined } = { active: true, overlay: false, enableCondition: undefined, origin: undefined, randomId: undefined }): Promise<ActiveEffect[] | boolean> {
+  const rid = foundry.utils.randomID();
   const status = CONFIG.statusEffects.find(e => e.id === statusId);
   if (!status) throw new Error(`Invalid status ID "${statusId}" provided to Actor#toggleStatusEffect`);
   const existing: ActiveEffect[] = [];
-
   // Find the effect with the static _id of the status effect
   if (status._id) {
     const effect: ActiveEffect | undefined = actor.effects.get(status._id);
@@ -2427,7 +2380,6 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
       if ((statuses.size === 1) && statuses.has(status.id)) existing.push(effect);
     }
   }
-
   // Remove the existing effects unless the status effect is forced active
   if (existing.length) {
     if (!stackableConditionsv12.enabled || !stackableConditionsv12.stackable.includes(statusId)) {
@@ -2507,9 +2459,8 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
       const statusEffects: Set<string> = new Set();
 
       for (let change of ceData.changes) {
-        if (change.key === "StatusEffect" && CONFIG.statusEffects.some(se => change.value === se.id)) {
-          statusEffects.add(change.value);
-        }
+        if (daeSystemClass.fieldMappings[change.key]) change.key = daeSystemClass.fieldMappings[change.key];
+
       }
       ceData.changes = ceData.changes
         .filter(change => change.key !== "StatusEffect" || change.value.startsWith("zce-"));

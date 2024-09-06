@@ -1,5 +1,5 @@
 
-const MODULE_ID = "midi-qol";
+const MODULE_ID = "dae";
 const PARTIAL_KEY = "6uy8g1tXqHlhlp65dhiL-genericFormHelper-" + MODULE_ID;
 
 export class FormBuilder {

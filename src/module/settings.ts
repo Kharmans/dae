@@ -65,7 +65,7 @@ export const registerSettings = async function () {
           game.settings.set("dae", "stackableConditionsv12", stackableConditionsv12);
           this.close();
         },
-        action: foundry.utils.randomID(),
+        // action: foundry.utils.randomID(),
         icon: "fas fa-cogs"
       })
       .button({
@@ -80,7 +80,7 @@ export const registerSettings = async function () {
       })
       .checkbox({ name: "enabled", label: i18n("dae.StackableConditions.Name"), hint: i18n("dae.StackableConditions.Hint"), value: stackableConditionsv12.enabled })
       //@ts-expect-error
-      .multiSelect({ name: "stackable", label: i18n("dae.StackableConditions.Name"), hint: i18n("dae.StackableConditions.Hint"), value: stackableConditionsv12.stackable, options: CONFIG.statusEffects.reduce((opts, se) => { opts[se.id] = se.name; return opts }, { all: "All Stackable" }) })
+      .multiSelect({ name: "stackable", label: i18n("dae.StackableConditions.Name"), value: stackableConditionsv12.stackable, options: CONFIG.statusEffects.reduce((opts, se) => { opts[se.id] = se.name; return opts }, { all: "All Stackable" }) })
       .registerAsMenu({ moduleId: "dae", key: "stackableConditionsv12", name: "dae.StackableConditions.Name", label: "dae.StackableConditions.Name", icon: "fas fa-layer-group", hint: "dae.StackableConditions.Hint", scope: "world", restricted: true, defaultValue: true, onChange: fetchParams, requiresReload: false });
     })
   } else {

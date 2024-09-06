@@ -1,12 +1,21 @@
+### 11.3.56
+* Active effect change "StatusEffect" has been retired. You can now simply use macro.StatusEffect or the condition list from the details tab. Existing StatusEffect changes on items will be mapped to macro.StatusEffect. I repeat the advice that the simplest way to apply status conditions is via the condition multi-select on the effect details tab.
+* The deprecation of StatusEffect changes also applies to non-v12 worlds.
+* You are advised to edit items that generate the deprecation warning on a timely basis.
+* macro.StatusEffect now only supports effects from CONFIG.statusEffects. 
+* To create CE effects, either use macro.CE (preferred) or drag the CE effect from the CE sidebar to the effects tab of the item/actor you want to add it to - will only work for effects that do not have dependent effects on them.
+* I am also aware of an interaction between Chris's pre-mades when enabling midi-qol effects on status conditions and dfreds Convenient Effects. If you use the Convenient Effect with the CPR setting enabled the changes due to both effects will be applied - so you need to choose CE for status effects or CPR but don't use both.
+
 ### 11.3.55
 * Fix for @mod being replaced by 0 in some item enchantment effects
 * Allow editing of stackable conditions in v12.
+* Push erroneously labeled as 11.3.54
 
 ### 11.3.54
 * Re-enable the midi toggleEffect property on items.
 
 ### 11.3.53.1
-* Change to support status changes, the only supported way is statuses.has("incapacitated"). Check like MidiQOL.hasCondition will be evaluated before the status active effect is applied, but statuses.has will work.
+* Change to support status changes, the only supported way is statuses.has("incapacitated"). Checks like MidiQOL.hasCondition will be evaluated before the status active effect is applied, but statuses.has will work.
 
 ### 11.3.53
 * Fix for evaluating conditional effects on non-gm clients.

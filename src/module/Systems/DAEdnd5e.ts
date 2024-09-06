@@ -471,6 +471,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   // Any actions to be called on init Hook 
   public static initActions() {
+    //@ts-expect-error
+    if (game.release.generation >= 12) {
+      this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
+    }
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
     warn("system is ", game.system)
     if (game.modules.get("dnd5e-custom-skills")?.active) {

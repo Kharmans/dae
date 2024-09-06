@@ -1,4 +1,4 @@
-import { aboutTimeInstalled, timesUpInstalled, expireRealTime, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, daeSystemClass, ceInterface, toggleActorStatusEffect, effectBaseName } from "./dae";
+import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, stackableConditions } from "./dae";
 import { warn, debug, error, debugEnabled } from "../dae";
 
 export class GMActionMessage {
@@ -330,7 +330,8 @@ export async function applyActiveEffects({ activate, targetList, activeEffects, 
     // Removal of existing is now handled by _preCreateActiveEffect override.
     // TODO workout what to do if activate is false? does not seem to be used anywhere to force delete effects
     if (activate) {
-      let dupEffects = foundry.utils.duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true); // .filter(aeData => !aeData.selfTarget));
+      let dupEffects = foundry.utils.duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true);
+      dupEffects.forEach(effectData => effectData.changes.forEach(change => {if (change.key === "StatusEffect") change.key = "macro.StatusEffect"}) )
       for (let aeData of dupEffects) {
         foundry.utils.setProperty(aeData, "flags.dae.actor", targetActor.uuid);
         if (aeData.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
@@ -445,10 +446,6 @@ export async function applyActiveEffects({ activate, targetList, activeEffects, 
               })
             }
           } else {
-            // context = me
-            // For non macros most @fields can be left to be evaluated when the change is applied by dae
-            // rgeObject(context, { "target": tokenOrDocument.id, "@target": "target", tokenUuid, "targetUuid": tokenUuid, "itemCardid": itemCardId, "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" }, { overwrite: true });
-            // change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false })
             const targetContext = { "targetUuid": getTokenDocument(targetActor)?.uuid, "target": getToken(targetActor)?.id, "tokenUuid": getTokenDocument(targetActor)?.uuid, "token": getToken(targetActor)?.id };
             for (let key of Object.keys(targetContext)) {
               change.value = change.value.replace(`@${key}`, targetContext[key])
@@ -461,7 +458,7 @@ export async function applyActiveEffects({ activate, targetList, activeEffects, 
 
       if (dupEffects.length > 0) {
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
-        let createdEffects = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData });
+        let createdEffects = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData, keepId: true });
         for (let effect of createdEffects) {
           //@ts-expect-error
           const origin = fromUuidSync(effect.origin);
