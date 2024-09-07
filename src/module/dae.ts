@@ -2105,8 +2105,10 @@ export function daeInitActions() {
     if (!(await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user))) return false;
     return _preCreateActiveEffect.bind(this)(wrapped, data, context, user);
   };
-  // Hooks.on("createActiveEffect", removeExistingEffectsHook) - this fires too late
-libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.toggleStatusEffect", _toggleActorStatusEffect, "MIXED");
+  // Hooks.on("createActiveEffect", removeExistingEffectsHook) - this fires too late in the chain
+  //@ts-expect-error
+  if (game.release.generation >= 12)
+    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.toggleStatusEffect", _toggleActorStatusEffect, "MIXED");
   Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "MIXED");

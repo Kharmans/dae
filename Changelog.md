@@ -1,3 +1,6 @@
+### 11.3.57
+* Fix for libwrapper error being thrown in v11
+
 ### 11.3.56
 * Active effect change "StatusEffect" has been retired. You can now simply use macro.StatusEffect or the condition list from the details tab. Existing StatusEffect changes on items will be mapped to macro.StatusEffect. I repeat the advice that the simplest way to apply status conditions is via the condition multi-select on the effect details tab.
 * The deprecation of StatusEffect changes also applies to non-v12 worlds.
