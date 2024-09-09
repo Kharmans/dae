@@ -1,3 +1,6 @@
+### 11.3.58
+* Fix for failing to apply multiple stack effects.
+
 ### 11.3.57
 * Fix for libwrapper error being thrown in v11
 

@@ -2481,7 +2481,7 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
           if (actor.effects.some(ef => ef.id === ceData._id)) continue;
           ceData.origin = conditionalEffect.uuid;
           if (debugEnabled > 0) warn(`dae | creating conditional effect on ${actor.name} ${actor.uuid}`, ceData)
-          await actor.createEmbeddedDocuments("ActiveEffect", [ceData], { keepId: true });
+          await actor.createEmbeddedDocuments("ActiveEffect", [ceData]);
         }
       }
     }

@@ -458,7 +458,7 @@ export async function applyActiveEffects({ activate, targetList, activeEffects, 
 
       if (dupEffects.length > 0) {
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
-        let createdEffects = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData, keepId: true });
+        let createdEffects = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData });
         for (let effect of createdEffects) {
           //@ts-expect-error
           const origin = fromUuidSync(effect.origin);
