@@ -1263,9 +1263,14 @@ function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: stri
       const c = foundry.utils.deepClone(change);
       if (typeof c.value === "string") {
         const rollData = this.getRollData();
+
         rollData.mod = rollData.abilities[this.abilityMod]?.mod ?? 0;
-        if (targetType !== "formula")
+        if (targetType !== "formula" && targetType !== "string")
           c.value = c.value.replaceAll("##", "@"); // can't defer this evaluation
+        const unmapped = ["UUID", "uuid"];
+        for (let unmap of unmapped) {
+          c.value = c.value.replaceAll(`@${unmap}`, `##${unmap}`);
+        }
         if (!["Array", "Object", "formula", undefined].includes(targetType)) {
           let expressionpre = Roll.replaceFormulaData(c.value, rollData, { missing: "0" });
           const expression = daeSystemClass.safeEvalExpression(expressionpre, rollData);

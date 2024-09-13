@@ -1,3 +1,6 @@
+### 11.3.59
+* Fiox for invorrectly converting @UUID references to 0 in enchantment effects.
+
 ### 11.3.58
 * Fix for failing to apply multiple stack effects.
 
