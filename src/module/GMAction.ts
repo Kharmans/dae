@@ -1,4 +1,4 @@
-import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, stackableConditions } from "./dae";
+import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface} from "./dae";
 import { warn, debug, error, debugEnabled } from "../dae";
 
 export class GMActionMessage {

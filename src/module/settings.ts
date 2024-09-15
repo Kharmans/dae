@@ -1,8 +1,17 @@
 import { i18n } from "../dae";
-import { fetchParams, stackableConditionsv12 } from "./dae";
+import { fetchParams } from "./dae";
 
 export const registerSettings = async function () {
 
+  game.settings.register("dae", "DependentConditions", {
+    name: "dae.DependentConditions.Name",
+    hint: "dae.DependentConditions.Hint",
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
   game.settings.register("dae", "rewriteTransferOrigin", {
     name: "dae.rewriteTransferOrigin.Name",
     hint: "dae.rewriteTransferOrigin.Hint",
@@ -33,77 +42,7 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  //@ts-expect-error
-  if (game.release.generation >= 12) {
-    game.settings.register("dae", "stackableConditions", {
-      name: "dae.StackableConditions.Name",
-      hint: "dae.StackableConditions.Hint",
-      scope: "world",
-      default: true,
-      type: Boolean,
-      config: false,
-      onChange: fetchParams
-    });
-    game.settings.register("dae", "stackableConditionsv12", {
-      name: "dae.StackableConditions.Name",
-      hint: "dae.StackableConditions.Hint",
-      scope: "world",
-      //@ts-expect-error
-      default: {enable: true, stackable: globalThis.CONFIG.DAE.defaultStackableConditions},
-      type: Object,
-      config: false,
-      onChange: fetchParams
-    });
-    const formBuilder = import("../libs/FormBuilder.js").then(formBuilder => {
-    new formBuilder.FormBuilder()
-      .title("dae.StackableConditions.Name")
-      .button({
-        label: "Default", callback: function () {
-          stackableConditionsv12.enabled = true;
-          //@ts-expect-error
-          stackableConditionsv12.stackable = globalThis.CONFIG.DAE.defaultStackableConditions;
-          game.settings.set("dae", "stackableConditionsv12", stackableConditionsv12);
-          this.close();
-        },
-        // action: foundry.utils.randomID(),
-        icon: "fas fa-cogs"
-      })
-      .button({
-        label: "Disable", callback: function () {
-          stackableConditionsv12.enabled = false;
-          stackableConditionsv12.stackable = [];
-          game.settings.set("dae", "stackableConditionsv12", stackableConditionsv12);
-          this.close();
-        },
-        action: foundry.utils.randomID(),
-        icon: "fas fa-cogs"
-      })
-      .checkbox({ name: "enabled", label: i18n("dae.StackableConditions.Name"), hint: i18n("dae.StackableConditions.Hint"), value: stackableConditionsv12.enabled })
-      //@ts-expect-error
-      .multiSelect({ name: "stackable", label: i18n("dae.StackableConditions.Name"), value: stackableConditionsv12.stackable, options: CONFIG.statusEffects.reduce((opts, se) => { opts[se.id] = se.name; return opts }, { all: "All Stackable" }) })
-      .registerAsMenu({ moduleId: "dae", key: "stackableConditionsv12", name: "dae.StackableConditions.Name", label: "dae.StackableConditions.Name", icon: "fas fa-layer-group", hint: "dae.StackableConditions.Hint", scope: "world", restricted: true, defaultValue: true, onChange: fetchParams, requiresReload: false });
-    })
-  } else {
-    game.settings.register("dae", "stackableConditions", {
-      name: "dae.StackableConditions.Name",
-      hint: "dae.StackableConditions.Hint",
-      scope: "world",
-      default: true,
-      type: Boolean,
-      config: true,
-      onChange: fetchParams
-    });
-    game.settings.register("dae", "stackableConditionsv12", {
-      name: "dae.StackableConditions.Name",
-      hint: "dae.StackableConditions.Hint",
-      scope: "world",
-      //@ts-expect-error
-      default: {enable: true, stackable: globalThis.CONFIG.DAE.defaultStackableConditions},
-      type: Object,
-      config: false,
-      onChange: fetchParams
-    })
-  }
+
   game.settings.register("dae", "showInline", {
     scope: "client",
     name: game.i18n.localize("dae.ShowInline.Name"),

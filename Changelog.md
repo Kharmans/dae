@@ -1,3 +1,6 @@
+### 11.3.60
+* Removed stackable status effects in favour of simply tracking if the status effect is required or not. (Thanks @chris @michael for the suggestion). Configurable via enable dependent effects.
+
 ### 11.3.59
 * Fiox for invorrectly converting @UUID references to 0 in enchantment effects.
 
