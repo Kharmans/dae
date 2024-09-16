@@ -1,3 +1,6 @@
+### 11.3.61
+* Fix for incorrect behaviour when deleteing stackable "count" effects when there is exactly one stack.
+
 ### 11.3.60
 * Removed stackable status effects in favour of simply tracking if the status effect is required or not. (Thanks @chris @michael for the suggestion). Configurable via enable dependent effects.
 

@@ -1002,7 +1002,7 @@ export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options,
 async function _preDeleteActiveEffect(wrapped, ...args) {
   let [options, userId] = args;
   if (!options.removeStacks) options.removeStacks = 1;
-  if (this.flags.dae?.stackable === "count") options.removeStacks = Math.max(1, this.flags.dae.stacks);
+  if (this.flags.dae?.stackable === "count") options.removeStacks = Math.max(1, this.flags.dae.stacks ?? 1);
   if (options.forceDelete || !(this.parent instanceof Actor)) return wrapped(...args); // TODO see if this is required.
   const stacks = Math.max(0, this.flags?.dae?.stacks ?? 1);
   const newStacks = Math.max(1, stacks - options.removeStacks)
