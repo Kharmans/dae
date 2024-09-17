@@ -1,3 +1,7 @@
+### 11.3.62
+* Fix for determining suppression when effect is transfer effect on synthetic actor.
+* Fix for applying enchantments on sidebar items.
+
 ### 11.3.61
 * Fix for incorrect behaviour when deleteing stackable "count" effects when there is exactly one stack.
 

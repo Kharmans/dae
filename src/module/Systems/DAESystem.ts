@@ -446,10 +446,12 @@ export class DAESystem {
       const message = `dae | safeEval | expression evaluation failed ${expression}`;
       if (err.message === preSetupError) {
         console.warn(message, err)
-
         warn(message, preSetupError);
       } else {
         console.warn(message, err)
+        console.warn(`Actor: ${sandbox.name} ${sandbox.actorUuid}`);
+        if (sandbox.item) console.warn(`Item: ${sandbox.item.name} ${sandbox.item.itemUuid}`);
+
       }
       result = onErrorReturn;
     }

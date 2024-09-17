@@ -1240,7 +1240,10 @@ const getTargetType = field => {
 };
 
 function _baseItemApplyEffects() {
+  if (this.isOwned)
   return doItemApplyEffects.bind(this)(undefined, [...ValidSpec.itemSpecs["union"].derivedSpecKeys, ...ValidSpec.itemSpecs["union"].excludeKeys], {});
+else // item is a sidebar.compendium item so don't ignore anything
+  return doItemApplyEffects.bind(this)(undefined, undefined, {});
 }
 function _itemApplyActiveEffects() {
   return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].derivedSpecKeys, ValidSpec.itemSpecs["union"].excludeKeys, this.overrides ?? {});
@@ -1264,7 +1267,7 @@ function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: stri
       if (typeof c.value === "string") {
         const rollData = this.getRollData();
 
-        rollData.mod = rollData.abilities[this.abilityMod]?.mod ?? 0;
+        rollData.mod = rollData.abilities?.[this.abilityMod]?.mod ?? 0;
         if (targetType !== "formula" && targetType !== "string")
           c.value = c.value.replaceAll("##", "@"); // can't defer this evaluation
         const unmapped = ["UUID", "uuid"];
@@ -1548,7 +1551,7 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
   }
   // Case 2: effect is a synthetic actor on the scene - only if the token ids match
   else if (parentType === "Scene") {
-    const itemUuid = effect.origin.replaces(/\.ActiveEffect\..*$/, "");
+    const itemUuid = effect.origin.replace(/\.ActiveEffect\..*$/, "");
     const [parentType, parentId, tokeyType, tokenId, syntheticActor, y, syntheticItem, syntheticItemId] = parts;
     if ((tokenId === effect.parent.token?.id) && (syntheticItem === "Item"))
       item = effect.parent.items.get(syntheticItemId);
