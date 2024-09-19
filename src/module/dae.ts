@@ -2176,11 +2176,13 @@ async function updateStatusEffects(doc, options, userId) {
   }
   //@ts-expect-error
   for (let status of newStatuses.difference(currentStatuses)) {
+    if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status)) continue;
     // statuses not present on the actor that should be
     await toggleActorStatusEffect(actor, status, { active: true, flags: {dae: {autoCreated: true}} });
   }
   //@ts-expect-error
   for (let status of currentStatuses.difference(newStatuses)) {
+    if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status)) continue;
     // statuses present on the actor that should not be
     await toggleActorStatusEffect(actor, status, { active: false });
   }

@@ -1,3 +1,7 @@
+### 11.3.63
+* Fix for adding second concentration when adding dependent effects
+* Fix for duplicated encumbrance statuses when adding dependent effects
+
 ### 11.3.62
 * Fix for determining suppression when effect is transfer effect on synthetic actor.
 * Fix for applying enchantments on sidebar items.
