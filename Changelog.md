@@ -1,3 +1,6 @@
+### 11.3.64
+* Disable for dnd5e v4 worlds
+
 ### 11.3.63
 * Fix for adding second concentration when adding dependent effects
 * Fix for duplicated encumbrance statuses when adding dependent effects
