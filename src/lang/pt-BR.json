@@ -383,8 +383,8 @@
   "dae.IconTint": "Tonalidade do Ícone",
   "dae.IconOverlay.Name": "Sobreposição de Ícones",
   "dae.IconOverlay.Hint": "Exibe o ícone de status do efeito como uma sobreposição.",
-  "dae.StackableConditions.Name": "Condições Acumuláveis",
-  "dae.StackableConditions.Hint": "Os efeitos de status (envenenado/paralisado) contarão quantas vezes forem adicionados e deverão ser removidos o número de vezes correspondente.",
+  "dae.DependentConditions.Name": "Condições Dependentes",
+  "dae.DependentConditions.Hint": "Os efeitos de status (Envenenado/Paralisado) também adicionarão condições dependentes, como Incapacitado.",
   "__Comment__": "As strings a seguir são para o sistema DAE. A tradução é opcional",
   "dae.fieldData": {
     "fieldCategories.All": "Todas",
