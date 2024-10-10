@@ -1,3 +1,9 @@
+### 11.3.65
+* Fix for error being thrown in change hook when a condition was not found
+* Restore sorting of effects list when adding a macro.statusEffect
+* Fix for error thrown when dnd5e bloodied is enabled.
+* Varios support functions for midi-qol v12dnd4
+
 ### 11.3.64
 * Disable for dnd5e v4 worlds
 

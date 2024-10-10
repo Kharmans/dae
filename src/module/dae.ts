@@ -407,7 +407,7 @@ export async function addConditionChange(actor, change, token, effect) {
     const effectId = change.value.replace("zce-", "ce-");
     return await ceInterface?.addEffect({ effectId, uuid: actor.uuid, origin: effect.uuid, overlay, metaData: {} });
   }
-  if (condition.statuses?.length > 1 && !condition?._id) {
+  if (condition?.statuses?.length > 1 && !condition?._id) {
     condition._id = condition.id.replaceAll(/[ :,.\+\-\*\&\^\%\$\#\@\!\[\]{}\(\)]/g, "").padEnd(16, "0").slice(-16);
   }
   const effects: boolean | any[] = await toggleActorStatusEffect(actor, condition.id, { active: true, origin: effect.uuid });
@@ -732,8 +732,8 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
         }
         const inline = typeof change.value === "string" && change.value.includes("[[");
         if (change.key === "StatusEffect") {
-            console.warn("ActiveEffect | StatusEffect is not supported in v12 and above");
-            continue;
+          console.warn("ActiveEffect | StatusEffect is not supported in v12 and above");
+          continue;
         } else if (inline) {
           const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
           const silentInline = change.value.includes("[[[");
@@ -941,7 +941,7 @@ export function updateActiveEffectHook(...args) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await addCreateItemChange(change, actor, effect, context)
           }
-          if (change.key === "macro.StatusEffect"  || change.key === "StatusEffect") {
+          if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
             await addConditionChange(actor, change, token, effect)
           }
         }
@@ -1474,6 +1474,74 @@ export async function doEffects(item, activate, targets = undefined, options: an
   return await applyNonTransferEffects(item, activate, targets, options)
 }
 
+export async function doActivityEffects(activity, activate, targets = undefined, activityEffectsUuids: string[], options: any =
+  {
+    whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,
+    fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: activity.item.uuid, context: {}
+  }) {
+  //@ts-expect-error
+  const activityEffects = activityEffectsUuids.map(aeUuid => fromUuidSync(aeUuid)).filter(ef => ef).map(ef=>ef.toObject());
+  return await applyActivityEffects(activity, activate, targets, activityEffects, options)
+}
+
+export async function applyActivityEffects(activity, activate, targets, activityEffects, options) {
+  if (!options.applyAll)
+    activityEffects = activityEffects.filter(aeData => foundry.utils.getProperty(aeData, "flags.dae.dontApply") !== true);
+  else
+    activityEffects.forEach(aeData => foundry.utils.setProperty(aeData, "flags.dae.dontApply", false));
+  if (activityEffects.length === 0) return;
+  const rollData = activity.item.getRollData(); //TODO if not caster eval move to evalArgs call
+  options.toggleEffect = activity.item.flags?.midiProperties?.toggleEffect === true;
+
+  let macroLocation = "mixed";
+  for (let [aeIndex, activeEffectData] of activityEffects.entries()) {
+    for (let [changeIndex, change] of activeEffectData.changes.entries()) {
+      const doRolls = allMacroEffects.includes(change.key);
+      if (doRolls) {
+        if (macroDestination[change.key] === "local" && macroLocation !== "GM") {
+          macroLocation = "local"
+        } else if (macroDestination[change.key] === "GM") macroLocation = "GM";
+      }
+      // eval args before calling GMAction so macro arguments are evaled in the casting context.
+      // Any @fields for macros are looked up in actor context and left unchanged otherwise
+      rollData.stackCount = activeEffectData.flags?.dae?.stacks ?? activeEffectData.flags?.dae?.statuscounter?.counter.value ?? 1;
+      const evalArgsOptions: any = foundry.utils.mergeObject(options, {
+        effectData: activeEffectData,
+        change,
+        doRolls
+      })
+      evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, { recursive: false });
+      evalArgsOptions.item = activity.item;
+      if (activity.actor) evalArgsOptions.actor = activity.actor;
+      let newChange = await evalArgs(evalArgsOptions)
+      activeEffectData.changes[changeIndex] = newChange;
+    };
+
+    activeEffectData.origin = options.origin ?? activity.item.uuid;
+    activeEffectData.duration.startTime = game.time.worldTime;
+    daeSystemClass.addDAEMetaData(activeEffectData, activity.item, options)
+    activityEffects[aeIndex] = activeEffectData;
+  }
+
+  // Split up targets according to whether they are owned on not. Owned targets have effects applied locally, only unowned are passed ot the GM
+  let targetList: any[] = Array.from(targets);
+  targetList = targetList.map(t =>
+    //@ts-expect-error
+    (typeof t === "string") ? fromUuidSync(t)?.actor : t
+  );
+  targetList = targetList.map(t => (t instanceof Token) || (t instanceof TokenDocument) ? t.actor : t);
+  targetList = targetList.filter(t => t instanceof Actor);
+  let localTargets = targetList.filter(t => macroLocation === "local" || (t.isOwner && macroLocation === "mixed")).map(t => t.uuid);
+  let gmTargets = targetList.filter(t => (!t.isOwner && macroLocation === "mixed") || macroLocation === "GM").map(t => t.uuid);
+
+  debug("apply non-transfer effects: About to call gmaction ", activate, activityEffects, targets, localTargets, gmTargets)
+  if (gmTargets.length > 0) {
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: activityEffects, targetList: gmTargets, itemDuration: activity.item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
+  }
+  if (localTargets.length > 0) {
+    const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: activityEffects, itemDuration: activity.item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
+  }
+}
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
@@ -2092,7 +2160,7 @@ export function daeInitActions() {
   Hooks.on("preUpdateItem", (item, data, options, userId) => preUpdateStatusEffects(item, options, userId));
   Hooks.on("preDeleteItem", (item, options, userId) => preUpdateStatusEffects(item, options, userId));
   Hooks.on("preCreateItem", (item, data, options, userId) => preUpdateStatusEffects(item, options, userId));
-  Hooks.on("createActiveEffect", (effect,  options, userId) => updateStatusEffects(effect, options, userId));
+  Hooks.on("createActiveEffect", (effect, options, userId) => updateStatusEffects(effect, options, userId));
   Hooks.on("updateActiveEffect", (effect, data, options, userId) => updateStatusEffects(effect, options, userId));
   Hooks.on("deleteActiveEffect", (effect, options, userId) => updateStatusEffects(effect, options, userId));
   Hooks.on("updateItem", (item, data, options, userId) => updateStatusEffects(item, options, userId));
@@ -2142,8 +2210,8 @@ function preUpdateStatusEffects(doc, options, userId) {
     //@ts-expect-error
     currentStatuses = currentStatuses.union(effect.statuses);
   }
-  options["dae"] = foundry.utils.mergeObject(options.dae ?? {},  {currentStatuses: Array.from(currentStatuses)} );
-  return true;  
+  options["dae"] = foundry.utils.mergeObject(options.dae ?? {}, { currentStatuses: Array.from(currentStatuses) });
+  return true;
 }
 
 async function updateStatusEffects(doc, options, userId) {
@@ -2168,8 +2236,8 @@ async function updateStatusEffects(doc, options, userId) {
     let statusesToAdd = new Set(effect.statuses);
     if (effect.flags?.dae?.autoCreated) {
       const statusEffect = CONFIG.statusEffects.find(se => se._id === effect.id);
-     // Don't count self in the new statuses for auto created 
-     if (statusEffect) statusesToAdd.delete(statusEffect.id);
+      // Don't count self in the new statuses for auto created 
+      if (statusEffect) statusesToAdd.delete(statusEffect.id);
     }
     //@ts-expect-error
     newStatuses = newStatuses.union(statusesToAdd);
@@ -2177,12 +2245,14 @@ async function updateStatusEffects(doc, options, userId) {
   //@ts-expect-error
   for (let status of newStatuses.difference(currentStatuses)) {
     if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status)) continue;
+    if (!CONFIG.statusEffects.find(se => se.id === status)) continue;
     // statuses not present on the actor that should be
-    await toggleActorStatusEffect(actor, status, { active: true, flags: {dae: {autoCreated: true}} });
+    await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
   }
   //@ts-expect-error
   for (let status of currentStatuses.difference(newStatuses)) {
     if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status)) continue;
+    if (!CONFIG.statusEffects.find(se => se.id === status)) continue;
     // statuses present on the actor that should not be
     await toggleActorStatusEffect(actor, status, { active: false });
   }
@@ -2218,6 +2288,7 @@ function attachItemSheetHeaderButton(app, buttons) {
       label: DIMtitleText,
       class: 'dae-dimeditor',
       icon: 'fas fa-file-pen',
+      tooltip: DIMtitle,
       onclick: ev => { new DIMEditor(app.document, {}).render(true); }
     });
   }
@@ -2425,9 +2496,9 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
   }
   // Remove the existing effects unless the status effect is forced active
   if (existing.length) {
-      if (options.active) return true;
-      await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(e => e.id ?? ""));
-      return false;
+    if (options.active) return true;
+    await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(e => e.id ?? ""));
+    return false;
   }
   // Create a new effect unless the status effect is forced inactive
   if (!options.active && (options.active !== undefined)) return false;
@@ -2437,7 +2508,7 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
   if (options.enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": options.enableCondition });
   if (options.overlay) effect.updateSource({ "flags.core.overlay": true });
   const flags = foundry.utils.mergeObject(effect.flags ?? {}, options.flags ?? {});
-  effect.updateSource({flags});
+  effect.updateSource({ flags });
   //@ts-expect-error
   const returnEffect = await ActiveEffect.implementation.create(effect, { parent: actor, keepId: true });
   return returnEffect ? [returnEffect] : false;

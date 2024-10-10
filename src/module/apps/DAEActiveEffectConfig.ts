@@ -63,11 +63,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       const ceList = ceInterface.findEffects().map(ce => ({ id: `z${ce.flags["dfreds-convenient-effects"].ceEffectId}`, name: `${ce.name} (CE)` }));
       // efl = efl.concat(ceList);
     }
-    //@ts-expect-error
-    if (foundry.utils.isNewerVersion(game.modules.get("dfreds-convenient-effects")?.version, "7.0"))
-      efl = efl.sort((a, b) => a.id < b.id ? -1 : 1);
-    else
-      efl = efl.sort((a, b) => a.name < b.name ? -1 : 1);
+    efl = efl.sort((a, b) => a.name < b.name ? -1 : 1);
     efl.forEach(se => {
       this.statusEffectList[se.id] = se.name;
     });

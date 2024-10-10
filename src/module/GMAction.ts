@@ -320,7 +320,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate, targetList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
+export async function applyActiveEffects({ activate = true, targetList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
   // debug("apply active effect ", activate, tokenList, foundry.utils.duplicate(activeEffects), itemDuration)
   for (let targetId of targetList) {
     //@ts-expect-error
