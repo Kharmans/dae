@@ -2,7 +2,7 @@
   "id": "dae",
   "title": "Dynamic effects using Active Effects (DAE)",
   "description": "Replacement for dynamic effects",
-  "version": "11.3.64",
+  "version": "12.0.0",
   "authors": [
     {
       "name": "tposney",
@@ -101,9 +101,9 @@
     "maximum": "12.999"
   },
   "url": "https://gitlab.com/tposney/dae",
-  "manifest": "https://gitlab.com/tposney/dae/raw/dndv3/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/dndv3/package/dae-v11.3.64.zip",
-  "readme": "https://gitlab.com/tposney/dae/-/blob/dndv3/Readme.md",
+  "manifest": "https://gitlab.com/tposney/dae/raw/dndv4/package/module.json",
+  "download": "https://gitlab.com/tposney/dae/raw/dndv4/package/dae-v12.0.0.zip",
+  "readme": "https://gitlab.com/tposney/dae/-/blob/dndv4/Readme.md",
   "changelog": "https://gitlab.com/tposney/dae/-/blob/dndv3/Changelog.md",
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
   "relationships": {
@@ -112,9 +112,9 @@
         "id": "dnd5e",
         "type": "system",
         "compatibility": {
-          "minimum": "3.1",
-          "verified": "3.3.99",
-          "maximum": "3.9.99"
+          "minimum": "3.0",
+          "verified": "3",
+          "maximum": "4.9.99"
         }
       }
     ],
