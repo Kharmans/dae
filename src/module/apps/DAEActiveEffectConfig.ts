@@ -30,7 +30,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   constructor(object: any = {}, options = {}) {
     super(object, options);
     this.tokenMagicEffects = {};
-    if (game.modules.get("tokenmagic")?.active) {
+    if (game.modules.get("tokenmagic")?.active && globalThis.TokenMagic) {
       globalThis.TokenMagic.getPresets().forEach(preset => {
         this.tokenMagicEffects[preset.name] = preset.name;
       })
