@@ -1,3 +1,9 @@
+### 12.0.1
+* Latest sequencer seems to break Token Magic FX and dae's test for TMFX also then breaks since TMFX is active but broken.
+
+### 12.0.0
+* Marked as dnd5e v4 compatible
+* Some changes required to support midi with dnd5e v4
 ### 11.3.65
 * Fix for error being thrown in change hook when a condition was not found
 * Restore sorting of effects list when adding a macro.statusEffect

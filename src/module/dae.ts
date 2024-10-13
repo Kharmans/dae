@@ -2013,7 +2013,7 @@ export function daeReadyActions() {
 export function localDeleteFilters(tokenId: string, filterName: string) {
   let tokenMagic = globalThis.TokenMagic;
   let token = canvas.tokens?.get(tokenId);
-  if (token) tokenMagic.deleteFilters(token, filterName);
+  if (token) tokenMagic?.deleteFilters(token, filterName);
 }
 
 export var tokenizer;
