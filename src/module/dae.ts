@@ -191,10 +191,12 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       console.warn(`dae | @data.key is deprecated, use @key instead (${c.effect.name} (${c.effect.id})${parentInfo} has value ${c.value})`);
       c.value = c.value.replace(/@data./g, "@");
     }
-    if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
-      c.value = daeSystemClass.safeEvalExpression(c.value, this.getRollData())
-    }
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
+    if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
+      const conditionData = this.getRollData();
+      foundry.utils.mergeObject(conditionData, { stackCount, effect: c.effect.toObject() });   //shouldn't be needed separately /*, effectId: c.effect.id, effectUuid: c.effect.uuid,origin: c.effect.origin*/
+      c.value = daeSystemClass.safeEvalExpression(c.value, conditionData);
+    }
     // let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
     //    let fieldType = "string";
     let field = c.key.startsWith("system.")
