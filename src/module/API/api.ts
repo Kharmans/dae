@@ -45,7 +45,7 @@ const API = {
     return actorFromUuid(uuid);
   },
   DAEfromUuid(uuid) {
-    console.warn("dae | Deprecation warning | DAEfromUuid is deprecated, use foundry.utils.fromUuidSync instead");
+    console.warn("dae | Deprecation warning | DAEfromUuid is deprecated, use fromUuidSync instead");
     //@ts-expect-error fromUuidSync
     return fromUuidSync(uuid);
   },
