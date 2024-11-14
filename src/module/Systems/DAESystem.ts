@@ -404,7 +404,9 @@ export class DAESystem {
     this.daeActionTypeKeys = [];
   }
   public static addDAEMetaData(activeEffectData, item, options) {
-    foundry.utils.setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
+    //@ts-expect-error
+    if (!fromUuidSync(item.uuid))
+      foundry.utils.setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
     foundry.utils.setProperty(activeEffectData, "flags.dae.transfer", false);
     if (options.metaData) foundry.utils.mergeObject(activeEffectData, options.metaData);
 

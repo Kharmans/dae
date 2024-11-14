@@ -1,4 +1,4 @@
-import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface} from "./dae";
+import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface } from "./dae";
 import { warn, debug, error, debugEnabled } from "../dae";
 
 export class GMActionMessage {
@@ -320,8 +320,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate = true, targetList, activeEffects, itemDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
-  // debug("apply active effect ", activate, tokenList, foundry.utils.duplicate(activeEffects), itemDuration)
+export async function applyActiveEffects({ activate = true, targetList, activeEffects, effectDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
   for (let targetId of targetList) {
     //@ts-expect-error
     let targetActor = fromUuidSync(targetId);
@@ -331,7 +330,7 @@ export async function applyActiveEffects({ activate = true, targetList, activeEf
     // TODO workout what to do if activate is false? does not seem to be used anywhere to force delete effects
     if (activate) {
       let dupEffects = foundry.utils.duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true);
-      dupEffects.forEach(effectData => effectData.changes.forEach(change => {if (change.key === "StatusEffect") change.key = "macro.StatusEffect"}) )
+      dupEffects.forEach(effectData => effectData.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StatusEffect" }))
       for (let aeData of dupEffects) {
         foundry.utils.setProperty(aeData, "flags.dae.actor", targetActor.uuid);
         if (aeData.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
@@ -376,8 +375,8 @@ export async function applyActiveEffects({ activate = true, targetList, activeEf
           aeData.duration.startTurn = game.combat?.turn;
         } else { // no specific duration on effect use spell duration
           const inCombat = targetActor.inCombat;
-          const convertedDuration = convertDuration(itemDuration, inCombat);
-          debug("converted duration ", convertedDuration, inCombat, itemDuration)
+          const convertedDuration = convertDuration(effectDuration, inCombat);
+          debug("converted duration ", convertedDuration, inCombat, effectDuration)
           if (convertedDuration.type === "seconds") {
             aeData.duration.seconds = convertedDuration.seconds;
             aeData.duration.startTime = game.time.worldTime;
@@ -422,12 +421,10 @@ export async function applyActiveEffects({ activate = true, targetList, activeEf
               newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
               const effects = await sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], { metaData });
               if (effects) for (let effect of effects) {
-                if (effect.addDependent) {
-                  //@ts-expect-error
-                  const origin = fromUuidSync(effect.origin);
-                  //@ts-expect-error
-                  if (origin instanceof ActiveEffect && effect.addDependent) await origin.addDependent(effect);
-                }
+                //@ts-expect-error
+                const origin = fromUuidSync(effect.origin);
+                //@ts-expect-error
+                if (origin instanceof ActiveEffect && origin.addDependent) await origin.addDependent(effect);
               }
             }
 
@@ -470,64 +467,64 @@ export async function applyActiveEffects({ activate = true, targetList, activeEf
   };
 }
 
-export function convertDuration(itemDuration: { units: string, value: number }, inCombat) {
+export function convertDuration(durationData: { units: string, value: number }, inCombat) {
   // TODO rewrite this abomination
   const useTurns = inCombat && timesUpInstalled;
-  if (!itemDuration || (itemDuration.units === "second" && itemDuration.value < CONFIG.time.roundTime)) { // no duration or very short (less than 1 round)
+  if (!durationData || (durationData.units === "second" && durationData.value < CONFIG.time.roundTime)) { // no duration or very short (less than 1 round)
     if (useTurns)
       return { type: "turns", seconds: 0, rounds: 0, turns: 1 };
     else
-      return { type: "seconds", seconds: Math.min(1, itemDuration.value), rounds: 0, turns: 0 };
+      return { type: "seconds", seconds: Math.min(1, durationData.value), rounds: 0, turns: 0 };
   }
 
   if (!simpleCalendarInstalled) {
-    switch (itemDuration.units) {
+    switch (durationData.units) {
       case "turn":
-      case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value };
+      case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: durationData.value };
       case "round":
-      case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0 }
+      case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: durationData.value * CONFIG.time.roundTime, rounds: durationData.value, turns: 0 }
       case "second":
       case "seconds":
-        return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0 }
+        return { type: useTurns ? "turns" : "seconds", seconds: durationData.value, rounds: durationData.value / CONFIG.time.roundTime, turns: 0 }
       case "minute":
       case "minutes":
-        let durSeconds = itemDuration.value * 60
+        let durSeconds = durationData.value * 60
         if (durSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0 };
         } else {
           return { type: "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0 };
         }
       case "hour":
-      case "hours": return { type: "seconds", seconds: itemDuration.value * 60 * 60, rounds: 0, turns: 0 };
+      case "hours": return { type: "seconds", seconds: durationData.value * 60 * 60, rounds: 0, turns: 0 };
       case "day":
-      case "days": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24, rounds: 0, turns: 0 };
+      case "days": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24, rounds: 0, turns: 0 };
       case "week":
-      case "weeks": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 7, rounds: 0, turns: 0 };
+      case "weeks": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 7, rounds: 0, turns: 0 };
       case "month":
-      case "months": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0 };
+      case "months": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0 };
       case "year":
-      case "years": return { type: "seconds", seconds: itemDuration.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0 };
+      case "years": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0 };
       case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
       case "spec": return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
       default:
-        warn("dae | unknown time unit found", itemDuration.units);
+        warn("dae | unknown time unit found", durationData.units);
         return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
     }
   } else {
-    switch (itemDuration.units) {
+    switch (durationData.units) {
       case "perm":
         return { type: "seconds", seconds: undefined, rounds: undefined, turns: undefined };
       case "turn":
-      case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: itemDuration.value };
+      case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: durationData.value };
       case "round":
-      case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value * CONFIG.time.roundTime, rounds: itemDuration.value, turns: 0 }
+      case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: durationData.value * CONFIG.time.roundTime, rounds: durationData.value, turns: 0 }
       case "second":
-        return { type: useTurns ? "turns" : "seconds", seconds: itemDuration.value, rounds: itemDuration.value / CONFIG.time.roundTime, turns: 0 };
+        return { type: useTurns ? "turns" : "seconds", seconds: durationData.value, rounds: durationData.value / CONFIG.time.roundTime, turns: 0 };
       case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
       case "spec": return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
       default:
         let interval = {}
-        interval[itemDuration.units] = itemDuration.value;
+        interval[durationData.units] = durationData.value;
         const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - game.time.worldTime;
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };

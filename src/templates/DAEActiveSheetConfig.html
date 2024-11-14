@@ -39,6 +39,7 @@
       <label>{{ localize "EFFECT.Disabled" }}</label>
       <input type="checkbox" name="disabled" {{ checked effect.disabled }} />
     </div>
+    {{#unless isEnchantment}}
     {{#if (and isItemEffect (not isConditionalActivationEffect))}}
     <div class="form-group dae-form-group effectTransfer">
       <label>{{ localize "dae.transfer.Name" }}</label>
@@ -48,6 +49,8 @@
       {{ localize "dae.transfer.Hint" }}
     </p>
     {{/if}}
+    {{/unless}}
+    
 
     {{#unless effect.transfer}}
     <div class="form-group dae-form-group">

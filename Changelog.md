@@ -1,9 +1,15 @@
+### 12.0.2
+* Fix for not picking up activity duration when applying effects
+* Fix for not correctly dealing with enchantments due to dnd5e v4 change from flags.dnd5e.type to object.type.
+* Include changes from merge request 117 (add stackCount and effectData in safeEval for applyDaEEffects).
+
 ### 12.0.1
 * Latest sequencer seems to break Token Magic FX and dae's test for TMFX also then breaks since TMFX is active but broken.
 
 ### 12.0.0
 * Marked as dnd5e v4 compatible
 * Some changes required to support midi with dnd5e v4
+
 ### 11.3.65
 * Fix for error being thrown in change hook when a condition was not found
 * Restore sorting of effects list when adding a macro.statusEffect

@@ -1,6 +1,6 @@
 
 import { ArrayField, BooleanField, MODULE_ID, NumberField, ObjectField, SchemaField, StringField, daeSpecialDurations, debug, debugEnabled, error, i18n, warn } from "../../dae";
-import { addAutoFields, DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
+import { addAutoFields, DAEActiveEffectConfig, isEnchantment } from "../apps/DAEActiveEffectConfig";
 import { DAESetupComplete, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, enumerateBaseValues, getSelfTarget, geti18nOptions, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem";
 
@@ -1567,7 +1567,7 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
 function determineSuppression() {
   this.isSuppressed = false;
   // if (this.disabled) return; dnd5e does not do this check
-  if (this.getFlag("dnd5e", "type") === "enchantment") return;
+  if (isEnchantment(this)) return;
 
   // DND5e currently does not work with unlinked tokens and suppression determination so this is overtide
   // TODO make this a WRAPPER when dnd5e fixes the unlinked token bug

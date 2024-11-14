@@ -78,7 +78,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       }
     }
 
-    if (atlActive && object.flags?.dnd5e?.type !== "enchantment") {
+    if (atlActive && !isEnchantment(object)) {
       this.ATLPresets = {};
       //@ts-expect-error
       game.settings.get("ATL", "presets")?.forEach(preset => this.ATLPresets[preset.name] = preset.name);
@@ -104,7 +104,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         mods[em._fieldSpec] = em._label;
         return mods;
       }, this.validFields);
-    if (this.object.flags.dnd5e?.type !== "enchantment") {
+    if (!isEnchantment(this.object)) {
       for (let field of otherFields) {
         this.validFields[field] = field;
       }
@@ -159,7 +159,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (this.object.parent instanceof CONFIG.Actor.documentClass || this.object instanceof CONFIG.Actor.documentClass) {
       this.validSpecsToUse = ValidSpec.actorSpecs[this.object.parent.type]
     }
-    if (this.object.flags?.dnd5e?.type === "enchantment") {
+    if (isEnchantment(this.object)) {
       this.object.transfer = false;
       if (this.object.isAppliedEnchantment) {
         this.validSpecsToUse = ValidSpec.itemSpecs[this.object.parent.type] ?? ValidSpec.itemSpecs["union"];
@@ -184,7 +184,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         mods[em._fieldSpec] = em._label;
         return mods;
       }, this.validFields);
-    if (this.object.flags.dnd5e?.type !== "enchantment") {
+    if (!isEnchantment(this.object)) {
       for (let field of otherFields) {
         this.validFields[field] = field;
       }
@@ -273,7 +273,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     data.midiActive = globalThis.MidiQOL !== undefined;
     //@ts-expect-error
     data.useIcon = game.release.generation < 12;
-    data.isEnchantment = this.object.getFlag(game.system.id, "type") === "enchantment";
+    data.isEnchantment = isEnchantment(this.object);
     data.isConditionalActivationEffect = this.object.parent.name === i18n("dae.ConditionalEffectsItem");
     if (data.isConditionalActivationEffect) {
       data.transfer = false;
@@ -397,8 +397,9 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     // fixed for very old items
     if (this.object.origin?.includes("OwnedItem.")) data.origin = this.object.origin.replace("OwnedItem.", "Item.");
     if (data.flags?.dae?.enableCondition?.length > 0) data.transfer = false;
-    if (data.transfer && this.object.getFlag(game.system.id, "type") !== "enchantment") data.origin = this.object.parent?.uuid;
+    if (data.transfer && !isEnchantment(this.object)) data.origin = this.object.parent?.uuid;
     else delete data.origin;
+    if (isEnchantment(this.object)) data.transfer = false;
     data.statuses ??= [];
 
     foundry.utils.setProperty(data, "flags.dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
@@ -417,7 +418,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         }
       } else if (this.object.parent.isOwned) formData.duration.startTime = null;
     }
-    if (foundry.utils.getProperty(formData, `flags.${game.system.id}.type`) === "enchantment") formData.transfer = false;
+    if (isEnchantment(formData)) formData.transfer = false;
     await this.object.update(formData);
   }
 
@@ -453,3 +454,14 @@ Hooks.once("setup", () => {
       canConfigure: true
     });
 })
+
+export function isEnchantment(effect: ActiveEffect): boolean {
+  //@ts-expect-error
+  if (foundry.utils.isNewerVersion(game.system.version, "3.9.99")) {
+    //@ts-expect-error
+    return effect.type === "enchantment";
+  } else {
+    //@ts-expect-error
+    return effect.flags?.dnd5e?.type === "enchantment";
+  }
+}

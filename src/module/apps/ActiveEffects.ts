@@ -220,7 +220,7 @@ export class ActiveEffects extends FormApplication {
           return await ActiveEffect.implementation.create({
             name: object.name,
             icon: object.img,
-            "flags.dnd5e.type": "enchantment",
+            type: "enchantment",
           }, {parent: object});
         };
         AEDATA = {

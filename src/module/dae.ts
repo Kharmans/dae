@@ -6,6 +6,7 @@ import { ValidSpec } from "./Systems/DAESystem";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e";
 import { DAESystemSW5E } from "./Systems/DAEsw5e";
 import { DIMEditor } from "./apps/DIMEditor";
+import { isEnchantment } from "./apps/DAEActiveEffectConfig";
 
 
 let templates = {};
@@ -191,10 +192,12 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       console.warn(`dae | @data.key is deprecated, use @key instead (${c.effect.name} (${c.effect.id})${parentInfo} has value ${c.value})`);
       c.value = c.value.replace(/@data./g, "@");
     }
-    if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
-      c.value = daeSystemClass.safeEvalExpression(c.value, this.getRollData())
-    }
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
+    if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
+      const conditionData = this.getRollData();
+      foundry.utils.mergeObject(conditionData, {stackCount, effect: c.effect.toObject()})
+      c.value = daeSystemClass.safeEvalExpression(c.value, conditionData)
+    }
     // let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
     //    let fieldType = "string";
     let field = c.key.startsWith("system.")
@@ -666,8 +669,15 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
       if (debugEnabled > 0) warn("Blocking creation of duplcate effect", this, parent.effects?.find(ef => ef.id === data._idid));
       return result = false;
     }
-    if (!this.flags?.dae?.specialDuration) this.updateSource({ "flags.dae.specialDuration": [] });
-
+    if (!this.flags?.dae?.specialDuration) {
+      this.updateSource({ "flags.dae.specialDuration": [] });
+      foundry.utils.setProperty(data, "flags.dae.specialDuration", []);
+    }
+    //@ts-expect-error
+    if (game.release.generation >= 12 && data.flags?.core?.statusId !== undefined) {
+      delete data.flags.core.statusId;
+      this.updateSource({ "flags.core.-=statusId": null });
+    } 
     if (parent instanceof Actor) {
       let existingEffect: any;
       if (CONFIG.statusEffects.find(se => se._id === this.id))
@@ -1480,7 +1490,7 @@ export async function doActivityEffects(activity, activate, targets = undefined,
     fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: activity.item.uuid, context: {}
   }) {
   //@ts-expect-error
-  const activityEffects = activityEffectsUuids.map(aeUuid => fromUuidSync(aeUuid)).filter(ef => ef).map(ef=>ef.toObject());
+  const activityEffects = activityEffectsUuids.map(aeUuid => fromUuidSync(aeUuid) ?? activity.effects.find(ae => ae.effect.uuid === aeUuid)?.effect).filter(ef => ef).map(ef=>ef.toObject());
   return await applyActivityEffects(activity, activate, targets, activityEffects, options)
 }
 
@@ -1536,10 +1546,10 @@ export async function applyActivityEffects(activity, activate, targets, activity
 
   debug("apply non-transfer effects: About to call gmaction ", activate, activityEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0) {
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: activityEffects, targetList: gmTargets, itemDuration: activity.item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: activityEffects, targetList: gmTargets, effectDuration: activity.druation, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
   if (localTargets.length > 0) {
-    const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: activityEffects, itemDuration: activity.item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
+    const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: activityEffects, effectDuration: activity.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
   }
 }
 // Apply non-transfer effects to targets.
@@ -1552,14 +1562,14 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   let appliedEffects: any[] = [];
   switch (options.selfEffects) {
     case "selfEffectsAlways":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.[game.system.id]?.type !== "enchantment" && ae.flags?.dae?.selfTargetAlways).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !isEnchantment(ae.type) && ae.flags?.dae?.selfTargetAlways).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data
       });
       break;
     case "selfEffectsAll":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.[game.system.id]?.type !== "enchantment" && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !isEnchantment(ae.type) && (ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data;
@@ -1567,7 +1577,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
       break
     case "none":
     default:
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && ae.flags?.[game.system.id]?.type !== "enchantment" && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
+      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !isEnchantment(ae.type) && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
         const data = ae.toObject(false);
         foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent.uuid);
         return data;
@@ -1624,10 +1634,10 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
 
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0) {
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: appliedEffects, targetList: gmTargets, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: appliedEffects, targetList: gmTargets, effectDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
   if (localTargets.length > 0) {
-    const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: appliedEffects, itemDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
+    const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: appliedEffects, effectDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
   }
 }
 
@@ -1848,7 +1858,7 @@ export async function createItemHook(...args) {
   if (rewriteTransferOrigin) {
     const updates: any[] = [];
     for (let effect of item.effects) {
-      if (effect.transfer && effect.getFlag(game.system.id, "type") !== "enchantment") {
+      if (effect.transfer && !isEnchantment(effect.type)) {
         effect.origin = item.uuid;
         updates.push({ _id: effect._id, origin: item.uuid });
       }
@@ -1925,7 +1935,8 @@ export function preUpdateActorHook(candidate, updates, options, user) {
         sourceToken,
         targetActor,
         targetToken,
-        originItem
+        originItem,
+        macroItem: originItem
       };
       let macroText;
       if (onUpdate.macroName.startsWith("ItemMacro")) { // TODO Come back and make sure this is tagged to the effect
@@ -1955,7 +1966,7 @@ export function preUpdateActorHook(candidate, updates, options, user) {
         const args: any[] = ["onUpdateActor"].concat(onUpdate.args);
         args.push(lastArg);
         const character = undefined; // game.user?.character;
-        const scope = { args, lastArgValue: lastArg, item: originItem };
+        const scope = { args, lastArgValue: lastArg, item: originItem, macroItem: originItem };
         args.forEach(argString => {
           if (typeof argString === "string") {
             const parts = argString.split("=");
