@@ -419,7 +419,7 @@ export class DAESystem {
     //if (tokenOrActorRef instanceof Actor) actor = tokenOrActorRef;
     if (typeof (tokenOrActorRef) == 'string') {
       //@ts-expect-error
-      const doc = foundry.utils.fromUuidSync(tokenOrActorRef);
+      const doc = fromUuidSync(tokenOrActorRef);
       actor = doc.actor ?? doc;
       if (actor) value = foundry.utils.getProperty(actor, `system.${attribute}`) ?? null;
     }
