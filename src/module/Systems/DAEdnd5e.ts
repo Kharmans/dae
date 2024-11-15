@@ -336,9 +336,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // removed - required so that init.bonus can work (prepapreinitiative called after derived effects
     // specials["system.attributes.init.total"] = [new NumberField(), -1];
     // moved to base values - specials["system.attributes.init.bonus"] = [new StringField(), -1];
-    for (let abl of Object.keys(daeSystemClass.systemConfig.abilities)) {
-      specials[`system.abilities.${abl}.dc`] = [new NumberField(), -1];
-    }
+    // Can;t find a way to support this anymore in dnd5e v4
+    // for (let abl of Object.keys(daeSystemClass.systemConfig.abilities)) {
+    //   specials[`system.abilities.${abl}.dc`] = [new NumberField(), -1];
+    // }
 
     specials["system.traits.da.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.da.value"] = [new StringField(), -1];
@@ -1129,12 +1130,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         };
         return true;
 
-      case "system.abilities.str.dc":
-      case "system.abilities.dex.dc":
-      case "system.abilities.int.dc":
-      case "system.abilities.wis.dc":
-      case "system.abilities.cha.dc":
-      case "system.abilities.con.dc":
+      // case "system.abilities.str.dc":
+      // case "system.abilities.dex.dc":
+      // case "system.abilities.int.dc":
+      // case "system.abilities.wis.dc":
+      // case "system.abilities.cha.dc":
+      // case "system.abilities.con.dc":
       case "system.bonuses.spell.dc":
       case "system.attributes.powerForceLightDC":
       case "system.attributes.powerForceDarkDC":
@@ -1164,17 +1165,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           foundry.utils.setProperty(actor, change.key, Number(current) + value);
         } else return;
 
-        // Spellcasting DC
-        const ad = actor.system;
-        const spellcastingAbility = ad.abilities[ad.attributes.spellcasting];
-        ad.attributes.spelldc = spellcastingAbility ? spellcastingAbility.dc : 8 + ad.attributes.prof;
-
-        if (actor.items) {
-          actor.items.forEach(item => {
-            item.getSaveDC();
-            item.getAttackToHit();
-          });
-        };
+        // Spellcasting DC - can't see how to implement this anymore
+        // const ad = actor.system;
+        // const spellcastingAbility = ad.abilities[ad.attributes.spellcasting];
+        // ad.attributes.spelldc = spellcastingAbility ? spellcastingAbility.dc : 8 + ad.attributes.prof;
         return true;
 
       case "flags.dae":
@@ -1241,9 +1235,9 @@ const getTargetType = field => {
 
 function _baseItemApplyEffects() {
   if (this.isOwned)
-  return doItemApplyEffects.bind(this)(undefined, [...ValidSpec.itemSpecs["union"].derivedSpecKeys, ...ValidSpec.itemSpecs["union"].excludeKeys], {});
-else // item is a sidebar.compendium item so don't ignore anything
-  return doItemApplyEffects.bind(this)(undefined, undefined, {});
+    return doItemApplyEffects.bind(this)(undefined, [...ValidSpec.itemSpecs["union"].derivedSpecKeys, ...ValidSpec.itemSpecs["union"].excludeKeys], {});
+  else // item is a sidebar.compendium item so don't ignore anything
+    return doItemApplyEffects.bind(this)(undefined, undefined, {});
 }
 function _itemApplyActiveEffects() {
   return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].derivedSpecKeys, ValidSpec.itemSpecs["union"].excludeKeys, this.overrides ?? {});
@@ -1367,12 +1361,10 @@ function prepareData(wrapped) {
     this.statuses ??= new Set();
     // Identify which special statuses had been active
     const specialStatuses = new Map();
-    if (foundry.utils.isNewerVersion(game.version, "11.293")) {
-      for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
-        specialStatuses.set(statusId, this.statuses.has(statusId));
-      }
-      this.statuses.clear(); // need to do this here since core foundry does this in applyActiveEffects, but we do multiple calls to applyEffects
+    for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
+      specialStatuses.set(statusId, this.statuses.has(statusId));
     }
+    this.statuses.clear(); // need to do this here since core foundry does this in applyActiveEffects, but we do multiple calls to applyEffects
     if (this.system.traits) {
       for (let key of ["da", "ida", "idr", "idv", "idi"]) {
         if (!(this.system.traits[key]?.value instanceof Set)) {
@@ -1386,13 +1378,8 @@ function prepareData(wrapped) {
     this.overrides = {};
     // Call the original prepare data - with foundry's apply effects replaced by dae's
     wrapped();
-    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      const hasHeavy = this.items.some(i => i.system.equipped && i.system.properties.has("stealthDisadvantage"));
-      if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
-    } else {
-      const hasHeavy = this.items.some(i => i.system.equipped && i.system.stealth);
-      if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
-    }
+    const hasHeavy = this.items.some(i => i.system.equipped && i.system.properties.has("stealthDisadvantage"));
+    if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
     // Extra pass of applying effects after prepare data has run to support referencing derived data
     applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.actorSpecs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
 
@@ -1403,25 +1390,22 @@ function prepareData(wrapped) {
     const checkBonus = simplifyBonus(globalBonuses?.check, rollData);
     if (this._prepareInitiative && this.system?.attributes)
       this._prepareInitiative(rollData, checkBonus);
-    if (foundry.utils.isNewerVersion(game.version, "11.293")) {
-      // Apply special statuses that changed to active tokens
-      let tokens;
-      for (const [statusId, wasActive] of specialStatuses) {
-        const isActive = this.statuses.has(statusId) && !this.system.traits.ci.value.has(statusId);
-        if (isActive === wasActive) continue;
-        if (!tokens) tokens = this.getActiveTokens();
-        for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
-      }
+    // Apply special statuses that changed to active tokens
+    let tokens;
+    for (const [statusId, wasActive] of specialStatuses) {
+      const isActive = this.statuses.has(statusId) && !this.system.traits.ci.value.has(statusId);
+      if (isActive === wasActive) continue;
+      if (!tokens) tokens = this.getActiveTokens();
+      for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
     }
     if (debugEnabled > 1) debug("prepare data: after passes", this);
 
-    //@ts-expect-error
-    if (foundry.utils.isNewerVersion(game.system.version, "3.2.0")) {
-      // Apply effects to items - moved after the rest of actor prepare data instead of default dnd5e behaviour
-      for (let item of this.items) {
-        _itemApplyActiveEffects.bind(item)();
-      }
+    // Apply effects to items - moved after the rest of actor prepare data instead of default dnd5e behaviour
+    for (let item of this.items) {
+      _itemApplyActiveEffects.bind(item)();
     }
+
+    // this._prepareSpellcasting();
     //@ts-expect-error Apply condition immunities
     if (game.release.generation >= 12) {
       const conditionImmunities = this.system.traits?.ci?.value;

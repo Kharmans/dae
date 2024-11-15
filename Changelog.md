@@ -1,3 +1,6 @@
+### 12.0.3
+* Removed system.abilities.str/dex/etc.dc as a modifiable stat - can't find a way to make it work.
+
 ### 12.0.2
 * Fix for not picking up activity duration when applying effects
 * Fix for not correctly dealing with enchantments due to dnd5e v4 change from flags.dnd5e.type to object.type.
