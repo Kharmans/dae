@@ -1,3 +1,7 @@
+### 11.3.66
+* Default stakcable mode change to multi instead of don't stack by name/origin. This means that effects from the SRD will behave as intended, with multiple applications. 
+  - When creating effects you will need to set the stacking option as required.
+  
 ### 11.3.65
 * Fix for error being thrown in change hook when a condition was not found
 * Restore sorting of effects list when adding a macro.statusEffect

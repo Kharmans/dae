@@ -409,6 +409,7 @@ export class DAESystem {
     if (options.metaData) foundry.utils.mergeObject(activeEffectData, options.metaData);
 
   }
+
   public static getAttributeValue(documentRef: string, attribute: string) {
     let actor;
     let value = "";   //what should be the default? null ?
@@ -432,6 +433,7 @@ export class DAESystem {
     }
     return value;
   }
+  
   public static safeEval(expression: string, sandbox: any, onErrorReturn: any | undefined = undefined) {
     let result;
     const preSetupError = "MidiQOL or fromUuidSync used before setup complete";

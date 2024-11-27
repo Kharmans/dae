@@ -602,7 +602,7 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
     if (!(parent instanceof CONFIG.Actor.documentClass)) return;
     if (!foundry.utils.getProperty(this, "flags.dae.stackable")) { // Check whether this should be multi by default?
       if (effectData.origin === parent?.uuid) this.updateSource({ "flags.dae.stackable": "multi" })
-      else this.updateSource({ "flags.dae.stackable": "noneName" })
+      else this.updateSource({ "flags.dae.stackable": "multi" })
     }
     const stackable = foundry.utils.getProperty(this, "flags.dae.stackable");
     if (["noneName", "none", "noneNameOnly"].includes(stackable)) {
