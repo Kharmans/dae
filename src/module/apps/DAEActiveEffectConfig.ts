@@ -193,9 +193,12 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     this.daeFieldBrowser.init();
     if (foundry.utils.getProperty(this.object, "flags.dae.specialDuration") === undefined)
       foundry.utils.setProperty(this.object, "flags.dae.specialDuration", []);
-    if (foundry.utils.getProperty(this.object, "flags.dae.stackable") === undefined)
-      foundry.utils.setProperty(this.object, "flags.dae.stackable", "noneName");
+
     const data: any = await super.getData(options);
+    if (!foundry.utils.getProperty(this.object, "flags.dae.stackable")) {
+    foundry.utils.setProperty(this.object, "flags.dae.stackable", "multi");
+    foundry.utils.setProperty(data, "effect.flags.dae.stackable", "multi");
+    }
     //@ts-expect-error
     data.preV12 = game.release.generation <= 11;
     if (data.preV12) {

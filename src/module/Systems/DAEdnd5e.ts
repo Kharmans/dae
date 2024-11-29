@@ -1405,13 +1405,26 @@ function prepareData(wrapped) {
       _itemApplyActiveEffects.bind(item)();
     }
 
-    // this._prepareSpellcasting();
-    //@ts-expect-error Apply condition immunities
-    if (game.release.generation >= 12) {
-      const conditionImmunities = this.system.traits?.ci?.value;
-      if (conditionImmunities) {
-        for (const condition of conditionImmunities) this.statuses.delete(condition);
+    // Add in dependent condtions
+    /* for (let effect of this.allApplicableEffects()) {
+      if (!effect.active || effect.flags?.dae?.autoCreated) continue;
+      if (effect.statuses.size > 0) this.statuses = this.statuses.union(effect.statuses);
+    }
+    */
+    // remove disabled conditions
+    /*
+    for (let status of this.statuses) {
+      const statusEffect = CONFIG.statusEffects.find(s => s.id === status);
+      if (statusEffect) {
+        const effect = this.effects.get(statusEffect.id);
+        if (effect && !effect?.active) this.statuses.delete(status);
+        // if (this.effects.get(statusEffect.id)?.disabled) this.statuses.delete(status);
       }
+    }    
+    */
+    const conditionImmunities = this.system.traits?.ci?.value;
+    if (conditionImmunities) {
+      for (const condition of conditionImmunities) this.statuses.delete(condition);
     }
   } catch (err) {
     console.error("Could not prepare data ", this.name, err);

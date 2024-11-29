@@ -411,20 +411,26 @@ export class DAESystem {
     if (options.metaData) foundry.utils.mergeObject(activeEffectData, options.metaData);
 
   }
-  public static getAttributeValue(tokenOrActorRef: string, attribute: string) {
+  public static getAttributeValue(documentRef: string, attribute: string) {
     let actor;
-    let value = "";   //what should be the default? null ?
-    //discussion: Needed or not?
-    //if (tokenOrActorRef instanceof Token) actor = tokenOrActorRef.actor; 
-    //if (tokenOrActorRef instanceof Actor) actor = tokenOrActorRef;
-    if (typeof (tokenOrActorRef) == 'string') {
+    let value = "";
+    if (typeof (documentRef) == 'string') {
+      function getActor(doc, nesting = 0, maxDepth = 3) {
+        nesting++;
+        if(nesting > maxDepth) return undefined;
+
+        if(doc instanceof Actor) return doc;
+        else if(doc.actor && (doc instanceof Token || doc instanceof Item)) return doc.actor;
+        else if(doc.parent && doc instanceof ActiveEffect) return getActor(doc.parent, nesting)
+        else return undefined;
+      }
       //@ts-expect-error
-      const doc = fromUuidSync(tokenOrActorRef);
-      actor = doc.actor ?? doc;
-      if (actor) value = foundry.utils.getProperty(actor, `system.${attribute}`) ?? null;
+      const doc = fromUuidSync(documentRef);
+      actor = getActor(doc);
+      if (actor) value = foundry.utils.getProperty(actor, `${attribute}`) ?? null;
     }
     return value;
-  }
+}
   public static safeEval(expression: string, sandbox: any, onErrorReturn: any | undefined = undefined) {
     let result;
     const preSetupError = "MidiQOL or fromUuidSync used before setup complete";

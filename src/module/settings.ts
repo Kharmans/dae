@@ -12,15 +12,6 @@ export const registerSettings = async function () {
     config: true,
     onChange: fetchParams
   });
-  game.settings.register("dae", "rewriteTransferOrigin", {
-    name: "dae.rewriteTransferOrigin.Name",
-    hint: "dae.rewriteTransferOrigin.Hint",
-    scope: "world",
-    default: true,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
 
   game.settings.register("dae", "noDupDamageMacro", {
     name: "dae.noDupDamageMacro.Name",

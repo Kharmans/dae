@@ -1,3 +1,10 @@
+### 12.0.4
+* Added deprecation warning to field description for mapped fields.
+* Rewrote dependent conditions code which should resolve the oustanding errors
+* Removed rewrite transfer origin setting as it conflicts with dnd5e too much.
+* Default for created effects is now stacking of "multi" rather than don't stack by name and oprigin. This should resolve some cases where effects did not stack and were expected to and aligns with the default foundry behaviour when creating effects.
+* Effects applied from an activity to a target actor will have disabled set to false. This aligns with dnd5e behaviour and will allow SRD Items to work without change.
+
 ### 12.0.3
 * Removed system.abilities.str/dex/etc.dc as a modifiable stat - can't find a way to make it work.
 

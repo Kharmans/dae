@@ -36,7 +36,6 @@ export var needStringNumericValues;
 export var actionQueue;
 export var linkedTokens;
 export var CECustomEffectsItemUuid: string | undefined;
-export var rewriteTransferOrigin;
 export var DAESetupComplete;
 export var DAEReadyComplete;
 export var dependentConditions;
@@ -195,7 +194,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
     const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
     if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
       const conditionData = this.getRollData();
-      foundry.utils.mergeObject(conditionData, {stackCount, effect: c.effect.toObject()})
+      foundry.utils.mergeObject(conditionData, { stackCount, effect: c.effect.toObject() })
       c.value = daeSystemClass.safeEvalExpression(c.value, conditionData)
     }
     // let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
@@ -546,7 +545,7 @@ function createActiveEffectHook(...args) {
   if (!(tokens[0] instanceof Token)) return;
   const token: Token = tokens[0];
   if (effect.determindSuppression) effect.determineSuppression();
-  if (effect.changes && !effect.disabled && !effect.isSuppressed) {
+  if (effect.changes && effect.active) {
     let changeLoop = async () => {
       try {
         const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
@@ -601,10 +600,9 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
 
     context.deleted = false;
     if (!(parent instanceof CONFIG.Actor.documentClass)) return;
-    if (!foundry.utils.getProperty(this, "flags.dae.stackable")) { // Check whether this should be multi by default?
-      if (effectData.origin === parent?.uuid) this.updateSource({ "flags.dae.stackable": "multi" })
-      else this.updateSource({ "flags.dae.stackable": "noneName" })
-    }
+    // if (!foundry.utils.getProperty(this, "flags.dae.stackable")) { // Check whether this should be multi by default?
+    //  this.updateSource({ "flags.dae.stackable": "multi" })
+    //}
     const stackable = foundry.utils.getProperty(this, "flags.dae.stackable");
     if (["noneName", "none", "noneNameOnly"].includes(stackable)) {
       if (!parent) return result = true;
@@ -655,18 +653,21 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
   }
 }
 
-async function _preCreateActiveEffect(wrapped, data, options, user) {
-  if (debugEnabled > 0) warn("_preCreateActiveEffect", this, data, options, user);
+async function _preCreateActiveEffectIncrement(data, options, user) {
+  if (debugEnabled > 0)
+    warn("_preCreateActiveEffect", this, data, options, user);
   // Make changes to the effect data as needed
   let result = true;
   try {
-    if (options.isUndo) return result = true;
+    if (options.isUndo)
+      return result = true;
     const parent = this.parent;
-    if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/) return result = true;
-
+    if (!(parent instanceof CONFIG.Actor.documentClass) /*|| actor.isToken*/)
+      return result = true;
     // Check if we are trying to create an existing effect - not quite sure how that might happen
     if (parent.effects?.find(ef => ef.id === data._id && false)) {
-      if (debugEnabled > 0) warn("Blocking creation of duplcate effect", this, parent.effects?.find(ef => ef.id === data._idid));
+      if (debugEnabled > 0)
+        warn("Blocking creation of duplcate effect", this, parent.effects?.find(ef => ef.id === data._idid));
       return result = false;
     }
     if (!this.flags?.dae?.specialDuration) {
@@ -677,9 +678,9 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
     if (game.release.generation >= 12 && data.flags?.core?.statusId !== undefined) {
       delete data.flags.core.statusId;
       this.updateSource({ "flags.core.-=statusId": null });
-    } 
+    }
     if (parent instanceof Actor) {
-      let existingEffect: any;
+      let existingEffect;
       if (CONFIG.statusEffects.find(se => se._id === this.id))
         existingEffect = parent.effects.find(ef => ef.id === this.id);
       else {
@@ -689,8 +690,9 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
       if (["count", "countDeleteDecrement"].includes(this.flags?.dae?.stackable)) {
         if (existingEffect) {
           const stacks = (existingEffect.flags.dae.stacks ?? 1) + 1;
-          const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
-          await counter?.setValue(stacks);
+          // const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
+          // await counter?.setValue(stacks);
+
           await existingEffect.update({ "flags.dae.stacks": stacks, name: `${effectBaseName(existingEffect)} (${stacks})` });
           if (existingEffect.getDependents && existingEffect.getDependents().length > 0) {
             const deps = existingEffect.getDependents().filter(ef => ["count", "countDeleteDecrement"].includes(ef.flags?.dae?.stackable));
@@ -698,11 +700,12 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
           }
           return result = false;
         }
-      } else if (CONFIG.statusEffects.find(se => se._id === this.id) && parent.effects.find(ef => ef.id === this._id)) {
+      }
+      else if (CONFIG.statusEffects.find(se => se._id === this.id) && parent.effects.find(ef => ef.id === this._id)) {
         console.warn(`dae | Attempting to add ${this.id} when already presnt - ignoring`);
         return result = false;
       }
-      let updates: any = {};
+      let updates = {};
       if (CONFIG.ActiveEffect.legacyTransferral) {
         foundry.utils.setProperty(updates, "flags.dae.transfer", data.transfer === true ? true : false);
       }
@@ -712,7 +715,8 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
         if (!data.transfer) { // for non-transfer effects we might be pointing to a different actor
           //@ts-expect-error
           const thing = fromUuidSync(this.origin);
-          if (thing?.actor) sourceActor = thing.actor;
+          if (thing?.actor)
+            sourceActor = thing.actor;
         }
         let theDurationRoll = new Roll(`${this.flags.dae.durationExpression}`, sourceActor?.getRollData());
         let theDuration = await theDurationRoll.evaluate();
@@ -720,10 +724,12 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
         if (inCombat) {
           updates["duration.rounds"] = Math.floor(theDuration.total / CONFIG.time.roundTime + 0.5);
           updates["duration.seconds"] = null;
-        } else updates["duration.seconds"] = theDuration.total;
+        }
+        else
+          updates["duration.seconds"] = theDuration.total;
       }
       let changesChanged = false;
-      let newChanges: any[] = [];
+      let newChanges: any = [];
       for (let change of this.changes) {
         if (typeof change.value === "string") {
           const token = getSelfTarget(parent);
@@ -732,7 +738,8 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
           for (let key of Object.keys(context)) {
             // Can't do a Roll.replaceFormula because of non-matches being replaced.
             let newValue;
-            if (change.value.includes(`@${key}`)) continue;
+            if (change.value.includes(`@${key}`))
+              continue;
             newValue = change.value.replaceAll(key, context[key]);
             if (newValue !== change.value) {
               changesChanged = true;
@@ -744,10 +751,11 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
         if (change.key === "StatusEffect") {
           console.warn("ActiveEffect | StatusEffect is not supported in v12 and above");
           continue;
-        } else if (inline) {
+        }
+        else if (inline) {
           const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
           const silentInline = change.value.includes("[[[");
-          const newChange = foundry.utils.duplicate(change);
+          const newChange: any = foundry.utils.duplicate(change);
           changesChanged = true;
           for (let match of change.value.matchAll(rgx)) {
             if (!match[1]) {
@@ -756,26 +764,30 @@ async function _preCreateActiveEffect(wrapped, data, options, user) {
             }
           }
           newChanges.push(newChange);
-        } else if (change.key.startsWith("macro.itemMacro")) {
+        }
+        else if (change.key.startsWith("macro.itemMacro")) {
           //@ts-expect-error
-          const item: any = fromUuidSync(this.origin);
+          const item = fromUuidSync(this.origin);
           if (item instanceof Item) {
             let macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
-            foundry.utils.setProperty(updates, `flags.dae.itemMacro`, macroCommand)
+            foundry.utils.setProperty(updates, `flags.dae.itemMacro`, macroCommand);
           }
-        } else newChanges.push(change);
+        }
+        else
+          newChanges.push(change);
       }
-      if (changesChanged) updates["changes"] = newChanges;
+      if (changesChanged)
+        updates["changes"] = newChanges;
       this.updateSource(updates);
     }
-    return wrapped(data, options, user);
-  } catch (err) {
-    console.warn("dae | _preCreateActiveEffect", err)
-  } finally {
-    return result
+  }
+  catch (err) {
+    console.warn("dae | _preCreateActiveEffect", err);
+  }
+  finally {
+    return result;
   }
 }
-
 async function evalInline(expression: string, actor: Actor, effect, silent) {
   try {
     warn("Doing inlinve eval", expression)
@@ -1009,27 +1021,32 @@ export function preUpdateActiveEffectEvalInlineHook(candidate, updates, options,
     return true;
   }
 }
-async function _preDeleteActiveEffect(wrapped, ...args) {
+
+async function _preDeleteActiveEffectDecrement(...args) {
   let [options, userId] = args;
-  if (!options.removeStacks) options.removeStacks = 1;
-  if (this.flags.dae?.stackable === "count") options.removeStacks = Math.max(1, this.flags.dae.stacks ?? 1);
-  if (options.forceDelete || !(this.parent instanceof Actor)) return wrapped(...args); // TODO see if this is required.
+  if (!options.removeStacks)
+    options.removeStacks = 1;
+  if (this.flags.dae?.stackable === "count")
+    options.removeStacks = Math.max(1, this.flags.dae.stacks ?? 1);
+  if (options.forceDelete || !(this.parent instanceof Actor))
+    return true;
   const stacks = Math.max(0, this.flags?.dae?.stacks ?? 1);
-  const newStacks = Math.max(1, stacks - options.removeStacks)
+  const newStacks = Math.max(1, stacks - options.removeStacks);
   if (stacks <= options.removeStacks) {
     options.removeStacks = Math.max(1, stacks);
-    return wrapped(options, userId);
+    return true;
   }
   foundry.utils.setProperty(this, "flags.dae.stacks", newStacks);
   await this.update({ "flags.dae.stacks": newStacks, name: `${effectBaseName(this)} (${newStacks})` });
-  const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
-  await counter?.setValue(newStacks);
+  // const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
+  // await counter?.setValue(newStacks);
   debug("decrementing complete", this.name, stacks);
-  if (this.getDependents()) for (let dependent of this.getDependents()) {
-    //@ts-expect-error
-    if (fromUuidSync(dependent.uuid))
-      await dependent.delete(options);
-  }
+  if (this.getDependents())
+    for (let dependent of this.getDependents()) {
+      //@ts-expect-error
+      if (fromUuidSync(dependent.uuid))
+        await dependent.delete(options);
+    }
   return false;
 }
 
@@ -1046,8 +1063,9 @@ async function _preDeleteActiveEffectBeta(wrapped, ...args) {
   else options.removeStacks = 1;
   foundry.utils.setProperty(this, "flags.dae.stacks", stacks - 1);
   await this.update({ "flags.dae.stacks": stacks - 1, name: `${effectBaseName(this)} (${stacks - 1})` });
-  const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
-  await counter?.setValue(stacks - 1);
+  // const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
+  console.error("Effect counter delete ", this.statusCounter);
+  // await counter?.setValue(stacks - 1);
   debug("decrementing complete", this.name, stacks);
   if (this.getDependents()) for (let dependent of this.getDependents()) {
     //@ts-expect-error
@@ -1490,7 +1508,8 @@ export async function doActivityEffects(activity, activate, targets = undefined,
     fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: activity.item.uuid, context: {}
   }) {
   //@ts-expect-error
-  const activityEffects = activityEffectsUuids.map(aeUuid => fromUuidSync(aeUuid) ?? activity.effects.find(ae => ae.effect.uuid === aeUuid)?.effect).filter(ef => ef).map(ef=>ef.toObject());
+  const activityEffects = activityEffectsUuids.map(aeUuid => fromUuidSync(aeUuid) ?? activity.effects.find(ae => ae.effect.uuid === aeUuid)?.effect).filter(ef => ef).map(ef => ef.toObject());
+  activityEffects.forEach(ef => ef.disabled = false);
   return await applyActivityEffects(activity, activate, targets, activityEffects, options)
 }
 
@@ -1854,19 +1873,6 @@ export async function createItemHook(...args) {
   const actor = item.parent;
   if (!(actor instanceof Actor)) return;
   if (CONFIG.ActiveEffect.legacyTransferral) return;
-  // rewrite the origin of passive effects to point to the current item, rather than the world item
-  if (rewriteTransferOrigin) {
-    const updates: any[] = [];
-    for (let effect of item.effects) {
-      if (effect.transfer && !isEnchantment(effect.type)) {
-        effect.origin = item.uuid;
-        updates.push({ _id: effect._id, origin: item.uuid });
-      }
-    }
-    if (updates.length > 0) {
-      await item.updateEmbeddedDocuments("ActiveEffect", updates);
-    }
-  }
   const token = tokenForActor(actor);
   for (let effect of item.effects) {
     if (!effect.transfer) continue;
@@ -2128,10 +2134,6 @@ export function daeInitActions() {
   // If updating item effects recreate actor effects for updated item.
   Hooks.on("updateItem", updateItemEffects);
 
-  // Need to move this to _preCreateActiveEffect for dice rolls - Map some fields that need to be changed when the effect is created...
-  // Hooks.on("preCreateActiveEffect", preCreateActiveEffectHook);
-
-
   Hooks.on("preUpdateItem", preUpdateItemHook);
   Hooks.on("createItem", createItemHook);
   Hooks.on("deleteItem", deleteItemHook);
@@ -2151,36 +2153,54 @@ export function daeInitActions() {
   Hooks.on("updateItem", (item, updates, options, userId) => {
     if (item.parent instanceof Actor) processConditionalEffects(item.parent, updates, options, userId)
   });
-  // wrap so we can remove the existing effect before the new one is created
-  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", preCreateActiveEffect, "MIXED");
-  async function preCreateActiveEffect(wrapped, data, context, user) {
-    if (!(await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user))) return false;
-    return _preCreateActiveEffect.bind(this)(wrapped, data, context, user);
-  };
-  // Hooks.on("createActiveEffect", removeExistingEffectsHook) - this fires too late in the chain
-  //@ ts-expect-error
-  /*
-  if (game.release.generation >= 12)
-    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.toggleStatusEffect", _toggleActorStatusEffect, "MIXED");
-  */
-  Hooks.on("createActiveEffect", createActiveEffectHook);
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "MIXED");
+  async function _preCreateActiveEffect(wrapped, data, context, user) {
+    let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
+    if (result) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
+    if (this.active && dependentConditions) {
+      if (debugEnabled > 0) warn("_preCreateActiveEffect", this, context);
+      await applyStatusEffects(this, true, context);
+    }
+    if (result) result = await wrapped(data, context, user);
+    return result;
+  }
 
-  Hooks.on("preCreateActiveEffect", (doc, data, options, userId) => preUpdateStatusEffects(doc, options, userId));
-  Hooks.on("preUpdateActiveEffect", (doc, data, options, userId) => preUpdateStatusEffects(doc, options, userId));
-  Hooks.on("preDeleteActiveEffect", (item, options, userId) => preUpdateStatusEffects(item, options, userId));
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "MIXED");
+  async function _preDeleteActiveEffect(wrapped, ...args) {
+    const [options, user] = args;
+    let result = await _preDeleteActiveEffectDecrement.bind(this)(...args);
+    if (this.active && !this.flags?.dae?.autoCreated && dependentConditions) {
+      if (debugEnabled > 0) warn("_preDelteActiveEffect", this, options);
+      await applyStatusEffects(this, false, options);
+    }
+    if (result) result = await wrapped(...args);
+    return result;
+  }
+
+  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "MIXED");
+  async function _preUpdateActiveEffect(wrapped, ...args) {
+    const [changed, options, userId] = args;
+    if (dependentConditions) {
+      // If the effect is active only process changes if the statuses of the effect changed
+      const changedStatuses = new Set(changed.statuses);
+      const statusesChanged = this.statuses.difference(changedStatuses).size > 0 && this.statuses.size !== changedStatuses.size;
+      if ((this.active && statusesChanged) || changed.disabled !== undefined || changed.isSuppressed !== undefined) {
+        if (debugEnabled > 0) warn("preUpdateActiveEffect ", this, changed, options);
+        await applyStatusEffects(this, !changed.disabled && !changed.suppressed, { ...options, statuses: changed.statuses ? changedStatuses : this.statuses });
+      }
+    }
+    return wrapped(...args);
+  }
+
+  Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("preUpdateItem", (item, data, options, userId) => preUpdateStatusEffects(item, options, userId));
   Hooks.on("preDeleteItem", (item, options, userId) => preUpdateStatusEffects(item, options, userId));
   Hooks.on("preCreateItem", (item, data, options, userId) => preUpdateStatusEffects(item, options, userId));
-  Hooks.on("createActiveEffect", (effect, options, userId) => updateStatusEffects(effect, options, userId));
-  Hooks.on("updateActiveEffect", (effect, data, options, userId) => updateStatusEffects(effect, options, userId));
-  Hooks.on("deleteActiveEffect", (effect, options, userId) => updateStatusEffects(effect, options, userId));
   Hooks.on("updateItem", (item, data, options, userId) => updateStatusEffects(item, options, userId));
   Hooks.on("deleteItem", (item, options, userId) => updateStatusEffects(item, options, userId));
   Hooks.on("createItem", (item, options, userId) => updateStatusEffects(item, options, userId));
 
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
-  libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "MIXED");
-  // libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._onDelete", _onDeleteActiveEffect, "MIXED");
   //  Hooks.on("preDeleteActiveEffect", preDeleteActiveEffectHook); - moved wrapper to avoid race conditions
   Hooks.on("preUpdateActiveEffect", preUpdateActiveEffectEvalInlineHook);
   Hooks.on("preUpdateActiveEffect", recordDisabledSuppressedHook);
@@ -2212,19 +2232,9 @@ function preUpdateStatusEffects(doc, options, userId) {
     actor = actor.parent;
   }
   if (!actor) return true;
-  let currentStatuses: Set<string> = new Set();
-
-  for (let effect of actor.allApplicableEffects()) {
-    if (effect.transfer && doc instanceof Item) effect.determineSuppression();
-    if (effect.flags?.["dfreds-convenient-effects"]) continue;
-    if (effect.disabled || effect.isSuppressed) continue;
-    //@ts-expect-error
-    currentStatuses = currentStatuses.union(effect.statuses);
-  }
-  options["dae"] = foundry.utils.mergeObject(options.dae ?? {}, { currentStatuses: Array.from(currentStatuses) });
+  options["dae"] = foundry.utils.mergeObject(options.dae ?? {}, { currentStatuses: Array.from(actor.statuses) });
   return true;
 }
-
 async function updateStatusEffects(doc, options, userId) {
   if (!dependentConditions) return;
   if (userId !== game.user?.id) return;
@@ -2236,34 +2246,84 @@ async function updateStatusEffects(doc, options, userId) {
     actor = actor.parent;
   }
   if (!actor) return;
-  let newStatuses: Set<string> = new Set();
+  //@ts-expect-error
+  if (doc instanceof ActiveEffect && doc.flags?.dae?.autoCreated) return;
+  // let newStatuses: Set<string> = new Set();
   if (!options.dae?.currentStatuses) return;
   let currentStatuses: Set<string> = new Set(options.dae?.currentStatuses);
-
+  let newStatuses: Set<string> = new Set; // actor.statuses;
   for (let effect of actor.allApplicableEffects()) {
-    if (effect.transfer && doc instanceof Item) effect.determineSuppression();
-    if (effect.disabled || effect.isSuppressed) continue;
-    if (effect.flags?.["dfreds-convenient-effects"]) continue;
-    let statusesToAdd = new Set(effect.statuses);
-    if (effect.flags?.dae?.autoCreated) {
-      const statusEffect = CONFIG.statusEffects.find(se => se._id === effect.id);
-      // Don't count self in the new statuses for auto created 
-      if (statusEffect) statusesToAdd.delete(statusEffect.id);
+    if (effect.flags?.dae?.autoCreated) { // even if disabled auto created effects should be included in current statuses
+      //@ts-expect-error
+      currentStatuses = currentStatuses.union(effect.statuses)
+      continue;
     }
+    if (effect.transfer && doc instanceof Item)
+      effect.determineSuppression();
+    if (!effect.active) continue;
+    if (effect.flags?.["dfreds-convenient-effects"]) continue;
     //@ts-expect-error
-    newStatuses = newStatuses.union(statusesToAdd);
+    newStatuses = newStatuses.union(effect.statuses);
   }
+  await applyStatusEffectChagnes(actor, doc, currentStatuses, newStatuses, true);
+}
+async function applyStatusEffects(theEffect: any, includeEffect: boolean, context: any = {}) {
+  if (!dependentConditions) return true;
+  if (theEffect.flags?.["condition-lab-triggler"]) return;
+  let actor = theEffect.parent;
+  if (actor instanceof Item) {
+    actor = actor.parent;
+  }
+  if (!actor) return true;
+  let newStatuses: Set<string> = new Set();
+  let currentStatuses = foundry.utils.deepClone(actor.statuses);
+  for (let effect of actor.allApplicableEffects()) {
+    if (effect.flags?.dae?.autoCreated) { // even if disabled auto created effects should be included in current statuses
+      currentStatuses = currentStatuses.union(effect.statuses)
+      continue;
+    }
+    if (effect.transfer && theEffect instanceof Item)
+      effect.determineSuppression();
+    if (!effect.active) continue;
+    if (effect.flags?.["dfreds-convenient-effects"]) continue;
+    if (effect.uuid === theEffect.uuid) continue; // skip existing effect it will be added in if needed
+
+    //@ts-expect-error
+    newStatuses = newStatuses.union(effect.statuses);
+  }
+  if (includeEffect && theEffect instanceof ActiveEffect) {
+    //@ts-expect-error
+    const docStatuses = context.statuses ?? theEffect.statuses;
+    //@ts-expect-error
+    newStatuses = newStatuses.union(docStatuses);
+  }
+  const doc_id = theEffect._id;
+  if (!includeEffect && theEffect instanceof ActiveEffect && newStatuses.has(doc_id)) {
+    newStatuses.delete(doc_id);
+    currentStatuses.delete(doc_id);
+  }
+  await applyStatusEffectChagnes(actor, theEffect, currentStatuses, newStatuses, includeEffect);
+}
+
+async function applyStatusEffectChagnes(actor, doc: any, currentStatuses: Set<string>, newStatuses: Set<string>, includeEffect: boolean) {
+  if (currentStatuses.size === 0 && newStatuses.size === 0) return;
   //@ts-expect-error
   for (let status of newStatuses.difference(currentStatuses)) {
-    if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status)) continue;
-    if (!CONFIG.statusEffects.find(se => se.id === status)) continue;
+    if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status))
+      continue;
+    const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
+    if (statusEffect?.statuses?.includes(status)) continue; // Self referential statuses cause problems
+    if (!statusEffect || (statusEffect._id === doc._id && includeEffect)) continue;
     // statuses not present on the actor that should be
     await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
   }
   //@ts-expect-error
   for (let status of currentStatuses.difference(newStatuses)) {
-    if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status)) continue;
-    if (!CONFIG.statusEffects.find(se => se.id === status)) continue;
+    if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status))
+      continue;
+    const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
+    if (statusEffect?.statuses?.includes(status)) continue; // Self referential statuses cause problems
+    if (!statusEffect || (statusEffect._id === doc._id && !includeEffect)) continue;
     // statuses present on the actor that should not be
     await toggleActorStatusEffect(actor, status, { active: false });
   }
@@ -2359,7 +2419,6 @@ export function fetchParams() {
   DIMETitleBar = game.settings.get("dae", "DIMETitleBar");
   daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
   daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
-  rewriteTransferOrigin = game.settings.get("dae", "rewriteTransferOrigin");
   expireRealTime = game.settings.get("dae", "expireRealTime");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   showInline = game.settings.get("dae", "showInline") ?? false;
@@ -2490,7 +2549,7 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
   const rid = foundry.utils.randomID();
   const status = CONFIG.statusEffects.find(e => e.id === statusId);
   if (!status) throw new Error(`Invalid status ID "${statusId}" provided to Actor#toggleStatusEffect`);
-  const existing: ActiveEffect[] = [];
+  let existing: ActiveEffect[] = [];
   // Find the effect with the static _id of the status effect
   if (status._id) {
     const effect: ActiveEffect | undefined = actor.effects.get(status._id);
@@ -2507,8 +2566,25 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
   }
   // Remove the existing effects unless the status effect is forced active
   if (existing.length) {
-    if (options.active) return true;
-    await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(e => e.id ?? ""));
+    if (options.active) {
+      //@ ts-expect-error
+      // existing = existing.filter(e => !e.disabled);
+      // for (let effect of existing) {
+      //   await effect.update({ disabled: false });
+      // }
+      //@ ts-expect-error
+      // await actor.updateEmbeddedDocuments("ActiveEffect", existing.map(e => ({_id: e._id, disabled: false})));
+      return true;
+    }
+    //@ ts-expect-error
+    // existing = existing.filter(e => e.disabled);
+    //for (let effect of existing) {
+    //  await effect.update({ disabled: true });
+    // }
+    //@ ts-expect-error
+    // await actor.updateEmbeddedDocuments("ActiveEffect", existing.map(e => ({_id: e._id, disabled: true})));
+    //@ts-expect-error
+    await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(e => e.id));
     return false;
   }
   // Create a new effect unless the status effect is forced inactive
@@ -2521,7 +2597,7 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
   const flags = foundry.utils.mergeObject(effect.flags ?? {}, options.flags ?? {});
   effect.updateSource({ flags });
   //@ts-expect-error
-  const returnEffect = await ActiveEffect.implementation.create(effect, { parent: actor, keepId: true });
+  const returnEffect = await ActiveEffect.implementation.create(effect, { parent: actor, keepId: true, ...options });
   return returnEffect ? [returnEffect] : false;
 }
 

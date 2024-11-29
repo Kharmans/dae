@@ -1,4 +1,6 @@
 import { log, debug } from "../../dae";
+import { DAESystem } from "../Systems/DAESystem";
+import { daeSystemClass } from "../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 
 interface FieldData {
@@ -92,9 +94,9 @@ export class DAEFieldBrowser {
           (localizedName !== nameLocalizationPath ? localizedName : key);
 
         // For descriptions, simply check if the localization string is present.
-        const finalDescription = 
+        let finalDescription = 
         localizedDescription !== descriptionLocalizationPath ? localizedDescription : '';
-        
+        if (daeSystemClass.fieldMappings[key]) finalDescription += ` use ${daeSystemClass.fieldMappings[key]} instead`
         return {
           key,
           name: finalName,
