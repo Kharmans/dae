@@ -1509,6 +1509,7 @@ export async function doActivityEffects(activity, activate, targets = undefined,
   }) {
   //@ts-expect-error
   const activityEffects = activityEffectsUuids.map(aeUuid => fromUuidSync(aeUuid) ?? activity.effects.find(ae => ae.effect.uuid === aeUuid)?.effect).filter(ef => ef).map(ef => ef.toObject());
+  // TODO dnd5e v4 - a temporary fix to make sure the effects are not disabled when applied
   activityEffects.forEach(ef => ef.disabled = false);
   return await applyActivityEffects(activity, activate, targets, activityEffects, options)
 }
@@ -2157,11 +2158,12 @@ export function daeInitActions() {
   async function _preCreateActiveEffect(wrapped, data, context, user) {
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
     if (result) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
-    if (this.active && dependentConditions) {
+    if (this.active && dependentConditions && !this.flags?.dae?.autoCreated) {
       if (debugEnabled > 0) warn("_preCreateActiveEffect", this, context);
       await applyStatusEffects(this, true, context);
     }
-    if (result) result = await wrapped(data, context, user);
+    if (result) result = wrapped(data, context, user);
+
     return result;
   }
 
@@ -2173,7 +2175,7 @@ export function daeInitActions() {
       if (debugEnabled > 0) warn("_preDelteActiveEffect", this, options);
       await applyStatusEffects(this, false, options);
     }
-    if (result) result = await wrapped(...args);
+    if (result) result = wrapped(...args);
     return result;
   }
 
@@ -2544,9 +2546,27 @@ export function getApplicableEffects(actor, { includeEnchantments }) {
   return effects;
 }
 
-// TODO once v12 only get rid of this since it is in core.
-export async function toggleActorStatusEffect(actor: Actor, statusId: string, options: { active?: boolean, overlay?: boolean, enableCondition?: string | undefined, origin?: string | undefined, randomId?: string | undefined, flags?: any } = { active: true, overlay: false, enableCondition: undefined, origin: undefined, randomId: undefined, flags: {} }): Promise<ActiveEffect[] | boolean> {
-  const rid = foundry.utils.randomID();
+// This does not work since the hook is called after _preCreateEffect is called which leads to the update source firing too late
+export async function toggleActorStatusEffectPossible(actor: Actor, statusId: string, { active = false, overlay = false, enableCondition = [], origin = "", flags = {} } = {}): Promise<ActiveEffect[] | boolean> {
+  let preCreateActiveEffectHookId;
+  try {
+    const statusEffect = CONFIG.statusEffects.find(e => e.id === statusId);
+    preCreateActiveEffectHookId = Hooks.on("preCreateActiveEffect", (effect, data, options, userId) => {
+      if (effect._id !== statusEffect._id) return;
+      if (origin) effect.updateSource({ origin });
+      if (enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": enableCondition });
+      if (overlay) effect.updateSource({ "flags.core.overlay": true });
+      flags = foundry.utils.mergeObject(effect.flags ?? {}, flags ?? {}, { inplace: false });
+      effect.updateSource({ flags });
+    })
+    //@ts-expect-error
+    return await actor.toggleStatusEffect(statusId, { active, overlay });
+  } finally {
+    if (preCreateActiveEffectHookId) Hooks.off("preCreateActiveEffect", preCreateActiveEffectHookId);
+  }
+}
+// TODO can't use the core toggleActorStatusEffect, consider patching this to replace the core one
+export async function toggleActorStatusEffect(actor: Actor, statusId: string, { active = false, overlay = false, enableCondition = [], origin = "", flags = {} } = {}): Promise<ActiveEffect[] | boolean> {
   const status = CONFIG.statusEffects.find(e => e.id === statusId);
   if (!status) throw new Error(`Invalid status ID "${statusId}" provided to Actor#toggleStatusEffect`);
   let existing: ActiveEffect[] = [];
@@ -2566,38 +2586,24 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, op
   }
   // Remove the existing effects unless the status effect is forced active
   if (existing.length) {
-    if (options.active) {
-      //@ ts-expect-error
-      // existing = existing.filter(e => !e.disabled);
-      // for (let effect of existing) {
-      //   await effect.update({ disabled: false });
-      // }
-      //@ ts-expect-error
-      // await actor.updateEmbeddedDocuments("ActiveEffect", existing.map(e => ({_id: e._id, disabled: false})));
+    if (active) {
       return true;
     }
-    //@ ts-expect-error
-    // existing = existing.filter(e => e.disabled);
-    //for (let effect of existing) {
-    //  await effect.update({ disabled: true });
-    // }
-    //@ ts-expect-error
-    // await actor.updateEmbeddedDocuments("ActiveEffect", existing.map(e => ({_id: e._id, disabled: true})));
     //@ts-expect-error
     await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(e => e.id));
     return false;
   }
   // Create a new effect unless the status effect is forced inactive
-  if (!options.active && (options.active !== undefined)) return false;
+  if (!active && active !== undefined) return false;
   //@ts-expect-error
   const effect = await ActiveEffect.implementation.fromStatusEffect(statusId);
-  if (options.origin) effect.updateSource({ origin: options.origin });
-  if (options.enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": options.enableCondition });
-  if (options.overlay) effect.updateSource({ "flags.core.overlay": true });
-  const flags = foundry.utils.mergeObject(effect.flags ?? {}, options.flags ?? {});
+  if (origin) effect.updateSource({ origin });
+  if (enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": enableCondition });
+  if (overlay) effect.updateSource({ "flags.core.overlay": true });
+  flags = foundry.utils.mergeObject(effect.flags ?? {}, flags ?? {}, { inplace: false });
   effect.updateSource({ flags });
   //@ts-expect-error
-  const returnEffect = await ActiveEffect.implementation.create(effect, { parent: actor, keepId: true, ...options });
+  const returnEffect = await ActiveEffect.implementation.create(effect, { parent: actor, keepId: true });
   return returnEffect ? [returnEffect] : false;
 }
 

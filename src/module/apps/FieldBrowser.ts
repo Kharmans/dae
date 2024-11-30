@@ -1,5 +1,4 @@
-import { log, debug } from "../../dae";
-import { DAESystem } from "../Systems/DAESystem";
+import { log, debug, error } from "../../dae";
 import { daeSystemClass } from "../dae";
 import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig";
 
@@ -69,8 +68,8 @@ export class DAEFieldBrowser {
       this.tabs = ['All', ...new Set(this.enrichedFields.map(field => field.category))];
 
       this.effectConfig.updateFieldInfo();
-    } catch (error) {
-      error("DAEFieldBrowser | Failed to initialize:", error);
+    } catch (err) {
+      error("DAEFieldBrowser | Failed to initialize:", err);
     }
   }
 
