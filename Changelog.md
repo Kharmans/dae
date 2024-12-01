@@ -1,3 +1,7 @@
+### 11.3.67
+* Backport of dependent conditions fixes from v12/dnd5e v4.
+  - Also a reminder that the preferred way to apply status effects is via the status conditions section in effect details, rather than macro.statusEffect.
+  
 ### 11.3.66
 * Default stakcable mode change to multi instead of don't stack by name/origin. This means that effects from the SRD will behave as intended, with multiple applications. 
   - When creating effects you will need to set the stacking option as required.
