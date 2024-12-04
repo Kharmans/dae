@@ -1,3 +1,7 @@
+### 12.0.5
+* Added some more edge case conditons to dependent condition application.
+* **Breaking** Stackable effects now apply their changes for each stack of the effect. So 3 stacks of system.attributes.ac.bonus add 1, will increase the target AC by 3.
+
 ### 12.0.4
 * Added deprecation warning to field description for mapped fields.
 * Rewrote dependent conditions code which should resolve the oustanding errors

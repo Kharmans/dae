@@ -159,6 +159,7 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
       })
       .map(c => {
         c = foundry.utils.duplicate(c);
+        c.count = effect.flags?.dae?.stacks || 1;
         flagChangeKeys(this, c);
         if (c.key.startsWith("flags.midi-qol.optional")) { // patch for optional effects
           const parts = c.key.split(".");
@@ -185,98 +186,87 @@ export function applyDaeEffects({ specList = [], completedSpecs = {}, allowAllSp
   for (let c of changes) {
     if (!c.key) continue;
 
-    //TODO remove @data sometime
-    if (typeof c.value === "string" && c.value.includes("@data.")) {
-      const parentInfo = c.effect.parent ? ` on ${c.effect.parent.name} (${c.effect.parent.id})` : '';
-      console.warn(`dae | @data.key is deprecated, use @key instead (${c.effect.name} (${c.effect.id})${parentInfo} has value ${c.value})`);
-      c.value = c.value.replace(/@data./g, "@");
-    }
-    const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
-    if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
-      const conditionData = this.getRollData();
-      foundry.utils.mergeObject(conditionData, { stackCount, effect: c.effect.toObject() })
-      c.value = daeSystemClass.safeEvalExpression(c.value, conditionData)
-    }
-    // let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
-    //    let fieldType = "string";
-    let field = c.key.startsWith("system.")
-      ? this.system.schema.getField(c.key.slice(7))
-      : this.schema.getField(c.key);
-    /*
-  if (field instanceof NumberField) {
-    fieldType = "number";
-  }
-  @ts-expect-error
-  else if (field instanceof foundry.data.fields.BooleanField) fieldType === "boolean";
-  else if (field === undefined) {
-    const sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
-    fieldType = typeof sampleValue;
-  }
-  if (fieldType !== "number" || c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM)
-    c.value = c.value.replace("@stackCount", stackCount)
-*/
-    if (field === undefined) {
-      field = foundry.utils.getProperty(this, c.key) ?? ValidSpec.actorSpecs[this.type].allSpecsObj[c.key]?.fieldType;
-    }
+    for (let i = 0; i < c.count; i++) {
+      //TODO remove @data sometime
+      if (typeof c.value === "string" && c.value.includes("@data.")) {
+        const parentInfo = c.effect.parent ? ` on ${c.effect.parent.name} (${c.effect.parent.id})` : '';
+        console.warn(`dae | @data.key is deprecated, use @key instead (${c.effect.name} (${c.effect.id})${parentInfo} has value ${c.value})`);
+        c.value = c.value.replace(/@data./g, "@");
+      }
+      const stackCount = c.effect.flags?.dae?.stacks ?? c.effect.flags?.dae?.statuscounter?.counter.value ?? 1;
+      if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
+        const conditionData = this.getRollData();
+        foundry.utils.mergeObject(conditionData, { stackCount, effect: c.effect.toObject() })
+        c.value = daeSystemClass.safeEvalExpression(c.value, conditionData)
+      }
+      // let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
+      //    let fieldType = "string";
+      let field = c.key.startsWith("system.")
+        ? this.system.schema.getField(c.key.slice(7))
+        : this.schema.getField(c.key);
 
-    if (!(field instanceof NumberField))
-      c.value = c.value.replace("@stackCount", stackCount)
+      if (field === undefined) {
+        field = foundry.utils.getProperty(this, c.key) ?? ValidSpec.actorSpecs[this.type].allSpecsObj[c.key]?.fieldType;
+      }
 
-    const getTargetType = field => {
-      //@ts-expect-error
-      if ((field instanceof game.system.dataModels.fields.FormulaField)) return "formula";
-      else if (field instanceof ArrayField) return "Array";
-      else if (field instanceof ObjectField) return "Object";
-      else if (field instanceof BooleanField) return "boolean";
-      else if (field instanceof NumberField) return "number";
-      else if (field instanceof StringField) return "string";
-    };
+      if (!(field instanceof NumberField))
+        c.value = c.value.replace("@stackCount", stackCount)
 
-    if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
-      //      if ((fieldType === "number" || fieldType === "boolean") && typeof c.value === "string") {
-      const fieldType = getTargetType(field) ?? "none";
-      if (["number", "boolean"].includes(fieldType) && typeof c.value === "string") {
-        debug("appplyDaeEffects: Doing eval of ", c, c.value);
+      const getTargetType = field => {
+        //@ts-expect-error
+        if ((field instanceof game.system.dataModels.fields.FormulaField)) return "formula";
+        else if (field instanceof ArrayField) return "Array";
+        else if (field instanceof ObjectField) return "Object";
+        else if (field instanceof BooleanField) return "boolean";
+        else if (field instanceof NumberField) return "number";
+        else if (field instanceof StringField) return "string";
+      };
 
-        const rollData = this.getRollData();
-        rollData.stackCount = stackCount;
-        c.value = c.value.replace("@item.level", "@itemLevel");
+      if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
+        //      if ((fieldType === "number" || fieldType === "boolean") && typeof c.value === "string") {
+        const fieldType = getTargetType(field) ?? "none";
+        if (["number", "boolean"].includes(fieldType) && typeof c.value === "string") {
+          debug("appplyDaeEffects: Doing eval of ", c, c.value);
 
-        //@ts-expect-error replaceFormulaData
-        let value = Roll.replaceFormulaData(c.value, rollData, { missing: 0, warn: false });
-        try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
-          c.value = `${daeSystemClass.safeEval(value, rollData)}`;
-        } catch (err) { // safeEval failed try a roll
-          try {
-            let roll = new Roll(c.value, rollData);
-            //@ts-expect-error
-            if (game.release.generation < 12) {
-              if (!roll.isDeterministic) {
-                console.warn("%c dae | you are using dice expressions in a numeric field. This will be disabled in foundry version 12", "color: red; font-size:14px;")
-                console.warn(`%c Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`, "color: red; font-size:14px;")
+          const rollData = this.getRollData();
+          rollData.stackCount = stackCount;
+          c.value = c.value.replace("@item.level", "@itemLevel");
+
+          //@ts-expect-error replaceFormulaData
+          let value = Roll.replaceFormulaData(c.value, rollData, { missing: 0, warn: false });
+          try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
+            c.value = `${daeSystemClass.safeEval(value, rollData)}`;
+          } catch (err) { // safeEval failed try a roll
+            try {
+              let roll = new Roll(c.value, rollData);
+              //@ts-expect-error
+              if (game.release.generation < 12) {
+                if (!roll.isDeterministic) {
+                  console.warn("%c dae | you are using dice expressions in a numeric field. This will be disabled in foundry version 12", "color: red; font-size:14px;")
+                  console.warn(`%c Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`, "color: red; font-size:14px;")
+                }
+                c.value = `${roll.evaluate({ async: false }).total}`;
+              } else {
+                if (!roll.isDeterministic) {
+                  console.error(`%c dae | you are using dice expressions in a numeric field which is not supported in ${game.version} dice terms ignored`, "color: red;");
+                  console.error(`Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`)
+                }
+                //@ts-expect-error evaluateSync
+                c.value = `${new Roll(value).evaluateSync({ strict: false }).total}`;
               }
-              c.value = `${roll.evaluate({ async: false }).total}`;
-            } else {
-              if (!roll.isDeterministic) {
-                console.error(`%c dae | you are using dice expressions in a numeric field which is not supported in ${game.version} dice terms ignored`, "color: red;");
-                console.error(`Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`)
-              }
-              //@ts-expect-error evaluateSync
-              c.value = `${new Roll(value).evaluateSync({ strict: false }).total}`;
+            } catch (err) {
+              console.warn("dae | change value calculation failed for", err, this, c);
             }
-          } catch (err) {
-            console.warn("dae | change value calculation failed for", err, this, c);
           }
         }
       }
+      const currentValue = foundry.utils.getProperty(this, c.key);
+      if (ValidSpec.actorSpecs[this.type].allSpecsObj[c.key]?.fieldType === "number" && typeof currentValue !== "number") {
+        foundry.utils.setProperty(this, c.key, 0);
+      }
+      const result = c.effect.apply(this, c);
+      Object.assign(overrides, result);
     }
-    const currentValue = foundry.utils.getProperty(this, c.key);
-    if (ValidSpec.actorSpecs[this.type].allSpecsObj[c.key]?.fieldType === "number" && typeof currentValue !== "number") {
-      foundry.utils.setProperty(this, c.key, 0);
-    }
-    const result = c.effect.apply(this, c);
-    Object.assign(overrides, result);
-
   }
 
   // Expand the set of final overrides + merge sincey
@@ -2162,7 +2152,7 @@ export function daeInitActions() {
       if (debugEnabled > 0) warn("_preCreateActiveEffect", this, context);
       await applyStatusEffects(this, true, context);
     }
-    if (result) result = wrapped(data, context, user);
+    if (result) result = await wrapped(data, context, user);
 
     return result;
   }
@@ -2183,10 +2173,12 @@ export function daeInitActions() {
   async function _preUpdateActiveEffect(wrapped, ...args) {
     const [changed, options, userId] = args;
     if (dependentConditions) {
+      let shouldInclude = this.active;
+      if (this.parent instanceof Item && !this.transfer) shouldInclude = false;
       // If the effect is active only process changes if the statuses of the effect changed
       const changedStatuses = new Set(changed.statuses);
       const statusesChanged = this.statuses.difference(changedStatuses).size > 0 && this.statuses.size !== changedStatuses.size;
-      if ((this.active && statusesChanged) || changed.disabled !== undefined || changed.isSuppressed !== undefined) {
+      if (shouldInclude && (statusesChanged || changed.disabled !== undefined || changed.isSuppressed !== undefined)) {
         if (debugEnabled > 0) warn("preUpdateActiveEffect ", this, changed, options);
         await applyStatusEffects(this, !changed.disabled && !changed.suppressed, { ...options, statuses: changed.statuses ? changedStatuses : this.statuses });
       }
@@ -2307,7 +2299,7 @@ async function applyStatusEffects(theEffect: any, includeEffect: boolean, contex
   await applyStatusEffectChagnes(actor, theEffect, currentStatuses, newStatuses, includeEffect);
 }
 
-async function applyStatusEffectChagnes(actor, doc: any, currentStatuses: Set<string>, newStatuses: Set<string>, includeEffect: boolean) {
+async function applyStatusEffectChagnes(actor, effect: any, currentStatuses: Set<string>, newStatuses: Set<string>, includeEffect: boolean) {
   if (currentStatuses.size === 0 && newStatuses.size === 0) return;
   //@ts-expect-error
   for (let status of newStatuses.difference(currentStatuses)) {
@@ -2315,7 +2307,8 @@ async function applyStatusEffectChagnes(actor, doc: any, currentStatuses: Set<st
       continue;
     const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
     if (statusEffect?.statuses?.includes(status)) continue; // Self referential statuses cause problems
-    if (!statusEffect || (statusEffect._id === doc._id && includeEffect)) continue;
+    if (!statusEffect || (statusEffect._id === effect._id && includeEffect)) continue; // incudeEffect true means the status effect is being added so don't double up
+    if (!effect.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses not present on the actor that should be
     await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
   }
@@ -2325,7 +2318,8 @@ async function applyStatusEffectChagnes(actor, doc: any, currentStatuses: Set<st
       continue;
     const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
     if (statusEffect?.statuses?.includes(status)) continue; // Self referential statuses cause problems
-    if (!statusEffect || (statusEffect._id === doc._id && !includeEffect)) continue;
+    if (!statusEffect || (statusEffect._id === effect._id && !includeEffect)) continue; // includeEffect being false means the effect is being removed so don't double up
+    if (!effect.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses present on the actor that should not be
     await toggleActorStatusEffect(actor, status, { active: false });
   }
