@@ -1054,7 +1054,6 @@ async function _preDeleteActiveEffectBeta(wrapped, ...args) {
   foundry.utils.setProperty(this, "flags.dae.stacks", stacks - 1);
   await this.update({ "flags.dae.stacks": stacks - 1, name: `${effectBaseName(this)} (${stacks - 1})` });
   // const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
-  console.error("Effect counter delete ", this.statusCounter);
   // await counter?.setValue(stacks - 1);
   debug("decrementing complete", this.name, stacks);
   if (this.getDependents()) for (let dependent of this.getDependents()) {
