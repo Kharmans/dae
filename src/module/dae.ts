@@ -2187,7 +2187,6 @@ export function daeInitActions() {
     return wrapped(...args);
   }
 
-  Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("preUpdateItem", (item, data, options, userId) => preUpdateStatusEffects(item, options, userId));
   Hooks.on("preDeleteItem", (item, options, userId) => preUpdateStatusEffects(item, options, userId));
   Hooks.on("preCreateItem", (item, data, options, userId) => preUpdateStatusEffects(item, options, userId));

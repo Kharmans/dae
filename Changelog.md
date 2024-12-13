@@ -1,3 +1,6 @@
+### 11.3.68
+* Fix for double calling macros when creating an ective effect.
+
 ### 11.3.67
 * Backport of dependent conditions fixes from v12/dnd5e v4.
   - Also a reminder that the preferred way to apply status effects is via the status conditions section in effect details, rather than macro.statusEffect.
