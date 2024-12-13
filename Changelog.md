@@ -1,3 +1,10 @@
+### 12.0.6
+* Support for Activity Macros, macro.ActivityMacro with similar semantics to macro.itemMacro
+* DIME supports editing activity macros as defined by midi-qol (only availalable on midi activities).
+* Added DAE/DIME header controls to tidysheet-5e.
+* Fix for @Embed changes not working on items.
+* Added support for function. macro calls in flags.dae.onUpdateActor specs. Not well tested yet.
+
 ### 12.0.5
 * Added some more edge case conditons to dependent condition application.
 * **Breaking** Stackable effects now apply their changes for each stack of the effect. So 3 stacks of system.attributes.ac.bonus add 1, will increase the target AC by 3.

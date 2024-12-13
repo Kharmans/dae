@@ -333,6 +333,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.attributes.ac.value"] = [new NumberField(), -1];
       specials["system.attributes.ac.min"] = [new NumberField(), -1];
     }
+    specials["macro.activityMacro"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     // removed - required so that init.bonus can work (prepapreinitiative called after derived effects
     // specials["system.attributes.init.total"] = [new NumberField(), -1];
     // moved to base values - specials["system.attributes.init.bonus"] = [new StringField(), -1];
@@ -876,6 +877,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       let macroRef = change.value;
       if (change.value === "ItemMacro" && change.effect?.origin?.includes("Item.")) { // rewrite the ItemMacro if there is an origin
         macroRef = `ItemMacro.${change.effect.origin}`;
+      } else if (change.value === "ActivityMacro" && change.effect.activity?.includes("Activity.")) {
+        macroRef = `ActivityMacro.${change.effect.activity}`;
+        console.error(change.effect.origin, change.effect);
+      } else if (change.value === "ActivityMacro") {
+        macroRef = `ActivityMacro.${change.effect.origin}`;
       }
       const current = foundry.utils.getProperty(actor, change.key);
       // includes wont work for macro names that are subsets of other macro names

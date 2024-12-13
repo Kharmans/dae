@@ -40,7 +40,7 @@ export var DAESetupComplete;
 export var DAEReadyComplete;
 export var dependentConditions;
 
-export var allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate"];
+export var allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate", "macro.activityMacro"];
 
 export var macroDestination = {
   "macro.execute": "mixed",
@@ -49,7 +49,8 @@ export var macroDestination = {
   "macro.itemMacro": "mixed",
   "macro.itemMacro.local": "local",
   "macro.itemMacro.GM": "GM",
-  "macro.actorUpdate": "mixed"
+  "macro.actorUpdate": "mixed",
+  "macro.activityMacro": "mixed"
 };
 
 export function geti18nOptions(key, moduleId) {
@@ -507,6 +508,7 @@ export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}
   let lastArg = foundry.utils.mergeObject(lastArgOptions, {
     effectId: effect.id,
     origin: effect.origin,
+    activity: foundry.utils.getProperty(effect, "flags.dae.activity"),
     efData: effect.toObject(false),
     actorId: actor.id,
     actorUuid: actor.uuid,
@@ -561,7 +563,7 @@ function createActiveEffectHook(...args) {
           if (tokenMagic && change.key === "macro.tokenMagic" && token)
             await addTokenMagicChange(actor, change, tokens); //TODO check disabled
         }
-        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
           await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid }); // TODO revisit to see if passing the effect is ok
         }
 
@@ -754,14 +756,17 @@ async function _preCreateActiveEffectIncrement(data, options, user) {
             }
           }
           newChanges.push(newChange);
-        }
-        else if (change.key.startsWith("macro.itemMacro")) {
+        } else if (change.key.startsWith("macro.itemMacro")) {
           //@ts-expect-error
           const item = fromUuidSync(this.origin);
           if (item instanceof Item) {
             let macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
             foundry.utils.setProperty(updates, `flags.dae.itemMacro`, macroCommand);
           }
+        } else if (change.key.startsWith("macro.activityMacro") && this.activity) {
+          //@ts-expect-error
+          const activity = fromUuidSync(this.activity);
+          foundry.utils.setProperty(updates, "flags.dae.activityMacro", activity.macro?.command)
         }
         else
           newChanges.push(change);
@@ -918,7 +923,7 @@ export function updateActiveEffectHook(...args) {
             await removeConditionChange(actor, change, token, effect, context)
           }
         }
-        if (changesToDisable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+        if (changesToDisable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
           warn("dae add macro off", actionQueue._queue.length);
           const effectData = effect.toObject(false);
           if (updates.changes) effectData.changes = oldChanges;
@@ -957,7 +962,7 @@ export function updateActiveEffectHook(...args) {
             await addConditionChange(actor, change, token, effect)
           }
         }
-        if (changesToEnable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+        if (changesToEnable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
           warn("action queue add dae macro on ", actionQueue._queue.length)
           await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid });
         }
@@ -1109,7 +1114,7 @@ export function deleteActiveEffectHook(...args) {
 
         }
         if (!foundry.utils.getProperty(context, "expiry-reason")) foundry.utils.setProperty(context, "expiry-reason", "effect-deleted");
-        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate"))) {
+        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
           context.effectUuid = effect.uuid;
           warn("action queue dae macro add off ", actionQueue._queue.length)
           await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), context);
@@ -1243,7 +1248,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           return arg;
         })
       } else args = change.value;
-      if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro")) {
+      if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro") || change.key.startsWith("macro.activityMacro")) {
         if (functionMatch) {
           macro = new CONFIG.Macro.documentClass({
             name: "DAE-Item-Macro",
@@ -1268,9 +1273,11 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           error("actor vanished", actor.name, actor.uuid);
           return;
         }
+        const activityUuid = effectData.flags?.dae?.activity;
         let lastArg = foundry.utils.mergeObject(lastArgOptions, {
           effectId: effectData._id,
           origin: effectData.origin,
+          activity: activityUuid,
           efData: effectData,
           actorId: actor.id,
           actorUuid: actor.uuid,
@@ -1282,9 +1289,10 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
           args = args.slice(1);
         let macroArgs: any[] = [action];
         macroArgs = macroArgs.concat(args).concat(lastArg);
+        const macroActivity = await fromUuid(activityUuid);
         //@ts-expect-error
         const effect = fromUuidSync(lastArgOptions.effectUuid);
-        const scope: any = { actor, token: selfTarget, lastArgValue: lastArg, item: theItem, macroItem: theItem, effect };
+        const scope: any = { actor, token: selfTarget, lastArgValue: lastArg, item: theItem, macroItem: theItem, macroActivity, effect };
 
         scope.args = macroArgs.filter(arg => {
           if (typeof arg === "string") {
@@ -1382,6 +1390,7 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
       case "macro.execute.local":
       case "macro.execute.GM":
       case "macro.actorUpdate":
+      case "macro.activityMacro":
         break;
       case "macro.CE":
       case "macro.CUB":
@@ -1435,17 +1444,26 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
       // Other uuids are not valid
       return undefined;
     }
-  } else if (change.key.startsWith("macro.itemMacro")) {
-    let macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
-    const itemData = foundry.utils.getProperty(effectData, "flags.dae.itemData");
-    if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.dae.macro.command");
-    if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.itemacro.macro.command");
-    if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.itemacro.macro.data.command");
-    if (!macroCommand && !item) { // we never got an item do a last ditch attempt
-      warn("eval args: fetching item from effectData/origin ", effectData?.origin);
-      //@ts-expect-error fromUuidSync
-      item = fromUuidSync(effectData?.origin); // Try and get it from the effectData
-      macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
+  } else if (change.key.startsWith("macro.activityMacro") || change.key.startsWith("macro.itemMacro")) {
+    let macroCommand;
+    if (change.key.startsWith("macro.activityMacro")) {
+      let activityUuid = foundry.utils.getProperty(effectData, "flags.dae.activity");
+      if (activityUuid) {
+        const activity: any = await fromUuid(activityUuid);
+        macroCommand = activity?.macro?.command;
+      }
+    } else if (change.key.startsWith("macro.itemMacro")) {
+      let macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
+      const itemData = foundry.utils.getProperty(effectData, "flags.dae.itemData");
+      if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.dae.macro.command");
+      if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.itemacro.macro.command");
+      if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.itemacro.macro.data.command");
+      if (!macroCommand && !item) { // we never got an item do a last ditch attempt
+        warn("eval args: fetching item from effectData/origin ", effectData?.origin);
+        //@ts-expect-error fromUuidSync
+        item = fromUuidSync(effectData?.origin); // Try and get it from the effectData
+        macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
+      }
     }
     if (!macroCommand) {
       const itemOrMacro = await fromUuid(name);
@@ -1555,10 +1573,10 @@ export async function applyActivityEffects(activity, activate, targets, activity
 
   debug("apply non-transfer effects: About to call gmaction ", activate, activityEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0) {
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: activityEffects, targetList: gmTargets, effectDuration: activity.druation, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activityUuid: activity.uuid, activeEffects: activityEffects, targetList: gmTargets, effectDuration: activity.druation, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
   if (localTargets.length > 0) {
-    const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: activityEffects, effectDuration: activity.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
+    const result = await applyActiveEffects({ activate, activityUuid: activity.uuid, targetList: localTargets, activeEffects: activityEffects, effectDuration: activity.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
   }
 }
 // Apply non-transfer effects to targets.
@@ -1687,7 +1705,7 @@ export function addEffectChange(actor, tokens, effectToApply, item, change, cont
       }
       break;
     default:
-      if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
+      if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro")) {
         if (debugEnabled > 0) warn("action queue add dae macro on ", actionQueue._queue.length)
         actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), { item, effectUuid: effectToApply.uuid });
         break;
@@ -1730,7 +1748,7 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change, c
         removeConditionChange(actor, change, tokens, effectToApply, context);
       break;
     default:
-      if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")) {
+      if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro")) {
         if (debugEnabled > 0) warn("dae add macro off", actionQueue._queue.length);
         actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), { item, origin: item.uuid, effectUuid: effectToApply.uuid, "expiry-reason": context["expiry-reason"] });
       }
@@ -1943,6 +1961,8 @@ export function preUpdateActorHook(candidate, updates, options, user) {
           if (!macroObject) macroObject = originObject?.parent?.items.getName(onUpdate.macroName.split(".")[1]);
           if (macroObject) macroText = foundry.utils.getProperty(macroObject, "flags.dae.macro.command") ?? foundry.utils.getProperty(macroObject, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(macroObject, "flags.itemacro.macro.data.command");
         }
+      } if (onUpdate.macroName.trim().startsWith("function.")) {
+        macroText = `return await ${onUpdate.macroName.trim().replace("function.", "").trim()}(speaker, actor, token, character, scope)`
       } else {
         const theMacro: Macro | undefined = game.macros?.getName(onUpdate.macroName);
         if (!theMacro) {
@@ -2203,6 +2223,7 @@ export function daeInitActions() {
   // Add the active effects title bar actions
   Hooks.on("getActorSheetHeaderButtons", attachActorSheetHeaderButton);
   Hooks.on("getItemSheetHeaderButtons", attachItemSheetHeaderButton);
+  Hooks.on("getActivitySheetHeaderButtons", attachActivitySheetHeaderButton);
   Hooks.on('renderActorSheet', updateSheetHeaderButton);
   Hooks.on('renderItemSheet', updateSheetHeaderButton);
   Hooks.on("preDeleteCombat", preDeleteCombatHook);
@@ -2335,7 +2356,40 @@ function attachActorSheetHeaderButton(app, buttons) {
     onclick: ev => { new ActiveEffects(app.document, {}).render(true); }
   })
 }
-
+// This does not seem to work.
+function attachActivitySheetHeaderButton(app, buttons) {
+  if (DIMETitleBar) {
+    const DIMtitle = game.i18n.localize('dae.DIMEditor.Name');
+    const DIMtitleText = daeNoTitleText ? "" : DIMtitle;
+    buttons.unshift({
+      label: DIMtitleText,
+      class: 'dae-dimeditor',
+      icon: 'fas fa-file-pen',
+      tooltip: DIMtitle,
+      onclick: ev => { new DIMEditor(app.document, {}).render(true); }
+    });
+  }
+}
+Hooks.once("tidy5e-sheet.ready", api => {
+  api.registerItemHeaderControls?.({
+    controls: [
+      {
+        icon: 'fas fa-wrench',
+        label: "DAE",
+        async onClickAction() {
+          new ActiveEffects(this.document, {}).render(true);
+        }
+      },
+      {
+        icon: 'fas fa-file-pen',
+        label: "DIME",
+        async onClickAction() {
+          new DIMEditor(this.document, {}).render(true);
+        }
+      }
+    ]
+  });
+});
 function attachItemSheetHeaderButton(app, buttons) {
   if (daeTitleBar) {
     const title = game.i18n.localize('dae.ActiveEffectName');
@@ -2472,9 +2526,10 @@ export function actorFromUuid(uuid): Actor | null {
 
 // Allow limited recursion of the formula replace function for things like
 // bonuses.heal.damage in spell formulas.
-export function replaceFormulaData(wrapped, formula, data, { missing, warn = false } = { missing: undefined, warn: false }) {
+export function replaceFormulaData(wrapped, formula, data: any = {}, { missing, warn = false } = { missing: undefined, warn: false }) {
   let result = formula;
   const maxIterations = 3;
+  data.Embed = "@Embed"; // Never replace these
   if (typeof formula !== "string") return formula;
   for (let i = 0; i < maxIterations; i++) {
     if (!result.includes("@")) break;

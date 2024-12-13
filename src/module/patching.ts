@@ -6,12 +6,11 @@ export function patchingInitSetup() {
 }
 
 export function initPatching() {
+  log("Patching Roll.replaceFormulaData");
+  libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
 }
 
 export function setupPatching() {
-  // patchAbilitySave(); removed in 0.8.74
-  log("Patching Roll.replaceFormulaData");
-  libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
   log("Patching ActiveEffect.isTemporary");
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isTemporary", isTemporary, "WRAPPER")
 };

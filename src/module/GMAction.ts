@@ -320,11 +320,12 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate = true, targetList, activeEffects, effectDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
+export async function applyActiveEffects({ activate = true, activityUuid = undefined, targetList, activeEffects, effectDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
   for (let targetId of targetList) {
     //@ts-expect-error
     let targetActor = fromUuidSync(targetId);
     if (!targetActor) continue;
+
 
     // Removal of existing is now handled by _preCreateActiveEffect override.
     // TODO workout what to do if activate is false? does not seem to be used anywhere to force delete effects
@@ -332,6 +333,7 @@ export async function applyActiveEffects({ activate = true, targetList, activeEf
       let dupEffects = foundry.utils.duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true);
       dupEffects.forEach(effectData => effectData.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StatusEffect" }))
       for (let aeData of dupEffects) {
+        if (activityUuid) foundry.utils.setProperty(aeData, "flags.dae.activity", activityUuid);
         foundry.utils.setProperty(aeData, "flags.dae.actor", targetActor.uuid);
         if (aeData.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
           //@ts-expect-error fromUuidSync
@@ -346,6 +348,15 @@ export async function applyActiveEffects({ activate = true, targetList, activeEf
           }
           foundry.utils.setProperty(aeData, "flags.dae.itemMacro", macroCommand)
         }
+        if (aeData.changes.some(change => change.key === "macro.ActivityMacro")) { // populate the ActivityMacro data.  
+          //@ts-expect-error
+          const activity = fromUuidSync(activityUuid);
+          if (activity) {
+           const macroCommand = activity.macro?.command;
+            foundry.utils.setProperty(aeData, "flags.dae.ActivityMacro", macroCommand)
+          }
+        }
+
         // convert item duration to seconds/rounds/turns according to combat
         if (aeData.duration.seconds) {
           aeData.duration.startTime = game.time.worldTime;

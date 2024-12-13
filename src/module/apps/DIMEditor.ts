@@ -75,6 +75,7 @@ export class DIMEditor extends FormApplication {
   }
 
   getMacro(): Macro {
+    if (globalThis.MidiQOL?.activityTypes && this.object?.macroData) return this.object.macro;
     let macroData = foundry.utils.getProperty(this.object, "flags.dae.macro")
       ?? foundry.utils.getProperty(this.object, "flags.itemacro.macro")
       ?? {};
@@ -87,6 +88,11 @@ export class DIMEditor extends FormApplication {
   }
 
   async setMacro(macro: Macro) {
+    if (this.object.macroData) {
+      // npm await this.object.macro = macro;
+      //@ts-expect-error
+      await this.object.update({ "macroData.name": macro.name, "macroData.command": macro.command });
+    }
     if (macro instanceof Macro) {
       await this.object.update({ "flags.dae.macro": macro.toObject() });
     }
