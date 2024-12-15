@@ -1,3 +1,6 @@
+### 12.0.6.1
+* Fix for macro calling - thanks @Elwin
+
 ### 12.0.6
 * Support for Activity Macros, macro.ActivityMacro with similar semantics to macro.itemMacro
 * DIME supports editing activity macros as defined by midi-qol (only availalable on midi activities).
