@@ -1453,7 +1453,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
         macroCommand = activity?.macro?.command;
       }
     } else if (change.key.startsWith("macro.itemMacro")) {
-      let macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
+      macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
       const itemData = foundry.utils.getProperty(effectData, "flags.dae.itemData");
       if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.dae.macro.command");
       if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.itemacro.macro.command");

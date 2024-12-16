@@ -1,3 +1,6 @@
+### 12.0.6.2
+* This time with the change actually included.
+
 ### 12.0.6.1
 * Fix for macro calling - thanks @Elwin
 
