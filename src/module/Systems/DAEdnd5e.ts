@@ -572,6 +572,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
       daeSpecialDurations["1Attack"] = game.i18n.format("dae.1Attack", { type: `${i18n("dae.spell")}/${i18n("dae.weapon")} ${i18n("dae.attack")}` });
       daeSpecialDurations["1Hit"] = game.i18n.format("dae.1Hit", { type: `${i18n("dae.spell")}/${i18n("dae.weapon")}` });
+      daeSpecialDurations["1Critical"] = i18n("dae.1Critical");
+      daeSpecialDurations["1Fumble"] = i18n("dae.1Fumble");
       //    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
       daeSpecialDurations["1Reaction"] = i18n("dae.1Reaction")
       let attackTypes = ["mwak", "rwak", "msak", "rsak"];
@@ -586,6 +588,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["isHealed"] = i18n("dae.isHealed");
       daeSpecialDurations["zeroHP"] = i18n("dae.ZeroHP");
       daeSpecialDurations["isHit"] = i18n("dae.isHit");
+      daeSpecialDurations["isHitCritical"] = i18n("dae.isHitCritical");
       daeSpecialDurations["isSave"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}`;
       daeSpecialDurations["isSaveSuccess"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
       daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;

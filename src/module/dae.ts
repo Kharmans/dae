@@ -2326,7 +2326,9 @@ async function applyStatusEffectChagnes(actor, effect: any, currentStatuses: Set
     if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status))
       continue;
     const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
-    if (statusEffect?.statuses?.includes(status)) continue; // Self referential statuses cause problems
+    if (!statusEffect) continue;
+    if (!statusEffect._id) continue; // status effects should have a fixed _id
+    if (statusEffect.statuses?.includes(status)) continue; // Self referential statuses cause problems
     if (!statusEffect || (statusEffect._id === effect._id && includeEffect)) continue; // incudeEffect true means the status effect is being added so don't double up
     if (!effect.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses not present on the actor that should be
@@ -2337,7 +2339,9 @@ async function applyStatusEffectChagnes(actor, effect: any, currentStatuses: Set
     if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status))
       continue;
     const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
-    if (statusEffect?.statuses?.includes(status)) continue; // Self referential statuses cause problems
+    if (!statusEffect) continue;
+    if (!statusEffect._id) continue; // status effects should have a fixed _id
+    if (statusEffect.statuses?.includes(status)) continue; // Self referential statuses cause problems
     if (!statusEffect || (statusEffect._id === effect._id && !includeEffect)) continue; // includeEffect being false means the effect is being removed so don't double up
     if (!effect.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses present on the actor that should not be

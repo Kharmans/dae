@@ -1,3 +1,8 @@
+### 12.0.7
+* Fix for effects added to CONFIG.statusEffects causing problems with dependent conditions.
+* Added special duration isHitCritical - expires when hit by a critical attack.
+* Added special durations 1Critical, 1Fumble expires when rolling a critical attack/fumble.
+
 ### 12.0.6.2
 * This time with the change actually included.
 
