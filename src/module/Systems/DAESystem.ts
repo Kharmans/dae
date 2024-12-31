@@ -386,9 +386,10 @@ export class DAESystem {
         returnValue.delete(checkValue);
         foundry.utils.setProperty(actor, change.key, returnValue);
       } else {
-        if ((current ?? new Set()).has(change.value)) return true;
-        if (validValues && !validValues.includes(change.value)) return true;
-        let returnValue = foundry.utils.deepClone(current);
+        // if ((current ?? new Set()).has(change.value)) return true;
+        let returnValue = new Set(current ?? [])
+        // Avoid problem with current custom changes setting return value to undefined if no changes made
+        // if (validValues && !validValues.includes(change.value)) return true;
         returnValue.add(change.value);
         foundry.utils.setProperty(actor, change.key, returnValue);
       }

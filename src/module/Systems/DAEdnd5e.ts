@@ -376,15 +376,25 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.traits.languages.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     }
     if (GameSystemConfig.damageTypes) {
-      specials[`system.traits.dm.midi.all`] = [new StringField(), -1];
+      specials[`system.traits.dm.midi.amount.all`] = [new StringField(), -1];
       Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dType => {
         specials[`system.traits.dm.amount.${dType}`] = [new StringField(), -1]
       });
       Object.keys(daeSystemClass.systemConfig.itemActionTypes).forEach(aType => {
-        specials[`system.traits.dm.midi.${aType}`] = [new StringField(), -1];
+        specials[`system.traits.dm.midi.amount${aType}`] = [new StringField(), -1];
       });
       Object.keys(daeSystemClass.systemConfig.healingTypes).forEach(dType => {
         specials[`system.traits.dm.amount.${dType}`] = [new StringField(), -1]
+      });
+      specials[`system.traits.da.midi.all`] = [new StringField(), -1];
+      Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dType => {
+        specials[`system.traits.da.${dType}`] = [new StringField(), -1]
+      });
+      Object.keys(daeSystemClass.systemConfig.itemActionTypes).forEach(aType => {
+        specials[`system.traits.da.midi.${aType}`] = [new StringField(), -1];
+      });
+      Object.keys(daeSystemClass.systemConfig.healingTypes).forEach(dType => {
+        specials[`system.traits.da.${dType}`] = [new StringField(), -1]
       });
       specials["system.traits.damageTypes.value"] = [new StringField(), -1];
       specials["system.traits.damageTypes.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -878,13 +888,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const damageBonusMacroFlag = `flags.${game.system.id}.DamageBonusMacro`;
     if (change.key === damageBonusMacroFlag) {
       let macroRef = change.value;
-      if (change.value === "ItemMacro" && change.effect?.origin?.includes("Item.")) { // rewrite the ItemMacro if there is an origin
-        macroRef = `ItemMacro.${change.effect.origin}`;
+      const macroItem = getActorItemForEffect(change.effect);
+      if (change.value === "ItemMacro") { // rewrite the ItemMacro if there is an origin
+        macroRef = `ItemMacro.${macroItem.uuid}`;
       } else if (change.value === "ActivityMacro" && change.effect.activity?.includes("Activity.")) {
         macroRef = `ActivityMacro.${change.effect.activity}`;
         console.error(change.effect.origin, change.effect);
       } else if (change.value === "ActivityMacro") {
-        macroRef = `ActivityMacro.${change.effect.origin}`;
+        macroRef = `ActivityMacro.${macroItem.uuid}`;
       }
       const current = foundry.utils.getProperty(actor, change.key);
       // includes wont work for macro names that are subsets of other macro names
@@ -984,11 +995,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.idr.value":
       case "system.traits.idv.value":
       case "system.traits.ida.value":
-        if (foundry.utils.isNewerVersion(systemConfig.version, "2.99")) {
           return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageTypes));
-        } else {
-          return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageResistanceTypes));
-        }
       case "system.traits.di.bypasses":
       case "system.traits.dr.bypasses":
       case "system.traits.dv.bypasses":

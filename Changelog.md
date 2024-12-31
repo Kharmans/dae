@@ -1,3 +1,8 @@
+### 12.0.8
+* Fix for custom mode changes where the target is a set. Core has a bug with these fields so dae will force write the value. Should stop value.add errors for things like system.traits.ci.value.
+* Fix for damage bonus macros not being found for ItemMacro targets. (effect.origin points to the wrong value). Sneak Attack v4 for example suffers from this problem when added to an actor from the compendium.
+* Some changes to support new midi damage absorption treatment.
+
 ### 12.0.7
 * Fix for effects added to CONFIG.statusEffects causing problems with dependent conditions.
 * Added special duration isHitCritical - expires when hit by a critical attack.
