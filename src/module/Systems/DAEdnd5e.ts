@@ -381,7 +381,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         specials[`system.traits.dm.amount.${dType}`] = [new StringField(), -1]
       });
       Object.keys(daeSystemClass.systemConfig.itemActionTypes).forEach(aType => {
-        specials[`system.traits.dm.midi.amount${aType}`] = [new StringField(), -1];
+        specials[`system.traits.dm.midi.amount.${aType}`] = [new StringField(), -1];
       });
       Object.keys(daeSystemClass.systemConfig.healingTypes).forEach(dType => {
         specials[`system.traits.dm.amount.${dType}`] = [new StringField(), -1]

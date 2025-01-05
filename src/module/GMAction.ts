@@ -485,7 +485,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
     if (useTurns)
       return { type: "turns", seconds: 0, rounds: 0, turns: 1 };
     else
-      return { type: "seconds", seconds: Math.min(1, durationData.value), rounds: 0, turns: 0 };
+      return { type: "seconds", seconds: Math.min(1, durationData?.value ?? 1), rounds: 0, turns: 0 };
   }
 
   if (!simpleCalendarInstalled) {
