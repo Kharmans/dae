@@ -342,10 +342,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     //   specials[`system.abilities.${abl}.dc`] = [new NumberField(), -1];
     // }
 
-    specials["system.traits.da.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.da.value"] = [new StringField(), -1];
-    specials["system.traits.da.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    // specials["system.traits.da.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.value"] = [new StringField(), -1];
     specials["system.traits.di.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -357,7 +353,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.traits.dv.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.value"] = [new StringField(), -1];
     specials["system.traits.dv.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dv.bypasses"] = [new StringField(), -1];
+    specials["system.traits.dv.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.da.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     // specials["system.traits.ci.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
     // specials["system.traits.ci.value"] = [new StringField(), -1];
     // specials["system.traits.ci.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -375,6 +372,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.traits.languages.value"] = [new StringField(), -1];
       specials["system.traits.languages.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     }
+    /*
     if (GameSystemConfig.damageTypes) {
       specials[`system.traits.dm.midi.amount.all`] = [new StringField(), -1];
       Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dType => {
@@ -399,7 +397,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.traits.damageTypes.value"] = [new StringField(), -1];
       specials["system.traits.damageTypes.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     }
-
+*/
     if (foundry.utils.getProperty(actorModelSchemaFields, "resources")) {
       specials["system.resources.primary.max"] = [new NumberField(), -1];
       specials["system.resources.primary.label"] = [new StringField(), -1];
@@ -537,21 +535,17 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
     // enchantments don't seem to get their world time set when applied to an item
-    //@ts-expect-error
-    if (foundry.utils.isNewerVersion(game.system.version, "3.1.99")) {
-      Hooks.on("preCreateActiveEffect", (candidate, data, options, user) => {
-        if (candidate.isAppliedEnchantment && (candidate.duration.seconds || candidate.duration.rounds || candidate.duration.turns)) {
-          if (!candidate.duration.startTime && candidate.duration.seconds)
-            candidate.updateSource({ duration: { startTime: game.time.worldTime } });
-          else if (!Number.isNumeric(candidate.duration.startRound) && !Number.isNumeric(candidate.duration.startTurn) && game.combat) {
-            candidate.updateSource({ duration: { startRound: game.combat?.round, startTurn: game.combat?.turn } });
-          }
+    Hooks.on("preCreateActiveEffect", (candidate, data, options, user) => {
+      if (candidate.isAppliedEnchantment && (candidate.duration.seconds || candidate.duration.rounds || candidate.duration.turns)) {
+        if (!candidate.duration.startTime && candidate.duration.seconds)
+          candidate.updateSource({ duration: { startTime: game.time.worldTime } });
+        else if (!Number.isNumeric(candidate.duration.startRound) && !Number.isNumeric(candidate.duration.startTurn) && game.combat) {
+          candidate.updateSource({ duration: { startRound: game.combat?.round, startTurn: game.combat?.turn } });
         }
-        return true;
-      });
-      libWrapper.register("dae", "CONFIG.Item.documentClass.prototype.applyActiveEffects", _baseItemApplyEffects, "OVERRIDE");
-    }
-
+      }
+      return true;
+    });
+    libWrapper.register("dae", "CONFIG.Item.documentClass.prototype.applyActiveEffects", _baseItemApplyEffects, "OVERRIDE");
   }
 
 
@@ -566,14 +560,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       const atlFields = Object.keys(CONFIG.Canvas.detectionModes).map(dm => `ATL.detectionModes.${dm}.range`);
       addAutoFields(atlFields);
     }
-
-    //@ts-expect-error .version
-    if (game.system.id === "dnd5e" && foundry.utils.isNewerVersion("2.3.0", game.system.version)) {
-      Object.keys(CONFIG.Item.sheetClasses.base).forEach(sheetId => {
-        libWrapper.register("dae", `CONFIG.Item.sheetClasses.base['${sheetId}'].cls.prototype._onDropActiveEffect`, _onDropActiveEffect, "OVERRIDE");
-      })
-    }
-
+    Hooks.callAll("dae.addSpecialDurations", daeSpecialDurations)
     if (game.modules.get("midi-qol")?.active) {
       daeSpecialDurations["1Action"] = i18n("dae.1Action");
       daeSpecialDurations["Bonus Action"] = i18n("dae.Bonus Action");
@@ -614,32 +601,17 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["shortRest"] = i18n("DND5E.ShortRest");
       daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
       Object.keys(daeSystemClass.systemConfig.abilities).forEach(abl => {
-        //@ts-expect-error .version
-        let ablString = foundry.utils.isNewerVersion(game.system.version, "2.1.5")
-          ? daeSystemClass.systemConfig.abilities[abl].label
-          : daeSystemClass.systemConfig.abilities[abl];
+        let ablString = daeSystemClass.systemConfig.abilities[abl].label
         daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}`;
         daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
         daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
         daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isCheckDetail")}`;
       })
-      //@ts-expect-error
-      if (foundry.utils.isNewerVersion(game.system.version, "2.9.99")) {
-        Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(key => {
-          daeSpecialDurations[`isDamaged.${key}`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.damageTypes[key].label}`;
-        });
+      Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(key => {
+        daeSpecialDurations[`isDamaged.${key}`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.damageTypes[key].label}`;
+      });
 
-      } else {
-        Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dt => {
-          daeSpecialDurations[`isDamaged.${dt}`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.damageTypes[dt]}`;
-        });
-      }
-      //@ts-expect-error
-      if (foundry.utils.isNewerVersion(game.system.version, "2.9.99")) {
-        daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.healingTypes["healing"].label}`;
-      } else {
-        daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.healingTypes["healing"]}`;
-      }
+      daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${daeSystemClass.systemConfig.healingTypes["healing"].label}`;
       Object.keys(daeSystemClass.systemConfig.skills).forEach(skillId => {
         daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${daeSystemClass.systemConfig.skills[skillId].label}`;
       });
@@ -720,39 +692,23 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const systemVersion = game.system.version;
     const damageTypes = [...Object.values(daeSystemClass.systemConfig.damageTypes), ...Object.values(daeSystemClass.systemConfig.healingTypes)];
 
-    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
-      Object.keys(daeSystemClass.systemConfig.healingTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.healingTypes[key].label; return obj }, this.traitList)
-      Object.keys(this.traitList).forEach(type => {
-        this.traitList[`-${type}`] = `- ${i18n(this.traitList[type])}`;
-      });
-    } else {
-      this.traitList = foundry.utils.duplicate(daeSystemClass.systemConfig.damageResistanceTypes);
-      const drTypes = Object.values(daeSystemClass.systemConfig.damageResistanceTypes);
-      this.customDamageResistanceList = drTypes.filter((drt: string) => !damageTypes.includes(drt))
-        .reduce((obj: {}, key: string) => { obj[key] = key; return obj }, {});
-      Object.keys(this.traitList).forEach(type => {
-        this.traitList[`-${type}`] = `- ${this.traitList[type]}`;
-      });
-    }
-    if (foundry.utils.isNewerVersion(systemVersion, "3.1.99")) {
-      this.bypassesList = Object.keys(daeSystemClass.systemConfig.itemProperties)
-        .filter(key => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
-        .map(key => {
-          const returnValue = {};
-          returnValue[key] = i18n(daeSystemClass.systemConfig.itemProperties[key].label);
-          return returnValue;
-        });
-    } else if (daeSystemClass.systemConfig.damageTypes) {
-      this.bypassesList = foundry.utils.duplicate(daeSystemClass.systemConfig.physicalWeaponProperties);
-    }
+    this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
+    Object.keys(daeSystemClass.systemConfig.healingTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.healingTypes[key].label; return obj }, this.traitList)
+    Object.keys(this.traitList).forEach(type => {
+      this.traitList[`-${type}`] = `- ${i18n(this.traitList[type])}`;
+    });
+
+    this.bypassesList = Object.entries(daeSystemClass.systemConfig.itemProperties)
+      .filter(([key, value]) => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
+      .reduce((acc, [key,value]) => {
+        //@ts-expect-error .label
+        acc[key] = value.label
+        return acc;
+      }, {});
 
     this.languageList = foundry.utils.duplicate(daeSystemClass.systemConfig.languages);
     Object.keys(daeSystemClass.systemConfig.languages).forEach(type => {
-      //@ts-expect-error .version
-      if (foundry.utils.isNewerVersion(game.system.version, "2.3.9")) {
-        this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
-      } else this.languageList[`-${type}`] = `- ${daeSystemClass.systemConfig.languages[type]}`;
+      this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
     });
 
     this.armorClassCalcList = {};
@@ -761,16 +717,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
     this.conditionList = {};
-    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(ct => {
-        this.conditionList[ct] = daeSystemClass.systemConfig.conditionTypes[ct].label;
-        this.conditionList[`-${ct}`] = `- ${daeSystemClass.systemConfig.conditionTypes[ct].label}`;
-      });
-    } else {
-      Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(type => {
-        this.conditionList[`-${type}`] = `- ${daeSystemClass.systemConfig.conditionTypes[type]}`;
-      });
-    }
+    Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(ct => {
+      this.conditionList[ct] = daeSystemClass.systemConfig.conditionTypes[ct].label;
+      this.conditionList[`-${ct}`] = `- ${daeSystemClass.systemConfig.conditionTypes[ct].label}`;
+    });
 
     this.toolProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.toolProficiencies);
     Object.keys(daeSystemClass.systemConfig.toolProficiencies).forEach(type => {
@@ -816,7 +766,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (spec.key === "system.attributes.ac.calc") {
       return this.armorClassCalcList;
     }
-    if (["system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses", "system.traits.da.bypasses"].includes(spec.key.key))
+    if (["system.traits.dm.bypasses", "system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses", "system.traits.da.bypasses"].includes(spec.key))
       return this.bypassesList;
     if (spec.key.includes("system.skills") && spec.key.includes("value"))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
@@ -825,15 +775,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return abilitiesList;
     }
     if (spec.key === "system.traits.size") {
-      //@ts-expect-error
-      if (foundry.utils.isNewerVersion(game.system.version, "3.1")) {
-        return Object.keys(daeSystemClass.systemConfig?.actorSizes).reduce((sizes, size) => {
-          sizes[size] = daeSystemClass.systemConfig.actorSizes[size].label;
-          return sizes;
-        }, {});
-      } else {
-        return daeSystemClass.systemConfig?.actorSizes;
-      }
+      return Object.keys(daeSystemClass.systemConfig?.actorSizes).reduce((sizes, size) => {
+        sizes[size] = daeSystemClass.systemConfig.actorSizes[size].label;
+        return sizes;
+      }, {});
     }
     return super.getOptionsForSpec(spec);
   }
@@ -893,7 +838,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         macroRef = `ItemMacro.${macroItem.uuid}`;
       } else if (change.value === "ActivityMacro" && change.effect.activity?.includes("Activity.")) {
         macroRef = `ActivityMacro.${change.effect.activity}`;
-        console.error(change.effect.origin, change.effect);
       } else if (change.value === "ActivityMacro") {
         macroRef = `ActivityMacro.${macroItem.uuid}`;
       }
@@ -974,15 +918,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdr.all":
       case "system.traits.sdv.all":
         const key = change.key.replace(".all", ".value")
-        //@ts-expect-error
-        if (foundry.utils.isNewerVersion(game.system.version, "2.99")) {
-          foundry.utils.setProperty(actor, key, new Set(Object.keys(systemConfig.damageTypes).filter(k => !["healing", "temphp"].includes(k))));
-        } else {
-          if (foundry.utils.getProperty(actor, key) instanceof Set)
-            foundry.utils.setProperty(actor, key, new Set(Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k))));
-          else
-            foundry.utils.setProperty(actor, key, Object.keys(systemConfig.damageResistanceTypes).filter(k => !["healing", "temphp"].includes(k)));
-        }
+        foundry.utils.setProperty(actor, key, new Set(Object.keys(systemConfig.damageTypes).filter(k => !["healing", "temphp"].includes(k))));
         return true;
       case "system.traits.di.value":
       case "system.traits.dr.value":
@@ -995,17 +931,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.idr.value":
       case "system.traits.idv.value":
       case "system.traits.ida.value":
-          return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageTypes));
+        return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.damageTypes));
       case "system.traits.di.bypasses":
       case "system.traits.dr.bypasses":
       case "system.traits.dv.bypasses":
       case "system.traits.da.bypasses":
-        if (foundry.utils.isNewerVersion(systemConfig.version, "3.1.99")) {
-          const validKeys: string[] = Object.keys(daeSystemClass.systemConfig.itemProperties)
-            .filter(key => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
-          return super.doCustomArrayValue(actor, current, change, validKeys);
-        } else
-          return super.doCustomArrayValue(actor, current, change, Object.keys(systemConfig.physicalWeaponProperties));
+      case "system.traits.dm.bypasses":
+        const validKeys: string[] = Object.keys(daeSystemClass.systemConfig.itemProperties)
+          .filter(key => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
+        return super.doCustomArrayValue(actor, current, change, validKeys);
       case "system.traits.da.custom":
       case "system.traits.di.custom":
       case "system.traits.dr.custom":
@@ -1537,13 +1471,7 @@ function patchPrepareArmorClassAttribution() {
   //@ts-expect-error
   const systemVersion = game.system.version;
   if (game.system.id === "dnd5e") {
-    if (foundry.utils.isNewerVersion(systemVersion, "2.99")) {
-      libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
-    } else {
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['dnd5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['dnd5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-      libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['dnd5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-    }
+    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
   } else if (game.system.id === "sw5e") {
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['sw5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['sw5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");

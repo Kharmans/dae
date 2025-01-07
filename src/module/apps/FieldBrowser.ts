@@ -51,7 +51,7 @@ export class DAEFieldBrowser {
       if (!DAEFieldBrowser.fieldDataInitialized) {
         // fetch data to save known category-field pairings.
         const fieldData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/field-data.json');
-        
+        Hooks.callAll("dae.setFieldData", fieldData);
         for (const [category, keys] of Object.entries(fieldData as Record<string, string[]>)) {
           for (const key of keys) {
             DAEFieldBrowser.knownFieldData[key] = { category };
@@ -80,8 +80,10 @@ export class DAEFieldBrowser {
   private enrichValidFields(): FieldData[] {
     return Object.entries(this.validFields)
       .map(([key, name]): FieldData => {
-        const nameLocalizationPath = `dae.fieldData.${key}.name`;
-        const descriptionLocalizationPath = `dae.fieldData.${key}.description`;
+        const category = DAEFieldBrowser.knownFieldData[key]?.category;
+        let localisationPrefix = `dae.${category ?? ""}.fieldData`;
+        const nameLocalizationPath = `${localisationPrefix}.${key}.name`;
+        const descriptionLocalizationPath = `${localisationPrefix}.${key}.description`;
         
         const localizedName = game.i18n.localize(nameLocalizationPath);
         const localizedDescription = game.i18n.localize(descriptionLocalizationPath);

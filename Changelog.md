@@ -1,3 +1,6 @@
+### 12.0.10
+* Support for midi taking over most midi fields, rather than being inserted by DAE.
+
 ### 12.0.9
 * Fix for typo setting dm.midi.amount fields
 * Fix for apply effects by non-gms where there is no duration data specified for the effect

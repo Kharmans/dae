@@ -6,10 +6,10 @@ import { DAEFieldBrowser } from "./FieldBrowser";
 export var otherFields: any[] = [];
 
 export function addAutoFields(fields: string[]) {
-  fields.forEach(f => {
-    if (!otherFields.includes(f)) otherFields.push(f)
-  })
-  otherFields.sort();
+  let newFields = new Set(fields);
+  //@ts-expect-error
+  newFields = newFields.union(new Set(otherFields));
+  otherFields = Array.from(newFields).sort();
 }
 
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
@@ -23,18 +23,17 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLVisionModes;
   validFields;
   validSpecsToUse;
-  bypassesList;
   daeFieldBrowser: DAEFieldBrowser;
 
   // object: any; Patch 4535992 Why ???
   constructor(object: any = {}, options = {}) {
     super(object, options);
     this.tokenMagicEffects = {};
-    if (game.modules.get("tokenmagic")?.active && globalThis.TokenMagic) {
+    if (globalThis.TokenMagic?.getPresets) {
       globalThis.TokenMagic.getPresets().forEach(preset => {
         this.tokenMagicEffects[preset.name] = preset.name;
       })
-    } else this.tokenMagicEffects["invalid"] = "module not installed"
+    } else this.tokenMagicEffects["invalid"] = "module not active"
 
     //@ts-expect-error
     this.validSpecsToUse = ValidSpec.actorSpecs?.union;
@@ -149,8 +148,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (spec.key === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
     if (spec.key === "ATL.preset") return this.ATLPresets;
     if (spec.key === "ATL.sight.visionMode") return this.ATLVisionModes;
-    if ([`system.traits.di.bypasses`, `system.traits.dr.bypasses`, `system.traits.dv.bypasses`].includes(spec.key))
-      return this.bypassesList;
     return daeSystemClass.getOptionsForSpec(spec);
   }
 
