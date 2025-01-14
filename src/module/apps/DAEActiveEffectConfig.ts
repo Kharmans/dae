@@ -251,8 +251,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       change.fieldName = fieldInfo.name;
       change.fieldDescription = fieldInfo.description;
       if (fieldInfo.name === change.key && !change.key.startsWith("flags")) {
-        // Could not find the key so set the name to <INVALID>
-        change.fieldName = "<INVALID>";
+        // Could not find the key so set the name to <UNKNOWN>
+        change.fieldName = "<UNKNOWN>";
       }
 
     });
