@@ -2769,7 +2769,7 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
 // @ts-expect-error
 const CONFIG: any = globalThis.CONFIG;
 
-export function enumerateBaseValues(objectDataModels: any[]) {
+export function enumerateBaseValues(objectDataModels: any[], logErrors: boolean = true): any {
   const baseValues: any = {};
   const modes = CONST.ACTIVE_EFFECT_MODES;
   //@ts-expect-error
@@ -2778,14 +2778,14 @@ export function enumerateBaseValues(objectDataModels: any[]) {
   const dataModels: any = game.system.dataModels;
   const MappingField = dataModels.fields.MappingField;
 
-  function processMappingField(key, mappingField, baseValues) {
+  function processMappingField(key, mappingField, baseValues, logErrors: boolean = true) {
     const fields = mappingField.initialKeys;
     if (!fields) return;
     for (let fieldKey of Object.keys(fields)) {
       if (mappingField.model instanceof SchemaField) {
-        processSchemaField(`${key}.${fieldKey}`, mappingField.model, baseValues);
+        processSchemaField(`${key}.${fieldKey}`, mappingField.model, baseValues. logErrors);
       } else if (mappingField.model instanceof MappingField) {
-        processMappingField(`${key}.${fieldKey}`, mappingField.model, baseValues);
+        processMappingField(`${key}.${fieldKey}`, mappingField.model, baseValues, logErrors);
       } else {
         // TODO come back and see how favorites might be supported.
         if (fieldKey.includes("favorites")) return;
@@ -2795,7 +2795,7 @@ export function enumerateBaseValues(objectDataModels: any[]) {
       }
     }
   }
-  function processSchemaField(key, schemaField, baseValues: any) {
+  function processSchemaField(key, schemaField, baseValues: any, logErrors: boolean = true) {
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     const fields = schemaField.fields;
     for (let fieldKey of Object.keys(fields)) {
@@ -2821,7 +2821,7 @@ export function enumerateBaseValues(objectDataModels: any[]) {
       processMappingField(`system`, schema, baseValues[key]);
     } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => schema instanceof fieldType)) {
       baseValues[key][`system`] = [schema.initial, -1];
-    } else console.error("Unexpected field ", key, schema)
+    } else if (logErrors) console.error("Unexpected field ", key, schema)
   }
   return baseValues;
 }

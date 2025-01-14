@@ -216,6 +216,7 @@ export class ValidSpec {
             m._label = `Flags ${localizedString}`;
           }
         }
+
         const saveBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).save/);
         const checkBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).mod/);
         const skillMod = m._fieldSpec.match(/system.skills.(\w\w\w).mod/);

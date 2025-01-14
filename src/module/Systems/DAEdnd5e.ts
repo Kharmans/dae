@@ -33,7 +33,47 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const FormulaField = game.system.dataModels.fields.FormulaField;
     //@ts-expect-error
     const gameConfig = game.system.config;
-    const itemSpecs = enumerateBaseValues(CONFIG.Item.dataModels);
+    let itemSpecs = enumerateBaseValues(CONFIG.Item.dataModels);
+    const activitySpecsRaw = enumerateBaseValues(globalThis.dnd5e.dataModels.activity, false);
+    const activitySpecs: any = {};
+    for (let k of ["CopnsumptionError", "AppliedEffectField", "ConsumptionTargetField"]) {
+      delete activitySpecsRaw[k];
+
+    };
+    for (let rawActivityKey of Object.keys(activitySpecsRaw)) {
+      const activityKey = rawActivityKey.replace("ActivityData", "").toLocaleLowerCase();
+      const activityLabel = i18n(`DND5E.${activityKey.toUpperCase()}.Title.one`);
+      for (let rawKey of Object.keys(activitySpecsRaw[rawActivityKey])) {
+        const key = rawKey.replace("system.", "");
+        if (["_id", "type"].includes(key)) continue;
+        activitySpecs[`activities[${activityKey}].${key}`] = activitySpecsRaw[rawActivityKey][rawKey]; 
+        activitySpecs[`activities[${activityKey}].${key}`][0].label = `${activityLabel} ${i18n("DND5E.ACTIVITY.Title.one")} ${key}`;
+      }
+      if (game.modules.get("midi-qol")?.active) {
+        activitySpecs[`activities[${activityKey}].useConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.useConditionText.hint") }), -1]; 
+        activitySpecs[`activities[${activityKey}].effectConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.effectConditionText.hint") }), -1]; 
+        activitySpecs[`activities[${activityKey}].macroData.name`] = [new StringField({ label: "Macro Name" }), -1];
+        activitySpecs[`activities[${activityKey}].macroData.command`] = [new StringField({ label: "Macro Command" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.ignoreTraits`] = [new ArrayField(new StringField(), { label: "Ignore Traits" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`] = [new StringField({ label: i18n("midi-qol.triggeredActivityId.hint") }), 0];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityConditionText`] = [new StringField({ label: i18n("midi-qol.triggeredActivityConditionText.hint") }), -1];
+        // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityTargets`] = [new StringField({ label: "Triggered Activity Targets" }), -1];
+        // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityRollAs`] = [new StringField({ label: "Triggered Activity Roll As" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.forceDialog`] = [new BooleanField({ label: i18n("midi-qol.forceDialog.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.confirmTargets`] = [new StringField({ label: i18n("midi-qol.confirmTargets.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.automationOnly`] = [new BooleanField({ label: i18n("miodi-qol.autoMactionOnly.hint") }), -1];
+        // activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`] = [new BooleanField({ label: "Other Activity Compatible" }), -1];
+      }
+
+      if (game.modules.get("midi-qol")?.active) {
+        activitySpecs["activities[attack].attackMode"] = [new StringField({label: "Attack Mode"}), -1];
+      }
+    }
+
+    for (let itemKey of Object.keys(itemSpecs)) {
+      itemSpecs[itemKey] = foundry.utils.mergeObject(itemSpecs[itemKey], activitySpecs, { insertValues: true, insertKeys: true, inplace: false, overwrite: false });
+    }
+
     const allSpecs = {};
     let unionSpecs = {};
     try {
@@ -47,6 +87,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         theSpecs = foundry.utils.flattenObject(theSpecs);
         theSpecs["name"] = [new StringField({ label: "Name" }), -1];
         theSpecs["img"] = [new StringField({ label: "Image" }), -1];
+        theSpecs["flags.dae.macro.name"] = [new StringField({ label: "Macro Name" }), -1];
+        theSpecs["flags.dae.macro.command"] = [new StringField({ label: "Macro Command" }), -1];
+        theSpecs["flags.dae.macro.img"] = [new StringField({ label: "Macro Img" }), -1];
+        theSpecs["flags.dae.macro.type"] = [new StringField({ label: "Macro Data" }), -1];
+        theSpecs["flags.dae.macro.scope"] = [new StringField({ label: "Macro Scope" }), -1];
         if (game.modules.get("midi-qol")?.active && ["union", "spell", "feat", "consumable", "equipment", "spell", "weapon"].includes(k)) {
           for (let [s, label] of [
             ["itemCondition", "midi-qol.ItemActivationCondition.Name"],
@@ -63,11 +108,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           theSpecs["flags.midiProperties.otherSaveDamage"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["otherSaveDamage"] ?? "Other Damage Save") }), -1];
           theSpecs["flags.midiProperties.saveDamage"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["saveDamage"] ?? "Base Damage Save") }), -1];
           theSpecs["flags.midiProperties.confirmTargets"] = [new StringField({ label: i18n(gameConfig.midiProperties?.["confirmTargets"] ?? "Confirm Targets") }), -1];
-
         }
+
         for (let k1 of Object.keys(theSpecs)) {
           theSpecs[k1] = new ValidSpec(k1, theSpecs[k1][0], theSpecs[k1][1], theSpecs[k1][0].label, theSpecs[k1][3]);
         }
+
         for (let k1 of Object.keys(theSpecs)) {
           switch (k1) {
             case "system.duration.units": theSpecs[k1].options = { "": null, ...gameConfig.timePeriods }; break;
@@ -82,6 +128,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
             case "flags.midiProperties.confirmTargets": theSpecs[k1].options = geti18nOptions("ConfirmTargetOptions", "midi-qol"); break;
           }
         }
+
+
         const derivedSpecsObj = {
           "name": theSpecs["name"],
           "system.attack.bonus": theSpecs["system.attack.bonus"],
@@ -104,7 +152,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         for (let k1 of Object.keys(theSpecs)) {
           if (!derivedSpecsObj[k1]) baseSpecsObj[k1] = theSpecs[k1];
         }
-
         allSpecs[k] = {
           allSpecsObj: theSpecs,
           baseSpecsObj,
@@ -1255,7 +1302,7 @@ function getRollData(wrapped, ...args) {
   data.effects = this.appliedEffects;
   data.actorId = this.id;
   data.actorUuid = this.uuid;
-  data.statuses = this.statuses;
+  data.statusesSet = this.statuses; //dnd5e now sets rollData.statuses to be an object indicating the count.
   // TODO see what config can be safely added without breaking item/actor sheets. data.config = CONFIG.DND5E;
 
   if (!data.token) Object.defineProperty(data, "token", {

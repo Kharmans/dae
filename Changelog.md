@@ -1,3 +1,29 @@
+### 12.0.11
+* **Breaking** dae no longer overwrites the dnd5e set actor.getRollData().statuses but leaves it as dnd5e sets it.
+  - Added actor.getRollData().statusesSet which is the actor.system.statuses field.
+* Several changes to item effects (i.e. enchantments)
+* Added activity effects to the keys that dae knows about, so activities[attack].attack.bonus will be recognized (it already worked).
+  - Added most of the midi specific keys to the browser as well
+  - activities[attack].midiProperties.ignoreTraits ADD idi, will cause the activity to ignore damage immunity when rolled.
+  - activities[attack].macroData.command OVERRIDE 'console.error("This is a message"); {} ', will prepend the console.error to the existing activity macro. You do not need to reference the existing activity macro. You can assign a name to the macro. Assining a command effectively create the macro on the activity.
+  - flags.dae.macro.name, flags.dae.macro.command, flags.dae.macro.type (script/text) are available to create/modify macros on the item being enchanted.
+* Enchantment effects can now cause the enchanted item call macros when the item is used.
+* Enchantment effects can now cause enchanted items to call macros from the enchantment item/activity when used.
+- Added flags.midi-qol.onUseMacroName to the available item effect changes which allows you to have the enchanted item call a macro when used.
+  - There are two ways to specify the macro to be called depending on whether the macro is to be sourced from the enchantment that added the effect or if the macro is to be sourced from the item the enchantement is applied to.
+  - To reference the enchantment item/activity use
+    flags.midi-qol.onUsemMacroName CUSTOM ActivityMacro, preAttackRoll
+    flags.midi-qol.onUsemMacroName CUSTOM ItemMAcro, preAttackRoll
+  - To reference the item/activitry the enchantment is applied to use
+    flags.midi-qol.onUseMacroName ADD **,[preAttackRoll]ItemMacro**
+    flags.midi-qol.onUseMacroName ADD **,[preAttackRoll]AttackMacro**
+  - Note the comma in the second version, it is required.
+  - You can also specify any of the other name forms, i.e. 
+    flags.midi-qol.onUseMacroNAME CUSTOM Macro.MacroName, preAttackRoll,
+    flags.midi-qol.onUseMacroName CUSTOM ItemMacro.ItemUuid, preAttackRoll
+    flags.midi-qol.onUseMacroName CUSTOM function.functionName, preAttackRoll
+    and so on
+    
 ### 12.0.10
 * Support for midi taking over most midi fields, rather than being inserted by DAE.
 
