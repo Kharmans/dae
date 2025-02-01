@@ -55,7 +55,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         activitySpecs[`activities[${activityKey}].macroData.name`] = [new StringField({ label: "Macro Name" }), -1];
         activitySpecs[`activities[${activityKey}].macroData.command`] = [new StringField({ label: "Macro Command" }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.ignoreTraits`] = [new ArrayField(new StringField(), { label: "Ignore Traits" }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`] = [new StringField({ label: i18n("midi-qol.triggeredActivityId.hint") }), 0];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`] = [new StringField({ label: i18n("midi-qol.triggeredActivityId.hint") }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityConditionText`] = [new StringField({ label: i18n("midi-qol.triggeredActivityConditionText.hint") }), -1];
         // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityTargets`] = [new StringField({ label: "Triggered Activity Targets" }), -1];
         // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityRollAs`] = [new StringField({ label: "Triggered Activity Roll As" }), -1];
@@ -253,6 +253,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (!baseValues["system.attributes.ac.armor"]) baseValues["system.attributes.ac.armor"] = [new NumberField(), -1];
     if (!baseValues["system.attributes.ac.shield"]) baseValues["system.attributes.ac.shield"] = [new NumberField(), -1];
     if (!baseValues["system.attributes.ac.cover"]) baseValues["system.attributes.ac.cover"] = [new NumberField(), -1];
+    if (!baseValues["system.attributes.ac.min"]) baseValues["system.attributes.ac.min"] = [new NumberField(), -1];
     if (!baseValues["system.attributes.ac.calc"]) baseValues["system.attributes.ac.calc"] = [new StringField(), modes.OVERRIDE];
     // system.attributes.prof/system.details.level and system.attributes.hd are all calced in prepareBaseData
     if (!baseValues["system.bonuses.All-Attacks"]) baseValues["system.bonuses.All-Attacks"] = [new StringField(), -1];
@@ -378,17 +379,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.attributes.ac.flat"] = [new NumberField(), -1];
     } else {
       specials["system.attributes.ac.value"] = [new NumberField(), -1];
-      specials["system.attributes.ac.min"] = [new NumberField(), -1];
     }
     specials["macro.activityMacro"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    // removed - required so that init.bonus can work (prepapreinitiative called after derived effects
-    // specials["system.attributes.init.total"] = [new NumberField(), -1];
-    // moved to base values - specials["system.attributes.init.bonus"] = [new StringField(), -1];
-    // Can;t find a way to support this anymore in dnd5e v4
-    // for (let abl of Object.keys(daeSystemClass.systemConfig.abilities)) {
-    //   specials[`system.abilities.${abl}.dc`] = [new NumberField(), -1];
-    // }
-
     specials["system.traits.di.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.di.value"] = [new StringField(), -1];
     specials["system.traits.di.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -402,9 +394,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.traits.dv.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.dv.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.da.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    // specials["system.traits.ci.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    // specials["system.traits.ci.value"] = [new StringField(), -1];
-    // specials["system.traits.ci.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
     specials["system.spells.pact.level"] = [new NumberField(), -1];
     specials["flags.dae"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -419,32 +408,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.traits.languages.value"] = [new StringField(), -1];
       specials["system.traits.languages.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     }
-    /*
-    if (GameSystemConfig.damageTypes) {
-      specials[`system.traits.dm.midi.amount.all`] = [new StringField(), -1];
-      Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dType => {
-        specials[`system.traits.dm.amount.${dType}`] = [new StringField(), -1]
-      });
-      Object.keys(daeSystemClass.systemConfig.itemActionTypes).forEach(aType => {
-        specials[`system.traits.dm.midi.amount.${aType}`] = [new StringField(), -1];
-      });
-      Object.keys(daeSystemClass.systemConfig.healingTypes).forEach(dType => {
-        specials[`system.traits.dm.amount.${dType}`] = [new StringField(), -1]
-      });
-      specials[`system.traits.da.midi.all`] = [new StringField(), -1];
-      Object.keys(daeSystemClass.systemConfig.damageTypes).forEach(dType => {
-        specials[`system.traits.da.${dType}`] = [new StringField(), -1]
-      });
-      Object.keys(daeSystemClass.systemConfig.itemActionTypes).forEach(aType => {
-        specials[`system.traits.da.midi.${aType}`] = [new StringField(), -1];
-      });
-      Object.keys(daeSystemClass.systemConfig.healingTypes).forEach(dType => {
-        specials[`system.traits.da.${dType}`] = [new StringField(), -1]
-      });
-      specials["system.traits.damageTypes.value"] = [new StringField(), -1];
-      specials["system.traits.damageTypes.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    }
-*/
+    
     if (foundry.utils.getProperty(actorModelSchemaFields, "resources")) {
       specials["system.resources.primary.max"] = [new NumberField(), -1];
       specials["system.resources.primary.label"] = [new StringField(), -1];
@@ -528,10 +492,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   // Any actions to be called on init Hook 
   public static initActions() {
-    //@ts-expect-error
-    if (game.release.generation >= 12) {
-      this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
-    }
+    //@ ts-expect-error  - renabled for some cases
+    // if (game.release.generation >= 12) {
+    //  this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
+    // }
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
     warn("system is ", game.system)
     if (game.modules.get("dnd5e-custom-skills")?.active) {

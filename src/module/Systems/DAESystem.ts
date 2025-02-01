@@ -92,7 +92,7 @@ export class ValidSpec {
       specials["macro.CLT"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-      // disabled since too many oddities in v12 - specials["StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       //specials["StatusEffectLabel"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       //specials["StatusEffectName"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       daeSystemClass.modifySpecials(specKey, specials, _characterSpec);

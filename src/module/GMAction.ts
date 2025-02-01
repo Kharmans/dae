@@ -337,11 +337,22 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
         foundry.utils.setProperty(aeData, "flags.dae.actor", targetActor.uuid);
         if (aeData.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
           //@ts-expect-error fromUuidSync
-          const item = fromUuidSync(aeData.origin);
+          let origin: any = fromUuidSync(aeData.origin);
+          let item;
           let macroCommand;
-          if (item instanceof Item) {
+          let count;
+          for (count = 0; count < 10 && origin instanceof CONFIG.ActiveEffect.documentClass; count++) {
+            //@ts-expect-error
+            origin = await fromUuid(origin.origin);
+          }
+          if (count === 10) {
+            console.warn("dae | applyActiveEffects: too many levels of active effects", aeData);
+          } else if (origin instanceof Item) {
+            item = origin;
             macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
-          } else if (aeData.flags?.dae?.itemData) {
+          } 
+          
+          if (!macroCommand && aeData.flags?.dae?.itemData) {
             const itemData = foundry.utils.getProperty(aeData, "flags.dae.itemData");
             if (itemData)
               macroCommand = foundry.utils.getProperty(itemData, "flags.dae.macro.command") ?? foundry.utils.getProperty(itemData, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(itemData, "flags.itemacro.macro.data.command");

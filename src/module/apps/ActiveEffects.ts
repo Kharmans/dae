@@ -238,7 +238,7 @@ export class ActiveEffects extends FormApplication {
       } else {
         let statusEffect = CONFIG.statusEffects.find(se => se.id === id);
         if (statusEffect) {
-          if (object instanceof CONFIG.Item.documentClass) {
+          if (object instanceof CONFIG.Item.documentClass && false) {
             AEDATA = {
               //@ts-expect-error
               name: statusEffect.name,

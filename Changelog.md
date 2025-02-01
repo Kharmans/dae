@@ -1,3 +1,7 @@
+### 12.0.12
+* Some changes to macro handling for macro.ItemMacro, in concert with changes in midi-qol, to align effect.origin to replicate what is set when dnd5e applies an effect.
+* Effects applied via DAE.doActivityEffects will record any item macros in effect.flags.dae.itemMacro.
+
 ### 12.0.11
 * **Breaking** dae no longer overwrites the dnd5e set actor.getRollData().statuses but leaves it as dnd5e sets it.
   - Added actor.getRollData().statusesSet which is the actor.system.statuses field.
