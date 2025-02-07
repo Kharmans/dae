@@ -42,7 +42,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     };
     for (let rawActivityKey of Object.keys(activitySpecsRaw)) {
       const activityKey = rawActivityKey.replace("ActivityData", "").toLocaleLowerCase();
-      const activityLabel = i18n(`DND5E.${activityKey.toUpperCase()}.Title.one`);
+      let activityLabel = i18n(`DND5E.${activityKey.toUpperCase()}.Title.one`);
+      if (activityLabel.startsWith("DND5E.")) activityLabel = i18n(`DND5E.${activityKey.toUpperCase()}.Title`); 
       for (let rawKey of Object.keys(activitySpecsRaw[rawActivityKey])) {
         const key = rawKey.replace("system.", "");
         if (["_id", "type"].includes(key)) continue;
@@ -55,14 +56,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         activitySpecs[`activities[${activityKey}].macroData.name`] = [new StringField({ label: "Macro Name" }), -1];
         activitySpecs[`activities[${activityKey}].macroData.command`] = [new StringField({ label: "Macro Command" }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.ignoreTraits`] = [new ArrayField(new StringField(), { label: "Ignore Traits" }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`] = [new StringField({ label: i18n("midi-qol.triggeredActivityId.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityConditionText`] = [new StringField({ label: i18n("midi-qol.triggeredActivityConditionText.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityId.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityConditionText`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityConditionText.hint") }), -1];
         // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityTargets`] = [new StringField({ label: "Triggered Activity Targets" }), -1];
         // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityRollAs`] = [new StringField({ label: "Triggered Activity Roll As" }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.forceDialog`] = [new BooleanField({ label: i18n("midi-qol.forceDialog.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.confirmTargets`] = [new StringField({ label: i18n("midi-qol.confirmTargets.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.automationOnly`] = [new BooleanField({ label: i18n("miodi-qol.autoMactionOnly.hint") }), -1];
-        // activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`] = [new BooleanField({ label: "Other Activity Compatible" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.forceDialog`] = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.forceDialog.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.confirmTargets`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.confirmTargets.hint") }), -1];        activitySpecs[`activities[${activityKey}].midiProperties.automationOnly`] = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.automationOnly.hint") }), -1];
+        // activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`] = [new BooleanField({ label: "midi-qol.SHARED.FIELDS.midiProperties.otherActivityCompatible.hint" }), -1];
       }
 
       if (game.modules.get("midi-qol")?.active) {
@@ -492,10 +492,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   // Any actions to be called on init Hook 
   public static initActions() {
-    //@ ts-expect-error  - renabled for some cases
-    // if (game.release.generation >= 12) {
-    //  this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
-    // }
+    //@ts-expect-error  - renabled for some cases
+    if (game.release.generation >= 12) {
+      this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
+    }
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
     warn("system is ", game.system)
     if (game.modules.get("dnd5e-custom-skills")?.active) {

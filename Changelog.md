@@ -1,3 +1,9 @@
+### 12.0.13
+* Some changes for origin entities being active effects rather than items, specifically in getItemMacro and flags.dae.onTargetUpdate effects.
+* Fix some labels on change labels for item changes in active effects.
+* Fix a deprecation warning in DimeEditor app.
+
+
 ### 12.0.12
 * Some changes to macro handling for macro.ItemMacro, in concert with changes in midi-qol, to align effect.origin to replicate what is set when dnd5e applies an effect.
 * Effects applied via DAE.doActivityEffects will record any item macros in effect.flags.dae.itemMacro.

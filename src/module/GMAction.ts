@@ -431,7 +431,12 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
             } else if (originEntity instanceof Actor) sourceActor = originEntity;
             //@ts-expect-error
             else if (originEntity instanceof ActiveEffect && originEntity.transfer) sourceActor = originEntity?.parent?.parent;
-            else if (originEntity instanceof ActiveEffect) sourceActor = originEntity?.parent;
+            else if (originEntity instanceof ActiveEffect) {
+              sourceActor = originEntity?.parent;
+              if (sourceActor instanceof CONFIG.Item.documentClass) {
+                sourceActor = sourceActor.actor;
+              }
+            }
 
             if (change.key === "flags.dae.onUpdateTarget") {
               // for onUpdateTarget effects, put the source actor, the target uuid, the origin and the original change.value

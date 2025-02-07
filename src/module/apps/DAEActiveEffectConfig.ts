@@ -163,10 +163,13 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       } else {
         let restrictionType = "union";
         if (this.object.parent instanceof CONFIG.Item.documentClass) {
-          if ((foundry.utils.getProperty(this.object.parent, "system.enchantment.restrictions.type") ?? "") !== "") {
-            restrictionType = foundry.utils.getProperty(this.object.parent, "system.enchantment.restrictions.type")
+          const activity = this.object.parent.system.activities.find(
+            a => a.type === "enchant" && a.effects.find(e => e.effect?.uuid === this.object?.uuid)
+          );
+          if (activity) {
+            restrictionType = activity.restrictions.type;
           }
-          this.validSpecsToUse = ValidSpec.itemSpecs[restrictionType];
+          this.validSpecsToUse = ValidSpec.itemSpecs[restrictionType || "union"];
         }
       }
     }
@@ -193,8 +196,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
     const data: any = await super.getData(options);
     if (!foundry.utils.getProperty(this.object, "flags.dae.stackable")) {
-    foundry.utils.setProperty(this.object, "flags.dae.stackable", "multi");
-    foundry.utils.setProperty(data, "effect.flags.dae.stackable", "multi");
+      foundry.utils.setProperty(this.object, "flags.dae.stackable", "multi");
+      foundry.utils.setProperty(data, "effect.flags.dae.stackable", "multi");
     }
     //@ts-expect-error
     data.preV12 = game.release.generation <= 11;

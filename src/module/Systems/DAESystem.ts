@@ -419,11 +419,11 @@ export class DAESystem {
     if (typeof (documentRef) == 'string') {
       function getActor(doc, nesting = 0, maxDepth = 3) {
         nesting++;
-        if(nesting > maxDepth) return undefined;
+        if (nesting > maxDepth) return undefined;
 
-        if(doc instanceof Actor) return doc;
-        else if(doc.actor && (doc instanceof Token || doc instanceof Item)) return doc.actor;
-        else if(doc.parent && doc instanceof ActiveEffect) return getActor(doc.parent, nesting)
+        if (doc instanceof Actor) return doc;
+        else if (doc.actor && (doc instanceof Token || doc instanceof Item)) return doc.actor;
+        else if (doc.parent && doc instanceof ActiveEffect) return getActor(doc.parent, nesting)
         else return undefined;
       }
       //@ts-expect-error
@@ -432,7 +432,7 @@ export class DAESystem {
       if (actor) value = foundry.utils.getProperty(actor, `${attribute}`) ?? null;
     }
     return value;
-}
+  }
   public static safeEval(expression: string, sandbox: any, onErrorReturn: any | undefined = undefined) {
     let result;
     const preSetupError = "MidiQOL or fromUuidSync used before setup complete";
@@ -608,13 +608,12 @@ function prepareData(wrapped) {
   this.statuses ??= new Set();
   // Identify which special statuses had been active
   const specialStatuses = new Map();
-  if (foundry.utils.isNewerVersion(game.version, "11.293")) {
-    //@ts-expect-error specialStatusEffects
-    for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
-      specialStatuses.set(statusId, this.statuses.has(statusId));
-    }
-    this.statuses.clear(); // need to do this here since core foundry does this in applyActiveEffects, but we do multiple calls to applyEffects
+
+  //@ts-expect-error specialStatusEffects
+  for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
+    specialStatuses.set(statusId, this.statuses.has(statusId));
   }
+  this.statuses.clear(); // need to do this here since core foundry does this in applyActiveEffects, but we do multiple calls to applyEffects
   foundry.utils.setProperty(this, "flags.dae.onUpdateTarget", foundry.utils.getProperty(this._source, "flags.dae.onUpdateTarget"));
   debug("prepare data: before passes", this.name, this._source);
   this.overrides = {};

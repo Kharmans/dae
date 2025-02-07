@@ -645,6 +645,10 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
   }
 }
 
+async function _preCreateEnchantmentEffect(data, options, user) {
+// There will be something needed here eventuall.
+}
+
 async function _preCreateActiveEffectIncrement(data, options, user) {
   if (debugEnabled > 0)
     warn("_preCreateActiveEffect", this, data, options, user);
@@ -701,6 +705,7 @@ async function _preCreateActiveEffectIncrement(data, options, user) {
       if (CONFIG.ActiveEffect.legacyTransferral) {
         foundry.utils.setProperty(updates, "flags.dae.transfer", data.transfer === true ? true : false);
       }
+
       // Update the duration on the effect if needed
       if (this.flags?.dae?.durationExpression && parent instanceof Actor) {
         let sourceActor = parent;
@@ -1093,7 +1098,7 @@ export function deleteActiveEffectHook(...args) {
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
             await removeCreateItemChange(change.value, actor, effect, context)
           }
-          if (change.key === "macro.StatusEffect") {
+          if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
             await removeConditionChange(actor, change, token, effect, context); // TODO this is not right
           }
           if (ceInterface && change.key === "macro.CE") {
@@ -1179,7 +1184,9 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
     let count;
     for (count = 0; count < 10 && source instanceof ActiveEffect; count++) {
       //@ts-expect-error
-      source = await fromUuid(source.origin);
+      const newSource: any = await fromUuid(source.origin);
+      if (!newSource) source = source.parent;
+      else source = newSource;
     }
     if (count === 10) {
       console.warn("dae | daeMacro | too many levels of origin", effectData);
@@ -1400,6 +1407,7 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
       case "macro.CUB":
       case "macro.CLT":
       case "macro.StatusEffect":
+      case "StatusEffect":
       case "macro.tokenMagic":
       case "macro.createItem":
       case "macro.createItemRunMacro":
@@ -1936,7 +1944,8 @@ export function preUpdateActorHook(candidate, updates, options, user) {
       const sourceToken = sourceTokenDocument?.object;
       const targetActor = targetTokenDocument?.actor;
       const targetToken = targetTokenDocument?.object;
-      let originItem = (originObject instanceof Item) ? originObject : undefined;
+      let originItem: any = (originObject instanceof Item) ? originObject : undefined;
+      if (!originItem && originObject instanceof ActiveEffect) originItem = originObject.parent;
       if (!originItem) {
         const theEffect = targetActor.appliedEffects.find(ef => ef.origin === onUpdate.origin);
         if (foundry.utils.getProperty(theEffect, "flags.dae.itemUuid")) {
@@ -1968,13 +1977,13 @@ export function preUpdateActorHook(candidate, updates, options, user) {
       let macroText;
       if (onUpdate.macroName.startsWith("ItemMacro")) { // TODO Come back and make sure this is tagged to the effect
         if (onUpdate.macroName === "ItemMacro") {
-          macroText = foundry.utils.getProperty(originObject, "flags.dae.macro.command") ?? foundry.utils.getProperty(originObject, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(originObject, "flags.itemacro.macro.data.command");
+          macroText = foundry.utils.getProperty(originItem ?? {}, "flags.dae.macro.command") ?? foundry.utils.getProperty(originObject, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(originItem ?? {}, "flags.itemacro.macro.data.command");
         } else if (onUpdate.macroName.startsWith("ItemMacro.")) {
           let macroObject = sourceActor?.items.getName(onUpdate.macroName.split(".")[1]);
           if (!macroObject) macroObject = originObject?.parent?.items.getName(onUpdate.macroName.split(".")[1]);
           if (macroObject) macroText = foundry.utils.getProperty(macroObject, "flags.dae.macro.command") ?? foundry.utils.getProperty(macroObject, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(macroObject, "flags.itemacro.macro.data.command");
         }
-      } if (onUpdate.macroName.trim().startsWith("function.")) {
+      } else if (onUpdate.macroName.trim().startsWith("function.")) {
         macroText = `return await ${onUpdate.macroName.trim().replace("function.", "").trim()}(speaker, actor, token, character, scope)`
       } else {
         const theMacro: Macro | undefined = game.macros?.getName(onUpdate.macroName);
@@ -2010,8 +2019,8 @@ export function preUpdateActorHook(candidate, updates, options, user) {
         const argNames = Object.keys(scope);
         const argValues = Object.values(scope);
         //@ts-expect-error
-        const fn = new AsyncFunction("speaker", "actor", "token", "character", "scope", ...argNames, macroText)
-        fn.call(this, speaker, candidate, targetTokenDocument?.object, character, scope, ...argValues);
+        const fn = new AsyncFunction("speaker", "actor", "token", "character", "item", "macroItem", "scope", ...argNames, macroText)
+        fn.call(this, speaker, candidate, targetTokenDocument?.object, character, scope.item, scope.macroItem, scope, ...argValues);
       } catch (err) {
         ui.notifications?.error(`There was an error running your macro. See the console (F12) for details`);
         error("dae | Error evaluating macro for onUpdateActor", err)
@@ -2180,6 +2189,7 @@ export function daeInitActions() {
   async function _preCreateActiveEffect(wrapped, data, context, user) {
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
     if (result) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
+    await _preCreateEnchantmentEffect.bind(this)(data, context, user);
     if (this.active && dependentConditions && !this.flags?.dae?.autoCreated) {
       if (debugEnabled > 0) warn("_preCreateActiveEffect", this, context);
       await applyStatusEffects(this, true, context);
@@ -2538,6 +2548,7 @@ export function actorFromUuid(uuid): Actor | null {
   let doc = fromUuidSync(uuid);
   if (doc instanceof CONFIG.Token.documentClass) doc = doc.actor;
   if (doc instanceof CONFIG.Actor.documentClass) return doc;
+  if (doc instanceof CONFIG.Item.documentClass) return doc.parent;
   return null;
 }
 

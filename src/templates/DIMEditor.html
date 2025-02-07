@@ -7,22 +7,14 @@
   <div class="form-group">
     <label>Scope</label>
     <select name="scope" disabled>
-        {{#select data.scope}}
-        {{#each macroScopes}}
-        <option value="{{this}}">{{this}}</option>
-        {{/each}}
-        {{/select}}
+    {{selectOptions macroScopes selected=data.scope}}
     </select>
 </div>
 
 <div class="form-group">
     <label>Type</label>
     <select name="type" disabled>
-        {{#select data.type}}
-        {{#each macroTypes as |value id|}}
-            <option value="{{id}}">{{value}}</option>
-        {{/each}}
-        {{/select}}
+      {{selectOptions macroTypes selected=type}}
     </select>
 </div>
 
