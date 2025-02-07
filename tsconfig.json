@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "types": ["@league-of-foundry-developers/foundry-vtt-types/index-lenient"],
-    "moduleResolution": "node",
+    "types": ["fvtt-types"],
+    "moduleResolution": "bundler",
     "strictNullChecks": true,
     "target": "ESNext",
     "useDefineForClassFields": true,
@@ -19,17 +19,19 @@
      */
     "allowJs": true,
     "checkJs": false,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "sourceMap": true,
-    "strict": false,
-    "esModuleInterop": false,
+    "strict": true,
+    "esModuleInterop": true,
     "noEmit": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitReturns": false,
     "noImplicitOverride": false,
     "noImplicitAny": false,
-    "skipLibCheck": true
+    "noImplicitThis": false,
+    "skipLibCheck": true,
+    "outDir": "dist",
   },
   "include": [
       "src"

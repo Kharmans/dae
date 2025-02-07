@@ -1,6 +1,6 @@
-import { effectIsTransfer, simpleCalendarInstalled } from "../dae"
-import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae";
-import { ValidSpec } from "../Systems/DAESystem";
+import { effectIsTransfer, simpleCalendarInstalled } from "../dae.js"
+import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae.js";
+import { ValidSpec } from "../Systems/DAESystem.js";
 
 export class ActiveEffects extends FormApplication {
   static filters = new Set();
@@ -21,7 +21,7 @@ export class ActiveEffects extends FormApplication {
     const options = super.defaultOptions;
     // options.id = "effect-selector-actor";
     options.classes = ["dnd5e", "sw5e"];
-    options.title = game.i18n.localize("dae.ActiveEffectName");
+    options.title = i18n("dae.ActiveEffectName");
     options.template = "./modules/dae/templates/ActiveEffects.html";
     options.submitOnClose = true;
     options.height = 500;
@@ -37,7 +37,8 @@ export class ActiveEffects extends FormApplication {
   }
 
   get title() {
-    return game.i18n.localize("dae.ActiveEffectName") + ` ${this.object.name}`;
+    // @ts-expect-error
+    return i18n("dae.ActiveEffectName") + ` ${this.object?.name}`;
   }
   get filters() { return ActiveEffects.filters }
   getData(): any {
@@ -47,9 +48,7 @@ export class ActiveEffects extends FormApplication {
 
     function* effectsGenerator() { for (const effect of this.effects) yield effect };
     let effects = effectsGenerator.bind(this.object);
-    //@ts-expect-error legacyTransferral
     if (this.object instanceof CONFIG.Actor.documentClass && CONFIG.ActiveEffect.legacyTransferral === false) {
-      //@ts-expect-error allApplicableEffects
       effects = this.object.allApplicableEffects.bind(this.object);
     }
     let actives: any[] = [];
@@ -80,7 +79,8 @@ export class ActiveEffects extends FormApplication {
         if (this.object instanceof CONFIG.Item.documentClass)
           change.label = ValidSpec.actorSpecs["union"].allSpecsObj[change.key]?.label || change.key;
         else
-          change.label = ValidSpec.actorSpecs[this.object.type].allSpecsObj[change.key]?.label || change.key;
+          // @ts-expect-error
+          change.label = ValidSpec.actorSpecs[this.object?.type].allSpecsObj[change.key]?.label || change.key;
         if (typeof change.value === "string" && change.value.length > 40) {
           change.value = change.value.substring(0, 30) + " ... ";
         } else if (Array.isArray(change.value)) {
@@ -99,7 +99,8 @@ export class ActiveEffects extends FormApplication {
     actives.forEach(e => {
       let id = e.origin?.match(/Actor.*Item\.(.*)/);
       if (id?.length === 2) {
-        const item = this.object.items?.get(id[1]);
+        // @ts-expect-error
+        const item = this.object?.items?.get(id[1]);
         foundry.utils.setProperty(e, "flags.dae.itemName", item?.name || "???");
       }
       else {
@@ -110,9 +111,7 @@ export class ActiveEffects extends FormApplication {
 
     let efl = CONFIG.statusEffects
       .map(se => {
-        //@ts-expect-error .name
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name} (CE)` };
-        //@ts-expect-error .name
         if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name} (CLT)` };
         //@ts-expect-error .name
         return { id: se.id, name: i18n(se.name) };
@@ -128,9 +127,12 @@ export class ActiveEffects extends FormApplication {
       actives: actives,
       isGM: game.user?.isGM,
       isItem,
+      // @ts-expect-error
       isOwned: this.object.isOwned,
+      // @ts-expect-error
       flags: this.object.flags,
       modes: modeKeys,
+      // @ts-expect-error
       validSpecs: isItem ? ValidSpec.actorSpecs["union"].allSpecsObj : ValidSpec.actorSpecs[this.object.type],
       // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
       canEdit: true,
@@ -179,15 +181,14 @@ export class ActiveEffects extends FormApplication {
     filterLists.on("click", ".filter-item", this._onToggleFilter.bind(this));
 
     html.find('.refresh').click(async ev => {
-      //@ts-expect-error
       return this.submit({ preventClose: true }).then(() => this.render());
     });
 
     // Delete Effect
     html.find('.effect-delete').click(async ev => {
-      const object = this.object;
+      const object = this.object as Actor.Implementation | Item.Implementation;
       const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-      let effect = object.effects.get(effectid);
+      let effect = object.effects.get(effectid ?? "");
       if (effect) { // this will mean deleting item transfer effects won't work unless the item is being edited
       if (object instanceof CONFIG.Actor.documentClass || object instanceof CONFIG.Item.documentClass) {
         //@ts-expect-error
@@ -196,11 +197,11 @@ export class ActiveEffects extends FormApplication {
     }
     });
     html.find('.effect-edit').click(async ev => {
-      const object: any = this.object;
+      const object = this.object as Actor.Implementation | Item.Implementation;
       if (object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
       const effectUuid = $(ev.currentTarget).parents(".effect-header").attr("effect-uuid");
       if (!effectUuid) return
-      //@ ts-expect-error fromUuidSync
+      // @ts-expect-error
       let effect: any = await fromUuid(effectUuid);
 
       // const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
@@ -209,17 +210,17 @@ export class ActiveEffects extends FormApplication {
       return effect?.sheet.render(true);
     })
     html.find('.effect-add').click(async ev => {
-      const object: any = this.object;
+      const object = this.object as Actor.Implementation | Item.Implementation;
       let effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
       let AEDATA;
-      //@ts-expect-error
-      let id = Object.entries(this.effectList).find(([key, value]) => value === effect_name)[0];
+      let id = (Object.entries(this.effectList).find(([key, value]) => value === effect_name) ?? [])[0];
       if (effect_name === "new") {
+        // @ts-expect-error no dnd5e-types
         if (false && object.system.enchantment) { // I think just creating a simple effect, rather than an enchantment is right
-          //@ts-expect-error .create
           return await ActiveEffect.implementation.create({
             name: object.name,
             icon: object.img,
+            // @ts-expect-error no dnd5e-types
             type: "enchantment",
           }, {parent: object});
         };
