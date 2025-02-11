@@ -283,9 +283,7 @@ export class DAESystemSW5E extends DAESystemDND5E {
       });
     }
   }
-  static get applyBaseEffectsFunc() {
-    return applyBaseActiveEffectssw5e
-  }
+
   public static getOptionsForSpec(spec: any): any {
     if (!spec.key) return undefined;
     if (spec.key.includes("system.skills") && spec.key.includes("value"))
@@ -307,16 +305,6 @@ export class DAESystemSW5E extends DAESystemDND5E {
   public static initActions() {
     super.initActions();
   }
-}
-// this function replaces applyActiveEffects in Actor
-function applyBaseActiveEffectssw5e() {
-  if (this._prepareScaleValues) this._prepareScaleValues();
-  if (this.system?.prepareEmbeddedData instanceof Function) this.system.prepareEmbeddedData();
-
-  // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
-  // determine whether they are suppressed or not.
-  this.effects.forEach(e => e.determineSuppression());
-  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
 }
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 foundry.utils.setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);

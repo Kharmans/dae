@@ -9,7 +9,7 @@ import { checkLibWrapperVersion } from './module/migration.js';
 import { setupPatching, initPatching } from './module/patching.js';
 import API from './module/API/api.js';
 
-// @ts-expect-error
+//@ts-expect-error
 export const CONFIG: any = globalThis.CONFIG;
 export const ArrayField = foundry.data.fields.ArrayField;
 export const ObjectField = foundry.data.fields.ObjectField

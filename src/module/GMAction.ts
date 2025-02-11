@@ -317,7 +317,11 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
     // TODO workout what to do if activate is false? does not seem to be used anywhere to force delete effects
     if (activate) {
       let dupEffects = foundry.utils.duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true);
-      dupEffects.forEach(effectData => effectData.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StatusEffect" }))
+      dupEffects.forEach(effectData => {
+        effectData.transfer = false;
+        if (effectData.flags?.dae?.transfer !== undefined) delete effectData.flags.dae.transfer;
+        effectData.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StatusEffect" })
+      });
       for (let aeData of dupEffects) {
         if (activityUuid) foundry.utils.setProperty(aeData, "flags.dae.activity", activityUuid);
         foundry.utils.setProperty(aeData, "flags.dae.actor", targetActor.uuid);
@@ -395,7 +399,6 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           }
         }
         warn("Apply active effects ", aeData, itemCardId);
-        if (aeData.flags?.dae?.transfer !== undefined) delete aeData.flags.dae.transfer;
         let source: any | undefined = await fromUuid(aeData.origin);
         let context = targetActor.getRollData();
         if (false && source instanceof CONFIG.Item.documentClass) {

@@ -1,8 +1,11 @@
+### 12.0.14
+* **dnd5e** Remove system.attack.bonus from Item special effects since it is just a bonus string
+* **Breaking** Change fields on Actors that dae does not recognise will now be preocessed in the base effects phase, rathere than being deferred until the derived phase. This is inline with how item effects are applied.
+
 ### 12.0.13
 * Some changes for origin entities being active effects rather than items, specifically in getItemMacro and flags.dae.onTargetUpdate effects.
 * Fix some labels on change labels for item changes in active effects.
 * Fix a deprecation warning in DimeEditor app.
-
 
 ### 12.0.12
 * Some changes to macro handling for macro.ItemMacro, in concert with changes in midi-qol, to align effect.origin to replicate what is set when dnd5e applies an effect.

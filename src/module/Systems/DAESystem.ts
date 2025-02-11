@@ -81,6 +81,7 @@ export class ValidSpec {
       // baseValues["items"] = ""; // TODO one day work this out.
       if (game.modules?.get("gm-notes")?.active) {
         baseValues["flags.gm-notes.notes"] = [new StringField(), -1];
+        baseValues["name"] = [new StringField(), -1];
         baseValues["system.att"]
       }
 
@@ -573,11 +574,13 @@ export class DAESystem {
   public static setupActions(): void {
   }
 
-  static get applyBaseEffects() {
-    return applyBaseActiveEffects;
-  }
+
 }
 
+// this function replaces applyActiveEffects in Actor
+function applyBaseActiveEffects() {
+  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].baseSpecsObj, excludeSpecs: ValidSpec.actorSpecs[this.type].derivedSpecsObj, allowAllSpecs: true, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
+}
 /*
 * replace the default actor prepareData
 * call applyDaeEffects
@@ -600,7 +603,7 @@ function prepareData(wrapped) {
   this.overrides = {};
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
-  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].derivedSpecsObj, completedSpecs: ValidSpec.actorSpecs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
+  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].derivedSpecsObj, excludeSpecs: ValidSpec.actorSpecs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
   let tokens;
   for (const [statusId, wasActive] of specialStatuses) {
     const isActive = this.statuses.has(statusId);
@@ -613,10 +616,6 @@ function prepareData(wrapped) {
   debug("prepare data: after passes", this);
 }
 
-// this function replaces applyActiveEffects in Actor
-function applyBaseActiveEffects() {
-  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
-}
 
 foundry.utils.setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
 

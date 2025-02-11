@@ -119,14 +119,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 /*
  * Replace default appplyAffects to do value lookups
  */
-export function applyDaeEffects({
-  specList = [], 
-  completedSpecs = {}, 
-  allowAllSpecs = false, 
-  wildCardsInclude = [], 
-  wildCardsExclude = [], 
-  doStatusEffects = true 
-}: {specList: any, completedSpecs: any, allowAllSpecs: boolean, wildCardsInclude: RegExp[], wildCardsExclude: RegExp[], doStatusEffects: boolean}) {
+export function applyDaeEffects({ specList = {}, excludeSpecs = {}, allowAllSpecs = false, wildCardsInclude = [] as Array<RegExp>, wildCardsExclude = [] as Array<RegExp>, doStatusEffects = false}) {
   if (disableEffects) return;
   const overrides = {};
   debug("prepare data: before passes", this.name, this._source);
@@ -160,7 +153,7 @@ export function applyDaeEffects({
             c.key = daeSystemClass.fieldMappings[c.key];
           }
         }
-        return !completedSpecs[c.key]
+        return !excludeSpecs[c.key]
           && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null))
           && (!wildCardsExclude.some(re => c.key.match(re) !== null))
           && !c.key.startsWith("ATL.")
@@ -2146,9 +2139,9 @@ export function daeInitActions() {
 
   // Hooks for condtional effects
   Hooks.on("updateActor", processConditionalEffects)
-  Hooks.on("updateToken", (tokenDocument, updates: TokenDocument.UpdateData, diff, userId) => {
+  Hooks.on("updateToken", (tokenDocument: TokenDocument, updates: TokenDocument.UpdateData, diff, userId) => {
     if (updates.x || updates.y)
-      processConditionalEffects(tokenDocument.actor, updates, diff, userId);
+      processConditionalEffects(tokenDocument.actor as Actor, updates, diff, userId);
   });
   Hooks.on("updateItem", (item, updates, options, userId) => {
     if (item.parent instanceof Actor) processConditionalEffects(item.parent, updates, options, userId)
@@ -2259,6 +2252,7 @@ async function updateStatusEffects(doc, options, userId) {
   let newStatuses: Set<string> = new Set; // actor.statuses;
   for (let effect of actor.allApplicableEffects()) {
     if (effect.flags?.dae?.autoCreated) { // even if disabled auto created effects should be included in current statuses
+      //@ts-ignore .union
       currentStatuses = currentStatuses.union(effect.statuses)
       continue;
     }
@@ -2266,6 +2260,7 @@ async function updateStatusEffects(doc, options, userId) {
       effect.determineSuppression();
     if (!effect.active) continue;
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
+    //@ts-ignore .union
     newStatuses = newStatuses.union(effect.statuses);
   }
   await applyStatusEffectChagnes(actor, doc, currentStatuses, newStatuses, true);
@@ -2291,10 +2286,12 @@ async function applyStatusEffects(theEffect: any, includeEffect: boolean, contex
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
     if (effect.uuid === theEffect.uuid) continue; // skip existing effect it will be added in if needed
 
+    //@ts-ignore .union
     newStatuses = newStatuses.union(effect.statuses);
   }
   if (includeEffect && theEffect instanceof ActiveEffect) {
     const docStatuses = context.statuses ?? theEffect.statuses;
+    //@ts-ignore .union
     newStatuses = newStatuses.union(docStatuses);
   }
   const doc_id = theEffect._id;
@@ -2593,7 +2590,7 @@ export async function toggleActorStatusEffectPossible(actor: Actor, statusId: st
   let preCreateActiveEffectHookId;
   try {
     const statusEffect = CONFIG.statusEffects.find(e => e.id === statusId);
-    preCreateActiveEffectHookId = Hooks.on("preCreateActiveEffect", (effect, data, options, userId) => {
+    preCreateActiveEffectHookId = Hooks.on("preCreateActiveEffect", (effect: any, data: any, options: any, userId: string) => {
       if (effect._id !== statusEffect._id) return;
       if (origin) effect.updateSource({ origin });
       if (enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": enableCondition });
