@@ -1,5 +1,5 @@
-import { itemacroActive, libWrapper, replaceFormulaData } from "./dae";
-import { debug, log, error, warn, } from "../dae";
+import { itemacroActive, libWrapper, replaceFormulaData } from "./dae.js";
+import { debug, log, error, warn, } from "../dae.js";
 
 export function patchingInitSetup() {
   return;

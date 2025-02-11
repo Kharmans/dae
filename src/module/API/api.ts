@@ -1,13 +1,13 @@
-import { confirmAction, daeSpecialDurations } from '../../dae';
-import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken, deleteItemActiveEffects } from '../../module/daeMacros';
-import { convertDuration } from '../GMAction';
-import { ActiveEffects } from '../apps/ActiveEffects';
-import { DAEActiveEffectConfig, addAutoFields, otherFields } from '../apps/DAEActiveEffectConfig';
-import { DIMEditor } from '../apps/DIMEditor';
-import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects } from '../dae';
-import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration';
-import { ValidSpec, wildcardEffects } from '../Systems/DAESystem';
-import { enumerateBaseValues } from '../dae';
+import { confirmAction, daeSpecialDurations } from '../../dae.js';
+import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken, deleteItemActiveEffects } from '../../module/daeMacros.js';
+import { convertDuration } from '../GMAction.js';
+import { ActiveEffects } from '../apps/ActiveEffects.js';
+import { DAEActiveEffectConfig, addAutoFields, otherFields } from '../apps/DAEActiveEffectConfig.js';
+import { DIMEditor } from '../apps/DIMEditor.js';
+import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects } from '../dae.js';
+import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration.js';
+import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
+import { enumerateBaseValues } from '../dae.js';
 
 const API = {
   ActiveEffects(object: any = {}, options: any = {}) {
@@ -46,7 +46,6 @@ const API = {
   },
   DAEfromUuid(uuid) {
     console.warn("dae | Deprecation warning | DAEfromUuid is deprecated, use fromUuidSync instead");
-    //@ts-expect-error fromUuidSync
     return fromUuidSync(uuid);
   },
   async daeMacro(action: string, actor, effectData, lastArgOptions: any = {}) {
@@ -118,7 +117,7 @@ const API = {
   async setFlag(tactor: Actor | Token | string, flagId: string, value: any) {
     return await setFlag(tactor, flagId, value);
   },
-  async setTileVisibility(tileOrId: Tile | string, visible: boolean) {
+  async setTileVisibility(tileOrId: TileDocument | string, visible: boolean) {
     return await setTileVisibility(tileOrId, visible);
   },
   async setTokenFlag(tokenOrId: Token | string | TokenDocument, flagName: string, flagValue: any) {

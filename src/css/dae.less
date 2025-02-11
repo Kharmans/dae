@@ -1,0 +1,547 @@
+/* ------------------------------------ */
+/*  	     ActiveEffect.HTML	        */
+/* ------------------------------------ */
+
+/*/ Filters /*/ 
+.dae-inventory-filters {
+  .dae-filter-container {
+    border: none;
+    margin: 0 6px 6px 6px;
+
+    .dae-filter-list {
+      line-height: 20px;
+    }
+  }
+}
+
+.dae-filter-container {
+  border: 2px groove #eeede0;
+
+  .dae-filter-list {
+    min-width: 100%;
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+}
+
+/*/ Unused? /*/ 
+.dnd5e.sheet.item {
+  /*/ List /*/
+  .dae-effect-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+
+    .effect {
+      line-height: 30px;
+      padding: 0 2px;
+      border-bottom: 1px solid #c9c7b8;
+
+      .effect-name {
+        cursor: pointer;
+        min-width: 220px;
+      }
+      
+      .effect-name h4 {
+        margin: 0;
+      }
+    }
+    
+    .effect-header h3 {
+      margin: 0 0px 0 0;
+      padding-left: 0px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    
+    .effect-name,
+    .effect-label {
+      flex: 0 0 220px;
+      padding-left: 4px;
+      overflow-wrap: anywhere;
+    }
+    
+    .effect-transfer {
+      flex: 0 0 100px;
+      padding-left: 4px;
+    }
+    
+    .effect-mode {
+      flex: 0 0 100px;
+      padding-left: 4px;
+    }
+    
+    .effect-value {
+      flex: 0 0 120px;
+      padding-left: 4px;
+    }
+    
+    .effect-value-value {
+      flex: 0 0 120px;
+      padding-left: 4px;
+    }
+    
+    .effect-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .effect-controls {
+      flex: 2 0 20px;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+
+      .flex1 {
+        flex: 1;
+      }
+      
+      .flex2 {
+        flex: 2;
+      }
+      
+      .flex3 {
+        flex: 3;
+      }
+      
+      .flex4 {
+        flex: 4;
+      }
+      
+      a {
+        flex: 0 0 22px;
+        font-size: 12px;
+        text-align: center;
+        color: #3c3c3c;
+      }
+
+      > * {
+        flex: 1;
+      }
+    }
+  }
+  
+  
+  /*/ Header /*/
+  
+  .dae-effect-header {
+    margin: 10px 0 2px 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.05);
+    border: 3px groove #eeede0;
+    font-weight: bold;
+    line-height: 24px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .dae-effect-first-header {
+    height: 40px;
+    border: 1px solid rgb(0 0 0 / 60%);
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    background-color: rgb(255 255 255 / 25%);
+    border-radius: 8px 8px 0 0;
+
+    .effect-add {
+      border: 1px solid rgb(0 0 0 / 50%);
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+      background-color: rgb(255 255 255 / 50%);
+
+      i {
+        font-size: 12px;
+        color: black;
+      }
+    }    
+  }
+
+  
+  /*/ Layout /*/
+  
+  .dae-change-list {
+    line-height: 1.5em;
+    display: flex;
+    align-items: center;
+
+    .effect-name {
+      border-left: 2px solid rgb(0 0 0 / 20%);
+      padding-left: 6px;
+    }
+    
+    .effect-mode {
+      border-left: 2px solid rgb(0 0 0 / 20%);
+      padding-left: 6px;
+    }
+    
+    .effect-value-value {
+      border-left: 2px solid rgb(0 0 0 / 20%);
+      padding-left: 6px;
+    }
+    
+    &:nth-child(odd) {
+      background-color: rgb(255 255 255 / 25%);
+    }
+    
+    .change-controls {
+      flex: 2 0 20px;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+  }
+
+  .smallbox {
+    line-height: 14px;
+    font-size: 14px;
+  }
+
+  .dae-effect-label {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.dae-new-effect {
+  flex-grow: 1;
+  margin-right: 5px;
+    
+  select {
+    width: 100%;
+  }
+}
+
+
+
+.dae-arrow-down,
+.dae-arrow-right {
+  padding-top: 4px;
+  padding-left: 4px;
+  width: 100px;
+  flex: 0 0 100px;
+}
+
+.dae-effect-status,
+.dae-effect-duration {
+  flex: 0 0 120px;
+}
+
+.dae-effect-icon,
+.dae-effect-img {
+  height: 24px;
+  width: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+/* Other */
+
+.dae-green-text {
+  color: #36ba36
+}
+
+.dae-active {
+  &-button {
+    border: none;
+    padding: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    display: flex;
+    font-weight: bold;
+    color: #8daf8d;
+    justify-content: space-between;
+    
+    &-styling {
+      border: none;
+      padding: 0px;
+    }
+  }
+
+  &-itemeffect {
+    text-indent: 10px;
+    font-size: 12px;
+  }
+
+  &-toggle {
+    border: none;
+    padding: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+.dae-inactive {
+  &-button {
+    border: none;
+    padding: 0;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    display: flex;
+    color: grey;
+    justify-content: space-between;
+  }
+  &-itemeffect {
+    color: grey;
+    text-indent: 10px;
+    font-size: 12px;
+  }
+}
+
+[id^="DAEActiveEffectConfig"] .active-effect-sheet .dae-scrollable-list {
+    overflow: visible;
+}
+
+
+/* ------------------------------------ */
+/*  	 DAE ACTIVE EFFECT EDITOR		*/
+/* ------------------------------------ */
+
+.dae-sheet-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 4px;;
+  
+  .dae-effect-icon {
+    height: 64px !important;
+    margin-right: 16px;
+    border-color: var(--color-border-light-tertiary);
+    background-color: rgb(0 0 0 / 5%);
+    padding: 4px;
+    border-radius: 4px;
+    transition: transform 0.2s ease-in-out;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+  
+  .dae-effect-title input {
+    width: 100% !important;
+    height: 64px !important;
+    margin: 0 !important;
+    padding: 8px 12px;
+    color: #333;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--color-border-light-tertiary);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+
+    &::placeholder {
+      color: #999;
+      font-style: italic;
+    }
+  }
+}
+
+.dae-form-group {
+  padding: 1px 4px;
+}
+
+/*/ Details Tab /*/
+
+.dae-notes{
+  padding: 0 4px 10px;
+}
+
+.dae-prosemirror {
+  .editor {
+    margin-bottom: 5px;
+    
+    .editor-container {
+      border: 2px groove #eeede0;
+      height: 100%;
+      margin: 0;
+      background-color: rgb(0 0 0 / 5%);
+      
+      .editor-content {
+        padding: 0 6px;
+      }
+    }
+  }
+  
+  label {
+    padding: 2px;
+    font-weight: bold;
+  }
+  
+  menu {
+    border-radius: 0;
+    border: 2px groove #eeede0;
+    border-bottom: none;
+  }
+}
+
+
+/*/ Duration Tab /*/
+
+.dae-special-duration-container {
+  border: 2px groove #eeede0;
+  padding: 6px;
+  margin: 8px 0 !important;
+  text-align: center;
+  
+  .dae-special-duration-title {
+    text-align: left;
+    height: 24px; 
+    line-height: 24px;
+    vertical-align: center;
+    padding-left: 4px;
+  }
+  
+  .dae-effect-control {
+    width: 120px;
+    border: 2px groove #eeede0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    margin-right: 27px
+  }
+  
+  .special-duration-list {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+    
+    .formgroup {
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    select {
+      flex-grow: 1;
+      margin-right: 4px;
+    }
+  }
+}
+
+/*/ Changes tab /*/
+
+.dae-effects-table {
+  width: 100% ;
+  border-collapse: separate ;
+  border-spacing: 0 ;
+  border: 1px solid rgb(0 0 0 / 25%) ;
+  min-height: 144px;
+  
+  th {
+    white-space: nowrap ;
+    box-sizing: border-box ;
+    background-color: #343434 ;
+    font-weight: normal ;
+  }
+  
+  .flexrow {
+    display: table-row ;
+  }
+}
+
+.dae-effects-tab {
+  &[data-tab="effects"] .dae-effects-table td {
+    vertical-align: top ;
+    padding: 10px 6px 8px 6px;
+    border-bottom: 1px dashed rgb(0 0 0 / 20%);
+    min-height: 200px !important;
+  }
+
+  .dae-effects-table {
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    input, select {
+      border: 1px solid rgb(0 0 0 / 70%);
+      background-color: rgb(255 255 255 / 10%);
+
+      &:focus {
+        border: 1px solid rgb(0 0 0 / 100%);
+        background-color: rgb(255 255 255 / 40%);
+      }
+    }
+  }
+
+  .dae-value-textarea textarea {
+    border: 1px solid rgb(0 0 0 / 70%);
+    background-color: rgb(255 255 255 / 10%);
+    margin: 0;
+    min-width: 250px;
+
+    &:focus {
+      border: 1px solid rgb(0 0 0 / 100%);
+      background-color: rgb(255 255 255 / 40%);
+    }
+  }
+  
+  
+  .dae-value {
+    min-width: 250px;
+  }
+  
+  .dae-key-wrapper, .dae-key {
+    width: 400px;
+    min-height: 66px;
+  }
+  
+  .dae-field-description {
+    font-size: smaller;
+    max-height: 36px;
+    overflow: auto;
+    margin-top: 1px;
+    padding-top: 2px;
+    border-top: 1px solid rgba(0, 0, 0, 0.2);
+  }
+  
+  .dae-field-name {
+    padding-bottom: 1px;
+  
+    font-weight: bold;
+  }
+  
+  .dae-field-info {
+    padding: 4px 2px 0;
+  }
+  
+  .dae-mode select, .dae-mode {
+    width: 110px;
+  }
+  
+  .dae-priority {
+    align-content: center;
+  }
+}
+
+.dae-priority {
+  width: 60px;
+
+  input {
+    text-align: center;
+    max-width: 60px;
+  }
+}
+
+.priority.dae-priority {
+  text-align: center;
+}
+
+
+.dae-controls {
+  width: 50px;
+}

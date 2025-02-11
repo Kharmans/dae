@@ -1,17 +1,17 @@
-import { cltActive, ceInterface, atlActive, daeSystemClass, geti18nOptions } from "../dae";
-import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae";
-import { ValidSpec } from "../Systems/DAESystem";
-import { DAEFieldBrowser } from "./FieldBrowser";
+import { cltActive, ceInterface, atlActive, daeSystemClass, geti18nOptions } from "../dae.js";
+import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae.js";
+import { ValidSpec } from "../Systems/DAESystem.js";
+import { DAEFieldBrowser } from "./FieldBrowser.js";
 
 export var otherFields: any[] = [];
 
 export function addAutoFields(fields: string[]) {
   let newFields = new Set(fields);
-  //@ts-expect-error
   newFields = newFields.union(new Set(otherFields));
   otherFields = Array.from(newFields).sort();
 }
 
+// @ts-expect-error no clue why
 export class DAEActiveEffectConfig extends ActiveEffectConfig {
   tokenMagicEffects;
   cltConditionList;
@@ -23,6 +23,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   ATLVisionModes;
   validFields;
   validSpecsToUse;
+  // @ts-expect-error
   daeFieldBrowser: DAEFieldBrowser;
 
   // object: any; Patch 4535992 Why ???
@@ -38,7 +39,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     //@ts-expect-error
     this.validSpecsToUse = ValidSpec.actorSpecs?.union;
     if (!this.validSpecsToUse) {
-      ui.notifications.error("DAE | No valid specs found");
+      ui.notifications?.error("DAE | No valid specs found");
       return;
     }
     daeSystemClass.configureLists(this)
@@ -80,17 +81,14 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     if (atlActive && !isEnchantment(object)) {
       this.ATLPresets = {};
       //@ts-expect-error
-      game.settings.get("ATL", "presets")?.forEach(preset => this.ATLPresets[preset.name] = preset.name);
+      game.settings?.get("ATL", "presets")?.forEach(preset => this.ATLPresets[preset.name] = preset.name);
 
-      //@ts-expect-error
       Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
         otherFields.push(`ATL.detectionModes.${dm}.range`);
       });
 
       this.ATLVisionModes = {};
-      //@ts-expect-error visionModes
       Object.values(CONFIG.Canvas.visionModes)
-        //@ts-expect-error TokenConfig, the core sheet for a token does this filtering, I think we should too
         .filter(f => f.tokenConfig)
         //@ts-expect-error
         .forEach(f => this.ATLVisionModes[f.id] = i18n(f.label))
@@ -124,7 +122,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }],
       dragDrop: [{ dropSelector: ".value" }, { dropSelector: ".key" }],
       scrollY: [".dae-scrollable-list .scrollable"],
-      //@ts-expect-error DOCUMENT_OWNERSHIP_LEVELS
       viewPermission: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,
     });
   }
@@ -154,15 +151,17 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /** @override */
   async getData(options?): Promise<any> {
     if (this.object.parent instanceof CONFIG.Actor.documentClass || this.object instanceof CONFIG.Actor.documentClass) {
-      this.validSpecsToUse = ValidSpec.actorSpecs[this.object.parent.type]
+      this.validSpecsToUse = ValidSpec.actorSpecs[this.object.parent?.type ?? ""]
     }
     if (isEnchantment(this.object)) {
       this.object.transfer = false;
+      // @ts-expect-error no dnd5e-types
       if (this.object.isAppliedEnchantment) {
-        this.validSpecsToUse = ValidSpec.itemSpecs[this.object.parent.type] ?? ValidSpec.itemSpecs["union"];
+        this.validSpecsToUse = ValidSpec.itemSpecs[this.object.parent?.type ?? ""] ?? ValidSpec.itemSpecs["union"];
       } else {
         let restrictionType = "union";
         if (this.object.parent instanceof CONFIG.Item.documentClass) {
+          // @ts-expect-error no dnd5e-types
           const activity = this.object.parent.system.activities.find(
             a => a.type === "enchant" && a.effects.find(e => e.effect?.uuid === this.object?.uuid)
           );
@@ -174,7 +173,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       }
     }
     if (!this.validSpecsToUse) {
-      ui.notifications.error("DAE | No valid specs found");
+      ui.notifications?.error("DAE | No valid specs found");
       return;
     }
     this.validFields = { "__": "" }
@@ -218,7 +217,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
     const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)
       .reduce((obj, e) => {
-        obj[e[1]] = game.i18n.localize("EFFECT.MODE_" + e[0]);
+        obj[e[1]] = i18n("EFFECT.MODE_" + e[0]);
         return obj;
       }, {});
     data.modes = allModes;
@@ -269,6 +268,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         data.durationString = duration.date + " " + duration.time;
       }
     }
+    // @ts-expect-error
     foundry.utils.setProperty(data.effect, "flags.dae.durationExpression", this.object.flags?.dae?.durationExpression);
     if (!data.effect.flags?.dae?.specialDuration || !(data.effect.flags.dae.specialDuration instanceof Array))
       foundry.utils.setProperty(data.effect.flags, "dae.specialDuration", []);
@@ -277,7 +277,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
     //@ts-expect-error
     data.useIcon = game.release.generation < 12;
     data.isEnchantment = isEnchantment(this.object);
-    data.isConditionalActivationEffect = this.object.parent.name === i18n("dae.ConditionalEffectsItem");
+    data.isConditionalActivationEffect = this.object.parent?.name === i18n("dae.ConditionalEffectsItem");
     if (data.isConditionalActivationEffect) {
       data.transfer = false;
       data.effect.transfer = false;
@@ -334,7 +334,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 
   async _onDrop(ev) {
     ev.preventDefault();
-    //@ts-expect-error getDragEventData
     const data: any = TextEditor.getDragEventData(ev);
     const item = await fromUuid(data.uuid);
     const targetValue = ev.target.value?.split(",")[1];
@@ -347,7 +346,7 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   }
 
   /* ----------------------------------------- */
-  _onEffectControl(event) {
+  async _onEffectControl(event) {
     event.preventDefault();
     const button = event.currentTarget;
     switch (button.dataset.action) {
@@ -355,20 +354,19 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
         return this._addEffectChange();
       case "delete":
         button.closest(".effect-change").remove();
-        //@ts-expect-error
-        return this.submit({ preventClose: true }).then(() => this.render());
+        return this.submit({ preventClose: true }).then(() => this.render()) as Promise<this>;
       case "add-specDur":
         this._addSpecDuration();
-        //@ts-expect-error
-        return this.submit({ preventClose: true }).then(() => this.render());
+        return this.submit({ preventClose: true }).then(() => this.render()) as Promise<this>;
       case "delete-specDur":
         button.closest(".effect-special-duration").remove();
-        //@ts-expect-error
-        return this.submit({ preventClose: true }).then(() => this.render());
+        return this.submit({ preventClose: true }).then(() => this.render()) as Promise<this>;
     }
+    return this;
   }
 
   _addSpecDuration() {
+    // @ts-expect-error
     const idx = this.object.flags?.dae.specialDuration?.length ?? 0;
     if (idx === 0) foundry.utils.setProperty(this.object, "flags.dae.specialDuration", []);
     return this.submit({
@@ -381,7 +379,6 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
   /* ----------------------------------------- */
 
   async _addEffectChange(): Promise<this> {
-    //@ts-expect-error .document
     const idx = (this.document ?? this.object).changes.length;
     return (this.submit({
       preventClose: true, updateData: {
@@ -417,9 +414,10 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
       if (Number.isNumeric(formData.duration?.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
         let startTime = parseInt(formData.duration.startTime);
         if (Math.abs(startTime) <= 3600) { // Only acdept durations of 1 hour or less as the start time field
-          formData.duration.startTime = game.time.worldTime + parseInt(formData.duration.startTime);
+          formData.duration.startTime = (game.time?.worldTime ?? 0) + parseInt(formData.duration.startTime);
         }
-      } else if (this.object.parent.isOwned) formData.duration.startTime = null;
+        // @ts-expect-error
+      } else if (this.object.parent?.isOwned) formData.duration.startTime = null;
     }
     if (isEnchantment(formData)) formData.transfer = false;
     await this.object.update(formData);
@@ -438,8 +436,8 @@ export class DAEActiveEffectConfig extends ActiveEffectConfig {
 }
 
 export function geti18nTranslations() {
-  let translations = game.i18n.translations["dae"];
-  //@ts-expect-error _fallback not accessible
+  let translations = game.i18n?.translations["dae"];
+  // @ts-expect-error protected
   if (!translations) translations = game.i18n._fallback["dae"];
   return translations ?? {};
 }
@@ -448,11 +446,11 @@ Hooks.once("setup", () => {
   DocumentSheetConfig.registerSheet(
     CONFIG.ActiveEffect.documentClass,
     "core",
+    // @ts-expect-error no clue why
     DAEActiveEffectConfig,
     {
       label: i18n("dae.EffectSheetLabel"),
       makeDefault: true,
-      //@ts-expect-error canBeDefault missing
       canBeDefault: true,
       canConfigure: true
     });

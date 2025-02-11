@@ -1,5 +1,5 @@
-import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface } from "./dae";
-import { warn, debug, error, debugEnabled } from "../dae";
+import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface } from "./dae.js";
+import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 
 export class GMActionMessage {
   action: string;
@@ -58,6 +58,7 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
   const { uuid, itemUuid, itemUuids, context } = data;
 
   for (let itemUuid of itemUuids ?? []) {
+    // @ts-expect-error
     const item: any = await fromUuid(itemUuid);
     if (!(item instanceof Item) || !item?.isOwned) continue; // Just in case we are trying to delete a world/compendium item
     await item.delete(context);
@@ -67,6 +68,7 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
 async function _createActorItem(data: { uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean }): Promise<Array<Item>> {
   const { uuid, itemDetails, effectUuid } = data;
   const [itemUuid, option] = itemDetails.split(",").map(s => s.trim());
+  // @ts-expect-error
   const item = await fromUuid(itemUuid);
   if (!item || !(item instanceof Item)) {
     error(`createActorItem could not find item ${itemUuid}`);
@@ -77,24 +79,20 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
     error(`createActorItem could not find Actor ${uuid}`);
     return [];
   }
-  if (actor.token) { // need to delay for unliked tokens as there is a timing issue
-    if (foundry.utils.isNewerVersion("11.293", game.version)) await delay(250)
-  }
 
   let itemData: any = item?.toObject(true);
   if (!itemData) return [];
   //@ts-expect-error unsupportedItemTypes
   if (actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type) || itemData.system.advancement?.length) {
-    ui.notifications.warn(game.i18n.format("DND5E.ActorWarningInvalidItem", {
-      itemType: game.i18n.localize(CONFIG.Item.typeLabels[itemData.type]),
-      actorType: game.i18n.localize(CONFIG.Actor.typeLabels[actor.type])
+    ui.notifications?.warn(i18nFormat("DND5E.ActorWarningInvalidItem", {
+      itemType: i18n(CONFIG.Item.typeLabels[itemData.type]),
+      actorType: i18n(CONFIG.Actor.typeLabels[actor.type])
     }));
     return [];
   }
 
   foundry.utils.setProperty(itemData, "flags.dae.DAECreated", true);
-  //@ts-expect-error
-  const documents: Item[] = await actor.createEmbeddedDocuments("Item", [itemData]);
+  const documents: Item[] = await actor.createEmbeddedDocuments("Item", [itemData]) as Item[];
   if (data.callItemMacro) {
     const change = { key: "macro.itemMacro" };
     for (let item of documents) {
@@ -119,14 +117,16 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
     };
   }
   if (option === "permanent") return documents;
-  //@ts-expect-error CONFIG
-  const effect: CONFIG.ActiveEffect.documentClass = await fromUuid(effectUuid);
+  // @ts-expect-error
+  const effect: ActiveEffect.Implementation = await fromUuid(effectUuid);
   if (!effect) {
     console.warn(`dae | createActorItem could not fetch ${effectUuid}`);
     return documents;
   }
+  // @ts-expect-error can't know about flags
   const itemsToDelete = effect?.flags.dae?.itemsToDelete ?? [];
   itemsToDelete.push(documents[0].uuid);
+  // @ts-expect-error
   await effect.update({ "flags.dae.itemsToDelete": itemsToDelete });
   return documents;
 }
@@ -154,6 +154,7 @@ async function _executeMacro(data: {
 }
 
 async function _suspendActiveEffect(data: { uuid: string }) {
+  // @ts-expect-error
   const effect = await fromUuid(data.uuid);
   if (!effect) return;
   if (effect instanceof CONFIG.ActiveEffect.documentClass) {
@@ -167,10 +168,12 @@ async function _deleteUuid(data: { uuid: string }) {
   //@ts-expect-error fromUuidSync
   const entity = fromUuidSync(data.uuid);
   if (!entity) return false;
-  if (entity instanceof CONFIG.Item.documentClass) return await entity.delete();
-  if (entity instanceof CONFIG.Token.documentClass) return await entity.delete();
-  if (entity instanceof CONFIG.ActiveEffect.documentClass) return await entity.delete();
-  if (entity instanceof CONFIG.MeasuredTemplate.documentClass) return await entity.delete();
+  if (entity instanceof Item.implementation) return await entity.delete();
+  // @ts-expect-error
+  if (entity instanceof TokenDocument.implementation) return await entity.delete();
+  if (entity instanceof ActiveEffect.implementation) return await entity.delete();
+  // @ts-expect-error
+  if (entity instanceof MeasuredTemplateDocument.implementation) return await entity.delete();
   return false;
 }
 
@@ -179,12 +182,10 @@ function _testMessage(data) {
   return "Test message received and processed";
 }
 async function _setTokenVisibility(data) {
-  //@ts-expect-error fromUuidSync
   await fromUuidSync(data.tokenUuid)?.update({ hidden: data.hidden })
 }
 
 async function _setTileVisibility(data) {
-  //@ts-expect-error fromUuidSync
   return await fromUuidSync(data.tileUuid)?.update({ visible: data.hidden })
 }
 
@@ -195,15 +196,14 @@ async function _recreateToken(data: { userId: string, tokenUuid: string, startSc
   //TODO this looks odd - should get the token data form the tokenUuid?
   await _createToken(data);
   //@ts-expect-error fromUuidSync
-  const token = await fromUuidSync(data.tokenUuid);
+  const token = await fromUuidSync(data.tokenUuid) as TokenDocument.Implementation;
   return token?.delete();
 }
 
 async function _createToken(data: { userId: string, targetSceneId: string, tokenData: {}, x: number, y: number }) {
   let scenes = game.scenes;
   let targetScene = scenes?.get(data.targetSceneId);
-  //@ts-expect-error
-  return await targetScene.createEmbeddedDocuments('Token', [foundry.utils.mergeObject(foundry.utils.duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
+  return await targetScene?.createEmbeddedDocuments('Token', [foundry.utils.mergeObject(foundry.utils.duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
 }
 
 async function _deleteToken(data: { tokenUuid: string }) {
@@ -219,7 +219,9 @@ async function _setTokenFlag(data: { flagName: string, flagValue: any, tokenUuid
 }
 
 async function _setFlag(data: { actorUuid: string | undefined, actorId: string | undefined, flagId: string, value: any }) {
+  // @ts-expect-error can't know about flags
   if (data.actorUuid) return await actorFromUuid(data.actorUuid)?.setFlag("dae", data.flagId, data.value);
+  // @ts-expect-error can't know about flags
   else if (data.actorId) return await game.actors?.get(data.actorId)?.setFlag("dae", data.flagId, data.value);
   return undefined;
 }
@@ -239,16 +241,9 @@ async function _blindToken(data: { tokenUuid: string }) {
     if (!ceInterface.hasEffectApplied({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid }))
       ceInterface.addEffect({ effectId: "ce-blinded", uuid: tokenDocument.actor?.uuid })
   } else {
-    //@ts-expect-error .specialStatusEffects
     const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
     if (blind) {
-      //@ts-expect-error
-      if (game.release.generation < 12)
-        return await getToken(tokenDocument)?.toggleEffect(blind, { overlay: false, active: true })
-      else {
-        //@ts-expect-error
-        return await tokenDocument.actor.toggleStatusEffect(blind.id, { active: true });
-      }
+      return await tokenDocument.actor.toggleStatusEffect(blind.id, { active: true });
     }
   }
 }
@@ -264,22 +259,15 @@ async function _restoreVision(data: { tokenUuid: string }) {
     if (ceInterface.hasEffectApplied({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid }))
       ceInterface.removeEffect({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid })
   } else {
-    //@ts-expect-error .specialStatusEffects
     const blind = CONFIG.statusEffects.find(se => se.id === CONFIG.specialStatusEffects.BLIND);
     if (blind) {
-      //@ts-expect-error
-      if (game.release.generation < 12)
-        return await getToken(tokenDocument)?.toggleEffect(blind, { overlay: false, active: false })
-      else {
-        //@ts-expect-error
-        return await tokenDocument.actor.toggleStatusEffect(blind.id, { active: false });
-      }
+      return await tokenDocument.actor.toggleStatusEffect(blind.id, { active: false });
     }
   }
 }
 
 async function _renameToken(data: { tokenData: any, newName: string }) { // TODO update this for uuids
-  return await canvas.tokens?.placeables.find(t => t.id === data.tokenData._id)?.document.update({ "name": data.newName })
+  return await canvas?.tokens?.placeables.find(t => t.id === data.tokenData._id)?.document.update({ "name": data.newName })
 }
 
 async function _addTokenMagic(data: { tokenUuid: string, effectId: string }) {
@@ -302,7 +290,6 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
     if (!actor) {
       error("could not find actor for ", idData);
     }
-    //@ts-expect-error .origin
     let effectsToDelete = actor?.effects?.filter(ef => ef.origin === data.origin && !data.ignore?.includes(ef.uuid));
     if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete?.filter(ae => ae.id && data.deleteEffects.includes(ae.id))
     if (effectsToDelete && effectsToDelete?.length > 0) {
@@ -322,7 +309,6 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
 
 export async function applyActiveEffects({ activate = true, activityUuid = undefined, targetList, activeEffects, effectDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
   for (let targetId of targetList) {
-    //@ts-expect-error
     let targetActor = fromUuidSync(targetId);
     if (!targetActor) continue;
 
@@ -336,7 +322,6 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
         if (activityUuid) foundry.utils.setProperty(aeData, "flags.dae.activity", activityUuid);
         foundry.utils.setProperty(aeData, "flags.dae.actor", targetActor.uuid);
         if (aeData.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
-          //@ts-expect-error fromUuidSync
           let origin: any = fromUuidSync(aeData.origin);
           let item;
           let macroCommand;
@@ -360,9 +345,9 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           foundry.utils.setProperty(aeData, "flags.dae.itemMacro", macroCommand)
         }
         if (aeData.changes.some(change => change.key === "macro.ActivityMacro")) { // populate the ActivityMacro data.  
-          //@ts-expect-error
           const activity = fromUuidSync(activityUuid);
           if (activity) {
+            // @ts-expect-error no dnd5e-types
            const macroCommand = activity.macro?.command;
             foundry.utils.setProperty(aeData, "flags.dae.ActivityMacro", macroCommand)
           }
@@ -370,7 +355,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
 
         // convert item duration to seconds/rounds/turns according to combat
         if (aeData.duration.seconds) {
-          aeData.duration.startTime = game.time.worldTime;
+          aeData.duration.startTime = game.time?.worldTime;
           const inCombat = targetActor.inCombat;
           let convertedDuration;
           if (inCombat && (aeData.duration.rounds || aeData.duration.turns)) {
@@ -401,7 +386,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           debug("converted duration ", convertedDuration, inCombat, effectDuration)
           if (convertedDuration.type === "seconds") {
             aeData.duration.seconds = convertedDuration.seconds;
-            aeData.duration.startTime = game.time.worldTime;
+            aeData.duration.startTime = game.time?.worldTime;
           } else if (convertedDuration.type === "turns") {
             aeData.duration.rounds = convertedDuration.rounds;
             aeData.duration.turns = convertedDuration.turns;
@@ -421,7 +406,6 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
         let newChanges: any[] = [];
         for (let change of aeData.changes) {
           if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
-            //@ts-expect-error fromUuidSync
             let originEntity = fromUuidSync(aeData.origin);
             let originItem;
             let sourceActor;
@@ -429,7 +413,6 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
               originItem = originEntity;
               sourceActor = originEntity.actor;
             } else if (originEntity instanceof Actor) sourceActor = originEntity;
-            //@ts-expect-error
             else if (originEntity instanceof ActiveEffect && originEntity.transfer) sourceActor = originEntity?.parent?.parent;
             else if (originEntity instanceof ActiveEffect) {
               sourceActor = originEntity?.parent;
@@ -448,9 +431,8 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
               newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
               const effects = await sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData], { metaData });
               if (effects) for (let effect of effects) {
-                //@ts-expect-error
                 const origin = fromUuidSync(effect.origin);
-                //@ts-expect-error
+                //@ts-expect-error no dnd5e-types
                 if (origin instanceof ActiveEffect && origin.addDependent) await origin.addDependent(effect);
               }
             }
@@ -458,8 +440,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
             // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
             if (typeof change.value === "number") {
             } else if (typeof change.value === "string") {
-              //@ts-expect-error replaceFormulaData
-              change.value = Roll.replaceFormulaData(change.value, context, { missing: 0, warn: false });
+              change.value = Roll.replaceFormulaData(change.value, context, { missing: '0', warn: false });
               change.value = change.value.replace("##", "@");
             } else {
               change.value = foundry.utils.duplicate(change.value).map(f => {
@@ -484,7 +465,6 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
         let createdEffects = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData });
         for (let effect of createdEffects) {
-          //@ts-expect-error
           const origin = fromUuidSync(effect.origin);
           if (origin?.addDependent)
             await origin.addDependent(effect);
@@ -552,7 +532,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       default:
         let interval = {}
         interval[durationData.units] = durationData.value;
-        const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - game.time.worldTime;
+        const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time?.worldTime, interval) - (game.time?.worldTime ?? 0);
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };
         } else {

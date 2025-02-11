@@ -1,9 +1,10 @@
-import { i18n } from "../dae";
-import { fetchParams } from "./dae";
+import { i18n } from "../dae.js";
+import { fetchParams } from "./dae.js";
 
 export const registerSettings = async function () {
 
-  game.settings.register("dae", "DependentConditions", {
+  // @ts-expect-error
+  game.settings?.register("dae", "DependentConditions", {
     name: "dae.DependentConditions.Name",
     hint: "dae.DependentConditions.Hint",
     scope: "world",
@@ -13,7 +14,8 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "noDupDamageMacro", {
+  // @ts-expect-error
+  game.settings?.register("dae", "noDupDamageMacro", {
     name: "dae.noDupDamageMacro.Name",
     hint: "dae.noDupDamageMacro.Hint",
     scope: "world",
@@ -23,7 +25,8 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "expireRealTime", {
+  // @ts-expect-error
+  game.settings?.register("dae", "expireRealTime", {
     name: "dae.expireRealTime.Name",
     hint: "dae.expireRealTime.Hint",
     scope: "world",
@@ -34,18 +37,21 @@ export const registerSettings = async function () {
   });
 
 
-  game.settings.register("dae", "showInline", {
+  // @ts-expect-error
+  game.settings?.register("dae", "showInline", {
     scope: "client",
-    name: game.i18n.localize("dae.ShowInline.Name"),
-    hint: game.i18n.localize("dae.ShowInline.Hint"),
+    name: "dae.ShowInline.Name",
+    hint: "dae.ShowInline.Hint",
     default: false,
     config: true,
     type: Boolean,
     onChange: fetchParams
   });
-  game.settings.register("dae", "DAETitleBar", {
-    name: game.i18n.localize("dae.DAETitleBar.Name"),
-    hint: game.i18n.localize("dae.DAETitleBar.Hint"),
+  
+  // @ts-expect-error
+  game.settings?.register("dae", "DAETitleBar", {
+    name: "dae.DAETitleBar.Name",
+    hint: "dae.DAETitleBar.Hint",
     scope: "world",
     default: true,
     type: Boolean,
@@ -53,9 +59,10 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "DIMETitleBar", {
-    name: game.i18n.localize("dae.DIMETitleBar.Name"),
-    hint: game.i18n.localize("dae.DIMETitleBar.Hint"),
+  // @ts-expect-error
+  game.settings?.register("dae", "DIMETitleBar", {
+    name: "dae.DIMETitleBar.Name",
+    hint: "dae.DIMETitleBar.Hint",
     scope: "world",
     default: true,
     type: Boolean,
@@ -63,18 +70,20 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "DIMESyncItemacro", {
-    name: game.i18n.localize("dae.DIMESyncItemacro.Name"),
-    hint: game.i18n.localize("dae.DIMESyncItemacro.Hint"),
+  // @ts-expect-error
+  game.settings?.register("dae", "DIMESyncItemacro", {
+    name: "dae.DIMESyncItemacro.Name",
+    hint: "dae.DIMESyncItemacro.Hint",
     scope: "world",
     default: true,
     type: Boolean,
     config: true
   });
 
-  game.settings.register("dae", "DAEColorTitleBar", {
-    name: game.i18n.localize("dae.DAEColorTitleBar.Name"),
-    hint: game.i18n.localize("dae.DAEColorTitleBar.Hint"),
+  // @ts-expect-error
+  game.settings?.register("dae", "DAEColorTitleBar", {
+    name: "dae.DAEColorTitleBar.Name",
+    hint: "dae.DAEColorTitleBar.Hint",
     scope: "world",
     default: true,
     type: Boolean,
@@ -82,9 +91,10 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "DAENoTitleText", {
-    name: game.i18n.localize("dae.DAENoTitleText.Name"),
-    hint: game.i18n.localize("dae.DAENoTitleText.Hint"),
+  // @ts-expect-error
+  game.settings?.register("dae", "DAENoTitleText", {
+    name: "dae.DAENoTitleText.Name",
+    hint: "dae.DAENoTitleText.Hint",
     scope: "world",
     default: false,
     type: Boolean,
@@ -92,21 +102,22 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "DAEAddHalfHealthEffect", {
-    name: game.i18n.localize("dae.DAEAddHalfHealthEffect.Name"),
-    hint: game.i18n.localize("dae.DAEAddHalfHealthEffect.Hint"),
+  // @ts-expect-error
+  game.settings?.register("dae", "DAEAddHalfHealthEffect", {
+    name: "dae.DAEAddHalfHealthEffect.Name",
+    hint: "dae.DAEAddHalfHealthEffect.Hint",
     scope: "world",
     default: false,
     type: Boolean,
     config: true,
     onChange: fetchParams,
-    //@ts-expect-error
     requiresReload: true
   });
 
-  game.settings.register("dae", "DAEUntestedSystems", {
-    name: game.i18n.localize("dae.DAEUntestedSystems.Name"),
-    hint: game.i18n.localize("dae.DAEUntestedSystems.Hint"),
+  // @ts-expect-error
+  game.settings?.register("dae", "DAEUntestedSystems", {
+    name: "dae.DAEUntestedSystems.Name",
+    hint: "dae.DAEUntestedSystems.Hint",
     scope: "world",
     default: false,
     type: Boolean,
@@ -114,7 +125,8 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "ZZDebug", {
+  // @ts-expect-error
+  game.settings?.register("dae", "ZZDebug", {
     name: "dae.Debug.Name",
     hint: "dae.Debug.Hint",
     scope: "world",
@@ -122,20 +134,17 @@ export const registerSettings = async function () {
     type: String,
     config: true,
     onChange: fetchParams,
-    //@ts-expect-error
     choices: { none: "None", warn: "warnings", debug: "debug", all: "all" }
-
   });
 
-  game.settings.register("dae", "disableEffects", {
+  // @ts-expect-error
+  game.settings?.register("dae", "disableEffects", {
     name: "dae.DisableEffects.Name",
     hint: "dae.DisableEffects.Hint",
     scope: "world",
     default: false,
     type: Boolean,
     config: true,
-    //@ts-expect-error
     requiresReload: true
   })
-
 };

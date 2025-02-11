@@ -27,6 +27,7 @@ const git = require(`gulp-git`);
 const argv = require(`yargs`).argv;
 const minifyJs = require('gulp-uglify');
 const concat = require('gulp-concat');
+const readlineSync = require("readline-sync");
 // const filter = require('gulp-filter');
 
 const loadJson = (path) => {
@@ -85,47 +86,47 @@ const getManifest = () => {
 }
 
 
-const createTransformer = () => {
-	/**
-	 * @param {typescript.Node} node
-	 */
-	const shouldMutateModuleSpecifier = (node) => {
-		if (!isImportDeclaration(node) && !isExportDeclaration(node))
-			return false;
-		if (node.moduleSpecifier === undefined)
-			return false;
-		if (!isStringLiteral(node.moduleSpecifier))
-			return false;
-		if (!node.moduleSpecifier.text.startsWith(`./`) && !node.moduleSpecifier.text.startsWith(`../`))
-			return false;
+// const createTransformer = () => {
+// 	/**
+// 	 * @param {typescript.Node} node
+// 	 */
+// 	const shouldMutateModuleSpecifier = (node) => {
+// 		if (!isImportDeclaration(node) && !isExportDeclaration(node))
+// 			return false;
+// 		if (node.moduleSpecifier === undefined)
+// 			return false;
+// 		if (!isStringLiteral(node.moduleSpecifier))
+// 			return false;
+// 		if (!node.moduleSpecifier.text.startsWith(`./`) && !node.moduleSpecifier.text.startsWith(`../`))
+// 			return false;
 
-		return path.extname(node.moduleSpecifier.text) === ``;
-	}
+// 		return path.extname(node.moduleSpecifier.text) === ``;
+// 	}
 
-	return (context) => {
-		return (node) => {
-			function visitor(node) {
-				if (shouldMutateModuleSpecifier(node)) {
-					if (isImportDeclaration(node)) {
-						const newModuleSpecifier = createLiteral(`${(node.moduleSpecifier).text}.js`);
-						return factory.updateImportDeclaration(node, node.decorators, node.modifiers, node.importClause, newModuleSpecifier, undefined);
-					} else if (isExportDeclaration(node)) {
-						const newModuleSpecifier = createLiteral(`${(node.moduleSpecifier).text}.js`);
-						return factory.updateExportDeclaration(node, node.decorators, node.modifiers, false, node.exportClause, newModuleSpecifier, undefined);
-					}
-				}
-				return visitEachChild(node, visitor, context);
-			}
-			return visitNode(node, visitor);
-		};
-	};
-}
+// 	return (context) => {
+// 		return (node) => {
+// 			function visitor(node) {
+// 				if (shouldMutateModuleSpecifier(node)) {
+// 					if (isImportDeclaration(node)) {
+// 						const newModuleSpecifier = createLiteral(`${(node.moduleSpecifier).text}.js`);
+// 						return factory.updateImportDeclaration(node, node.decorators, node.modifiers, node.importClause, newModuleSpecifier, undefined);
+// 					} else if (isExportDeclaration(node)) {
+// 						const newModuleSpecifier = createLiteral(`${(node.moduleSpecifier).text}.js`);
+// 						return factory.updateExportDeclaration(node, node.decorators, node.modifiers, false, node.exportClause, newModuleSpecifier, undefined);
+// 					}
+// 				}
+// 				return visitEachChild(node, visitor, context);
+// 			}
+// 			return visitNode(node, visitor);
+// 		};
+// 	};
+// }
 
-const tsConfig = ts.createProject(`tsconfig.json`, {
-	getCustomTransformers: (_program) => ({
-		after: [createTransformer()],
-	}),
-});
+// const tsConfig = ts.createProject(`tsconfig.json`, {
+// 	getCustomTransformers: (_program) => ({
+// 		after: [createTransformer()],
+// 	}),
+// });
 
 /********************/
 /*		BUILD		*/
@@ -134,12 +135,18 @@ const tsConfig = ts.createProject(`tsconfig.json`, {
 /**
  * Build TypeScript
  */
-function buildTS() {
+function buildTS({alwaysBuild = false}) {
 
 	return (
 		gulp
 		.src(`src/**/*.ts`)
-		.pipe(tsConfig())
+		.pipe(ts.createProject("tsconfig.json")())
+		.on("error", (error) => {
+			if (alwaysBuild) return;
+			if (!this.alreadyRefusedBuild && readlineSync.keyInYN("Build Anyway?")) return;
+			this.alreadyRefusedBuild = true;
+			throw error;
+		})
 		.pipe(gulp.dest(`dist`))
 	);
 }
@@ -370,7 +377,7 @@ const cleanDist = async () => {
 const buildWatch = () => {
 	gulp.watch('src/**/*.ts', {
 		ignoreInitial: false
-	}, buildTS);
+	}, () => buildTS({alwaysBuild: true}));
 	gulp.watch('src/**/*.less', {
 		ignoreInitial: false
 	}, buildLess);

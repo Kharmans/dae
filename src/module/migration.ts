@@ -1,6 +1,6 @@
 
-import { debug, warn, log, i18n, error } from "../dae";
-import { effectIsTransfer } from "./dae";
+import { debug, warn, log, i18n, error } from "../dae.js";
+import { effectIsTransfer } from "./dae.js";
 
 const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
 
@@ -47,13 +47,14 @@ export async function loadPacks() {
 }
 
 export async function migrateAllActorsDAESRD(includeSRD = false) {
-  if (!game.settings.get("dae", "disableEffects")) {
-    ui.notifications.error("Please set DAE disable all effect processing")
+  // @ts-expect-error
+  if (!game.settings?.get("dae", "disableEffects")) {
+    ui.notifications?.error("Please set DAE disable all effect processing")
     error("Please set DAE disable all effect processing")
     return;
   }
-  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
-    ui.notifications.warn("DAE SRD Module not active");
+  if (!game.modules?.get("Dynamic-Effects-SRD")?.active) {
+    ui.notifications?.warn("DAE SRD Module not active");
     error("DAE SRD Module not active");
     return;
   }
@@ -63,17 +64,19 @@ export async function migrateAllActorsDAESRD(includeSRD = false) {
 }
 
 export async function migrateAllNPCDAESRD(includeSRD = false) {
-  if (!game.settings.get("dae", "disableEffects")) {
-    ui.notifications.error("Please set DAE disable all effect processing")
+  // @ts-expect-error
+  if (!game.settings?.get("dae", "disableEffects")) {
+    ui.notifications?.error("Please set DAE disable all effect processing")
     error("Please set DAE disable all effect processing")
     return;
   }
-  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
-    ui.notifications.warn("DAE SRD Module not active");
+  if (!game.modules?.get("Dynamic-Effects-SRD")?.active) {
+    ui.notifications?.warn("DAE SRD Module not active");
     error("DAE SRD Module not active");
     return;
   }
   for (let a of game.actors ?? []) {
+    // @ts-expect-error no dnd5e-types
     if (a.type !== "character") {
       await migrateActorDAESRD(a, includeSRD);
     };
@@ -81,13 +84,14 @@ export async function migrateAllNPCDAESRD(includeSRD = false) {
 }
 
 export async function migrateActorDAESRD(actor, includeSRD = false) {
-  if (!game.settings.get("dae", "disableEffects")) {
-    ui.notifications.error("Please set DAE disable all effect processing")
+  // @ts-expect-error
+  if (!game.settings?.get("dae", "disableEffects")) {
+    ui.notifications?.error("Please set DAE disable all effect processing")
     error("Please set DAE disable all effect processing")
     return;
   }
-  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
-    ui.notifications.warn("DAE SRD Module not active");
+  if (!game.modules?.get("Dynamic-Effects-SRD")?.active) {
+    ui.notifications?.warn("DAE SRD Module not active");
     error("DAE SRD Module not active");
     return;
   }
@@ -164,13 +168,14 @@ function removeDynamiceffects(actor) {
 
 export function checkLibWrapperVersion() {
   //@ts-expect-error .version
-  if (foundry.utils.isNewerVersion("1.8.0", game.modules.get("lib-wrapper")?.version)) {
+  if (foundry.utils.isNewerVersion("1.8.0", game.modules?.get("lib-wrapper")?.version)) {
     let d = new Dialog({
       // localize this text
       title: i18n("dae.confirm"),
       content: `<h2>DAE requires libWrapper version 1.8.0 or later</p>`,
       buttons: {
         one: {
+          label: "one",
           icon: '<i class="fas fa-cross"></i>',
         },
       },
@@ -210,7 +215,6 @@ export async function removeActorArmorItems(actor: Actor) {
     let toDelete: string[] = [];
     if (!item.effects) continue;
     for (let effect of item.effects) {
-      //@ts-expect-error .changes
       for (let change of effect.changes) {
         if (change.key === "data.attributes.ac.value" && change.value === "AutoCalc") {
           console.warn("Removing DAE Item ", actor.name, item.name, item.id)
@@ -234,20 +238,16 @@ export async function cleanEffectOrigins(processItems: boolean = false) {
 }
 
 export async function cleanAllActorEffectOrigins() {
-  //@ts-expect-error
-  for (let actor of game.actors?.contents) {
-    //@ts-expect-error
-    let ownedItemEffects = actor.effects.filter(ef => ef.origin?.includes("OwnedItem"));
-    //@ts-expect-error .origin
-    let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin.replace("OwnedItem", "Item") } });
+  for (let actor of game.actors?.contents ?? []) {
+    let ownedItemEffects = actor.effects.filter(ef => ef.origin?.includes("OwnedItem") as boolean);
+    let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin?.replace("OwnedItem", "Item") } });
     if (updates.length > 0) {
       await actor.updateEmbeddedDocuments("ActiveEffect", updates)
       console.warn("Updates are ", actor.name, updates)
     }
     const itemChanges: any[] = [];
     for (let item of actor.items) {
-      //@ts-expect-error .origin
-      if (!(item.effects.some(ef => ef.origin?.includes("OwnedItem")))) continue;
+      if (!(item.effects.some(ef => ef.origin?.includes("OwnedItem") as boolean))) continue;
       const itemData = item.toObject(true);
       for (let effectData of itemData.effects)
         if (typeof effectData.origin === "string") effectData.origin = effectData.origin.replace("OwnedItem", "Item")
@@ -295,9 +295,7 @@ export async function cleanAllTokenEffectOrigins() {
     for (let tokenDocument of scene.tokens) {
       if (!tokenDocument.isLinked && tokenDocument.actor) {
         const actor = tokenDocument.actor;
-        //@ts-expect-error .origin
         let ownedItemEffects = actor.effects.filter(ef => ef.origin?.includes("OwnedItem"));
-        //@ts-expect-error .origin
         let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin.replace("OwnedItem", "Item") } });
         if (updates.length > 0) {
           await actor.updateEmbeddedDocuments("ActiveEffect", updates)
@@ -394,9 +392,8 @@ export async function fixTransferEffect(actor, item) {
 
 
 async function removeDaePassiveEffectsActor(actor, skipOrigins = false) {
-  //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications.error("Must be run in a world with legacy transferral false");
+    ui.notifications?.error("Must be run in a world with legacy transferral false");
     return;
   }
   if (!actor) return;
@@ -418,9 +415,8 @@ async function removeDaePassiveEffectsActor(actor, skipOrigins = false) {
   }
 }
 export async function removeScenePassiveEffects() {
-  //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications.error("Must be run in a world with legacy transferral false");
+    ui.notifications?.error("Must be run in a world with legacy transferral false");
     return;
   }
   for (let token of canvas?.scene?.tokens ?? []) {
@@ -434,9 +430,8 @@ export async function removeScenePassiveEffects() {
 }
 
 export async function removeActorsPassiveEffects() {
-  //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications.error("Must be run in a world with legacy transferral false");
+    ui.notifications?.error("Must be run in a world with legacy transferral false");
     return;
   }
   for (let actor of game.actors ?? []) {
@@ -450,9 +445,8 @@ export async function removeActorsPassiveEffects() {
 }
 
 export async function migrateCompendium(pack) {
-  //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications.error("Must be run in a world with legacy transferral false");
+    ui.notifications?.error("Must be run in a world with legacy transferral false");
     return;
   }
   const documentName = pack.documentName;
@@ -461,7 +455,7 @@ export async function migrateCompendium(pack) {
   // Unlock the pack for editing
   const wasLocked = pack.locked;
   await pack.configure({ locked: false });
-  //@ts-expect-error
+  //@ts-expect-error no dnd5e-types
   game.dnd5e.moduleArt.suppressArt = true;
 
   const documents = await pack.getDocuments();
@@ -480,7 +474,7 @@ export async function migrateCompendium(pack) {
     }
 
     // Handle migration failures
-    catch (err) {
+    catch (err: any) {
       err.message = `Legacy passive wEffect removal for document ${doc.name} in pack ${pack.collection} failed: ${err.message}`;
       console.error(err);
     }
@@ -493,13 +487,12 @@ export async function migrateCompendium(pack) {
 };
 
 export async function removeCompendiaPassiveEffects() {
-  //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications.error("Must be run in a world with legacy transferral false");
+    ui.notifications?.error("Must be run in a world with legacy transferral false");
     return;
   }
   // Migrate World Compendium Packs
-  for (let p of game.packs) {
+  for (let p of game.packs ?? []) {
     //@ ts-expect-error
     // if (p.metadata.packageType !== "world") continue;
     if (!["Actor"].includes(p.documentName)) continue;
@@ -510,15 +503,13 @@ export async function removeCompendiaPassiveEffects() {
 }
 
 export async function removeAllScenesPassiveEffects() {
-  //@ts-expect-error
   if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications.error("Must be run in a world with legacy transferral false");
+    ui.notifications?.error("Must be run in a world with legacy transferral false");
     return;
   }
   if (game.scenes)
     for (let scene of game.scenes) {
       for (let token of scene.tokens) {
-        //@ts-expect-error .actorLink
         if (token.actorLink || !token.actor) continue;
         await removeDaePassiveEffectsActor(token.actor, true);
       }

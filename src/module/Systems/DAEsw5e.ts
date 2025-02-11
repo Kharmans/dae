@@ -1,9 +1,9 @@
-import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig";
-import { applyDaeEffects, daeSystemClass } from "../dae";
-import { DAESystemDND5E } from "./DAEdnd5e";
-import { ValidSpec, wildcardEffects } from "./DAESystem";
+import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig.js";
+import { applyDaeEffects, daeSystemClass } from "../dae.js";
+import { DAESystemDND5E } from "./DAEdnd5e.js";
+import { ValidSpec, wildcardEffects } from "./DAESystem.js";
 
-//@ts-ignore
+// @ts-expect-error
 const CONFIG: any = globalThis.CONFIG;
 const SW5ESystemFlags = [ // TODO comeback and do this properly and take into account starship flags
   "flags.sw5e.advantage.all",
@@ -187,7 +187,6 @@ export class DAESystemSW5E extends DAESystemDND5E {
 
   public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
     super.modifySpecials(actorType, specials, characterSpec);
-    //@ts-ignore
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     specials["system.traits.sdi.all"] = [false, ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.traits.sdi.value"] = ["", -1];
@@ -219,9 +218,9 @@ export class DAESystemSW5E extends DAESystemDND5E {
   }
 
   public static async editConfig() {
-    if (game.system.id === "sw5e") {
+    if (game.system?.id === "sw5e") {
       try {
-        const armorPack = game.packs.get("sw5e.armor");
+        const armorPack = game.packs?.get("sw5e.armor");
         let pack;
         const profs = [
           { type: "tool", list: this.toolProfList },
@@ -234,7 +233,8 @@ export class DAESystemSW5E extends DAESystemDND5E {
           if (ids !== undefined) {
             const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
             for (const [key, id] of Object.entries(ids)) {
-              const item = await fromUuid(`Compendium.${id}`)
+              // @ts-expect-error
+              const item = await fromUuid(`Compendium.${id}`) as Item;
               list[key] = item?.name;
             }
           }
@@ -316,7 +316,7 @@ function applyBaseActiveEffectssw5e() {
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
   // determine whether they are suppressed or not.
   this.effects.forEach(e => e.determineSuppression());
-  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpes: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
+  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].baseSpecsObj, completedSpecs: {}, allowAllSpecs: false, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
 }
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 foundry.utils.setProperty(globalThis.daeSystems, "sw5e", DAESystemSW5E);
