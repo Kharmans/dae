@@ -548,7 +548,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
     // enchantments don't seem to get their world time set when applied to an item
-    Hooks.on("preCreateActiveEffect", (candidate: ActiveEffect, data, options, user) => {
+    Hooks.on("preCreateActiveEffect", (candidate: ActiveEffect, data: any, options: any, user: string) => {
       //@ts-expect-error no dnd5e types
       if (candidate.isAppliedEnchantment && (candidate.duration.seconds || candidate.duration.rounds || candidate.duration.turns)) {
         if (!candidate.duration.startTime && candidate.duration.seconds)
