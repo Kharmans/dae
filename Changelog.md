@@ -1,3 +1,6 @@
+### 12.0.15
+* Fix for syntax error in en.json
+
 ### 12.0.14
 * **dnd5e** Remove system.attack.bonus from Item special effects since it is just a bonus string
 * **Breaking** Change fields on Actors that dae does not recognise will now be preocessed in the base effects phase, rathere than being deferred until the derived phase. This is inline with how item effects are applied.

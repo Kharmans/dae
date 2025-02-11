@@ -466,2293 +466,2293 @@
     },
     "flags.dnd5e.spellCriticalThreshold": {
       "name": "Spell Critical Hit Threshold",
-      "description": "See \"Special Traits\" for details. }",
-      "flags.dnd5e.spellSniper": {
-        "name": "Spell Sniper",
-        "description": "See \"Special Traits\" for details."
-      },
-      "flags.dnd5e.tavernBrawlerFeat": {
-        "name": "Tavern Brawler Feat",
-        "description": "See \"Special Traits\" for details."
-      },
-      "flags.dnd5e.weaponCriticalThreshold": {
-        "name": "Weapon Critical Hit Threshold",
-        "description": "See \"Special Traits\" for details."
-      }
+      "description": "See \"Special Traits\" for details.",
     },
-    "dae.Macros.fieldData": {
-      "macro.actorUpdate": {
-        "name": "",
-        "description": ""
-      },
-      "macro.CE": {
-        "name": "",
-        "description": ""
-      },
-      "macro.CLT": {
-        "name": "",
-        "description": ""
-      },
-      "macro.createItem": {
-        "name": "",
-        "description": ""
-      },
-      "macro.createItemRunMacro": {
-        "name": "",
-        "description": ""
-      },
-      "macro.CUB": {
-        "name": "",
-        "description": ""
-      },
-      "macro.execute": {
-        "name": "",
-        "description": ""
-      },
-      "macro.execute.GM": {
-        "name": "",
-        "description": ""
-      },
-      "macro.execute.local": {
-        "name": "",
-        "description": ""
-      },
-      "macro.itemMacro": {
-        "name": "",
-        "description": ""
-      },
-      "macro.itemMacro.GM": {
-        "name": "",
-        "description": ""
-      },
-      "macro.itemMacro.local": {
-        "name": "",
-        "description": ""
-      },
-      "macro.StatusEffect": {
-        "name": "",
-        "description": ""
-      }
+    "flags.dnd5e.spellSniper": {
+      "name": "Spell Sniper",
+      "description": "See \"Special Traits\" for details."
     },
-    "dae.SystemAbilities.fieldData": {
-      "system.abilities.cha.bonuses.check": {
-        "name": "Charisma Check Bonus",
-        "description": ""
-      },
-      "system.abilities.cha.bonuses.save": {
-        "name": "Charisma Save Bonus",
-        "description": ""
-      },
-      "system.abilities.cha.dc": {
-        "name": "Charisma Save DC",
-        "description": ""
-      },
-      "system.abilities.cha.max": {
-        "name": "Charisma Max Score",
-        "description": ""
-      },
-      "system.abilities.cha.mod": {
-        "name": "Charisma Mod",
-        "description": ""
-      },
-      "system.abilities.cha.proficient": {
-        "name": "Charisma Save Proficiency",
-        "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
-      },
-      "system.abilities.cha.save": {
-        "name": "Charisma Save Mod",
-        "description": ""
-      },
-      "system.abilities.cha.value": {
-        "name": "Charisma Score",
-        "description": ""
-      },
-      "system.abilities.con.bonuses.check": {
-        "name": "Constitution Check Bonus",
-        "description": ""
-      },
-      "system.abilities.con.bonuses.save": {
-        "name": "Constitution Save Bonus",
-        "description": ""
-      },
-      "system.abilities.con.dc": {
-        "name": "Constitution Save DC",
-        "description": ""
-      },
-      "system.abilities.con.max": {
-        "name": "Constitution Max Score",
-        "description": ""
-      },
-      "system.abilities.con.mod": {
-        "name": "Constitution Mod",
-        "description": ""
-      },
-      "system.abilities.con.proficient": {
-        "name": "Constitution Save Proficiency",
-        "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
-      },
-      "system.abilities.con.save": {
-        "name": "Constitution Save Mod",
-        "description": ""
-      },
-      "system.abilities.con.value": {
-        "name": "Constitution Score",
-        "description": ""
-      },
-      "system.abilities.dex.bonuses.check": {
-        "name": "Dexterity Check Bonus",
-        "description": ""
-      },
-      "system.abilities.dex.bonuses.save": {
-        "name": "Dexterity Save Bonus",
-        "description": ""
-      },
-      "system.abilities.dex.dc": {
-        "name": "Dexterity Save DC",
-        "description": ""
-      },
-      "system.abilities.dex.max": {
-        "name": "Dexterity Max Score",
-        "description": ""
-      },
-      "system.abilities.dex.mod": {
-        "name": "Dexterity Mod",
-        "description": ""
-      },
-      "system.abilities.dex.proficient": {
-        "name": "Dexterity Save Proficiency",
-        "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
-      },
-      "system.abilities.dex.save": {
-        "name": "Dexterity Save Mod",
-        "description": ""
-      },
-      "system.abilities.dex.value": {
-        "name": "Dexterity Score",
-        "description": ""
-      },
-      "system.abilities.int.bonuses.check": {
-        "name": "Intelligence Check Bonus",
-        "description": ""
-      },
-      "system.abilities.int.bonuses.save": {
-        "name": "Intelligence Save Bonus",
-        "description": ""
-      },
-      "system.abilities.int.dc": {
-        "name": "Intelligence Save DC",
-        "description": ""
-      },
-      "system.abilities.int.max": {
-        "name": "Intelligence Max Score",
-        "description": ""
-      },
-      "system.abilities.int.mod": {
-        "name": "Intelligence Mod",
-        "description": ""
-      },
-      "system.abilities.int.proficient": {
-        "name": "Intelligence Save Proficiency",
-        "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
-      },
-      "system.abilities.int.save": {
-        "name": "Intelligence Save Mod",
-        "description": ""
-      },
-      "system.abilities.int.value": {
-        "name": "Intelligence Score",
-        "description": ""
-      },
-      "system.abilities.str.bonuses.check": {
-        "name": "Strength Check Bonus",
-        "description": ""
-      },
-      "system.abilities.str.bonuses.save": {
-        "name": "Strength Save Bonus",
-        "description": ""
-      },
-      "system.abilities.str.dc": {
-        "name": "Strength Save DC",
-        "description": ""
-      },
-      "system.abilities.str.max": {
-        "name": "Strength Max Score",
-        "description": ""
-      },
-      "system.abilities.str.mod": {
-        "name": "Strength Mod",
-        "description": ""
-      },
-      "system.abilities.str.proficient": {
-        "name": "Strength Save Proficiency",
-        "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
-      },
-      "system.abilities.str.save": {
-        "name": "Strength Save Mod",
-        "description": ""
-      },
-      "system.abilities.str.value": {
-        "name": "Strength Score",
-        "description": ""
-      },
-      "system.abilities.wis.bonuses.check": {
-        "name": "Wisdom Check Bonus",
-        "description": ""
-      },
-      "system.abilities.wis.bonuses.save": {
-        "name": "Wisdom Save Bonus",
-        "description": ""
-      },
-      "system.abilities.wis.dc": {
-        "name": "Wisdom Save DC",
-        "description": ""
-      },
-      "system.abilities.wis.max": {
-        "name": "Wisdom Max Score",
-        "description": ""
-      },
-      "system.abilities.wis.mod": {
-        "name": "Wisdom Mod",
-        "description": ""
-      },
-      "system.abilities.wis.proficient": {
-        "name": "Wisdom Save Proficiency",
-        "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
-      },
-      "system.abilities.wis.save": {
-        "name": "Wisdom Save Mod",
-        "description": ""
-      },
-      "system.abilities.wis.value": {
-        "name": "Wisdom Score",
-        "description": ""
-      }
+    "flags.dnd5e.tavernBrawlerFeat": {
+      "name": "Tavern Brawler Feat",
+      "description": "See \"Special Traits\" for details."
     },
-    "dae.SystemSkills.fieldData": {
-      "system.skills.acr.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.acr.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.acr.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.acr.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.acr.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.acr.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.acr.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ani.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ani.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ani.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ani.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ani.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ani.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ani.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.arc.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.arc.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.arc.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.arc.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.arc.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.arc.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.arc.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ath.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ath.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ath.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ath.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ath.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ath.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ath.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.dec.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.dec.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.dec.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.dec.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.dec.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.dec.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.dec.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.his.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.his.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.his.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.his.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.his.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.his.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.his.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ins.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ins.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ins.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ins.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ins.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ins.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ins.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.inv.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.inv.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.inv.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.inv.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.inv.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.inv.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.inv.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.itm.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.itm.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.itm.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.itm.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.itm.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.itm.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.itm.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.med.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.med.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.med.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.med.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.med.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.med.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.med.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.nat.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.nat.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.nat.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.nat.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.nat.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.nat.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.nat.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.per.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.per.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.per.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.per.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.per.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.per.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.per.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prc.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prc.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prc.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prc.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prc.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prc.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prc.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prf.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prf.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prf.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prf.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prf.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prf.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.prf.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.rel.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.rel.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.rel.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.rel.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.rel.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.rel.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.rel.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.slt.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.slt.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.slt.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.slt.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.slt.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.slt.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.slt.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ste.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ste.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ste.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ste.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ste.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ste.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.ste.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.sur.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.sur.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.sur.bonuses.passive": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.sur.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.sur.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.sur.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.skills.sur.value": {
-        "name": "",
-        "description": ""
-      }
+    "flags.dnd5e.weaponCriticalThreshold": {
+      "name": "Weapon Critical Hit Threshold",
+      "description": "See \"Special Traits\" for details."
+    }
+  },
+  "dae.Macros.fieldData": {
+    "macro.actorUpdate": {
+      "name": "",
+      "description": ""
     },
-    "dae.SystemAttributes.fieldData": {
-      "system.attributes.ac.AR": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.ac.armor": {
-        "name": "",
-        "description": "AC armor bonus (usually provided only via equipped armor item - will only have an effect if not wearing armor)."
-      },
-      "system.attributes.ac.base": {
-        "name": "",
-        "description": "Deprecated derived field - do not use."
-      },
-      "system.attributes.ac.bonus": {
-        "name": "",
-        "description": "Numerical bonus to AC."
-      },
-      "system.attributes.ac.calc": {
-        "name": "",
-        "description": "AC calculation method."
-      },
-      "system.attributes.ac.cover": {
-        "name": "",
-        "description": "AC cover bonus (usually provided only via cover status effects)."
-      },
-      "system.attributes.ac.EC": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.ac.flat": {
-        "name": "",
-        "description": "Flat AC (requires system.attributes.ac.calc to be \"flat\")."
-      },
-      "system.attributes.ac.formula": {
-        "name": "",
-        "description": "AC calculation formula (requires system.attributes.ac.calc to be \"custom\")."
-      },
-      "system.attributes.ac.min": {
-        "name": "",
-        "description": "Minimum AC value (if calculated lower, will upgrade to this number)."
-      },
-      "system.attributes.ac.shield": {
-        "name": "",
-        "description": "AC shield bonus (usually provided only via equipped shield item)."
-      },
-      "system.attributes.ac.value": {
-        "name": "",
-        "description": "Use system.attributes.ac.calc as \"flat\" and system.attributes.ac.flat as your desired value instead."
-      },
-      "system.attributes.attunement.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.concentration.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.concentration.bonuses.save": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.concentration.limit": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.concentration.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.concentration.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.concentration.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.death.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.death.failure": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.death.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.death.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.death.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.death.success": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.encumbrance.bonuses.encumbered": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.encumbrance.bonuses.heavilyEncumbered": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.encumbrance.bonuses.maximum": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.encumbrance.bonuses.overall": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.encumbrance.multipliers.encumbered": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.encumbrance.multipliers.heavilyEncumbered": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.encumbrance.multipliers.maximum": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.encumbrance.multipliers.overall": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.exhaustion": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.hd.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.hp.bonuses.level": {
-        "name": "HP Bonus Per Level",
-        "description": "Bonus to HP applied for each character level (only works for classed actors)."
-      },
-      "system.attributes.hp.bonuses.overall": {
-        "name": "HP Overall Bonus",
-        "description": "Bonus to HP (only works for classed actors)."
-      },
-      "system.attributes.hp.max": {
-        "name": "Max HP",
-        "description": "This should not be modified on an actor with a class - use one of the .bonuses or .tempmax instead."
-      },
-      "system.attributes.hp.temp": {
-        "name": "Temp HP",
-        "description": "This should never be modified in an active effect - apply temphp damage instead."
-      },
-      "system.attributes.hp.tempmax": {
-        "name": "Temporary Max HP",
-        "description": "Temporary adjustment to max HP."
-      },
-      "system.attributes.hp.value": {
-        "name": "Current HP",
-        "description": "This should never be modified in an active effect - apply damage instead."
-      },
-      "system.attributes.init.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.init.bonus": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.init.roll.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.init.roll.min": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.init.roll.mode": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.inspiration": {
-        "name": "Inspiration",
-        "description": ""
-      },
-      "system.attributes.movement.all": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.movement.burrow": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.movement.climb": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.movement.fly": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.movement.hover": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.movement.swim": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.movement.units": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.movement.walk": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.senses.blindsight": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.senses.darkvision": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.senses.special": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.senses.tremorsense": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.senses.truesight": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.senses.units": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.spellcasting": {
-        "name": "",
-        "description": ""
-      }
+    "macro.CE": {
+      "name": "",
+      "description": ""
     },
-    "dae.SystemBonuses.fieldData": {
-      "system.bonuses.abil.damage": {
-        "name": "",
-        "description": ""
-      },
-      "system.bonuses.abilities.check": {
-        "name": "",
-        "description": "Bonus to all ability checks."
-      },
-      "system.bonuses.abilities.save": {
-        "name": "",
-        "description": "Bonus to all ability saves."
-      },
-      "system.bonuses.abilities.skill": {
-        "name": "",
-        "description": "Bonus to all skill checks."
-      },
-      "system.bonuses.All-Attacks": {
-        "name": "",
-        "description": "Bonus to all attack rolls."
-      },
-      "system.bonuses.All-Damage": {
-        "name": "",
-        "description": "Bonus to all damage rolls."
-      },
-      "system.bonuses.check.damage": {
-        "name": "",
-        "description": "Bonus to all Check-activity damage rolls."
-      },
-      "system.bonuses.heal.attack": {
-        "name": "",
-        "description": ""
-      },
-      "system.bonuses.heal.damage": {
-        "name": "",
-        "description": "Bonus to all Heal-activity damage rolls."
-      },
-      "system.bonuses.msak.attack": {
-        "name": "",
-        "description": "Bonus to all \"melee spell attack\" attack rolls."
-      },
-      "system.bonuses.msak.damage": {
-        "name": "",
-        "description": "Bonus to all \"melee spell attack\" damage rolls."
-      },
-      "system.bonuses.mwak.attack": {
-        "name": "",
-        "description": "Bonus to all \"melee weapon attack\" attack rolls."
-      },
-      "system.bonuses.mwak.damage": {
-        "name": "",
-        "description": "Bonus to all \"melee weapon attack\" damage rolls."
-      },
-      "system.bonuses.other.damage": {
-        "name": "",
-        "description": ""
-      },
-      "system.bonuses.rsak.attack": {
-        "name": "",
-        "description": "Bonus to all \"ranged spell attack\" attack rolls."
-      },
-      "system.bonuses.rsak.damage": {
-        "name": "",
-        "description": "Bonus to all \"ranged spell attack\" damage rolls."
-      },
-      "system.bonuses.rwak.attack": {
-        "name": "",
-        "description": "Bonus to all \"ranged weapon attack\" attack rolls."
-      },
-      "system.bonuses.rwak.damage": {
-        "name": "",
-        "description": "Bonus to all \"ranged weapon attack\" damage rolls."
-      },
-      "system.bonuses.save.damage": {
-        "name": "",
-        "description": "Bonus to all Save-activity damage rolls."
-      },
-      "system.bonuses.spell.all.damage": {
-        "name": "",
-        "description": "Bonus to all spell damage rolls."
-      },
-      "system.bonuses.spell.attack": {
-        "name": "",
-        "description": "Bonus to all spell attack rolls."
-      },
-      "system.bonuses.spell.damage": {
-        "name": "",
-        "description": "Bonus to all Attack-activity spell damage rolls."
-      },
-      "system.bonuses.spell.dc": {
-        "name": "",
-        "description": "Bonus to spell save DC."
-      },
-      "system.bonuses.util.damage": {
-        "name": "",
-        "description": ""
-      },
-      "system.bonuses.weapon.attack": {
-        "name": "",
-        "description": "Bonus to all weapon attack rolls."
-      },
-      "system.bonuses.weapon.damage": {
-        "name": "",
-        "description": "Bonus to all Attack-activity weapon damage rolls."
-      }
+    "macro.CLT": {
+      "name": "",
+      "description": ""
     },
-    "dae.SystemTraits.fieldData": {
-      "system.traits.armorProf.all": {
-        "name": "All Armor Proficiency",
-        "description": ""
-      },
-      "system.traits.armorProf.custom": {
-        "name": "Custom Armor Proficiency",
-        "description": ""
-      },
-      "system.traits.armorProf.value": {
-        "name": "Armor Proficiency Value",
-        "description": ""
-      },
-      "system.traits.ci.all": {
-        "name": "Immune to all conditions",
-        "description": "Immune to all conditions."
-      },
-      "system.traits.ci.custom": {
-        "name": "Custom Condition Immunity",
-        "description": ""
-      },
-      "system.traits.ci.value": {
-        "name": "Individual Condition Immunity",
-        "description": "Use mode Add and choose condition immunity to add. -condition removes it."
-      },
-      "system.traits.da.all": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.da.custom": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.da.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.damageTypes.custom": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.damageTypes.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.di.all": {
-        "name": "",
-        "description": "Immune to all damage types."
-      },
-      "system.traits.di.bypasses": {
-        "name": "",
-        "description": "Item/weapon properties which bypass damage immunity."
-      },
-      "system.traits.di.custom": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.di.value": {
-        "name": "",
-        "description": "Use mode Add and choose type immunity to add. -type removes it."
-      },
-      "system.traits.dm.amount.acid": {
-        "name": "",
-        "description": "Damage Modification for Acid damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.bludgeoning": {
-        "name": "",
-        "description": "Damage Modification for Bludgeoning damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.cold": {
-        "name": "",
-        "description": "Damage Modification for Cold damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.fire": {
-        "name": "",
-        "description": "Damage Modification for Fire damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.force": {
-        "name": "",
-        "description": "Damage Modification for Force damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.healing": {
-        "name": "",
-        "description": "Damage Modification for Healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.lightning": {
-        "name": "",
-        "description": "Damage Modification for Lightning damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.midi-none": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dm.amount.necrotic": {
-        "name": "",
-        "description": "Damage Modification for Necrotic damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.none": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dm.amount.piercing": {
-        "name": "",
-        "description": "Damage Modification for Piercing damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.poison": {
-        "name": "",
-        "description": "Damage Modification for Poison damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.psychic": {
-        "name": "",
-        "description": "Damage Modification for Psychic damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.radiant": {
-        "name": "",
-        "description": "Damage Modification for Radiant damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.slashing": {
-        "name": "",
-        "description": "Damage Modification for Slashing damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.temphp": {
-        "name": "",
-        "description": "Damage Modification for Temphp healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.amount.thunder": {
-        "name": "",
-        "description": "Damage Modification for Thunder damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.bypasses": {
-        "name": "",
-        "description": "Item/weapon properties which bypass damage modification."
-      },
-      "system.traits.dm.midi.abil": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dm.midi.all": {
-        "name": "",
-        "description": "Damage Modification for all damage types. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.midi.ench": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dm.midi.heal": {
-        "name": "",
-        "description": "Damage Modification for Heal activities. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.midi.msak": {
-        "name": "",
-        "description": "Damage Modification for melee spell attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.midi.mwak": {
-        "name": "",
-        "description": "Damage Modification for melee weapon attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.midi.other": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dm.midi.rsak": {
-        "name": "",
-        "description": "Damage Modification for ranged spell attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.midi.rwak": {
-        "name": "",
-        "description": "Damage Modification for ranged weapon attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-      },
-      "system.traits.dm.midi.save": {
-        "name": "",
-        "description": "Damage Modification for Save activities. Positive numbers mean additional damage taken, negative mean reduced damage taken"
-      },
-      "system.traits.dm.midi.summ": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dm.midi.util": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dr.all": {
-        "name": "",
-        "description": "Damage Resistance to all damage types."
-      },
-      "system.traits.dr.bypasses": {
-        "name": "",
-        "description": "Item/weapon properties which bypass damage reduction."
-      },
-      "system.traits.dr.custom": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dr.value": {
-        "name": "",
-        "description": "Use mode Add and choose type reduction to add. -type removes it."
-      },
-      "system.traits.dv.all": {
-        "name": "",
-        "description": "Damage Vulnerability to all damage types."
-      },
-      "system.traits.dv.bypasses": {
-        "name": "",
-        "description": "Item/weapon properties which bypass damage vulnerability."
-      },
-      "system.traits.dv.custom": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.dv.value": {
-        "name": "",
-        "description": "Use mode Add and choose type vulnerability to add. -type removes it."
-      },
-      "system.traits.languages.all": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.languages.custom": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.languages.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.size": {
-        "name": "",
-        "description": ""
-      },
-      "system.traits.weaponProf.all": {
-        "name": "All Weapon Proficiency",
-        "description": ""
-      },
-      "system.traits.weaponProf.custom": {
-        "name": "Custom Weapon Proficiency",
-        "description": ""
-      },
-      "system.traits.weaponProf.value": {
-        "name": "Weapon Proficiency Value",
-        "description": ""
-      }
+    "macro.createItem": {
+      "name": "",
+      "description": ""
     },
-    "dae.Other.fieldData": {
-      "StatusEffect": {
-        "name": "",
-        "description": ""
-      },
-      "StatusEffectLabel": {
-        "name": "",
-        "description": ""
-      },
-      "StatusEffectName": {
-        "name": "",
-        "description": ""
-      },
-      "flags.dae": {
-        "name": "",
-        "description": ""
-      },
-      "flags.dae.onUpdateSource": {
-        "name": "",
-        "description": ""
-      },
-      "flags.dae.onUpdateTarget": {
-        "name": "",
-        "description": ""
-      },
-      "system.favorites": {
-        "name": "Favorites",
-        "description": ""
-      },
-      "system.attributes.movement.air": {
-        "name": "Air Movement",
-        "description": ""
-      },
-      "system.attributes.movement.land": {
-        "name": "Land Movement",
-        "description": ""
-      },
-      "system.attributes.movement.water": {
-        "name": "Water Movement",
-        "description": ""
-      },
-      "system.description.full": {
-        "name": "Full Description",
-        "description": ""
-      },
-      "system.description.summary": {
-        "name": "Summary Description",
-        "description": ""
-      },
-      "system.members": {
-        "name": "Members",
-        "description": ""
-      },
-      "system.type.value": {
-        "name": "Type Value",
-        "description": ""
-      },
-      "system.attributes.hd.spent": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.hp.formula": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.cr": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.environment": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.source.book": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.source.custom": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.source.license": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.source.page": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.spellLevel": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.type.custom": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.type.subtype": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.type.swarm": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.type.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.lair.initiative": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.lair.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.legact.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.legres.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.attributes.ac.motionless": {
-        "name": "AC When Motionless",
-        "description": ""
-      },
-      "system.attributes.actions.stations": {
-        "name": "Action Stations",
-        "description": ""
-      },
-      "system.attributes.actions.thresholds.0": {
-        "name": "Actions Threshold 0",
-        "description": ""
-      },
-      "system.attributes.actions.thresholds.1": {
-        "name": "Actions Threshold 1",
-        "description": ""
-      },
-      "system.attributes.actions.thresholds.2": {
-        "name": "Actions Threshold 2",
-        "description": ""
-      },
-      "system.attributes.actions.value": {
-        "name": "Actions Value",
-        "description": ""
-      },
-      "system.attributes.capacity.cargo": {
-        "name": "Cargo Capacity",
-        "description": ""
-      },
-      "system.attributes.capacity.creature": {
-        "name": "Creature Capacity",
-        "description": ""
-      },
-      "system.attributes.hp.dt": {
-        "name": "Damage Threshold",
-        "description": ""
-      },
-      "system.attributes.hp.mt": {
-        "name": "Minimum Threshold",
-        "description": ""
-      },
-      "system.cargo.crew": {
-        "name": "Crew Capacity",
-        "description": ""
-      },
-      "system.cargo.passengers": {
-        "name": "Passenger Capacity",
-        "description": ""
-      },
-      "system.traits.dimensions": {
-        "name": "Dimensions",
-        "description": ""
-      },
-      "system.vehicleType": {
-        "name": "Vehicle Type",
-        "description": ""
-      },
-      "system.currency.cp": {
-        "name": "",
-        "description": ""
-      },
-      "system.currency.ep": {
-        "name": "",
-        "description": ""
-      },
-      "system.currency.gp": {
-        "name": "",
-        "description": ""
-      },
-      "system.currency.pp": {
-        "name": "",
-        "description": ""
-      },
-      "system.currency.sp": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.age": {
-        "name": "Age",
-        "description": ""
-      },
-      "system.details.alignment": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.appearance": {
-        "name": "Appearance",
-        "description": ""
-      },
-      "system.details.background": {
-        "name": "Background",
-        "description": ""
-      },
-      "system.details.biography.public": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.biography.value": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.bond": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.eyes": {
-        "name": "Eyes",
-        "description": ""
-      },
-      "system.details.faith": {
-        "name": "Faith",
-        "description": ""
-      },
-      "system.details.flaw": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.gender": {
-        "name": "Gender",
-        "description": ""
-      },
-      "system.details.hair": {
-        "name": "Hair",
-        "description": ""
-      },
-      "system.details.height": {
-        "name": "Height",
-        "description": ""
-      },
-      "system.details.ideal": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.level": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.originalClass": {
-        "name": "Original Class",
-        "description": ""
-      },
-      "system.details.race": {
-        "name": "",
-        "description": ""
-      },
-      "system.details.skin": {
-        "name": "Skin",
-        "description": ""
-      },
-      "system.details.trait": {
-        "name": "Trait",
-        "description": ""
-      },
-      "system.details.weight": {
-        "name": "Weight",
-        "description": ""
-      },
-      "system.details.xp.value": {
-        "name": "XP Value",
-        "description": ""
-      },
-      "system.resources.legact.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.legres.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.primary.label": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.primary.lr": {
-        "name": "Primary Resource Long Rest",
-        "description": "Recover on Long Rest (1/0)"
-      },
-      "system.resources.primary.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.primary.sr": {
-        "name": "Primary Resource Short Rest",
-        "description": "Recover on Short Rest (1/0)"
-      },
-      "system.resources.primary.value": {
-        "name": "Primary Resource Value",
-        "description": "Should not set this via an active effect"
-      },
-      "system.resources.secondary.label": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.secondary.lr": {
-        "name": "Secondary Resource Long Rest",
-        "description": "Recover on Long Rest (1/0)"
-      },
-      "system.resources.secondary.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.secondary.sr": {
-        "name": "Secondary Resource Short Rest",
-        "description": "Recover on Short Rest (1/0)"
-      },
-      "system.resources.secondary.value": {
-        "name": "Secondary Resource Value",
-        "description": "Should not set this via an active effect"
-      },
-      "system.resources.tertiary.label": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.tertiary.lr": {
-        "name": "Tertiary Resource Long Rest",
-        "description": "Recover on Long Rest (1/0)"
-      },
-      "system.resources.tertiary.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.resources.tertiary.sr": {
-        "name": "Tertiary Resource Short Rest",
-        "description": "Recover on Short Rest (1/0)"
-      },
-      "system.resources.tertiary.value": {
-        "name": "Tertiary Resource Value",
-        "description": "Should not set this via an active effect"
-      },
-      "system.spells.pact.level": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.pact.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.pact.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell1.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell1.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell2.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell2.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell3.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell3.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell4.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell4.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell5.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell5.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell6.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell6.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell7.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell7.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell8.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell8.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell9.max": {
-        "name": "",
-        "description": ""
-      },
-      "system.spells.spell9.override": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.alchemist.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.alchemist.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.alchemist.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.art.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.art.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.art.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.bagpipes.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.bagpipes.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.bagpipes.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.brewer.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.brewer.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.brewer.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.calligrapher.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.calligrapher.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.calligrapher.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.card.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.card.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.card.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.carpenter.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.carpenter.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.carpenter.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cartographer.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cartographer.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cartographer.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.chess.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.chess.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.chess.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cobbler.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cobbler.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cobbler.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cook.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cook.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.cook.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.dice.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.dice.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.dice.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.disg.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.disg.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.disg.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.drum.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.drum.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.drum.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.dulcimer.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.dulcimer.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.dulcimer.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.flute.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.flute.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.flute.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.forg.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.forg.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.forg.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.game.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.game.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.game.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.glassblower.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.glassblower.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.glassblower.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.herb.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.herb.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.herb.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.horn.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.horn.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.horn.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.jeweler.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.jeweler.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.jeweler.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.leatherworker.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.leatherworker.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.leatherworker.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.lute.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.lute.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.lute.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.lyre.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.lyre.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.lyre.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.mason.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.mason.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.mason.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.music.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.music.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.music.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.navg.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.navg.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.navg.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.painter.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.painter.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.painter.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.panflute.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.panflute.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.panflute.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.pois.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.pois.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.pois.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.potter.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.potter.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.potter.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.shawm.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.shawm.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.shawm.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.smith.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.smith.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.smith.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.thief.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.thief.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.thief.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.tinker.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.tinker.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.tinker.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.vehicle.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.vehicle.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.vehicle.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.viol.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.viol.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.viol.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.weaver.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.weaver.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.weaver.prof": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.woodcarver.ability": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.woodcarver.bonuses.check": {
-        "name": "",
-        "description": ""
-      },
-      "system.tools.woodcarver.prof": {
-        "name": "",
-        "description": ""
-      }
+    "macro.createItemRunMacro": {
+      "name": "",
+      "description": ""
+    },
+    "macro.CUB": {
+      "name": "",
+      "description": ""
+    },
+    "macro.execute": {
+      "name": "",
+      "description": ""
+    },
+    "macro.execute.GM": {
+      "name": "",
+      "description": ""
+    },
+    "macro.execute.local": {
+      "name": "",
+      "description": ""
+    },
+    "macro.itemMacro": {
+      "name": "",
+      "description": ""
+    },
+    "macro.itemMacro.GM": {
+      "name": "",
+      "description": ""
+    },
+    "macro.itemMacro.local": {
+      "name": "",
+      "description": ""
+    },
+    "macro.StatusEffect": {
+      "name": "",
+      "description": ""
+    }
+  },
+  "dae.SystemAbilities.fieldData": {
+    "system.abilities.cha.bonuses.check": {
+      "name": "Charisma Check Bonus",
+      "description": ""
+    },
+    "system.abilities.cha.bonuses.save": {
+      "name": "Charisma Save Bonus",
+      "description": ""
+    },
+    "system.abilities.cha.dc": {
+      "name": "Charisma Save DC",
+      "description": ""
+    },
+    "system.abilities.cha.max": {
+      "name": "Charisma Max Score",
+      "description": ""
+    },
+    "system.abilities.cha.mod": {
+      "name": "Charisma Mod",
+      "description": ""
+    },
+    "system.abilities.cha.proficient": {
+      "name": "Charisma Save Proficiency",
+      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+    },
+    "system.abilities.cha.save": {
+      "name": "Charisma Save Mod",
+      "description": ""
+    },
+    "system.abilities.cha.value": {
+      "name": "Charisma Score",
+      "description": ""
+    },
+    "system.abilities.con.bonuses.check": {
+      "name": "Constitution Check Bonus",
+      "description": ""
+    },
+    "system.abilities.con.bonuses.save": {
+      "name": "Constitution Save Bonus",
+      "description": ""
+    },
+    "system.abilities.con.dc": {
+      "name": "Constitution Save DC",
+      "description": ""
+    },
+    "system.abilities.con.max": {
+      "name": "Constitution Max Score",
+      "description": ""
+    },
+    "system.abilities.con.mod": {
+      "name": "Constitution Mod",
+      "description": ""
+    },
+    "system.abilities.con.proficient": {
+      "name": "Constitution Save Proficiency",
+      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+    },
+    "system.abilities.con.save": {
+      "name": "Constitution Save Mod",
+      "description": ""
+    },
+    "system.abilities.con.value": {
+      "name": "Constitution Score",
+      "description": ""
+    },
+    "system.abilities.dex.bonuses.check": {
+      "name": "Dexterity Check Bonus",
+      "description": ""
+    },
+    "system.abilities.dex.bonuses.save": {
+      "name": "Dexterity Save Bonus",
+      "description": ""
+    },
+    "system.abilities.dex.dc": {
+      "name": "Dexterity Save DC",
+      "description": ""
+    },
+    "system.abilities.dex.max": {
+      "name": "Dexterity Max Score",
+      "description": ""
+    },
+    "system.abilities.dex.mod": {
+      "name": "Dexterity Mod",
+      "description": ""
+    },
+    "system.abilities.dex.proficient": {
+      "name": "Dexterity Save Proficiency",
+      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+    },
+    "system.abilities.dex.save": {
+      "name": "Dexterity Save Mod",
+      "description": ""
+    },
+    "system.abilities.dex.value": {
+      "name": "Dexterity Score",
+      "description": ""
+    },
+    "system.abilities.int.bonuses.check": {
+      "name": "Intelligence Check Bonus",
+      "description": ""
+    },
+    "system.abilities.int.bonuses.save": {
+      "name": "Intelligence Save Bonus",
+      "description": ""
+    },
+    "system.abilities.int.dc": {
+      "name": "Intelligence Save DC",
+      "description": ""
+    },
+    "system.abilities.int.max": {
+      "name": "Intelligence Max Score",
+      "description": ""
+    },
+    "system.abilities.int.mod": {
+      "name": "Intelligence Mod",
+      "description": ""
+    },
+    "system.abilities.int.proficient": {
+      "name": "Intelligence Save Proficiency",
+      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+    },
+    "system.abilities.int.save": {
+      "name": "Intelligence Save Mod",
+      "description": ""
+    },
+    "system.abilities.int.value": {
+      "name": "Intelligence Score",
+      "description": ""
+    },
+    "system.abilities.str.bonuses.check": {
+      "name": "Strength Check Bonus",
+      "description": ""
+    },
+    "system.abilities.str.bonuses.save": {
+      "name": "Strength Save Bonus",
+      "description": ""
+    },
+    "system.abilities.str.dc": {
+      "name": "Strength Save DC",
+      "description": ""
+    },
+    "system.abilities.str.max": {
+      "name": "Strength Max Score",
+      "description": ""
+    },
+    "system.abilities.str.mod": {
+      "name": "Strength Mod",
+      "description": ""
+    },
+    "system.abilities.str.proficient": {
+      "name": "Strength Save Proficiency",
+      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+    },
+    "system.abilities.str.save": {
+      "name": "Strength Save Mod",
+      "description": ""
+    },
+    "system.abilities.str.value": {
+      "name": "Strength Score",
+      "description": ""
+    },
+    "system.abilities.wis.bonuses.check": {
+      "name": "Wisdom Check Bonus",
+      "description": ""
+    },
+    "system.abilities.wis.bonuses.save": {
+      "name": "Wisdom Save Bonus",
+      "description": ""
+    },
+    "system.abilities.wis.dc": {
+      "name": "Wisdom Save DC",
+      "description": ""
+    },
+    "system.abilities.wis.max": {
+      "name": "Wisdom Max Score",
+      "description": ""
+    },
+    "system.abilities.wis.mod": {
+      "name": "Wisdom Mod",
+      "description": ""
+    },
+    "system.abilities.wis.proficient": {
+      "name": "Wisdom Save Proficiency",
+      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+    },
+    "system.abilities.wis.save": {
+      "name": "Wisdom Save Mod",
+      "description": ""
+    },
+    "system.abilities.wis.value": {
+      "name": "Wisdom Score",
+      "description": ""
+    }
+  },
+  "dae.SystemSkills.fieldData": {
+    "system.skills.acr.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.value": {
+      "name": "",
+      "description": ""
+    }
+  },
+  "dae.SystemAttributes.fieldData": {
+    "system.attributes.ac.AR": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.ac.armor": {
+      "name": "",
+      "description": "AC armor bonus (usually provided only via equipped armor item - will only have an effect if not wearing armor)."
+    },
+    "system.attributes.ac.base": {
+      "name": "",
+      "description": "Deprecated derived field - do not use."
+    },
+    "system.attributes.ac.bonus": {
+      "name": "",
+      "description": "Numerical bonus to AC."
+    },
+    "system.attributes.ac.calc": {
+      "name": "",
+      "description": "AC calculation method."
+    },
+    "system.attributes.ac.cover": {
+      "name": "",
+      "description": "AC cover bonus (usually provided only via cover status effects)."
+    },
+    "system.attributes.ac.EC": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.ac.flat": {
+      "name": "",
+      "description": "Flat AC (requires system.attributes.ac.calc to be \"flat\")."
+    },
+    "system.attributes.ac.formula": {
+      "name": "",
+      "description": "AC calculation formula (requires system.attributes.ac.calc to be \"custom\")."
+    },
+    "system.attributes.ac.min": {
+      "name": "",
+      "description": "Minimum AC value (if calculated lower, will upgrade to this number)."
+    },
+    "system.attributes.ac.shield": {
+      "name": "",
+      "description": "AC shield bonus (usually provided only via equipped shield item)."
+    },
+    "system.attributes.ac.value": {
+      "name": "",
+      "description": "Use system.attributes.ac.calc as \"flat\" and system.attributes.ac.flat as your desired value instead."
+    },
+    "system.attributes.attunement.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.bonuses.save": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.limit": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.failure": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.success": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.bonuses.encumbered": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.bonuses.heavilyEncumbered": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.bonuses.maximum": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.bonuses.overall": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.multipliers.encumbered": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.multipliers.heavilyEncumbered": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.multipliers.maximum": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.multipliers.overall": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.exhaustion": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.hd.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.hp.bonuses.level": {
+      "name": "HP Bonus Per Level",
+      "description": "Bonus to HP applied for each character level (only works for classed actors)."
+    },
+    "system.attributes.hp.bonuses.overall": {
+      "name": "HP Overall Bonus",
+      "description": "Bonus to HP (only works for classed actors)."
+    },
+    "system.attributes.hp.max": {
+      "name": "Max HP",
+      "description": "This should not be modified on an actor with a class - use one of the .bonuses or .tempmax instead."
+    },
+    "system.attributes.hp.temp": {
+      "name": "Temp HP",
+      "description": "This should never be modified in an active effect - apply temphp damage instead."
+    },
+    "system.attributes.hp.tempmax": {
+      "name": "Temporary Max HP",
+      "description": "Temporary adjustment to max HP."
+    },
+    "system.attributes.hp.value": {
+      "name": "Current HP",
+      "description": "This should never be modified in an active effect - apply damage instead."
+    },
+    "system.attributes.init.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.init.bonus": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.init.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.init.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.init.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.inspiration": {
+      "name": "Inspiration",
+      "description": ""
+    },
+    "system.attributes.movement.all": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.burrow": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.climb": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.fly": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.hover": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.swim": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.units": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.walk": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.blindsight": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.darkvision": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.special": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.tremorsense": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.truesight": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.units": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.spellcasting": {
+      "name": "",
+      "description": ""
+    }
+  },
+  "dae.SystemBonuses.fieldData": {
+    "system.bonuses.abil.damage": {
+      "name": "",
+      "description": ""
+    },
+    "system.bonuses.abilities.check": {
+      "name": "",
+      "description": "Bonus to all ability checks."
+    },
+    "system.bonuses.abilities.save": {
+      "name": "",
+      "description": "Bonus to all ability saves."
+    },
+    "system.bonuses.abilities.skill": {
+      "name": "",
+      "description": "Bonus to all skill checks."
+    },
+    "system.bonuses.All-Attacks": {
+      "name": "",
+      "description": "Bonus to all attack rolls."
+    },
+    "system.bonuses.All-Damage": {
+      "name": "",
+      "description": "Bonus to all damage rolls."
+    },
+    "system.bonuses.check.damage": {
+      "name": "",
+      "description": "Bonus to all Check-activity damage rolls."
+    },
+    "system.bonuses.heal.attack": {
+      "name": "",
+      "description": ""
+    },
+    "system.bonuses.heal.damage": {
+      "name": "",
+      "description": "Bonus to all Heal-activity damage rolls."
+    },
+    "system.bonuses.msak.attack": {
+      "name": "",
+      "description": "Bonus to all \"melee spell attack\" attack rolls."
+    },
+    "system.bonuses.msak.damage": {
+      "name": "",
+      "description": "Bonus to all \"melee spell attack\" damage rolls."
+    },
+    "system.bonuses.mwak.attack": {
+      "name": "",
+      "description": "Bonus to all \"melee weapon attack\" attack rolls."
+    },
+    "system.bonuses.mwak.damage": {
+      "name": "",
+      "description": "Bonus to all \"melee weapon attack\" damage rolls."
+    },
+    "system.bonuses.other.damage": {
+      "name": "",
+      "description": ""
+    },
+    "system.bonuses.rsak.attack": {
+      "name": "",
+      "description": "Bonus to all \"ranged spell attack\" attack rolls."
+    },
+    "system.bonuses.rsak.damage": {
+      "name": "",
+      "description": "Bonus to all \"ranged spell attack\" damage rolls."
+    },
+    "system.bonuses.rwak.attack": {
+      "name": "",
+      "description": "Bonus to all \"ranged weapon attack\" attack rolls."
+    },
+    "system.bonuses.rwak.damage": {
+      "name": "",
+      "description": "Bonus to all \"ranged weapon attack\" damage rolls."
+    },
+    "system.bonuses.save.damage": {
+      "name": "",
+      "description": "Bonus to all Save-activity damage rolls."
+    },
+    "system.bonuses.spell.all.damage": {
+      "name": "",
+      "description": "Bonus to all spell damage rolls."
+    },
+    "system.bonuses.spell.attack": {
+      "name": "",
+      "description": "Bonus to all spell attack rolls."
+    },
+    "system.bonuses.spell.damage": {
+      "name": "",
+      "description": "Bonus to all Attack-activity spell damage rolls."
+    },
+    "system.bonuses.spell.dc": {
+      "name": "",
+      "description": "Bonus to spell save DC."
+    },
+    "system.bonuses.util.damage": {
+      "name": "",
+      "description": ""
+    },
+    "system.bonuses.weapon.attack": {
+      "name": "",
+      "description": "Bonus to all weapon attack rolls."
+    },
+    "system.bonuses.weapon.damage": {
+      "name": "",
+      "description": "Bonus to all Attack-activity weapon damage rolls."
+    }
+  },
+  "dae.SystemTraits.fieldData": {
+    "system.traits.armorProf.all": {
+      "name": "All Armor Proficiency",
+      "description": ""
+    },
+    "system.traits.armorProf.custom": {
+      "name": "Custom Armor Proficiency",
+      "description": ""
+    },
+    "system.traits.armorProf.value": {
+      "name": "Armor Proficiency Value",
+      "description": ""
+    },
+    "system.traits.ci.all": {
+      "name": "Immune to all conditions",
+      "description": "Immune to all conditions."
+    },
+    "system.traits.ci.custom": {
+      "name": "Custom Condition Immunity",
+      "description": ""
+    },
+    "system.traits.ci.value": {
+      "name": "Individual Condition Immunity",
+      "description": "Use mode Add and choose condition immunity to add. -condition removes it."
+    },
+    "system.traits.da.all": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.da.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.da.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.damageTypes.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.damageTypes.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.di.all": {
+      "name": "",
+      "description": "Immune to all damage types."
+    },
+    "system.traits.di.bypasses": {
+      "name": "",
+      "description": "Item/weapon properties which bypass damage immunity."
+    },
+    "system.traits.di.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.di.value": {
+      "name": "",
+      "description": "Use mode Add and choose type immunity to add. -type removes it."
+    },
+    "system.traits.dm.amount.acid": {
+      "name": "",
+      "description": "Damage Modification for Acid damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.bludgeoning": {
+      "name": "",
+      "description": "Damage Modification for Bludgeoning damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.cold": {
+      "name": "",
+      "description": "Damage Modification for Cold damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.fire": {
+      "name": "",
+      "description": "Damage Modification for Fire damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.force": {
+      "name": "",
+      "description": "Damage Modification for Force damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.healing": {
+      "name": "",
+      "description": "Damage Modification for Healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.lightning": {
+      "name": "",
+      "description": "Damage Modification for Lightning damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.midi-none": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.amount.necrotic": {
+      "name": "",
+      "description": "Damage Modification for Necrotic damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.none": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.amount.piercing": {
+      "name": "",
+      "description": "Damage Modification for Piercing damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.poison": {
+      "name": "",
+      "description": "Damage Modification for Poison damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.psychic": {
+      "name": "",
+      "description": "Damage Modification for Psychic damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.radiant": {
+      "name": "",
+      "description": "Damage Modification for Radiant damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.slashing": {
+      "name": "",
+      "description": "Damage Modification for Slashing damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.temphp": {
+      "name": "",
+      "description": "Damage Modification for Temphp healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.amount.thunder": {
+      "name": "",
+      "description": "Damage Modification for Thunder damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.bypasses": {
+      "name": "",
+      "description": "Item/weapon properties which bypass damage modification."
+    },
+    "system.traits.dm.midi.abil": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.midi.all": {
+      "name": "",
+      "description": "Damage Modification for all damage types. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.ench": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.midi.heal": {
+      "name": "",
+      "description": "Damage Modification for Heal activities. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.msak": {
+      "name": "",
+      "description": "Damage Modification for melee spell attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.mwak": {
+      "name": "",
+      "description": "Damage Modification for melee weapon attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.other": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.midi.rsak": {
+      "name": "",
+      "description": "Damage Modification for ranged spell attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.rwak": {
+      "name": "",
+      "description": "Damage Modification for ranged weapon attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.save": {
+      "name": "",
+      "description": "Damage Modification for Save activities. Positive numbers mean additional damage taken, negative mean reduced damage taken"
+    },
+    "system.traits.dm.midi.summ": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.midi.util": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dr.all": {
+      "name": "",
+      "description": "Damage Resistance to all damage types."
+    },
+    "system.traits.dr.bypasses": {
+      "name": "",
+      "description": "Item/weapon properties which bypass damage reduction."
+    },
+    "system.traits.dr.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dr.value": {
+      "name": "",
+      "description": "Use mode Add and choose type reduction to add. -type removes it."
+    },
+    "system.traits.dv.all": {
+      "name": "",
+      "description": "Damage Vulnerability to all damage types."
+    },
+    "system.traits.dv.bypasses": {
+      "name": "",
+      "description": "Item/weapon properties which bypass damage vulnerability."
+    },
+    "system.traits.dv.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dv.value": {
+      "name": "",
+      "description": "Use mode Add and choose type vulnerability to add. -type removes it."
+    },
+    "system.traits.languages.all": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.languages.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.languages.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.size": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.weaponProf.all": {
+      "name": "All Weapon Proficiency",
+      "description": ""
+    },
+    "system.traits.weaponProf.custom": {
+      "name": "Custom Weapon Proficiency",
+      "description": ""
+    },
+    "system.traits.weaponProf.value": {
+      "name": "Weapon Proficiency Value",
+      "description": ""
+    }
+  },
+  "dae.Other.fieldData": {
+    "StatusEffect": {
+      "name": "",
+      "description": ""
+    },
+    "StatusEffectLabel": {
+      "name": "",
+      "description": ""
+    },
+    "StatusEffectName": {
+      "name": "",
+      "description": ""
+    },
+    "flags.dae": {
+      "name": "",
+      "description": ""
+    },
+    "flags.dae.onUpdateSource": {
+      "name": "",
+      "description": ""
+    },
+    "flags.dae.onUpdateTarget": {
+      "name": "",
+      "description": ""
+    },
+    "system.favorites": {
+      "name": "Favorites",
+      "description": ""
+    },
+    "system.attributes.movement.air": {
+      "name": "Air Movement",
+      "description": ""
+    },
+    "system.attributes.movement.land": {
+      "name": "Land Movement",
+      "description": ""
+    },
+    "system.attributes.movement.water": {
+      "name": "Water Movement",
+      "description": ""
+    },
+    "system.description.full": {
+      "name": "Full Description",
+      "description": ""
+    },
+    "system.description.summary": {
+      "name": "Summary Description",
+      "description": ""
+    },
+    "system.members": {
+      "name": "Members",
+      "description": ""
+    },
+    "system.type.value": {
+      "name": "Type Value",
+      "description": ""
+    },
+    "system.attributes.hd.spent": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.hp.formula": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.cr": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.environment": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.source.book": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.source.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.source.license": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.source.page": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.spellLevel": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.type.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.type.subtype": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.type.swarm": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.type.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.lair.initiative": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.lair.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.legact.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.legres.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.ac.motionless": {
+      "name": "AC When Motionless",
+      "description": ""
+    },
+    "system.attributes.actions.stations": {
+      "name": "Action Stations",
+      "description": ""
+    },
+    "system.attributes.actions.thresholds.0": {
+      "name": "Actions Threshold 0",
+      "description": ""
+    },
+    "system.attributes.actions.thresholds.1": {
+      "name": "Actions Threshold 1",
+      "description": ""
+    },
+    "system.attributes.actions.thresholds.2": {
+      "name": "Actions Threshold 2",
+      "description": ""
+    },
+    "system.attributes.actions.value": {
+      "name": "Actions Value",
+      "description": ""
+    },
+    "system.attributes.capacity.cargo": {
+      "name": "Cargo Capacity",
+      "description": ""
+    },
+    "system.attributes.capacity.creature": {
+      "name": "Creature Capacity",
+      "description": ""
+    },
+    "system.attributes.hp.dt": {
+      "name": "Damage Threshold",
+      "description": ""
+    },
+    "system.attributes.hp.mt": {
+      "name": "Minimum Threshold",
+      "description": ""
+    },
+    "system.cargo.crew": {
+      "name": "Crew Capacity",
+      "description": ""
+    },
+    "system.cargo.passengers": {
+      "name": "Passenger Capacity",
+      "description": ""
+    },
+    "system.traits.dimensions": {
+      "name": "Dimensions",
+      "description": ""
+    },
+    "system.vehicleType": {
+      "name": "Vehicle Type",
+      "description": ""
+    },
+    "system.currency.cp": {
+      "name": "",
+      "description": ""
+    },
+    "system.currency.ep": {
+      "name": "",
+      "description": ""
+    },
+    "system.currency.gp": {
+      "name": "",
+      "description": ""
+    },
+    "system.currency.pp": {
+      "name": "",
+      "description": ""
+    },
+    "system.currency.sp": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.age": {
+      "name": "Age",
+      "description": ""
+    },
+    "system.details.alignment": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.appearance": {
+      "name": "Appearance",
+      "description": ""
+    },
+    "system.details.background": {
+      "name": "Background",
+      "description": ""
+    },
+    "system.details.biography.public": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.biography.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.bond": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.eyes": {
+      "name": "Eyes",
+      "description": ""
+    },
+    "system.details.faith": {
+      "name": "Faith",
+      "description": ""
+    },
+    "system.details.flaw": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.gender": {
+      "name": "Gender",
+      "description": ""
+    },
+    "system.details.hair": {
+      "name": "Hair",
+      "description": ""
+    },
+    "system.details.height": {
+      "name": "Height",
+      "description": ""
+    },
+    "system.details.ideal": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.level": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.originalClass": {
+      "name": "Original Class",
+      "description": ""
+    },
+    "system.details.race": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.skin": {
+      "name": "Skin",
+      "description": ""
+    },
+    "system.details.trait": {
+      "name": "Trait",
+      "description": ""
+    },
+    "system.details.weight": {
+      "name": "Weight",
+      "description": ""
+    },
+    "system.details.xp.value": {
+      "name": "XP Value",
+      "description": ""
+    },
+    "system.resources.legact.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.legres.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.primary.label": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.primary.lr": {
+      "name": "Primary Resource Long Rest",
+      "description": "Recover on Long Rest (1/0)"
+    },
+    "system.resources.primary.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.primary.sr": {
+      "name": "Primary Resource Short Rest",
+      "description": "Recover on Short Rest (1/0)"
+    },
+    "system.resources.primary.value": {
+      "name": "Primary Resource Value",
+      "description": "Should not set this via an active effect"
+    },
+    "system.resources.secondary.label": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.secondary.lr": {
+      "name": "Secondary Resource Long Rest",
+      "description": "Recover on Long Rest (1/0)"
+    },
+    "system.resources.secondary.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.secondary.sr": {
+      "name": "Secondary Resource Short Rest",
+      "description": "Recover on Short Rest (1/0)"
+    },
+    "system.resources.secondary.value": {
+      "name": "Secondary Resource Value",
+      "description": "Should not set this via an active effect"
+    },
+    "system.resources.tertiary.label": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.tertiary.lr": {
+      "name": "Tertiary Resource Long Rest",
+      "description": "Recover on Long Rest (1/0)"
+    },
+    "system.resources.tertiary.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.tertiary.sr": {
+      "name": "Tertiary Resource Short Rest",
+      "description": "Recover on Short Rest (1/0)"
+    },
+    "system.resources.tertiary.value": {
+      "name": "Tertiary Resource Value",
+      "description": "Should not set this via an active effect"
+    },
+    "system.spells.pact.level": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.pact.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.pact.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell1.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell1.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell2.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell2.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell3.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell3.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell4.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell4.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell5.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell5.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell6.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell6.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell7.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell7.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell8.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell8.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell9.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell9.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.alchemist.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.alchemist.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.alchemist.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.art.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.art.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.art.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.bagpipes.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.bagpipes.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.bagpipes.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.brewer.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.brewer.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.brewer.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.calligrapher.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.calligrapher.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.calligrapher.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.card.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.card.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.card.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.carpenter.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.carpenter.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.carpenter.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cartographer.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cartographer.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cartographer.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.chess.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.chess.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.chess.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cobbler.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cobbler.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cobbler.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cook.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cook.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cook.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dice.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dice.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dice.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.disg.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.disg.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.disg.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.drum.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.drum.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.drum.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dulcimer.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dulcimer.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dulcimer.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.flute.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.flute.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.flute.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.forg.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.forg.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.forg.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.game.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.game.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.game.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.glassblower.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.glassblower.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.glassblower.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.herb.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.herb.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.herb.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.horn.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.horn.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.horn.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.jeweler.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.jeweler.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.jeweler.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.leatherworker.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.leatherworker.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.leatherworker.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lute.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lute.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lute.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lyre.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lyre.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lyre.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.mason.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.mason.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.mason.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.music.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.music.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.music.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.navg.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.navg.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.navg.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.painter.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.painter.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.painter.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.panflute.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.panflute.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.panflute.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.pois.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.pois.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.pois.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.potter.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.potter.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.potter.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.shawm.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.shawm.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.shawm.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.smith.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.smith.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.smith.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.thief.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.thief.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.thief.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.tinker.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.tinker.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.tinker.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.vehicle.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.vehicle.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.vehicle.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.viol.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.viol.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.viol.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.weaver.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.weaver.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.weaver.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.woodcarver.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.woodcarver.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.woodcarver.prof": {
+      "name": "",
+      "description": ""
     }
   }
 }
