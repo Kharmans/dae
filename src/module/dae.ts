@@ -2338,7 +2338,7 @@ function attachActorSheetHeaderButton(app, buttons) {
     label: titleText,
     class: 'dae-config-actorsheet',
     icon: 'fas fa-wrench',
-    onclick: ev => { new ActiveEffects(app.document, {}).render(true); }
+    onclick: ev => { new ActiveEffects({document: app.document}).render({force: true}); }
   })
 }
 // This does not seem to work.
@@ -2351,7 +2351,7 @@ function attachActivitySheetHeaderButton(app, buttons) {
       class: 'dae-dimeditor',
       icon: 'fas fa-file-pen',
       tooltip: DIMtitle,
-      onclick: ev => { new DIMEditor(app.document, {}).render(true); }
+      onclick: (ev) => new DIMEditor({document: app.document}).render({force: true})
     });
   }
 }
@@ -2362,14 +2362,14 @@ Hooks.once("tidy5e-sheet.ready", api => {
         icon: 'fas fa-wrench',
         label: "DAE",
         async onClickAction() {
-          new ActiveEffects(this.document, {}).render(true);
+          new ActiveEffects({document: this.document}).render({force: true});
         }
       },
       {
         icon: 'fas fa-file-pen',
         label: "DIME",
         async onClickAction() {
-          new DIMEditor(this.document, {}).render(true);
+          new DIMEditor({document: this.document}).render({force: true});
         }
       }
     ]
@@ -2383,7 +2383,7 @@ function attachItemSheetHeaderButton(app, buttons) {
       label: titleText,
       class: 'dae-config-itemsheet',
       icon: 'fas fa-wrench',
-      onclick: ev => { new ActiveEffects(app.document, {}).render(true); }
+      onclick: ev => { new ActiveEffects({document: app.document}).render({force: true}); }
     })
   }
   if (DIMETitleBar) {
@@ -2394,7 +2394,7 @@ function attachItemSheetHeaderButton(app, buttons) {
       class: 'dae-dimeditor',
       icon: 'fas fa-file-pen',
       tooltip: DIMtitle,
-      onclick: ev => { new DIMEditor(app.document, {}).render(true); }
+      onclick: (ev) => new DIMEditor({document: app.document}).render({force: true})
     });
   }
 }

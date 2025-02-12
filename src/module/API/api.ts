@@ -11,7 +11,7 @@ import { enumerateBaseValues } from '../dae.js';
 
 const API = {
   ActiveEffects(object: any = {}, options: any = {}) {
-    return new ActiveEffects(object, options);
+    return new ActiveEffects({document: object});
   },
   addAutoFields(fields: string[]) {
     return addAutoFields(fields);

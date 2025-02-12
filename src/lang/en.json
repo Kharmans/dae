@@ -188,6 +188,8 @@
   "dae.tokenEffects.Name": "Enable Token Effects",
   "dae.tokenEffects.Hint": "Allows effects that target a specific token, e.g. invisible, blind (experimental feature)",
   "dae.macro": "Macro",
+  "dae.macroRepeat": "Macro Repeat",
+  "dae.specialDuration": "Special Duration",
   "dae.execute": "Execute",
   "dae.GM": "GM",
   "dae.local": "Local",

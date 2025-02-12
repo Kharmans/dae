@@ -1,0 +1,15 @@
+<div>
+    <header class="sheet-header img-name flexrow">
+        <img class="dime-img" src="{{macro.img}}" title="{{macro.name}}" height="64" width="64"/>
+        <h4 class="dime-title">{{macro.name}}</h4>
+    </header>
+
+    {{#if isV12}}
+        <div class="form-group stacked command" style="height:calc(100% - 100px);">
+            <label>Command</label>
+            <textarea name="command">{{macro.command}}</textarea>
+        </div>
+    {{else}}
+        {{formInput macroSchema.fields.command value=macro.command language=editorLang elementType="code-mirror"}}
+    {{/if}}
+</div>

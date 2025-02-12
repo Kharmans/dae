@@ -1,38 +1,52 @@
+import { AnyObject } from "fvtt-types/utils";
 import { debug } from "../../dae.js";
-export class DIMEditor extends FormApplication {
+const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      template: "./modules/dae/templates/DIMEditor.html",
-      classes: ["macro-sheet", "sheet", "dimeditor"],
-      resizable: true,
+export class DIMEditor<
+  Document extends Item.Implementation,
+  RenderContext extends AnyObject
+> extends HandlebarsApplicationMixin(DocumentSheetV2)<
+  Document,
+  RenderContext
+> {
+
+  static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
+    classes: ["macro-config", "dimeditor"],
+    window: {
+      contentClasses: ["standard-form"],
+      resizable: true
+    },
+    position: {
       width: 560,
       height: 480
-    });
-  }
+    },
+    form: { closeOnSubmit: true }
+  }, { inplace: false });
 
-  render(force, options = {}) {
+  static PARTS = {
+    body: {template: "./modules/dae/templates/DIMEditor.hbs", root: true},
+    footer: {template: "templates/generic/form-footer.hbs"}
+  };
+
+  async render(options) {
     Hooks.once("renderDIMEditor", (app, html, data) => {
       Hooks.callAll("renderMacroConfig", app, html, data)
     });
-    return super.render(force, options)
+    return super.render(options)
   }
-  getData(options = {}) {
-    const macroTypes = game.documentTypes?.Macro.reduce((obj, t) => {
-      // @ts-expect-error
-      if (t === CONST.BASE_DOCUMENT_TYPE) return obj;
-      if ((t === "script") && !game.user?.can("MACRO_SCRIPT")) return obj;
-      //@ts-expect-error typeLabels
-      obj[t] = game.i18n.localize(CONFIG.Macro.typeLabels[t]);
-      return obj;
-    }, {});
-    const macroScopes = CONST.MACRO_SCOPES;
-    return foundry.utils.mergeObject(super.getData(options), {
-      macro: this.getMacro(),
-      macroTypes,
-      macroScopes
-    });
+
+  async _prepareContext(options) {
+    const context: any = await super._prepareContext(options);
+    context.editorLang = "javascript";
+    context.macro = this.getMacro();
+    context.macroSchema = Macro.schema;
+    context.buttons = [{
+      type: "submit", icon: "fa-solid fa-save", label: "MACRO.Save"
+    }];
+    context.isV12 = !foundry.utils.isNewerVersion(game.version ?? "", "13");
+    return context;
   }
+
   /*
     Override
   */
@@ -44,66 +58,57 @@ export class DIMEditor extends FormApplication {
   /*
     Override
   */
-  async _updateObject(event, formData) {
-    debug("DIMEditor | _updateObject  | ", { event, formData });
-    //@ts-expect-error type
-    await this.updateMacro(foundry.utils.mergeObject(formData, { type: "script", }));
+  async _processSubmitData(event, form, submitData) {
+    const command = new FormDataExtended(form)?.get("command");
+    await this.updateMacro(foundry.utils.mergeObject({ command, type: "script" }));
   }
 
   async updateMacro({ command, type }) {
-    let item = this.object;
+    let item = this.document;
     let macro: any = this.getMacro();
 
     debug("DIMEditor | updateMacro  | ", { command, type, item, macro });
     if (macro.command != command) {
         await this.setMacro(new Macro({
-          // @ts-expect-error
-          name: this.object.name,
-          // @ts-expect-error
-          img: this.object.img,
+          name: this.document.name,
+          img: this.document.img,
           type: "script",
           scope: "global",
           command,
           author: game.user?.id,
-          //@ts-expect-error v12 DOCUMENT_PERMISSION_LEVELS -> DOCUMENT_OWNERSHIP_LEVELS
-          ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? CONST.DOCUMENT_PERMISSION_LEVELS.OWNER }
+          ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER }
         }, {}));
     }
   }
 
   hasMacro() {
-    // @ts-expect-error
-    let command = foundry.utils.getProperty(this.object, "flags.dae.macro.command") ?? foundry.utils.getProperty(this.object, "flags.itemacro.macro");
+    const command = foundry.utils.getProperty(this.document, "flags.dae.macro.command") ?? foundry.utils.getProperty(this.document, "flags.itemacro.macro");
     return !!command;
   }
 
   getMacro(): Macro {
     // @ts-expect-error
-    if (globalThis.MidiQOL?.activityTypes && this.object?.macroData) return this.object.macro;
-    // @ts-expect-error
-    let macroData = foundry.utils.getProperty(this.object, "flags.dae.macro")
-      // @ts-expect-error
-      ?? foundry.utils.getProperty(this.object, "flags.itemacro.macro")
+    if (globalThis.MidiQOL?.activityTypes && this.document?.macroData) return this.document.macro;
+    let macroData = foundry.utils.getProperty(this.document, "flags.dae.macro")
+      ?? foundry.utils.getProperty(this.document, "flags.itemacro.macro")
       ?? {};
 
     if (!macroData.command && macroData.data) macroData = macroData.data;
     delete macroData.data;
-    // @ts-expect-error
-    macroData = foundry.utils.mergeObject(macroData, { img: this.object.img, name: this.object.name, scope: "global", type: "script" });
+    macroData = foundry.utils.mergeObject(macroData, { img: this.document.img, name: this.document.name, scope: "global", type: "script" });
     debug("DIMEditor | getMacro | ", { macroData });
-    return new Macro(macroData, {});
+    return new Macro.implementation(macroData, {});
   }
 
   async setMacro(macro: Macro) {
     // @ts-expect-error
-    if (this.object.macroData) {
-      // npm await this.object.macro = macro;
+    if (this.document.macroData) {
       //@ts-expect-error
-      await this.object.update({ "macroData.name": macro.name, "macroData.command": macro.command });
+      await this.document.update({ "macroData.name": macro.name, "macroData.command": macro.command });
     }
     if (macro instanceof Macro) {
       // @ts-expect-error
-      await this.object.update({ "flags.dae.macro": macro.toObject() });
+      await this.document.update({ "flags.dae.macro": macro.toObject() });
     }
   }
 

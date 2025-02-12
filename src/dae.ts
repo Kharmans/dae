@@ -132,9 +132,14 @@ Hooks.once('setup', function () {
 });
 
 export async function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {
-  if (toCheck) {
-    return Dialog.confirm({title, content: `<p>${i18n("dae.sure")}</p>`, yes: confirmFunction});
-  } else return confirmFunction();
+  if (toCheck || await foundry.applications.api.DialogV2.confirm({
+    // @ts-expect-error types issue
+    window: {title},
+    content: `<p>${i18n("dae.sure")}</p>`,
+    rejectClose: false
+  })) {
+    return confirmFunction();
+  }
 }
 
 

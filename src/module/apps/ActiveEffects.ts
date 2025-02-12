@@ -1,8 +1,16 @@
 import { effectIsTransfer, simpleCalendarInstalled } from "../dae.js"
 import { warn, debug, i18n, confirmAction, daeSpecialDurations } from "../../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
+import { AnyObject } from "fvtt-types/utils";
+const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class ActiveEffects extends FormApplication {
+export class ActiveEffects<
+  Document extends Actor.Implementation | Item.Implementation,
+  RenderContext extends AnyObject
+> extends HandlebarsApplicationMixin(DocumentSheetV2)<
+  Document,
+  RenderContext
+> {
   static filters = new Set();
   hookId: number | null = null;
   itemHookId: number | null = null;
@@ -15,41 +23,44 @@ export class ActiveEffects extends FormApplication {
   combatHookId: number | null = null;
   effect;
   effectList;
+  
+  static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
+    classes: ["dae-active-effects"],
+    window: {
+      title: "dae.ActiveEffectName",
+      resizable: true
+    },
+    position: {
+      height: 500,
+      width: 650
+    }
+  }, { inplace: false });
 
+  static PARTS = {
+    body: {template: "./modules/dae/templates/ActiveEffects.hbs"}
+  };
 
-  static get defaultOptions() {
-    const options = super.defaultOptions;
-    // options.id = "effect-selector-actor";
-    options.classes = ["dnd5e", "sw5e"];
-    options.title = i18n("dae.ActiveEffectName");
-    options.template = "./modules/dae/templates/ActiveEffects.html";
-    options.submitOnClose = true;
-    options.height = 500;
-    options.width = 650;
-    options.resizable = true;
-    return options;
-  }
   get id() {
-    const actor: any = this.object;
+    const actor: any = this.document;
     let id = `ActiveEffects-${actor.id}`;
     if (actor.isToken) id += `-${actor.token.id}`;
     return id;
   }
 
   get title() {
-    // @ts-expect-error
-    return i18n("dae.ActiveEffectName") + ` ${this.object?.name}`;
+    return i18n("dae.ActiveEffectName") + ` ${this.document.name}`;
   }
+
   get filters() { return ActiveEffects.filters }
-  getData(): any {
-    // const object: any = this.object;
+
+  async _prepareContext(options) {
     const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
     const modeKeys = Object.keys(EFFECTMODES);
-
-    function* effectsGenerator() { for (const effect of this.effects) yield effect };
-    let effects = effectsGenerator.bind(this.object);
-    if (this.object instanceof CONFIG.Actor.documentClass && CONFIG.ActiveEffect.legacyTransferral === false) {
-      effects = this.object.allApplicableEffects.bind(this.object);
+  
+    function* effectsGenerator(this: any) { for (const effect of this.effects) yield effect };
+    let effects = effectsGenerator.bind(this.document);
+    if (this.document instanceof CONFIG.Actor.documentClass && CONFIG.ActiveEffect.legacyTransferral === false) {
+      effects = this.document.allApplicableEffects.bind(this.document);
     }
     let actives: any[] = [];
     for (let ae of effects()) {
@@ -76,11 +87,10 @@ export class ActiveEffects extends FormApplication {
         continue;
       }
       newAe.changes.map(change => {
-        if (this.object instanceof CONFIG.Item.documentClass)
+        if (this.document instanceof CONFIG.Item.documentClass)
           change.label = ValidSpec.actorSpecs["union"].allSpecsObj[change.key]?.label || change.key;
         else
-          // @ts-expect-error
-          change.label = ValidSpec.actorSpecs[this.object?.type].allSpecsObj[change.key]?.label || change.key;
+          change.label = ValidSpec.actorSpecs[this.document.type].allSpecsObj[change.key]?.label || change.key;
         if (typeof change.value === "string" && change.value.length > 40) {
           change.value = change.value.substring(0, 30) + " ... ";
         } else if (Array.isArray(change.value)) {
@@ -92,15 +102,14 @@ export class ActiveEffects extends FormApplication {
       });
       actives.push(newAe);
     };
-
+  
     if (this.filters.has("temporary")) actives = actives.filter(e => e.isTemporary);
     if (this.filters.has("enabled")) actives = actives.filter(e => !e.disabled && !e.isSuppressed);
     actives.sort((a, b) => a.name < b.name ? -1 : 1);
     actives.forEach(e => {
       let id = e.origin?.match(/Actor.*Item\.(.*)/);
-      if (id?.length === 2) {
-        // @ts-expect-error
-        const item = this.object?.items?.get(id[1]);
+      if (id?.length === 2 && this.document instanceof Actor) {
+        const item = this.document.items?.get(id[1]);
         foundry.utils.setProperty(e, "flags.dae.itemName", item?.name || "???");
       }
       else {
@@ -108,7 +117,7 @@ export class ActiveEffects extends FormApplication {
       }
       e.transfer = effectIsTransfer(e) ?? true;
     });
-
+  
     let efl = CONFIG.statusEffects
       .map(se => {
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name} (CE)` };
@@ -121,43 +130,38 @@ export class ActiveEffects extends FormApplication {
     efl.forEach(se => {
       this.effectList[se.id] = se.name;
     });
-
-    const isItem = this.object instanceof CONFIG.Item.documentClass;
-    let data = {
+  
+    const isItem = this.document instanceof CONFIG.Item.documentClass;
+    const context = foundry.utils.mergeObject(await super._prepareContext(options), {
       actives: actives,
       isGM: game.user?.isGM,
       isItem,
-      // @ts-expect-error
-      isOwned: this.object.isOwned,
-      // @ts-expect-error
-      flags: this.object.flags,
+      isOwned: this.document instanceof Item && this.document.isOwned,
+      flags: this.document.flags,
       modes: modeKeys,
-      // @ts-expect-error
-      validSpecs: isItem ? ValidSpec.actorSpecs["union"].allSpecsObj : ValidSpec.actorSpecs[this.object.type],
+      validSpecs: isItem ? ValidSpec.actorSpecs["union"].allSpecsObj : ValidSpec.actorSpecs[this.document.type],
       // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
       canEdit: true,
       // showEffects: playersCanSeeEffects !== "none" || game.user.isGM,
       showEffects: true,
       effectList: this.effectList,
-      newEffect: "new",
-      //@ts-expect-error
-      useIcon: game.release.generation < 12,
-    }
-    return data;
+      effect: "new"
+    });
+    return context;
   }
 
-  async _updateObject(event, formData) {
-    const object: any = this.object;
-    formData = foundry.utils.expandObject(formData);
-    if (!formData.changes) formData.changes = [];
-    formData.changes = Object.values(formData.changes);
-    for (let c of formData.changes) {
+  async _processSubmitData(event, form, submitData) {
+    const document = this.document;
+    submitData = foundry.utils.expandObject(submitData);
+    submitData.changes ??= [];
+    submitData.changes = Object.values(submitData.changes);
+    for (let c of submitData.changes) {
       if (Number.isNumeric(c.value)) c.value = parseFloat(c.value);
     }
-    return object.update(formData);
+    await document.update(submitData);
   }
 
-  _initializeFilterItemList(i, ul) {
+  _initializeFilterItemList(ul) {
     const set = this.filters;
     const filters = ul.querySelectorAll(".filter-item");
     for (let li of filters) {
@@ -166,138 +170,144 @@ export class ActiveEffects extends FormApplication {
   }
   _onToggleFilter(event) {
     event.preventDefault();
-    const li = event.currentTarget;
+    const li = event.target;
     const set = this.filters;
     const filter = li.dataset.filter;
     if (set.has(filter)) set.delete(filter);
     else set.add(filter);
     this.render();
   }
-  // delete change
-  activateListeners(html) {
-    super.activateListeners(html);
-    const filterLists = html.find(".filter-list");
-    filterLists.each(this._initializeFilterItemList.bind(this));
-    filterLists.on("click", ".filter-item", this._onToggleFilter.bind(this));
 
-    html.find('.refresh').click(async ev => {
-      return this.submit({ preventClose: true }).then(() => this.render());
-    });
+  _onRender(context, options) {
+    super._onRender(context, options);
+    for (const filterList of Array.from(this.element.querySelectorAll(".filter-list"))) {
+      this._initializeFilterItemList.call(this, filterList);
+      filterList.addEventListener("click", (event) => {
+        // @ts-expect-error EventTarget oddness
+        if (event.target?.closest(".filter-item")) this._onToggleFilter.call(this, event);
+      });
+    }
+
+    // This doesn't seem to reference anything
+    // html.find('.refresh').click(async ev => {
+    //   return this.submit({ preventClose: true }).then(() => this.render());
+    // });
 
     // Delete Effect
-    html.find('.effect-delete').click(async ev => {
-      const object = this.object as Actor.Implementation | Item.Implementation;
-      const effectid = $(ev.currentTarget).parents(".effect-header").attr("effect-id");
-      let effect = object.effects.get(effectid ?? "");
-      if (effect) { // this will mean deleting item transfer effects won't work unless the item is being edited
-      if (object instanceof CONFIG.Actor.documentClass || object instanceof CONFIG.Item.documentClass) {
-        //@ts-expect-error
-        object.deleteEmbeddedDocuments("ActiveEffect", [effectid], { "expiry-reason": "manual-deletion" });
-      }
+    for (const deleteButton of Array.from(this.element.querySelectorAll(".effect-delete"))) {
+      deleteButton.addEventListener("click", (event) => {
+        const object = this.document as Actor.Implementation | Item.Implementation;
+        // @ts-expect-error EventTarget oddness
+        const effectId = event.currentTarget?.closest(".effect-header")?.getAttribute("effect-id");
+        let effect = object.effects.get(effectId ?? "");
+        if (effect) { // this will mean deleting item transfer effects won't work unless the item is being edited
+          // Shouldn't be necessary
+          if (object instanceof CONFIG.Actor.documentClass || object instanceof CONFIG.Item.documentClass) {
+            object.deleteEmbeddedDocuments("ActiveEffect", [effectId], { "expiry-reason": "manual-deletion" });
+          }
+        }
+      });
     }
-    });
-    html.find('.effect-edit').click(async ev => {
-      const object = this.object as Actor.Implementation | Item.Implementation;
-      if (object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
-      const effectUuid = $(ev.currentTarget).parents(".effect-header").attr("effect-uuid");
-      if (!effectUuid) return
-      // @ts-expect-error
-      let effect: any = await fromUuid(effectUuid);
 
-      // const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
-      //const ownedItemEffect = new CONFIG.ActiveEffect.documentClass(effect.toObject(), effect.parent);
+    for (const editButton of Array.from(this.element.querySelectorAll(".effect-edit"))) {
+      editButton.addEventListener("click", async (event) => {
+        const object = this.document as Actor.Implementation | Item.Implementation;
+        if (object.parent instanceof Item) return; // TODO Think about editing effects on items in bags
+        // @ts-expect-error EventTarget oddness
+        const effectUuid = event.currentTarget?.closest(".effect-header")?.getAttribute("effect-uuid");
+        if (!effectUuid) return;
+        let effect: any = await fromUuid(effectUuid);
 
-      return effect?.sheet.render(true);
-    })
-    html.find('.effect-add').click(async ev => {
-      const object = this.object as Actor.Implementation | Item.Implementation;
-      let effect_name = $(ev.currentTarget).parents(".effect-header").find(".newEffect option:selected").text();
-      let AEDATA;
-      let id = (Object.entries(this.effectList).find(([key, value]) => value === effect_name) ?? [])[0];
-      if (effect_name === "new") {
-        // @ts-expect-error no dnd5e-types
-        if (false && object.system.enchantment) { // I think just creating a simple effect, rather than an enchantment is right
-          return await ActiveEffect.implementation.create({
-            name: object.name,
-            icon: object.img,
-            // @ts-expect-error no dnd5e-types
-            type: "enchantment",
-          }, {parent: object});
-        };
-        AEDATA = {
+        // const ownedItemEffect = new EditOwnedItemEffectsActiveEffect(effect.toObject(), effect.parent);
+        //const ownedItemEffect = new CONFIG.ActiveEffect.documentClass(effect.toObject(), effect.parent);
+
+        return effect?.sheet.render(true);
+      });
+    }
+
+    this.element.querySelector(".effect-add")?.addEventListener("click", async (event) => {
+      const object = this.document as Actor.Implementation | Item.Implementation;
+      // @ts-expect-error EventTarget oddness
+      const effectName = event.currentTarget?.closest(".effect-header")?.querySelector(".newEffect option:checked")?.textContent;
+      let AEData;
+      const id = Object.entries(this.effectList).find(([_, value]) => value === effectName)?.[0];
+      if (effectName === "new") {
+        // if (false && object.system.enchantment) { // I think just creating a simple effect, rather than an enchantment is right
+        //   return await ActiveEffect.implementation.create({
+        //     name: object.name,
+        //     icon: object.img,
+        //     // @ts-expect-error no dnd5e-types
+        //     type: "enchantment",
+        //   }, {parent: object});
+        // };
+        AEData = {
           name: object.name,
           changes: [],
           transfer: false,
-        }
-        const img = object.img || "icons/svg/mystery-man.svg";
-
-        //@ts-expect-error
-        if (game.release.generation < 12) AEDATA.icon = img;
-        else AEDATA.img = img;
-        await object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
-
+          img: object.img || "icons/svg/mystery-man.svg"
+        };
+        await object.createEmbeddedDocuments("ActiveEffect", [AEData]);
       } else {
-        let statusEffect = CONFIG.statusEffects.find(se => se.id === id);
-        if (statusEffect) {
-          if (object instanceof CONFIG.Item.documentClass && false) {
-            AEDATA = {
-              //@ts-expect-error
-              name: statusEffect.name,
-              origin: object.uuid,
-              changes: [{ key: "StatusEffect", mode: 0, value: id }],
-              transfer: true,
-              flags: { "dae.itemName": object.name }
-            }
-            //@ts-expect-error
-            if (game.release.generation < 12) AEDATA.icon = statusEffect.icon;
-            //@ts-expect-error
-            else AEDATA.img = statusEffect.img;
-            object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
-          } else {
-            if (!statusEffect._id) { // fiddle for CE effects
-              statusEffect._id = foundry.utils.randomID();
-            };
-            //@ts-expect-error
-            let effect = await ActiveEffect.implementation.fromStatusEffect(id, { parent: object, keepId: true });
-            effect.updateSource({_id: statusEffect._id, origin: object.uuid});
-            //@ts-expect-error
-            await ActiveEffect.implementation.create(effect, { parent: object, keepId: true });
-          }
+        const statusEffect = CONFIG.statusEffects.find(se => se.id === id);
+        if (statusEffect && id) {
+          // if (object instanceof CONFIG.Item.documentClass && false) {
+          //   AEDATA = {
+          //     //@ts-expect-error
+          //     name: statusEffect.name,
+          //     origin: object.uuid,
+          //     changes: [{ key: "StatusEffect", mode: 0, value: id }],
+          //     transfer: true,
+          //     flags: { "dae.itemName": object.name }
+          //   }
+          //   //@ts-expect-error
+          //   if (game.release.generation < 12) AEDATA.icon = statusEffect.icon;
+          //   //@ts-expect-error
+          //   else AEDATA.img = statusEffect.img;
+          //   object.createEmbeddedDocuments("ActiveEffect", [AEDATA]);
+          // } else {
+          // fiddle for CE effects - probably irrelevant now?
+          if (!statusEffect._id) statusEffect._id = foundry.utils.randomID();
+          // @ts-expect-error is keepId gone now?
+          let effect = await ActiveEffect.implementation.fromStatusEffect(id, { parent: object, keepId: true });
+          effect.updateSource({ _id: statusEffect._id, origin: object.uuid });
+          // @ts-expect-error
+          await ActiveEffect.implementation.create(effect, { parent: object, keepId: true });
+          // }
         }
       }
-    })
+    });
 
-    function efhandler(type, effect, data, options, user) {
-      if (this.object.id === effect.parent.id || effect.parent?.parent?.id === this.object.id) {
+    function efHandler(type, effect, data, options, user) {
+      if (this.document.id === effect.parent.id || effect.parent?.parent?.id === this.document.id) {
         setTimeout(() => this.render(), 0)
       }
     };
     function itemHandler(item, data, options, user) {
-      if (this.object.id === item.id || item.parent?.id === this.object.id) {
+      if (this.document.id === item.id || item.parent?.id === this.document.id) {
         setTimeout(() => this.render(), 0)
       }
     };
     function tmHandler(worldTime: number, dt: number) {
       //@ts-expect-error
-      if (Array.from(this.object.effects).some(ef => ef.isTemporary))
+      if (Array.from(this.document.effects).some(ef => ef.isTemporary))
         setTimeout(() => this.render(), 0)
     }
     function tkHandler(token, update, options, user) {
-      if (token.actor.id !== this.object.id) return;
+      if (token.actor.id !== this.document.id) return;
       setTimeout(() => this.render(), 0);
     }
-
+  
     function actHandler(actor, updates, options, user) {
-      if (actor.id !== this.object.id) return;
+      if (actor.id !== this.document.id) return;
       setTimeout(() => this.render(), 0)
     }
-
+  
     if (!this.effectHookIdu)
-      this.effectHookIdu = Hooks.on("updateActiveEffect", efhandler.bind(this, "update"));
+      this.effectHookIdu = Hooks.on("updateActiveEffect", efHandler.bind(this, "update"));
     if (!this.effectHookIdc)
-      this.effectHookIdc = Hooks.on("createActiveEffect", efhandler.bind(this, "create"));
+      this.effectHookIdc = Hooks.on("createActiveEffect", efHandler.bind(this, "create"));
     if (!this.effectHookIdd)
-      this.effectHookIdd = Hooks.on("deleteActiveEffect", efhandler.bind(this, "delete"));
+      this.effectHookIdd = Hooks.on("deleteActiveEffect", efHandler.bind(this, "delete"));
     if (!this.itemHookId)
       this.itemHookId = Hooks.on("updateItem", itemHandler.bind(this))
     if (!this.effectHookIdt)
@@ -309,7 +319,9 @@ export class ActiveEffects extends FormApplication {
     if (!this.combatHookId)
       this.combatHookId = Hooks.on("updateCombat", tmHandler.bind(this));
   }
-  async close() {
+  
+  async _preClose(options) {
+    await super._preClose(options);
     if (this.effectHookIdu) Hooks.off("updateActiveEffect", this.effectHookIdu);
     if (this.effectHookIdc) Hooks.off("createActiveEffect", this.effectHookIdc);
     if (this.effectHookIdd) Hooks.off("deleteActiveEffect", this.effectHookIdd);
@@ -318,6 +330,5 @@ export class ActiveEffects extends FormApplication {
     if (this.effectHookIda) Hooks.off("updateActor", this.effectHookIda);
     if (this.itemHookId) Hooks.off("updateItem", this.itemHookId);
     if (this.combatHookId) Hooks.off("updateCombat", this.combatHookId);
-    return super.close()
   }
 }
