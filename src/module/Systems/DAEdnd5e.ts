@@ -611,9 +611,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       daeSpecialDurations["isInitiative"] = `${i18n("dae.isRollBase")} ${i18n("dae.isInitiativeDetail")}`;
 
       daeSpecialDurations["isMoved"] = i18n("dae.isMoved");
-      daeSpecialDurations["longRest"] = i18n("DND5E.LongRest");
-      daeSpecialDurations["shortRest"] = i18n("DND5E.ShortRest");
-      daeSpecialDurations["newDay"] = `${i18n("DND5E.NewDay")}`;
+      daeSpecialDurations["longRest"] = i18n("DND5E.REST.Long.Label");
+      daeSpecialDurations["shortRest"] = i18n("DND5E.REST.Short.Label");
+      daeSpecialDurations["newDay"] = `${i18n("DND5E.REST.NewDay.Label")}`;
       Object.keys(daeSystemClass.systemConfig.abilities).forEach(abl => {
         let ablString = daeSystemClass.systemConfig.abilities[abl].label
         daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}`;

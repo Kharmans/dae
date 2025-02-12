@@ -1,9 +1,14 @@
+### 12.0.16
+* Fix for syntax error in en.json
+* Fix for long/short rest and new day special duration dropdown labels
+* Updated pt-br.json thanks @kharmans
+
 ### 12.0.15
 * Fix for syntax error in en.json
 
 ### 12.0.14
 * **dnd5e** Remove system.attack.bonus from Item special effects since it is just a bonus string
-* **Breaking** Change fields on Actors that dae does not recognise will now be preocessed in the base effects phase, rathere than being deferred until the derived phase. This is inline with how item effects are applied.
+* **Breaking** Change fields on Actors that dae does not recognize will now be processed in the base effects phase, rather than being deferred until the derived phase. This is inline with how item effects are applied.
 
 ### 12.0.13
 * Some changes for origin entities being active effects rather than items, specifically in getItemMacro and flags.dae.onTargetUpdate effects.
@@ -21,16 +26,16 @@
 * Added activity effects to the keys that dae knows about, so activities[attack].attack.bonus will be recognized (it already worked).
   - Added most of the midi specific keys to the browser as well
   - activities[attack].midiProperties.ignoreTraits ADD idi, will cause the activity to ignore damage immunity when rolled.
-  - activities[attack].macroData.command OVERRIDE 'console.error("This is a message"); {} ', will prepend the console.error to the existing activity macro. You do not need to reference the existing activity macro. You can assign a name to the macro. Assining a command effectively create the macro on the activity.
+  - activities[attack].macroData.command OVERRIDE 'console.error("This is a message"); {} ', will prepend the console.error to the existing activity macro. You do not need to reference the existing activity macro. You can assign a name to the macro. Assigning a command effectively create the macro on the activity.
   - flags.dae.macro.name, flags.dae.macro.command, flags.dae.macro.type (script/text) are available to create/modify macros on the item being enchanted.
 * Enchantment effects can now cause the enchanted item call macros when the item is used.
 * Enchantment effects can now cause enchanted items to call macros from the enchantment item/activity when used.
 - Added flags.midi-qol.onUseMacroName to the available item effect changes which allows you to have the enchanted item call a macro when used.
-  - There are two ways to specify the macro to be called depending on whether the macro is to be sourced from the enchantment that added the effect or if the macro is to be sourced from the item the enchantement is applied to.
+  - There are two ways to specify the macro to be called depending on whether the macro is to be sourced from the enchantment that added the effect or if the macro is to be sourced from the item the enchantment is applied to.
   - To reference the enchantment item/activity use
     flags.midi-qol.onUsemMacroName CUSTOM ActivityMacro, preAttackRoll
     flags.midi-qol.onUsemMacroName CUSTOM ItemMAcro, preAttackRoll
-  - To reference the item/activitry the enchantment is applied to use
+  - To reference the item/activity the enchantment is applied to use
     flags.midi-qol.onUseMacroName ADD **,[preAttackRoll]ItemMacro**
     flags.midi-qol.onUseMacroName ADD **,[preAttackRoll]AttackMacro**
   - Note the comma in the second version, it is required.
@@ -65,20 +70,20 @@
 
 ### 12.0.6
 * Support for Activity Macros, macro.ActivityMacro with similar semantics to macro.itemMacro
-* DIME supports editing activity macros as defined by midi-qol (only availalable on midi activities).
+* DIME supports editing activity macros as defined by midi-qol (only available on midi activities).
 * Added DAE/DIME header controls to tidysheet-5e.
 * Fix for @Embed changes not working on items.
 * Added support for function. macro calls in flags.dae.onUpdateActor specs. Not well tested yet.
 
 ### 12.0.5
-* Added some more edge case conditons to dependent condition application.
+* Added some more edge case conditions to dependent condition application.
 * **Breaking** Stackable effects now apply their changes for each stack of the effect. So 3 stacks of system.attributes.ac.bonus add 1, will increase the target AC by 3.
 
 ### 12.0.4
 * Added deprecation warning to field description for mapped fields.
-* Rewrote dependent conditions code which should resolve the oustanding errors
+* Rewrote dependent conditions code which should resolve the outstanding errors
 * Removed rewrite transfer origin setting as it conflicts with dnd5e too much.
-* Default for created effects is now stacking of "multi" rather than don't stack by name and oprigin. This should resolve some cases where effects did not stack and were expected to and aligns with the default foundry behaviour when creating effects.
+* Default for created effects is now stacking of "multi" rather than don't stack by name and origin. This should resolve some cases where effects did not stack and were expected to and aligns with the default foundry behaviour when creating effects.
 * Effects applied from an activity to a target actor will have disabled set to false. This aligns with dnd5e behaviour and will allow SRD Items to work without change.
 
 ### 12.0.3
@@ -101,7 +106,7 @@
 * Fix for error being thrown in change hook when a condition was not found
 * Restore sorting of effects list when adding a macro.statusEffect
 * Fix for error thrown when dnd5e bloodied is enabled.
-* Varios support functions for midi-qol v12dnd4
+* Various support functions for midi-qol v12dnd4
 
 ### 11.3.64
 * Disable for dnd5e v4 worlds
@@ -115,13 +120,13 @@
 * Fix for applying enchantments on sidebar items.
 
 ### 11.3.61
-* Fix for incorrect behaviour when deleteing stackable "count" effects when there is exactly one stack.
+* Fix for incorrect behaviour when deleting stackable "count" effects when there is exactly one stack.
 
 ### 11.3.60
 * Removed stackable status effects in favour of simply tracking if the status effect is required or not. (Thanks @chris @michael for the suggestion). Configurable via enable dependent effects.
 
 ### 11.3.59
-* Fiox for invorrectly converting @UUID references to 0 in enchantment effects.
+* Fix for incorrectly converting @UUID references to 0 in enchantment effects.
 
 ### 11.3.58
 * Fix for failing to apply multiple stack effects.
@@ -158,8 +163,8 @@
 * FIx for a couple of typos.
 
 ### 11.3.52
-* Added setting to enable/disable stackable conditions. (Defaults to on and is probably recommended). When enabled conditions applied to the actor will be counted - so paralyed and petrified will result in 2 stacks of inacapacitated and both must be removed before incapacitated is removed.
-  - Lots of edge cases in combining stackable/non-stackable conditions have been cleaned up, but there will no dobut be some I've missed.
+* Added setting to enable/disable stackable conditions. (Defaults to on and is probably recommended). When enabled conditions applied to the actor will be counted - so paralysed and petrified will result in 2 stacks of incapacitated and both must be removed before incapacitated is removed.
+  - Lots of edge cases in combining stackable/non-stackable conditions have been cleaned up, but there will no doubt be some I've missed.
   - Be aware, removing a condition from the character sheet removes 1 stack of the condition, not all of them, so you may need to push the remove condition button a few times.
 * Removed flag flags.dae.decrementDelete and made it an option on the effect definition.
 * If you have effects that apply conditions multiple times and enable stackable conditions in dae it is suggested that you enable the module "Status Icon Counters", as this will give better management of multiple effects applying incapacitated (for example).

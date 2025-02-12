@@ -466,7 +466,7 @@
     },
     "flags.dnd5e.spellCriticalThreshold": {
       "name": "Spell Critical Hit Threshold",
-      "description": "See \"Special Traits\" for details.",
+      "description": "See \"Special Traits\" for details."
     },
     "flags.dnd5e.spellSniper": {
       "name": "Spell Sniper",
