@@ -2,11 +2,7 @@
 
   <!-- Effect Header -->
   <header class="sheet-header dae-sheet-header">
-    {{#if useIcon}}
-    <img class="effect-icon dae-effect-icon" src="{{ effect.icon }}" data-edit="icon">
-    {{else}}
     <img class="effect-icon dae-effect-icon" src="{{ effect.img }}" data-edit="icon">
-    {{/if}}
     <h1 class="effect-title dae-effect-title">
       <input name="name" type="text" value="{{data.name}}" placeholder="{{ localize 'Name' }}" />
     </h1>
@@ -93,26 +89,26 @@
     <div class="form-group dae-form-group">
       <label>{{ localize "dae.SelfTarget.Name" }}</label>
       <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
+      <p class="notes" style="margin-bottom:1em">
+        {{ localize "dae.SelfTarget.Hint" }}
+      </p>
     </div>
-    <p class="notes" style="margin-bottom:1em">
-      {{ localize "dae.SelfTarget.Hint" }}
-    </p>
 
     <div class="form-group dae-form-group">
       <label>{{ localize "dae.SelfTargetAlways.Name" }}</label>
       <input type="checkbox" name="flags.dae.selfTargetAlways" {{ checked effect.flags.dae.selfTargetAlways }} />
+      <p class="notes" style="margin-bottom:1em">
+        {{ localize "dae.SelfTargetAlways.Hint" }}
+      </p>
     </div>
-    <p class="notes" style="margin-bottom:1em">
-      {{ localize "dae.SelfTargetAlways.Hint" }}
-    </p>
 
     <div class="form-group dae-form-group">
       <label>{{ localize "dae.DontApply.Name" }}</label>
       <input type="checkbox" name="flags.dae.dontApply" {{ checked effect.flags.dae.dontApply }} />
+      <p class="notes" style="margin-bottom:1em">
+        {{ localize "dae.DontApply.Hint" }}
+      </p>
     </div>
-    <p class="notes" style="margin-bottom:1em">
-      {{ localize "dae.DontApply.Hint" }}
-    </p>
     {{/if}}
     {{/unless}}
     {{/unless}}
@@ -143,17 +139,17 @@
     <div class="form-group dae-form-group">
       <label>{{ localize "dae.ShowIcon.Name" }}</label>
       <input type="checkbox" name="flags.dae.showIcon" {{ checked effect.flags.dae.showIcon }} />
+      <p class="notes" style="margin-bottom:1em">
+        {{ localize "dae.ShowIcon.Hint" }}
+      </p>
     </div>
-    <p class="notes" style="margin-bottom:1em">
-      {{ localize "dae.ShowIcon.Hint" }}
-    </p>
     <div class="form-group dae-form-group">
       <label>{{ localize "dae.IconOverlay.Name" }}</label>
       <input type="checkbox" name="flags.core.overlay" {{ checked effect.flags.core.overlay }} />
+      <p class="notes" style="margin-bottom:1em">
+        {{ localize "dae.IconOverlay.Hint" }}
+      </p>
     </div>
-    <p class="notes" style="margin-bottom:1em">
-      {{ localize "dae.IconOverlay.Hint" }}
-    </p>
   </section>
 
   <!-- Duration Tab -->
@@ -240,7 +236,7 @@
       <ol class="special-duration-list">
         {{#each effect.flags.dae.specialDuration as |label i|}}
         <li class="effect-special-duration flexrow" data-index="{{i}}">
-          <div class="formgroup">
+          <div class="form-group">
             <select name="flags.dae.specialDuration.{{i}}" data-dtype="string">
               {{selectOptions ../specialDuration selected=label}}
             </select>
@@ -273,7 +269,7 @@
           <td class="key dae-key">
             <div class="formgroup dae-key-wrapper">
               <div class="key dae-key-input">
-                <input class="keyinput dae-keyinput" type="text" name="changes.{{i}}.key" value="{{change.key}}" />
+                <input class="key-input dae-keyinput" type="text" name="changes.{{i}}.key" value="{{change.key}}" />
               </div>
               <div class="dae-field-info">
                 <div class="dae-field-name">{{change.fieldName}}</div>

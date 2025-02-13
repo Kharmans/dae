@@ -15,7 +15,7 @@
 }
 
 .dae-filter-container {
-  border: 2px groove #eeede0;
+  border: 2px groove var(--color-form-label);
 
   .dae-filter-list {
     min-width: 100%;
@@ -134,12 +134,13 @@
     margin: 10px 0 2px 0;
     padding: 0;
     background: rgba(0, 0, 0, 0.05);
-    border: 3px groove #eeede0;
+    border: 3px groove var(--color-fieldset-border);
     font-weight: bold;
     line-height: 24px;
     min-height: 40px;
     display: flex;
     align-items: center;
+    border-radius: 8px;
   }
   
   .dae-effect-first-header {
@@ -149,7 +150,7 @@
     display: flex;
     align-items: center;
     font-weight: bold;
-    background-color: rgb(255 255 255 / 25%);
+    background-color: rgb(255 255 255 / 10%);
     border-radius: 8px 8px 0 0;
 
     .effect-add {
@@ -191,7 +192,7 @@
     }
     
     &:nth-child(odd) {
-      background-color: rgb(255 255 255 / 25%);
+      background-color: rgb(255 255 255 / 10%);
     }
     
     .change-controls {
@@ -212,16 +213,19 @@
     display: flex;
     align-items: center;
   }
-}
-
-.dae-new-effect {
-  flex-grow: 1;
-  margin-right: 5px;
-    
-  select {
-    width: 100%;
+  
+  .dae-new-effect {
+    flex-grow: 1;
+    margin-right: 5px;
+      
+    select {
+      width: 100%;
+      color: var(--color-text-primary);
+      background-color: var(--input-background-color);
+    }
   }
 }
+
 
 
 
@@ -303,7 +307,8 @@
   }
 }
 
-[id^="DAEActiveEffectConfig"] .active-effect-sheet .dae-scrollable-list {
+[id^="DAEActiveEffectConfig"] .active-effect-sheet .dae-scrollable-list,
+[id^="DAEActiveEffectConfig"] .active-effect-config .dae-scrollable-list {
     overflow: visible;
 }
 
@@ -311,7 +316,7 @@
 /* ------------------------------------ */
 /*  	 DAE ACTIVE EFFECT EDITOR		*/
 /* ------------------------------------ */
-
+// START V12-SPECIFIC
 .dae-sheet-header {
   display: flex;
   align-items: center;
@@ -386,12 +391,13 @@
     border-bottom: none;
   }
 }
-
+// END V12-SPECIFIC
 
 /*/ Duration Tab /*/
 
 .dae-special-duration-container {
-  border: 2px groove #eeede0;
+  border: 2px groove var(--color-fieldset-border);
+  border-radius: 8px;
   padding: 6px;
   margin: 8px 0 !important;
   text-align: center;
@@ -402,16 +408,30 @@
     line-height: 24px;
     vertical-align: center;
     padding-left: 4px;
+    color: var(--color-form-label);
+
+    &:hover {
+      color: var(--color-form-label-hover);
+    }
   }
   
   .dae-effect-control {
     width: 120px;
-    border: 2px groove #eeede0;
+    border: 2px groove var(--color-fieldset-border);
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
-    margin-right: 27px
+    margin-right: 27px;
+    border-radius: 8px;
+    padding-top: 3px;
+    padding-bottom: 2px;
+    transition: border 250ms;
+
+    &:hover {
+      border-color: var(--color-form-hint-hover);
+      transition: border-color 250ms;
+    }
   }
   
   .special-duration-list {
@@ -419,7 +439,7 @@
     margin: 0;
     list-style-type: none;
     
-    .formgroup {
+    .form-group {
       margin-top: 4px;
       display: flex;
       justify-content: space-between;
@@ -430,11 +450,19 @@
       flex-grow: 1;
       margin-right: 4px;
     }
+
+    .effect-control {
+      flex: 0
+    }
+  }
+
+  .dae-effect-controls {
+    flex: 0;
   }
 }
 
 /*/ Changes tab /*/
-
+// START V12-SPECIFIC
 .dae-effects-table {
   width: 100% ;
   border-collapse: separate ;
@@ -544,4 +572,91 @@
 
 .dae-controls {
   width: 50px;
+}
+// END V12-SPECIFIC
+// START V13-SPECIFIC
+.dae.active-effect-config .tab.changes {
+  header {
+    grid-template-columns: 400px 110px 250px 60px 1rem;
+    padding-right: 14px;
+  }
+
+  ol {
+    grid-template-columns: 400px 110px 250px 60px 1rem;
+    align-items: start;
+  }
+  
+  .key {
+    min-width: 400px;
+  }
+  
+  .key-wrapper {
+    flex-direction: column;
+    align-items: start;
+  }
+  
+  .mode {
+    min-width: 110px;
+
+    select {
+      min-width: 110px;
+    }
+  }
+  
+  .value {
+    min-width: 250px;
+
+    input,textarea {
+      min-width: 250px;
+    }
+  }
+  
+  .priority {
+    width: 60px;
+  }
+  
+  .controls:has(a[data-action="deleteChange"]) {
+    margin-top: 7.25px;
+  }
+  
+  .dae-field-info {
+    padding: 4px 2px 0;
+  }
+  
+  .dae-field-name {
+    padding-bottom: 1px;
+    
+    font-weight: bold;
+  }
+  
+  .dae-field-description {
+    font-size: smaller;
+    max-height: 36px;
+    overflow: auto;
+    margin-top: 1px;
+    padding-top: 2px;
+    border-top: 1px solid rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* ------------------------------------ */
+/*  	            DIME      	          */
+/* ------------------------------------ */
+.dimeditor .dime-img {
+  flex: none;
+}
+
+// V12-only
+.dimeditor {
+  div[data-application-part="body"]:has(.form-group.stacked.command) {
+    height: 100%;
+  }
+  .form-group.stacked.command {
+    height: calc(100% - 100px);
+    
+    textarea {
+      height: 100%;
+      resize: none;
+    }
+}
 }

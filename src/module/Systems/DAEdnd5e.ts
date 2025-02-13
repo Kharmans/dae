@@ -440,7 +440,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     }
 
-    specials[`flags.${game.system?.id}.initiativeHalfProf`] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    // specials[`flags.${game.system?.id}.initiativeHalfProf`] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials[`flags.${game.system?.id}.initiativeDisadv`] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
     if (game.modules?.get("tidy5e-sheet")?.active)
@@ -653,22 +653,16 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       hint: "Macro to use for damage bonus",
       section: "Midi QOL"
     };
-    daeSystemClass.systemConfig.characterFlags["initiativeHalfProficiency"] = {
-      type: Boolean,
-      name: "Half Proficiency for Initiative",
-      hint: "add 1/2 proficiency to initiative",
-      section: "Midi QOL"
-    };
+    // daeSystemClass.systemConfig.characterFlags["initiativeHalfProficiency"] = {
+    //   type: Boolean,
+    //   name: "Half Proficiency for Initiative",
+    //   hint: "add 1/2 proficiency to initiative",
+    //   section: "Midi QOL"
+    // };
     daeSystemClass.systemConfig.characterFlags["initiativeDisadv"] = {
       type: Boolean,
       name: "Disadvantage on Initiative",
-      hint: "Provided by fears or magical items",
-      section: "Feats"
-    };
-    daeSystemClass.systemConfig.characterFlags["spellSniper"] = {
-      type: Boolean,
-      name: "Spell Sniper",
-      hint: "Provided by fears or magical items",
+      hint: "Disadvantage on Initiative",
       section: "Midi QOL"
     };
   }

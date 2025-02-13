@@ -135,11 +135,13 @@ export class DAEFieldBrowser {
     
     const fullBrowserClass = DAEFieldBrowser.isFullBrowser ? 'active' : '';
     const descriptionsClass = DAEFieldBrowser.showDescriptions ? 'active' : '';
-    const browserClass = DAEFieldBrowser.isFullBrowser ? 'dae-fb-browser dae-fb-full-browser' : 'dae-fb-browser';
+    const browserClasses = DAEFieldBrowser.isFullBrowser ? ['dae-fb-browser', 'dae-fb-full-browser'] : ['dae-fb-browser'];
+    if ((game.release?.generation ?? 12) < 13) browserClasses.push('dae-v12');
+    else browserClasses.push('application');
   
     this.browserElement = document.createElement('div');
     this.browserElement.id = 'dae-fb-browser';
-    this.browserElement.className = browserClass;
+    this.browserElement.classList.add(...browserClasses);
     this.browserElement.innerHTML = `
       <div class="dae-fb-tabs"></div>
       <div class="dae-fb-content"></div>
@@ -312,7 +314,7 @@ export class DAEFieldBrowser {
     if (this.browserElement && 
         !this.browserElement.contains(event.target as Node) && 
         event.target !== this.currentInput &&
-        !(this.currentInput?.classList.contains('keyinput') && event.target === this.currentInput)) {
+        !(this.currentInput?.classList.contains('key-input') && event.target === this.currentInput)) {
       this.hideBrowser();
     }
   }
