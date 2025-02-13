@@ -1,17 +1,13 @@
 import { AnyObject } from "fvtt-types/utils";
 import { debug } from "../../dae.js";
-const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
+const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-export class DIMEditor<
-  Document extends Item.Implementation,
-  RenderContext extends AnyObject
-> extends HandlebarsApplicationMixin(DocumentSheetV2)<
-  Document,
-  RenderContext
-> {
+export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
+  document: Item.Implementation; // could be an activity too
 
   static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
     classes: ["macro-config", "dimeditor"],
+    tag: "form",
     window: {
       contentClasses: ["standard-form"],
       resizable: true
@@ -20,13 +16,21 @@ export class DIMEditor<
       width: 560,
       height: 480
     },
-    form: { closeOnSubmit: true }
+    form: { 
+      closeOnSubmit: true,
+      handler: this.#processSubmitData as any
+    }
   }, { inplace: false });
 
   static PARTS = {
     body: {template: "./modules/dae/templates/DIMEditor.hbs", root: true},
     footer: {template: "templates/generic/form-footer.hbs"}
   };
+
+  constructor(options) {
+    super(options);
+    this.document = options.document;
+  }
 
   async render(options) {
     Hooks.once("renderDIMEditor", (app, html, data) => {
@@ -58,8 +62,9 @@ export class DIMEditor<
   /*
     Override
   */
-  async _processSubmitData(event, form, submitData) {
+  static async #processSubmitData(event, form, formDataData) {
     const command = new FormDataExtended(form)?.get("command");
+    // @ts-expect-error
     await this.updateMacro(foundry.utils.mergeObject({ command, type: "script" }));
   }
 
