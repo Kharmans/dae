@@ -1,3 +1,6 @@
+### 12.0.17
+* Some DIME changes that need to be in sync with the midi release
+
 ### 12.0.16
 * Fix for syntax error in en.json
 * Fix for long/short rest and new day special duration dropdown labels

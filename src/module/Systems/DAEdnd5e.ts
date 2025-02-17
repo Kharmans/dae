@@ -1,7 +1,7 @@
 
 import { ArrayField, BooleanField, NumberField, ObjectField, SchemaField, StringField, daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, DAEActiveEffectConfig, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, enumerateBaseValues, getSelfTarget, geti18nOptions, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae.js";
+import { actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, geti18nOptions, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae.js";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 var d20Roll;
@@ -51,8 +51,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         activitySpecs[`activities[${activityKey}].${key}`][0].label = `${activityLabel} ${i18n("DND5E.ACTIVITY.Title.one")} ${key}`;
       }
       if (game.modules?.get("midi-qol")?.active) {
-        activitySpecs[`activities[${activityKey}].useConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.useConditionText.hint") }), -1]; 
-        activitySpecs[`activities[${activityKey}].effectConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.effectConditionText.hint") }), -1]; 
+        activitySpecs[`activities[${activityKey}].useConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.useConditionText.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].effectConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.effectConditionText.hint") }), -1];
         activitySpecs[`activities[${activityKey}].macroData.name`] = [new StringField({ label: "Macro Name" }), -1];
         activitySpecs[`activities[${activityKey}].macroData.command`] = [new StringField({ label: "Macro Command" }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.ignoreTraits`] = [new ArrayField(new StringField(), { label: "Ignore Traits" }), -1];
@@ -66,7 +66,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
 
       if (game.modules?.get("midi-qol")?.active) {
-        activitySpecs["activities[attack].attackMode"] = [new StringField({label: "Attack Mode"}), -1];
+        activitySpecs["activities[attack].attackMode"] = [new StringField({ label: "Attack Mode" }), -1];
       }
     }
 
@@ -317,10 +317,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues[`flags.${game.system?.id}.powerCriticalThreshold`];
     delete baseValues[`flags.${game.system?.id}.meleeCriticalDamageDice`];
     delete baseValues[`flags.${game.system?.id}.spellCriticalThreshold`];
-
-    //TODO work out how to evaluate this to a number in prepare data - it looks like this is wrong
-    if (foundry.utils.getProperty(this.getActorDataModelFields(actorType), "bonuses.fields.spell"))
-      baseValues["system.bonuses.spell.dc"] = [new NumberField(), -1];
     Object.keys(baseValues).forEach(key => {
       // can't modify many spell details.
       if (key.includes("system.spells")) {
@@ -529,22 +525,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // @ts-expect-error
     if (GameSystemConfig.conditionEffects && GameSystemConfig.conditionEffects["halfHealth"] && game.settings?.get("dae", "DAEAddHalfHealthEffect")) {
       GameSystemConfig.conditionEffects["halfHealth"].add("halfHealthEffect");
-      //@ts-expect-error
-      if (game.version >= 12) {
-        CONFIG.statusEffects.push({
-          id: "halfHealthEffect",
-          name: i18n("dae.halfHealthEffectLabel"),
-          img: "systems/dnd5e/icons/svg/damage/healing.svg",
-          flags: { dnd5e: { halfHealth: true } }
-        });
-      } else {
-        CONFIG.statusEffects.push({
-          id: "halfHealthEffect",
-          name: i18n("dae.halfHealthEffectLabel"),
-          icon: "systems/dnd5e/icons/svg/damage/healing.svg",
-          flags: { dnd5e: { halfHealth: true } }
-        });
-      }
+      CONFIG.statusEffects.push({
+        id: "halfHealthEffect",
+        _id: getStaticID("halfHealthEffect"),
+        name: i18n("dae.halfHealthEffectLabel"),
+        img: "modules/dae/icons/half-health.webp",
+        flags: { dnd5e: { halfHealth: true } }
+      });
     }
 
     // enchantments don't seem to get their world time set when applied to an item
@@ -647,6 +634,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage" },
     };
     daeSystemClass.daeActionTypeKeys = Object.keys(daeSystemClass.systemConfig.itemActionTypes);
+    /*
     daeSystemClass.systemConfig.characterFlags["DamageBonusMacro"] = {
       type: String,
       name: "Damage Bonus Macro",
@@ -665,6 +653,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       hint: "Disadvantage on Initiative",
       section: "Midi QOL"
     };
+    */
   }
 
   public static effectDisabled(actor, effect, itemData = null) {
@@ -1075,14 +1064,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         };
         return true;
-
-      // case "system.abilities.str.dc":
-      // case "system.abilities.dex.dc":
-      // case "system.abilities.int.dc":
-      // case "system.abilities.wis.dc":
-      // case "system.abilities.cha.dc":
-      // case "system.abilities.con.dc":
-      case "system.bonuses.spell.dc":
       case "system.attributes.powerForceLightDC":
       case "system.attributes.powerForceDarkDC":
       case "system.attributes.powerForceUnivDC":
@@ -1102,10 +1083,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           foundry.utils.setProperty(actor, change.key, Number(current) + value);
         } else return;
 
-        // Spellcasting DC - can't see how to implement this anymore
-        // const ad = actor.system;
-        // const spellcastingAbility = ad.abilities[ad.attributes.spellcasting];
-        // ad.attributes.spelldc = spellcastingAbility ? spellcastingAbility.dc : 8 + ad.attributes.prof;
         return true;
 
       case "flags.dae":

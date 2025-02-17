@@ -2813,3 +2813,8 @@ function busyWait(seconds: number) {
   return new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }
 
+export function getStaticID(id: string): string {
+  id = `dnd5e${id}`;
+  if (id.length >= 16) return id.substring(0, 16);
+  return id.padEnd(16, "0");
+}

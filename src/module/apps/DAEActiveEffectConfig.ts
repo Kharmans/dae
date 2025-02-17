@@ -39,7 +39,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
 
   // object: any; Patch 4535992 Why ???
   constructor(options: any = {}, v12Options) {
-    const object = (options instanceof Document) ? options : options.document;
+    const object = options.document ?? options.document ?? options; //(options instanceof Document) ? options : options.document;
     if (!v12Options) {
       super(options);
     } else {
