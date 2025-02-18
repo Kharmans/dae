@@ -1165,7 +1165,7 @@ function prepareData(wrapped) {
     // Apply special statuses that changed to active tokens
     let tokens;
     for (const [statusId, wasActive] of specialStatuses) {
-      const isActive = this.statuses.has(statusId) && !this.system.traits.ci.value.has(statusId);
+      const isActive = this.statuses.has(statusId) && !this.system.traits?.ci.value.has(statusId);
       if (isActive === wasActive) continue;
       if (!tokens) tokens = this.getActiveTokens();
       for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);

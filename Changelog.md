@@ -1,3 +1,6 @@
+### 12.9.18
+* Fix for data preparation on group actors.
+
 ### 12.0.17
 * Some DIME changes that need to be in sync with the midi release
 
