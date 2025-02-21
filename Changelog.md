@@ -1,4 +1,7 @@
-### 12.9.18
+### 12.0.19
+* Minor change to midi flags handling - setting default to all modes.
+
+### 12.0.18
 * Fix for data preparation on group actors.
 
 ### 12.0.17

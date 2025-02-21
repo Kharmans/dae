@@ -264,9 +264,9 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
         const mode = {};
         mode[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
         change.modes = mode;
-      } else if (!this.validSpecsToUse.allSpecsObjchange.key.startsWith("flags.midi-qol")) {
+      } /*else if (!this.validSpecsToUse.allSpecsObj[change.key].startsWith("flags.midi-qol")) {
         change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
-      }
+      }*/
 
       if (this.validSpecsToUse.allSpecsObj[change.key]?.options)
         change.options = this.validSpecsToUse.allSpecsObj[change.key]?.options;

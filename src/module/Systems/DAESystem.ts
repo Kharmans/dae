@@ -297,9 +297,9 @@ export class DAESystem {
     return getRollData;
   }
   /**
-   * accepts a string field specificaiton, e.g. system.traits.languages.value. Used extensively in ConfigPanel.ts
+   * accepts a string field specification, e.g. system.traits.languages.value. Used extensively in ConfigPanel.ts
    * return an object or false.
-   * Keys are valid options for the field specificaiton and the value is the user facing text for that option 
+   * Keys are valid options for the field specification and the value is the user facing text for that option 
    * e.g. {common: "Common"}
    * */
   public static getOptionsForSpec(specification): any {
@@ -309,11 +309,10 @@ export class DAESystem {
     }
     return undefined;
   }
-  // Configure any lookp lists that might be required by getOptionsForSpec.
+  // Configure any lookup lists that might be required by getOptionsForSpec.
   public static configureLists(daeConfig: DAEActiveEffectConfig) {
     this.detectionModeList = {};
     Object.values(CONFIG.Canvas.detectionModes).forEach(dm => {
-      
       this.detectionModeList[dm.id as string] = i18n(`${dm.label}`);
     })
   }
