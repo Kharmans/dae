@@ -28,7 +28,7 @@ export class ActiveEffects<
     classes: ["dae-active-effects"],
     window: {
       title: "dae.ActiveEffectName",
-      resizable: true
+      resizable: true,
     },
     position: {
       height: 500,
@@ -37,7 +37,7 @@ export class ActiveEffects<
   }, { inplace: false });
 
   static PARTS = {
-    body: {template: "./modules/dae/templates/ActiveEffects.hbs"}
+    body: {template: "modules/dae/templates/ActiveEffects.hbs"}
   };
 
   get id() {

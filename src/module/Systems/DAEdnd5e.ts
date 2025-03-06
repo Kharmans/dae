@@ -244,7 +244,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         baseValues[`system.${key}`] = [modelField.iniital, -1];
       } else console.error("Unexpected field ", key, modelField)
     }
-
+    //@ts-expect-error
+    const GameSystemConfig = game.system.config;
     if (!baseValues["system.attributes.prof"]) baseValues["system.attributes.prof"] = [new NumberField(), -1];
     if (!baseValues["system.details.level"]) baseValues["system.details.level"] = [new NumberField(), -1];
     if (!baseValues["system.attributes.ac.bonus"]) baseValues["system.attributes.ac.bonus"] = [new StringField(), -1];
@@ -296,7 +297,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         baseValues[`system.tools.${vehicleKey}.value`] = [new NumberField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
       }
     }
-    // move all the characteer flags to specials so that the can be custom effects only
+    // move all the character flags to specials so that the can be custom effects only
     let charFlagKeys = Object.keys(daeSystemClass.systemConfig.characterFlags);
     charFlagKeys.forEach(key => {
       let theKey = `flags.${game.system?.id}.${key}`;
@@ -329,11 +330,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
 
-    // removed - required so that init.bonus can work (prepapreinitiative called after derived effects
+    // removed - required so that init.bonus can work (prepareInitiative called after derived effects
     // delete baseValues["system.attributes.init.total"];
     delete baseValues["system.attributes.init.mod"];
     // delete baseValues["system.attributes.init.bonus"];
-    // leaving this in base values works because prepareInitiative is called after applicaiton of derived effects
+    // leaving this in base values works because prepareInitiative is called after application of derived effects
     delete baseValues["flags"];
 
     baseValues["system.traits.ci.all"] = [new BooleanField(), modes.CUSTOM];
@@ -360,6 +361,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     baseValues["system.attributes.encumbrance.multipliers.maximum"] = [new StringField(), -1];
     baseValues["system.attributes.encumbrance.multipliers.overall"] = [new StringField(), -1];
     baseValues["system.traits.size"] = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+    if (GameSystemConfig.languages) {
+      baseValues["system.traits.languages.all"] = [new BooleanField(), -1];
+    }
 
   }
 
@@ -397,12 +401,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["system.attributes.movement.hover"] = [new NumberField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["system.attributes.ac.EC"] = [new NumberField(), -1];
     specials["system.attributes.ac.AR"] = [new NumberField(), -1];
-
-    if (GameSystemConfig.languages) {
-      specials["system.traits.languages.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["system.traits.languages.value"] = [new StringField(), -1];
-      specials["system.traits.languages.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    }
 
     if (foundry.utils.getProperty(actorModelSchemaFields, "resources")) {
       specials["system.resources.primary.max"] = [new NumberField(), -1];
@@ -663,7 +661,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   public static enumerateLanguages(systemLanguages: any): any {
-    const languages = {};
+    const languages = {"ALL": "All"};
     Object.keys(systemLanguages).forEach(lang => {
       if (typeof systemLanguages[lang] === "string") {
         languages[lang] = i18n(systemLanguages[lang]);
@@ -959,7 +957,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
       case "system.traits.languages.all":
         if (actor.system.traits.languages.value instanceof Set)
-          foundry.utils.setProperty(actor, "system.traits.languages.value", new Set(Object.keys(systemConfig.languages)))
+          foundry.utils.setProperty(actor, "system.traits.languages.value", new Set(Object.keys(DAESystemDND5E.enumerateLanguages(daeSystemClass.systemConfig.languages))))
         else
           foundry.utils.setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
         return true;
@@ -1198,17 +1196,27 @@ const getTargetType = field => {
 };
 
 function _baseItemApplyEffects() {
+  // It seems that this is called with embedded preparation when first initialising and also when cloning.
+  // Since we can't tell if it will later get called from prepareData the best we can do is apply all effects now
+  return doItemApplyEffects.bind(this)(undefined, undefined, {});
+
   if (this.isOwned)
     return doItemApplyEffects.bind(this)(undefined, [...ValidSpec.itemSpecs["union"].derivedSpecKeys, ...ValidSpec.itemSpecs["union"].excludeKeys], {});
   else // item is a sidebar.compendium item so don't ignore anything
     return doItemApplyEffects.bind(this)(undefined, undefined, {});
 }
 function _itemApplyActiveEffects() {
+  // since baseItemApplyEffects will apply all effects we can't do it gain here
+  return;
   return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].derivedSpecKeys, ValidSpec.itemSpecs["union"].excludeKeys, this.overrides ?? {});
 }
 
 function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: string[] | undefined, overrides: any) {
-  // Organize non-disabled effects by their application priority
+  if (this.actor?._embeddedPreparation) { // embedded preparation means this is only called once after actor preparation - so allow all effects to be applied 
+    includeKeys = undefined;
+    excludeKeys = undefined;
+  }
+  // Organize non-disabled changes by their application priority
   let changes: any[] = [];
 
   for (const effect of this.allApplicableEffects()) {
@@ -1247,6 +1255,7 @@ function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: stri
       return c;
     }));
   }
+  
   changes.sort((a, b) => a.priority - b.priority);
 
   // Apply all changes
@@ -1255,7 +1264,6 @@ function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: stri
     const changes = change.effect.apply(this, change);
     Object.assign(overrides, changes);
   }
-
   // Expand the set of final overrides
   this.overrides = foundry.utils.expandObject(overrides);
 }

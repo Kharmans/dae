@@ -1,6 +1,5 @@
 import { i18n } from "../dae.js";
 import { fetchParams } from "./dae.js";
-
 export const registerSettings = async function () {
 
   // @ts-expect-error
@@ -144,6 +143,17 @@ export const registerSettings = async function () {
     scope: "world",
     default: false,
     type: Boolean,
+    config: true,
+    requiresReload: true
+  })
+
+  //@ts-expect-error
+  game.settings?.register("dae", "maxShortDuration", {
+    name: "dae.maxShortDuration.Name",
+    hint: "dae.maxShortDuration.Hint",
+    scope: "world",
+    default: 600,
+    type: Number,
     config: true,
     requiresReload: true
   })

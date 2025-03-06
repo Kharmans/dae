@@ -1,3 +1,9 @@
+### 12.0.20
+* Fix for dependent effects inheriting dependencies of the source effect - affects removing effects on multiple targets when a single one should be removed.
+* Due to the way items are initialised it's not possible to have two passes for applying item effects. There is now just a single pass called before actor data is prepared.
+* Changes to support new system.traits.languages.value "ALL"
+ - fix for system.traits.languages.all
+
 ### 12.0.19
 * Minor change to midi flags handling - setting default to all modes.
 

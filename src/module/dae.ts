@@ -2441,6 +2441,7 @@ export function daeSetupActions() {
   daeSystemClass.setupActions();
 }
 
+export var maxShortDuration;
 export function fetchParams() {
   //@ts-expect-error type string
   setDebugLevel(game.settings?.get("dae", "ZZDebug"));
@@ -2464,6 +2465,8 @@ export function fetchParams() {
   showInline = game.settings?.get("dae", "showInline") ?? false;
   // @ts-expect-error
   dependentConditions = game.settings?.get("dae", "DependentConditions") ?? false;
+  //@ts-expect-error
+  maxShortDuration = game.settings?.get("dae", "maxShortDuration") ?? 600;
   Hooks.callAll("dae.settingsChanged")
 }
 
