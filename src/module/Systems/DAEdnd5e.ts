@@ -959,7 +959,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         if (actor.system.traits.languages.value instanceof Set)
           foundry.utils.setProperty(actor, "system.traits.languages.value", new Set(Object.keys(DAESystemDND5E.enumerateLanguages(daeSystemClass.systemConfig.languages))))
         else
-          foundry.utils.setProperty(actor, "system.traits.languages.value", Object.keys(systemConfig.languages))
+          foundry.utils.setProperty(actor, "system.traits.languages.value", Object.keys(DAESystemDND5E.enumerateLanguages(daeSystemClass.systemConfig.languages)))
         return true;
       case "system.traits.languages.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(this.languageList));

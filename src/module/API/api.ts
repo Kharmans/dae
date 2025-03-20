@@ -64,7 +64,7 @@ const API = {
   get DIMEditor() { return DIMEditor },
   async doEffects(item, activate, targets = undefined, options: any =
     {
-      whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,
+      whisper: false, spellLevel: 0, damageTotal: null, critical: false,
       fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false,
       selfEffects: "none"
     }) {
@@ -72,7 +72,7 @@ const API = {
   },
   async doActivityEffects(activity, activate, targets = undefined, activityEffectsUuids: string[], options: any =
     {
-      whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,
+      whisper: false, spellLevel: 0, damageTotal: null, critical: false,
       fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: activity.item.uuid,
       selfEffects: "none", context: {}
     }) {

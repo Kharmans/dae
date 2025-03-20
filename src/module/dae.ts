@@ -119,7 +119,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
 /*
  * Replace default appplyAffects to do value lookups
  */
-export function applyDaeEffects({ specList = {}, excludeSpecs = {}, allowAllSpecs = false, wildCardsInclude = [] as Array<RegExp>, wildCardsExclude = [] as Array<RegExp>, doStatusEffects = false}) {
+export function applyDaeEffects({ specList = {}, excludeSpecs = {}, allowAllSpecs = false, wildCardsInclude = [] as Array<RegExp>, wildCardsExclude = [] as Array<RegExp>, doStatusEffects = false }) {
   if (disableEffects) return;
   const overrides = {};
   debug("prepare data: before passes", this.name, this._source);
@@ -633,7 +633,7 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
 }
 
 async function _preCreateEnchantmentEffect(data, options, user) {
-// There will be something needed here eventuall.
+  // There will be something needed here eventuall.
 }
 
 async function _preCreateActiveEffectIncrement(data, options, user) {
@@ -1324,7 +1324,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   return effectData;
 }
 
-export async function evalArgs({ effectData, item, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardId = null }) {
+export async function evalArgs({ effectData, item, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardUuid = null }) {
   const itemId = item?.id ?? foundry.utils.getProperty(effectData.flags, "dae.itemId");
   const itemUuid = item?.uuid ?? foundry.utils.getProperty(effectData.flags, "dae.itemUuid");
   if (!item && itemUuid) item = await fromUuid(itemUuid);
@@ -1340,7 +1340,7 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
     spellLevel,
     itemLevel: spellLevel,
     damage: damageTotal,
-    itemCardId: itemCardId,
+    itemCardUuid: itemCardUuid,
     unique: foundry.utils.randomID(),
     actor: actor.id,
     actorUuid: actor.uuid,
@@ -1436,10 +1436,10 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
         macroCommand = activity?.macro?.command;
       }
     } else if (change.key.startsWith("macro.itemMacro")) {
-      macroCommand = foundry.utils.getProperty(effectData, "flags.dae.itemMacro") 
-                      ?? foundry.utils.getProperty(item, "flags.dae.macro.command") 
-                      ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") 
-                      ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
+      macroCommand = foundry.utils.getProperty(effectData, "flags.dae.itemMacro")
+        ?? foundry.utils.getProperty(item, "flags.dae.macro.command")
+        ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command")
+        ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
       const itemData = foundry.utils.getProperty(effectData, "flags.dae.itemData");
       if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.dae.macro.command");
       if (!macroCommand && itemData) macroCommand = foundry.utils.getProperty(itemData, "flags.itemacro.macro.command");
@@ -1490,16 +1490,25 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
  */
 export async function doEffects(item, activate, targets = undefined, options: any =
   {
-    whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,
+    whisper: false, spellLevel: 0, damageTotal: null, itemCardUuid: null, critical: false,
     fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: item.uuid,
     selfEffects: "none", context: {}
   }) {
+  if (options.itemCardId) {
+    foundry.utils.logCompatibilityWarning("itemCardId is deprecated, pass itemCardUuid instead",
+      { since: "12.0.22", until: "13.0.1" }
+    );
+    if (!options.itemCardUuid) {
+      const itemCard = game.messages?.get(options.itemCardId);
+      options.itemCardUuid = itemCard?.uuid;
+    }
+  }
   return await applyNonTransferEffects(item, activate, targets, options)
 }
 
 export async function doActivityEffects(activity, activate, targets = undefined, activityEffectsUuids: string[], options: any =
   {
-    whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false,
+    whisper: false, spellLevel: 0, damageTotal: null, itemCardUuid: null, critical: false,
     fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: activity.item.uuid, context: {}
   }) {
   //@ts-expect-error
@@ -1510,6 +1519,15 @@ export async function doActivityEffects(activity, activate, targets = undefined,
 }
 
 export async function applyActivityEffects(activity, activate, targets, activityEffects, options) {
+  if (options.itemCardId) {
+    foundry.utils.logCompatibilityWarning("itemCardId is deprecated, pass itemCardUuid instead",
+      { since: "12.0.22", until: "13.0.1" }
+    );
+    if (!options.itemCardUuid) {
+      const itemCard = game.messages?.get(options.itemCardId);
+      options.itemCardUuid = itemCard?.uuid;
+    }
+  }
   if (!options.applyAll)
     activityEffects = activityEffects.filter(aeData => foundry.utils.getProperty(aeData, "flags.dae.dontApply") !== true);
   else
@@ -1561,17 +1579,17 @@ export async function applyActivityEffects(activity, activate, targets, activity
 
   debug("apply non-transfer effects: About to call gmaction ", activate, activityEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0) {
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activityUuid: activity.uuid, activeEffects: activityEffects, targetList: gmTargets, effectDuration: activity.druation, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activityUuid: activity.uuid, activeEffects: activityEffects, targetList: gmTargets, effectDuration: activity.duration, itemCardUuid: options.itemCardUuid, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
   if (localTargets.length > 0) {
-    const result = await applyActiveEffects({ activate, activityUuid: activity.uuid, targetList: localTargets, activeEffects: activityEffects, effectDuration: activity.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
+    const result = await applyActiveEffects({ activate, activityUuid: activity.uuid, targetList: localTargets, activeEffects: activityEffects, effectDuration: activity.duration, itemCardUuid: options.itemCardUuid, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
   }
 }
 // Apply non-transfer effects to targets.
 // macro arguments are evaluated in the context of the actor applying to the targets
 // @target is left unevaluated.
 // request is passed to a GM client if the token is not owned
-export async function applyNonTransferEffects(item, activate, targets, options: any = { whisper: false, spellLevel: 0, damageTotal: null, itemCardId: null, critical: false, fumble: false, tokenId: undefined, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, selfEffects: "none" }) {
+export async function applyNonTransferEffects(item, activate, targets, options: any = { whisper: false, spellLevel: 0, damageTotal: null, itemCardUuid: null, critical: false, fumble: false, tokenId: undefined, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, selfEffects: "none" }) {
   if (!targets) return;
   let macroLocation = "mixed";
   let appliedEffects: any[] = [];
@@ -1649,10 +1667,10 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
 
   debug("apply non-transfer effects: About to call gmaction ", activate, appliedEffects, targets, localTargets, gmTargets)
   if (gmTargets.length > 0) {
-    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: appliedEffects, targetList: gmTargets, effectDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
+    await socketlibSocket.executeAsGM("applyActiveEffects", { userId: game.user?.id, activate, activeEffects: appliedEffects, targetList: gmTargets, effectDuration: item.system.duration, itemCardUuid: options.itemCardUuid, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData })
   }
   if (localTargets.length > 0) {
-    const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: appliedEffects, effectDuration: item.system.duration, itemCardId: options.itemCardId, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
+    const result = await applyActiveEffects({ activate, targetList: localTargets, activeEffects: appliedEffects, effectDuration: item.system.duration, itemCardUuid: options.itemCardUuid, removeMatchLabel: options.removeMatchLabel, toggleEffect: options.toggleEffect, metaData: options.metaData, origin: options.origin })
   }
 }
 
@@ -2338,7 +2356,7 @@ function attachActorSheetHeaderButton(app, buttons) {
     label: titleText,
     class: 'dae-config-actorsheet',
     icon: 'fas fa-wrench',
-    onclick: ev => { new ActiveEffects({document: app.document}).render({force: true}); }
+    onclick: ev => { new ActiveEffects({ document: app.document }).render({ force: true }); }
   })
 }
 // This does not seem to work.
@@ -2351,7 +2369,7 @@ function attachActivitySheetHeaderButton(app, buttons) {
       class: 'dae-dimeditor',
       icon: 'fas fa-file-pen',
       tooltip: DIMtitle,
-      onclick: (ev) => new DIMEditor({document: app.document}).render({force: true})
+      onclick: (ev) => new DIMEditor({ document: app.document }).render({ force: true })
     });
   }
 }
@@ -2362,14 +2380,14 @@ Hooks.once("tidy5e-sheet.ready", api => {
         icon: 'fas fa-wrench',
         label: "DAE",
         async onClickAction() {
-          new ActiveEffects({document: this.document}).render({force: true});
+          new ActiveEffects({ document: this.document }).render({ force: true });
         }
       },
       {
         icon: 'fas fa-file-pen',
         label: "DIME",
         async onClickAction() {
-          new DIMEditor({document: this.document}).render({force: true});
+          new DIMEditor({ document: this.document }).render({ force: true });
         }
       }
     ]
@@ -2383,7 +2401,7 @@ function attachItemSheetHeaderButton(app, buttons) {
       label: titleText,
       class: 'dae-config-itemsheet',
       icon: 'fas fa-wrench',
-      onclick: ev => { new ActiveEffects({document: app.document}).render({force: true}); }
+      onclick: ev => { new ActiveEffects({ document: app.document }).render({ force: true }); }
     })
   }
   if (DIMETitleBar) {
@@ -2394,7 +2412,7 @@ function attachItemSheetHeaderButton(app, buttons) {
       class: 'dae-dimeditor',
       icon: 'fas fa-file-pen',
       tooltip: DIMtitle,
-      onclick: (ev) => new DIMEditor({document: app.document}).render({force: true})
+      onclick: (ev) => new DIMEditor({ document: app.document }).render({ force: true })
     });
   }
 }
@@ -2762,7 +2780,7 @@ export function enumerateBaseValues(objectDataModels: any[], logErrors: boolean 
     if (!fields) return;
     for (let fieldKey of Object.keys(fields)) {
       if (mappingField.model instanceof SchemaField) {
-        processSchemaField(`${key}.${fieldKey}`, mappingField.model, baseValues. logErrors);
+        processSchemaField(`${key}.${fieldKey}`, mappingField.model, baseValues.logErrors);
       } else if (mappingField.model instanceof MappingField) {
         processMappingField(`${key}.${fieldKey}`, mappingField.model, baseValues, logErrors);
       } else {

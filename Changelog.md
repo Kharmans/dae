@@ -1,3 +1,9 @@
+### 12.0.21
+* Some changes to support using actorUuids for applying effects rather than tokenUuids
+* Change from using itemCardId to itemCardUuid when passed to dae.
+* Change so that the converted duration of instantaneous, special, and permanent effects will be undefined, rather than 1 turn/1 second.
+* Fix to correctly pick up all languages in the settings list.
+
 ### 12.0.20
 * Fix for dependent effects inheriting dependencies of the source effect - affects removing effects on multiple targets when a single one should be removed.
 * Due to the way items are initialised it's not possible to have two passes for applying item effects. There is now just a single pass called before actor data is prepared.

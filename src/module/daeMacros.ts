@@ -211,8 +211,9 @@ export function getFlag(entity: Actor | Token | string, flagId: string) {
   let theActor: Actor | undefined  | null;
   if (!entity) return error(`dae.getFlag: actor not defined`);
   if (typeof entity === "string") { 
+    theActor = (fromUuidSync(entity) as TokenDocument)?.actor;
     // assume string === tokenId
-    theActor = canvas?.tokens?.get(entity)?.actor;
+    if (!theActor) theActor = canvas?.tokens?.get(entity)?.actor;
     if (!theActor) theActor = game.actors?.get(entity); // if not a token maybe an actor
     if (!theActor) {
       //@ts-expect-error fromUuidSync

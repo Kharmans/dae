@@ -307,7 +307,7 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate = true, activityUuid = undefined, targetList, activeEffects, effectDuration, itemCardId = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
+export async function applyActiveEffects({ activate = true, activityUuid = undefined, targetList, activeEffects, effectDuration, itemCardUuid = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
   for (let targetId of targetList) {
     let targetActor = fromUuidSync(targetId);
     if (!targetActor) continue;
@@ -400,13 +400,13 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
             aeData.duration.startTurn = game.combat?.turn;
           }
         }
-        warn("Apply active effects ", aeData, itemCardId);
+        warn("Apply active effects ", aeData, itemCardUuid);
         let source: any | undefined = await fromUuid(aeData.origin);
         let context = targetActor.getRollData();
         if (false && source instanceof CONFIG.Item.documentClass) {
           context = source?.getRollData();
         }
-        context = foundry.utils.mergeObject(context, { "target": getTokenDocument(targetActor)?.id, "targetUuid": getTokenDocument(targetActor)?.uuid, "targetActorUuid": targetActor?.uuid, "itemCardid": itemCardId, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
+        context = foundry.utils.mergeObject(context, { "target": getTokenDocument(targetActor)?.id, "targetUuid": getTokenDocument(targetActor)?.uuid, "targetActorUuid": targetActor?.uuid, itemCardUuid: itemCardUuid, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
 
         let newChanges: any[] = [];
         for (let change of aeData.changes) {
@@ -452,7 +452,13 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
               change.value = change.value.replace("##", "@");
             } else {
               change.value = foundry.utils.duplicate(change.value).map(f => {
-                if (f === "@itemCardId") return itemCardId;
+                if (f === "@itemCardId") {
+                  foundry.utils.logCompatibilityWarning("DAE | @itemCardId is deprecated use @itemCardUuid instead",
+                  {since: "12.0.21", until: "13.0.0"});
+                  const itemCard = fromUuidSync(itemCardUuid);
+                  return itemCard?.id;
+                }
+                if (f === "@itemCardUuid") return itemCardUuid;
                 if (f === "@target") return getToken(targetActor)?.id;
                 if (f === "@targetUuid") return getTokenDocument(targetActor)?.uuid;
                 return f;
@@ -521,11 +527,14 @@ export function convertDuration(durationData: { units: string, value: number }, 
       case "months": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0 };
       case "year":
       case "years": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0 };
-      case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
-      case "spec": return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
+      case "inst":
+      case "spec": 
+      case "perm":
+      case "disp":
+      case "distr":
       default:
         warn("dae | unknown time unit found", durationData.units);
-        return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
+        return { type: useTurns ? "none" : "none", seconds: undefined, rounds: undefined, turns: undefined };
     }
   } else {
     switch (durationData.units) {
@@ -537,8 +546,12 @@ export function convertDuration(durationData: { units: string, value: number }, 
       case "rounds": return { type: useTurns ? "turns" : "seconds", seconds: durationData.value * CONFIG.time.roundTime, rounds: durationData.value, turns: 0 }
       case "second":
         return { type: useTurns ? "turns" : "seconds", seconds: durationData.value, rounds: durationData.value / CONFIG.time.roundTime, turns: 0 };
-      case "inst": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: 1 };
-      case "spec": return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
+      case "inst":
+      case "spec":
+      case "perm":
+      case "disp":
+      case "distr":
+        return { type: useTurns ? "none" : "seconds", seconds: undefined, rounds: undefined, turns: undefined };
       default:
         let interval = {}
         interval[durationData.units] = durationData.value;
