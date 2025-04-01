@@ -43,7 +43,6 @@ export let setupSocket = () => {
 }
 
 async function _itemReplaceEffects(data) {
-  //@ts-expect-error
   const item = fromUuidSync(data.itemUuid);
   // await item.update({"effects": []});
   return item.update({ "effects": data.effects });
@@ -68,8 +67,8 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
 async function _createActorItem(data: { uuid: string, itemDetails: string, effectUuid: string, callItemMacro: boolean }): Promise<Array<Item>> {
   const { uuid, itemDetails, effectUuid } = data;
   const [itemUuid, option] = itemDetails.split(",").map(s => s.trim());
-  // @ts-expect-error
-  const item = await fromUuid(itemUuid);
+  let item: Item | undefined = await fromUuid(itemUuid) as Item;
+  if (!item) item = game.items?.getName(itemUuid); // try to find the item by name if was not a uuid.
   if (!item || !(item instanceof Item)) {
     error(`createActorItem could not find item ${itemUuid}`);
     return [];
@@ -308,15 +307,16 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
 }
 
 export async function applyActiveEffects({ activate = true, activityUuid = undefined, targetList, activeEffects, effectDuration, itemCardUuid = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
-  for (let targetId of targetList) {
-    let targetActor = fromUuidSync(targetId);
+  for (let targetActorUuid of targetList) {
+    let targetActor = fromUuidSync(targetActorUuid);
     if (!targetActor) continue;
-
+    if (targetActor instanceof TokenDocument) targetActor = targetActor.actor; // for backwards compatibility
 
     // Removal of existing is now handled by _preCreateActiveEffect override.
     // TODO workout what to do if activate is false? does not seem to be used anywhere to force delete effects
     if (activate) {
       let dupEffects = foundry.utils.duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true);
+
       dupEffects.forEach(effectData => {
         effectData.transfer = false;
         if (effectData.flags?.dae?.transfer !== undefined) delete effectData.flags.dae.transfer;
@@ -532,6 +532,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       case "perm":
       case "disp":
       case "distr":
+        return { type: useTurns ? "none" : "none", seconds: undefined, rounds: undefined, turns: undefined };
       default:
         warn("dae | unknown time unit found", durationData.units);
         return { type: useTurns ? "none" : "none", seconds: undefined, rounds: undefined, turns: undefined };

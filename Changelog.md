@@ -1,3 +1,7 @@
+### 12.0.22
+* reinstate fetching items by name in macro.createItem active effects.
+* Fix for applying dependent conditions when dnd5e has rider effects (prone in unconscious).
+
 ### 12.0.21
 * Some changes to support using actorUuids for applying effects rather than tokenUuids
 * Change from using itemCardId to itemCardUuid when passed to dae.

@@ -123,8 +123,7 @@ export class ValidSpec {
       specials["flags.dae.onUpdateSource"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
       Object.keys(specials).forEach(key => {
-        if (baseValues[key]) console.log(`DAE | specials ${key} is already defined in baseValues - removing from baseValues`)
-        if (debugEnabled > 0 && baseValues[key]) warn(`DAE | specials ${key} is already defined in baseValues - removing`)
+        if (debugEnabled > 0 && baseValues[key]) console.log(`DAE | specials ${key} is already defined in baseValues - removing from baseValues`)
         delete baseValues[key]
       })
 
