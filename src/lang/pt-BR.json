@@ -188,6 +188,8 @@
   "dae.tokenEffects.Name": "Habilitar Efeitos do Token",
   "dae.tokenEffects.Hint": "Permite efeitos direcionados a um token específico. Ex.: Invisível, Cego (recurso experimental)",
   "dae.macro": "Macro",
+  "dae.macroRepeat": "Repetir Macro",
+  "dae.specialDuration": "Duração Especial",
   "dae.execute": "Executar",
   "dae.GM": "MJ",
   "dae.local": "Local",
