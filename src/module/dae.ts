@@ -657,8 +657,6 @@ async function _preCreateActiveEffectIncrement(data, options, user) {
       this.updateSource({ "flags.dae.specialDuration": [] });
       foundry.utils.setProperty(data, "flags.dae.specialDuration", []);
     }
-    delete data.flags.core.statusId;
-    this.updateSource({ "flags.core.-=statusId": null });
 
     if (parent instanceof Actor) {
       let existingEffect;
@@ -2283,7 +2281,7 @@ async function updateStatusEffects(doc, options, userId) {
     //@ts-ignore .union
     newStatuses = newStatuses.union(effect.statuses);
   }
-  await applyStatusEffectChanges(actor, doc, currentStatuses, newStatuses, true);
+  await applyStatusEffectChanges(actor, undefined, currentStatuses, newStatuses, true);
 }
 
 // Not used
@@ -2416,7 +2414,7 @@ async function applyStatusEffects(theEffect: any, includeEffect: boolean, contex
 
   await applyStatusEffectChanges(actor, theEffect, currentStatuses, newStatuses, includeEffect);
 }
-async function applyStatusEffectChanges(actor, effect: any, currentStatuses: Set<string>, newStatuses: Set<string>, includeEffect: boolean) {
+async function applyStatusEffectChanges(actor, effect: any | undefined, currentStatuses: Set<string>, newStatuses: Set<string>, includeEffect: boolean) {
   if (currentStatuses.size === 0 && newStatuses.size === 0) return;
   if (debugEnabled > 0)
     warn("applyStatusEffectChanges", actor.name, currentStatuses, newStatuses, currentStatuses.difference(newStatuses), newStatuses.difference(currentStatuses), includeEffect);
@@ -2427,8 +2425,8 @@ async function applyStatusEffectChanges(actor, effect: any, currentStatuses: Set
     if (!statusEffect) continue;
     if (!statusEffect._id) continue; // status effects should have a fixed _id
     if (statusEffect.statuses?.includes(status)) continue; // Self referential statuses cause problems
-    if (!statusEffect || (statusEffect._id === effect._id && includeEffect)) continue; // includeEffect true means the status effect is being added so don't double up
-    if (!effect.statuses.has(status)) continue; // Only deal with statuses that are on the effect
+    if (!statusEffect || (statusEffect._id === effect?._id && includeEffect)) continue; // includeEffect true means the status effect is being added so don't double up
+    if (!effect?.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses not present on the actor that should be
     await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
   }
@@ -2439,8 +2437,8 @@ async function applyStatusEffectChanges(actor, effect: any, currentStatuses: Set
     if (!statusEffect) continue;
     if (!statusEffect._id) continue; // status effects should have a fixed _id
     if (statusEffect.statuses?.includes(status)) continue; // Self referential statuses cause problems
-    if (!statusEffect || (statusEffect._id === effect._id && !includeEffect)) continue; // includeEffect being false means the effect is being removed so don't double up
-    if (!effect.statuses.has(status)) continue; // Only deal with statuses that are on the effect
+    if (!statusEffect || (statusEffect._id === effect?._id && !includeEffect)) continue; // includeEffect being false means the effect is being removed so don't double up
+    if (!effect?.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses present on the actor that should not be
     await toggleActorStatusEffect(actor, status, { active: false });
   }

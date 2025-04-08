@@ -1284,7 +1284,7 @@
     },
     "system.attributes.ac.value": {
       "name": "",
-      "description": "Use system.attributes.ac.calc as \"flat\" and system.attributes.ac.flat as your desired value instead."
+      "description": "Use system.attributes.ac.calc as \"flat\" and system.attributes.ac.flat as your desired value instead if overriding ac.bonus if adding."
     },
     "system.attributes.attunement.max": {
       "name": "",

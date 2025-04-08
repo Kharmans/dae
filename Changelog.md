@@ -1,3 +1,7 @@
+### 12.0.23
+* Fix for item updates with transfer effects causing issues when dependent conditions is enabled.
+* Fix for sanity.value changes not being supported.
+
 ### 12.0.22
 * reinstate fetching items by name in macro.createItem active effects.
 * Fix for applying dependent conditions when dnd5e has rider effects (prone in unconscious).

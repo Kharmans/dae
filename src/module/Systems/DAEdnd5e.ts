@@ -427,10 +427,17 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (["character", "npc"].includes(actorType) && game.system?.id === "dnd5e") {
       // @ts-expect-error
       if (game.settings?.get("dnd5e", "honorScore")) {
+        specials[`system.abilities.hon.mod`] = [new NumberField(), -1];
+        specials[`system.abilities.hon.save`] = [new NumberField(), -1];
+        // specials[`system.abilities.hon.min`] = [new NumberField(), -1]; There is no min attribute yet
+        specials[`system.abilities.hon.max`] = [new NumberField(), -1];
       }
       // @ts-expect-error
       if (game.settings?.get("dnd5e", "sanityScore")) {
-        specials["system.abilities.san.value"] = [new NumberField(), -1];
+        specials[`system.abilities.san.mod`] = [new NumberField(), -1];
+        specials[`system.abilities.san.save`] = [new NumberField(), -1];
+        // specials[`system.abilities.san.min`] = [new NumberField(), -1]; There is no min attribute yet
+        specials[`system.abilities.san.max`] = [new NumberField(), -1];
       }
     }
 
