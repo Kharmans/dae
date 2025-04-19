@@ -1,3 +1,7 @@
+### 12.0.24
+* Fix for not respecting item toggle effect midi property. (Deprecated in favour of the activity flag).
+* Updated br.json and it.json, thanks to @kharmans and Gregory Warn repecitively.
+
 ### 12.0.23
 * Fix for item updates with transfer effects causing issues when dependent conditions is enabled.
 * Fix for sanity.value changes not being supported.
@@ -219,10 +223,10 @@
     - system.magicalBonus OVERRIDE @abilities.str.mod and system.magicalBonus OVERRIDE ##abilities.str.mod will both set the bonus to 6
 
 ### 11.3.51
-* Renabled support for status icon counters.
+* Reenabled support for status icon counters.
 * Added new option for stacking effects, flags.dae.decrementDelete, which if true means deleting the effect will decrement the number of stacks by 1 rather than deleting the effect. If the count reaches 0 the effect is deleted.
 * Also support activeEffect.delete({forceDelete: true}) to override that setting.
-* The application of status conditions now uses dae stacking so that if more than one effect causes (for example) incapcitated all of the effects have to be removed before incapacitated is removed - requires stackable conditions to be set in the config options.
+* The application of status conditions now uses dae stacking so that if more than one effect causes (for example) incapacitated all of the effects have to be removed before incapacitated is removed - requires stackable conditions to be set in the config options.
   - if status icon counters is enabled the number of times a status has been applied to an actor is reflected in the status icon count.
 * Fix for wrong update checks when testing conditional effects vs token updates - thanks @Elwin
 

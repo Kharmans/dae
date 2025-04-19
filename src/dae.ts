@@ -215,7 +215,7 @@ export async function createDAEMacros() {
           log(`Macro ${macroData.name} created`);
         }
       } catch (err) {
-        const message = `createDAEMacros | falied to create macro ${macroSpec.name}`
+        const message = `createDAEMacros | failed to create macro ${macroSpec.name}`
         error(err, message);
       }
     }

@@ -24,7 +24,7 @@ export var midiActive;
 export var statusCounterActive;
 // export var useAbilitySave;
 export var activeConditions;
-export var ehnanceStatusEffects;
+export var enhanceStatusEffects;
 export var expireRealTime
 export var noDupDamageMacro;
 export var disableEffects;
@@ -84,7 +84,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
   if (hasCheckBonus) {
     const checkBonus = change.key.match(/data.abilities.(\w\w\w).mod/);
     const abl = checkBonus[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use syatem.abilities.${abl}.bonuses.check instead`)
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.abilities.${abl}.bonuses.check instead`)
     // change.key = `data.abilities.${abl}.bonuses.check`;
     return;
   }
@@ -92,7 +92,7 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
   if (hasSkillMod) {
     const skillMod = change.key.match(/data.skills.(\w\w\w).mod/);
     const abl = skillMod[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use syatem.skills.${abl}.bonuses.check instead`)
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.skills.${abl}.bonuses.check instead`)
     // change.key = `data.skills.${abl}.bonuses.check`;
     return;
   }
@@ -100,24 +100,23 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
   if (hasSkillPassive) {
     const skillPassive = change.key.match(/data.skills.(\w\w\w).passive/);
     const abl = skillPassive[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use syatem.skills.${abl}.bonuses.passive instead`)
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.skills.${abl}.bonuses.passive instead`)
     // change.key = `data.dkills.${abl}.bonuses.passive`;
     return;
   }
 
   const hasSkillBonus = change.key.startsWith("flags.skill-customization-5e");
   if (hasSkillBonus) {
-    const skillPassive = change.key.match(/lags.skill-customization-5e.(\w\w\w).skill-bonus/);
+    const skillPassive = change.key.match(/flags.skill-customization-5e.(\w\w\w).skill-bonus/);
     const abl = skillPassive[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use syatem.skills.${abl}.bonuses.check instead`)
-    // change.key = `data.dkills.${abl}.bonuses.passive`;
+    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.skills.${abl}.bonuses.check instead`)
     return;
   }
 }
 
 
 /*
- * Replace default appplyAffects to do value lookups
+ * Replace default applyAffects to do value lookups
  */
 export function applyDaeEffects({ specList = {}, excludeSpecs = {}, allowAllSpecs = false, wildCardsInclude = [] as Array<RegExp>, wildCardsExclude = [] as Array<RegExp>, doStatusEffects = false }) {
   if (disableEffects) return;
@@ -135,7 +134,7 @@ export function applyDaeEffects({ specList = {}, excludeSpecs = {}, allowAllSpec
       }
     }
     if (!effects || effects.size === 0) return this.overrides || {};
-    // TODO find a solution for flags.? perhaps just a generic speclist
+    // TODO find a solution for flags.? perhaps just a generic specList
     return changes.concat(expandEffectChanges(foundry.utils.duplicate(effect.changes))
       .filter(c => {
         if (daeSystemClass.fieldMappings[c.key]) {
@@ -349,7 +348,7 @@ async function myAddCEEffectWith(effectData: any, uuid: string, origin, overlay:
   let interval = 1;
   if (interval) await delay(interval);
   //@ts-expect-error
-  if (foundry.utils.isNewerVersion("6.9", game.modules?.get("dfreds-convenientEfgfects")?.version)) {
+  if (foundry.utils.isNewerVersion("6.9", game.modules?.get("dfreds-convenientEffects")?.version)) {
     return await ceInterface.addEffectWith({ effectData, uuid, origin, overlay: false });
   } else {
     return await ceInterface.addEffect({ effectName: effectData.name, uuid, origin, effectData });
@@ -368,7 +367,7 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
   if (!ceEffect) return;
   let effectData = foundry.utils.mergeObject(ceEffect.toObject(), context.metaData);
   let returnValue;
-  effectData.orgin = origin;
+  effectData.origin = origin;
   returnValue = await actionQueue.add(myAddCEEffectWith, effectData, uuid, origin, false, isToken);
   return returnValue;
 }
@@ -378,12 +377,12 @@ export async function addConditionChange(actor, change, token, effect) {
   const condition: any = CONFIG.statusEffects.find(se => se.id === change.value);
   const overlay = foundry.utils.getProperty(effect, "flags.core.overlay")
   if (change.value.startsWith("Convenient Effect")) {
-    console.warn("Convenient Effect change detected in macro.SatusEffect which is deprecated use macro.CE instead");
+    console.warn("Convenient Effect change detected in macro.StatusEffect which is deprecated use macro.CE instead");
     console.warn(`Actor: ${actor.name} Change: ${change.value} Token: ${token.name} Effect: ${effect.name} ${effect.uuid}`);
     const effectName = change.value.split("Convenient Effect: ")[1];
     return await ceInterface?.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, overlay, metaData: {} });
   } else if (change.value.startsWith("zce-")) {
-    console.warn("Convenient Effect change detected in macro.SatusEffect which is deprecated use macro.CE instead");
+    console.warn("Convenient Effect change detected in macro.StatusEffect which is deprecated use macro.CE instead");
     console.warn(`Actor: ${actor.name} Change: ${change.value} Token: ${token.name} Effect: ${effect.name} ${effect.uuid}`);
     const effectId = change.value.replace("zce-", "ce-");
     return await ceInterface?.addEffect({ effectId, uuid: actor.uuid, origin: effect.uuid, overlay, metaData: {} });
@@ -650,7 +649,7 @@ async function _preCreateActiveEffectIncrement(data, options, user) {
     // Check if we are trying to create an existing effect - not quite sure how that might happen
     if (parent.effects?.find(ef => ef.id === data._id && false)) {
       if (debugEnabled > 0)
-        warn("Blocking creation of duplicate effect", this, parent.effects?.find(ef => ef.id === data._idid));
+        warn("Blocking creation of duplicate effect", this, parent.effects?.find(ef => ef.id === data._id));
       return result = false;
     }
     if (!this.flags?.dae?.specialDuration) {
@@ -1147,7 +1146,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   let macro;
   let theItem;
 
-  // Work out what itemdata should be
+  // Work out what itemData should be
   warn("Dae macro ", action, actor, effectData, lastArgOptions)
   if (!effectData.changes) return effectData;
   if (effectData instanceof ActiveEffect) {
@@ -1392,7 +1391,7 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
         if (doRolls && typeof (currentValue ?? ValidSpec.actorSpecs[actor.type].allSpecsObj[change.key]?.fieldType) === "number") {
           const roll = new Roll(returnChange.value, contextToUse);
           if (!roll.isDeterministic) {
-            error("evalargs: expression is not deterministic dice terms ignored", actor.name, actor.uuid, returnChange.value);
+            error("evalArgs: expression is not deterministic dice terms ignored", actor.name, actor.uuid, returnChange.value);
             returnChange.value = roll.evaluateSync({ strict: false }).total;
           }
         };
@@ -1530,7 +1529,7 @@ export async function applyActivityEffects(activity, activate, targets, activity
     activityEffects.forEach(aeData => foundry.utils.setProperty(aeData, "flags.dae.dontApply", false));
   if (activityEffects.length === 0) return;
   const rollData = activity.item.getRollData(); //TODO if not caster eval move to evalArgs call
-  options.toggleEffect = activity.item.flags?.midiProperties?.toggleEffect === true;
+  options.toggleEffect = activity.midiProperties?.toggleEffect || activity.item.flags?.midiProperties?.toggleEffect;
 
   let macroLocation = "mixed";
   for (let [aeIndex, activeEffectData] of activityEffects.entries()) {
@@ -1619,7 +1618,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
   if (options.effectsToApply?.length > 0) appliedEffects = appliedEffects.filter(aeData => options.effectsToApply.includes(aeData._id))
   if (appliedEffects.length === 0) return;
   const rollData = item.getRollData(); //TODO if not caster eval move to evalArgs call
-  options.toggleEffect = item.flags?.midiProperties?.toggleEffect === true;
+  // options.toggleEffect = item.flags?.midiProperties?.toggleEffect === true;
 
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     for (let [changeIndex, change] of activeEffectData.changes.entries()) {
@@ -1629,7 +1628,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
           macroLocation = "local"
         } else if (macroDestination[change.key] === "GM") macroLocation = "GM";
       }
-      // eval args before calling GMAction so macro arguments are evaled in the casting context.
+      // eval args before calling GMAction so macro arguments are evaluated in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       rollData.stackCount = activeEffectData.flags?.dae?.stacks ?? activeEffectData.flags?.dae?.statuscounter?.counter.value ?? 1;
       const evalArgsOptions: any = foundry.utils.mergeObject(options, {
@@ -2112,8 +2111,8 @@ export function daeInitActions() {
     ceInterface = game.modules?.get("dfreds-convenient-effects")?.active ? game.dfreds.effectInterface : undefined;
   });
 
-  // Default systtem class is setup, this oeverrides with system specific calss
-  const dnd5esystem = DAESystemDND5E; // force reference so they are installed?
+  // Default system class is setup, this overrides with system specific class
+  const dnd5System = DAESystemDND5E; // force reference so they are installed?
   const sw5eSystem = DAESystemSW5E;
   libWrapper = globalThis.libWrapper;
   if (foundry.utils.getProperty(globalThis.daeSystems, game.system?.id ?? ""))
@@ -2183,7 +2182,7 @@ export function daeInitActions() {
     const [options, user] = args;
     let result = await _preDeleteActiveEffectDecrement.bind(this)(...args);
     if (this.active && dependentConditions && result) { // took this out 12.0.22 && !this.flags?.dae?.autoCreated)
-      if (debugEnabled > 0) warn("_preDelteActiveEffect", this, options);
+      if (debugEnabled > 0) warn("_preDeleteActiveEffect", this, options);
       await applyStatusEffects(this, false, options);
     }
     if (result) result = wrapped(...args);

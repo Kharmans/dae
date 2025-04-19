@@ -36,7 +36,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     let itemSpecs = enumerateBaseValues(CONFIG.Item.dataModels);
     const activitySpecsRaw = enumerateBaseValues(globalThis.dnd5e.dataModels.activity, false);
     const activitySpecs: any = {};
-    for (let k of ["CopnsumptionError", "AppliedEffectField", "ConsumptionTargetField"]) {
+    for (let k of ["ConsumptionError", "AppliedEffectField", "ConsumptionTargetField"]) {
       delete activitySpecsRaw[k];
 
     };
@@ -241,7 +241,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       } else if (modelField instanceof MappingField) {
         processMappingField(`system.${key}`, modelField);
       } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => modelField instanceof fieldType)) {
-        baseValues[`system.${key}`] = [modelField.iniital, -1];
+        baseValues[`system.${key}`] = [modelField.initial, -1];
       } else console.error("Unexpected field ", key, modelField)
     }
     //@ts-expect-error
@@ -453,7 +453,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     }
 
-    // move all the characteer flags to specials so that they can be custom effects only
+    // move all the character flags to specials so that they can be custom effects only
     let charFlagKeys = Object.keys(daeSystemClass.systemConfig?.characterFlags ?? {});
     charFlagKeys.forEach(key => {
       let theKey = `flags.${game.system?.id}.${key}`;
@@ -989,7 +989,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         }
         return true;
 
-      case "system.traits.weaponProf.value": // TODO v10 armor and weapon proiciencies
+      case "system.traits.weaponProf.value": // TODO v10 armor and weapon proficiencies
         return super.doCustomArrayValue(actor, current, change, undefined)
       case "system.traits.weaponProf.all":
         if (actor.system.traits.weaponProf?.value) {
@@ -1229,8 +1229,8 @@ function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: stri
   for (const effect of this.allApplicableEffects()) {
     if (!effect.active) continue;
     let possibleChanges = effect.changes;
-    if (includeKeys) possibleChanges = possibleChanges.filter(c => includeKeys.includes(c.key));
-    if (excludeKeys) possibleChanges = possibleChanges.filter(c => !excludeKeys.includes(c.key));
+    if (includeKeys) possibleChanges = possibleChanges.filter(c => includeKeys?.includes(c.key));
+    if (excludeKeys) possibleChanges = possibleChanges.filter(c => !excludeKeys?.includes(c.key));
     changes.push(...possibleChanges.map(change => {
       let field = change.key.startsWith("system.")
         ? this.system.schema.getField(change.key.slice(7))
@@ -1393,7 +1393,7 @@ async function _prepareActorArmorClassAttribution(wrapped, data) {
   }
   if (attributions.length > 0) {
     //@ts-expect-error
-    const extraHtml = new game.system.application.PopertyAttribution(this, attributions, "attributions.ac", { title: "" }).renderTooltip();
+    const extraHtml = new game.system.application.PropertyAttribution(this, attributions, "attributions.ac", { title: "" }).renderTooltip();
     attributionHtml += extraHtml;
   }
   return attributionHtml;
@@ -1443,7 +1443,7 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
   // Case 2: effect is a synthetic actor on the scene - only if the token ids match
   else if (parentType === "Scene") {
     const itemUuid = effect.origin.replace(/\.ActiveEffect\..*$/, "");
-    const [parentType, parentId, tokeyType, tokenId, syntheticActor, y, syntheticItem, syntheticItemId] = parts;
+    const [parentType, parentId, tokenType, tokenId, syntheticActor, y, syntheticItem, syntheticItemId] = parts;
     if ((tokenId === effect.parent.token?.id) && (syntheticItem === "Item"))
       item = effect.parent.items.get(syntheticItemId);
   }
@@ -1460,7 +1460,7 @@ function determineSuppression() {
   // if (this.disabled) return; dnd5e does not do this check
   if (isEnchantment(this)) return;
 
-  // DND5e currently does not work with unlinked tokens and suppression determination so this is overtide
+  // DND5e currently does not work with unlinked tokens and suppression determination so this is overridden
   // TODO make this a WRAPPER when dnd5e fixes the unlinked token bug
 
   let actor;
@@ -1474,7 +1474,7 @@ function determineSuppression() {
   }
 
   if (this.parent instanceof CONFIG.Item.documentClass && effectIsTransfer(this)) {
-    // If the parent of the effect is an item then supressed is based on the item
+    // If the parent of the effect is an item then suppressed is based on the item
     this.isSuppressed = this.isSuppressed || this.parent.areEffectsSuppressed;
     return;
   }
