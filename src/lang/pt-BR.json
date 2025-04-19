@@ -1285,7 +1285,7 @@
     },
     "system.attributes.ac.value": {
       "name": "Valor de CA",
-      "description": "Use system.attributes.ac.calc como \"Fixo\" e system.attributes.ac.flat como seu valor desejado, ao invés deste." 
+      "description": "Usar system.attributes.ac.calc como \"Fixo\" e system.attributes.ac.flat como seu valor desejado, ao invés deste, se sobescrever ac.bonus for adicionar." 
     },
     "system.attributes.attunement.max": {
       "name": "",
