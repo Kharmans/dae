@@ -907,7 +907,7 @@ export function updateActiveEffectHook(...args) {
           }
         }
         if (changesToDisable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
-          warn("dae add macro off", actionQueue._queue.length);
+          warn("dae add macro off", actionQueue.remaining);
           const effectData = effect.toObject(false);
           if (updates.changes) effectData.changes = oldChanges;
           if (becameDisabled) context["expiry-reason"] = "effect-disabled";
@@ -946,7 +946,7 @@ export function updateActiveEffectHook(...args) {
           }
         }
         if (changesToEnable.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
-          warn("action queue add dae macro on ", actionQueue._queue.length)
+          warn("action queue add dae macro on ", actionQueue.remaining)
           await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid });
         }
       }
@@ -1097,7 +1097,7 @@ export function deleteActiveEffectHook(...args) {
         if (!foundry.utils.getProperty(context, "expiry-reason")) foundry.utils.setProperty(context, "expiry-reason", "effect-deleted");
         if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
           context.effectUuid = effect.uuid;
-          warn("action queue dae macro add off ", actionQueue._queue.length)
+          warn("action queue dae macro add off ", actionQueue.remaining)
           await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), context);
         }
 
@@ -1473,7 +1473,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
       author: game.user?.id,
       ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER },
       // TODO see if this should change.
-      flags: { "dnd5e.itemMacro": true }
+      flags: { dnd5e: {itemMacro: true }}
     }, { displaySheet: false, temporary: true });
   } else if (change.key === "actorUpdate") {
     console.error("Should not be trying to lookup the macro for actorUpdate")
@@ -1481,7 +1481,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
   return undefined;
 }
 /*
- * appply non-transfer effects to target tokens - provided for backwards compat
+ * apply non-transfer effects to target tokens - provided for backwards compat
  */
 export async function doEffects(item, activate, targets = undefined, options: any =
   {
@@ -1707,7 +1707,7 @@ export function addEffectChange(actor, tokens, effectToApply, item, change, cont
       break;
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro")) {
-        if (debugEnabled > 0) warn("action queue add dae macro on ", actionQueue._queue.length)
+        if (debugEnabled > 0) warn("action queue add dae macro on ", actionQueue.remaining)
         actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), { item, effectUuid: effectToApply.uuid });
         break;
       }
@@ -1750,7 +1750,7 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change, c
       break;
     default:
       if (change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro")) {
-        if (debugEnabled > 0) warn("dae add macro off", actionQueue._queue.length);
+        if (debugEnabled > 0) warn("dae add macro off", actionQueue.remaining);
         actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), { item, origin: item.uuid, effectUuid: effectToApply.uuid, "expiry-reason": context["expiry-reason"] });
       }
       break;

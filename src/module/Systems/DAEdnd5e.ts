@@ -1540,7 +1540,7 @@ function preUpdateItemHook(candidateItem, updates, context, user) {
       if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
         foundry.utils.setProperty(effect, "flags.dae.itemUuid", candidateItem.uuid);
       */
-      warn("action queue add suppressed ", actionQueue._queue.length)
+      warn("action queue add suppressed ", actionQueue.remaining)
     }
   } catch (err) {
     console.warn("dae | preItemUpdate ", err)

@@ -1,6 +1,10 @@
+### 13.0.0
+* This is a testing version only and **not** ready for gameplay.
+* Couple of identified bugs fixed
+
 ### 12.0.24
 * Fix for not respecting item toggle effect midi property. (Deprecated in favour of the activity flag).
-* Updated br.json and it.json, thanks to @kharmans and Gregory Warn repecitively.
+* Updated br.json and it.json, thanks to @kharmans and Gregory Warn respectively.
 
 ### 12.0.23
 * Fix for item updates with transfer effects causing issues when dependent conditions is enabled.
