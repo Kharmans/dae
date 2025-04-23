@@ -281,9 +281,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues["system.traits.toolProf.all"];
     if (daeSystemClass.systemConfig.toolProficiencies && foundry.utils.getProperty(actorModelSchemaFields, "tools")) {
       const toolProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.toolProficiencies);
-      const ids = daeSystemClass.systemConfig[`toolIds`];
+      const ids = daeSystemClass.systemConfig[`tools`];
       if (ids !== undefined) {
-        for (const [key, id] of Object.entries(ids)) {
+        for (const [key, { ability, id }] of Object.entries(ids as Record<string, { ability: string, id: string }>)) {
           // const item = await pack.getDocument(id);
           toolProfList[key] = key;
         }
@@ -668,7 +668,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   public static enumerateLanguages(systemLanguages: any): any {
-    const languages = {"ALL": "All"};
+    const languages = { "ALL": "All" };
     Object.keys(systemLanguages).forEach(lang => {
       if (typeof systemLanguages[lang] === "string") {
         languages[lang] = i18n(systemLanguages[lang]);
@@ -792,15 +792,25 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           { type: "weapon", list: this.weaponProfList }
         ];
         for (let { type, list } of profs) {
-          let choices = daeSystemClass.systemConfig[`${type}Proficiencies`];
-          const ids = daeSystemClass.systemConfig[`${type}Ids`];
-          if (ids !== undefined) {
-            const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
-            for (const [key, id] of Object.entries(ids)) {
+          if (type === "tool") {
+            let choices = daeSystemClass.systemConfig[`${type}Proficiencies`];
+            const typeProperty = `${type}Type`;
+            for (const [key, { ability, id }] of Object.entries(daeSystemClass.systemConfig[`${type}s`] as Record<string, { ability: string, id: string }>)) {
               //@ts-expect-error .documents
               const item = game.system.documents.Trait.getBaseItem(id, { indexOnly: true })
-              // const item = await pack.getDocument(id);
               list[key] = item.name;
+            }
+          } else {
+            let choices = daeSystemClass.systemConfig[`${type}Proficiencies`];
+            const ids = daeSystemClass.systemConfig[`${type}Ids`];
+            if (ids !== undefined) {
+              const typeProperty = (type !== "armor") ? `${type}Type` : `armor.type`;
+              for (const [key, id] of Object.entries(ids)) {
+                //@ts-expect-error .documents
+                const item = game.system.documents.Trait.getBaseItem(id, { indexOnly: true })
+                // const item = await pack.getDocument(id);
+                list[key] = item.name;
+              }
             }
           }
         }
@@ -1262,7 +1272,7 @@ function doItemApplyEffects(includeKeys: string[] | undefined, excludeKeys: stri
       return c;
     }));
   }
-  
+
   changes.sort((a, b) => a.priority - b.priority);
 
   // Apply all changes

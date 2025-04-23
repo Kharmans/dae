@@ -551,10 +551,10 @@ export function geti18nTranslations() {
 }
 
 Hooks.once("setup", () => {
-  DocumentSheetConfig.registerSheet(
+  //@ts-expect-error
+  foundry.applications.apps.DocumentSheetConfig.registerSheet(
     CONFIG.ActiveEffect.documentClass,
     "core",
-    // @ts-expect-error no clue why
     DAEActiveEffectConfig,
     {
       label: i18n("dae.EffectSheetLabel"),
