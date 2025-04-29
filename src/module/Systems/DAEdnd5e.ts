@@ -1456,9 +1456,9 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
 }
 
 function determineSuppression() {
-  this.isSuppressed = false;
   // if (this.disabled) return; dnd5e does not do this check
   if (isEnchantment(this)) return;
+  this.isSuppressed = false;
 
   // DND5e currently does not work with unlinked tokens and suppression determination so this is overridden
   // TODO make this a WRAPPER when dnd5e fixes the unlinked token bug

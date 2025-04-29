@@ -1,3 +1,6 @@
+### 12.0.25
+* Fix for conditional removal not firing when actor statuses change.
+
 ### 12.0.24
 * Fix for not respecting item toggle effect midi property. (Deprecated in favour of the activity flag).
 * Updated br.json and it.json, thanks to @kharmans and Gregory Warn repecitively.
