@@ -1414,7 +1414,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
           macroData.command = macroData.data.command;
           delete macroData.data.command;
         };
-        macroData.flags = foundry.utils.mergeObject(macroData.flags ?? {}, { "dnd5e.itemMacro": true })
+        macroData.flags = foundry.utils.mergeObject(macroData.flags ?? {}, { dnd5e: { itemMacro: true } })
         return new CONFIG.Macro.documentClass(macroData, { displaySheet: false, temporary: true });
       } else if (itemOrMacro instanceof Macro) {
         return itemOrMacro;
@@ -1473,7 +1473,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
       author: game.user?.id,
       ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER },
       // TODO see if this should change.
-      flags: { dnd5e: {itemMacro: true }}
+      flags: { dnd5e: { itemMacro: true } }
     }, { displaySheet: false, temporary: true });
   } else if (change.key === "actorUpdate") {
     console.error("Should not be trying to lookup the macro for actorUpdate")
@@ -2159,6 +2159,42 @@ export function daeInitActions() {
   Hooks.on("updateItem", (item, updates, options, userId) => {
     if (item.parent instanceof Actor) processConditionalEffects(item.parent, updates, options, userId)
   });
+
+  Hooks.on("createActiveEffect", (effect: ActiveEffect, data, options, userId) => {
+    if (game.user !== game.users?.activeGM) return;
+    if (effect.parent instanceof Actor) {
+      const actor = effect.parent;
+      processConditionalEffects(effect.parent, {}, options, userId);
+    } else if (effect.transfer) {
+      const item = effect.parent;
+      const actor = item?.parent;
+      if (actor) processConditionalEffects(actor, {}, options, userId);
+    }
+  });
+
+  Hooks.on("updateActiveEffect", (effect: ActiveEffect, updates, options, userId) => {
+    if (game.user !== game.users?.activeGM) return;
+    if (effect.parent instanceof Actor) {
+      const actor = effect.parent;
+      processConditionalEffects(effect.parent, updates, options, userId);
+    } else if (effect.transfer) {
+      const item = effect.parent;
+      const actor = item?.parent;
+      if (actor) processConditionalEffects(actor, updates, options, userId);
+    }
+  })
+
+  Hooks.on("deleteActiveEffect", (effect: ActiveEffect, options, userId) => {
+    if (game.user !== game.users?.activeGM) return;
+    if (effect.parent instanceof Actor) {
+      const actor = effect.parent;
+      processConditionalEffects(effect.parent, {}, options, userId);
+    } else if (effect.transfer) {
+      const item = effect.parent;
+      const actor = item?.parent;
+      if (actor) processConditionalEffects(actor, {}, options, userId);
+    }
+  })
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "MIXED");
   async function _preCreateActiveEffect(wrapped, data, context, user) {
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);

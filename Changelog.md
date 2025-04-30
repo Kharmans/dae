@@ -1,3 +1,6 @@
+### 13.0.1
+* Fix for conditional removal not firing when actor statuses change.
+
 ### 13.0.0
 * This is a testing version only and **not** ready for gameplay.
 * Couple of identified bugs fixed
