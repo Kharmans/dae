@@ -2269,11 +2269,17 @@ export function daeInitActions() {
   Hooks.on("updateActiveEffect", updateTransferEffectsHook);
 
   // Add the active effects title bar actions
+  // OLD STUFF
   Hooks.on("getActorSheetHeaderButtons", attachActorSheetHeaderButton);
   Hooks.on("getItemSheetHeaderButtons", attachItemSheetHeaderButton);
-  Hooks.on("getActivitySheetHeaderButtons", attachActivitySheetHeaderButton);
   Hooks.on('renderActorSheet', updateSheetHeaderButton);
   Hooks.on('renderItemSheet', updateSheetHeaderButton);
+  // END OLD STUFF
+  // NEW STUFF
+  Hooks.on("getHeaderControlsItemSheet5e", appendDocumentSheetHeaderControls)
+  Hooks.on("getHeaderControlsActorSheetV2", appendDocumentSheetHeaderControls)
+  // END NEW STUFF
+  Hooks.on("getActivitySheetHeaderButtons", attachActivitySheetHeaderButton);
   Hooks.on("preDeleteCombat", preDeleteCombatHook);
   Hooks.on("preCreateCombatant", preCreateCombatantHook);
 
@@ -2497,7 +2503,7 @@ function attachActorSheetHeaderButton(app, buttons) {
     onclick: ev => { new ActiveEffects({ document: app.document }).render({ force: true }); }
   })
 }
-// This does not seem to work.
+
 function attachActivitySheetHeaderButton(app, buttons) {
   if (DIMETitleBar) {
     const DIMtitle = i18n('dae.DIMEditor.Name');
@@ -2553,6 +2559,41 @@ function attachItemSheetHeaderButton(app, buttons) {
       onclick: (ev) => new DIMEditor({ document: app.document }).render({ force: true })
     });
   }
+}
+function appendDocumentSheetHeaderControls(app, controls) {
+  console.log(app);
+  const daeTitle = i18n("dae.ActiveEffectName");
+  const DIMETitle = i18n("dae.DIMEditor.Name");
+  if (daeTitleBar) {
+    controls.push({
+      label: daeTitle,
+      icon: "fa-solid fa-wrench",
+      onClick: () => new ActiveEffects({ document: app.document }).render({ force: true })
+    });
+  }
+  if (DIMETitleBar && app.document instanceof Item) {
+    controls.push({
+      label: DIMETitle,
+      icon: "fa-solid fa-file-pen",
+      onClick: () => new DIMEditor({ document: app.document }).render({ force: true })
+    });
+  }
+  // I hate this but can see no way around it
+  setTimeout(() => {
+    const contextItems = document.querySelectorAll<HTMLElement>("nav#context-menu .context-item");
+    const daeIcon = Array.from(contextItems).find(i => i.innerText.includes(daeTitle))?.querySelector("i");
+    const DIMEIcon = Array.from(contextItems).find(i => i.innerText.includes(DIMETitle))?.querySelector("i");
+    let hasEffects = false;
+    if (app.document instanceof Actor) hasEffects = app.document.allApplicableEffects().next().value !== undefined;
+    else hasEffects = app.document.effects?.size > 0;
+    if (daeIcon && hasEffects) {
+      daeIcon.style.color = "#36ba36";
+    }
+    const validMacroFlags = ["flags.dae.macro.command", "flags.itemacro.macro.command", "flags.itemacro.macro.data.command"];
+    if (DIMEIcon && validMacroFlags.some(f => foundry.utils.getProperty(app.document, f))) {
+      DIMEIcon.style.color = "#36ba36";
+    }
+  }, 50);
 }
 
 function updateSheetHeaderButton(app, [elem], options) {
