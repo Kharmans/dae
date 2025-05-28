@@ -412,7 +412,8 @@ export class DAESystem {
         if (nesting > maxDepth) return undefined;
 
         if (doc instanceof Actor) return doc;
-        else if (doc.actor && (doc instanceof Token || doc instanceof Item)) return doc.actor;
+        // @ts-expect-error v13ism
+        else if (doc.actor && (doc instanceof foundry.canvas.placeables.Token || doc instanceof Item)) return doc.actor;
         else if (doc.parent && doc instanceof ActiveEffect) return getActor(doc.parent, nesting)
         else return undefined;
       }

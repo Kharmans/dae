@@ -488,8 +488,10 @@ export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}
   if (actor.token) tokenUuid = actor.token.uuid;
   else {
     const selfTarget = getSelfTarget(actor);
-    if (selfTarget instanceof Token) tokenUuid = selfTarget.document.uuid;
-    else tokenUuid = selfTarget.uuid;
+    // @ts-expect-error v13ism
+    if (selfTarget instanceof foundry.canvas.placeables.Token) tokenUuid = selfTarget.document.uuid;
+    // TODO: remove as once above is recognized
+    else tokenUuid = (selfTarget as TokenDocument).uuid;
   }
   let lastArg = foundry.utils.mergeObject(lastArgOptions, {
     effectId: effect.id,
@@ -520,7 +522,8 @@ function createActiveEffectHook(...args) {
     return true;
   }
   const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
-  if (!(tokens[0] instanceof Token)) return;
+  // @ts-expect-error v13ism
+  if (!(tokens[0] instanceof foundry.canvas.placeables.Token)) return;
   const token: Token = tokens[0];
   if (effect.determindSuppression) effect.determineSuppression();
   if (effect.changes && effect.active) {
@@ -614,10 +617,11 @@ async function _preCreateActiveEffectRemoveExisting(...args) {
 
       if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
       context["existing"] = "effect-stacking";
-      await parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id), context);
+      await parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id ?? ""), context);
 
       // We need to wait for the chain of dependents to be deleted before allowing things to continue.
       let count = 0;
+      // @ts-expect-error no dnd5e-types
       while (hasExisting.some(ef => ef.getDependents().length > 0) && count < 100) {
         count += 1;
         await busyWait(0.05);
@@ -692,8 +696,8 @@ async function _preCreateActiveEffectIncrement(data, options, user) {
         let sourceActor = parent;
         if (!data.transfer) { // for non-transfer effects we might be pointing to a different actor
           const thing = fromUuidSync(this.origin);
-          if (thing?.actor)
-            sourceActor = thing.actor;
+          // @ts-expect-error imprecise on what `thing` is
+          if (thing?.actor) sourceActor = thing.actor;
         }
         let theDurationRoll = new Roll(`${this.flags.dae.durationExpression}`, sourceActor?.getRollData() as AnyObject);
         let theDuration = await theDurationRoll.evaluate();
@@ -749,7 +753,8 @@ async function _preCreateActiveEffectIncrement(data, options, user) {
           }
         } else if (change.key.startsWith("macro.activityMacro") && this.activity) {
           const activity = fromUuidSync(this.activity);
-          foundry.utils.setProperty(updates, "flags.dae.activityMacro", activity.macro?.command)
+          // @ts-expect-error module
+          foundry.utils.setProperty(updates, "flags.dae.activityMacro", activity?.macro?.command)
         }
         else
           newChanges.push(change);
@@ -847,7 +852,8 @@ export function updateActiveEffectHook(...args) {
       // const item = await fromUuid(effect.origin);
       const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
       const token = tokens[0];
-      if (!(token instanceof Token)) return;
+      // @ts-expect-error v13ism
+      if (!(token instanceof foundry.canvas.placeables.Token)) return;
       if (effect.determineSuppression) effect.determineSuppression();
       // Just deal with equipped etc
       warn("add active effect actions", actor, updates)
@@ -1135,7 +1141,7 @@ export function getSelfTarget(actor): Token | TokenDocument {
     if (token) return token;
   }
   const tokenData = actor.prototypeToken.toObject(false);
-  return new CONFIG.Token.documentClass(tokenData, { actor });
+  return new CONFIG.Token.documentClass(tokenData);
 }
 
 export async function daeMacro(action: string, actor, effectData, lastArgOptions: any = {}) {
@@ -1243,7 +1249,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
             ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER ?? CONST.DOCUMENT_PERMISSION_LEVELS.OWNER },
             author: game.user?.id,
             command: `return await ${functionMatch}.bind(this)({ speaker, actor, token, character, item, args, scope })`,
-          }, { displaySheet: false, temporary: true });
+          });
         } else macro = await getMacro({ change, name: args[0] }, theItem, effectData);
         if (!macro) {
           //TODO localize this
@@ -1415,7 +1421,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
           delete macroData.data.command;
         };
         macroData.flags = foundry.utils.mergeObject(macroData.flags ?? {}, { dnd5e: { itemMacro: true } })
-        return new CONFIG.Macro.documentClass(macroData, { displaySheet: false, temporary: true });
+        return new CONFIG.Macro.documentClass(macroData);
       } else if (itemOrMacro instanceof Macro) {
         return itemOrMacro;
       }
@@ -1445,6 +1451,7 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
         if (itemOrEffect instanceof CONFIG.Item.documentClass) item = itemOrEffect;
         if (!item) {
           const activity = fromUuidSync(foundry.utils.getProperty(effectData, "flags.dae.activity"));
+          // @ts-expect-error no dnd5e-types
           if (activity) item = activity.item;
         }
         macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
@@ -1471,10 +1478,11 @@ export async function getMacro({ change, name }, item, effectData): Promise<Macr
       img: null,
       command: macroCommand,
       author: game.user?.id,
-      ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER },
+      ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
       // TODO see if this should change.
+      // @ts-expect-error
       flags: { dnd5e: { itemMacro: true } }
-    }, { displaySheet: false, temporary: true });
+    });
   } else if (change.key === "actorUpdate") {
     console.error("Should not be trying to lookup the macro for actorUpdate")
   }
@@ -1567,7 +1575,8 @@ export async function applyActivityEffects(activity, activate, targets, activity
     //@ts-expect-error
     (typeof t === "string") ? fromUuidSync(t)?.actor : t
   );
-  targetList = targetList.map(t => (t instanceof Token) || (t instanceof TokenDocument) ? t.actor : t);
+  // @ts-expect-error v13ism
+  targetList = targetList.map(t => (t instanceof foundry.canvas.placeables.Token) || (t instanceof TokenDocument) ? t.actor : t);
   targetList = targetList.filter(t => t instanceof Actor);
   let localTargets = targetList.filter(t => macroLocation === "local" || (t.isOwner && macroLocation === "mixed")).map(t => t.uuid);
   let gmTargets = targetList.filter(t => (!t.isOwner && macroLocation === "mixed") || macroLocation === "GM").map(t => t.uuid);
@@ -1655,7 +1664,8 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
     //@ts-expect-error
     (typeof t === "string") ? fromUuidSync(t)?.actor : t
   );
-  targetList = targetList.map(t => (t instanceof Token) || (t instanceof TokenDocument) ? t.actor : t);
+  // @ts-expect-error v13ism
+  targetList = targetList.map(t => (t instanceof foundry.canvas.placeables.Token) || (t instanceof TokenDocument) ? t.actor : t);
   targetList = targetList.filter(t => t instanceof Actor);
   let localTargets = targetList.filter(t => macroLocation === "local" || (t.isOwner && macroLocation === "mixed")).map(t => t.uuid);
   let gmTargets = targetList.filter(t => (!t.isOwner && macroLocation === "mixed") || macroLocation === "GM").map(t => t.uuid);
@@ -1915,8 +1925,8 @@ export function preUpdateActorHook(candidate, updates, options, user) {
       if (foundry.utils.getProperty(updates, onUpdate.filter) === undefined) continue;
 
       const originObject: any = fromUuidSync(onUpdate.origin);
-      const sourceTokenDocument = fromUuidSync(onUpdate.sourceTokenUuid)
-      const targetTokenDocument = fromUuidSync(onUpdate.targetTokenUuid);
+      const sourceTokenDocument = fromUuidSync(onUpdate.sourceTokenUuid) as TokenDocument | undefined;
+      const targetTokenDocument = fromUuidSync(onUpdate.targetTokenUuid) as TokenDocument | undefined;
       const sourceActor = actorFromUuid(onUpdate.sourceActorUuid);
       const sourceToken = sourceTokenDocument?.object;
       const targetActor = targetTokenDocument?.actor;
@@ -1924,7 +1934,7 @@ export function preUpdateActorHook(candidate, updates, options, user) {
       let originItem: any = (originObject instanceof Item) ? originObject : undefined;
       if (!originItem && originObject instanceof ActiveEffect) originItem = originObject.parent;
       if (!originItem) {
-        const theEffect = targetActor.appliedEffects.find(ef => ef.origin === onUpdate.origin);
+        const theEffect = targetActor?.appliedEffects.find(ef => ef.origin === onUpdate.origin) ?? {};
         if (foundry.utils.getProperty(theEffect, "flags.dae.itemUuid")) {
           originItem = fromUuidSync(foundry.utils.getProperty(theEffect, "flags.dae.itemUuid"));
         }
@@ -1935,10 +1945,10 @@ export function preUpdateActorHook(candidate, updates, options, user) {
         effectId: null,
         origin: onUpdate.origin,
         efData: null,
-        actorId: targetActor.id,
-        actorUuid: targetActor.uuid,
-        tokenId: targetToken.id,
-        tokenUuid: targetTokenDocument.uuid,
+        actorId: targetActor?.id,
+        actorUuid: targetActor?.uuid,
+        tokenId: targetToken?.id,
+        tokenUuid: targetTokenDocument?.uuid,
         actor: candidate,
         updates,
         options,
@@ -2067,6 +2077,7 @@ Hooks.on("spotlightOmnisearch.indexBuilt", async (index, promises) => {
     }))
   );
   for (let entry of entries) {
+    // @ts-expect-error module
     index.push(new CONFIG.SpotlightOmnisearch.SearchTerm({
       icon: ["fas fa-heart"],
       dragData: { fieldName: entry.key },
@@ -2305,7 +2316,6 @@ async function updateStatusEffects(doc, options, userId) {
   let newStatuses: Set<string> = new Set; // actor.statuses;
   for (let effect of actor.allApplicableEffects()) {
     if (effect.flags?.dae?.autoCreated) { // even if disabled auto created effects should be included in current statuses
-      //@ts-ignore .union
       currentStatuses = currentStatuses.union(effect.statuses)
       continue;
     }
@@ -2313,7 +2323,6 @@ async function updateStatusEffects(doc, options, userId) {
       effect.determineSuppression();
     if (!effect.active) continue;
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
-    //@ts-ignore .union
     newStatuses = newStatuses.union(effect.statuses);
   }
   await applyStatusEffectChanges(actor, undefined, currentStatuses, newStatuses, true);
@@ -2337,7 +2346,7 @@ async function applyRequiredStatusEffectsHook(effect, options, userId) {
     let appliedStatuses: Set<string> = actorAppliedStatues(actor);
 
     if (CONFIG.statusEffects.find(se => se._id === effect._id))
-      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id).id);
+      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id)?.id ?? "");
     // appliedStatuses = appliedStatuses.union(effect.statuses);
     warn("applyRequiredStatusEffectsHook", myid, effect.name, effect._id, actor.name, requiredStatuses, appliedStatuses);
     for (let status of requiredStatuses) {
@@ -2348,7 +2357,7 @@ async function applyRequiredStatusEffectsHook(effect, options, userId) {
         await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
         appliedStatuses = actorAppliedStatues(actor);
         if (CONFIG.statusEffects.find(se => se._id === effect._id))
-          appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id).id);
+          appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id)?.id ?? "");
         appliedStatuses = appliedStatuses.union(effect.statuses);
       }
     }
@@ -2367,7 +2376,7 @@ function actorAppliedStatues(actor): Set<string> {
     if (!effect.active) continue;
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
     if (CONFIG.statusEffects.find(se => se._id === effect._id))
-      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id).id);
+      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id)?.id ?? "");
   }
   return appliedStatuses;
 
@@ -2392,10 +2401,10 @@ async function applyRequiredStatusEffects(wrapped, data, options, userId) {
       if (!effect.active) continue;
       if (effect.flags?.["dfreds-convenient-effects"]) continue;
       if (CONFIG.statusEffects.find(se => se._id === effect._id))
-        appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id).id);
+        appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id)?.id ?? "");
     }
     if (CONFIG.statusEffects.find(se => se._id === this._id))
-      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === this._id).id);
+      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === this._id)?.id ?? "");
     warn("applyRequiredStatusEffects", myid, this.name, this._id, actor, requiredStatuses, appliedStatuses);
     for (let status of requiredStatuses) {
       warn("checking status", myid, status);
@@ -2432,12 +2441,10 @@ async function applyStatusEffects(theEffect: any, includeEffect: boolean, contex
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
     if (effect.uuid === theEffect.uuid) continue; // skip existing effect it will be added in if needed
 
-    //@ts-ignore .union
     newStatuses = newStatuses.union(effect.statuses);
   }
   if (includeEffect && theEffect instanceof ActiveEffect) {
     const docStatuses = context.statuses ?? theEffect.statuses;
-    //@ts-ignore .union
     newStatuses = newStatuses.union(docStatuses);
   }
   const doc_id = theEffect._id;
@@ -2459,7 +2466,7 @@ async function applyStatusEffectChanges(actor, effect: any | undefined, currentS
     const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
     if (!statusEffect) continue;
     if (!statusEffect._id) continue; // status effects should have a fixed _id
-    if (statusEffect.statuses?.includes(status)) continue; // Self referential statuses cause problems
+    if ((statusEffect.statuses as Array<string>)?.includes(status)) continue; // Self referential statuses cause problems
     if (!statusEffect || (statusEffect._id === effect?._id && includeEffect)) continue; // includeEffect true means the status effect is being added so don't double up
     if (!effect?.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses not present on the actor that should be
@@ -2471,7 +2478,7 @@ async function applyStatusEffectChanges(actor, effect: any | undefined, currentS
     const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
     if (!statusEffect) continue;
     if (!statusEffect._id) continue; // status effects should have a fixed _id
-    if (statusEffect.statuses?.includes(status)) continue; // Self referential statuses cause problems
+    if ((statusEffect.statuses as Array<string>)?.includes(status)) continue; // Self referential statuses cause problems
     if (!statusEffect || (statusEffect._id === effect?._id && !includeEffect)) continue; // includeEffect being false means the effect is being removed so don't double up
     if (!effect?.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses present on the actor that should not be
@@ -2624,7 +2631,8 @@ export function getTokenDocument(tokenRef: Token | TokenDocument | string | Acto
     //@ts-expect-error fromUuidSync
     const entity = fromUuidSync(tokenRef);
     if (entity instanceof TokenDocument) return entity;
-    if (entity instanceof Token) return entity.document;
+    // @ts-expect-error v13ism
+    if (entity instanceof foundry.canvas.placeables.Token) return entity.document;
     if (entity instanceof Actor) {
       if (entity.isToken) return entity.token ?? undefined;
       else return entity.getActiveTokens(false, true)[0];
@@ -2632,7 +2640,8 @@ export function getTokenDocument(tokenRef: Token | TokenDocument | string | Acto
     return undefined;
   }
   if (tokenRef instanceof TokenDocument) return tokenRef;
-  if (tokenRef instanceof Token) return tokenRef.document;
+  // @ts-expect-error v13ism
+  if (tokenRef instanceof foundry.canvas.placeables.Token) return tokenRef.document;
   if (tokenRef instanceof Actor) {
     // actor.token returns a token document
     if (tokenRef.isToken) return tokenRef.token ?? undefined;
@@ -2642,14 +2651,16 @@ export function getTokenDocument(tokenRef: Token | TokenDocument | string | Acto
 
 export function getToken(tokenRef: Token | TokenDocument | string | Actor): Token | undefined {
   if (!tokenRef) return undefined;
-  if (tokenRef instanceof Token) return tokenRef;
+  // @ts-expect-error v13ism
+  if (tokenRef instanceof foundry.canvas.placeables.Token) return tokenRef;
   if (tokenRef instanceof TokenDocument) return tokenRef.object ?? undefined;
   let entity: any = tokenRef;
   if (typeof tokenRef === "string") {
     //@ts-expect-error fromUuidSync
     entity = fromUuidSync(tokenRef);
   }
-  if (entity instanceof Token) return entity;
+  // @ts-expect-error v13ism
+  if (entity instanceof foundry.canvas.placeables.Token) return entity;
   if (entity instanceof TokenDocument) return entity.object ?? undefined;
   if (entity instanceof Actor) return tokenForActor(entity);
   if (entity instanceof Item && entity.parent instanceof Actor) return tokenForActor(entity.parent);
@@ -2695,7 +2706,6 @@ export function tokensForActor(actorRef: Actor | string | undefined | null): Tok
   if (actor.token) return [actor.token.object];
   if (!(actor instanceof Actor)) return undefined;
 
-  // @ts-expect-error types gets mixed up
   const tokens: Token[] = actor.getActiveTokens();
   if (!tokens.length) return undefined;
   const controlled = tokens.filter(t => t.controlled);
@@ -2743,7 +2753,7 @@ export async function toggleActorStatusEffectPossible(actor: Actor, statusId: st
   try {
     const statusEffect = CONFIG.statusEffects.find(e => e.id === statusId);
     preCreateActiveEffectHookId = Hooks.on("preCreateActiveEffect", (effect: any, data: any, options: any, userId: string) => {
-      if (effect._id !== statusEffect._id) return;
+      if (effect._id !== statusEffect?._id) return;
       if (origin) effect.updateSource({ origin });
       if (enableCondition?.length) effect.updateSource({ "flags.dae.enableCondition": enableCondition });
       if (overlay) effect.updateSource({ "flags.core.overlay": true });
@@ -2765,7 +2775,7 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, { 
   let existing: ActiveEffect[] = [];
   // Find the effect with the static _id of the status effect
   if (status._id) {
-    const effect: ActiveEffect | undefined = actor.effects.get(status._id);
+    const effect: ActiveEffect | undefined = actor.effects.get(status._id as string);
     if (effect?.id) existing.push(effect);
   }
 
@@ -2895,9 +2905,6 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
   }
   await token?.drawEffects();
 }
-
-// @ts-expect-error
-const CONFIG: any = globalThis.CONFIG;
 
 export function enumerateBaseValues(objectDataModels: any[], logErrors: boolean = true): any {
   const baseValues: any = {};

@@ -1,5 +1,6 @@
 import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, maxShortDuration } from "./dae.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
+import { MustBeValidUuid } from "fvtt-types/utils";
 
 export class GMActionMessage {
   action: string;
@@ -43,13 +44,12 @@ export let setupSocket = () => {
 }
 
 async function _itemReplaceEffects(data) {
-  const item = fromUuidSync(data.itemUuid);
-  // await item.update({"effects": []});
-  return item.update({ "effects": data.effects });
+  const item = fromUuidSync(data.itemUuid) as Item | undefined;
+  return item?.update({ "effects": data.effects });
 }
 
 async function _updateActor(data) {
-  const actor = await fromUuid(data.actorUuid);
+  const actor = (await fromUuid(data.actorUuid)) as Actor | undefined;
   return actor?.update(data.update, data.context)
 }
 
@@ -164,14 +164,11 @@ async function _suspendActiveEffect(data: { uuid: string }) {
 async function _deleteUuid(data: { uuid: string }) {
   // don't allow deletion of compendium entries or world Items
   if (data.uuid.startsWith("Compendium") || data.uuid.startsWith("Item")) return false;
-  //@ts-expect-error fromUuidSync
-  const entity = fromUuidSync(data.uuid);
+  const entity = fromUuidSync(data.uuid as MustBeValidUuid<string>);
   if (!entity) return false;
   if (entity instanceof Item.implementation) return await entity.delete();
-  // @ts-expect-error
   if (entity instanceof TokenDocument.implementation) return await entity.delete();
   if (entity instanceof ActiveEffect.implementation) return await entity.delete();
-  // @ts-expect-error
   if (entity instanceof MeasuredTemplateDocument.implementation) return await entity.delete();
   return false;
 }
@@ -181,11 +178,11 @@ function _testMessage(data) {
   return "Test message received and processed";
 }
 async function _setTokenVisibility(data) {
-  await fromUuidSync(data.tokenUuid)?.update({ hidden: data.hidden })
+  await (fromUuidSync(data.tokenUuid as MustBeValidUuid<string>) as TokenDocument)?.update({ hidden: data.hidden })
 }
 
 async function _setTileVisibility(data) {
-  return await fromUuidSync(data.tileUuid)?.update({ visible: data.hidden })
+  return await (fromUuidSync(data.tileUuid as MustBeValidUuid<string>) as TileDocument)?.update({ hidden: data.hidden })
 }
 
 async function _applyActiveEffects(data) {
@@ -226,6 +223,7 @@ async function _setFlag(data: { actorUuid: string | undefined, actorId: string |
 }
 
 async function _unsetFlag(data: { actorUuid: string, flagId: string }) {
+  // @ts-expect-error can't know about flags
   return await actorFromUuid(data.actorUuid)?.unsetFlag("dae", data.flagId)
 }
 
@@ -311,6 +309,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
     let targetActor = fromUuidSync(targetActorUuid);
     if (!targetActor) continue;
     if (targetActor instanceof TokenDocument) targetActor = targetActor.actor; // for backwards compatibility
+    if (!(targetActor instanceof Actor)) continue; // TODO: verify this is always true
 
     // Removal of existing is now handled by _preCreateActiveEffect override.
     // TODO workout what to do if activate is false? does not seem to be used anywhere to force delete effects
@@ -477,12 +476,11 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
 
       if (dupEffects.length > 0) {
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
-        let createdEffects = await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData });
+        let createdEffects = (await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData })) ?? [];
         for (let effect of createdEffects) {
-          const origin = fromUuidSync(effect.origin);
-          if (origin?.addDependent) {
-            await origin.addDependent(effect);
-          }
+          const origin = fromUuidSync(effect.origin as MustBeValidUuid<string>);
+          // @ts-expect-error
+          if (origin?.addDependent) await origin.addDependent(effect);
         }
       }
     }

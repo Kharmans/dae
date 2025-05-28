@@ -9,8 +9,6 @@ import { checkLibWrapperVersion } from './module/migration.js';
 import { setupPatching, initPatching } from './module/patching.js';
 import API from './module/API/api.js';
 
-//@ts-expect-error
-export const CONFIG: any = globalThis.CONFIG;
 export const ArrayField = foundry.data.fields.ArrayField;
 export const ObjectField = foundry.data.fields.ObjectField
 export const BooleanField = foundry.data.fields.BooleanField;
@@ -124,6 +122,7 @@ Hooks.once('setup', function () {
     // Set API
     const data:any = game.modules?.get("dae");
     data.api = API;
+    // @ts-expect-error types doesn't know
     globalThis.DAE = game.modules?.get("dae")?.api;
 
     setupSocket();
@@ -133,7 +132,6 @@ Hooks.once('setup', function () {
 
 export async function confirmAction(toCheck: boolean, confirmFunction, title = i18n("dae.confirm")) {
   if (toCheck || await foundry.applications.api.DialogV2.confirm({
-    // @ts-expect-error types issue
     window: {title},
     content: `<p>${i18n("dae.sure")}</p>`,
     rejectClose: false
@@ -211,6 +209,7 @@ export async function createDAEMacros() {
             },
             flags: { "dae-version": macroSpec.version ?? daeVersion }
           };
+          // @ts-expect-error types silliness
           await Macro.createDocuments([macroData]);
           log(`Macro ${macroData.name} created`);
         }
