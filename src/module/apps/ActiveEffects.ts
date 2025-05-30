@@ -9,15 +9,7 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
   foundry.applications.api.DocumentSheetV2.RenderContext
 > {
   static filters = new Set();
-  hookId: number | null = null;
-  itemHookId: number | null = null;
-  effectHookIdu: number | null = null;
-  effectHookIdc: number | null = null;
   effectHookIdd: number | null = null;
-  effectHookIdt: number | null = null;
-  effectHookIda: number | null = null;
-  timeHookId: number | null = null;
-  combatHookId: number | null = null;
   declare effectList: Record<string, string>;
   
   static override DEFAULT_OPTIONS = {
@@ -186,7 +178,7 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
 
   static async #onEditEffect(this: ActiveEffects, _event: PointerEvent, target: HTMLElement) {
     if (this.document.parent instanceof Item) return; // TODO think about editing effects on items in bags
-    const effectUuid = target.closest<HTMLElement>("data-effect-uuid]")?.dataset.effectUuid;
+    const effectUuid = target.closest<HTMLElement>("[data-effect-uuid]")?.dataset.effectUuid;
     if (!effectUuid) return;
     const effect: ActiveEffect | null = await fromUuid(effectUuid);
     // @ts-expect-error types doesn't know this is definitely AppV2
@@ -216,6 +208,7 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
     }
   }
 
+  // TODO: nuke these last two, if possible
   async _onRender(context, options) {
     super._onRender(context, options);
 
@@ -224,51 +217,13 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
         this.render();
       }
     };
-    function itemHandler(this: ActiveEffects, item, data, options, user) {
-      if (this.document.id === item.id || item.parent?.id === this.document.id) {
-        this.render();
-      }
-    };
-    function tmHandler(this: ActiveEffects, worldTime: number, dt: number) {
-      if (Array.from(this.document.effects).some(ef => ef.isTemporary))
-        this.render();
-    }
-    function tkHandler(this: ActiveEffects, token, update, options, user) {
-      if (token.actor.id !== this.document.id) return;
-      this.render();
-    }
-    function actHandler(actor, updates, options, user) {
-      if (actor.id !== this.document.id) return;
-      this.render();
-    }
   
-    if (!this.effectHookIdu)
-      this.effectHookIdu = Hooks.on("updateActiveEffect", efHandler.bind(this, "update"));
-    if (!this.effectHookIdc)
-      this.effectHookIdc = Hooks.on("createActiveEffect", efHandler.bind(this, "create"));
     if (!this.effectHookIdd)
       this.effectHookIdd = Hooks.on("deleteActiveEffect", efHandler.bind(this, "delete"));
-    if (!this.itemHookId)
-      this.itemHookId = Hooks.on("updateItem", itemHandler.bind(this))
-    if (!this.effectHookIdt)
-      this.effectHookIdt = Hooks.on("updateToken", tkHandler.bind(this));
-    if (!this.effectHookIda)
-      this.effectHookIda = Hooks.on("updateActor", actHandler.bind(this));
-    if (!this.timeHookId)
-      this.timeHookId = Hooks.on("updateWorldTime", tmHandler.bind(this))
-    if (!this.combatHookId)
-      this.combatHookId = Hooks.on("updateCombat", tmHandler.bind(this));
   }
   
   async _preClose(options) {
     await super._preClose(options);
-    if (this.effectHookIdu) Hooks.off("updateActiveEffect", this.effectHookIdu);
-    if (this.effectHookIdc) Hooks.off("createActiveEffect", this.effectHookIdc);
     if (this.effectHookIdd) Hooks.off("deleteActiveEffect", this.effectHookIdd);
-    if (this.timeHookId) Hooks.off("updateWorldTime", this.timeHookId);
-    if (this.effectHookIdt) Hooks.off("updateToken", this.effectHookIdt);
-    if (this.effectHookIda) Hooks.off("updateActor", this.effectHookIda);
-    if (this.itemHookId) Hooks.off("updateItem", this.itemHookId);
-    if (this.combatHookId) Hooks.off("updateCombat", this.combatHookId);
   }
 }
