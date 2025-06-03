@@ -300,9 +300,11 @@ export async function macroActorUpdate(...args) {
       console.warn(`dae | macro.actorUpdate user ${game.user?.name} is updating ${actor.name} ${targetField}`);
     }
     switch (type) {
-      case "boolean": value = JSON.parse(value) ? true : false;
+      case "boolean": 
+        value = JSON.parse(value) ? true : false;
+        break;
       case "number": 
-      let op = " ";
+        let op = " ";
         if (typeof value === "string") {
           value=value.trim();
           op = value[0];
