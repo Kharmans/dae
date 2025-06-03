@@ -11,41 +11,29 @@ export function addAutoFields(fields: string[]) {
   otherFields = Array.from(newFields).sort();
 }
 
-// TODO: Remove this stub once on v13 types
-declare module "fvtt-types/configuration" {
-  namespace foundry.applications.sheets {
-    class ActiveEffectConfig extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
-      document: ActiveEffect.Implementation;
-      submit: Function;
-      _processFormData: Function;
-      form: any;
-    }
-  }
-}
-
-export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEffectConfig ?? ActiveEffectConfig) {
-  tokenMagicEffects;
-  cltConditionList;
-  ceEffectList;
-  statusEffectList;
-  ConditionalVisibilityList;
-  ConditionalVisibilityVisionList;
-  ATLPresets;
-  ATLVisionModes;
-  validFields;
-  validSpecsToUse;
-  // @ts-expect-error
-  daeFieldBrowser: DAEFieldBrowser;
+export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEffectConfig {
+  declare tokenMagicEffects: Record<string, string>;
+  declare cltConditionList?: Record<string, string>;
+  declare ceEffectList?: Record<string, string>;
+  declare statusEffectList: Record<string, string>;
+  declare ConditionalVisibilityList?: Record<string, string>;
+  declare ConditionalVisibilityVisionList?: Record<string, string>;
+  declare ATLPresets?: Record<string, string>;
+  declare ATLVisionModes?: Record<string, string>;
+  declare validFields: Record<string, string>;
+  declare validSpecsToUse: {
+    allSpecs: ValidSpec[];
+    allSpecsObj: Record<string, ValidSpec>;
+    baseSpecs: ValidSpec[];
+    baseSpecsObj: Record<string, ValidSpec>;
+    derivedSpecs: ValidSpec[],
+    derivedSpecsObj: Record<string, ValidSpec>;
+  };
+  declare daeFieldBrowser: DAEFieldBrowser;
 
   // object: any; Patch 4535992 Why ???
-  constructor(options: any = {}, v12Options) {
-    const object = options.document ?? options.document ?? options; //(options instanceof Document) ? options : options.document;
-    if (!v12Options) {
-      super(options);
-    } else {
-      // @ts-expect-error v12 shenanigans
-      super(options, v12Options);
-    }
+  constructor(options: Partial<foundry.applications.sheets.ActiveEffectConfig.Configuration>) {
+    super(options);
     this.tokenMagicEffects = {};
     if (globalThis.TokenMagic?.getPresets) {
       globalThis.TokenMagic.getPresets().forEach(preset => {
@@ -64,6 +52,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
       this.cltConditionList = {}
       //@ts-expect-error .clt
       game.clt.conditions?.forEach(cltc => {
+        // @ts-expect-error for some reason
         this.cltConditionList[cltc.id] = cltc.name;
       })
     }
@@ -88,6 +77,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     if (ceInterface) {
       this.ceEffectList = {};
       if (ceInterface.findEffects)
+        // @ts-expect-error for some reason
         ceInterface.findEffects().forEach(ceEffect => { this.ceEffectList[ceEffect.name] = ceEffect.name; });
       else {
         //@ts-expect-error
@@ -95,7 +85,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
       }
     }
 
-    if (atlActive && !isEnchantment(object)) {
+    if (atlActive && !isEnchantment(options.document!)) {
       this.ATLPresets = {};
       //@ts-expect-error
       game.settings?.get("ATL", "presets")?.forEach(preset => this.ATLPresets[preset.name] = preset.name);
@@ -127,24 +117,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     this.daeFieldBrowser.init();
   }
 
-  /** @override */
-  static get defaultOptions() {
-    // @ts-expect-error v12-shenanigans
-    return foundry.utils.mergeObject(super.defaultOptions ?? {}, {
-      classes: ["sheet", "active-effect-sheet window-app"],
-      title: "EFFECT.ConfigTitle",
-      template: `./modules/dae/templates/DAEActiveSheetConfig.html`,
-      width: 900,
-      height: "auto",
-      resizable: true,
-      tabs: [{ navSelector: ".tabs", contentSelector: "form", initial: "details" }],
-      dragDrop: [{ dropSelector: ".value" }, { dropSelector: ".key" }],
-      scrollY: [".dae-scrollable-list .scrollable"],
-      viewPermission: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,
-    });
-  }
-
-  static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS ?? {}, {
+  static DEFAULT_OPTIONS = {
     window: {
       title: "EFFECT.ConfigTitle",
       resizable: true
@@ -158,12 +131,12 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
       addSpecialDuration: DAEActiveEffectConfig.#onAddSpecialDuration,
       deleteSpecialDuration: DAEActiveEffectConfig.#onDeleteSpecialDuration
     }
-  }, { inplace: false });
+  };
 
   static PARTS = foundry.utils.mergeObject(super.PARTS ?? {}, {
-    details: {template: "./modules/dae/templates/DAESheetConfig/Details.hbs"},
+    details: {template: "./modules/dae/templates/DAESheetConfig/Details.hbs", scrollable: [""]},
     duration: {template: "./modules/dae/templates/DAESheetConfig/Duration.hbs"},
-    changes: {template: "./modules/dae/templates/DAESheetConfig/Changes.hbs"}
+    changes: {template: "./modules/dae/templates/DAESheetConfig/Changes.hbs", scrollable: ["scrollable"]}
   }, {inplace: false});
 
   /* ----------------------------------------- */
@@ -188,7 +161,9 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     return daeSystemClass.getOptionsForSpec(spec);
   }
 
-  async prepHelper(document: ActiveEffect.Implementation, context, options?) {
+  async _prepareContext(options) {
+    const context: DAEActiveEffectConfigRenderContext = await super._prepareContext(options);
+    const document = this.document;
     if (document.parent instanceof CONFIG.Actor.documentClass || document instanceof CONFIG.Actor.documentClass) {
       this.validSpecsToUse = ValidSpec.actorSpecs[document.parent?.type ?? ""]
     }
@@ -213,7 +188,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     }
     if (!this.validSpecsToUse) {
       ui.notifications?.error("DAE | No valid specs found");
-      return;
+      return context;
     }
     this.validFields = { "__": "" }
     this.validFields = this.validSpecsToUse.allSpecs
@@ -252,33 +227,40 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
 
     if (document.parent) {
       context.isItemEffect = document.parent instanceof CONFIG.Item.documentClass;
-      context.isActorEffrect = document.parent instanceof CONFIG.Actor.documentClass;
+      context.isActorEffect = document.parent instanceof CONFIG.Actor.documentClass;
     }
     context.validFields = this.validFields;
     context.submitText = "EFFECT.Submit";
 
-    (context.source ?? context.effect).changes.forEach(change => {
+    context.source!.changes.forEach(change => {
       if ([-1, undefined].includes(this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
+        // @ts-expect-error dae-added in-memory property
         change.modes = allModes;
       } else if (this.validSpecsToUse.allSpecsObj[change.key]) {
         const mode = {};
         mode[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
+        // @ts-expect-error dae-added in-memory property
         change.modes = mode;
       } /*else if (!this.validSpecsToUse.allSpecsObj[change.key].startsWith("flags.midi-qol")) {
         change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
       }*/
 
       if (this.validSpecsToUse.allSpecsObj[change.key]?.options)
+        // @ts-expect-error dae-added in-memory property
         change.options = this.validSpecsToUse.allSpecsObj[change.key]?.options;
       else
+        // @ts-expect-error dae-added in-memory property
         change.options = this.getOptionsForSpec(change);
       if (!change.priority) change.priority = change.mode * 10;
 
       const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
+      // @ts-expect-error dae-added in-memory property
       change.fieldName = fieldInfo.name;
+      // @ts-expect-error dae-added in-memory property
       change.fieldDescription = fieldInfo.description;
       if (fieldInfo.name === change.key && !change.key.startsWith("flags")) {
         // Could not find the key so set the name to <UNKNOWN>
+        // @ts-expect-error dae-added in-memory property
         change.fieldName = "<UNKNOWN>";
       }
 
@@ -295,7 +277,8 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     }
     // @ts-expect-error
     foundry.utils.setProperty(context.document, "flags.dae.durationExpression", document.flags?.dae?.durationExpression);
-    if (!(context.effect ?? context.document).flags?.dae?.specialDuration || !((context.effect ?? context.document).flags.dae.specialDuration instanceof Array))
+    // @ts-expect-error can't know about flags
+    if (!context.document.flags?.dae?.specialDuration || !(context.document.flags.dae.specialDuration instanceof Array))
       foundry.utils.setProperty(context.document.flags, "dae.specialDuration", []);
     context.sourceName = await document.sourceName;
     context.midiActive = globalThis.MidiQOL !== undefined;
@@ -303,24 +286,9 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     context.isConditionalActivationEffect = document.parent?.name === i18n("dae.ConditionalEffectsItem");
     if (context.isConditionalActivationEffect) {
       context.transfer = false;
-      if (context.effect) context.effect.transfer = false;
-      if (context.document) context.document.transfer = false;
+      context.document.transfer = false;
     }
     return context;
-  }
-
-  // TODO: Kill once v12 is over
-  /** @override */
-  async getData(options?): Promise<any> {
-    // @ts-expect-error v12 shenanigans
-    const context = await super.getData(options);
-    // @ts-expect-error v12 shenanigans
-    return this.prepHelper(this.object, context, options);
-  }
-
-  async _prepareContext(options?) {
-    const context = await super._prepareContext(options);
-    return this.prepHelper(this.document, context, options);
   }
 
   updateFieldInfo() {
@@ -340,31 +308,14 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     });
   }
 
-  _onRender(context, options) {
+  async _onRender(context, options) {
     // @ts-expect-error
     const currTabId = Object.values(context.tabs)?.find(i => i.active)?.id;
     if (currTabId !== "changes") this.position.height = this.element.offsetHeight ?? "auto";
     const keyInputs = Array.from(this.element.querySelectorAll(".key-input"));
     for (const keyInput of keyInputs) {
-      keyInput.addEventListener("click", this._onKeyInputInteraction.bind(this));
-      keyInput.addEventListener("input", this._onKeyInputInteraction.bind(this));
-    }
-  }
-
-  /** @override */
-  activateListeners(html) {
-    // @ts-expect-error v12 shenanigans
-    super.activateListeners(html);
-
-    // html.find(".effectTransfer").on("click", event => {
-    //   this.object.transfer = !this.object.transfer;
-    //   this.render(true);
-    // });
-
-    const keyInputs: Element[] = Array.from(this.element[0].querySelectorAll(".key-input"));
-    for (const keyInput of keyInputs) {
-      keyInput.addEventListener("click", this._onKeyInputInteraction.bind(this));
-      keyInput.addEventListener("input", this._onKeyInputInteraction.bind(this));
+      keyInput.addEventListener("click", this.#onKeyInputInteraction.bind(this));
+      keyInput.addEventListener("input", this.#onKeyInputInteraction.bind(this));
     }
   }
 
@@ -378,7 +329,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     this.setPosition(newPos);
   }
 
-  private _onKeyInputInteraction(event): void {
+  #onKeyInputInteraction(event: Event): void {
     const input = event.currentTarget as HTMLInputElement;
     this.daeFieldBrowser.setInput(input);
 
@@ -412,7 +363,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
 
   static #onAddSpecialDuration() {
     // @ts-expect-error static doesn't seem to inherit
-    const submitData = this._processFormData(null, this.form, new FormDataExtended(this.form));
+    const submitData = this._processFormData(null, this.form, new foundry.applications.ux.FormDataExtended(this.form));
     const specialDuration = Object.values(submitData.flags?.dae?.specialDuration ?? {});
     // @ts-expect-error as above
     return this.submit({
@@ -425,7 +376,7 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
 
   static #onDeleteSpecialDuration(event) {
     // @ts-expect-error as above
-    const submitData = this._processFormData(null, this.form, new FormDataExtended(this.form));
+    const submitData = this._processFormData(null, this.form, new foundry.applications.ux.FormDataExtended(this.form));
     const specialDuration = Object.values(submitData.flags?.dae?.specialDuration ?? {});
     const idx = Number(event.target.closest("li").dataset.index) || 0;
     specialDuration.splice(idx, 1);
@@ -438,109 +389,53 @@ export class DAEActiveEffectConfig extends (foundry.applications.sheets.ActiveEf
     });
   }
 
-  /* ----------------------------------------- */
-  // V12 only
-  async _onEffectControl(event) {
-    event.preventDefault();
-    const button = event.currentTarget;
-    switch (button.dataset.action) {
-      case "add":
-        return this._addEffectChange();
-      case "delete":
-        button.closest(".effect-change").remove();
-        return this.submit({ preventClose: true }).then(() => this.render()) as Promise<this>;
-      case "add-specDur":
-        this._addSpecDuration();
-        return this.submit({ preventClose: true }).then(() => this.render()) as Promise<this>;
-      case "delete-specDur":
-        button.closest(".effect-special-duration").remove();
-        return this.submit({ preventClose: true }).then(() => this.render()) as Promise<this>;
-    }
-    return this;
-  }
-
-  _addSpecDuration() {
-    // @ts-expect-error v12 shenanigans
-    const idx = this.object.flags?.dae.specialDuration?.length ?? 0;
-    // @ts-expect-error v12 shenanigans
-    if (idx === 0) foundry.utils.setProperty(this.object, "flags.dae.specialDuration", []);
-    return this.submit({
-      preventClose: true, updateData: {
-        [`flags.dae.specialDuration.${idx}`]: ""
-      }
-    });
-  }
-
-  /* ----------------------------------------- */
-
-  async _addEffectChange(): Promise<this> {
-    // @ts-expect-error v12 shenanigans
-    const idx = (this.document ?? this.object).changes.length;
-    return (this.submit({
-      preventClose: true, updateData: {
-        [`changes.${idx}`]: { key: "", mode: CONST.ACTIVE_EFFECT_MODES.ADD, value: "" }
-      }
-    })) ?? this;
-  }
-
-  submitHelper(document: ActiveEffect.Implementation, data) {
-    for (let change of data.changes ?? []) {
+  async _processSubmitData(event, form, submitData) {
+    const document = this.document;
+    for (let change of submitData.changes ?? []) {
       if (typeof change.priority === "string") change.priority = Number(change.priority);
       if (change.priority === undefined || isNaN(change.priority)) change.priority = change.mode ? change.mode * 10 : 0;
     }
-    if (!data.tint || data.tint === "") data.tint = null;
+    if (!submitData.tint || submitData.tint === "") submitData.tint = null;
     // fixed for very old items
-    if (document.origin?.includes("OwnedItem.")) data.origin = document.origin.replace("OwnedItem.", "Item.");
-    if (data.flags?.dae?.enableCondition?.length > 0) data.transfer = false;
-    if (data.transfer && !isEnchantment(document)) data.origin = document.parent?.uuid;
-    else delete data.origin;
-    if (isEnchantment(document)) data.transfer = false;
-    data.statuses ??= [];
+    if (document.origin?.includes("OwnedItem.")) submitData.origin = document.origin.replace("OwnedItem.", "Item.");
+    if (submitData.flags?.dae?.enableCondition?.length > 0) submitData.transfer = false;
+    if (submitData.transfer && !isEnchantment(document)) submitData.origin = document.parent?.uuid;
+    else delete submitData.origin;
+    if (isEnchantment(document)) submitData.transfer = false;
+    submitData.statuses ??= [];
 
-    foundry.utils.setProperty(data, "flags.dae.specialDuration", Array.from(Object.values(data.flags?.dae?.specialDuration ?? {})))
-    return data;
-  }
-
-  async _processSubmitData(event, form, submitData) {
-    submitData = this.submitHelper(this.document, submitData);
+    foundry.utils.setProperty(submitData, "flags.dae.specialDuration", Array.from(Object.values(submitData.flags?.dae?.specialDuration ?? {})))
     await this.document.update(submitData);
-  }
-
-  _getSubmitData(updateData: any = {}) {
-    // @ts-expect-error v12 shenanigans
-    const data = this.submitHelper(this.object, super._getSubmitData(updateData))
-    return data;
   }
   /* ----------------------------------------- */
 
-  /** @override */
-  async _updateObject(event, formData) {
-    if (formData.duration) {
-      //@ts-expect-error isNumeric
-      if (Number.isNumeric(formData.duration?.startTime) && Math.abs(Number(formData.duration.startTime) < 3600)) {
-        let startTime = parseInt(formData.duration.startTime);
-        if (Math.abs(startTime) <= 3600) { // Only acdept durations of 1 hour or less as the start time field
-          formData.duration.startTime = (game.time?.worldTime ?? 0) + parseInt(formData.duration.startTime);
-        }
-        // @ts-expect-error v12-shenanigans
-      } else if (this.object.parent?.isOwned) formData.duration.startTime = null;
-    }
-    if (isEnchantment(formData)) formData.transfer = false;
-    // @ts-expect-error v12-shenanigans
-    await this.object.update(formData);
-  }
 
-  /** @override */
-  async close(options = {}): Promise<this> {
-    // Once purely in v13 can probably make this happen in _preClose
-    // Though it seems right to do it this way, if there's any issue with overriding close, the closeDAEActiveEffectConfig hook can be used.
+  async _preClose(options) {
+    await super._preClose(options);
     if (this.daeFieldBrowser && this.daeFieldBrowser.browserElement) {
       this.daeFieldBrowser.browserElement.remove();
       this.daeFieldBrowser.browserElement = null;
     }
-
-    return super.close(options);
   }
+}
+
+interface DAEActiveEffectConfigRenderContext extends foundry.applications.sheets.ActiveEffectConfig.RenderContext {
+  modes?: Record<number, string>;
+  specialDuration?: Record<string, string>;
+  showSpecialDurations?: boolean;
+  macroRepeats?: Record<string, string>
+  stackableOptions?: Record<string, string>;
+  isItemEffect?: boolean;
+  isActorEffect?: boolean;
+  validFields?: Record<string, string>;
+  submitText?: string;
+  startTimeString?: string;
+  durationString?: string;
+  sourceName?: string;
+  midiActive?: boolean;
+  isEnchantment?: boolean;
+  isConditionalActivationEffect?: boolean;
+  transfer?: boolean;
 }
 
 export function geti18nTranslations() {

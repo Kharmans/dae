@@ -3,9 +3,9 @@
         <div class="dnd5e sheet actor inventory-filters flexrow dae-inventory-filters">
             <div class="dae-filter-container">
                 <ul class="filter-list flexrow dae-filter-list" data-filter="inventory">
-                <li class="filter-item dae-filter-item" data-filter="summary">{{localize "dae.summaryFilter"}}</li>
-                <li class="filter-item dae-filter-item" data-filter="enabled">{{localize "dae.enabledFilter"}}</li>
-                <li class="filter-item dae-filter-item" data-filter="temporary">{{localize "dae.temporaryFilter"}}</li>
+                    <li class="filter-item dae-filter-item{{#if summaryActive}} active{{/if}}" data-action="toggleFilter" data-filter="summary">{{localize "dae.summaryFilter"}}</li>
+                    <li class="filter-item dae-filter-item{{#if enabledActive}} active{{/if}}" data-action="toggleFilter" data-filter="enabled">{{localize "dae.enabledFilter"}}</li>
+                    <li class="filter-item dae-filter-item{{#if temporaryActive}} active{{/if}}" data-action="toggleFilter" data-filter="temporary">{{localize "dae.temporaryFilter"}}</li>
                 </ul>
             </div>
         </div>
@@ -26,13 +26,13 @@
                                     </select>
                                 </div>
 
-                                <a class="effect-add dae-effect-add" title={{localize dae.add}}><i class="fas fa-plus"></i></a>
+                                <a class="effect-add dae-effect-add" data-action="addEffect" title={{localize dae.add}}><i class="fas fa-plus"></i></a>
                             </div>
                         {{/if}}
                     </li>
 
                     {{#each actives as |effect iid|}}
-                        <li class="flexrow effect-header dae-effect-header" effect-id="{{effect._id}}" effect-uuid="{{effect.uuid}}">
+                        <li class="flexrow effect-header dae-effect-header" data-effect-id="{{effect._id}}" data-effect-uuid="{{effect.uuid}}">
                             <div class="effect-label dae-effect-label">
                                 <img src="{{effect.img}}" class="dae-effect-img">
                                 {{effect.name}}
@@ -56,8 +56,8 @@
                             {{/if}}
 
                             <div class="effect-controls dae-effect-list">
-                                <a class="effect-edit dae-effect-edit" title={{localize dae.edit}}><i class="fas fa-edit"></i></a>
-                                <a class="effect-delete dae-effect-delete" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
+                                <a class="effect-edit dae-effect-edit" data-action="editEffect" title={{localize dae.edit}}><i class="fas fa-edit"></i></a>
+                                <a class="effect-delete dae-effect-delete" data-action="deleteEffect" title={{localize dae.Delete}}><i class="fas fa-trash"></i></a>
                             </div>
                         </li>
                         {{#each effect.changes as |change cid|}}

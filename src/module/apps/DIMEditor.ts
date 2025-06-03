@@ -1,11 +1,10 @@
-import { AnyObject } from "fvtt-types/utils";
 import { debug } from "../../dae.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   document: Item.Implementation; // could be an activity too
 
-  static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
+  static override DEFAULT_OPTIONS = {
     classes: ["macro-config", "dimeditor"],
     tag: "form",
     window: {
@@ -18,11 +17,11 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     },
     form: { 
       closeOnSubmit: true,
-      handler: this.#processSubmitData as any
+      handler: this.#processSubmitData
     }
-  }, { inplace: false });
+  };
 
-  static PARTS = {
+  static override PARTS = {
     body: {template: "./modules/dae/templates/DIMEditor.hbs", root: true},
     footer: {template: "templates/generic/form-footer.hbs"}
   };
@@ -47,24 +46,11 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     context.buttons = [{
       type: "submit", icon: "fa-solid fa-save", label: "MACRO.Save"
     }];
-    context.isV12 = !foundry.utils.isNewerVersion(game.version ?? "", "13");
     return context;
   }
 
-  /*
-    Override
-  */
-  _onEditImage(event) {
-    debug("DIMEditor | _onEditImage  | ", { event });
-    // return ui.notifications.error(settings.i18n("error.editImage"));
-  }
-
-  /*
-    Override
-  */
-  static async #processSubmitData(event, form, formDataData) {
-    const command = new FormDataExtended(form)?.get("command");
-    // @ts-expect-error
+  static async #processSubmitData(this: DIMEditor, _event: Event, form: HTMLFormElement) {
+    const command = new foundry.applications.ux.FormDataExtended(form)?.get("command");
     await this.updateMacro(foundry.utils.mergeObject({ command, type: "script" }));
   }
 
@@ -81,7 +67,7 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
           scope: "global",
           command,
           author: game.user?.id,
-          ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS?.OWNER }
+          ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER }
         }, {}));
     }
   }

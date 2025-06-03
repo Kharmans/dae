@@ -5,7 +5,8 @@ export let applyActive = (itemName: string, activate: boolean = true, itemType: 
 }
 
 function getTokenUuid(token: Token | TokenDocument) {
-  if (token instanceof Token) return token.document.uuid;
+  // @ts-expect-error v13ism
+  if (token instanceof foundry.canvas.placeables.Token) return token.document.uuid;
   if (token instanceof TokenDocument) return token.uuid;
   return undefined;
 }
@@ -139,7 +140,6 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
 
 export async function setTokenVisibility(tokenOrId: string | Token, visible: boolean) {
   let tokenUuid: string;
-  //@ts-expect-error
   if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
   else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
   else tokenUuid = `Scene.${canvas?.scene?.id}.Token.${tokenOrId}`;
@@ -202,7 +202,8 @@ export async function setTokenFlag(tokenOrId: Token | string | TokenDocument, fl
     if (tokenOrId.startsWith("Scene.")) tokenUuid = tokenOrId;
     else tokenUuid = canvas?.scene?.tokens.get(tokenOrId)?.uuid ?? "";
   } 
-  else if (tokenOrId instanceof Token) tokenUuid = getTokenUuid(tokenOrId) ?? "";
+  // @ts-expect-error v13ism
+  else if (tokenOrId instanceof foundry.canvas.placeables.Token) tokenUuid = getTokenUuid(tokenOrId) ?? "";
   else if (tokenOrId instanceof TokenDocument) tokenUuid = tokenOrId.uuid ?? "";
   return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
 }
@@ -240,7 +241,8 @@ export async function setFlag(tactor: Actor | Token | string, flagId: string, va
     // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
   let actor: Actor | undefined | null;
-  if (tactor instanceof Token) actor = tactor.actor;
+  // @ts-expect-error v13ism
+  if (tactor instanceof foundry.canvas.placeables.Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`);
   return socketlibSocket.executeAsGM("setFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId, value });
@@ -255,7 +257,8 @@ export async function unsetFlag(tactor: Actor | Token | string, flagId) {
     // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
   let actor: Actor | undefined | null;
-  if (tactor instanceof Token) actor = tactor.actor;
+  // @ts-expect-error v13ism
+  if (tactor instanceof foundry.canvas.placeables.Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`)
   return socketlibSocket.executeAsGM("unsetFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId });

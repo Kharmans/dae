@@ -295,8 +295,8 @@ export async function cleanAllTokenEffectOrigins() {
     for (let tokenDocument of scene.tokens) {
       if (!tokenDocument.isLinked && tokenDocument.actor) {
         const actor = tokenDocument.actor;
-        let ownedItemEffects = actor.effects.filter(ef => ef.origin?.includes("OwnedItem"));
-        let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin.replace("OwnedItem", "Item") } });
+        let ownedItemEffects = actor.effects.filter(ef => !!ef.origin?.includes("OwnedItem"));
+        let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin?.replace("OwnedItem", "Item") } });
         if (updates.length > 0) {
           await actor.updateEmbeddedDocuments("ActiveEffect", updates)
         }
@@ -309,7 +309,6 @@ export async function tobMapper(iconsPath = "icons/TOBTokens") {
   const pack = game.packs?.get("tome-of-beasts.beasts");
   await pack?.getDocuments();
   if (!pack) return;
-  //@ts-expect-error ._source
   let details: any[] = pack?.contents.map(a => a._source);
   let detailNames = foundry.utils.duplicate(details).map(detail => {
     let name = detail.name

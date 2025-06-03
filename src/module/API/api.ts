@@ -35,7 +35,7 @@ const API = {
     return await createToken(tokenData, x, y);
   },
   DAEActiveEffectConfig(object: any = {}, options: any = {}) {
-    return new DAEActiveEffectConfig(object, options);
+    return new DAEActiveEffectConfig({ document: object, ...options });
   },
   DAEfromActorUuid(uuid): Actor | null {
     console.warn("dae | Deprecation warning | DAEfromActorUuid is deprecated, use DAE.fromActorUuid instead");

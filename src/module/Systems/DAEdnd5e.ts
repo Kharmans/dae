@@ -1303,7 +1303,8 @@ function getRollData(wrapped, ...args) {
         const actor = actorFromUuid(data.actorUuid ?? "");
         const token = getSelfTarget(actor);
         // If the return is a tokenDocument then we have no token on the scene
-        if (token instanceof Token) data._token = token;
+        // @ts-expect-error v13ism
+        if (token instanceof foundry.canvas.placeables.Token) data._token = token;
       }
       return data._token;
     },
@@ -1313,7 +1314,8 @@ function getRollData(wrapped, ...args) {
   if (!data.tokenUuid) Object.defineProperty(data, "tokenUuid", {
     get() { // During initialisation getSelfTarget will return a token document not a token
       if (data._tokenUuid) return data._tokenUuid;
-      if (data.token instanceof Token)
+      // @ts-expect-error v13ism
+      if (data.token instanceof foundry.canvas.placeables.Token)
         return data.token?.document.uuid ?? "undefined";
       else return data.token?.uuid ?? "undefined"
     },
