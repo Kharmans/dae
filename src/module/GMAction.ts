@@ -330,17 +330,23 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           let origin: any = fromUuidSync(aeData.origin);
           let item;
           let macroCommand;
-          let count;
-          for (count = 0; count < 10 && origin instanceof CONFIG.ActiveEffect.documentClass; count++) {
-            //@ts-expect-error
-            origin = await fromUuid(origin.origin);
+          let count;       
+          for (count = 0; count < 10 && origin instanceof CONFIG.ActiveEffect.documentClass && !(origin.parent instanceof Item); count++) {
+            if (origin.parent instanceof CONFIG.Item.documentClass) origin = origin.parent;
+            else {
+              //@ts-expect-error
+              origin = await fromUuid(origin.origin);
+            }
           }
           if (count === 10) {
             console.warn("dae | applyActiveEffects: too many levels of active effects", aeData);
           } else if (origin instanceof Item) {
             item = origin;
             macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
-          } 
+          } else if (origin.parent instanceof Item) {
+            item = origin.parent;
+            macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
+          }
           
           if (!macroCommand && aeData.flags?.dae?.itemData) {
             const itemData = foundry.utils.getProperty(aeData, "flags.dae.itemData");
@@ -360,6 +366,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
 
         // convert item duration to seconds/rounds/turns according to combat
         if (aeData.duration.seconds) {
+          //@ts-expect-error worldTime
           aeData.duration.startTime = game.time?.worldTime;
           const inCombat = targetActor.inCombat;
           let convertedDuration;
@@ -391,6 +398,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           debug("converted duration ", convertedDuration, inCombat, effectDuration, maxShortDuration);
           if (convertedDuration.type === "seconds") {
             aeData.duration.seconds = convertedDuration.seconds;
+            //@ts-expect-error worldTime
             aeData.duration.startTime = game.time?.worldTime;
           } else if (convertedDuration.type === "turns") {
             aeData.duration.rounds = convertedDuration.rounds;
@@ -402,11 +410,11 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
         warn("Apply active effects ", aeData, itemCardUuid);
         let source: any | undefined = await fromUuid(aeData.origin);
         let context = targetActor.getRollData();
-        if (false && source instanceof CONFIG.Item.documentClass) {
+        if (source instanceof CONFIG.Item.documentClass) {
           context = source?.getRollData();
         }
         context = foundry.utils.mergeObject(context, { "target": getTokenDocument(targetActor)?.id, "targetUuid": getTokenDocument(targetActor)?.uuid, "targetActorUuid": targetActor?.uuid, itemCardUuid: itemCardUuid, "@target": "target", "stackCount": "@stackCount", "item": "@item", "itemData": "@itemData" });
-
+      
         let newChanges: any[] = [];
         for (let change of aeData.changes) {
           if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
@@ -554,6 +562,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       default:
         let interval = {}
         interval[durationData.units] = durationData.value;
+        //@ts-expect-error worldTime
         const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time?.worldTime, interval) - (game.time?.worldTime ?? 0);
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };

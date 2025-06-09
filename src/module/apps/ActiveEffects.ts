@@ -6,6 +6,7 @@ const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api
 
 export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
   Actor.Implementation | Item.Implementation,
+  //@ts-expect-error
   foundry.applications.api.DocumentSheetV2.RenderContext
 > {
   static filters = new Set();

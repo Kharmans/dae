@@ -134,10 +134,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   };
 
   static PARTS = foundry.utils.mergeObject(super.PARTS ?? {}, {
-    details: {template: "./modules/dae/templates/DAESheetConfig/Details.hbs", scrollable: [""]},
-    duration: {template: "./modules/dae/templates/DAESheetConfig/Duration.hbs"},
-    changes: {template: "./modules/dae/templates/DAESheetConfig/Changes.hbs", scrollable: ["scrollable"]}
-  }, {inplace: false});
+    details: { template: "./modules/dae/templates/DAESheetConfig/Details.hbs", scrollable: [""] },
+    duration: { template: "./modules/dae/templates/DAESheetConfig/Duration.hbs" },
+    changes: { template: "./modules/dae/templates/DAESheetConfig/Changes.hbs", scrollable: ["scrollable"] }
+  }, { inplace: false });
 
   /* ----------------------------------------- */
 
@@ -284,6 +284,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     context.midiActive = globalThis.MidiQOL !== undefined;
     context.isEnchantment = isEnchantment(document);
     context.isConditionalActivationEffect = document.parent?.name === i18n("dae.ConditionalEffectsItem");
+    context.transfer = document.transfer;
     if (context.isConditionalActivationEffect) {
       context.transfer = false;
       context.document.transfer = false;
@@ -317,15 +318,20 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       keyInput.addEventListener("click", this.#onKeyInputInteraction.bind(this));
       keyInput.addEventListener("input", this.#onKeyInputInteraction.bind(this));
     }
+    const transferCheckBox = Array.from(this.element.querySelectorAll(".transferCheckbox"));
+    for (const checkbox of transferCheckBox) {
+      checkbox.addEventListener("change", (event) => {
+        this.submit({ preventClose: true })?.then(() => this.render());
+      });
+    }
   }
-
   changeTab(tab, group, options) {
-    let autoPos: foundry.applications.api.ApplicationV2.Position = {...this.position, height: "auto"};
+    let autoPos: foundry.applications.api.ApplicationV2.Position = { ...this.position, height: "auto" };
     this.setPosition(autoPos);
     super.changeTab(tab, group, options);
     // Don't want to allow resizing height for changes tab, as that's handled by resizing the textareas themselves
     if (tab === "changes") return;
-    let newPos = {...this.position, height: this.element.offsetHeight};
+    let newPos = { ...this.position, height: this.element.offsetHeight };
     this.setPosition(newPos);
   }
 
@@ -367,7 +373,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const specialDuration = Object.values(submitData.flags?.dae?.specialDuration ?? {});
     // @ts-expect-error as above
     return this.submit({
-      preventClose: true, 
+      preventClose: true,
       updateData: {
         "flags.dae.specialDuration": specialDuration.concat("None")
       }
@@ -381,7 +387,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const idx = Number(event.target.closest("li").dataset.index) || 0;
     specialDuration.splice(idx, 1);
     // @ts-expect-error as above
-    return this.submit({ 
+    return this.submit({
       preventClose: true,
       updateData: {
         "flags.dae.specialDuration": specialDuration
@@ -446,7 +452,6 @@ export function geti18nTranslations() {
 }
 
 Hooks.once("setup", () => {
-  //@ts-expect-error
   foundry.applications.apps.DocumentSheetConfig.registerSheet(
     CONFIG.ActiveEffect.documentClass,
     "core",

@@ -38,7 +38,11 @@ export let daeAlternateStatus;
 export var gameSystemCompatible = "maybe"; // no, yes, partial, maybe
 export var daeUntestedSystems: boolean;
 export const MODULE_ID = "dae";
-
+declare global {
+  interface LenientGlobalVariableTypes {
+    game: never; // the type doesn't matter
+  }
+}
 /* ------------------------------------ */
 /* Initialize module					*/
 /* ------------------------------------ */

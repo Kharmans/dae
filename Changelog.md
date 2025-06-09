@@ -1,3 +1,10 @@
+### 13.0.2
+* Fix for not being able to edit some of the midi-qol specific fields in effects.
+* Support @tokenUuid to refer to the caster token as an argument in
+  macro.ItemMacro CUSTOM @tokenUuid
+  which will be replaced with the text of the casting tokens uuid.
+* Fix for not toggling midi fields display when changing transfer status on effect editor.
+
 ### 13.0.1
 * Fix for conditional removal not firing when actor statuses change.
 

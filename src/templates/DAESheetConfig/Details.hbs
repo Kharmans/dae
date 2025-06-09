@@ -9,7 +9,9 @@
 
     {{#unless isEnchantment}}
         {{#if (and isItemEffect (not isConditionalActivationEffect))}}
+          <div class="transferCheckbox">
             {{formGroup fields.transfer value=source.transfer rootId=rootId label=(localize "EFFECT.FIELDS.transfer.label") hint=(localize "dae.transfer.Hint")}}
+          </div>
         {{/if}}
     {{/unless}}
     
@@ -17,7 +19,7 @@
 
     <fieldset>
         <legend>DAE</legend>
-        {{#unless source.transfer}}
+        {{#unless transfer}}
             <div class="form-group stacked">
                 <label>{{ localize "dae.EnableCondition" }}</label>
                 <div class="form-fields value">
@@ -67,11 +69,11 @@
                 <label>{{ localize "dae.IncapacitatedDisabled" }}</label>
                 <input type="checkbox" name="flags.dae.disableIncapacitated" {{ checked source.flags.dae.disableIncapacitated }} />
             </div>
-            {{#unless effect.transfer}}
+            {{#unless transfer}}
                 {{#if (and isItemEffect (not isConditionalActivationEffect))}}
                     <div class="form-group">
                         <label>{{ localize "dae.SelfTarget.Name" }}</label>
-                        <input type="checkbox" name="flags.dae.selfTarget" {{ checked effect.flags.dae.selfTarget }} />
+                        <input type="checkbox" name="flags.dae.selfTarget" {{ checked source.flags.dae.selfTarget }} />
                         <p class="hint" style="margin-bottom:1em">
                             {{ localize "dae.SelfTarget.Hint" }}
                         </p>
@@ -79,7 +81,7 @@
 
                     <div class="form-group">
                         <label>{{ localize "dae.SelfTargetAlways.Name" }}</label>
-                        <input type="checkbox" name="flags.dae.selfTargetAlways" {{ checked effect.flags.dae.selfTargetAlways }} />
+                        <input type="checkbox" name="flags.dae.selfTargetAlways" {{ checked source.flags.dae.selfTargetAlways }} />
                         <p class="hint" style="margin-bottom:1em">
                             {{ localize "dae.SelfTargetAlways.Hint" }}
                         </p>
@@ -87,7 +89,7 @@
 
                     <div class="form-group">
                         <label>{{ localize "dae.DontApply.Name" }}</label>
-                        <input type="checkbox" name="flags.dae.dontApply" {{ checked effect.flags.dae.dontApply }} />
+                        <input type="checkbox" name="flags.dae.dontApply" {{ checked source.flags.dae.dontApply }} />
                         <p class="hint" style="margin-bottom:1em">
                             {{ localize "dae.DontApply.Hint" }}
                         </p>

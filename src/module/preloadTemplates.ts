@@ -8,6 +8,5 @@ export const preloadTemplates = async function() {
 		"./modules/dae/templates/DAESheetConfig/Changes.hbs",
 	];
 
-  //@ts-expect-error
 	return foundry.applications.handlebars.loadTemplates(templatePaths);
 }

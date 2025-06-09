@@ -1163,7 +1163,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   if (!theItem) { // follow the origin trail backwards
     let source = effectData.origin ? await fromUuid(effectData.origin) : undefined;
     let count;
-    for (count = 0; count < 10 && source instanceof ActiveEffect; count++) {
+    for (count = 0; count < 10 && source instanceof ActiveEffect && !(source.parent instanceof Item); count++) {
       //@ts-expect-error
       const newSource: any = await fromUuid(source.origin);
       if (!newSource) source = source.parent;
@@ -1173,6 +1173,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
       console.warn("dae | daeMacro | too many levels of origin", effectData);
     }
     else if (source instanceof Item) theItem = source;
+    else if (source?.parent instanceof Item) theItem = source.parent;
   }
 
   if (!theItem && effectData.flags.dae?.itemUuid) {
@@ -1325,7 +1326,7 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   return effectData;
 }
 
-export async function evalArgs({ effectData, item, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardUuid = null }) {
+export async function evalArgs({ effectData, item, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardUuid = null, tokenUuid = null }) {
   const itemId = item?.id ?? foundry.utils.getProperty(effectData.flags, "dae.itemId");
   const itemUuid = item?.uuid ?? foundry.utils.getProperty(effectData.flags, "dae.itemUuid");
   if (!item && itemUuid) item = await fromUuid(itemUuid);
@@ -1351,6 +1352,7 @@ export async function evalArgs({ effectData, item, context, actor, change, spell
     change: JSON.stringify(change.toJSON),
     itemId: item?.id,
     itemUuid: item?.uuid,
+    tokenUuid
   }, context, { overwrite: true });
   //contextToUse["item"] = "@item";
   if (item) {
@@ -1564,6 +1566,7 @@ export async function applyActivityEffects(activity, activate, targets, activity
     };
 
     activeEffectData.origin = options.origin ?? activityEffects[aeIndex].uuid;
+    //@ts-expect-error worldTime
     activeEffectData.duration.startTime = game.time?.worldTime;
     daeSystemClass.addDAEMetaData(activeEffectData, activity.item, options)
     activityEffects[aeIndex] = activeEffectData;
@@ -1653,6 +1656,7 @@ export async function applyNonTransferEffects(item, activate, targets, options: 
     };
 
     activeEffectData.origin = options.origin ?? item.uuid;
+    //@ts-expect-error worldTime
     activeEffectData.duration.startTime = game.time?.worldTime;
     daeSystemClass.addDAEMetaData(activeEffectData, item, options)
     appliedEffects[aeIndex] = activeEffectData;
@@ -2347,7 +2351,7 @@ async function applyRequiredStatusEffectsHook(effect, options, userId) {
     if (actor instanceof Item) {
       actor = actor.parent;
     }
-    await busyWait(0.05); // Hopefull this will allow the rest of the updates to complete
+    await busyWait(0.05); // Hopefully this will allow the rest of the updates to complete
     const requiredStatuses: Set<string> = new Set(actor.statuses);
     let appliedStatuses: Set<string> = actorAppliedStatues(actor);
 

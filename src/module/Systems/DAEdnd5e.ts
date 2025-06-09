@@ -544,6 +544,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //@ts-expect-error no dnd5e types
       if (candidate.isAppliedEnchantment && (candidate.duration.seconds || candidate.duration.rounds || candidate.duration.turns)) {
         if (!candidate.duration.startTime && candidate.duration.seconds)
+        //@ts-expect-error worldTime
           candidate.updateSource({ duration: { startTime: game.time?.worldTime ?? 0 } });
         else if (!Number.isNumeric(candidate.duration.startRound) && !Number.isNumeric(candidate.duration.startTurn) && game.combat) {
           candidate.updateSource({ duration: { startRound: game.combat?.round, startTurn: game.combat?.turn } });
