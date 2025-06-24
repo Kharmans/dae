@@ -4,6 +4,7 @@
   macro.ItemMacro CUSTOM @tokenUuid
   which will be replaced with the text of the casting tokens uuid.
 * Fix for not toggling midi fields display when changing transfer status on effect editor.
+* Fix for "If a character has concentration that refers to an item that no longer exists dae will cause an infinite loop"
 
 ### 13.0.1
 * Fix for conditional removal not firing when actor statuses change.

@@ -264,8 +264,9 @@ export class ValidSpec {
 }
 
 function getRollData(wrapped, ...args): any {
+  if (this.system.getRollData) return this.system.getRollData(...args)
   // need to be careful - default foundry getRollData() returns the "live" actor.system
-  return wrapped(args);
+  return wrapped(...args);
 }
 
 export class DAESystem {
