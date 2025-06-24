@@ -1,3 +1,6 @@
+### 12.0.26
+* Fix for "If a character has concentration that refers to an item that no longer exists dae will cause an infinite loop"
+
 ### 12.0.25
 * Fix for conditional removal not firing when actor statuses change.
 
