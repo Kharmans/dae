@@ -1,3 +1,6 @@
+### 12.0.27
+* Added Czecg language files - thanks @Lethrendis
+
 ### 12.0.26
 * Fix for "If a character has concentration that refers to an item that no longer exists dae will cause an infinite loop"
 

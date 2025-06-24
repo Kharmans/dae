@@ -1,0 +1,2760 @@
+{
+  "dae.str": "Síla",
+  "dae.dex": "Obratnost",
+  "dae.con": "Odolnost",
+  "dae.wis": "Moudrost",
+  "dae.int": "Inteligence",
+  "dae.cha": "Charisma",
+  "dae.All_Modifiers/Checks": "Ověření vlastností (číselné)",
+  "dae.ac": "Obranné číslo",
+  "dae.hp": "BV",
+  "dae.di": "Imunita vůči zranění",
+  "dae.idi": "Ignorovat imunitu vůči zranění",
+  "dae.dr": "Odolání vůči zranění",
+  "dae.idr": "Ignorovat odolání vůči poškození",
+  "dae.dv": "Zranitelnost vůči zranění",
+  "dae.idv": "Ignorovat zranitelnost vůči zranění",
+  "dae.da": "Absorpce zranění",
+  "dae.ida": "Ignorovat absorpci zranění",
+  "dae.ci": "Imunita vůči stavu",
+  "dae.languages": "Jazyk",
+  "dae.Languages_All": "Všechny jazyky",
+  "dae.acr": "Akrobacie",
+  "dae.ani": "Ovládání zvířat",
+  "dae.arc": "Mystika",
+  "dae.ath": "Atletika",
+  "dae.dec": "Klamání",
+  "dae.his": "Historie",
+  "dae.ins": "Vhled",
+  "dae.inv": "Vyšetřování",
+  "dae.itm": "Zastrašování",
+  "dae.med": "Lékařství",
+  "dae.nat": "Příroda",
+  "dae.per": "Přesvědčování",
+  "dae.prc": "Vnímání",
+  "dae.prf": "Umění",
+  "dae.rel": "Náboženství",
+  "dae.slt": "Čachry",
+  "dae.ste": "Nenápadnost",
+  "dae.sur": "Přežití",
+  "dae.init": "Iniciativa",
+  "dae.spd": "Rychlost chůze",
+  "dae.Speed_Special": "Speciální Rychlost",
+  "dae.prof": "Zdatnost",
+  "dae.Strength_Attacks": "Útoky Silou",
+  "dae.Dexterity_Attacks": "Útoky Obratností",
+  "dae.Spell_Attacks": "Útoky kouzly",
+  "dae.All_Skills": "Bonus k ověření dovedností (číselný)",
+  "dae.All_Saves": "Záchranné hody (číselné)",
+  "dae.Initiative_Advantage": "Výhoda na iniciativu",
+  "dae.Initiative_Alert": "Hlídač",
+  "dae.InitiativeHalfProf": "Poloviční zdatnost k iniciativě",
+  "dae.Powerful_Build": "Mohutně stavěný",
+  "dae.Savage_Attacks": "Tvrdý útočník",
+  "dae.Spell_DC Bonus": "Bonus k SO kouzel (číselný)",
+  "dae.Critical_Hit Threshold": "Práh kritického zásahu",
+  "dae.mwak": "Útok zbraní na blízko",
+  "dae.rwak": "Útok zbraní na dálku",
+  "dae.msak": "Útok kouzlem na blízko",
+  "dae.rsak": "Útok kouzlem na dálku",
+  "dae.attack": "Útok",
+  "dae.damage": "Zranění",
+  "dae.heal": "Léčení",
+  "dae.check": "Ověření",
+  "dae.save": "Záchrana",
+  "dae.saveBonusDE": "Záchrana",
+  "dae.value": "Hodnota",
+  "dae.max": "Maximum",
+  "dae.proficient": "Zdatnost",
+  "dae.ability": "Vlastnost",
+  "dae.bonus": "Bonus",
+  "dae.success": "Úspěch",
+  "dae.failure": "Selhání",
+  "dae.sr": "Krátký odpočinek",
+  "dae.lr": "Důkladný odpočinek",
+  "dae.primary": "Primární",
+  "dae.secondary": "Sekundární",
+  "dae.tertiary": "Terciární",
+  "dae.alignment": "Přesvědčení",
+  "dae.biography": "Biografie",
+  "dae.public": "Veřejný",
+  "dae.race": "Rasa",
+  "dae.background": "Zázemí",
+  "dae.trait": "Rys",
+  "dae.ideal": "Ideál",
+  "dae.bond": "Pouto",
+  "dae.flaw": "Vada",
+  "dae.level": "Úroveň",
+  "dae.hd": "Kostky obnovy",
+  "dae._deprecated": "<ZASTARALÉ>",
+  "dae.size": "Velikost",
+  "dae.senses": "Smysly",
+  "dae.blindsight": "Mimozrakové vnímání",   
+  "dae.darkvision": "Vidění ve tmě",
+  "dae.tremorsense": "Citlivost na otřesy",
+  "dae.truesight": "Pravdivé vidění",   
+  "dae.weaponProf": "Zdatnost se zbraněmi",
+  "dae.armorProf": "Výcvik se zbrojí",
+  "dae.toolProf": "Zdatnost s nástrojem",
+  "dae.spell0": "Pozice 0. stupně",
+  "dae.spell1": "Pozice 1. stupně",
+  "dae.spell2": "Pozice 2. stupně",
+  "dae.spell3": "Pozice 3. stupně",
+  "dae.spell4": "Pozice 4. stupně",
+  "dae.spell5": "Pozice 5. stupně",
+  "dae.spell6": "Pozice 6. stupně",
+  "dae.spell7": "Pozice 7. stupně",
+  "dae.spell8": "Pozice 8. stupně.",
+  "dae.spell9": "Pozice 9. stupně",
+  "dae.pact": "Pozice kouzel magie paktu",
+  "dae.Attuned": "Naladěno",
+  "dae.Active": "Vybaveno a tím povoleno",
+  "dae.Cursed": "Vždy povoleno",
+  "dae.Create": "Vytvořit položku",
+  "dae.Edit": "Upravit položku",
+  "dae.Delete": "Odstranit položku",
+  "dae.EffectTarget": "Cíl efektu",
+  "dae.ActiveEffectName": "DAE",
+  "dae.TransferEffects": "Přenos efektů",
+  "dae.NonTransferEffects": "Nepřenosné efekty",
+  "dae.EffectMode": "Režim",
+  "dae.EffectValue": "Hodnota",
+  "dae.label": "Štítek",
+  "dae.Title": "Efekty",
+  "dae.Add": "Přidat",
+  "dae.UpdateEffect": "Aktualizovat efekt",
+  "dae.ItemEffectSelection": "Výběr efektu položky",
+  "dae.noeffect": "Tvá postava nemá název efektu",
+  "dae.enabled": "Povoleno",
+  "dae.disabled": "Zakázáno",
+  "dae.suppressed": "Potlačeno",
+  "dae.tool_proficiency": "Zdatnost s nástrojem",
+  "dae.notTargetItem": "Tato položka nemá určené cíle",
+  "dae.ConsumeCharge.Name": "Spotřeba nabití při pasivní aktivaci",
+  "dae.ConsumeCharge.Hint": "Při aktivaci pasivního efektu pomocí ´togglePassiveEffect´ či karty stavu v chatu se aktivuje, pouze pokud má položka nabití a jedno spotřebuje.",
+  "dae.noCharges": " neaktivováno, žádné zbývající nabití",
+  "dae.noSelection": "Není vybrán žádný token ani postava",
+  "dae.category": "Kategorie",
+  "dae.abilities": "Vlastnosti",
+  "dae.attributes": "Atributy",
+  "dae.bonuses": "Bonusy",
+  "dae.resources": "Zdroje",
+  "dae.currency": "Mince",
+  "dae.details": "Detaily",
+  "dae.flags": "Příznaky",
+  "dae.skills": "Dovednosti",
+  "dae.spells": "Kouzla",
+  "dae.traits": "Rysy",
+  "dae.min": "Min",
+  "dae.mod": "Oprava",
+  "dae.total": "Celkem",
+  "dae.xp": "Body zkušeností",
+  "dae.cp": "Měďáky",
+  "dae.sp": "Stříbrňáky",
+  "dae.ep": "Elektrony",
+  "dae.gp": "Zlaťáky",
+  "dae.pp": "Platiňáky",
+  "dae.initiativeHalfProf": "Poloviční zdatnost k iniciativě",
+  "dae.check_all": "Všechna ověření vlastností",
+  "dae.spelldc": "Stupeň obtížnosti kouzla",
+  "dae.spelllevel": "Stupeň kouzla",
+  "dae.death": "Záchrana proti smrti",
+  "dae.advantage": "Výhoda",
+  "dae.exhaustion": "Vyčerpání",
+  "dae.temp": "Dočasné BV",
+  "dae.tempmax": "Maximum dočasných BV",
+  "dae.inspiration": "Inspirace",
+  "dae.special": "Speciální",
+  "dae.speed": "Rychlost",
+  "dae.spellcasting": "Sesílání kouzel",
+  "dae.All-Attacks": "Bonusy ke všem útokům",
+  "dae.All-Damage": "Bonusy ke všem zraněním",
+  "dae.skill": "Dovednost",
+  "dae.spell": "Kouzlo",
+  "dae.weapon": "Zbraň",
+  "dae.dc": "Stupeň obtížnosti",
+  "dae.passive": "Pasivní",
+  "dae.custom": "Vlastní",
+  "dae.all": "Vše",  
+  "dae.ActiveItemSelect": "Aktivní efekty položek",
+  "dae.chooseitem": "Vybrat položku",
+  "dae.itemname": "Položka",
+  "dae.applyeffect": "Aplikovat na cíle",
+  "dae.unapplyeffect": "Odstranit z cílů",
+  "dae.gm-notes": "Poznámky PJ",
+  "dae.notes": "Poznámky",
+  "dae.playersCanSeeEffects.Name": "Povolení hráčům vidět detaily efektů",
+  "dae.playersCanSeeEffects.Hint": "Pokud je vypnuto, hráči neuvidí kartu efektů položky, ani podrobný souhrn efektů u pasivních položek. DŮVĚRYHODNÍ hráči mohou efekty upravovat.",
+  "dae.tokenEffects.Name": "Povolení efektů tokenu",
+  "dae.tokenEffects.Hint": "Umožňuje efekty zaměřené na konkrétní token, např. neviditelnost, slepota (experimentální funkce).",
+  "dae.macro": "Makro",
+  "dae.macroRepeat": "Opakování makra",
+  "dae.specialDuration": "Speciální trvání",
+  "dae.execute": "Spustit",
+  "dae.GM": "PJ",
+  "dae.local": "Lokální",
+  "dae.actorUpdate": "Aktualizace postavy",
+  "dae.itemMacro": "Makro položky",
+  "dae.override": "Přepsat",
+  "dae.forceCritical": "Kritické zranění",
+  "dae.attackAdvantage": "Výhoda k útoku",
+  "dae.conditions": "Stav",
+  "dae.calculateArmor.Name": "Automatický výpočet obranného čísla",
+  "dae.calculateArmor.Hint": "Pokud je zaškr tnuto, bude DAE automaticky počítat OČ podle zbroje/štítů v inventáři. Ostatní položky mohou OČ stále upravovat.",
+  "dae.applyBaseAC.Name": "Automatický výpočet základního OČ",
+  "dae.applyBaseAC.Hint": "Pokud je zaškrtnuto, bude postavám (nikoliv NP) nastaveno základní OČ na 10 + oprava Obratnosti",
+  "dae.applyingEffects": "Aplikování efektů",
+  "dae.removingEffects": "Odstraňování efektů",
+  "dae.tokenMagic": "TokenMagic",
+  "dae.transfer.Name": "Aplikace efektu na postavu",
+  "dae.transfer.Hint": "Pokud je zaškrtnuto, efekt se aplikuje na vlastníka položky při jejím vybavení. Pokud chceš efekt aplikovat na cíl při použití položky, pak tuto možnost odškrtni.",
+  "dae.effectName": "Název efektu",
+  "dae.readOnly": "EFEKT POUZE KE ČTENÍ",
+  "dae.legact": "Legendární akce",
+  "dae.legres": "Legendární odolání",
+  "dae.encumbrance": "Zatížení",
+  "dae.useAbilitySave.Name": "Při hodu na záchranu používat pole záchrany vlastností",
+  "dae.useAbilitySave.Hint": "Výchozí nastavení DND5e používá pouze opravu schopnosti, zapnutím této možnosti se při hodech na záchranu použije příslušné pole a lze ho pomocí DAE upravovat.",
+  "dae.Debug.Name": "Množství informací ladění",
+  "dae.Debug.Hint": "Zobrazí v konzoli více informací o ladění podle nastavení: Žádné < Varování < Ladění < Vše.",
+  "dae.summaryFilter": "Souhrn efektů",
+  "dae.enabledFilter": "Povolené efekty",
+  "dae.temporaryFilter": "Časově omezené efekty",
+  "dae.Priority": "Priorita",
+  "dae.Stackable": "Sčitatelné",
+  "dae.EffectSheetLabel": "Seznam aktivních efektů DAE",
+  "dae.confirm": "Potvrzovací dialog",
+  "dae.sure": "Jsi si jistý/á?",
+  "dae.dae": "DAE",
+  "dae.movement": "Pohyb",
+  "dae.burrow": "Hrabání",
+  "dae.climb": "Šplhání",
+  "dae.hover": "Vznášení se",
+  "dae.fly": "Let",
+  "dae.swim": "Plavání",
+  "dae.units": "Jednotky",
+  "dae.walk": "Chůze",
+  "dae.diamondSoul": "Diamantová duše",
+  "dae.noGM": "Není připojen žádný klient PJ",  
+  "dae.expireRealTime.Name": "Vypršení časovaných efektů v reálném čase",
+  "dae.expireRealTime.Hint": "Pokud je zaškrtnuto a nejsou nainstalovány moduly about-time či times-up, časované efekty vyprší v reálném čase.",
+  "dae.isAttacked": "je napaden(a): Vyprší, pokud je postava napadena",
+  "dae.isMoved": "Přesunutí: Vyprší, když je token přesunut",
+  "dae.isDamaged": "je zraněn(a): Vyprší, pokud je postava zraněna",
+  "dae.isHealed": "je vyléčen(a): Vyprší, pokud je postava vyléčena",
+  "dae.ZeroHP": "Nula BV: Vyprší, pokud postavě klesnou BV na 0",
+  "dae.isHit": "je zasažen(a): Vyprší, pokud je postava zasažena jakýmkoli útokem zbraní/kouzlem, i když útok nezpůsobí zranění",
+  "dae.isHitCritical": "je kriticky zasažen(a): Vyprší, pokud je postava zasažena kritickým útokem zbraní/kouzlem",
+  "dae.isRollBase": "Vyprší, pokud postava hodí: ",
+  "dae.isSaveDetail": "záchranný hod",
+  "dae.isCheckDetail": "ověření vlastnosti",
+  "dae.isSkillDetail": "ověření dovednosti",
+  "dae.isConcentrationSave": "Záchranný hod na soustředění",
+  "dae.isInitiativeDetail": "iniciativu",
+  "dae.1Action": "1. akce: Vyprší při příští akci (hodu položky) postavy",
+  "dae.Bonus Action": "Vyprší při příštím použití položky s typem aktivace ´Bonusová akce´",
+  "dae.Reaction": "Vyprší při příštím použití položky s typem aktivace ´Reakce´",
+  "dae.Turn Action": "Vyprší při příštím použití položky s typem aktivace ´Akce´",
+  "dae.1Attack": "1. útok: Vyprší při příštím {type} postavy",
+  "dae.1Spell": "1. kouzlo: Vyprší při příštím seslání jakéhokoliv kouzla postavou",
+  "dae.1Reaction": "1. reakce: Vyprší po útoku, který spustil reakci",
+  "dae.1Hit": "1. zásah: Vyprší při příštím {type} zásahu postavy",
+  "dae.1Critical": "1. kritický zásah: Vyprší při příštím kritickém zásahu postavy",
+  "dae.1Fumble": "1. neúspěšný hod: Vyprší při příštím selhání postavy",
+  "dae.DamageDealt": "1 udělené zranění: Vyprší, když postava způsobí zranění",
+  "dae.turnStart": "Začátek kola: Vyprší na začátku příštího kola cíle (v boji)",
+  "dae.turnStartSource": "Začátek kola: Vyprší na začátku příštího kola zdrojové postavy (v boji)",
+  "dae.turnEnd": "Konec kola: Vyprší na konci příštího kola cíle (v boji)",
+  "dae.turnEndSource": "Konec kola: Vyprší na konci příštího kola zdrojové postavy (v boji)",
+  "dae.startEveryTurn": "Začátek každého kola: Spustí makra efektu na začátku kola postavy",
+  "dae.startEndEveryTurn": "Začátek a konec každého kola: Spustí makra efektu na začátku a na konci kola postavy",
+  "dae.startEveryTurnAny": "Začátek každého kola: Spustí makra efektu na začátku kola postavy, i když je efekt deaktivován",
+  "dae.startEndEveryTurnAny": "Začátek a konec každého kola: Spustí makra efektu na začátku a na konci kola postavy, i když je efekt deaktivován",
+  "dae.endEveryTurn": "Konec každého kola: Spustí makra efektu na konci kola postavy",
+  "dae.endEveryTurnAny": "Konec každého kola: Spustí makra efektu na konci kola postavy, i když je efekt deaktivován",
+  "dae.ConditionalVisibility": "Podmíněná viditelnost",
+  "dae.ConditionalVisibilityVision": "PV Vidění",
+  "dae.noDupDamageMacro.Name": "Žádná duplicitní makra zranění",
+  "dae.noDupDamageMacro.Hint": "Pokud je zaškrtnuto, budou duplicitní makra zranění ignorována.",
+  "dae.DisableEffects.Name": "Zákaz zpracování všech aktivních efektů",
+  "dae.DisableEffects.Hint": "Pokud je zaškrtnuto, nebudou na postavy žádné aktivní efekty aplikovány. Je to užitečné, pokud chceš měnit hodnoty postav ovlivněné aktivními efekty.",
+  "dae.HandleEquip.Name": "Spravovat aktivní efekty při vybavení/sejmutí předmětu",
+  "dae.HandleEquip.Hint": "Pokud je zaškrtnuto, bude DAE spravovat aktivaci/deaktivaci efektů při vybavení/sejmutí předmětu a přepnutí aktivního efektu přepne i stav vybavení.",
+  "dae.DAETitleBar.Name": "Titulková lišta DAE",
+  "dae.DAETitleBar.Hint": "Zobrazí tlačítko editoru efektů DAE v titulkové liště.",
+  "dae.DIMETitleBar.Name": "Titulková lišta DIME ",
+  "dae.DIMETitleBar.Hint": "Zobrazí editor makra položek DAE v titulkové liště.",
+  "dae.DAEColorTitleBar.Name": "Barevná titulková lišta DAE",
+  "dae.DAEColorTitleBar.Hint": "Aplikuje barvu na tlačítko editoru efektů DAE/DIME, pokud jsou v dokumentu přítomny efekty/makra položek (vyžaduje zaškrtnutí ´Titulkové lišty DAE´).",
+  "dae.DAENoTitleText.Name": "Pouze ikona",
+  "dae.DAENoTitleText.Hint": "Zobrazí v titulkové liště pouze hlavní ikonu, jinak ikonu + DAE.",
+  "dae.StatusEffect": "Stavový efekt",
+  "dae.ShowDeprecation.Name": "Zobrazení chyb zastaralosti",
+  "dae.ShowDeprecation.Hint": "Bude v konzoli zobrazovat chyby zastaralosti.",
+  "dae.CE": "Convenient Effects",
+  "dae.CUB": "Combat Utility Belt",
+  "dae.ShowInline.Name": "Zobrazení výsledků vnořených hodů",
+  "dae.ShowInline.Hint": "Pokud je zaškrtnuto, tak budou efekty s vnořeným hodem zobrazovat výsledky hodu.",
+  "dae.StackableOptions": {
+    "noneName": "Efekty se nesčítají podle názvu efektu a původu efektu",
+    "noneNameOnly": "Efekty se nesčítají podle názvu efektu",
+    "none": "Efekty se nesčítají podle původu efektu",
+    "multi": "Sčitatelné efekty aplikují efekt vícekrát",
+    "count": "Každé sčítání zvyšuje počet sčítání o 1",
+    "countDeleteDecrement": "Při aplikaci zvyšuje počet sčítání o 1, při odstranění snižuje počet sčítání o 1, odstraněno při 0 sčítáních"
+  },
+  "dae.SW5EHint": "Poznámka pro překladatele - Následující řetězce jsou vyžadovány POUZE pro systém SW5E.", 
+  "dae.SW5E": "SW5e",
+  "dae.force": "Síla",
+  "dae.tech": "Technologie",
+  "dae.known": "Známé Síly",
+  "dae.points": "Body",
+  "dae.powers": "Zdatnosti",
+  "dae.power": "Zdatnost",
+  "dae.power0": "Pozice 0. stupně",
+  "dae.power1": "Pozice 1. stupně",
+  "dae.power2": "Pozice 2. stupně",
+  "dae.power3": "Pozice 3. stupně",
+  "dae.power4": "Pozice 4. stupně",
+  "dae.power5": "Pozice 5. stupně",
+  "dae.power6": "Pozice 6. stupně",
+  "dae.power7": "Pozice 7. stupně",
+  "dae.power8": "Pozice 8. stupně",
+  "dae.power9": "Pozice 9. stupně",
+  "dae.mpak": "Útok na blízko",
+  "dae.rpak": "Útok na dálku",
+  "dae.gc": "Kredity",
+  "dae.species": "Druh",
+  "dae.forceDarkDC": "Obtížnost schopnosti Temné Síly",
+  "dae.forceLightDC": "Obtížnost schopnosti Světlé Síly",
+  "dae.forceUnivDC": "Obtížnost schopnosti Univerzální Síly",
+  "dae.techDC": "Obtížnost technologické zdatnosti",
+  "dae.fmax": "Maximální Síla",
+  "dae.fvalue": "Hodnota Síly",
+  "dae.foverride": "Přepsání Síly",
+  "dae.tmax": "Maximální Technologie",
+  "dae.tvalue": "Hodnota Technologie",
+  "dae.toverride": "Přepsání Technologie",
+  "dae.lor": "Znalosti",
+  "dae.pil": "Pilotování",
+  "dae.tec": "Technologie",
+  "dae.powerForceLevel": "Úroveň schopnosti Síly",
+  "dae.forceToHud.Name": "Zobrazení Síly na tokenu",
+  "dae.forceToHud.Hint": "Pokud není prázdné, ikona efektu bude zobrazena na tokenu bez ohledu na dobu trvání.",
+  "dae.DurationExpression": "Hod kostkou v sekundách pro dobu trvání efektu",
+  "dae.not-reflected": "Efekt položky uložen. Tyto změny nebudou odráženy v původně přeneseném efektu.",
+  "dae.not-transferred": "Efekt položky uložen. Nastavení efektu vlastněného položkou na Přenos nebude efekt automaticky přenášet.",
+  "dae.ATLHint": "Poznámka pro překladatele - Tyto řetězce jsou vyžadovány POUZE pro ´Active Token Lighting´.",
+  "dae.ATL": "ATL",
+  "dae.dimLight": "Tlumené světlo",
+  "dae.brightLight": "Jasné světlo",
+  "dae.light": "Světlo",
+  "dae.bright": "Jasné",
+  "dae.dim": "Tlumené",
+  "dae.color": "Barva světla",
+  "dae.animation": "Animace",
+  "dae.alpha": "Průhlednost",
+  "dae.angle": "Úhel",
+  "dae.dimSight": "Tlumené vidění",
+  "dae.brightSight": "Jasné vidění",
+  "dae.sightAngle": "Úhel vidění",
+  "dae.lightColor": "Barva světla",
+  "dae.lightAnimation": "Animace světla",
+  "dae.lightAlpha": "Průhlednost světla",
+  "dae.lightAngle": "Úhel světla",
+  "dae.DAEUntestedSystems.Name": "Načtení DAE i pro netestované herní systémy",
+  "dae.DAEUntestedSystems.Hint": "Pokud je zaškrtnuto, načte se DAE pro jakýkoli systém, který není označen jako kompatibilní. Pokud není zaškrtnuto, DAE se načte pouze pro systémy označené jako kompatibilní. Vyžaduje restart.",
+  "dae.SelfTarget.Name": "Používání na sebe, když položka aplikuje efekty na cíle",
+  "dae.SelfTarget.Hint": "Efekt se aplikuje na uživatele položky, nikoli na cíle, pokud položka aplikuje efekty na cíle.",
+  "dae.SelfTargetAlways.Name": "Používání na sebe, když je položka vyvolána",
+  "dae.SelfTargetAlways.Hint": "Efekt se aplikuje na uživatele položky, nikoli na cíle, kdykoli je položka vyvolána.",
+  "dae.ShowIcon.Name": "Vždy zobrazovat ikonu efektu",
+  "dae.ShowIcon.Hint": "Zobrazí ikonu efektu na tokenu a v bojovém zobrazení.",
+  "dae.DontApply.Name": "Neaplikovat efekt",
+  "dae.DontApply.Hint": "Když DAE (a Midi) aplikuje aktivní efekty, tento efekt přeskočí.",
+  "dae.DIMEditor.Name": "DIME",
+  "dae.IncapacitatedDisabled": "Pokud je aktér neschopný akce, bude efekt deaktivován",
+  "dae.DIMESyncItemacro.Name": "Synchronizace DIME a Itemacra",
+  "dae.DIMESyncItemacro.Hint": "Pokud je zaškrtnuto, budou makra DIME a makra Itemacro synchronizovány – lze je pak upravovat v kterémkoli z nich. Pokud není zaškrtnuto, bude mít prioritu editor DIME.",
+  "dae.halfHealthEffectLabel": "Poloviční výdrž",
+  "dae.DAEAddHalfHealthEffect.Name": "Přidání efektu poloviční výdrže",
+  "dae.DAEAddHalfHealthEffect.Hint": "Přidá stavový efekt poloviční výdrže nastavující maximální body výdrže aktéra na polovinu jeho běžného maxima.",
+  "dae.TabChanges": "Změny",
+  "dae.DisableCondition": "Výraz, jehož vyhodnocení jako ´pravda´ efekt deaktivuje",
+  "dae.EnableCondition": "Výraz, jehož vyhodnocení jako ´nepravda´ efekt deaktivuje",
+  "dae.ConditionalEffectsItem": "Podmíněné efekty DAE",
+  "dae.IconTint": "Odstín ikony",
+  "dae.IconOverlay.Name": "Překryv ikony",
+  "dae.IconOverlay.Hint": "Zobrazí ikonu stavu efektu jako překryv.",
+  "dae.DependentConditions.Name": "Přidružené stavy",
+  "dae.DependentConditions.Hint": "Stavové efekty (otrávený/paralyzovaný) přidávají také přidružené stavy, jako je ´zneschopněný´.",
+  "__Comment__": "Následující řetězce jsou určeny pro systém DAE. Překlad je volitelný.",
+  "dae.fieldData": {
+    "fieldCategories.All": "Vše",
+    "fieldCategories.D&D5E": "D&D5E",
+    "fieldCategories.Macros": "Makra",
+    "fieldCategories.MidiQOL": "MidiQOL",
+    "fieldCategories.SystemAbilities": "Systém: Vlastnosti",
+    "fieldCategories.SystemSkills": "Systém: Dovednosti",
+    "fieldCategories.SystemAttributes": "Systém: Atributy",
+    "fieldCategories.SystemBonuses": "Systém: Bonusy",
+    "fieldCategories.SystemTraits": "Systém: Rysy",
+    "fieldCategories.Other": "Ostatní",
+    "fieldCategories.SystemResources": "Systém: Zdroje",
+    "fieldCategories.SystemCurrency": "Systém: Mince",
+    "fieldCategories.SystemDetails": "Systém: Detaily",
+    "fieldCategories.SystemFlags": "Systém: Příznaky"
+  },
+  "dae.D&D5E.fieldData": {
+    "flags.dnd5e.DamageBonusMacro": {
+      "name": "Makra bonusového zranění",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.diamondSoul": {
+      "name": "Diamantová duše",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.elvenAccuracy": {
+      "name": "Elfí přesnost",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.halflingLucky": {
+      "name": "Štěstí půlčíků",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.initiativeAdv": {
+      "name": "Výhoda k iniciativě",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.initiativeAlert": {
+      "name": "Hlídač",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.initiativeDisadv": {
+      "name": "Nevýhoda k iniciativě",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.initiativeHalfProf": {
+      "name": "",
+      "description": ""
+    },
+    "flags.dnd5e.initiativeHalfProficiency": {
+      "name": "Poloviční zdatnost k iniciativě",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.jackOfAllTrades": {
+      "name": "Všeuměl",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.meleeCriticalDamageDice": {
+      "name": "Kritické zranění v boji nablízko",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.observantFeat": {
+      "name": "Pozorovatel",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.powerfulBuild": {
+      "name": "Mohutně stavěný",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.reliableTalent": {
+      "name": "Spolehlivý talent",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.remarkableAthlete": {
+      "name": "Mimořádný atlet",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.spellCriticalThreshold": {
+      "name": "Práh kritického zásahu kouzlem",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.spellSniper": {
+      "name": "Kouzelný ostřelovač",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.tavernBrawlerFeat": {
+      "name": "Hospodský rváč",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    },
+    "flags.dnd5e.weaponCriticalThreshold": {
+      "name": "Práh kritického zásahu zbraní",
+      "description": "Podrobnosti viz \"Zvláštní rysy\"."
+    }
+  },
+  "dae.Macros.fieldData": {
+    "macro.actorUpdate": {
+      "name": "",
+      "description": ""
+    },
+    "macro.CE": {
+      "name": "",
+      "description": ""
+    },
+    "macro.CLT": {
+      "name": "",
+      "description": ""
+    },
+    "macro.createItem": {
+      "name": "",
+      "description": ""
+    },
+    "macro.createItemRunMacro": {
+      "name": "",
+      "description": ""
+    },
+    "macro.CUB": {
+      "name": "",
+      "description": ""
+    },
+    "macro.execute": {
+      "name": "",
+      "description": ""
+    },
+    "macro.execute.GM": {
+      "name": "",
+      "description": ""
+    },
+    "macro.execute.local": {
+      "name": "",
+      "description": ""
+    },
+    "macro.itemMacro": {
+      "name": "",
+      "description": ""
+    },
+    "macro.itemMacro.GM": {
+      "name": "",
+      "description": ""
+    },
+    "macro.itemMacro.local": {
+      "name": "",
+      "description": ""
+    },
+    "macro.StatusEffect": {
+      "name": "",
+      "description": ""
+    }
+  },
+  "dae.SystemAbilities.fieldData": {
+    "system.abilities.cha.bonuses.check": {
+      "name": "Bonus k ověření Charismatu",
+      "description": ""
+    },
+    "system.abilities.cha.bonuses.save": {
+      "name": "Bonus k záchraně Charismatem",
+      "description": ""
+    },
+    "system.abilities.cha.dc": {
+      "name": "SO záchrany Charismatem",
+      "description": ""
+    },
+    "system.abilities.cha.max": {
+      "name": "Maximální hodnota Charismatu",
+      "description": ""
+    },
+    "system.abilities.cha.mod": {
+      "name": "Oprava Charismatu",
+      "description": ""
+    },
+    "system.abilities.cha.proficient": {
+      "name": "Zdatnost v záchraně Charismatem",
+      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
+    },
+    "system.abilities.cha.save": {
+      "name": "Oprava záchrany Charismatem",
+      "description": ""
+    },
+    "system.abilities.cha.value": {
+      "name": "Hodnota Charismatu",
+      "description": ""
+    },
+    "system.abilities.con.bonuses.check": {
+      "name": "Bonus k ověření Odolnosti",
+      "description": ""
+    },
+    "system.abilities.con.bonuses.save": {
+      "name": "Bonus k záchrannému hodu Odolností",
+      "description": ""
+    },
+    "system.abilities.con.dc": {
+      "name": "SO záchrany Odolností",
+      "description": ""
+    },
+    "system.abilities.con.max": {
+      "name": "Maximální hodnota Odolnosti",
+      "description": ""
+    },
+    "system.abilities.con.mod": {
+      "name": "Oprava Odolnosti",
+      "description": ""
+    },
+    "system.abilities.con.proficient": {
+      "name": "Zdatnost v záchraně Odolností",
+      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
+    },
+    "system.abilities.con.save": {
+      "name": "Oprava záchrany Odolností",
+      "description": ""
+    },
+    "system.abilities.con.value": {
+      "name": "Hodnota Odolnosti",
+      "description": ""
+    },
+    "system.abilities.dex.bonuses.check": {
+      "name": "Bonus k ověření Obratnosti",
+      "description": ""
+    },
+    "system.abilities.dex.bonuses.save": {
+      "name": "Bonus k záchraně Obratností",
+      "description": ""
+    },
+    "system.abilities.dex.dc": {
+      "name": "SO záchrany Obratností",
+      "description": ""
+    },
+    "system.abilities.dex.max": {
+      "name": "Maximální hodnota Obratnosti",
+      "description": ""
+    },
+    "system.abilities.dex.mod": {
+      "name": "Oprava Obratnosti",
+      "description": ""
+    },
+    "system.abilities.dex.proficient": {
+      "name": "Zdatnost v záchraně Obratností",
+      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
+    },
+    "system.abilities.dex.save": {
+      "name": "Oprava záchrany Obratností",
+      "description": ""
+    },
+    "system.abilities.dex.value": {
+      "name": "Hodnota Obratnosti",
+      "description": ""
+    },
+    "system.abilities.int.bonuses.check": {
+      "name": "Bonus k ověření Inteligence",
+      "description": ""
+    },
+    "system.abilities.int.bonuses.save": {
+      "name": "Bonus k záchraně Inteligencí",
+      "description": ""
+    },
+    "system.abilities.int.dc": {
+      "name": "SO záchrany Inteligencí",
+      "description": ""
+    },
+    "system.abilities.int.max": {
+      "name": "Maximální hodnota Inteligence",
+      "description": ""
+    },
+    "system.abilities.int.mod": {
+      "name": "Oprava Inteligence",
+      "description": ""
+    },
+    "system.abilities.int.proficient": {
+      "name": "Zdatnost v záchraně Inteligencí",
+      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
+    },
+    "system.abilities.int.save": {
+      "name": "Oprava záchrany Inteligencí",
+      "description": ""
+    },
+    "system.abilities.int.value": {
+      "name": "Hodnota Inteligence",
+      "description": ""
+    },
+    "system.abilities.str.bonuses.check": {
+      "name": "Bonus k ověření Síly",
+      "description": ""
+    },
+    "system.abilities.str.bonuses.save": {
+      "name": "Bonus k záchraně Silou",
+      "description": ""
+    },
+    "system.abilities.str.dc": {
+      "name": "SO záchrany Silou",
+      "description": ""
+    },
+    "system.abilities.str.max": {
+      "name": "Maximální hodnota Síly",
+      "description": ""
+    },
+    "system.abilities.str.mod": {
+      "name": "Oprava Síly",
+      "description": ""
+    },
+    "system.abilities.str.proficient": {
+      "name": "Zdatnost v záchraně Silou",
+      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
+    },
+    "system.abilities.str.save": {
+      "name": "Oprava záchrany Silou",
+      "description": ""
+    },
+    "system.abilities.str.value": {
+      "name": "Hodnota Síly",
+      "description": ""
+    },
+    "system.abilities.wis.bonuses.check": {
+      "name": "Bonus k ověření Moudrosti",
+      "description": ""
+    },
+    "system.abilities.wis.bonuses.save": {
+      "name": "Bonus k záchraně Moudrostí",
+      "description": ""
+    },
+    "system.abilities.wis.dc": {
+      "name": "SO záchrany Moudrostí",
+      "description": ""
+    },
+    "system.abilities.wis.max": {
+      "name": "Maximální hodnota Moudrosti",
+      "description": ""
+    },
+    "system.abilities.wis.mod": {
+      "name": "Oprava Moudrosti",
+      "description": ""
+    },
+    "system.abilities.wis.proficient": {
+      "name": "Zdatnost v záchraně na Moudrost",
+      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
+    },
+    "system.abilities.wis.save": {
+      "name": "Oprava záchrany Moudrostí",
+      "description": ""
+    },
+    "system.abilities.wis.value": {
+      "name": "Hodnota Moudrosti",
+      "description": ""
+    }
+  },
+  "dae.SystemSkills.fieldData": {
+    "system.skills.acr.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.acr.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ani.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.arc.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ath.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.dec.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.his.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ins.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.inv.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.itm.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.med.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.nat.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.per.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prc.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.prf.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.rel.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.slt.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.ste.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.bonuses.passive": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.skills.sur.value": {
+      "name": "",
+      "description": ""
+    }
+  },
+  "dae.SystemAttributes.fieldData": {
+    "system.attributes.ac.AR": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.ac.armor": {
+      "name": "",
+      "description": "Bonus k OČ zbroje (obvykle poskytován pouze nošenou zbrojí, bude tedy mít efekt pouze v případě, kdy postava nenosí zbroj)."
+    },
+    "system.attributes.ac.base": {
+      "name": "",
+      "description": "Zastaralé odvozené pole - nepoužívat."
+    },
+    "system.attributes.ac.bonus": {
+      "name": "",
+      "description": "Číselný bonus k OČ."
+    },
+    "system.attributes.ac.calc": {
+      "name": "",
+      "description": "Metoda výpočtu OČ."
+    },
+    "system.attributes.ac.cover": {
+      "name": "",
+      "description": "Bonus k OČ za kryt (obvykle poskytován pouze efekty krytu)."
+    },
+    "system.attributes.ac.EC": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.ac.flat": {
+      "name": "",
+      "description": "Pevná hodnota OČ (vyžaduje, aby system.attributes.ac.calc bylo nastaveno na \"pevné\")."
+    },
+    "system.attributes.ac.formula": {
+      "name": "",
+      "description": "Vzorec pro výpočet OČ (vyžaduje, aby system.attributes.ac.calc bylo nastaveno na \"vlastní\")."
+    },
+    "system.attributes.ac.min": {
+      "name": "",
+      "description": "Minimální hodnota OČ (pokud je vypočtená hodnota nižší, bude nastavena na tuto hodnotu)."
+    },
+    "system.attributes.ac.shield": {
+      "name": "",
+      "description": "Bonus k OČ ze štítu (obvykle poskytován pouze nošeným štítem)."
+    },
+    "system.attributes.ac.value": {
+      "name": "",
+      "description": "Použije system.attributes.ac.calc jako \"pevné\" a system.attributes.ac.flat jako požadovanou hodnotu."
+    },
+    "system.attributes.attunement.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.bonuses.save": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.limit": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.concentration.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.failure": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.death.success": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.bonuses.encumbered": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.bonuses.heavilyEncumbered": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.bonuses.maximum": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.bonuses.overall": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.multipliers.encumbered": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.multipliers.heavilyEncumbered": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.multipliers.maximum": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.encumbrance.multipliers.overall": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.exhaustion": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.hd.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.hp.bonuses.level": {
+      "name": "Bonus k BV za úroveň",
+      "description": "Bonus k bodům výdrže přidávaný za každou úroveň postavy (funguje pouze pro postavy s povoláním)."
+    },
+    "system.attributes.hp.bonuses.overall": {
+      "name": "Celkový bonus k BV",
+      "description": "Bonus k bodům výdrže (funguje pouze pro postavy s povoláním)."
+    },
+    "system.attributes.hp.max": {
+      "name": "Maximální BV",
+      "description": "Tato hodnota by neměla být upravována aktérem s povoláním - místo toho použij některý z .bonuses nebo .tempmax."
+    },
+    "system.attributes.hp.temp": {
+      "name": "Dočasné BV",
+      "description": "Tato hodnota by nikdy neměla být upravována aktivním efektem - místo toho aplikuj zranění temphp."
+    },
+    "system.attributes.hp.tempmax": {
+      "name": "Dočasné max. BV",
+      "description": "Dočasná úprava maximálních bodům výdrže."
+    },
+    "system.attributes.hp.value": {
+      "name": "Aktuální BV",
+      "description": "Tato hodnota by nikdy neměla být upravována aktivním efektem - místo toho aplikuj zranění."
+    },
+    "system.attributes.init.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.init.bonus": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.init.roll.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.init.roll.min": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.init.roll.mode": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.inspiration": {
+      "name": "Inspirace",
+      "description": ""
+    },
+    "system.attributes.movement.all": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.burrow": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.climb": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.fly": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.hover": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.swim": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.units": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.movement.walk": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.blindsight": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.darkvision": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.special": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.tremorsense": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.truesight": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.senses.units": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.spellcasting": {
+      "name": "",
+      "description": ""
+    }
+  },
+  "dae.SystemBonuses.fieldData": {
+    "system.bonuses.abil.damage": {
+      "name": "",
+      "description": ""
+    },
+    "system.bonuses.abilities.check": {
+      "name": "",
+      "description": "Bonus ke všem ověřením vlastností."
+    },
+    "system.bonuses.abilities.save": {
+      "name": "",
+      "description": "Bonus ke všem záchranám vlastnostmi."
+    },
+    "system.bonuses.abilities.skill": {
+      "name": "",
+      "description": "Bonus ke všem ověřením dovedností."
+    },
+    "system.bonuses.All-Attacks": {
+      "name": "",
+      "description": "Bonus ke všem hodům na útok."
+    },
+    "system.bonuses.All-Damage": {
+      "name": "",
+      "description": "Bonus ke všem hodům na zásah."
+    },
+    "system.bonuses.check.damage": {
+      "name": "",
+      "description": "Bonus ke všem ověřením aktivit hodů na zásah."
+    },
+    "system.bonuses.heal.attack": {
+      "name": "",
+      "description": ""
+    },
+    "system.bonuses.heal.damage": {
+      "name": "",
+      "description": "Bonus ke všem hodům na zásah aktivit léčení."
+    },
+    "system.bonuses.msak.attack": {
+      "name": "",
+      "description": "Bonus ke všem hodům na útok u \"útoků kouzlem na blízko\"."
+    },
+    "system.bonuses.msak.damage": {
+      "name": "",
+      "description": "Bonus ke všem hodům na zásah u \"útoků kouzlem na blízko\"."
+    },
+    "system.bonuses.mwak.attack": {
+      "name": "",
+      "description": "Bonus ke všem hodům na útok u \"útoků zbraní na blízko\"."
+    },
+    "system.bonuses.mwak.damage": {
+      "name": "",
+      "description": "Bonus ke všem hodům na zásah u \"útoků zbraní na blízko\"."
+    },
+    "system.bonuses.other.damage": {
+      "name": "",
+      "description": ""
+    },
+    "system.bonuses.rsak.attack": {
+      "name": "",
+      "description": "Bonus ke všem hodům na útok \"útoků kouzlem na dálku\"."
+    },
+    "system.bonuses.rsak.damage": {
+     "name": "",
+      "description": "Bonus ke všem hodům na zásah \"útoků kouzlem na dálku\"."
+    },
+    "system.bonuses.rwak.attack": {
+      "name": "",
+      "description": "Bonus ke všem hodům na útok \"útoků zbraní na dálku\"."
+    },
+    "system.bonuses.rwak.damage": {
+      "name": "",
+      "description": "Bonus ke všem hodům na zásah \"útoků zbraní na dálku\"."
+    },
+    "system.bonuses.save.damage": {
+      "name": "",
+      "description": "Bonus ke všem hodům na zásah aktivit záchranných hodů."
+    },
+    "system.bonuses.spell.all.damage": {
+      "name": "",
+      "description": "Bonus ke všem hodům na zásah kouzel."
+    },
+    "system.bonuses.spell.attack": {
+      "name": "",
+      "description": "Bonus ke všem hodům na útok kouzlem."
+    },
+    "system.bonuses.spell.damage": {
+      "name": "",
+      "description": "Bonus ke všem hodům na zásah aktivit útoků kouzlem."
+    },
+    "system.bonuses.spell.dc": {
+      "name": "",
+      "description": "Bonus ke Stupni obtížnosti záchrany proti kouzlům."
+    },
+      "system.bonuses.util.damage": {
+        "name": "",
+        "description": ""
+      },
+      "system.bonuses.weapon.attack": {
+        "name": "",
+        "description": "Bonus ke všem hodům na útok zbraní."
+      },
+      "system.bonuses.weapon.damage": {
+        "name": "",
+        "description": "Bonus ke všem hodům na zásah aktivit útoků zbraní."
+    }
+  },
+  "dae.SystemTraits.fieldData": {
+    "system.traits.armorProf.all": {
+      "name": "Výcvik se všemi typy zbrojí",
+      "description": ""
+    },
+    "system.traits.armorProf.custom": {
+      "name": "Vlastní výcvik se zbrojí",
+      "description": ""
+    },
+    "system.traits.armorProf.value": {
+      "name": "Hodnota výcviku se zbrojí",
+      "description": ""
+    },
+    "system.traits.ci.all": {
+      "name": "Imunita vůči všem stavům",
+      "description": "Imunita vůči všem stavům."
+    },
+    "system.traits.ci.custom": {
+      "name": "Vlastní imunita vůči stavu",
+      "description": ""
+    },
+    "system.traits.ci.value": {
+      "name": "Individuální imunita vůči stavu",
+      "description": "Použij režim ´Přidat´ a vyber imunitu vůči stavu, kterou chceš přidat. ´-condition´ ji odstraní."
+    },
+    "system.traits.da.all": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.da.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.da.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.damageTypes.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.damageTypes.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.di.all": {
+      "name": "",
+      "description": "Imunita vůči všem typům zranění."
+    },
+    "system.traits.di.bypasses": {
+      "name": "",
+      "description": "Vlastnosti položky/zbraně obcházející imunitu vůči zranění."
+    },
+    "system.traits.di.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.di.value": {
+      "name": "",
+      "description": "Použij režim ´Přidat´ a vyber typ imunity, kterou chceš přidat. ´-type´ ji odstraní."
+    },
+    "system.traits.dm.amount.acid": {
+      "name": "",
+      "description": "Úprava zranění kyselinou. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.bludgeoning": {
+      "name": "",
+      "description": "Úprava zranění drtivým útokem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.cold": {
+      "name": "",
+      "description": "Úprava zranění chladem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.fire": {
+      "name": "",
+      "description": "Úprava zranění ohněm. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.force": {
+      "name": "",
+      "description": "Úprava zranění silou. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.healing": {
+      "name": "",
+      "description": "Úprava léčení. Kladná čísla znamenají zvýšené léčení, záporná snížené."
+    },
+    "system.traits.dm.amount.lightning": {
+      "name": "",
+      "description": "Úprava zranění bleskem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.midi-none": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.amount.necrotic": {
+      "name": "",
+      "description": "Úprava nekrotického zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.none": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.amount.piercing": {
+      "name": "",
+      "description": "Úprava zranění bodným útokem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.poison": {
+      "name": "",
+      "description": "Úprava zranění jedem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.psychic": {
+      "name": "",
+      "description": "Úprava psychického zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.radiant": {
+      "name": "",
+      "description": "Úprava zářivého zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.slashing": {
+      "name": "",
+      "description": "Úprava sečného zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.amount.temphp": {
+      "name": "",
+      "description": "Úprava léčení dočasných bodů výdrže. Kladná čísla znamenají zvýšené léčení, záporná snížené."
+    },
+    "system.traits.dm.amount.thunder": {
+      "name": "",
+      "description": "Úprava zranění hromem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.bypasses": {
+      "name": "",
+      "description": "Parametry položek/zbraně obcházejících úpravy zranění."
+    },
+    "system.traits.dm.midi.abil": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.midi.all": {
+      "name": "",
+      "description": "Úprava zranění pro všechny typy zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.midi.ench": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.midi.heal": {
+      "name": "",     
+      "description": "Úprava zranění u aktivit léčení. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.midi.msak": {
+      "name": "",
+      "description": "Úprava zranění u útoků kouzlem na blízko. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.midi.mwak": {
+      "name": "",
+      "description": "Úprava zranění u útoků zbraní na blízko. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.midi.other": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.midi.rsak": {
+      "name": "",
+      "description": "Úprava zranění u útoků kouzlem na dálku. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.midi.rwak": {
+      "name": "",
+      "description": "Úprava zranění u útoků zbraní na dálku. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.midi.save": {
+      "name": "",
+      "description": "Úprava zranění u záchranných hodů. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    },
+    "system.traits.dm.midi.summ": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dm.midi.util": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dr.all": {
+      "name": "",
+      "description": "Odolání vůči všem typům zranění."
+    },
+    "system.traits.dr.bypasses": {
+      "name": "",
+      "description": "Parametry položky/zbraně obcházejících snížení zranění."
+    },
+    "system.traits.dr.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dr.value": {
+      "name": "",
+      "description": "Použij režim ´Přidat´ a vyber typ redukce, kterou chceš přidat. ´-typ´ ji odstraní."
+    },
+    "system.traits.dv.all": {
+      "name": "",
+      "description": "Zranitelnost vůči všem typům zranění."
+    },
+    "system.traits.dv.bypasses": {
+      "name": "",
+      "description": "Parametry předmětu/zbraně obcházejících zranitelnost vůči zranění."
+    },
+    "system.traits.dv.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.dv.value": {
+      "name": "",
+      "description": "Použij režim ´Přidat´ a vyber typ zranitelnosti, kterou chceš přidat. ´-typ´ jej odstraní."
+    },
+    "system.traits.languages.all": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.languages.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.languages.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.size": {
+      "name": "",
+      "description": ""
+    },
+    "system.traits.weaponProf.all": {
+      "name": "Zdatnost se všemi zbraněmi",
+      "description": ""
+    },
+    "system.traits.weaponProf.custom": {
+      "name": "Vlastní zdatnost se zbraní",
+      "description": ""
+    },
+    "system.traits.weaponProf.value": {
+      "name": "Hodnota zdatnosti se zbraní",
+      "description": ""
+    }
+  },
+  "dae.Other.fieldData": {
+    "StatusEffect": {
+      "name": "",
+      "description": ""
+    },
+    "StatusEffectLabel": {
+      "name": "",
+      "description": ""
+    },
+    "StatusEffectName": {
+      "name": "",
+      "description": ""
+    },
+    "flags.dae": {
+      "name": "",
+      "description": ""
+    },
+    "flags.dae.onUpdateSource": {
+      "name": "",
+      "description": ""
+    },
+    "flags.dae.onUpdateTarget": {
+      "name": "",
+      "description": ""
+    },
+    "system.favorites": {
+      "name": "Oblíbené",
+      "description": ""
+    },
+    "system.attributes.movement.air": {
+      "name": "Pohyb vzduchem",
+      "description": ""
+    },
+    "system.attributes.movement.land": {
+      "name": "Pohyb po zemi",
+      "description": ""
+    },
+    "system.attributes.movement.water": {
+      "name": "Pohyb ve vodě",
+      "description": ""
+    },
+    "system.description.full": {
+      "name": "Plný popis",
+      "description": ""
+    },
+    "system.description.summary": {
+      "name": "Stručný popis",
+      "description": ""
+    },
+    "system.members": {
+      "name": "Členové",
+      "description": ""
+    },
+    "system.type.value": {
+      "name": "Hodnota typu",
+      "description": ""
+    },
+    "system.attributes.hd.spent": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.hp.formula": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.cr": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.environment": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.source.book": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.source.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.source.license": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.source.page": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.spellLevel": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.type.custom": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.type.subtype": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.type.swarm": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.type.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.lair.initiative": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.lair.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.legact.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.legres.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.attributes.ac.motionless": {
+      "name": "OČ při nehybnosti",
+      "description": ""
+    },
+    "system.attributes.actions.stations": {
+      "name": "Bojová stanoviště",
+      "description": ""
+    },
+    "system.attributes.actions.thresholds.0": {
+      "name": "Práh akcí 0",
+      "description": ""
+    },
+    "system.attributes.actions.thresholds.1": {
+      "name": "Práh akcí 1",
+      "description": ""
+    },
+    "system.attributes.actions.thresholds.2": {
+      "name": "Práh akcí 2",
+      "description": ""
+    },
+    "system.attributes.actions.value": {
+      "name": "Hodnota akcí",
+      "description": ""
+    },
+    "system.attributes.capacity.cargo": {
+      "name": "Nákladní kapacita",
+      "description": ""
+    },
+    "system.attributes.capacity.creature": {
+      "name": "Kapacita bytostí",
+      "description": ""
+    },
+    "system.attributes.hp.dt": {
+      "name": "Práh poškození",
+      "description": ""
+    },
+    "system.attributes.hp.mt": {
+      "name": "Minimální práh",
+      "description": ""
+    },
+    "system.cargo.crew": {
+      "name": "Kapacita posádky",
+      "description": ""
+    },
+    "system.cargo.passengers": {
+      "name": "Kapacita cestujících",
+      "description": ""
+    },
+    "system.traits.dimensions": {
+      "name": "Rozměry",
+      "description": ""
+    },
+    "system.vehicleType": {
+      "name": "Typ dopravního prostředku",
+      "description": ""
+    },
+    "system.currency.cp": {
+      "name": "",
+      "description": ""
+    },
+    "system.currency.ep": {
+      "name": "",
+      "description": ""
+    },
+    "system.currency.gp": {
+      "name": "",
+      "description": ""
+    },
+    "system.currency.pp": {
+      "name": "",
+      "description": ""
+    },
+    "system.currency.sp": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.age": {
+      "name": "Věk",
+      "description": ""
+    },
+    "system.details.alignment": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.appearance": {
+      "name": "Vzhled",
+      "description": ""
+    },
+    "system.details.background": {
+      "name": "Zázemí",
+      "description": ""
+    },
+    "system.details.biography.public": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.biography.value": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.bond": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.eyes": {
+      "name": "Oči",
+      "description": ""
+    },
+    "system.details.faith": {
+      "name": "Víra",
+      "description": ""
+    },
+    "system.details.flaw": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.gender": {
+      "name": "Pohlaví",
+      "description": ""
+    },
+    "system.details.hair": {
+      "name": "Vlasy",
+      "description": ""
+    },
+    "system.details.height": {
+      "name": "Výška",
+      "description": ""
+    },
+    "system.details.ideal": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.level": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.originalClass": {
+      "name": "Původní povolání",
+      "description": ""
+    },
+    "system.details.race": {
+      "name": "",
+      "description": ""
+    },
+    "system.details.skin": {
+      "name": "Barva kůže",
+      "description": ""
+    },
+    "system.details.trait": {
+      "name": "Rysy",
+      "description": ""
+    },
+    "system.details.weight": {
+      "name": "Váha",
+      "description": ""
+    },
+    "system.details.xp.value": {
+      "name": "Hodnota bodů zkušeností",
+      "description": ""
+    },
+    "system.resources.legact.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.legres.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.primary.label": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.primary.lr": {
+      "name": "Primarní zdroj po důkladném odpočinku",
+      "description": "Obnova při důkladném odpočinku (1/0)"
+    },
+    "system.resources.primary.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.primary.sr": {
+      "name": "Primární zdroj po krátkém odpočinku",
+      "description": "Obnova při krátkém odpočinku (1/0)"
+    },
+    "system.resources.primary.value": {
+      "name": "Hodnota primárního zdroje",
+      "description": "Toto by se nemělo nastavovat pomocí aktivního efektu!"
+    },
+    "system.resources.secondary.label": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.secondary.lr": {
+      "name": "Sekundární zdroj po důkladném odpočinku",
+      "description": "Obnova při důkladném odpočinku (1/0)"
+    },
+    "system.resources.secondary.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.secondary.sr": {
+      "name": "Sekundární zdroj po krátkém odpočinku",
+      "description": "Obnova při krátkém odpočinkuu (1/0)"
+    },
+    "system.resources.secondary.value": {
+      "name": "Hodnota sekundárního zdroje",
+      "description": "Toto by se nemělo nastavovat pomocí aktivního efektu!"
+    },
+    "system.resources.tertiary.label": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.tertiary.lr": {
+      "name": "Terciární zdroj po důkladném odpočinku",
+      "description": "Obnova při důkladném odpočinku (1/0)"
+    },
+    "system.resources.tertiary.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.resources.tertiary.sr": {
+      "name": "Terciární zdroj po krátkém odpočinku",
+      "description": "Obnova při krátkém odpočinku (1/0)"
+    },
+    "system.resources.tertiary.value": {
+      "name": "Hodnota terciárního zdroje",
+      "description": "Toto by se nemělo nastavovat pomocí aktivního efektu!"
+    },
+    "system.spells.pact.level": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.pact.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.pact.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell1.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell1.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell2.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell2.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell3.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell3.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell4.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell4.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell5.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell5.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell6.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell6.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell7.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell7.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell8.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell8.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell9.max": {
+      "name": "",
+      "description": ""
+    },
+    "system.spells.spell9.override": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.alchemist.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.alchemist.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.alchemist.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.art.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.art.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.art.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.bagpipes.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.bagpipes.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.bagpipes.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.brewer.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.brewer.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.brewer.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.calligrapher.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.calligrapher.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.calligrapher.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.card.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.card.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.card.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.carpenter.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.carpenter.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.carpenter.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cartographer.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cartographer.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cartographer.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.chess.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.chess.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.chess.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cobbler.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cobbler.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cobbler.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cook.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cook.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.cook.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dice.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dice.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dice.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.disg.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.disg.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.disg.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.drum.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.drum.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.drum.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dulcimer.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dulcimer.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.dulcimer.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.flute.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.flute.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.flute.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.forg.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.forg.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.forg.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.game.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.game.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.game.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.glassblower.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.glassblower.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.glassblower.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.herb.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.herb.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.herb.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.horn.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.horn.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.horn.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.jeweler.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.jeweler.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.jeweler.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.leatherworker.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.leatherworker.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.leatherworker.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lute.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lute.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lute.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lyre.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lyre.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.lyre.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.mason.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.mason.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.mason.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.music.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.music.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.music.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.navg.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.navg.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.navg.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.painter.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.painter.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.painter.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.panflute.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.panflute.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.panflute.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.pois.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.pois.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.pois.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.potter.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.potter.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.potter.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.shawm.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.shawm.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.shawm.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.smith.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.smith.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.smith.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.thief.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.thief.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.thief.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.tinker.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.tinker.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.tinker.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.vehicle.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.vehicle.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.vehicle.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.viol.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.viol.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.viol.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.weaver.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.weaver.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.weaver.prof": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.woodcarver.ability": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.woodcarver.bonuses.check": {
+      "name": "",
+      "description": ""
+    },
+    "system.tools.woodcarver.prof": {
+      "name": "",
+      "description": ""
+    }
+  }
+}
