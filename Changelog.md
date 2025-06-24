@@ -1,3 +1,6 @@
+### 13.0.3
+* Added Czech language files - thanks @Lethrendis
+
 ### 13.0.2
 * Fix for not being able to edit some of the midi-qol specific fields in effects.
 * Support @tokenUuid to refer to the caster token as an argument in
