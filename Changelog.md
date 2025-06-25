@@ -1,4 +1,8 @@
 ### 12.0.27
+* Better fix for the fix in 12.0.26 - thanks @michael.
+  - Should restore statuses to various evaluations @Elwin
+
+### 12.0.27
 * Added Czech language files - thanks @Lethrendis
 
 ### 12.0.26
