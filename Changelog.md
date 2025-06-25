@@ -1,3 +1,7 @@
+### 13.0.4
+* Better fix for the looping concentration problem - thanks @Micheal.
+  - Should fix the missing statuses issue @Elwin
+
 ### 13.0.3
 * Added Czech language files - thanks @Lethrendis
 
