@@ -1,5 +1,5 @@
 ### 13.0.4
-* Better fix for the looping concentration problem - thanks @Micheal.
+* Better fix for the looping concentration problem - thanks @Michael.
   - Should fix the missing statuses issue @Elwin
 
 ### 13.0.3
