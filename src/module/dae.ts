@@ -2565,7 +2565,6 @@ function attachItemSheetHeaderButton(app, buttons) {
   }
 }
 function appendDocumentSheetHeaderControls(app, controls) {
-  console.log(app);
   const daeTitle = i18n("dae.ActiveEffectName");
   const DIMETitle = i18n("dae.DIMEditor.Name");
   if (daeTitleBar) {
