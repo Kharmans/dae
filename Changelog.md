@@ -1,3 +1,6 @@
+### 13.0.5
+* Little cleanup of duration conversion
+
 ### 13.0.4
 * Better fix for the looping concentration problem - thanks @Michael.
   - Should fix the missing statuses issue @Elwin
