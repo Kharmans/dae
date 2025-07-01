@@ -528,6 +528,8 @@ export function convertDuration(durationData: { units: string, value: number }, 
       case "year":
       case "years": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0 };
       case "inst":
+        case "inst":
+          return { type: useTurns ? "turns" : "seconds", seconds: 0, rounds: 0, turns: 0 };
       case "spec": 
       case "perm":
       case "disp":
@@ -548,6 +550,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       case "second":
         return { type: useTurns ? "turns" : "seconds", seconds: durationData.value, rounds: durationData.value / CONFIG.time.roundTime, turns: 0 };
       case "inst":
+        return { type: useTurns ? "turns" : "seconds", seconds: 0, rounds: 0, turns: 0 };
       case "spec":
       case "perm":
       case "disp":
@@ -556,6 +559,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       default:
         let interval = {}
         interval[durationData.units] = durationData.value;
+        //@ts-expect-error worldTime
         const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time?.worldTime, interval) - (game.time?.worldTime ?? 0);
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };

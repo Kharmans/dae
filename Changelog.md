@@ -1,3 +1,6 @@
+### 12.0.29
+* Little cleanup of duration conversion
+
 ### 12.0.28
 * Better fix for the fix in 12.0.26 - thanks @michael.
   - Should restore statuses to various evaluations @Elwin
