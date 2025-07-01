@@ -518,7 +518,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // Overide prepareData so it can add the extra pass
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // support other things that can suppress an effect, like condition immunity
-    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "OVERRIDE");
+    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "WRAPPER");
     // This supplies DAE custom effects - the main game
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
     // done here as it references some .system data
@@ -1467,8 +1467,8 @@ export function getActorItemForEffect(effect: any /* ActiveEffect */) {
   return item;
 }
 
-function determineSuppression() {
-  this.isSuppressed = false;
+function determineSuppression(wrapped) {
+  wrapped();
   // if (this.disabled) return; dnd5e does not do this check
   if (isEnchantment(this)) return;
 
@@ -1482,15 +1482,10 @@ function determineSuppression() {
 
   if (globalThis.MidiQOL && foundry.utils.getProperty(this, "flags.dae.disableIncapacitated")) {
     // if (actor) this.isSuppressed = actor.statuses.has("incapacitated");
-    if (actor) this.isSuppressed = globalThis.MidiQOL.checkIncapacitated(actor);
+    if (actor) this.isSuppressed = this.isSuppressed || globalThis.MidiQOL.checkIncapacitated(actor);
   }
 
-  if (this.parent instanceof CONFIG.Item.documentClass && effectIsTransfer(this)) {
-    // If the parent of the effect is an item then suppressed is based on the item
-    this.isSuppressed = this.isSuppressed || this.parent.areEffectsSuppressed;
-    return;
-  }
-  //TODO revisit when dnd5e is fixed
+  //TODO revisit when dnd5e is fixed. When can this actually happen? 
   // This is an actor effect and it's a transfer effect
   if (this.parent instanceof CONFIG.Actor.documentClass && effectIsTransfer(this)) {
     const item = getActorItemForEffect(this);
