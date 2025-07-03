@@ -2797,7 +2797,7 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, { 
   return returnEffect ? [returnEffect] : false;
 }
 
-export async function processConditionalEffects(actorRef: TokenDocument | Actor, updates, user, options) {
+export async function processConditionalEffects(actorRef: TokenDocument | Actor, updates, options, user) {
   if (!game.users?.activeGM?.isSelf) return;
   let actor;
   let tokenDocument;
