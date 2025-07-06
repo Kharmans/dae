@@ -286,7 +286,7 @@ export async function macroActorUpdate(...args) {
   let actor;
   actor = tactor.actor ? tactor.actor : tactor;
   // const fieldDef = `flags.dae.save.${targetField}`;
-  const fieldDef = `flags.dae.actorUpdate.${targetField}`;
+  const fieldDef = `flags.dae.actorUpdate.${lastArg.effectId}.${targetField}`;
   let actorValue = foundry.utils.getProperty(actor, targetField);
   if (args[0] === "each") {
     // for subsequent executions we have to recover the origianl actor value from the saved value.
@@ -349,10 +349,7 @@ export async function macroActorUpdate(...args) {
 
     if (undo !== false) {
       const update = {};
-      let nullField = fieldDef.split(".");
-      nullField[nullField.length - 1] = "-=" + nullField[nullField.length - 1];
-      const nulledField = nullField.join(".");
-      update[nulledField] = null;
+      foundry.utils.setProperty(update, `flags.dae.actorUpdate.-=${lastARg.effectId}`, null);
       update[targetField] = restoreValue;
       if (actor.isOwner) return await actor.update(update);
       else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update})
