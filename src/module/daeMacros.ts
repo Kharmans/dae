@@ -289,7 +289,7 @@ export async function macroActorUpdate(...args) {
   let actor;
   actor = tactor.actor ? tactor.actor : tactor;
   // const fieldDef = `flags.dae.save.${targetField}`;
-  const fieldDef = `flags.dae.actorUpdate.${targetField}`;
+  const fieldDef = `flags.dae.actorUpdate.${lastArg.effectId}.${targetField}`;
   let actorValue = foundry.utils.getProperty(actor, targetField);
   if (args[0] === "each") {
     // for subsequent executions we have to recover the origianl actor value from the saved value.
@@ -303,18 +303,20 @@ export async function macroActorUpdate(...args) {
       console.warn(`dae | macro.actorUpdate user ${game.user?.name} is updating ${actor.name} ${targetField}`);
     }
     switch (type) {
-      case "boolean": value = JSON.parse(value) ? true : false;
-      case "number": 
-      let op = " ";
-        if (typeof value === "string") {
-          value=value.trim();
+      case 'boolean':
+        value = JSON.parse(value) ? true : false;
+        break;
+      case 'number':
+        let op = ' ';
+        if (typeof value === 'string') {
+          value = value.trim();
           op = value[0];
         }
-        value = `${value}`.replace(/(\*\*(.+?)\*\*)/g, "@$2");
-        if (["+","-","*","/"].includes(op) && Number.isNumeric(actorValue))
-          value = new Roll(`${actorValue}${value}`, rollContext).evaluateSync({strict: false}).total;
-        else
-          value = new Roll(value, rollContext).evaluateSync({strict: false}).total;
+        value = `${value}`.replace(/(\*\*(.+?)\*\*)/g, '@$2');
+        if (['+', '-', '*', '/'].includes(op) && Number.isNumeric(actorValue)) 
+          value = new Roll(`${actorValue}${value}`, rollContext).evaluateSync({ strict: false }).total;
+        else 
+          value = new Roll(value, rollContext).evaluateSync({ strict: false }).total;
         break;
       default: // assume a string
     }
@@ -350,10 +352,7 @@ export async function macroActorUpdate(...args) {
 
     if (undo !== false) {
       const update = {};
-      let nullField = fieldDef.split(".");
-      nullField[nullField.length - 1] = "-=" + nullField[nullField.length - 1];
-      const nulledField = nullField.join(".");
-      update[nulledField] = null;
+      foundry.utils.setProperty(update, `flags.dae.actorUpdate.-=${lastArg.effectId}`, null);
       update[targetField] = restoreValue;
       if (actor.isOwner) return await actor.update(update);
       else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update})
