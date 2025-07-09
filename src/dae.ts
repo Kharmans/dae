@@ -38,11 +38,6 @@ export let daeAlternateStatus;
 export var gameSystemCompatible = "maybe"; // no, yes, partial, maybe
 export var daeUntestedSystems: boolean;
 export const MODULE_ID = "dae";
-declare global {
-  interface LenientGlobalVariableTypes {
-    game: never; // the type doesn't matter
-  }
-}
 /* ------------------------------------ */
 /* Initialize module					*/
 /* ------------------------------------ */
@@ -61,8 +56,7 @@ Hooks.once('init', async function () {
     console.error(`DAE is not compatible with ${game.system?.title} module disabled`)
   } else {
     registerSettings();
-    // @ts-expect-error
-    daeUntestedSystems = game.settings?.get("dae", "DAEUntestedSystems") === true;
+    daeUntestedSystems = game.settings.get("dae", "DAEUntestedSystems") === true;
     if (gameSystemCompatible === "yes" || daeUntestedSystems) {
       if (gameSystemCompatible === "maybe") console.warn(`DAE compatibility warning for ${game.system?.title} is not tested with DAE`);
       daeInitActions();
@@ -181,7 +175,7 @@ const DAEMacros = [
 ];
 
 export async function createDAEMacros() {
-  if (game?.user?.isGM) {
+  if (game.user?.isGM) {
     const daeVersion = "11.2.0";
     for (let macroSpec of DAEMacros) {
       try {

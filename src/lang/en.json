@@ -292,7 +292,6 @@
   "dae.ShowDeprecation.Name": "Show Deprecation Errors",
   "dae.ShowDeprecation.Hint": "Show Deprecation Errors in console",
   "dae.CE": "Convenient Effects",
-  "dae.CUB": "Combat Utility Belt",
   "dae.ShowInline.Name": "Display results of inline rolls",
   "dae.ShowInline.Hint": "Effects with an inline roll will display the roll results if set",
   "dae.StackableOptions": {
@@ -492,19 +491,11 @@
       "name": "",
       "description": ""
     },
-    "macro.CLT": {
-      "name": "",
-      "description": ""
-    },
     "macro.createItem": {
       "name": "",
       "description": ""
     },
     "macro.createItemRunMacro": {
-      "name": "",
-      "description": ""
-    },
-    "macro.CUB": {
       "name": "",
       "description": ""
     },

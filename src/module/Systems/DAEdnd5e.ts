@@ -325,7 +325,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     });
     if (foundry.utils.getProperty(actorModelSchemaFields, "spells")) {
-      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") ?? []))
+      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") as string[] ?? []))
         baseValues[`system.spells.${spellSpec}.override`] = [new NumberField(), -1];
     }
 
@@ -420,20 +420,20 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     }
     if (foundry.utils.getProperty(actorModelSchemaFields, "spells")) {
-      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") ?? []))
+      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") as string[] ?? []))
         specials[`system.spells.${spellSpec}.max`] = [new NumberField(), -1];
     }
 
     if (["character", "npc"].includes(actorType) && game.system?.id === "dnd5e") {
       // @ts-expect-error
-      if (game.settings?.get("dnd5e", "honorScore")) {
+      if (game.settings.get("dnd5e", "honorScore")) {
         specials[`system.abilities.hon.mod`] = [new NumberField(), -1];
         specials[`system.abilities.hon.save`] = [new NumberField(), -1];
         // specials[`system.abilities.hon.min`] = [new NumberField(), -1]; There is no min attribute yet
         specials[`system.abilities.hon.max`] = [new NumberField(), -1];
       }
       // @ts-expect-error
-      if (game.settings?.get("dnd5e", "sanityScore")) {
+      if (game.settings.get("dnd5e", "sanityScore")) {
         specials[`system.abilities.san.mod`] = [new NumberField(), -1];
         specials[`system.abilities.san.save`] = [new NumberField(), -1];
         // specials[`system.abilities.san.min`] = [new NumberField(), -1]; There is no min attribute yet
@@ -477,7 +477,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
     super.modifyDerivedSpecs(actorType, derivedSpecs, characterSpec);
     const actorModelSchemaFields = DAESystem.getActorDataModelFields(actorType);
-    //@ts-expect-error
     const systemVersion = game.system.version;
   }
 
@@ -494,7 +493,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   // Any actions to be called on init Hook 
   public static initActions() {
-    //@ts-expect-error  - renabled for some cases
     if (game.release.generation >= 12) {
       this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
     }
@@ -520,6 +518,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // support other things that can suppress an effect, like condition immunity
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "WRAPPER");
     // This supplies DAE custom effects - the main game
+    // @ts-expect-error hook needs to be fixed in types-land
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
@@ -527,8 +526,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     Hooks.once("babel.ready", () => { this.configureLists(null); });
     //@ts-expect-error
     const GameSystemConfig = game.system.config;
-    // @ts-expect-error
-    if (GameSystemConfig.conditionEffects && GameSystemConfig.conditionEffects["halfHealth"] && game.settings?.get("dae", "DAEAddHalfHealthEffect")) {
+    if (GameSystemConfig.conditionEffects && GameSystemConfig.conditionEffects["halfHealth"] && game.settings.get("dae", "DAEAddHalfHealthEffect")) {
       GameSystemConfig.conditionEffects["halfHealth"].add("halfHealthEffect");
       CONFIG.statusEffects.push({
         id: "halfHealthEffect",
@@ -544,8 +542,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //@ts-expect-error no dnd5e types
       if (candidate.isAppliedEnchantment && (candidate.duration.seconds || candidate.duration.rounds || candidate.duration.turns)) {
         if (!candidate.duration.startTime && candidate.duration.seconds)
-        //@ts-expect-error worldTime
-          candidate.updateSource({ duration: { startTime: game.time?.worldTime ?? 0 } });
+          candidate.updateSource({ duration: { startTime: game.time.worldTime ?? 0 } });
         else if (!Number.isNumeric(candidate.duration.startRound) && !Number.isNumeric(candidate.duration.startTurn) && game.combat) {
           candidate.updateSource({ duration: { startRound: game.combat?.round, startTurn: game.combat?.turn } });
         }
@@ -688,7 +685,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   // For DAE Editor
   public static configureLists(daeConfig: DAEActiveEffectConfig | null) {
-    //@ts-expect-error
     const systemVersion = game.system.version;
     const damageTypes = [...Object.values(daeSystemClass.systemConfig.damageTypes), ...Object.values(daeSystemClass.systemConfig.healingTypes)];
 
@@ -853,6 +849,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
       const current = foundry.utils.getProperty(actor, change.key);
       // includes wont work for macro names that are subsets of other macro names
+      // @ts-expect-error TODO: type this better
       if (noDupDamageMacro && current?.split(",").some(macro => macro === macroRef)) return true;
       foundry.utils.setProperty(actor, change.key, current ? `${current},${macroRef}` : macroRef)
       return true;
@@ -1139,7 +1136,6 @@ function applyBaseEffects() {
 }
 
 function prepareData(wrapped) {
-  //@ts-expect-error
   const systemVersion = game.system.version;
   if (!ValidSpec.actorSpecs) {
     ValidSpec.createValidMods();
@@ -1303,7 +1299,6 @@ function getRollData(wrapped, ...args) {
         const actor = actorFromUuid(data.actorUuid ?? "");
         const token = getSelfTarget(actor);
         // If the return is a tokenDocument then we have no token on the scene
-        // @ts-expect-error v13ism
         if (token instanceof foundry.canvas.placeables.Token) data._token = token;
       }
       return data._token;
@@ -1314,7 +1309,6 @@ function getRollData(wrapped, ...args) {
   if (!data.tokenUuid) Object.defineProperty(data, "tokenUuid", {
     get() { // During initialisation getSelfTarget will return a token document not a token
       if (data._tokenUuid) return data._tokenUuid;
-      // @ts-expect-error v13ism
       if (data.token instanceof foundry.canvas.placeables.Token)
         return data.token?.document.uuid ?? "undefined";
       else return data.token?.uuid ?? "undefined"
@@ -1430,7 +1424,6 @@ function _prepareArmorClassAttribution(wrapped, data) {
 }
 
 function patchPrepareArmorClassAttribution() {
-  //@ts-expect-error
   const systemVersion = game.system.version;
   if (game.system?.id === "dnd5e") {
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");

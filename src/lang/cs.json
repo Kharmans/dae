@@ -292,7 +292,6 @@
   "dae.ShowDeprecation.Name": "Zobrazení chyb zastaralosti",
   "dae.ShowDeprecation.Hint": "Bude v konzoli zobrazovat chyby zastaralosti.",
   "dae.CE": "Convenient Effects",
-  "dae.CUB": "Combat Utility Belt",
   "dae.ShowInline.Name": "Zobrazení výsledků vnořených hodů",
   "dae.ShowInline.Hint": "Pokud je zaškrtnuto, tak budou efekty s vnořeným hodem zobrazovat výsledky hodu.",
   "dae.StackableOptions": {
@@ -492,19 +491,11 @@
       "name": "",
       "description": ""
     },
-    "macro.CLT": {
-      "name": "",
-      "description": ""
-    },
     "macro.createItem": {
       "name": "",
       "description": ""
     },
     "macro.createItemRunMacro": {
-      "name": "",
-      "description": ""
-    },
-    "macro.CUB": {
       "name": "",
       "description": ""
     },

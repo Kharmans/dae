@@ -267,7 +267,6 @@
     "dae.ShowDeprecation.Name": "Deprecation 에러 표시",
     "dae.ShowDeprecation.Hint": "콘솔창에 Deprecation 에러 메시지를 표시한다.",
     "dae.CE": "Convenient Effects",
-    "dae.CUB": "Combat Utility Belt",
     "dae.ShowInline.Name": "인라인 굴림의 결과 표시",
     "dae.ShowInline.Hint": "인라인 굴림을 사용한 효과가 결과를 표시하도록 설정한다.",
     "dae.stackableOptions": {"none": "효과 중첩 안됨", "multi": "중첩 효과 다차례 적용", "count": "각 스택 횟수 1씩 증가"},

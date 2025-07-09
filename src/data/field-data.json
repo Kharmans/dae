@@ -28,10 +28,8 @@
   "Macros": [
     "macro.actorUpdate",
     "macro.CE",
-    "macro.CLT",
     "macro.createItem",
     "macro.createItemRunMacro",
-    "macro.CUB",
     "macro.execute",
     "macro.execute.GM",
     "macro.execute.local",

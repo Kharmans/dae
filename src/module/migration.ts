@@ -47,8 +47,7 @@ export async function loadPacks() {
 }
 
 export async function migrateAllActorsDAESRD(includeSRD = false) {
-  // @ts-expect-error
-  if (!game.settings?.get("dae", "disableEffects")) {
+  if (!game.settings.get("dae", "disableEffects")) {
     ui.notifications?.error("Please set DAE disable all effect processing")
     error("Please set DAE disable all effect processing")
     return;
@@ -64,8 +63,7 @@ export async function migrateAllActorsDAESRD(includeSRD = false) {
 }
 
 export async function migrateAllNPCDAESRD(includeSRD = false) {
-  // @ts-expect-error
-  if (!game.settings?.get("dae", "disableEffects")) {
+  if (!game.settings.get("dae", "disableEffects")) {
     ui.notifications?.error("Please set DAE disable all effect processing")
     error("Please set DAE disable all effect processing")
     return;
@@ -84,8 +82,7 @@ export async function migrateAllNPCDAESRD(includeSRD = false) {
 }
 
 export async function migrateActorDAESRD(actor, includeSRD = false) {
-  // @ts-expect-error
-  if (!game.settings?.get("dae", "disableEffects")) {
+  if (!game.settings.get("dae", "disableEffects")) {
     ui.notifications?.error("Please set DAE disable all effect processing")
     error("Please set DAE disable all effect processing")
     return;
@@ -167,9 +164,8 @@ function removeDynamiceffects(actor) {
 }
 
 export function checkLibWrapperVersion() {
-  //@ts-expect-error .version
   if (foundry.utils.isNewerVersion("1.8.0", game.modules?.get("lib-wrapper")?.version)) {
-    let d = new Dialog({
+    let d = new foundry.appv1.api.Dialog({
       // localize this text
       title: i18n("dae.confirm"),
       content: `<h2>DAE requires libWrapper version 1.8.0 or later</p>`,

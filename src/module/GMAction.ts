@@ -57,7 +57,6 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
   const { uuid, itemUuid, itemUuids, context } = data;
 
   for (let itemUuid of itemUuids ?? []) {
-    // @ts-expect-error
     const item: any = await fromUuid(itemUuid);
     if (!(item instanceof Item) || !item?.isOwned) continue; // Just in case we are trying to delete a world/compendium item
     await item.delete(context);
@@ -153,7 +152,6 @@ async function _executeMacro(data: {
 }
 
 async function _suspendActiveEffect(data: { uuid: string }) {
-  // @ts-expect-error
   const effect = await fromUuid(data.uuid);
   if (!effect) return;
   if (effect instanceof CONFIG.ActiveEffect.documentClass) {
@@ -191,7 +189,6 @@ async function _applyActiveEffects(data) {
 async function _recreateToken(data: { userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
   //TODO this looks odd - should get the token data form the tokenUuid?
   await _createToken(data);
-  //@ts-expect-error fromUuidSync
   const token = await fromUuidSync(data.tokenUuid) as TokenDocument.Implementation;
   return token?.delete();
 }
@@ -334,7 +331,6 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           for (count = 0; count < 10 && origin instanceof CONFIG.ActiveEffect.documentClass && !(origin.parent instanceof Item); count++) {
             if (origin.parent instanceof CONFIG.Item.documentClass) origin = origin.parent;
             else {
-              //@ts-expect-error
               origin = await fromUuid(origin.origin);
             }
           }
@@ -366,8 +362,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
 
         // convert item duration to seconds/rounds/turns according to combat
         if (aeData.duration.seconds) {
-          //@ts-expect-error worldTime
-          aeData.duration.startTime = game.time?.worldTime;
+          aeData.duration.startTime = game.time.worldTime;
           const inCombat = targetActor.inCombat;
           let convertedDuration;
           if (inCombat && (aeData.duration.rounds || aeData.duration.turns)) {
@@ -398,8 +393,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           debug("converted duration ", convertedDuration, inCombat, effectDuration, maxShortDuration);
           if (convertedDuration.type === "seconds") {
             aeData.duration.seconds = convertedDuration.seconds;
-            //@ts-expect-error worldTime
-            aeData.duration.startTime = game.time?.worldTime;
+            aeData.duration.startTime = game.time.worldTime;
           } else if (convertedDuration.type === "turns") {
             aeData.duration.rounds = convertedDuration.rounds;
             aeData.duration.turns = convertedDuration.turns;
@@ -509,8 +503,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
   if (!simpleCalendarInstalled) {
     // Calcs for durations above 1 day are just wrong - but there is no core support for it that works.
     // TODO Once core timeToComponents(game.time.worldTime).add(components).componentsToTime() works correctly it can be fixed
-    //@ts-expect-error calendar
-    const calendar = game.time?.calendar;
+    const calendar = game.time.calendar;
     const secondsPerDay = calendar.days.secondsPerMinute * calendar.days.minutesPerHour * calendar.days.hoursPerDay 
 
     switch (durationData.units) {
@@ -537,7 +530,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       case "weeks": return { type: "seconds", seconds: durationData.value * secondsPerDay * calendar.days.values.length, rounds: 0, turns: 0 };
       case "month":
       case "months": 
-      const averageMonth = calendar.months.values.reduce((a, b) => a + b, 0) / calendar.months.values.length;
+      const averageMonth = calendar.months.values.reduce((acc, month) => acc + month.days, 0) / calendar.months.values.length;
       return { type: "seconds", seconds: durationData.value * secondsPerDay * averageMonth, rounds: 0, turns: 0 };
       case "year":
       case "years": return { type: "seconds", seconds: durationData.value * secondsPerDay * calendar.days.daysPerYear, rounds: 0, turns: 0 };
@@ -573,8 +566,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       default:
         let interval = {}
         interval[durationData.units] = durationData.value;
-        //@ts-expect-error worldTime
-        const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time?.worldTime, interval) - (game.time?.worldTime ?? 0);
+        const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - (game.time.worldTime ?? 0);
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };
         } else {

@@ -273,7 +273,6 @@
   "dae.ShowDeprecation.Name": "Afficher les erreurs de dépréciation",
   "dae.ShowDeprecation.Hint": "Afficher les erreurs de dépréciation dans la console",
   "dae.CE": "Convenient Effects",
-  "dae.CUB": "Combat Utility Belt",
   "dae.ShowInline.Name": "Afficher les résultats des jets en ligne",
   "dae.ShowInline.Hint": "Les effets avec un jet en ligne afficheront les résultats du jet s'ils sont définis",
   "dae.stackableOptions": {

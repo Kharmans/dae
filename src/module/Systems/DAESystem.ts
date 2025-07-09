@@ -51,7 +51,7 @@ export class ValidSpec {
       this.actorSpecs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
       // @ts-expect-error
       _characterSpec["system"] = game.system?.model ? foundry.utils.duplicate(game.system.model.Actor[specKey] ?? {}) : {};
-      let baseValues = foundry.utils.flattenObject(_characterSpec);
+      let baseValues = foundry.utils.flattenObject(_characterSpec) as Record<string, any>;
       for (let prop in baseValues) {
         baseValues[prop] = [baseValues[prop], -1];
       }
@@ -86,8 +86,6 @@ export class ValidSpec {
       }
 
       var specials: any = {};
-      specials["macro.CUB"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["macro.CLT"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -412,14 +410,13 @@ export class DAESystem {
         if (nesting > maxDepth) return undefined;
 
         if (doc instanceof Actor) return doc;
-        // @ts-expect-error v13ism
         else if (doc.actor && (doc instanceof foundry.canvas.placeables.Token || doc instanceof Item)) return doc.actor;
         else if (doc.parent && doc instanceof ActiveEffect) return getActor(doc.parent, nesting)
         else return undefined;
       }
-      //@ts-expect-error
       const doc = fromUuidSync(documentRef);
       actor = getActor(doc);
+      // @ts-expect-error TODO: type this better
       if (actor) value = foundry.utils.getProperty(actor, `${attribute}`) ?? null;
     }
     return value;
@@ -544,7 +541,7 @@ export class DAESystem {
       const macroName = ["none", ""].includes(values[5] ?? "") ? "" : values[5];
       const filter = ["none", ""].includes(values[6] ?? "") ? "system" : values[6];;
       const args = values.slice(7);
-      let flagValue = foundry.utils.getProperty(actor, "flags.dae.onUpdateTarget") ?? [];
+      let flagValue = actor.flags?.dae?.onUpdateTarget ?? [];
       flagValue.push({ flagName, macroName, origin, sourceTokenUuid, args, targetTokenUuid, filter, sourceActorUuid })
       foundry.utils.setProperty(actor, "flags.dae.onUpdateTarget", flagValue);
     }
