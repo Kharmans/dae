@@ -1,3 +1,8 @@
+### 13.0.6
+* Fix for deleting effects with macro.createItem throwing an error/warning on deletion.
+* Use foundry calendar for seconds per minute/hour/day etc.
+
+
 ### 13.0.5
 * Little cleanup of duration conversion
 

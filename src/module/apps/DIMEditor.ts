@@ -31,6 +31,13 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     this.document = options.document;
   }
 
+  override _initializeApplicationOptions(options) {
+    options = super._initializeApplicationOptions(options);
+    const suffix = options.document.uuid ?? foundry.utils.randomID();
+    options.uniqueId = `${this.constructor.name}-${suffix.replaceAll(".", "-")}`;
+    return options;
+  }
+
   async render(options) {
     Hooks.once("renderDIMEditor", (app, html, data) => {
       Hooks.callAll("renderMacroConfig", app, html, data)

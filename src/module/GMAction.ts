@@ -507,6 +507,12 @@ export function convertDuration(durationData: { units: string, value: number }, 
   }
 
   if (!simpleCalendarInstalled) {
+    // Calcs for durations above 1 day are just wrong - but there is no core support for it that works.
+    // TODO Once core timeToComponents(game.time.worldTime).add(components).componentsToTime() works correctly it can be fixed
+    //@ts-expect-error calendar
+    const calendar = game.time?.calendar;
+    const secondsPerDay = calendar.days.secondsPerMinute * calendar.days.minutesPerHour * calendar.days.hoursPerDay 
+
     switch (durationData.units) {
       case "turn":
       case "turns": return { type: useTurns ? "turns" : "seconds", seconds: 1, rounds: 0, turns: durationData.value };
@@ -517,22 +523,24 @@ export function convertDuration(durationData: { units: string, value: number }, 
         return { type: useTurns ? "turns" : "seconds", seconds: durationData.value, rounds: durationData.value / CONFIG.time.roundTime, turns: 0 }
       case "minute":
       case "minutes":
-        let durSeconds = durationData.value * 60
+        let durSeconds = durationData.value * calendar.days.secondsPerMinute;
         if (durSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0 };
         } else {
           return { type: "seconds", seconds: durSeconds, rounds: durSeconds / CONFIG.time.roundTime, turns: 0 };
         }
       case "hour":
-      case "hours": return { type: "seconds", seconds: durationData.value * 60 * 60, rounds: 0, turns: 0 };
+      case "hours": return { type: "seconds", seconds: durationData.value * calendar.days.secondsPerMinute * calendar.days.minutesPerHour, rounds: 0, turns: 0 };
       case "day":
-      case "days": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24, rounds: 0, turns: 0 };
+      case "days": return { type: "seconds", seconds: durationData.value * secondsPerDay, rounds: 0, turns: 0 };
       case "week":
-      case "weeks": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 7, rounds: 0, turns: 0 };
+      case "weeks": return { type: "seconds", seconds: durationData.value * secondsPerDay * calendar.days.values.length, rounds: 0, turns: 0 };
       case "month":
-      case "months": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 30, rounds: 0, turns: 0 };
+      case "months": 
+      const averageMonth = calendar.months.values.reduce((a, b) => a + b, 0) / calendar.months.values.length;
+      return { type: "seconds", seconds: durationData.value * secondsPerDay * averageMonth, rounds: 0, turns: 0 };
       case "year":
-      case "years": return { type: "seconds", seconds: durationData.value * 60 * 60 * 24 * 30 * 365, rounds: 0, turns: 0 };
+      case "years": return { type: "seconds", seconds: durationData.value * secondsPerDay * calendar.days.daysPerYear, rounds: 0, turns: 0 };
       case "inst":
         case "inst":
           return { type: useTurns ? "turns" : "seconds", seconds: 0, rounds: 0, turns: 0 };

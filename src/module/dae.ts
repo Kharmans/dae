@@ -304,8 +304,8 @@ export async function removeCreateItemChange(itemId: string, actor: Actor, effec
   let [uuid, option] = itemId.split(",").map(s => s.trim());
   if (option === "permanent") return; // don't delete permanent items
   if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
+  if (!(context.effectDeleted || context.itemDeleted)) await effect.update({ "flags.dae.itemsToDelete": [] });
   await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete, context })
-  await effect.update({ "flags.dae.itemsToDelete": [] });
 }
 
 export async function addTokenMagicChange(actor, change, tokens) {
@@ -1072,12 +1072,14 @@ export function deleteActiveEffectHook(...args) {
     const token = tokens[0];
     const tokenMagic = globalThis.TokenMagic;
     /// if (actor.isToken) await delay(1);
-    try {
-      let entityToDelete;
-      if (effect.changes) {
-        for (let change of effect.changes) {
+
+    let entityToDelete;
+    if (effect.changes) {
+      for (let change of effect.changes) {
+        try {
           if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
+            context.effectDeleted = true;
             await removeCreateItemChange(change.value, actor, effect, context)
           }
           if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
@@ -1098,16 +1100,16 @@ export function deleteActiveEffectHook(...args) {
             await socketlibSocket.executeAsGM("suspendActiveEffect", { uuid: change.value });
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.origin;
-
+          if (!foundry.utils.getProperty(context, "expiry-reason")) foundry.utils.setProperty(context, "expiry-reason", "effect-deleted");
+          if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
+            context.effectUuid = effect.uuid;
+            warn("action queue dae macro add off ", actionQueue.remaining)
+            await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), context);
+          }
+          if (entityToDelete) await socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
+        } catch (err) {
+          console.warn("dae | error deleting active effect ", effect, err);
         }
-        if (!foundry.utils.getProperty(context, "expiry-reason")) foundry.utils.setProperty(context, "expiry-reason", "effect-deleted");
-        if (effect.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate") || change.key.startsWith("macro.activityMacro"))) {
-          context.effectUuid = effect.uuid;
-          warn("action queue dae macro add off ", actionQueue.remaining)
-          await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), context);
-        }
-
-        if (entityToDelete) await socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
       }
       if (effect.origin) {
         let origin: any = await fromUuid(effect.origin);
@@ -1115,18 +1117,7 @@ export function deleteActiveEffectHook(...args) {
         // Covers the spirit guardian case where all the aura's point back to the source item.
         if (globalThis.Sequencer && (origin === actor || origin?.parent === actor))
           globalThis.Sequencer.EffectManager.endEffects({ origin: effect.origin });
-
-        /* Not used anymore
-        if (canvas?.scene && (origin === actor || origin?.parent === actor)) {
-        //@ts-expect-error .flags
-        const removeTiles = canvas.scene.tiles.filter(tile => tile.flags?.autoanimations?.origin === effect.origin).map(tile => tile.id);
-        if (removeTiles.length > 0) await canvas.Scene.deleteEmbeddedDocuments("Tile", removeTiles);
       }
-        */
-      }
-
-    } catch (err) {
-      console.warn("dae | error deleting active effect ", err);
     }
   };
   changesLoop();
@@ -1326,13 +1317,14 @@ export async function daeMacro(action: string, actor, effectData, lastArgOptions
   return effectData;
 }
 
-export async function evalArgs({ effectData, item, context, actor, change, spellLevel = 0, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardUuid = null, tokenUuid = null }) {
+export async function evalArgs({ effectData, item, context, actor, change, spellLevel = undefined, damageTotal = 0, doRolls = false, critical = false, fumble = false, whisper = false, itemCardUuid = null, tokenUuid = null }) {
   const itemId = item?.id ?? foundry.utils.getProperty(effectData.flags, "dae.itemId");
   const itemUuid = item?.uuid ?? foundry.utils.getProperty(effectData.flags, "dae.itemUuid");
   if (!item && itemUuid) item = await fromUuid(itemUuid);
   if (typeof change.value !== 'string')
     return change; // nothing to do
   const returnChange = foundry.utils.duplicate(change);
+  spellLevel ??= context.flags?.dnd5e?.spellLevel;
   let contextToUse = foundry.utils.mergeObject({
     scene: canvas?.scene?.id,
     token: ChatMessage.getSpeaker({ actor }).token,
@@ -1881,10 +1873,11 @@ export async function deleteItemHook(...args) {
       // don't apply macro or macro like effects if active aura and not targeting self
       if (selfAuraChange) return;
       for (let change of effect.changes) {
+        context.itemDeleted = true;
         removeEffectChange(actor, [token], effect, candidateItem, change, context)
       }
     } catch (err) {
-      console.warn("dae | error creating active effect ", err);
+      console.warn("dae | error creating delete item hook", err);
     }
   }
   return;
