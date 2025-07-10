@@ -4,7 +4,7 @@ import { warn, error, debug, i18n } from "../dae.js";
 export let applyActive = (itemName: string, activate: boolean = true, itemType: string = "") => {
 }
 
-function getTokenUuid(token: Token | TokenDocument) {
+function getTokenUuid(token: foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation) {
   if (token instanceof foundry.canvas.placeables.Token) return token.document.uuid;
   if (token instanceof TokenDocument) return token.uuid;
   return undefined;
@@ -88,7 +88,7 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
   return await teleport(token, scene, found.x + xGridOffset * (canvas.scene?.grid.size ?? 100), found.y + yGridOffset * (canvas.scene?.grid.size ?? 100))
 }
 
-export async function createToken(tokenData, x, y) {
+export async function createToken(tokenData: TokenDocument.CreateData, x: number, y: number) {
   let targetSceneId = canvas?.scene?.id;
   // requestGMAction(GMAction.actions.createToken, {userId: game.user.id, targetSceneId, tokenData, x, y})
   return socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, targetSceneId, tokenData, x, y })
@@ -182,8 +182,8 @@ export function getTokenFlag(token: Token | any /* TokenDocument*/, flagName: st
   return foundry.utils.getProperty(token.document, `flags.dae.${flagName}`);
 }
 
-export async function deleteItemActiveEffects(tokens: Array<string | Token | any /* TokenDocument */>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
-  const targets = tokens.map(t => ({"uuid": typeof t === "string" ? t : (t.document?.uuid ?? t.uuid)}));
+export async function deleteItemActiveEffects(tokens: Array<string | foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
+  const targets = tokens.map(t => ({"uuid": typeof t === "string" ? t : getTokenUuid(t)}));
   return socketlibSocket.executeAsGM("deleteEffects", { targets, origin, ignore, deleteEffects, removeSequencer, options});
 }
 
@@ -191,14 +191,13 @@ export async function deleteActiveEffect(uuid: string, origin: string, ignore: s
   return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore, deleteEffects, removeSequencer, options });
 }
 
-export async function setTokenFlag(tokenOrId: Token | string | TokenDocument, flagName: string, flagValue: any) {
+export async function setTokenFlag(tokenOrId: foundry.canvas.placeables.Token.Implementation | string | TokenDocument.Implementation, flagName: string, flagValue: any) {
   let tokenUuid: string = "";
   if (typeof tokenOrId === "string") {
     if (tokenOrId.startsWith("Scene.")) tokenUuid = tokenOrId;
     else tokenUuid = canvas?.scene?.tokens.get(tokenOrId)?.uuid ?? "";
   } 
-  else if (tokenOrId instanceof foundry.canvas.placeables.Token) tokenUuid = getTokenUuid(tokenOrId) ?? "";
-  else if (tokenOrId instanceof TokenDocument) tokenUuid = tokenOrId.uuid ?? "";
+  else tokenUuid = getTokenUuid(tokenOrId) ?? "";
   return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
 }
 
@@ -289,7 +288,7 @@ export async function macroActorUpdate(...args) {
     actorValue = fieldValue.actorValue;
   }
   const rollContext = actor.getRollData();
-  rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? lastArg.efData.flags?.dae?.statuscounter?.counter.value ?? 1;
+  rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? 1;
   if (["on", "each"].includes(args[0])) {
     if (!game.user?.isGM) {
       console.warn(`dae | macro.actorUpdate user ${game.user?.name} is updating ${actor.name} ${targetField}`);

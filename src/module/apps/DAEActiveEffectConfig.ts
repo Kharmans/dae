@@ -451,11 +451,6 @@ Hooks.once("setup", () => {
 })
 
 export function isEnchantment(effect: ActiveEffect): boolean {
-  if (foundry.utils.isNewerVersion(game.system.version, "3.9.99")) {
-    //@ts-expect-error
-    return effect.type === "enchantment";
-  } else {
-    //@ts-expect-error
-    return effect.flags?.dnd5e?.type === "enchantment";
-  }
+  //@ts-expect-error no dnd5e-types
+  return effect.type === "enchantment";
 }

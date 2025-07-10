@@ -115,7 +115,7 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   public static preUpdateItemHook(item: Item.Implementation, updates: Item.UpdateData, context, user): boolean {
-    if (!game.settings.get("dae", "DIMESyncItemacro") /*|| !game.modules?.get("itemacro") */) return true;
+    if (!game.settings.get("dae", "DIMESyncItemacro") /*|| !game.modules.get("itemacro") */) return true;
     const existing = item.flags?.dae?.macro
       ?? item?.flags?.itemacro?.macro
       ?? { command: "" };

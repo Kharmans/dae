@@ -4,51 +4,43 @@ import { convertDuration } from '../GMAction.js';
 import { ActiveEffects } from '../apps/ActiveEffects.js';
 import { DAEActiveEffectConfig, addAutoFields, otherFields } from '../apps/DAEActiveEffectConfig.js';
 import { DIMEditor } from '../apps/DIMEditor.js';
-import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects } from '../dae.js';
+import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets } from '../dae.js';
 import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration.js';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
 import { enumerateBaseValues } from '../dae.js';
 
 const API = {
-  ActiveEffects(object: any = {}, options: any = {}) {
-    return new ActiveEffects({document: object});
+  ActiveEffects(document: Actor.Implementation | Item.Implementation) {
+    return new ActiveEffects({document});
   },
   addAutoFields(fields: string[]) {
     return addAutoFields(fields);
   },
-  async blindToken(tokenOrId: Token | string) {
+  async blindToken(tokenOrId: Token.Implementation | string) {
     return await blindToken(tokenOrId);
   },
   async cleanEffectOrigins(processItems?: boolean) {
     return await cleanEffectOrigins(processItems);
   },
-  async cleanActorItemsEffectOrigins(actor: any) {
+  async cleanActorItemsEffectOrigins(actor: Actor.Implementation) {
     return await cleanActorItemsEffectOrigins(actor);
   },
   confirmAction(toCheck: boolean, confirmFunction: any, title?: string) {
     return confirmAction(toCheck, confirmFunction, title);
   },
-  convertDuration(itemDuration: { units: string, value: number }, inCombat) {
+  convertDuration(itemDuration: { units: string, value: number }, inCombat: boolean) {
     return convertDuration(itemDuration, inCombat);
   },
-  async createToken(tokenData, x, y) {
+  async createToken(tokenData: TokenDocument.CreateData, x: number, y: number) {
     return await createToken(tokenData, x, y);
   },
-  DAEActiveEffectConfig(object: any = {}, options: any = {}) {
-    return new DAEActiveEffectConfig({ document: object, ...options });
-  },
-  DAEfromActorUuid(uuid): Actor | null {
-    console.warn("dae | Deprecation warning | DAEfromActorUuid is deprecated, use DAE.fromActorUuid instead");
-    return actorFromUuid(uuid);
+  DAEActiveEffectConfig(document: ActiveEffect.Implementation, options: Partial<foundry.applications.sheets.ActiveEffectConfig.Configuration> = {}) {
+    return new DAEActiveEffectConfig({ document, ...options });
   },
   actorFromUuid(uuid: string): Actor | null {
-    return actorFromUuid(uuid);
+    return actorFromUuid(uuid);          
   },
-  DAEfromUuid(uuid) {
-    console.warn("dae | Deprecation warning | DAEfromUuid is deprecated, use fromUuidSync instead");
-    return fromUuidSync(uuid);
-  },
-  async daeMacro(action: string, actor, effectData, lastArgOptions: any = {}) {
+  async daeMacro(action: string, actor: Actor.Implementation, effectData: ActiveEffect.Implementation | ActiveEffect.Source, lastArgOptions: any = {}) {
     if (effectData instanceof ActiveEffect && !lastArgOptions.effectUuid) lastArgOptions.effectUuid = effectData.uuid;
     return await daeMacro(action, actor, effectData, lastArgOptions);
   },
@@ -58,24 +50,25 @@ const API = {
   async deleteActiveEffect(uuid: string, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true) {
     return await deleteActiveEffect(uuid, origin, ignore, deleteEffects, removeSequencer);
   },
-  async deleteItemActiveEffects(tokens: Array<string | Token | any /* TokenDocument */>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true) {
+  async deleteItemActiveEffects(tokens: Array<string | foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true) {
     return await deleteItemActiveEffects(tokens, origin, ignore, deleteEffects, removeSequencer);
   },
   get DIMEditor() { return DIMEditor },
-  async doEffects(item, activate, targets = undefined, options: any =
-    {
-      whisper: false, spellLevel: 0, damageTotal: null, critical: false,
-      fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false,
-      selfEffects: "none"
-    }) {
+  async doEffects(
+    item: Item.Implementation,
+    activate: boolean,
+    targets: (string | Actor.Implementation | TokenDocument.Implementation | foundry.canvas.placeables.Token.Implementation)[] | undefined = undefined,
+    options: DoEffectsOptions
+  ) {
     return await doEffects(item, activate, targets, options);
   },
-  async doActivityEffects(activity, activate, targets = undefined, activityEffectsUuids: string[], options: any =
-    {
-      whisper: false, spellLevel: 0, damageTotal: null, critical: false,
-      fumble: false, effectsToApply: [], removeMatchLabel: false, toggleEffect: false, origin: activity.item.uuid,
-      selfEffects: "none", context: {}
-    }) {
+  async doActivityEffects(
+    activity,
+    activate: boolean,
+    targets: DoEffectsTargets = undefined,
+    activityEffectsUuids: string[],
+    options: DoEffectsOptions
+  ) {
     return doActivityEffects(activity, activate, targets, activityEffectsUuids, options);
   },
   enumerateBaseValues(dataModels: any) {

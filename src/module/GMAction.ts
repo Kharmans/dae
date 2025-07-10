@@ -1,6 +1,6 @@
 import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, maxShortDuration } from "./dae.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
-import { MustBeValidUuid } from "fvtt-types/utils";
+import { AnyMutableObject, MustBeValidUuid } from "fvtt-types/utils";
 
 export class GMActionMessage {
   action: string;
@@ -193,10 +193,17 @@ async function _recreateToken(data: { userId: string, tokenUuid: string, startSc
   return token?.delete();
 }
 
-async function _createToken(data: { userId: string, targetSceneId: string, tokenData: {}, x: number, y: number }) {
+async function _createToken(data: { userId: string, targetSceneId: string, tokenData: TokenDocument.CreateData, x: number, y: number }) {
   let scenes = game.scenes;
   let targetScene = scenes?.get(data.targetSceneId);
-  return await targetScene?.createEmbeddedDocuments('Token', [foundry.utils.mergeObject(foundry.utils.duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
+  let tokenData = foundry.utils.mergeObject(data.tokenData, {
+    x: data.x,
+    y: data.y,
+    hidden: false
+  }, {
+    inplace: false
+  });
+  return await targetScene?.createEmbeddedDocuments('Token', [tokenData]);
 }
 
 async function _deleteToken(data: { tokenUuid: string }) {
@@ -277,7 +284,7 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
-async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options: any }) {
+async function _deleteEffects(data: { targets: {uuid: string}[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options: any }) {
   if (data.options === undefined) data.options = {};
   for (let idData of data.targets) {
     const actor = actorFromUuid(idData.uuid);
@@ -301,7 +308,29 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate = true, activityUuid = undefined, targetList, activeEffects, effectDuration, itemCardUuid = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
+export async function applyActiveEffects({
+  activate = true,
+  activityUuid = undefined,
+  targetList,
+  activeEffects,
+  effectDuration,
+  itemCardUuid = null,
+  removeMatchLabel = false,
+  toggleEffect = false,
+  metaData = {},
+  origin = undefined
+}: {
+  activate: boolean;
+  activityUuid?: string;
+  targetList: string[];
+  activeEffects: ActiveEffect.Source[];
+  effectDuration: { units: string, value: number };
+  itemCardUuid?: string | null;
+  removeMatchLabel: boolean;
+  toggleEffect: boolean;
+  metaData: AnyMutableObject;
+  origin?: string;
+}) {
   for (let targetActorUuid of targetList) {
     let targetActor = fromUuidSync(targetActorUuid);
     if (!targetActor) continue;
@@ -380,7 +409,9 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           if (convertedDuration.type === "turns") {
             aeData.duration.rounds = convertedDuration.rounds;
             aeData.duration.turns = convertedDuration.turns;
+            // @ts-expect-error maybe it's not `ActiveEffect.Source`
             aeData.startRound = game.combat?.round;
+            // @ts-expect-error maybe it's not `ActiveEffect.Source`
             aeData.startTurn = game.combat?.turn;
             delete aeData.duration.seconds;
           }
@@ -452,18 +483,13 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
               change.value = Roll.replaceFormulaData(change.value, context, { missing: '0', warn: false });
               change.value = change.value.replace("##", "@");
             } else {
+              // @ts-expect-error when could this happen?
               change.value = foundry.utils.duplicate(change.value).map(f => {
-                if (f === "@itemCardId") {
-                  foundry.utils.logCompatibilityWarning("DAE | @itemCardId is deprecated use @itemCardUuid instead",
-                  {since: "12.0.21", until: "13.0.0"});
-                  const itemCard = fromUuidSync(itemCardUuid);
-                  return itemCard?.id;
-                }
                 if (f === "@itemCardUuid") return itemCardUuid;
                 if (f === "@target") return getToken(targetActor)?.id;
                 if (f === "@targetUuid") return getTokenDocument(targetActor)?.uuid;
                 return f;
-              })
+              });
             }
           } else {
             const targetContext = { "targetUuid": getTokenDocument(targetActor)?.uuid, "target": getToken(targetActor)?.id, "tokenUuid": getTokenDocument(targetActor)?.uuid, "token": getToken(targetActor)?.id };
@@ -478,7 +504,8 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
 
       if (dupEffects.length > 0) {
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
-        let createdEffects = (await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData })) ?? [];
+          // @ts-expect-error `duplicate` issues
+          let createdEffects = (await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData })) ?? [];
         for (let effect of createdEffects) {
           const origin = fromUuidSync(effect.origin as MustBeValidUuid<string>);
           // @ts-expect-error
@@ -489,7 +516,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
   };
 }
 
-export function convertDuration(durationData: { units: string, value: number }, inCombat, maxSecondsToConvert = Number.POSITIVE_INFINITY) {
+export function convertDuration(durationData: { units: string, value: number }, inCombat: boolean, maxSecondsToConvert = Number.POSITIVE_INFINITY) {
   // TODO rewrite this abomination - for v13 look at default calendar
   let useTurns = inCombat && timesUpInstalled;
   if (durationData.units === "second" && durationData.value > maxSecondsToConvert) useTurns = false;

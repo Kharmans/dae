@@ -218,7 +218,7 @@ export class DAESystemSW5E extends DAESystemDND5E {
   }
 
   public static async editConfig() {
-    if (game.system?.id === "sw5e") {
+    if (game.system.id === "sw5e") {
       try {
         const armorPack = game.packs?.get("sw5e.armor");
         let pack;

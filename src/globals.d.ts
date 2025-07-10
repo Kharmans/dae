@@ -1,4 +1,6 @@
+// import { DotKeys, GetProperty } from "fvtt-types/utils";
 export {}
+
 // Declaration Merging for DAE-specific stuff
 declare module "fvtt-types/configuration" {
   interface AssumeHookRan {
@@ -13,6 +15,7 @@ declare module "fvtt-types/configuration" {
       "dae.modifyDerivedSpecs": (specKey: unknown, derivedSpecs: Record<string, unknown>, charSpec: unknown) => void;
       "dae.modifySpecials": (speKey: unknown, specials: Record<string, unknown>, charSpec: unknown) => void;
       "dae.setFieldData": (fieldData: unknown) => void;
+      "dae.setupComplete": () => void;
       "dae.settingsChanged": () => void;
 
       // Other module hooks that might exist
@@ -37,12 +40,17 @@ declare module "fvtt-types/configuration" {
         activity?: string;
         activityMacro?: string;
         autoCreated?: boolean;
+        dontApply?: boolean;
         durationExpression?: string;
         enableCondition?: string;
         itemData?: Item.InitializedData;
         itemUuid?: string;
+        selfTarget?: boolean;
+        selfTargetAlways?: boolean;
         specialDuration?: string | string[];
         stackable?: "noneName" | "noneNameOnly" | "none" | "multi" | "count" | "countDeleteDecrement";
+        stacks?: number;
+        transfer?: boolean;
       }
     }
     Actor: {
@@ -62,7 +70,7 @@ declare module "fvtt-types/configuration" {
     Item: {
       dae?: {
         macro?: Macro.CreateData;
-      },
+      }
       itemacro?: {
         macro?: Macro.CreateData;
       }
@@ -89,4 +97,8 @@ declare module "fvtt-types/configuration" {
     "dae.disableEffects": boolean;
     "dae.maxShortDuration": number;
   }
+  // More precise `getProperty`
+  // namespace foundry.utils {
+  //   export function getProperty<T extends object, K extends DotKeys<T>>(object: T, key: K): GetProperty<T, K>;
+  // }
 }

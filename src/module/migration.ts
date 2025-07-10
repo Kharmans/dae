@@ -52,7 +52,7 @@ export async function migrateAllActorsDAESRD(includeSRD = false) {
     error("Please set DAE disable all effect processing")
     return;
   }
-  if (!game.modules?.get("Dynamic-Effects-SRD")?.active) {
+  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
     ui.notifications?.warn("DAE SRD Module not active");
     error("DAE SRD Module not active");
     return;
@@ -68,7 +68,7 @@ export async function migrateAllNPCDAESRD(includeSRD = false) {
     error("Please set DAE disable all effect processing")
     return;
   }
-  if (!game.modules?.get("Dynamic-Effects-SRD")?.active) {
+  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
     ui.notifications?.warn("DAE SRD Module not active");
     error("DAE SRD Module not active");
     return;
@@ -87,7 +87,7 @@ export async function migrateActorDAESRD(actor, includeSRD = false) {
     error("Please set DAE disable all effect processing")
     return;
   }
-  if (!game.modules?.get("Dynamic-Effects-SRD")?.active) {
+  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
     ui.notifications?.warn("DAE SRD Module not active");
     error("DAE SRD Module not active");
     return;
@@ -164,7 +164,7 @@ function removeDynamiceffects(actor) {
 }
 
 export function checkLibWrapperVersion() {
-  if (foundry.utils.isNewerVersion("1.8.0", game.modules?.get("lib-wrapper")?.version)) {
+  if (foundry.utils.isNewerVersion("1.8.0", game.modules.get("lib-wrapper")?.version)) {
     let d = new foundry.appv1.api.Dialog({
       // localize this text
       title: i18n("dae.confirm"),
@@ -271,10 +271,10 @@ export async function cleanAllActorItemsEffectOrigins() {
   if (game.actors) for (let actor of game.actors)
     await cleanActorItemsEffectOrigins(actor)
 }
-export async function cleanActorItemsEffectOrigins(actor) {
-  const itemChanges: any[] = [];
+export async function cleanActorItemsEffectOrigins(actor: Actor.Implementation) {
+  const itemChanges: Item.UpdateData[] = [];
   for (let item of actor.items) {
-    if (!(item.effects.some(ef => ef.origin?.includes("OwnedItem")))) continue;
+    if (!(item.effects.some(ef => !!ef.origin?.includes("OwnedItem")))) continue;
     const itemData = item.toObject(true);
     for (let effectData of itemData.effects)
       if (typeof effectData.origin === "string") effectData.origin = effectData.origin.replace("OwnedItem", "Item")
