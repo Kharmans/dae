@@ -292,7 +292,6 @@
   "dae.ShowDeprecation.Name": "Mostra Deprecation Errors",
   "dae.ShowDeprecation.Hint": "Mostra Deprecation Errors in console",
   "dae.CE": "Convenient Effects",
-  "dae.CUB": "Combat Utility Belt",
   "dae.ShowInline.Name": "Visualizza i risultati dei tiri in linea",
   "dae.ShowInline.Hint": "Gli effetti con un tiro in linea mostreranno i risultati del tiro, se impostati",
   "dae.stackableOptions": {

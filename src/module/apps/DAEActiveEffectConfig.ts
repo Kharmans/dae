@@ -1,4 +1,4 @@
-import { cltActive, ceInterface, atlActive, daeSystemClass, geti18nOptions } from "../dae.js";
+import { ceInterface, atlActive, daeSystemClass, geti18nOptions } from "../dae.js";
 import { i18n, confirmAction, daeSpecialDurations, daeMacroRepeats, log } from "../../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
@@ -13,7 +13,6 @@ export function addAutoFields(fields: string[]) {
 
 export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEffectConfig {
   declare tokenMagicEffects: Record<string, string>;
-  declare cltConditionList?: Record<string, string>;
   declare ceEffectList?: Record<string, string>;
   declare statusEffectList: Record<string, string>;
   declare ConditionalVisibilityList?: Record<string, string>;
@@ -33,6 +32,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
   // object: any; Patch 4535992 Why ???
   constructor(options: Partial<foundry.applications.sheets.ActiveEffectConfig.Configuration>) {
+    // @ts-expect-error v13 stubby
     super(options);
     this.tokenMagicEffects = {};
     if (globalThis.TokenMagic?.getPresets) {
@@ -41,28 +41,18 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       })
     } else this.tokenMagicEffects["invalid"] = "module not active"
 
-    //@ts-expect-error
-    this.validSpecsToUse = ValidSpec.actorSpecs?.union;
+    this.validSpecsToUse = ValidSpec.actorSpecs?.["union"];
     if (!this.validSpecsToUse) {
       ui.notifications?.error("DAE | No valid specs found");
       return;
     }
     daeSystemClass.configureLists(this)
-    if (cltActive) {
-      this.cltConditionList = {}
-      //@ts-expect-error .clt
-      game.clt.conditions?.forEach(cltc => {
-        // @ts-expect-error for some reason
-        this.cltConditionList[cltc.id] = cltc.name;
-      })
-    }
 
     this.statusEffectList = {};
     let efl: any = CONFIG.statusEffects;
     efl = efl.filter(se => se.id)
       .map(se => {
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name} (CE)` };
-        if (foundry.utils.getProperty(se, "flags.condition-lab-triggler")) return { id: se.id, name: `${se.name} (CLT)` };
         return { id: se.id, name: i18n(se.name) };
       });
     if (ceInterface?.findEffects) {
@@ -88,7 +78,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     if (atlActive && !isEnchantment(options.document!)) {
       this.ATLPresets = {};
       //@ts-expect-error
-      game.settings?.get("ATL", "presets")?.forEach(preset => this.ATLPresets[preset.name] = preset.name);
+      game.settings.get("ATL", "presets")?.forEach(preset => this.ATLPresets[preset.name] = preset.name);
 
       Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
         otherFields.push(`ATL.detectionModes.${dm}.range`);
@@ -149,10 +139,8 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     if (!spec?.key) return undefined;
     if (spec.key.includes("tokenMagic"))
       return this.tokenMagicEffects;
-    if (spec.key === "macro.CUB") return this.cltConditionList;
     if (spec.key === "macro.CE") return this.ceEffectList;
     if (spec.key === "macro.StatusEffect") return this.statusEffectList;
-    if (spec.key === "macro.CLT") return this.cltConditionList;
     if (spec.key === "StatusEffect") return this.statusEffectList;
     if (spec.key === "macro.ConditionalVisibility") return this.ConditionalVisibilityList;
     if (spec.key === "macro.ConditionalVisibilityVision") return this.ConditionalVisibilityVisionList;
@@ -275,9 +263,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         context.durationString = duration.date + " " + duration.time;
       }
     }
-    // @ts-expect-error
     foundry.utils.setProperty(context.document, "flags.dae.durationExpression", document.flags?.dae?.durationExpression);
-    // @ts-expect-error can't know about flags
     if (!context.document.flags?.dae?.specialDuration || !(context.document.flags.dae.specialDuration instanceof Array))
       foundry.utils.setProperty(context.document.flags, "dae.specialDuration", []);
     context.sourceName = await document.sourceName;
@@ -465,12 +451,6 @@ Hooks.once("setup", () => {
 })
 
 export function isEnchantment(effect: ActiveEffect): boolean {
-  //@ts-expect-error
-  if (foundry.utils.isNewerVersion(game.system.version, "3.9.99")) {
-    //@ts-expect-error
-    return effect.type === "enchantment";
-  } else {
-    //@ts-expect-error
-    return effect.flags?.dnd5e?.type === "enchantment";
-  }
+  //@ts-expect-error no dnd5e-types
+  return effect.type === "enchantment";
 }

@@ -4,9 +4,17 @@ import { ValidSpec } from "../Systems/DAESystem.js";
 import { AnyObject } from "fvtt-types/utils";
 const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+declare module "fvtt-types/configuration" {
+  namespace Hooks {
+    interface ApplicationV2Config {
+      ActiveEffects: ActiveEffects;
+    }
+  }
+}
+
 export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
   Actor.Implementation | Item.Implementation,
-  //@ts-expect-error
+  //@ts-expect-error render context wants to know exactly which document is being used
   foundry.applications.api.DocumentSheetV2.RenderContext
 > {
   static filters = new Set();
@@ -52,7 +60,7 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
     const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
     const modeKeys = Object.keys(EFFECTMODES);
   
-    function* effectsGenerator(this: any) { for (const effect of this.effects) yield effect };
+    function* effectsGenerator(this: Actor.Implementation | Item.Implementation) { for (const effect of this.effects) yield effect };
     let effects = effectsGenerator.bind(this.document);
     if (this.document instanceof CONFIG.Actor.documentClass && CONFIG.ActiveEffect.legacyTransferral === false) {
       effects = this.document.allApplicableEffects.bind(this.document);
@@ -60,19 +68,19 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
     let actives: any[] = [];
     for (let ae of effects()) {
       //    let newAe = globalThis.foundry.utils.foundry.utils.deepClone(ae);
-      let newAe = ae.toObject();
+      const newAe = ae.toObject() as ActivesEntry;
       newAe.uuid = ae.uuid;
       newAe.isSuppressed = ae.isSuppressed;
-      newAe.duration = foundry.utils.duplicate(ae.duration);
-      ae.updateDuration(); // TODO remove this if v10 change made
-      if (simpleCalendarInstalled && ae.duration?.type === "seconds") {
+      newAe.duration = foundry.utils.duplicate(ae.duration) as ActiveEffect.Duration;
+      const aeDuration = ae.updateDuration(); // TODO remove this if v10 change made
+      if (simpleCalendarInstalled && aeDuration.type === "seconds") {
         const simpleCalendar = globalThis.SimpleCalendar?.api;
-        newAe.duration.label = simpleCalendar.formatTimestamp(ae.duration.remaining).time
-      } else if (ae.duration.label) {
-        newAe.duration.label = ae.duration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
+        newAe.duration.label = simpleCalendar.formatTimestamp(aeDuration.remaining).time
+      } else if (aeDuration.label) {
+        newAe.duration.label = aeDuration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
       }
-      let specialDuration = foundry.utils.getProperty(ae.flags, "dae.specialDuration") || [daeSpecialDurations["None"]];
-      if (typeof specialDuration === "string") specialDuration = [ae.flags.dae.specialDuration]
+      let specialDuration = ae.flags?.dae?.specialDuration || [daeSpecialDurations["None"]];
+      if (typeof specialDuration === "string") specialDuration = [specialDuration]
       newAe.duration.label += ", " + `[${specialDuration.map(dur => (daeSpecialDurations[dur], dur))}]`;
       newAe.isTemporary = ae.isTemporary;
       newAe.sourceName = `(${ae.sourceName ?? "Unknown"})`;
@@ -116,8 +124,6 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
     let efl = CONFIG.statusEffects
       .map(se => {
         if (se.id.startsWith("Convenient Effect:")) return { id: se.id, name: `${se.name} (CE)` };
-        if (se.id.startsWith("condition-lab-triggler.")) return { id: se.id, name: `${se.name} (CLT)` };
-        //@ts-expect-error .name
         return { id: se.id, name: i18n(se.name) };
       })
       .sort((a, b) => a.name < b.name ? -1 : 1);
@@ -203,7 +209,6 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
         if (!statusEffect._id) statusEffect._id = foundry.utils.randomID();
         const effect = await ActiveEffect.implementation.fromStatusEffect(id, { parent: this.document });
         effect.updateSource({ _id: statusEffect._id, origin: this.document.uuid });
-        // @ts-expect-error weirdness
         await ActiveEffect.implementation.create(effect.toObject(), { parent: this.document, keepId: true });
       }
     }
@@ -213,18 +218,29 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
   async _onRender(context, options) {
     super._onRender(context, options);
 
-    function efHandler(this: ActiveEffects, type, effect, data, options, user) {
-      if (this.document.id === effect.parent.id || effect.parent?.parent?.id === this.document.id) {
+    function efHandler(this: ActiveEffects, effect: ActiveEffect.Implementation) {
+      if (this.document.id === effect.parent?.id || effect.parent?.parent?.id === this.document.id) {
         this.render();
       }
     };
   
     if (!this.effectHookIdd)
-      this.effectHookIdd = Hooks.on("deleteActiveEffect", efHandler.bind(this, "delete"));
+      this.effectHookIdd = Hooks.on("deleteActiveEffect", efHandler.bind(this));
   }
   
   async _preClose(options) {
     await super._preClose(options);
     if (this.effectHookIdd) Hooks.off("deleteActiveEffect", this.effectHookIdd);
   }
+}
+
+interface ActivesEntry extends Omit<foundry.data.fields.SchemaField.SourceData<ActiveEffect.Schema>, "duration" | "changes"> {
+  uuid: string;
+  isSuppressed: boolean;
+  duration: ActiveEffect.Duration;
+  isTemporary: boolean;
+  sourceName: string;
+  changes: (ActiveEffect.ChangeData & {
+    label: string;
+  })[]
 }

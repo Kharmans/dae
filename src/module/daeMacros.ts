@@ -4,8 +4,7 @@ import { warn, error, debug, i18n } from "../dae.js";
 export let applyActive = (itemName: string, activate: boolean = true, itemType: string = "") => {
 }
 
-function getTokenUuid(token: Token | TokenDocument) {
-  // @ts-expect-error v13ism
+function getTokenUuid(token: foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation) {
   if (token instanceof foundry.canvas.placeables.Token) return token.document.uuid;
   if (token instanceof TokenDocument) return token.uuid;
   return undefined;
@@ -61,22 +60,18 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
       tokenUuid: getTokenUuid(token),
       targetSceneId: scene?.id, 
       tokenData: token.document.toObject(false),
-      //@ts-expect-error .grid
-      x: found.x + xGridOffset * canvas.scene?.grid,
-      //@ts-expect-error .grid
-      y: found.y + yGridOffset * canvas.scene?.grid
+      x: found.x + xGridOffset * (canvas.scene?.grid.size ?? 100),
+      y: found.y + yGridOffset * (canvas.scene?.grid.size ?? 100)
     });
 }
 
 export let renameToken = async (token: Token, newName: string) => {
-  //@ts-expect-error
-  socketlibSocket.executeAsGM("renameToken", { userId: game.user.id, startSceneId: canvas.scene.id, tokenData: token.document.toObject(false), newName });
+  socketlibSocket.executeAsGM("renameToken", { userId: game.user?.id, startSceneId: canvas.scene?.id, tokenData: token.document.toObject(false), newName });
 }
 
 export async function teleportToken(token: Token, scene: Scene | string, position: {x:number, y: number}) {
   let theScene: Scene;
-  //@ts-expect-error .scenes
-  if (typeof scene === "string") theScene = canvas.scenes.get(scene);
+  if (typeof scene === "string") theScene = game.scenes?.get(scene) as Scene;
   else theScene = scene;
   return teleport(token, theScene, position.x, position.y)
 }
@@ -86,15 +81,14 @@ export let teleportToToken = async (token, targetTokenName, xGridOffset: number 
     error("dae| teleportToToken: Token not found");
     return ("Token not found")
   }
-  if (!found) {
+  if (!found || !scene) {
     error("dae| teleportToToken: Target Not found");
     return `Token ${targetTokenName} not found`;
   }
-  //@ts-expect-error target.scene.grid
-  return await teleport(token, scene, found.x + xGridOffset * canvas.scene.grid.size, found.y + yGridOffset * canvas.scene.grid.size)
+  return await teleport(token, scene, found.x + xGridOffset * (canvas.scene?.grid.size ?? 100), found.y + yGridOffset * (canvas.scene?.grid.size ?? 100))
 }
 
-export async function createToken(tokenData, x, y) {
+export async function createToken(tokenData: TokenDocument.CreateData, x: number, y: number) {
   let targetSceneId = canvas?.scene?.id;
   // requestGMAction(GMAction.actions.createToken, {userId: game.user.id, targetSceneId, tokenData, x, y})
   return socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, targetSceneId, tokenData, x, y })
@@ -116,31 +110,32 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
 
   // Hide the current token
   if (targetScene.name === canvas?.scene?.name) {
-    CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
+    foundry.canvas.animation.CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
     let sourceSceneId = canvas.scene?.id;
-    //@ts-expect-error
-    await socketlibSocket.executeAsGM("recreateToken", { userId: game.user.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos });
+    await socketlibSocket.executeAsGM("recreateToken", { userId: game.user!.id, tokenUuid: getTokenUuid(token), startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos });
     canvas.pan({ x: xpos, y: ypos });
     return true;
   }
   // deletes and recreates the token
   var sourceSceneId = canvas?.scene?.id;
-  Hooks.once("canvasReady", async () => {
-    await socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos });
-    // canvas.pan({ x: xpos, y: ypos });
-
-    await socketlibSocket.executeAsGM("deleteToken", { userId: game.user?.id, tokenUuid: getTokenUuid(token) })
-    // await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, tokenUuid: getTokenUuid(token)});
-  })
+  Hooks.once("canvasReady", () => {
+    socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos })
+      .then(async () => {
+        // canvas.pan({ x: xpos, y: ypos });
+    
+        // await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, tokenUuid: getTokenUuid(token)});
+        await socketlibSocket.executeAsGM("deleteToken", { userId: game.user?.id, tokenUuid: getTokenUuid(token) })
+      });
+  });
 
   // Need to stop animation since we are going to delete the token and if that happens before the animation completes we get an error
-  CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
+  foundry.canvas.animation.CanvasAnimation.terminateAnimation(`Token.${token.id}.animateMovement`);
   return await targetScene.view();
 }
 
 export async function setTokenVisibility(tokenOrId: string | Token, visible: boolean) {
   let tokenUuid: string;
-  if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
+  if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId) as string;
   else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
   else tokenUuid = `Scene.${canvas?.scene?.id}.Token.${tokenOrId}`;
   return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
@@ -187,8 +182,8 @@ export function getTokenFlag(token: Token | any /* TokenDocument*/, flagName: st
   return foundry.utils.getProperty(token.document, `flags.dae.${flagName}`);
 }
 
-export async function deleteItemActiveEffects(tokens: Array<string | Token | any /* TokenDocument */>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
-  const targets = tokens.map(t => ({"uuid": typeof t === "string" ? t : (t.document?.uuid ?? t.uuid)}));
+export async function deleteItemActiveEffects(tokens: Array<string | foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
+  const targets = tokens.map(t => ({"uuid": typeof t === "string" ? t : getTokenUuid(t)}));
   return socketlibSocket.executeAsGM("deleteEffects", { targets, origin, ignore, deleteEffects, removeSequencer, options});
 }
 
@@ -196,15 +191,13 @@ export async function deleteActiveEffect(uuid: string, origin: string, ignore: s
   return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore, deleteEffects, removeSequencer, options });
 }
 
-export async function setTokenFlag(tokenOrId: Token | string | TokenDocument, flagName: string, flagValue: any) {
+export async function setTokenFlag(tokenOrId: foundry.canvas.placeables.Token.Implementation | string | TokenDocument.Implementation, flagName: string, flagValue: any) {
   let tokenUuid: string = "";
   if (typeof tokenOrId === "string") {
     if (tokenOrId.startsWith("Scene.")) tokenUuid = tokenOrId;
     else tokenUuid = canvas?.scene?.tokens.get(tokenOrId)?.uuid ?? "";
   } 
-  // @ts-expect-error v13ism
-  else if (tokenOrId instanceof foundry.canvas.placeables.Token) tokenUuid = getTokenUuid(tokenOrId) ?? "";
-  else if (tokenOrId instanceof TokenDocument) tokenUuid = tokenOrId.uuid ?? "";
+  else tokenUuid = getTokenUuid(tokenOrId) ?? "";
   return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
 }
 
@@ -217,7 +210,6 @@ export function getFlag(entity: Actor | Token | string, flagId: string) {
     if (!theActor) theActor = canvas?.tokens?.get(entity)?.actor;
     if (!theActor) theActor = game.actors?.get(entity); // if not a token maybe an actor
     if (!theActor) {
-      //@ts-expect-error fromUuidSync
       const actor = fromUuidSync(entity);
       // @ts-expect-error
       theActor = actor?.actor ?? actor;
@@ -241,7 +233,6 @@ export async function setFlag(tactor: Actor | Token | string, flagId: string, va
     // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
   let actor: Actor | undefined | null;
-  // @ts-expect-error v13ism
   if (tactor instanceof foundry.canvas.placeables.Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`);
@@ -257,7 +248,6 @@ export async function unsetFlag(tactor: Actor | Token | string, flagId) {
     // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
   }
   let actor: Actor | undefined | null;
-  // @ts-expect-error v13ism
   if (tactor instanceof foundry.canvas.placeables.Token) actor = tactor.actor;
   if (tactor instanceof Actor) actor = tactor;
   if (!actor) return error(`dae.setFlag: actor not defined`)
@@ -294,10 +284,11 @@ export async function macroActorUpdate(...args) {
   if (args[0] === "each") {
     // for subsequent executions we have to recover the origianl actor value from the saved value.
     const fieldValue = foundry.utils.getProperty(actor, fieldDef);
+    // @ts-expect-error
     actorValue = fieldValue.actorValue;
   }
   const rollContext = actor.getRollData();
-  rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? lastArg.efData.flags?.dae?.statuscounter?.counter.value ?? 1;
+  rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? 1;
   if (["on", "each"].includes(args[0])) {
     if (!game.user?.isGM) {
       console.warn(`dae | macro.actorUpdate user ${game.user?.name} is updating ${actor.name} ${targetField}`);
@@ -326,6 +317,7 @@ export async function macroActorUpdate(...args) {
     if (actor.isOwner) return await actor.update(update);
     else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update});
   } else if (args[0] === "off") {
+    // @ts-expect-error
     const {oldValue = undefined, updateValue} = foundry.utils.getProperty(actor, fieldDef);
     let restoreValue;
     if (undo === undefined) undo = true;
@@ -337,6 +329,7 @@ export async function macroActorUpdate(...args) {
       undo = true;
     }
     if (typeof undo === "string" && undo === "remove") {
+      // @ts-expect-error
       restoreValue = Math.max(0, actorValue - (updateValue - oldValue))
     } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
       restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;

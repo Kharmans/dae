@@ -292,7 +292,6 @@
   "dae.ShowDeprecation.Name": "Mostrar Erros Descontinuados",
   "dae.ShowDeprecation.Hint": "Exibe erros de códigos descontinuados no console",
   "dae.CE": "Convenient Effects",
-  "dae.CUB": "Combat Utility Belt",
   "dae.ShowInline.Name": "Exibir Resultados Inline",
   "dae.ShowInline.Hint": "Se habilitado, efeitos com uma rolagem inline exibirão os resultados da rolagem.",
   "dae.StackableOptions": {
@@ -493,19 +492,11 @@
       "name": "",
       "description": "" 
     },
-    "macro.CLT": {
-      "name": "",
-      "description": "" 
-    },
     "macro.createItem": {
       "name": "",
       "description": "" 
     },
     "macro.createItemRunMacro": {
-      "name": "",
-      "description": "" 
-    },
-    "macro.CUB": {
       "name": "",
       "description": "" 
     },

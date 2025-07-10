@@ -1,8 +1,10 @@
 
-import { ArrayField, BooleanField, NumberField, ObjectField, SchemaField, StringField, daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
+import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, DAEActiveEffectConfig, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
 import { actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeSystemClass, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, geti18nOptions, libWrapper, noDupDamageMacro, removeEffectChange } from "../dae.js";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
+
+const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
 
 var d20Roll;
 var dice;
@@ -50,7 +52,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         activitySpecs[`activities[${activityKey}].${key}`] = activitySpecsRaw[rawActivityKey][rawKey];
         activitySpecs[`activities[${activityKey}].${key}`][0].label = `${activityLabel} ${i18n("DND5E.ACTIVITY.Title.one")} ${key}`;
       }
-      if (game.modules?.get("midi-qol")?.active) {
+      if (game.modules.get("midi-qol")?.active) {
         activitySpecs[`activities[${activityKey}].useConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.useConditionText.hint") }), -1];
         activitySpecs[`activities[${activityKey}].effectConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.effectConditionText.hint") }), -1];
         activitySpecs[`activities[${activityKey}].macroData.name`] = [new StringField({ label: "Macro Name" }), -1];
@@ -65,7 +67,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         // activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`] = [new BooleanField({ label: "midi-qol.SHARED.FIELDS.midiProperties.otherActivityCompatible.hint" }), -1];
       }
 
-      if (game.modules?.get("midi-qol")?.active) {
+      if (game.modules.get("midi-qol")?.active) {
         activitySpecs["activities[attack].attackMode"] = [new StringField({ label: "Attack Mode" }), -1];
       }
     }
@@ -92,7 +94,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         theSpecs["flags.dae.macro.img"] = [new StringField({ label: "Macro Img" }), -1];
         theSpecs["flags.dae.macro.type"] = [new StringField({ label: "Macro Data" }), -1];
         theSpecs["flags.dae.macro.scope"] = [new StringField({ label: "Macro Scope" }), -1];
-        if (game.modules?.get("midi-qol")?.active && ["union", "spell", "feat", "consumable", "equipment", "spell", "weapon"].includes(k)) {
+        if (game.modules.get("midi-qol")?.active && ["union", "spell", "feat", "consumable", "equipment", "spell", "weapon"].includes(k)) {
           for (let [s, label] of [
             ["itemCondition", "midi-qol.ItemActivationCondition.Name"],
             ["reactionCondition", "midi-qol.ReactionActivationCondition.Name"],
@@ -300,24 +302,24 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // move all the character flags to specials so that the can be custom effects only
     let charFlagKeys = Object.keys(daeSystemClass.systemConfig.characterFlags);
     charFlagKeys.forEach(key => {
-      let theKey = `flags.${game.system?.id}.${key}`;
-      if ([`flags.${game.system?.id}.weaponCriticalThreshold`,
-      `flags.${game.system?.id}.meleeCriticalDamageDice`,
-      `flags.${game.system?.id}.spellCriticalThreshold`].includes(theKey)) {
+      let theKey = `flags.${game.system.id}.${key}`;
+      if ([`flags.${game.system.id}.weaponCriticalThreshold`,
+      `flags.${game.system.id}.meleeCriticalDamageDice`,
+      `flags.${game.system.id}.spellCriticalThreshold`].includes(theKey)) {
         delete baseValues[theKey];
       } else if (daeSystemClass.systemConfig.characterFlags[key].type === Boolean) baseValues[theKey] = false;
       else if (daeSystemClass.systemConfig.characterFlags[key].type === Number) baseValues[theKey] = 0;
       else if (daeSystemClass.systemConfig.characterFlags[key].type === String) baseValues[theKey] = "";
     });
-    if (game.modules?.get("skill-customization-5e")?.active && game.system?.id === "dnd5e") {
+    if (game.modules.get("skill-customization-5e")?.active && game.system.id === "dnd5e") {
       Object.keys(daeSystemClass.systemConfig.skills).forEach(skl => {
         baseValues[`flags.skill-customization-5e.${skl}.skill-bonus`] = "";
       })
     }
-    delete baseValues[`flags.${game.system?.id}.weaponCriticalThreshold`];
-    delete baseValues[`flags.${game.system?.id}.powerCriticalThreshold`];
-    delete baseValues[`flags.${game.system?.id}.meleeCriticalDamageDice`];
-    delete baseValues[`flags.${game.system?.id}.spellCriticalThreshold`];
+    delete baseValues[`flags.${game.system.id}.weaponCriticalThreshold`];
+    delete baseValues[`flags.${game.system.id}.powerCriticalThreshold`];
+    delete baseValues[`flags.${game.system.id}.meleeCriticalDamageDice`];
+    delete baseValues[`flags.${game.system.id}.spellCriticalThreshold`];
     Object.keys(baseValues).forEach(key => {
       // can't modify many spell details.
       if (key.includes("system.spells")) {
@@ -325,7 +327,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     });
     if (foundry.utils.getProperty(actorModelSchemaFields, "spells")) {
-      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") ?? []))
+      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") as string[] ?? []))
         baseValues[`system.spells.${spellSpec}.override`] = [new NumberField(), -1];
     }
 
@@ -412,7 +414,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       specials["system.resources.legact.max"] = [new NumberField(), -1];
       specials["system.resources.legres.max"] = [new NumberField(), -1];
 
-      if (game.modules?.get("resourcesplus")?.active) {
+      if (game.modules.get("resourcesplus")?.active) {
         for (let res of ["fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]) {
           specials[`system.resources.${res}.max`] = [new NumberField(), -1];
           specials[`system.resources.${res}.label`] = [new StringField(), -1];
@@ -420,20 +422,20 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     }
     if (foundry.utils.getProperty(actorModelSchemaFields, "spells")) {
-      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") ?? []))
+      for (let spellSpec of (foundry.utils.getProperty(actorModelSchemaFields, "spells.initialKeys") as string[] ?? []))
         specials[`system.spells.${spellSpec}.max`] = [new NumberField(), -1];
     }
 
-    if (["character", "npc"].includes(actorType) && game.system?.id === "dnd5e") {
+    if (["character", "npc"].includes(actorType) && game.system.id === "dnd5e") {
       // @ts-expect-error
-      if (game.settings?.get("dnd5e", "honorScore")) {
+      if (game.settings.get("dnd5e", "honorScore")) {
         specials[`system.abilities.hon.mod`] = [new NumberField(), -1];
         specials[`system.abilities.hon.save`] = [new NumberField(), -1];
         // specials[`system.abilities.hon.min`] = [new NumberField(), -1]; There is no min attribute yet
         specials[`system.abilities.hon.max`] = [new NumberField(), -1];
       }
       // @ts-expect-error
-      if (game.settings?.get("dnd5e", "sanityScore")) {
+      if (game.settings.get("dnd5e", "sanityScore")) {
         specials[`system.abilities.san.mod`] = [new NumberField(), -1];
         specials[`system.abilities.san.save`] = [new NumberField(), -1];
         // specials[`system.abilities.san.min`] = [new NumberField(), -1]; There is no min attribute yet
@@ -441,10 +443,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
     }
 
-    // specials[`flags.${game.system?.id}.initiativeHalfProf`] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials[`flags.${game.system?.id}.initiativeDisadv`] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    // specials[`flags.${game.system.id}.initiativeHalfProf`] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials[`flags.${game.system.id}.initiativeDisadv`] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
-    if (game.modules?.get("tidy5e-sheet")?.active)
+    if (game.modules.get("tidy5e-sheet")?.active)
       specials["system.details.maxPreparedSpells"] = [new NumberField(), -1];
     // change movement effects to be after prepareDerivedData
     if (foundry.utils.getProperty(actorModelSchemaFields, "attributes.fields.movement")) {
@@ -456,11 +458,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // move all the character flags to specials so that they can be custom effects only
     let charFlagKeys = Object.keys(daeSystemClass.systemConfig?.characterFlags ?? {});
     charFlagKeys.forEach(key => {
-      let theKey = `flags.${game.system?.id}.${key}`;
-      if ([`flags.${game.system?.id}.weaponCriticalThreshold`,
-      `flags.${game.system?.id}.powerCriticalThreshold`,
-      `flags.${game.system?.id}.meleeCriticalDamageDice`,
-      `flags.${game.system?.id}.spellCriticalThreshold`].includes(theKey)) {
+      let theKey = `flags.${game.system.id}.${key}`;
+      if ([`flags.${game.system.id}.weaponCriticalThreshold`,
+      `flags.${game.system.id}.powerCriticalThreshold`,
+      `flags.${game.system.id}.meleeCriticalDamageDice`,
+      `flags.${game.system.id}.spellCriticalThreshold`].includes(theKey)) {
         specials[theKey] = [new NumberField(), -1];
       }
     });
@@ -477,7 +479,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
     super.modifyDerivedSpecs(actorType, derivedSpecs, characterSpec);
     const actorModelSchemaFields = DAESystem.getActorDataModelFields(actorType);
-    //@ts-expect-error
     const systemVersion = game.system.version;
   }
 
@@ -494,13 +495,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   // Any actions to be called on init Hook 
   public static initActions() {
-    //@ts-expect-error  - renabled for some cases
     if (game.release.generation >= 12) {
       this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
     }
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
     warn("system is ", game.system)
-    if (game.modules?.get("dnd5e-custom-skills")?.active) {
+    if (game.modules.get("dnd5e-custom-skills")?.active) {
       wildcardEffects.push(/system\.skills\..*\.value/);
       wildcardEffects.push(/system\.skills\..*\.ability/);
       wildcardEffects.push(/system\.skills\..*\.bonuses/);
@@ -520,6 +520,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // support other things that can suppress an effect, like condition immunity
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "WRAPPER");
     // This supplies DAE custom effects - the main game
+    // @ts-expect-error hook needs to be fixed in types-land
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
@@ -527,8 +528,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     Hooks.once("babel.ready", () => { this.configureLists(null); });
     //@ts-expect-error
     const GameSystemConfig = game.system.config;
-    // @ts-expect-error
-    if (GameSystemConfig.conditionEffects && GameSystemConfig.conditionEffects["halfHealth"] && game.settings?.get("dae", "DAEAddHalfHealthEffect")) {
+    if (GameSystemConfig.conditionEffects && GameSystemConfig.conditionEffects["halfHealth"] && game.settings.get("dae", "DAEAddHalfHealthEffect")) {
       GameSystemConfig.conditionEffects["halfHealth"].add("halfHealthEffect");
       CONFIG.statusEffects.push({
         id: "halfHealthEffect",
@@ -544,8 +544,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //@ts-expect-error no dnd5e types
       if (candidate.isAppliedEnchantment && (candidate.duration.seconds || candidate.duration.rounds || candidate.duration.turns)) {
         if (!candidate.duration.startTime && candidate.duration.seconds)
-        //@ts-expect-error worldTime
-          candidate.updateSource({ duration: { startTime: game.time?.worldTime ?? 0 } });
+          candidate.updateSource({ duration: { startTime: game.time.worldTime ?? 0 } });
         else if (!Number.isNumeric(candidate.duration.startRound) && !Number.isNumeric(candidate.duration.startTurn) && game.combat) {
           candidate.updateSource({ duration: { startRound: game.combat?.round, startTurn: game.combat?.turn } });
         }
@@ -568,7 +567,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       addAutoFields(atlFields);
     }
     Hooks.callAll("dae.addSpecialDurations", daeSpecialDurations)
-    if (game.modules?.get("midi-qol")?.active) {
+    if (game.modules.get("midi-qol")?.active) {
       daeSpecialDurations["1Action"] = i18n("dae.1Action");
       daeSpecialDurations["Bonus Action"] = i18n("dae.Bonus Action");
       daeSpecialDurations["Reaction"] = i18n("dae.Reaction");
@@ -581,7 +580,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
       daeSpecialDurations["1Reaction"] = i18n("dae.1Reaction")
       let attackTypes = ["mwak", "rwak", "msak", "rsak"];
-      if (game.system?.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
+      if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
       attackTypes.forEach(at => {
         daeSpecialDurations[`1Attack:${at}`] = `${daeSystemClass.systemConfig.itemActionTypes[at]}: ${i18nFormat("dae.1Attack", { type: daeSystemClass.systemConfig.itemActionTypes[at] })}`;
         daeSpecialDurations[`1Hit:${at}`] = `${daeSystemClass.systemConfig.itemActionTypes[at]}: ${i18nFormat("dae.1Hit", { type: daeSystemClass.systemConfig.itemActionTypes[at] })}`;
@@ -688,7 +687,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   // For DAE Editor
   public static configureLists(daeConfig: DAEActiveEffectConfig | null) {
-    //@ts-expect-error
     const systemVersion = game.system.version;
     const damageTypes = [...Object.values(daeSystemClass.systemConfig.damageTypes), ...Object.values(daeSystemClass.systemConfig.healingTypes)];
 
@@ -771,7 +769,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (spec.key.includes("system.skills") && spec.key.includes("value"))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.key.includes("system.skills") && spec.key.includes("ability")) {
-      if (game.system?.id === "dnd5e")
+      if (game.system.id === "dnd5e")
         return abilitiesList;
     }
     if (spec.key === "system.traits.size") {
@@ -784,7 +782,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   public static async editConfig() {
-    if (game.system?.id === "dnd5e") {
+    if (game.system.id === "dnd5e") {
       try {
         const pack = game.packs?.get(daeSystemClass.systemConfig.sourcePacks.ITEMS);
         const profs = [
@@ -840,7 +838,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     var validValues;
     var value;
     if (typeof change?.key !== "string") return true;
-    const damageBonusMacroFlag = `flags.${game.system?.id}.DamageBonusMacro`;
+    const damageBonusMacroFlag = `flags.${game.system.id}.DamageBonusMacro`;
     if (change.key === damageBonusMacroFlag) {
       let macroRef = change.value;
       const macroItem = getActorItemForEffect(change.effect);
@@ -853,12 +851,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }
       const current = foundry.utils.getProperty(actor, change.key);
       // includes wont work for macro names that are subsets of other macro names
+      // @ts-expect-error TODO: type this better
       if (noDupDamageMacro && current?.split(",").some(macro => macro === macroRef)) return true;
       foundry.utils.setProperty(actor, change.key, current ? `${current},${macroRef}` : macroRef)
       return true;
     }
-    if (change.key.includes(`flags.${game.system?.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]) {
-      if (change.key.includes(`flags.${game.system?.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type !== String) {
+    if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]) {
+      if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type !== String) {
         const type = daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type ?? Boolean;
         const rollData = actor.getRollData();
         const flagValue = foundry.utils.getProperty(rollData, change.key) || 0;
@@ -870,7 +869,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
       }
 
-      if (change.key.includes(`flags.${game.system?.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type !== Boolean) {
+      if (change.key.includes(`flags.${game.system.id}`) && daeSystemClass.systemConfig.characterFlags[change.key.split(".").pop()]?.type !== Boolean) {
         return true;
       }
     }
@@ -1139,7 +1138,6 @@ function applyBaseEffects() {
 }
 
 function prepareData(wrapped) {
-  //@ts-expect-error
   const systemVersion = game.system.version;
   if (!ValidSpec.actorSpecs) {
     ValidSpec.createValidMods();
@@ -1203,7 +1201,7 @@ function prepareData(wrapped) {
 }
 const getTargetType = field => {
   // @ts-expect-error
-  const FormulaField = game.system?.dataModels.fields.FormulaField;
+  const FormulaField = game.system.dataModels.fields.FormulaField;
   const ActiveEffect5eFormulaFields: Set<string> = CONFIG.ActiveEffect.documentClass.FORMULA_FIELDS
   if ((field instanceof FormulaField) || ActiveEffect5eFormulaFields.has(field)) return "formula";
   else if (field instanceof foundry.data.fields.ArrayField) return "Array";
@@ -1303,7 +1301,6 @@ function getRollData(wrapped, ...args) {
         const actor = actorFromUuid(data.actorUuid ?? "");
         const token = getSelfTarget(actor);
         // If the return is a tokenDocument then we have no token on the scene
-        // @ts-expect-error v13ism
         if (token instanceof foundry.canvas.placeables.Token) data._token = token;
       }
       return data._token;
@@ -1314,7 +1311,6 @@ function getRollData(wrapped, ...args) {
   if (!data.tokenUuid) Object.defineProperty(data, "tokenUuid", {
     get() { // During initialisation getSelfTarget will return a token document not a token
       if (data._tokenUuid) return data._tokenUuid;
-      // @ts-expect-error v13ism
       if (data.token instanceof foundry.canvas.placeables.Token)
         return data.token?.document.uuid ?? "undefined";
       else return data.token?.uuid ?? "undefined"
@@ -1430,11 +1426,10 @@ function _prepareArmorClassAttribution(wrapped, data) {
 }
 
 function patchPrepareArmorClassAttribution() {
-  //@ts-expect-error
   const systemVersion = game.system.version;
-  if (game.system?.id === "dnd5e") {
+  if (game.system.id === "dnd5e") {
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
-  } else if (game.system?.id === "sw5e") {
+  } else if (game.system.id === "sw5e") {
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['sw5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['sw5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
     libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['sw5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");

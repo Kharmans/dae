@@ -1,6 +1,6 @@
 import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, maxShortDuration } from "./dae.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
-import { MustBeValidUuid } from "fvtt-types/utils";
+import { AnyMutableObject, MustBeValidUuid } from "fvtt-types/utils";
 
 export class GMActionMessage {
   action: string;
@@ -57,7 +57,6 @@ async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuid
   const { uuid, itemUuid, itemUuids, context } = data;
 
   for (let itemUuid of itemUuids ?? []) {
-    // @ts-expect-error
     const item: any = await fromUuid(itemUuid);
     if (!(item instanceof Item) || !item?.isOwned) continue; // Just in case we are trying to delete a world/compendium item
     await item.delete(context);
@@ -153,7 +152,6 @@ async function _executeMacro(data: {
 }
 
 async function _suspendActiveEffect(data: { uuid: string }) {
-  // @ts-expect-error
   const effect = await fromUuid(data.uuid);
   if (!effect) return;
   if (effect instanceof CONFIG.ActiveEffect.documentClass) {
@@ -191,15 +189,21 @@ async function _applyActiveEffects(data) {
 async function _recreateToken(data: { userId: string, tokenUuid: string, startSceneId: string, targetSceneId: string, tokenData: {}, targetTokenData: {}, x: number, y: number }) {
   //TODO this looks odd - should get the token data form the tokenUuid?
   await _createToken(data);
-  //@ts-expect-error fromUuidSync
   const token = await fromUuidSync(data.tokenUuid) as TokenDocument.Implementation;
   return token?.delete();
 }
 
-async function _createToken(data: { userId: string, targetSceneId: string, tokenData: {}, x: number, y: number }) {
+async function _createToken(data: { userId: string, targetSceneId: string, tokenData: TokenDocument.CreateData, x: number, y: number }) {
   let scenes = game.scenes;
   let targetScene = scenes?.get(data.targetSceneId);
-  return await targetScene?.createEmbeddedDocuments('Token', [foundry.utils.mergeObject(foundry.utils.duplicate(data.tokenData), { "x": data.x, "y": data.y, hidden: false }, { overwrite: true, inplace: true })])
+  let tokenData = foundry.utils.mergeObject(data.tokenData, {
+    x: data.x,
+    y: data.y,
+    hidden: false
+  }, {
+    inplace: false
+  });
+  return await targetScene?.createEmbeddedDocuments('Token', [tokenData]);
 }
 
 async function _deleteToken(data: { tokenUuid: string }) {
@@ -280,7 +284,7 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
-async function _deleteEffects(data: { targets: any[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options: any }) {
+async function _deleteEffects(data: { targets: {uuid: string}[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options: any }) {
   if (data.options === undefined) data.options = {};
   for (let idData of data.targets) {
     const actor = actorFromUuid(idData.uuid);
@@ -304,7 +308,29 @@ async function _deleteEffects(data: { targets: any[], origin: string, ignore: st
   return true;
 }
 
-export async function applyActiveEffects({ activate = true, activityUuid = undefined, targetList, activeEffects, effectDuration, itemCardUuid = null, removeMatchLabel = false, toggleEffect = false, metaData = {}, origin = undefined }) {
+export async function applyActiveEffects({
+  activate = true,
+  activityUuid = undefined,
+  targetList,
+  activeEffects,
+  effectDuration,
+  itemCardUuid = null,
+  removeMatchLabel = false,
+  toggleEffect = false,
+  metaData = {},
+  origin = undefined
+}: {
+  activate: boolean;
+  activityUuid?: string;
+  targetList: string[];
+  activeEffects: ActiveEffect.Source[];
+  effectDuration: { units: string, value: number };
+  itemCardUuid?: string | null;
+  removeMatchLabel: boolean;
+  toggleEffect: boolean;
+  metaData: AnyMutableObject;
+  origin?: string;
+}) {
   for (let targetActorUuid of targetList) {
     let targetActor = fromUuidSync(targetActorUuid);
     if (!targetActor) continue;
@@ -334,7 +360,6 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           for (count = 0; count < 10 && origin instanceof CONFIG.ActiveEffect.documentClass && !(origin.parent instanceof Item); count++) {
             if (origin.parent instanceof CONFIG.Item.documentClass) origin = origin.parent;
             else {
-              //@ts-expect-error
               origin = await fromUuid(origin.origin);
             }
           }
@@ -366,8 +391,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
 
         // convert item duration to seconds/rounds/turns according to combat
         if (aeData.duration.seconds) {
-          //@ts-expect-error worldTime
-          aeData.duration.startTime = game.time?.worldTime;
+          aeData.duration.startTime = game.time.worldTime;
           const inCombat = targetActor.inCombat;
           let convertedDuration;
           if (inCombat && (aeData.duration.rounds || aeData.duration.turns)) {
@@ -385,7 +409,9 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           if (convertedDuration.type === "turns") {
             aeData.duration.rounds = convertedDuration.rounds;
             aeData.duration.turns = convertedDuration.turns;
+            // @ts-expect-error maybe it's not `ActiveEffect.Source`
             aeData.startRound = game.combat?.round;
+            // @ts-expect-error maybe it's not `ActiveEffect.Source`
             aeData.startTurn = game.combat?.turn;
             delete aeData.duration.seconds;
           }
@@ -398,8 +424,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
           debug("converted duration ", convertedDuration, inCombat, effectDuration, maxShortDuration);
           if (convertedDuration.type === "seconds") {
             aeData.duration.seconds = convertedDuration.seconds;
-            //@ts-expect-error worldTime
-            aeData.duration.startTime = game.time?.worldTime;
+            aeData.duration.startTime = game.time.worldTime;
           } else if (convertedDuration.type === "turns") {
             aeData.duration.rounds = convertedDuration.rounds;
             aeData.duration.turns = convertedDuration.turns;
@@ -458,18 +483,13 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
               change.value = Roll.replaceFormulaData(change.value, context, { missing: '0', warn: false });
               change.value = change.value.replace("##", "@");
             } else {
+              // @ts-expect-error when could this happen?
               change.value = foundry.utils.duplicate(change.value).map(f => {
-                if (f === "@itemCardId") {
-                  foundry.utils.logCompatibilityWarning("DAE | @itemCardId is deprecated use @itemCardUuid instead",
-                  {since: "12.0.21", until: "13.0.0"});
-                  const itemCard = fromUuidSync(itemCardUuid);
-                  return itemCard?.id;
-                }
                 if (f === "@itemCardUuid") return itemCardUuid;
                 if (f === "@target") return getToken(targetActor)?.id;
                 if (f === "@targetUuid") return getTokenDocument(targetActor)?.uuid;
                 return f;
-              })
+              });
             }
           } else {
             const targetContext = { "targetUuid": getTokenDocument(targetActor)?.uuid, "target": getToken(targetActor)?.id, "tokenUuid": getTokenDocument(targetActor)?.uuid, "token": getToken(targetActor)?.id };
@@ -484,7 +504,8 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
 
       if (dupEffects.length > 0) {
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
-        let createdEffects = (await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData })) ?? [];
+          // @ts-expect-error `duplicate` issues
+          let createdEffects = (await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects, { toggleEffect, metaData })) ?? [];
         for (let effect of createdEffects) {
           const origin = fromUuidSync(effect.origin as MustBeValidUuid<string>);
           // @ts-expect-error
@@ -495,7 +516,7 @@ export async function applyActiveEffects({ activate = true, activityUuid = undef
   };
 }
 
-export function convertDuration(durationData: { units: string, value: number }, inCombat, maxSecondsToConvert = Number.POSITIVE_INFINITY) {
+export function convertDuration(durationData: { units: string, value: number }, inCombat: boolean, maxSecondsToConvert = Number.POSITIVE_INFINITY) {
   // TODO rewrite this abomination - for v13 look at default calendar
   let useTurns = inCombat && timesUpInstalled;
   if (durationData.units === "second" && durationData.value > maxSecondsToConvert) useTurns = false;
@@ -509,8 +530,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
   if (!simpleCalendarInstalled) {
     // Calcs for durations above 1 day are just wrong - but there is no core support for it that works.
     // TODO Once core timeToComponents(game.time.worldTime).add(components).componentsToTime() works correctly it can be fixed
-    //@ts-expect-error calendar
-    const calendar = game.time?.calendar;
+    const calendar = game.time.calendar;
     const secondsPerDay = calendar.days.secondsPerMinute * calendar.days.minutesPerHour * calendar.days.hoursPerDay 
 
     switch (durationData.units) {
@@ -537,7 +557,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       case "weeks": return { type: "seconds", seconds: durationData.value * secondsPerDay * calendar.days.values.length, rounds: 0, turns: 0 };
       case "month":
       case "months": 
-      const averageMonth = calendar.months.values.reduce((a, b) => a + b, 0) / calendar.months.values.length;
+      const averageMonth = calendar.months.values.reduce((acc, month) => acc + month.days, 0) / calendar.months.values.length;
       return { type: "seconds", seconds: durationData.value * secondsPerDay * averageMonth, rounds: 0, turns: 0 };
       case "year":
       case "years": return { type: "seconds", seconds: durationData.value * secondsPerDay * calendar.days.daysPerYear, rounds: 0, turns: 0 };
@@ -573,8 +593,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
       default:
         let interval = {}
         interval[durationData.units] = durationData.value;
-        //@ts-expect-error worldTime
-        const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time?.worldTime, interval) - (game.time?.worldTime ?? 0);
+        const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - (game.time.worldTime ?? 0);
         if (durationSeconds / CONFIG.time.roundTime <= 10) {
           return { type: useTurns ? "turns" : "seconds", seconds: durationSeconds, rounds: Math.floor(durationSeconds / CONFIG.time.roundTime), turns: 0 };
         } else {
