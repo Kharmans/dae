@@ -1,5 +1,4 @@
-// import { DotKeys, GetProperty } from "fvtt-types/utils";
-export {}
+export type TokenOrDocument = foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation;
 
 // Declaration Merging for DAE-specific stuff
 declare module "fvtt-types/configuration" {

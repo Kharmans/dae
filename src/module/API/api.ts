@@ -5,9 +5,10 @@ import { ActiveEffects } from '../apps/ActiveEffects.js';
 import { DAEActiveEffectConfig, addAutoFields, otherFields } from '../apps/DAEActiveEffectConfig.js';
 import { DIMEditor } from '../apps/DIMEditor.js';
 import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets } from '../dae.js';
-import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, migrateActorDAESRD, migrateAllActorsDAESRD, migrateAllNPCDAESRD, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration.js';
+import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration.js';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
 import { enumerateBaseValues } from '../dae.js';
+import { TokenOrDocument } from '../../globals.js';
 
 const API = {
   ActiveEffects(document: Actor.Implementation | Item.Implementation) {
@@ -16,7 +17,7 @@ const API = {
   addAutoFields(fields: string[]) {
     return addAutoFields(fields);
   },
-  async blindToken(tokenOrId: Token.Implementation | string) {
+  async blindToken(tokenOrId: TokenOrDocument | string) {
     return await blindToken(tokenOrId);
   },
   async cleanEffectOrigins(processItems?: boolean) {
@@ -37,7 +38,7 @@ const API = {
   DAEActiveEffectConfig(document: ActiveEffect.Implementation, options: Partial<foundry.applications.sheets.ActiveEffectConfig.Configuration> = {}) {
     return new DAEActiveEffectConfig({ document, ...options });
   },
-  actorFromUuid(uuid: string): Actor | null {
+  actorFromUuid(uuid: string): Actor.Implementation | null {
     return actorFromUuid(uuid);          
   },
   async daeMacro(action: string, actor: Actor.Implementation, effectData: ActiveEffect.Implementation | ActiveEffect.Source, lastArgOptions: any = {}) {
@@ -57,12 +58,13 @@ const API = {
   async doEffects(
     item: Item.Implementation,
     activate: boolean,
-    targets: (string | Actor.Implementation | TokenDocument.Implementation | foundry.canvas.placeables.Token.Implementation)[] | undefined = undefined,
+    targets: DoEffectsTargets = undefined,
     options: DoEffectsOptions
   ) {
     return await doEffects(item, activate, targets, options);
   },
   async doActivityEffects(
+    // TODO (Michael) dnd5e-types
     activity,
     activate: boolean,
     targets: DoEffectsTargets = undefined,
@@ -71,64 +73,55 @@ const API = {
   ) {
     return doActivityEffects(activity, activate, targets, activityEffectsUuids, options);
   },
-  enumerateBaseValues(dataModels: any) {
+  enumerateBaseValues(dataModels: foundry.abstract.DataModel<any>[]) {
     return enumerateBaseValues(dataModels);
   },
-  async fixTransferEffects(actor) {
+  async fixTransferEffects(actor: Actor.Implementation) {
     return await fixTransferEffects(actor);
   },
-  async fixTransferEffect(actor, item) {
+  async fixTransferEffect(actor: Actor.Implementation, item: Item.Implementation) {
     return await fixTransferEffect(actor, item);
   },
-  getFlag(entity: Actor | Token | string, flagId: string) {
+  getFlag(entity: Actor.Implementation | TokenOrDocument | string, flagId: string) {
     return getFlag(entity, flagId);
   },
-  getTokenFlag(token: Token | any /* TokenDocument*/, flagName: string) {
+  getTokenFlag(token: TokenOrDocument, flagName: string) {
     return getTokenFlag(token, flagName);
   },
-  async migrateActorDAESRD(actor, includeSRD = false) {
-    return await migrateActorDAESRD(actor, includeSRD);
-  },
-  async migrateAllActorsDAESRD(includeSRD = false) {
-    return await migrateAllActorsDAESRD(includeSRD);
-  },
-  async migrateAllNPCDAESRD(includeSRD = false) {
-    return await migrateAllNPCDAESRD(includeSRD);
-  },
-  async moveToken(token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") {
+  async moveToken(token: TokenOrDocument, targetTokenName: string, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") {
     return await moveToken(token, targetTokenName, xGridOffset, yGridOffset, targetSceneName);
   },
-  async renameToken(token: Token, newName: string) {
+  async renameToken(token: foundry.canvas.placeables.Token.Implementation, newName: string) {
     return await renameToken(token, newName);
   },
-  async restoreVision(tokenOrId: Token | string) {
+  async restoreVision(tokenOrId: TokenOrDocument | string) {
     return await restoreVision(tokenOrId);
   },
   evalExpression(): string {
     return daeSystemClass.safeEvalExpression.bind(daeSystemClass);
   },
-  async setFlag(tactor: Actor | Token | string, flagId: string, value: any) {
+  async setFlag(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string, flagId: string, value: any) {
     return await setFlag(tactor, flagId, value);
   },
-  async setTileVisibility(tileOrId: TileDocument | string, visible: boolean) {
+  async setTileVisibility(tileOrId: TileDocument.Implementation | string, visible: boolean) {
     return await setTileVisibility(tileOrId, visible);
   },
-  async setTokenFlag(tokenOrId: Token | string | TokenDocument, flagName: string, flagValue: any) {
+  async setTokenFlag(tokenOrId:  string | TokenOrDocument, flagName: string, flagValue: any) {
     return await setTokenFlag(tokenOrId, flagName, flagValue);
   },
-  async setTokenVisibility(tokenOrId: string | Token, visible: boolean) {
+  async setTokenVisibility(tokenOrId: string | TokenOrDocument, visible: boolean) {
     return await setTokenVisibility(tokenOrId, visible);
   },
-  async teleportToken(token: Token, scene: Scene | string, position: { x: number, y: number }) {
+  async teleportToken(token: TokenOrDocument, scene: Scene.Implementation | string, position: { x: number, y: number }) {
     return await teleportToken(token, scene, position);
   },
-  async teleportToToken(token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") {
+  async teleportToToken(token: TokenOrDocument, targetTokenName: string, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") {
     return await teleportToToken(token, targetTokenName, xGridOffset, yGridOffset, targetSceneName);
   },
   async tobMapper(iconsPath = "icons/TOBTokens") {
     return await tobMapper(iconsPath);
   },
-  async unsetFlag(tactor: Actor | Token | string, flagId) {
+  async unsetFlag(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string, flagId: string) {
     return await unsetFlag(tactor, flagId);
   },
   get ValidSpec() { return ValidSpec },

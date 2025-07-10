@@ -8,6 +8,7 @@ import { DAESystemSW5E } from "./Systems/DAEsw5e.js";
 import { DIMEditor } from "./apps/DIMEditor.js";
 import { isEnchantment } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial } from "fvtt-types/utils";
+import { TokenOrDocument } from "../globals.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
 
@@ -2579,7 +2580,7 @@ export function getToken(tokenRef: Token | TokenDocument | string | Actor): Toke
   return undefined;
 }
 
-export function actorFromUuid(uuid: string): Actor | null {
+export function actorFromUuid(uuid: string): Actor.Implementation | null {
   let doc = fromUuidSync(uuid);
   if (doc instanceof CONFIG.Token.documentClass) doc = doc.actor;
   if (doc instanceof CONFIG.Actor.documentClass) return doc;
@@ -2626,7 +2627,7 @@ export function tokenForActor(actor: Actor | string | undefined | null): Token |
   return tokens[0];
 }
 
-export function effectIsTransfer(effect) {
+export function effectIsTransfer(effect: ActiveEffect.Implementation) {
   if (CONFIG.ActiveEffect.legacyTransferral === false) return effect.transfer === true;
   if (effect.flags.dae?.transfer !== undefined) return effect.flags.dae.transfer;
   if (effect.transfer !== undefined) return effect.transfer;
@@ -2813,7 +2814,7 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
   await token?.drawEffects();
 }
 
-export function enumerateBaseValues(objectDataModels: any[], logErrors: boolean = true): any {
+export function enumerateBaseValues(objectDataModels: foundry.abstract.DataModel<any>[], logErrors: boolean = true): any {
   const baseValues: any = {};
   //@ts-expect-error
   const dataModels: any = game.system.dataModels;
@@ -2884,7 +2885,7 @@ export function getStaticID(id: string): string {
   return id.padEnd(16, "0");
 }
 
-export type DoEffectsTargets = (string | Actor.Implementation | TokenDocument.Implementation | foundry.canvas.placeables.Token.Implementation)[] | undefined;
+export type DoEffectsTargets = (string | Actor.Implementation | TokenOrDocument)[] | undefined;
 
 export interface DoEffectsOptions extends InexactPartial<{
   applyAll: boolean;
