@@ -27,7 +27,7 @@ const API = {
   daeSpecialDurations() {
     return daeSpecialDurations;
   },
-  evalExpression(): string {
+  evalExpression(): (input: string, context: any, depth?: number) => string {
     return daeSystemClass.safeEvalExpression.bind(daeSystemClass);
   },
   get otherValidSpecKeys() { return otherFields },

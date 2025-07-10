@@ -116,9 +116,6 @@ export class ValidSpec {
         }
       }
 
-      // TODO reactivate when cond vis is v10 ready
-      // specials["macro.ConditionalVisibility"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-      // specials["macro.ConditionalVisibilityVision"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["flags.dae.onUpdateTarget"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["flags.dae.onUpdateSource"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
@@ -147,8 +144,8 @@ export class ValidSpec {
       })
       this.actorSpecs[specKey].allSpecs = this.actorSpecs[specKey].baseSpecs.concat(this.actorSpecs[specKey].derivedSpecs);
 
-      // TDO come back and clean this up
-      if (["dnd5e", "sw5e"].includes(game.system.id ?? "")) {
+      // TODO come back and clean this up
+      if (["dnd5e"].includes(game.system.id ?? "")) {
         // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
         // and initiative bonus depends on advantage on initiative
         this.actorSpecs[specKey].allSpecs.forEach(m => {
@@ -182,7 +179,7 @@ export class ValidSpec {
     this.actorSpecs["union"].allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
     this.actorSpecs["union"].baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
     this.actorSpecs["union"].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-    this.itemSpecs = daeSystemClass?.getItemSpecs() ?? {};
+    this.itemSpecs = "getItemSpecs" in daeSystemClass ? daeSystemClass?.getItemSpecs() : {};
   }
 
 
@@ -274,7 +271,7 @@ export class DAESystem {
   static attackTypes: string[];
   static bonusSelectors: any;
   static daeActionTypeKeys: string[];
-  static detectionModeList: any;
+  static detectionModeList: Record<string, string>;
   public static fieldMappings: any = {};
 
   public static get systemConfig() {
@@ -301,15 +298,15 @@ export class DAESystem {
    * Keys are valid options for the field specification and the value is the user facing text for that option 
    * e.g. {common: "Common"}
    * */
-  public static getOptionsForSpec(specification): any {
-    if (!specification.key) return undefined;
+  public static getOptionsForSpec(specification?: ActiveEffect.ChangeData): Record<string, string> | undefined {
+    if (!specification?.key) return undefined;
     if (specification?.key === "ATE.detectionMode") {
       return this.detectionModeList;
     }
     return undefined;
   }
   // Configure any lookup lists that might be required by getOptionsForSpec.
-  public static configureLists(daeConfig: DAEActiveEffectConfig) {
+  public static configureLists() {
     this.detectionModeList = {};
     Object.values(CONFIG.Canvas.detectionModes).forEach(dm => {
       this.detectionModeList[dm.id as string] = i18n(`${dm.label}`);
@@ -522,7 +519,7 @@ export class DAESystem {
     return output; // depth ? this.safeEval(output, context) : output;
   }
 
-  public static daeCustomEffect(actor, change): any {
+  public static daeCustomEffect(actor, change, _current?: never, _delta?: never, _changes?: never): any {
     if (typeof change.value === "string" && (change.value?.includes("dae.eval(") || change.value?.includes("dae.roll("))) {
       const context = actor.getRollData();
       context.actor = actor;
@@ -562,6 +559,7 @@ export class DAESystem {
     // Might have to be tailored to other systems.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // This supplies DAE custom effects
+    // @ts-expect-error types is missing some args here
     Hooks.on("applyActiveEffect", daeSystemClass.daeCustomEffect.bind(daeSystemClass));
 
   }
@@ -613,7 +611,6 @@ function prepareData(wrapped) {
   // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
 }
-
 
 foundry.utils.setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
 

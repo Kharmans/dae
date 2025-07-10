@@ -6,23 +6,17 @@ import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
 
-var d20Roll;
-var dice;
-
-//@ts-expect-error
-const CONFIG: any = globalThis.CONFIG;
-
 export class DAESystemDND5E extends CONFIG.DAE.systemClass {
-  traitList;
-  languageList;
-  conditionList;
-  bypassesList;
-  customDamageResistanceList;
-  armorClassCalcList;
+  static traitList: Record<string, string>;
+  static languageList: Record<string, string>;
+  static conditionList: Record<string, string>;
+  static bypassesList: Record<string, string>;
+  static customDamageResistanceList: Record<string, string>;
+  static armorClassCalcList: Record<string, string>;
   static profInit;
-  static toolProfList;
-  static armorProfList;
-  static weaponProfList;
+  static toolProfList: Record<string, string>;
+  static armorProfList: Record<string, string>;
+  static weaponProfList: Record<string, string>;
 
   public static get systemConfig() {
     //@ts-expect-error
@@ -31,9 +25,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
   public static getItemSpecs() {
     // Setup Item Specs
-    //@ts-expect-error
+    //@ts-expect-error no dnd5e-types
     const FormulaField = game.system.dataModels.fields.FormulaField;
-    //@ts-expect-error
+    //@ts-expect-error no dnd5e-types
     const gameConfig = game.system.config;
     let itemSpecs = enumerateBaseValues(CONFIG.Item.dataModels);
     const activitySpecsRaw = enumerateBaseValues(globalThis.dnd5e.dataModels.activity, false);
@@ -295,6 +289,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         baseValues[`system.tools.${key}.ability`] = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
         baseValues[`system.tools.${key}.bonuses.check`] = [new StringField(), -1];
       }
+      // @ts-expect-error no dnd5e-types
       for (let vehicleKey of Object.keys(CONFIG.DND5E.vehicleTypes)) {
         baseValues[`system.tools.${vehicleKey}.value`] = [new NumberField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
       }
@@ -507,10 +502,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
     wildcardEffects.push(/system\.abilities\..*\.value/);
     wildcardEffects.push(/system\.scale\..*\.value/);
-    //@ts-expect-error
-    dice = game.system.dice;
-    if (!dice) error("game.system.dice not defined! Many things won't work");
-    else d20Roll = dice?.d20Roll;
 
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
     // We will call this in prepareData
@@ -524,8 +515,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
-    this.configureLists(null);
-    Hooks.once("babel.ready", () => { this.configureLists(null); });
+    this.configureLists();
+    Hooks.once("babel.ready", () => { this.configureLists(); });
     //@ts-expect-error
     const GameSystemConfig = game.system.config;
     if (GameSystemConfig.conditionEffects && GameSystemConfig.conditionEffects["halfHealth"] && game.settings.get("dae", "DAEAddHalfHealthEffect")) {
@@ -580,7 +571,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       //    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
       daeSpecialDurations["1Reaction"] = i18n("dae.1Reaction")
       let attackTypes = ["mwak", "rwak", "msak", "rsak"];
-      if (game.system.id === "sw5e") attackTypes = ["mwak", "rwak", "mpak", "rpak"];
       attackTypes.forEach(at => {
         daeSpecialDurations[`1Attack:${at}`] = `${daeSystemClass.systemConfig.itemActionTypes[at]}: ${i18nFormat("dae.1Attack", { type: daeSystemClass.systemConfig.itemActionTypes[at] })}`;
         daeSpecialDurations[`1Hit:${at}`] = `${daeSystemClass.systemConfig.itemActionTypes[at]}: ${i18nFormat("dae.1Hit", { type: daeSystemClass.systemConfig.itemActionTypes[at] })}`;
@@ -667,47 +657,39 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     return disabled;
   }
 
-  public static enumerateLanguages(systemLanguages: any): any {
+  public static enumerateLanguages(systemLanguages: Record<string, {label?: string, children?: Record<string, Record<string, unknown>>}>): any {
     const languages = { "ALL": "All" };
-    Object.keys(systemLanguages).forEach(lang => {
-      if (typeof systemLanguages[lang] === "string") {
-        languages[lang] = i18n(systemLanguages[lang]);
+    Object.entries(systemLanguages).forEach(([key, language]) => {
+      if (typeof language === "string") {
+        languages[key] = i18n(language);
+      } else if (language.label) {
+        languages[key] = language.label;
       }
-      if (systemLanguages[lang].label) {
-        languages[`${lang}`] = `${systemLanguages[lang].label}`;
-      }
-      if (systemLanguages[lang].children) {
-        const subLanguages = this.enumerateLanguages(systemLanguages[lang].children);
+      if (language.children) {
+        const subLanguages = this.enumerateLanguages(language.children);
         Object.keys(subLanguages).forEach(subLang => {
           languages[subLang] = subLanguages[subLang];
-        })
+        });
       }
     });
     return languages;
   }
   // For DAE Editor
-  public static configureLists(daeConfig: DAEActiveEffectConfig | null) {
-    const systemVersion = game.system.version;
-    const damageTypes = [...Object.values(daeSystemClass.systemConfig.damageTypes), ...Object.values(daeSystemClass.systemConfig.healingTypes)];
+  public static configureLists() {
+    this.traitList = Object.fromEntries(Object.entries(daeSystemClass.systemConfig.damageTypes as Record<string, {label: string}>).map(([key, {label}]) => [[key, label], [`-${key}`, `- ${label}`]]).flat(1));
+    for (const [key, {label}] of Object.entries(daeSystemClass.systemConfig.healingTypes as Record<string, {label: string}>)) {
+      this.traitList[key] = label;
+      this.traitList[`-${key}`] = `- ${label}`;
+    }
 
-    this.traitList = Object.keys(daeSystemClass.systemConfig.damageTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.damageTypes[key].label; return obj }, {})
-    Object.keys(daeSystemClass.systemConfig.healingTypes).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.healingTypes[key].label; return obj }, this.traitList)
-    Object.keys(this.traitList).forEach(type => {
-      this.traitList[`-${type}`] = `- ${i18n(this.traitList[type])}`;
-    });
-
-    this.bypassesList = Object.entries(daeSystemClass.systemConfig.itemProperties)
-      .filter(([key, value]) => daeSystemClass.systemConfig.itemProperties[key].isPhysical)
+    this.bypassesList = Object.entries(daeSystemClass.systemConfig.itemProperties as Record<string, {isPhysical: boolean, label: string}>)
+      .filter(([key, value]) => value.isPhysical)
       .reduce((acc, [key, value]) => {
-        //@ts-expect-error .label
-        acc[key] = value.label
+        acc[key] = value.label;
         return acc;
       }, {});
 
-    this.languageList = foundry.utils.duplicate(daeSystemClass.systemConfig.languages);
-    Object.keys(daeSystemClass.systemConfig.languages).forEach(type => {
-      this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
-    });
+    this.languageList = this.enumerateLanguages(daeSystemClass.systemConfig.languages);
 
     this.armorClassCalcList = {};
     for (let acCalc in daeSystemClass.systemConfig.armorClasses) {
@@ -715,28 +697,28 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
     this.conditionList = {};
-    Object.keys(daeSystemClass.systemConfig.conditionTypes).forEach(ct => {
-      this.conditionList[ct] = daeSystemClass.systemConfig.conditionTypes[ct].label;
-      this.conditionList[`-${ct}`] = `- ${daeSystemClass.systemConfig.conditionTypes[ct].label}`;
+    Object.entries(daeSystemClass.systemConfig.conditionTypes as Record<string, {label: string}>).forEach(([type, {label}]) => {
+      this.conditionList[type] = label;
+      this.conditionList[`-${type}`] = `- ${label}`;
     });
 
     this.toolProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.toolProficiencies);
-    Object.keys(daeSystemClass.systemConfig.toolProficiencies).forEach(type => {
-      this.toolProfList[`-${type}`] = `- ${daeSystemClass.systemConfig.toolProficiencies[type]}`;
+    Object.entries(this.toolProfList).forEach(([type, label]) => {
+      this.toolProfList[`-${type}`] = `- ${label}`;
     });
 
     this.armorProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.armorProficiencies);
-    Object.keys(daeSystemClass.systemConfig.armorProficiencies).forEach(type => {
-      this.armorProfList[`-${type}`] = `- ${daeSystemClass.systemConfig.armorProficiencies[type]}`;
+    Object.entries(this.armorProfList).forEach(([type, label]) => {
+      this.armorProfList[`-${type}`] = `- ${label}`;
     });
 
     this.weaponProfList = foundry.utils.duplicate(daeSystemClass.systemConfig.weaponProficiencies);
-    Object.keys(daeSystemClass.systemConfig.weaponProficiencies).forEach(type => {
-      this.weaponProfList[`-${type}`] = `- ${daeSystemClass.systemConfig.weaponProficiencies[type]}`;
+    Object.entries(this.weaponProfList).forEach(([type, label]) => {
+      this.weaponProfList[`-${type}`] = `- ${label}`;
     });
   }
 
-  public static getOptionsForSpec(spec: any): any {
+  public static getOptionsForSpec(spec?: ActiveEffect.ChangeData): Record<string, string> | undefined {
     const abilitiesList = Object.keys(daeSystemClass.systemConfig.abilities).reduce((obj: {}, key: string) => { obj[key] = daeSystemClass.systemConfig.abilities[key].label; return obj }, {});
     if (!spec?.key) return undefined;
     if (spec.key === "system.traits.languages.value")
@@ -1200,8 +1182,9 @@ function prepareData(wrapped) {
   }
 }
 const getTargetType = field => {
-  // @ts-expect-error
+  // @ts-expect-error no dnd5e-types
   const FormulaField = game.system.dataModels.fields.FormulaField;
+  // @ts-expect-error no dnd5e-types
   const ActiveEffect5eFormulaFields: Set<string> = CONFIG.ActiveEffect.documentClass.FORMULA_FIELDS
   if ((field instanceof FormulaField) || ActiveEffect5eFormulaFields.has(field)) return "formula";
   else if (field instanceof foundry.data.fields.ArrayField) return "Array";
@@ -1427,13 +1410,7 @@ function _prepareArmorClassAttribution(wrapped, data) {
 
 function patchPrepareArmorClassAttribution() {
   const systemVersion = game.system.version;
-  if (game.system.id === "dnd5e") {
-    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
-  } else if (game.system.id === "sw5e") {
-    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.character['sw5e.ActorSheet5eCharacter'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.npc['sw5e.ActorSheet5eNPC'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-    libWrapper.register("dae", "CONFIG.Actor.sheetClasses.vehicle['sw5e.ActorSheet5eVehicle'].cls.prototype._prepareArmorClassAttribution", _prepareArmorClassAttribution, "WRAPPER");
-  }
+  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
 }
 
 export function getActorItemForEffect(effect: any /* ActiveEffect */) {

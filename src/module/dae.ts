@@ -2,9 +2,8 @@ import { applyActiveEffects, socketlibSocket } from "./GMAction.js";
 import { warn, error, debug, setDebugLevel, i18n, debugEnabled } from "../dae.js";
 import { ActiveEffects } from "./apps/ActiveEffects.js";
 import { macroActorUpdate } from "./daeMacros.js";
-import { ValidSpec } from "./Systems/DAESystem.js";
-import { DAESystemDND5E, getActorItemForEffect } from "./Systems/DAEdnd5e.js";
-import { DAESystemSW5E } from "./Systems/DAEsw5e.js";
+import { DAESystem, ValidSpec } from "./Systems/DAESystem.js";
+import { DAESystemDND5E } from "./Systems/DAEdnd5e.js";
 import { DIMEditor } from "./apps/DIMEditor.js";
 import { isEnchantment } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial } from "fvtt-types/utils";
@@ -14,14 +13,40 @@ const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringF
 
 let templates = {};
 
-export var aboutTimeInstalled: any = false;
-export var timesUpInstalled: any = false;
-export var simpleCalendarInstalled: any = false;
-export var ceInterface;
-export var atlActive;
-export var furnaceActive;
-export var itemacroActive;
-export var midiActive;
+export let aboutTimeInstalled: boolean = false;
+export let timesUpInstalled: boolean = false;
+export let simpleCalendarInstalled: boolean = false;
+export let atlActive: boolean = false;
+export let furnaceActive: boolean = false;
+export let itemacroActive: boolean = false;
+export let midiActive: boolean = false;
+export let ceInterface: {
+  findEffects: () => ActiveEffect.Implementation[];
+  findEffect: (input: {
+    folderId?: string,
+    effectId?: string,
+    effectName?: string
+  }) => ActiveEffect.Implementation | null;
+  hasEffectApplied: (input: {
+    effectId?: string,
+    effectName?: string,
+    uuid?: string
+  }) => boolean;
+  addEffect: (input: {
+    effectId?: string,
+    effectName?: string,
+    effectData?: ActiveEffect.CreateData,
+    uuid?: string,
+    overlay?: boolean,
+    origin?: string,
+  }) => Promise<ActiveEffect.Implementation>;
+  removeEffect: (input: {
+    effectId?: string,
+    effectName?: string,
+    uuid?: string,
+    origin?: string,
+  }) => Promise<void>; 
+} | undefined;
 // export var useAbilitySave;
 export var activeConditions;
 export var enhanceStatusEffects;
@@ -61,7 +86,7 @@ export function geti18nOptions(key, moduleId) {
   return translation;
 };
 
-export var daeSystemClass;
+export let daeSystemClass: typeof DAESystem | typeof DAESystemDND5E;
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 
 // export var showDeprecation = true;
@@ -71,7 +96,7 @@ let debugLog = true;
 
 
 function flagChangeKeys(actor, change) { // this id dnd5e only and should be moved
-  if (!(["dnd5e", "sw5e"].includes(game.system.id ?? ""))) return;
+  if (!(["dnd5e"].includes(game.system.id ?? ""))) return;
   const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
   if (hasSaveBonus) {
     const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
@@ -334,7 +359,7 @@ export async function removeTokenMagicChange(actor, change, tokens, context: any
 async function myRemoveCEEffect(effectName: string, uuid: string, origin, isToken: boolean, metaData: any) {
   let interval = 1;
   await delay(interval); // let all of the stuff settle down
-  return await ceInterface?.removeEffect({ effectName, uuid, origin, metaData });
+  return await ceInterface?.removeEffect({ effectName, uuid, origin });
 }
 export async function removeConvenientEffectsChange(effectName: string, uuid: string, origin, isToken: boolean, metaData: {} = {}) {
   if (isToken) await delay(1); // let all of the stuff settle down
@@ -346,11 +371,7 @@ async function myAddCEEffectWith(effectData: any, uuid: string, origin, overlay:
   if (!ceInterface) return;
   let interval = 1;
   if (interval) await delay(interval);
-  if (foundry.utils.isNewerVersion("6.9", game.modules.get("dfreds-convenientEffects")?.version ?? 0)) {
-    return await ceInterface.addEffectWith({ effectData, uuid, origin, overlay: false });
-  } else {
-    return await ceInterface.addEffect({ effectName: effectData.name, uuid, origin, effectData });
-  }
+  return await ceInterface.addEffect({ effectName: effectData.name, uuid, origin, effectData, overlay });
 }
 
 export async function addConvenientEffectsChange(effectName: string, uuid: string, origin, context: any, isToken: boolean, CEmetaData: {} = {}) {
@@ -373,17 +394,17 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
 export async function addConditionChange(actor, change, token, effect) {
   // This is from macro.statusEffect
   const condition: any = CONFIG.statusEffects.find(se => se.id === change.value);
-  const overlay = foundry.utils.getProperty(effect, "flags.core.overlay")
+  const overlay = foundry.utils.getProperty(effect, "flags.core.overlay") as boolean;
   if (change.value.startsWith("Convenient Effect")) {
     console.warn("Convenient Effect change detected in macro.StatusEffect which is deprecated use macro.CE instead");
     console.warn(`Actor: ${actor.name} Change: ${change.value} Token: ${token.name} Effect: ${effect.name} ${effect.uuid}`);
     const effectName = change.value.split("Convenient Effect: ")[1];
-    return await ceInterface?.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, overlay, metaData: {} });
+    return await ceInterface?.addEffect({ effectName, uuid: actor.uuid, origin: effect.uuid, overlay });
   } else if (change.value.startsWith("zce-")) {
     console.warn("Convenient Effect change detected in macro.StatusEffect which is deprecated use macro.CE instead");
     console.warn(`Actor: ${actor.name} Change: ${change.value} Token: ${token.name} Effect: ${effect.name} ${effect.uuid}`);
     const effectId = change.value.replace("zce-", "ce-");
-    return await ceInterface?.addEffect({ effectId, uuid: actor.uuid, origin: effect.uuid, overlay, metaData: {} });
+    return await ceInterface?.addEffect({ effectId, uuid: actor.uuid, origin: effect.uuid, overlay });
   }
   if (condition?.statuses?.length > 1 && !condition?._id) {
     condition._id = condition.id.replaceAll(/[ :,.\+\-\*\&\^\%\$\#\@\!\[\]{}\(\)]/g, "").padEnd(16, "0").slice(-16);
@@ -411,7 +432,7 @@ export async function addStatusEffectChange(actor, change, tokens, sourceEffect,
     const effectId = change.value.replace("zce-", "ce-")
     const effect = ceInterface?.findEffect && ceInterface.findEffect({ effectId });
     if (effect) {
-      return [await ceInterface.addEffect({ effectId, uuid: actor.uuid, origin: sourceEffect.uuid, overlay: false })];
+      return [await ceInterface!.addEffect({ effectId, uuid: actor.uuid, origin: sourceEffect.uuid, overlay: false })];
     }
   } else {
     let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
@@ -2066,13 +2087,9 @@ export function daeInitActions() {
 
   // Default system class is setup, this overrides with system specific class
   const dnd5System = DAESystemDND5E; // force reference so they are installed?
-  const sw5eSystem = DAESystemSW5E;
   libWrapper = globalThis.libWrapper;
-  if (foundry.utils.getProperty(globalThis.daeSystems, game.system.id ?? ""))
-    daeSystemClass = foundry.utils.getProperty(globalThis.daeSystems, game.system.id ?? "");
-  else
-    //@ts-expect-error
-    daeSystemClass = globalThis.CONFIG.DAE.systemClass;
+  daeSystemClass = foundry.utils.getProperty(globalThis.daeSystems, game.system.id ?? "") as typeof DAESystem;
+  daeSystemClass ??= CONFIG.DAE.systemClass;
 
   daeSystemClass.initActions();
   daeSystemClass.initSystemData();
@@ -2628,7 +2645,7 @@ export function tokenForActor(actor: Actor | string | undefined | null): Token |
   return tokens[0];
 }
 
-export function effectIsTransfer(effect: ActiveEffect.Implementation) {
+export function effectIsTransfer(effect: ActiveEffect.Implementation | ActiveEffect.Source) {
   if (CONFIG.ActiveEffect.legacyTransferral === false) return effect.transfer === true;
   if (effect.flags.dae?.transfer !== undefined) return effect.flags.dae.transfer;
   if (effect.transfer !== undefined) return effect.transfer;
@@ -2815,7 +2832,8 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
   await token?.drawEffects();
 }
 
-export function enumerateBaseValues(objectDataModels: foundry.abstract.DataModel<any>[], logErrors: boolean = true): any {
+// TODO (Michael) type this for activities not just items
+export function enumerateBaseValues(objectDataModels: Record<string, typeof foundry.abstract.DataModel<any, Item.Implementation>>, logErrors: boolean = true): any {
   const baseValues: any = {};
   //@ts-expect-error
   const dataModels: any = game.system.dataModels;
@@ -2860,9 +2878,12 @@ export function enumerateBaseValues(objectDataModels: foundry.abstract.DataModel
     baseValues[key] = {};
     if (schema instanceof SchemaField) {
       processSchemaField(`system`, schema, baseValues[key]);
+      // @ts-expect-error system agnostic here so doesn't know about mapping fields... is this possible though?
     } else if (schema instanceof MappingField) {
       processMappingField(`system`, schema, baseValues[key]);
+      // @ts-expect-error as above
     } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => schema instanceof fieldType)) {
+      // @ts-expect-error as above
       baseValues[key][`system`] = [schema.initial, -1];
     } else if (logErrors) console.error("Unexpected field ", key, schema)
   }

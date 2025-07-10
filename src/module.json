@@ -89,17 +89,6 @@
     "css/dae.css",
     "css/field-browser.css"
   ],
-  "flags": {
-    "compatible": [
-      "dnd5e",
-      "sw5e"
-    ],
-    "incompatible": [
-      "pf2e"
-    ],
-    "partial": [],
-    "allowBugReporter": true
-  },
   "compatibility": {
     "minimum": "13.0",
     "verified": "13.340",

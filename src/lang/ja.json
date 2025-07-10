@@ -256,8 +256,6 @@
     "dae.turnEndSource": "【次ターンの終わりまで（自身）】自身の次のターンの終了時に期限切れになります（戦闘中のみ）。",
     "dae.startEveryTurn": "【各ターンの開始時】ターン開始時にエフェクトマクロを実行します。",
     "dae.endEveryTurn": "【各ターンの終了時】ターン終了時にエフェクトマクロを実行します。",
-    "dae.ConditionalVisibility": "Conditional Visibility",
-    "dae.ConditionalVisibilityVision": "CV（感覚）",
     "dae.noDupDamageMacro.Name": "ダメージマクロを重複させない",
     "dae.noDupDamageMacro.Hint": "有効にすると、重複したダメージマクロは無視されます。",
     "dae.DisableEffects.Name": "アクティブ効果の処理をすべて無効にする",

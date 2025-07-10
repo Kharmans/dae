@@ -272,8 +272,6 @@
   "dae.startEndEveryTurnAny": "Start and end of each turn: Run effect macros at the start and end of the characters turn even if the effect is disabled",
   "dae.endEveryTurn": "End of each turn: Run effect macros at the end of the characters turn",
   "dae.endEveryTurnAny": "End of each turn: Run effect macros at the end of the characters turn even if the effect is disabled",
-  "dae.ConditionalVisibility": "Conditional Visibility",
-  "dae.ConditionalVisibilityVision": "CV Vision",
   "dae.noDupDamageMacro.Name": "No Duplicate Damage macros",
   "dae.noDupDamageMacro.Hint": "If checked duplicate Damage Macros will be ignored",
   "dae.DisableEffects.Name": "Disable all active effect processing",

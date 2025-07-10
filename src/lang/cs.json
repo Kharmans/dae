@@ -272,8 +272,6 @@
   "dae.startEndEveryTurnAny": "Začátek a konec každého kola: Spustí makra efektu na začátku a na konci kola postavy, i když je efekt deaktivován",
   "dae.endEveryTurn": "Konec každého kola: Spustí makra efektu na konci kola postavy",
   "dae.endEveryTurnAny": "Konec každého kola: Spustí makra efektu na konci kola postavy, i když je efekt deaktivován",
-  "dae.ConditionalVisibility": "Podmíněná viditelnost",
-  "dae.ConditionalVisibilityVision": "PV Vidění",
   "dae.noDupDamageMacro.Name": "Žádná duplicitní makra zranění",
   "dae.noDupDamageMacro.Hint": "Pokud je zaškrtnuto, budou duplicitní makra zranění ignorována.",
   "dae.DisableEffects.Name": "Zákaz zpracování všech aktivních efektů",

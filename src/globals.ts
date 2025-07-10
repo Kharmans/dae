@@ -1,3 +1,6 @@
+import { DAESystemDND5E } from "./module/Systems/DAEdnd5e";
+import { DAESystem } from "./module/Systems/DAESystem";
+
 export type TokenOrDocument = foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation;
 
 // Declaration Merging for DAE-specific stuff
@@ -51,6 +54,10 @@ declare module "fvtt-types/configuration" {
         stacks?: number;
         transfer?: boolean;
       }
+      // Temp, while no 5e-types
+      dnd5e: {
+        halfHealth: boolean;
+      }
     }
     Actor: {
       dae?: {
@@ -95,9 +102,24 @@ declare module "fvtt-types/configuration" {
     "dae.ZZDebug": "none" | "warn" | "debug" | "all";
     "dae.disableEffects": boolean;
     "dae.maxShortDuration": number;
+
+    // Other module settings
+    "ATL.presets": {
+      name: string;
+      light: Record<string, unknown>;
+      id: string;
+    }[]
   }
   // More precise `getProperty`
   // namespace foundry.utils {
   //   export function getProperty<T extends object, K extends DotKeys<T>>(object: T, key: K): GetProperty<T, K>;
   // }
+}
+
+declare global {
+  interface CONFIG {
+    DAE: {
+      systemClass: typeof DAESystem;
+    }
+  }
 }
