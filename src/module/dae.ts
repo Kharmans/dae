@@ -1103,6 +1103,7 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
   let macro;
   let theItem;
 
+  if (effectData instanceof ActiveEffect && !lastArgOptions.effectUuid) lastArgOptions.effectUuid = effectData.uuid;
   // Work out what itemData should be
   warn("Dae macro ", action, actor, effectData, lastArgOptions)
   if (!effectData.changes) return effectData;
