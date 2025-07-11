@@ -85,7 +85,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }
     }
     this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
-    this.daeFieldBrowser.init();
+    this.daeFieldBrowser.init().then(() => this.render());
   }
 
   static DEFAULT_OPTIONS = {
@@ -250,7 +250,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const changes = this.document.changes;
     changes.forEach((change, index) => {
       const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
-      const row = this.element.querySelector(`.effect-change[data-index="${index}"]`);
+      const row = this.element?.querySelector(`.effect-change[data-index="${index}"]`);
       const fieldName = row?.querySelector(".dae-field-name");
       const fieldDescription = row?.querySelector(".dae-field-description");
       if (fieldName && fieldDescription) {

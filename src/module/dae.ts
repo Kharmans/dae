@@ -20,6 +20,7 @@ export let atlActive: boolean = false;
 export let furnaceActive: boolean = false;
 export let itemacroActive: boolean = false;
 export let midiActive: boolean = false;
+export let useDetermineSuppression: boolean = false;
 export let ceInterface: {
   findEffects: () => ActiveEffect.Implementation[];
   findEffect: (input: {
@@ -51,7 +52,7 @@ export let ceInterface: {
 export var activeConditions;
 export var enhanceStatusEffects;
 export var expireRealTime
-export var noDupDamageMacro;
+export let noDupDamageMacro: boolean;
 export var disableEffects;
 export var daeTitleBar;
 export var DIMETitleBar;
@@ -129,14 +130,6 @@ function flagChangeKeys(actor, change) { // this id dnd5e only and should be mov
     // change.key = `data.dkills.${abl}.bonuses.passive`;
     return;
   }
-
-  const hasSkillBonus = change.key.startsWith("flags.skill-customization-5e");
-  if (hasSkillBonus) {
-    const skillPassive = change.key.match(/flags.skill-customization-5e.(\w\w\w).skill-bonus/);
-    const abl = skillPassive[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.skills.${abl}.bonuses.check instead`)
-    return;
-  }
 }
 
 
@@ -149,7 +142,7 @@ export function applyDaeEffects({ specList = {}, excludeSpecs = {}, allowAllSpec
   debug("prepare data: before passes", this.name, this._source);
 
   for (let effect of this.allApplicableEffects())
-    if (effect.determineSuppression) effect.determineSuppression();
+    if (useDetermineSuppression) effect.determineSuppression();
   const effects = this.appliedEffects.filter(ef => !ef.disabled && !ef.isSuppressed);
   if (!effects || effects.size === 0) return this.overrides ?? {};
   const changes = effects.reduce((changes, effect) => {
@@ -478,7 +471,7 @@ export async function expireEffects(actor, effects: ActiveEffect[], context: any
   return { deleted: actorEffectsToDelete, disabled: effectsToDisable, itemEffects: effectsToDelete };
 }
 
-export function prepareLastArgData(effect, actor: Actor, lastArgOptions: {} = {}) {
+export function prepareLastArgData(effect: ActiveEffect.Implementation, actor: Actor.Implementation, lastArgOptions: {} = {}) {
   if (!effect.changes) return effect;
   let tokenUuid;
   if (actor.token) tokenUuid = actor.token.uuid;
@@ -519,7 +512,7 @@ function createActiveEffectHook(...args) {
   const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
   if (!(tokens[0] instanceof foundry.canvas.placeables.Token)) return;
   const token: Token = tokens[0];
-  if (effect.determindSuppression) effect.determineSuppression();
+  if (useDetermineSuppression) effect.determineSuppression();
   if (effect.changes && effect.active) {
     let changeLoop = async () => {
       try {
@@ -844,7 +837,7 @@ export function updateActiveEffectHook(...args) {
       const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
       const token = tokens[0];
       if (!(token instanceof foundry.canvas.placeables.Token)) return;
-      if (effect.determineSuppression) effect.determineSuppression();
+      if (useDetermineSuppression) effect.determineSuppression();
       // Just deal with equipped etc
       warn("add active effect actions", actor, updates)
 
@@ -925,7 +918,7 @@ export function updateActiveEffectHook(...args) {
         for (let change of changesToEnable) {
           if (ceInterface && change.key === "macro.CE") {
             const lastArg = prepareLastArgData(effect, actor)
-            await addConvenientEffectsChange(change.value, actor.uuid, undefined, actor.isToken, lastArg);
+            await addConvenientEffectsChange(change.value, actor.uuid, undefined, undefined, actor.isToken, lastArg);
           }
           if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(actor, change, tokens);
           if (["macro.createItem", "macro.createItemRunMacro"].includes(change.key)) {
@@ -1105,14 +1098,14 @@ export function deleteActiveEffectHook(...args) {
   return true;
 }
 
-export function getSelfTarget(actor): Token | TokenDocument {
-  if (actor?.token) return actor.token.object;
+export function getSelfTarget(actor: Actor.Implementation | null): Token | TokenDocument {
+  if (actor?.token) return actor.token.object!;
   const speaker = ChatMessage.getSpeaker({ actor });
   if (speaker.token) {
     const token = canvas?.tokens?.get(speaker.token);
     if (token) return token;
   }
-  const tokenData = actor.prototypeToken.toObject(false);
+  const tokenData = actor?.prototypeToken.toObject(false);
   return new CONFIG.Token.documentClass(tokenData);
 }
 
@@ -1668,7 +1661,14 @@ function preUpdateItemHook(candidate, updates, options, user) {
   return true;
 }
 
-export function addEffectChange(actor, tokens, effectToApply, item, change, context) {
+export function addEffectChange(
+  actor: Actor.Implementation,
+  tokens: (foundry.canvas.placeables.Token | undefined)[],
+  effectToApply: ActiveEffect.Implementation,
+  item: Item.Implementation,
+  change: ActiveEffect.ChangeData,
+  context: Item.Database.UpdateOperation
+) {
   if (debugEnabled > 0) warn("addEffectChange ", actor, change, tokens, effectToApply)
   const token = tokens[0];
   switch (change.key) {
@@ -1705,9 +1705,19 @@ export function addEffectChange(actor, tokens, effectToApply, item, change, cont
   }
 }
 
-export function removeEffectChange(actor, tokens, effectToApply, item, change, context) {
+export function removeEffectChange(
+  actor: Actor.Implementation,
+  tokens: (foundry.canvas.placeables.Token | undefined)[],
+  effectToApply: ActiveEffect.Implementation,
+  item: Item.Implementation,
+  change: ActiveEffect.ChangeData,
+  context: Item.Database.UpdateOperation
+) {
   let token = tokens[0];
-  if (!token) tokens = [getToken(actor)];
+  if (!token) {
+    token = getToken(actor);
+    tokens = token ? [token] : [];
+  }
   switch (change.key) {
     case "macro.CE":
       const lastArg = prepareLastArgData(effectToApply, actor);
@@ -1724,7 +1734,7 @@ export function removeEffectChange(actor, tokens, effectToApply, item, change, c
         removeCreateItemChange(change.value, actor, effectToApply, context);
       } else {
         for (let effect of actor.allApplicableEffects()) {
-          if ((effect.origin === item.uuid || effect.parent.uuid === item.origin) && effectIsTransfer(effect)) {
+          if ((effect.origin === item.uuid || effect.parent?.uuid === item.uuid) && effectIsTransfer(effect)) {
             removeCreateItemChange(change.value, actor, effect, context)
           }
         }
@@ -2277,7 +2287,7 @@ async function updateStatusEffects(doc, options, userId) {
       currentStatuses = currentStatuses.union(effect.statuses)
       continue;
     }
-    if (effect.transfer && doc instanceof Item)
+    if (effect.transfer && doc instanceof Item && useDetermineSuppression)
       effect.determineSuppression();
     if (!effect.active) continue;
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
@@ -2330,7 +2340,7 @@ async function applyRequiredStatusEffectsHook(effect, options, userId) {
 function actorAppliedStatues(actor): Set<string> {
   let appliedStatuses: Set<string> = new Set();
   for (let effect of actor.allApplicableEffects()) {
-    effect.determineSuppression();
+    if (useDetermineSuppression) effect.determineSuppression();
     if (!effect.active) continue;
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
     if (CONFIG.statusEffects.find(se => se._id === effect._id))
@@ -2355,7 +2365,7 @@ async function applyRequiredStatusEffects(wrapped, data, options, userId) {
     const requiredStatuses: Set<string> = new Set(actor.statuses);
     let appliedStatuses: Set<string> = new Set();
     for (let effect of actor.allApplicableEffects()) {
-      effect.determineSuppression();
+      if (useDetermineSuppression) effect.determineSuppression();
       if (!effect.active) continue;
       if (effect.flags?.["dfreds-convenient-effects"]) continue;
       if (CONFIG.statusEffects.find(se => se._id === effect._id))
@@ -2393,7 +2403,7 @@ async function applyStatusEffects(theEffect: any, includeEffect: boolean, contex
       currentStatuses = currentStatuses.union(effect.statuses)
       continue;
     }
-    if (effect.transfer && effect.parent instanceof Item)
+    if (effect.transfer && effect.parent instanceof Item && useDetermineSuppression)
       effect.determineSuppression();
     if (!effect.active) continue;
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
@@ -2540,6 +2550,7 @@ export function daeSetupActions() {
   itemacroActive = game.modules.get("itemacro")?.active;
   furnaceActive = game.modules.get("furnace")?.active || game.modules.get("advanced-macros")?.active;
   midiActive = game.modules.get("midi-qol")?.active;
+  useDetermineSuppression = game.system.id === "dnd5e" && foundry.utils.isNewerVersion("5.1", game.system.version);
   daeSystemClass.setupActions();
 }
 
@@ -2833,18 +2844,22 @@ export async function processConditionalEffects(actorRef: TokenDocument | Actor,
 }
 
 // TODO (Michael) type this for activities not just items
-export function enumerateBaseValues(objectDataModels: Record<string, typeof foundry.abstract.DataModel<any, Item.Implementation>>, logErrors: boolean = true): any {
-  const baseValues: any = {};
+export function enumerateBaseValues(
+  objectDataModels: Record<string, typeof foundry.abstract.DataModel<any, Item.Implementation>>,
+  logErrors: boolean = true
+): BaseValuesReturn {
+  const baseValues: BaseValuesReturn = {};
   //@ts-expect-error
   const dataModels: any = game.system.dataModels;
   const MappingField = dataModels.fields.MappingField;
 
-  function processMappingField(key, mappingField, baseValues, logErrors: boolean = true) {
+  // TODO (Michael) once dnd5e-types in, ensure mapping field properly typed
+  function processMappingField(key: string, mappingField: any, baseValues: BaseValuesInner, logErrors = true) {
     const fields = mappingField.initialKeys;
     if (!fields) return;
     for (let fieldKey of Object.keys(fields)) {
       if (mappingField.model instanceof SchemaField) {
-        processSchemaField(`${key}.${fieldKey}`, mappingField.model, baseValues.logErrors);
+        processSchemaField(`${key}.${fieldKey}`, mappingField.model, baseValues, logErrors);
       } else if (mappingField.model instanceof MappingField) {
         processMappingField(`${key}.${fieldKey}`, mappingField.model, baseValues, logErrors);
       } else {
@@ -2856,15 +2871,14 @@ export function enumerateBaseValues(objectDataModels: Record<string, typeof foun
       }
     }
   }
-  function processSchemaField(key, schemaField, baseValues: any, logErrors: boolean = true) {
-    const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
+  function processSchemaField(key: string, schemaField: foundry.data.fields.SchemaField<any>, baseValues: BaseValuesInner, logErrors = true) {
     const fields = schemaField.fields;
     for (let fieldKey of Object.keys(fields)) {
       if (fields[fieldKey] instanceof SchemaField) {
-        processSchemaField(`${key}.${fieldKey}`, fields[fieldKey], baseValues);
+        processSchemaField(`${key}.${fieldKey}`, fields[fieldKey], baseValues, logErrors);
       }
       else if (fields[fieldKey] instanceof MappingField) {
-        processMappingField(`${key}.${fieldKey}`, fields[fieldKey], baseValues);
+        processMappingField(`${key}.${fieldKey}`, fields[fieldKey], baseValues, logErrors);
       } else {
         if (fieldKey.includes("favorites")) return; //TODO see above
         // let initial = fields[fieldKey].initial ?? 0;;
@@ -2878,13 +2892,6 @@ export function enumerateBaseValues(objectDataModels: Record<string, typeof foun
     baseValues[key] = {};
     if (schema instanceof SchemaField) {
       processSchemaField(`system`, schema, baseValues[key]);
-      // @ts-expect-error system agnostic here so doesn't know about mapping fields... is this possible though?
-    } else if (schema instanceof MappingField) {
-      processMappingField(`system`, schema, baseValues[key]);
-      // @ts-expect-error as above
-    } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => schema instanceof fieldType)) {
-      // @ts-expect-error as above
-      baseValues[key][`system`] = [schema.initial, -1];
     } else if (logErrors) console.error("Unexpected field ", key, schema)
   }
   return baseValues;
@@ -2934,3 +2941,6 @@ interface ToggleStatusEffectOptions {
   origin?: string;
   flags?: any;
 }
+
+export type BaseValuesInner = Record<string, [foundry.data.fields.DataField<any>, number]>
+type BaseValuesReturn = Record<string, BaseValuesInner>;

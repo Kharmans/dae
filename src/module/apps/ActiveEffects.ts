@@ -35,7 +35,7 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
 
   override _initializeApplicationOptions(options) {
     options = super._initializeApplicationOptions(options);
-    const suffix = options.document.uuid?? foundry.utils.randomID();
+    const suffix = options.document.uuid ?? foundry.utils.randomID();
     options.uniqueId = `${this.constructor.name}-${suffix.replaceAll(".", "-")}`;
     return options;
   }

@@ -88,15 +88,19 @@ export class DAEFieldBrowser {
         const localizedName = i18n(nameLocalizationPath);
         const localizedDescription = i18n(descriptionLocalizationPath);
 
-        const finalName = 
-        // If the field already has a name, use it, otherwise attempt to localize or use the key itself
+        // If we have a localization, use it, otherwise use the default field's name, or finally the key itself
         // Logic looks a bit weird because DAE already sets the value of the validFields kvp to its key if missing.
-          (typeof name === 'string' && name !== '' && name !== key) ? name :
-          (localizedName !== nameLocalizationPath ? localizedName : key);
+        const finalName = localizedName !== nameLocalizationPath
+          ? localizedName
+          : (typeof name === "string" && name !== "" && name !== key)
+            ? name
+            : key;
 
         // For descriptions, simply check if the localization string is present.
-        let finalDescription = 
-        localizedDescription !== descriptionLocalizationPath ? localizedDescription : '';
+        let finalDescription = localizedDescription !== descriptionLocalizationPath
+          ? localizedDescription
+          : '';
+
         if (daeSystemClass.fieldMappings[key]) finalDescription += ` use ${daeSystemClass.fieldMappings[key]} instead`
         return {
           key,
@@ -104,8 +108,7 @@ export class DAEFieldBrowser {
           description: finalDescription,
           category: DAEFieldBrowser.knownFieldData[key]?.category || 'Other'
         };
-      })
-      .filter(field => field.category !== 'Hidden');
+      }).filter(field => field.category !== 'Hidden');
   }
 
   public updateBrowser(): void {

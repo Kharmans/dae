@@ -42,6 +42,7 @@ declare module "fvtt-types/configuration" {
         activity?: string;
         activityMacro?: string;
         autoCreated?: boolean;
+        disableIncapacitated?: boolean;
         dontApply?: boolean;
         durationExpression?: string;
         enableCondition?: string;
@@ -71,6 +72,11 @@ declare module "fvtt-types/configuration" {
           filter: string;
           sourceActorUuid: string;
         }[];
+      }
+      // Until midi has its own types exported that we can rely on, maybe
+      "midi-qol"?: {
+        advantage?: MidiAdvantageFlag;
+        disadvantage?: MidiAdvantageFlag
       }
     }
     Item: {
@@ -109,6 +115,10 @@ declare module "fvtt-types/configuration" {
       light: Record<string, unknown>;
       id: string;
     }[]
+
+    // Temp until dnd5e-types
+    "dnd5e.honorScore": boolean;
+    "dnd5e.sanityScore": boolean;
   }
   // More precise `getProperty`
   // namespace foundry.utils {
@@ -121,5 +131,87 @@ declare global {
     DAE: {
       systemClass: typeof DAESystem;
     }
+    // Temp, until we use dnd5e-types
+    DND5E: {
+      abilities: Record<string, {
+        label: string;
+      }>;
+      abilityConsumptionTypes: Record<string, string>;
+      actorSizes: Record<string, {
+        label: string;
+      }>;
+      armorClasses: Record<string, {
+        label: string
+      }>;
+      armorProficiencies: Record<string, string>;
+      attunementTypes: Record<string, string>;
+      characterFlags: Record<string, {
+        name: string;
+        hint: string;
+        section: string;
+        type: BooleanConstructor | StringConstructor | NumberConstructor;
+        placeholder: string
+        abilities?: string[];
+        choices?: Record<string, string>;
+        skills?: string[];
+      }>;
+      conditionEffects: Record<string, Set<string>>;
+      conditionTypes: Record<string, {
+        name: string;
+      }>;
+      // This one's added by midi
+      customDamageResistanceTypes: Record<string, string>;
+      damageTypes: Record<string, {
+        label: string;
+        isPhysical: boolean;
+      }>;
+      healingTypes: Record<string, {
+        label: string;
+      }>;
+      itemActionTypes: Record<string, string>;
+      itemProperties: Record<string, {
+        label: string;
+        isPhysical: boolean;
+      }>;
+      languages: Record<string, Record<string, unknown>>;
+      limitedUsePeriods: Record<string, Record<string, string>>;
+      movementTypes: Record<string, string>;
+      skills: Record<string, {
+        label: string;
+        ability: string;
+      }>;
+      sourcePacks: {
+        BACKGROUNDS: string;
+        CLASSES: string;
+        ITEMS: string;
+        RACES: string;
+      }
+      targetTypes: Record<string, string>;
+      timePeriods: Record<string, string>;
+      toolProficiencies: Record<string, string>;
+      tools: Record<string, {
+        ability: string;
+        id: string;
+      }>;
+      vehicleTypes: Record<string, string>;
+      weaponProficiencies: Record<string, string>;
+    }
   }
 }
+
+// Incomplete typing
+type MidiAdvantageFlag = {
+  all?: boolean;
+  ability?: {
+    all?: boolean;
+    check?: {
+      all?: boolean;
+    };
+    save?: {
+      all?: boolean;
+    };
+  };
+  skill?: {
+    all?: boolean;
+  }
+};

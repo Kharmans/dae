@@ -1,3 +1,4 @@
+import { AnyMutableObject } from "fvtt-types/utils";
 import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
 import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig.js";
 import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAESetupComplete, DAEReadyComplete, enumerateBaseValues, geti18nOptions, DoEffectsOptions } from "../dae.js";
@@ -34,7 +35,7 @@ export class ValidSpec {
   get options(): any { return this._options }
   set options(options: any) { this._options = options }
 
-  constructor(fs: string, sv: FieldType, forcedMode = -1, label = undefined, options: any = undefined) {
+  constructor(fs: string, sv: FieldType, forcedMode = -1, label?: string, options?: any) {
     this._fieldSpec = fs;
     this._fieldType = sv;
     this._label = label ?? fs;
@@ -260,7 +261,7 @@ export class ValidSpec {
   }
 }
 
-function getRollData(wrapped, ...args): any {
+function getRollData(wrapped, ...args): AnyMutableObject {
   // need to be careful - default foundry getRollData() returns the "live" actor.system
   return wrapped(...args);
 }
@@ -279,7 +280,7 @@ export class DAESystem {
     return game.system.config;
   }
 
-  public static getActorDataModelFields(actorType: string): any {
+  public static getActorDataModelFields(actorType: string): Record<string, foundry.data.fields.DataField<any>> {
     return CONFIG.Actor.dataModels[actorType]?.schema?.fields;
     /*
     const dataModels: any = game.system.dataModels;
