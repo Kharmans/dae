@@ -2961,5 +2961,473 @@
       "name": "Woodcarver's Tools Proficiency",
       "description": ""
     }
+  },
+  "dae.Unknown.fieldData": {
+    "system.ability": {
+      "name": "Attack Ability",
+      "description": "Note: Should use \"activities[attack].attack.ability\" instead."
+    },
+    "system.attack.bonus": {
+      "name": "Attack Bonus",
+      "description": "Note: Should use \"activities[attack].attack.bonus\" instead."
+    },
+    "system.attack.flat": {
+      "name": "Attack Flat To-Hit",
+      "description": "True or false. Note: Should use \"activities[attack].attack.flat\" instead."
+    },
+    "system.damage.bonus": {
+      "name": "Damage Bonus",
+      "description": "Note: Should use \"system.damageBonus\" instead."
+    },
+    "system.damageBonus": {
+      "name": "Damage Bonus",
+      "description": "Bonus to all damage-dealing activities."
+    },
+    "system.damage.parts": {
+      "name": "Damage Parts",
+      "description": "Allows you to add damage parts in the legacy format (e.g. [[\"1d6\", \"fire\"]]). Will add parts to all damage-dealing activities, not only attacks."
+    },
+    "system.damage.types": {
+      "name": "Damage Types",
+      "description": ""
+    },
+    "activities[attack].attack.ability": {
+      "name": "Attack Ability",
+      "description": ""
+    },
+    "activities[attack].attack.bonus": {
+      "name": "Attack Bonus",
+      "description": ""
+    },
+    "activities[attack].attack.critical.threshold": {
+      "name": "Attack Critical Threshold",
+      "description": ""
+    },
+    "activities[attack].attack.flat": {
+      "name": "Attack Flat To-Hit",
+      "description": "True or false."
+    },
+    "activities[attack].attack.type.value": {
+      "name": "Attack Type",
+      "description": ""
+    },
+    "activities[attack].attack.type.classification": {
+      "name": "Attack Classification",
+      "description": ""
+    },
+    "activities[attack].damage.includeBase": {
+      "name": "Include Base Damage",
+      "description": ""
+    },
+    "activities[cast].spell.ability": {
+      "name": "Spell Ability",
+      "description": ""
+    },
+    "activities[cast].spell.challenge.attack": {
+      "name": "Spell Attack Bonus",
+      "description": "Also set \"activities[cast].spell.challenge.override\" to \"true\"."
+    },
+    "activities[cast].spell.challenge.save": {
+      "name": "Spell Save Formula",
+      "description": "Also set \"activities[cast].spell.challenge.override\" to \"true\"."
+    },
+    "activities[cast].spell.challenge.override": {
+      "name": "Spell Attack/Save Override",
+      "description": ""
+    },
+    "activities[cast].spell.level": {
+      "name": "Spell Level",
+      "description": ""
+    },
+    "activities[cast].spell.properties": {
+      "name": "Spell Properties",
+      "description": ""
+    },
+    "activities[cast].spell.spellbook": {
+      "name": "Show Spell in Spellbook",
+      "description": ""
+    },
+    "activities[cast].spell.uuid": {
+      "name": "Spell UUID",
+      "description": ""
+    },
+    "activities[check].check.ability": {
+      "name": "Check Ability",
+      "description": ""
+    },
+    "activities[check].check.associated": {
+      "name": "Associated Skills or Tools",
+      "description": ""
+    },
+    "activities[check].check.dc.calculation": {
+      "name": "DC Calculation",
+      "description": ""
+    },
+    "activities[check].check.dc.formula": {
+      "name": "DC Formula",
+      "description": "\"activities[check].check.dc.calculation\" should be set to \"Custom Formula\" if using this key."
+    },
+    "activities[damage].damage.critical.allow": {
+      "name": "Allow Criticals",
+      "description": ""
+    },
+    "activities[enchant].enchant.identifier": {
+      "name": "Enchantment Class Identifier",
+      "description": ""
+    },
+    "activities[enchant].restrictions.allowMagical": {
+      "name": "Restrictions: Allow Magical",
+      "description": ""
+    },
+    "activities[enchant].restrictions.categories": {
+      "name": "Restrictions: Valid Item Categories",
+      "description": ""
+    },
+    "activities[enchant].restrictions.properties": {
+      "name": "Restrictions: Valid Item Properties",
+      "description": ""
+    },
+    "activities[enchant].restrictions.type": {
+      "name": "Restrictions: Item Type",
+      "description": ""
+    },
+    "activities[forward].activity.id": {
+      "name": "Forwarded Activity ID",
+      "description": ""
+    },
+    "activities[heal].healing.number": {
+      "name": "Healing: Number of Dice",
+      "description": ""
+    },
+    "activities[heal].healing.denomination": {
+      "name": "Healing: Denomination of Dice",
+      "description": ""
+    },
+    "activities[heal].healing.bonus": {
+      "name": "Healing: Bonus",
+      "description": ""
+    },
+    "activities[heal].healing.types": {
+      "name": "Healing Types",
+      "description": ""
+    },
+    "activities[heal].healing.custom.enabled": {
+      "name": "Healing: Custom Formula Enabled",
+      "description": ""
+    },
+    "activities[heal].healing.custom.formula": {
+      "name": "Healing: Custom Formula",
+      "description": "Also set \"activities[heal].healing.custom.enabled\" to \"true\"."
+    },
+    "activities[heal].healing.scaling.mode": {
+      "name": "Healing: Scaling Mode",
+      "description": ""
+    },
+    "activities[heal].healing.scaling.number": {
+      "name": "Healing: Scaling Number",
+      "description": "Additional dice rolled per scaling level."
+    },
+    "activities[heal].healing.scaling.formula": {
+      "name": "Healing: Scaling Formula",
+      "description": "Additional formula added per scaling level."
+    },
+    "activities[save].damage.onSave": {
+      "name": "Damage on Save",
+      "description": ""
+    },
+    "activities[save].save.ability": {
+      "name": "Save Ability",
+      "description": ""
+    },
+    "activities[save].save.dc.calculation": {
+      "name": "DC Calculation",
+      "description": ""
+    },
+    "activities[save].save.dc.formula": {
+      "name": "DC Formula",
+      "description": "\"activities[save].save.dc.calculation\" should be set to \"Custom Formula\" if using this key."
+    },
+    "activities[summon].bonuses.ac": {
+      "name": "Bonus AC Formula",
+      "description": ""
+    },
+    "activities[summon].bonuses.hd": {
+      "name": "Bonus Hit Die Formula",
+      "description": ""
+    },
+    "activities[summon].bonuses.hp": {
+      "name": "Bonus HP Formula",
+      "description": ""
+    },
+    "activities[summon].bonuses.attackDamage": {
+      "name": "Bonus Attack Damage",
+      "description": ""
+    },
+    "activities[summon].bonuses.saveDamage": {
+      "name": "Bonus Save Damage",
+      "description": ""
+    },
+    "activities[summon].bonuses.healing": {
+      "name": "Bonus Healing",
+      "description": ""
+    },
+    "activities[summon].creatureSizes": {
+      "name": "Valid Creature Sizes",
+      "description": ""
+    },
+    "activities[summon].creatureTypes": {
+      "name": "Valid Creature Types",
+      "description": ""
+    },
+    "activities[summon].match.ability": {
+      "name": "Ability to Match",
+      "description": "Summoner ability score to use for matching attacks/saves."
+    },
+    "activities[summon].match.attacks": {
+      "name": "Match Attacks Bonuses",
+      "description": ""
+    },
+    "activities[summon].match.proficiency": {
+      "name": "Match Proficiency",
+      "description": ""
+    },
+    "activities[summon].match.saves": {
+      "name": "Match Save DCs",
+      "description": ""
+    },
+    "activities[summon].summon.identifier": {
+      "name": "Summon Class Identifier",
+      "description": ""
+    },
+    "activities[summon].summon.mode": {
+      "name": "Summon Mode",
+      "description": ""
+    },
+    "activities[summon].summon.prompt": {
+      "name": "Summon Prompt",
+      "description": ""
+    },
+    "activities[transform].settings.effects": {
+      "name": "Transform: Effects",
+      "description": "Which types of effects to keep when transforming."
+    },
+    "activities[transform].settings.keep": {
+      "name": "Transform: Keep",
+      "description": "Which details to keep when transforming."
+    },
+    "activities[transform].settings.merge": {
+      "name": "Transform: Merge",
+      "description": "Which proficiencies to merge when transforming."
+    },
+    "activities[transform].settings.other": {
+      "name": "Transform: Other",
+      "description": ""
+    },
+    "activities[transform].settings.preset": {
+      "name": "Transform: Preset",
+      "description": ""
+    },
+    "activities[transform].settings.tempFormula": {
+      "name": "Transform: Temp HP Formula",
+      "description": ""
+    },
+    "activities[transform].settings.transformTokens": {
+      "name": "Transform: Transform Linked Tokens",
+      "description": ""
+    },
+    "activities[transform].transform.customize": {
+      "name": "Transform: Customize",
+      "description": ""
+    },
+    "activities[transform].transform.identifier": {
+      "name": "Transform Class Identifier",
+      "description": ""
+    },
+    "activities[transform].transform.preset": {
+      "name": "Transform: Preset",
+      "description": ""
+    },
+    "activities[utility].roll.formula": {
+      "name": "Roll Formula",
+      "description": ""
+    },
+    "activities[utility].roll.name": {
+      "name": "Roll Name",
+      "description": ""
+    },
+    "activities[utility].roll.prompt": {
+      "name": "Roll Prompt",
+      "description": ""
+    },
+    "activities[utility].roll.visible": {
+      "name": "Roll: Visible",
+      "description": ""
+    }
+  },
+  "dae.genericSuffixes": {
+    "name": {
+      "name": "Name",
+      "description": ""
+    },
+    "img": {
+      "name": "Icon",
+      "description": ""
+    },
+    "sort": {
+      "name": "Sort",
+      "description": ""
+    },
+    "activation.type": {
+      "name": "Activation Type",
+      "description": ""
+    },
+    "activation.value": {
+      "name": "Activation Value",
+      "description": "Quantity of activation type required (if applicable)"
+    },
+    "activation.condition": {
+      "name": "Activation Condition",
+      "description": ""
+    },
+    "activation.override": {
+      "name": "Activation Override",
+      "description": "Not relevant in an enchantment context."
+    },
+    "consumption.scaling.allowed": {
+      "name": "Scaling Consumption Allowed",
+      "description": ""
+    },
+    "consumption.scaling.max": {
+      "name": "Scaling Consumption Max",
+      "description": ""
+    },
+    "consumption.spellSlot": {
+      "name": "Spell SlotConsumption",
+      "description": ""
+    },
+    "consumption.targets": {
+      "name": "Consumption Targets",
+      "description": ""
+    },
+    "description.chatFlavor": {
+      "name": "Chat Flavor",
+      "description": ""
+    },
+    "duration.value": {
+      "name": "Duration",
+      "description": ""
+    },
+    "duration.units": {
+      "name": "Duration Units",
+      "description": ""
+    },
+    "duration.special": {
+      "name": "Duration Special",
+      "description": ""
+    },
+    "duration.concentration": {
+      "name": "Duration: Concentration",
+      "description": ""
+    },
+    "duration.override": {
+      "name": "Duration Override",
+      "description": "Not relevant in an enchantment context."
+    },
+    "effects": {
+      "name": "Effects",
+      "description": "An array of objects with \"_id\" equal to the id of an effect on the item which should be applied when the activity is used."
+    },
+    "range.value": {
+      "name": "Range",
+      "description": ""
+    },
+    "range.units": {
+      "name": "Range Units",
+      "description": ""
+    },
+    "range.special": {
+      "name": "Range Special",
+      "description": ""
+    },
+    "range.override": {
+      "name": "Range Override",
+      "description": "Not relevant in an enchantment context."
+    },
+    "target.template.count": {
+      "name": "Number of Templates",
+      "description": ""
+    },
+    "target.template.contiguous": {
+      "name": "Contiguous Templates",
+      "description": "True or false."
+    },
+    "target.template.type": {
+      "name": "Template Type",
+      "description": ""
+    },
+    "target.template.size": {
+      "name": "Template Size",
+      "description": ""
+    },
+    "target.template.width": {
+      "name": "Template Width",
+      "description": ""
+    },
+    "target.template.height": {
+      "name": "Template Height",
+      "description": ""
+    },
+    "target.template.units": {
+      "name": "Template Units",
+      "description": ""
+    },
+    "target.affects.count": {
+      "name": "Targets",
+      "description": ""
+    },
+    "target.affects.type": {
+      "name": "Targets Type",
+      "description": ""
+    },
+    "target.affects.choice": {
+      "name": "Choose Targets",
+      "description": ""
+    },
+    "target.affects.special": {
+      "name": "Targets (Special)",
+      "description": ""
+    },
+    "target.override": {
+      "name": "Target Override",
+      "description": "Not relevant in an enchantment context."
+    },
+    "target.prompt": {
+      "name": "Template Placement Prompt",
+      "description": ""
+    },
+    "uses.spent": {
+      "name": "Spent Uses",
+      "description": ""
+    },
+    "uses.max": {
+      "name": "Max Uses",
+      "description": ""
+    },
+    "uses.recovery": {
+      "name": "Uses Recovery",
+      "description": "An array of objects representing recovery."
+    },
+    "damage.critical.bonus": {
+      "name": "Critical Damage Bonus",
+      "description": ""
+    },
+    "damage.parts": {
+      "name": "Damage Parts",
+      "description": ""
+    },
+    "profiles": {
+      "name": "Profiles",
+      "description": ""
+    }
   }
 }

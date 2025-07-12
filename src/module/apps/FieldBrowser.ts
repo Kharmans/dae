@@ -22,7 +22,7 @@ export class DAEFieldBrowser {
   private currentTab: string = 'All';
   private tabs: string[] = [];
   public browserElement: HTMLElement | null = null;
-  private validFields: Record<string, any>;
+  private validFields: Record<string, {name: string, description?: string}>;
   private currentInput: HTMLInputElement | undefined;
   private contentElement: HTMLElement | null = null;
   private effectConfig: DAEActiveEffectConfig;
@@ -31,10 +31,10 @@ export class DAEFieldBrowser {
 
   /**
    * Creates an instance of DAEFieldBrowser.
-   * @param {Record<string, any>} validFields - The valid fields for the browser.
+   * @param {Record<string, {name: string, description?: string}>} validFields - The valid fields for the browser.
    * @param {DAEActiveEffectConfig} effectConfig - The effect configuration class.
    */
-  constructor(validFields: Record<string, any>, effectConfig: DAEActiveEffectConfig) {
+  constructor(validFields: Record<string, {name: string, description?: string}>, effectConfig: DAEActiveEffectConfig) {
     this.validFields = validFields;
     this.effectConfig = effectConfig;
     log("DaeFieldBrowser | Initializing");
@@ -79,9 +79,9 @@ export class DAEFieldBrowser {
  */
   private enrichValidFields(): FieldData[] {
     return Object.entries(this.validFields)
-      .map(([key, name]): FieldData => {
+      .map(([key, {name, description}]): FieldData => {
         const category = DAEFieldBrowser.knownFieldData[key]?.category;
-        let localisationPrefix = `dae.${category ?? ""}.fieldData`;
+        let localisationPrefix = `dae.${category ?? "Unknown"}.fieldData`;
         const nameLocalizationPath = `${localisationPrefix}.${key}.name`;
         const descriptionLocalizationPath = `${localisationPrefix}.${key}.description`;
         
@@ -92,14 +92,16 @@ export class DAEFieldBrowser {
         // Logic looks a bit weird because DAE already sets the value of the validFields kvp to its key if missing.
         const finalName = (localizedName !== "") && (localizedName !== nameLocalizationPath)
           ? localizedName
-          : (typeof name === "string" && name !== "" && name !== key)
+          : (typeof name === "string" && name !== "" && name !== key && !name.startsWith("dae.genericSuffixes"))
             ? name
             : key;
 
-        // For descriptions, simply check if the localization string is present.
-        let finalDescription = localizedDescription !== descriptionLocalizationPath
+        // Same logic for descriptions
+        let finalDescription = (localizedDescription !== "") && (localizedDescription !== descriptionLocalizationPath)
           ? localizedDescription
-          : '';
+          : (typeof description === "string" && description !== "" && !description.startsWith("dae.genericSuffixes"))
+            ? description
+            : '';
 
         if (daeSystemClass.fieldMappings[key]) finalDescription += ` deprecated: use ${daeSystemClass.fieldMappings[key]} instead`
         return {

@@ -27,10 +27,26 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     let itemSpecs = enumerateBaseValues(CONFIG.Item.dataModels);
     const activitySpecsRaw = enumerateBaseValues(globalThis.dnd5e.dataModels.activity, false);
     const activitySpecs: BaseValuesInner = {};
-    for (let k of ["ConsumptionError", "AppliedEffectField", "ConsumptionTargetField"]) {
+    for (let k of Object.keys(activitySpecsRaw).filter(i => !i.endsWith("ActivityData"))) {
       delete activitySpecsRaw[k];
-
     };
+    const overrideSuffixes = [
+      ".ability",
+      ".activation.type",
+      ".duration.units",
+      ".range.units",
+      ".target.template.type",
+      ".target.template.units",
+      ".target.affects.type",
+      ".attack.type.value",
+      ".attack.type.classification",
+      // TODO: THIS
+      // ".dc.calculation",
+      ".healing.scaling.mode",
+      // ".damage.onSave",
+      // ".summon.mode",
+      "[transform].settings.preset"
+    ]
     for (let rawActivityKey of Object.keys(activitySpecsRaw)) {
       const activityKey = rawActivityKey.replace("ActivityData", "").toLocaleLowerCase();
       let activityLabel = i18n(`DND5E.${activityKey.toUpperCase()}.Title.one`);
@@ -39,7 +55,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         const key = rawKey.replace("system.", "");
         if (["_id", "type"].includes(key)) continue;
         activitySpecs[`activities[${activityKey}].${key}`] = activitySpecsRaw[rawActivityKey][rawKey];
-        activitySpecs[`activities[${activityKey}].${key}`][0].label = `${activityLabel} ${i18n("DND5E.ACTIVITY.Title.one")} ${key}`;
+        // activitySpecs[`activities[${activityKey}].${key}`][0].label = `${activityLabel} ${i18n("DND5E.ACTIVITY.Title.other")} ${key}`;
+        activitySpecs[`activities[${activityKey}].${key}`][0].label = i18n(`dae.genericSuffixes.${key}.name`);
+        activitySpecs[`activities[${activityKey}].${key}`][0].hint = i18n(`dae.genericSuffixes.${key}.description`);
+        if (overrideSuffixes.some(k => key.endsWith(k))) activitySpecs[`activities[${activityKey}].${key}`][1] = CONST.ACTIVE_EFFECT_MODES.OVERRIDE;
       }
       if (game.modules.get("midi-qol")?.active) {
         activitySpecs[`activities[${activityKey}].useConditionText`]                              = [new StringField({ label: i18n("midi-qol.FIELDS.useConditionText.hint") }), -1];
@@ -93,10 +112,25 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         }
 
+        // Add some not-in-datamodel keys
+        theSpecs["system.damageBonus"] = [new StringField(), -1];
+
+        // Add some legacy keys that still work. 
+        // NOTE: Must keep an eye on the system and ensure this stays up to date
+        theSpecs["system.ability"] = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+        theSpecs["system.attack.bonus"] = [new StringField(), -1];
+        theSpecs["system.attack.flat"] = [new StringField(), -1];
+        theSpecs["system.damage.bonus"] = [new StringField(), -1];
+        theSpecs["system.damage.parts"] = [new StringField(), -1];
+        theSpecs["system.damage.types"] = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+
+        // Remove some keys that shouldn't be there
+        Object.keys(theSpecs).filter(k => k.includes("[consumptiontargetdata]")).forEach(k => delete theSpecs[k]);
+
         const finalSpecs: Record<string, ValidSpec> = {};
 
         for (let k1 of Object.keys(theSpecs)) {
-          finalSpecs[k1] = new ValidSpec(k1, theSpecs[k1][0], theSpecs[k1][1], theSpecs[k1][0].label/*, theSpecs[k1][3] */);
+          finalSpecs[k1] = new ValidSpec(k1, theSpecs[k1][0], theSpecs[k1][1], theSpecs[k1][0].label, theSpecs[k1][0].hint/*, theSpecs[k1][3] */);
         }
 
         for (let k1 of Object.keys(finalSpecs)) {
@@ -741,8 +775,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return sizes;
       }, {});
     }
+    function extractLabels(orig: Record<string, {label: string}>) {
+      return Object.fromEntries(Object.entries(orig).map(([key, {label}]) => [key, label]));
+    }
     if (["system.attributes.movement.units", "system.attributes.senses.units"].includes(spec.key)) {
-      return Object.fromEntries(Object.entries(this.systemConfig.movementUnits).map(([key, {label}]) => [key, label]));
+      return extractLabels(this.systemConfig.movementUnits);
     }
     if (spec.key === "system.attributes.spellcasting") {
       return abilitiesList;
@@ -754,8 +791,48 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }, {'': ''});
     }
     if (spec.key === "system.details.type.value") {
-      return Object.fromEntries(Object.entries(this.systemConfig.creatureTypes).map(([key, {label}]) => [key, label]));
+      return extractLabels(this.systemConfig.creatureTypes);
     }
+    // Enchant stuff
+    if ((spec.key === "system.ability") || (spec.key.includes("activities") && spec.key.endsWith(".ability"))) {
+      return abilitiesList;
+    }
+    if (["system.damage.types", "system.damage.base.types"].includes(spec.key) || (spec.key.includes("activities") && spec.key.endsWith("damage.types"))) {
+      return this.traitList;
+    }
+    if (spec.key.endsWith(".activation.type")) {
+      return extractLabels(this.systemConfig.activityActivationTypes);
+    }
+    if (spec.key.endsWith(".duration.units")) {
+      return extractLabels(this.systemConfig.timeUnits);
+    }
+    if (spec.key.endsWith(".range.units")) {
+      return extractLabels(this.systemConfig.distanceUnits);
+    }
+    if (spec.key.endsWith(".target.template.type")) {
+      return extractLabels(this.systemConfig.areaTargetTypes);
+    }
+    if (spec.key.endsWith(".target.template.units")) {
+      return extractLabels(this.systemConfig.movementUnits);
+    }
+    if (spec.key.endsWith(".target.affects.type")) {
+      return extractLabels(this.systemConfig.individualTargetTypes);
+    }
+    if (spec.key.endsWith(".attack.type.value")) {
+      return extractLabels(this.systemConfig.attackTypes);
+    }
+    if (spec.key.endsWith(".attack.type.classification")) {
+      return extractLabels(this.systemConfig.attackClassifications);
+    }
+    if (spec.key.endsWith(".healing.scaling.mode")) {
+      return extractLabels(this.systemConfig.damageScalingModes);
+    }
+    if (spec.key.endsWith("[transform].settings.preset")) {
+      return extractLabels(this.systemConfig.transformation.presets)
+    }
+    // TODO: dc.calculation
+    // TODO: damage.onSave
+    // TODO: summon.mode
     return super.getOptionsForSpec(spec);
   }
 

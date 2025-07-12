@@ -26,6 +26,10 @@ export class ValidSpec {
   get label(): string { return this._label }
   set label(label: string) { this._label = label }
 
+  _description: string;
+  get description(): string { return this._description }
+  set description(description: string) { this._description = description }
+
   _forcedMode: number;
   get forcedMode(): number { return this._forcedMode }
   set forcedMode(mode: number) { this._forcedMode = mode }
@@ -34,10 +38,11 @@ export class ValidSpec {
   get options(): any { return this._options }
   set options(options: any) { this._options = options }
 
-  constructor(fs: string, sv: FieldType, forcedMode = -1, label?: string, options?: any) {
+  constructor(fs: string, sv: FieldType, forcedMode = -1, label?: string, description?: string, options?: any) {
     this._fieldSpec = fs;
     this._fieldType = sv;
     this._label = label ?? fs;
+    this._description = description ?? "";
     this._forcedMode = forcedMode;
     this._options = options;
   }

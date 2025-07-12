@@ -16,7 +16,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   declare statusEffectList: Record<string, string>;
   declare ATLPresets?: Record<string, string>;
   declare ATLVisionModes?: Record<string, string>;
-  declare validFields: Record<string, string>;
+  declare validFields: Record<string, {name: string, description?: string}>;
   declare validSpecsToUse: {
     allSpecs: ValidSpec[];
     allSpecsObj: Record<string, ValidSpec>;
@@ -72,16 +72,19 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         .forEach(f => this.ATLVisionModes![f.id!] = i18n(f.label!))
     }
 
-    this.validFields = { "__": "" }
+    this.validFields = { "__": { name: "" } }
     this.validFields = this.validSpecsToUse.allSpecs
       .filter(e => e._fieldSpec.includes(""))
       .reduce((mods, em) => {
-        mods[em._fieldSpec] = em._label;
+        mods[em._fieldSpec] = {
+          name: em._label,
+          description: em._description
+        };
         return mods;
       }, this.validFields);
     if (!isEnchantment(this.document)) {
       for (let field of otherFields) {
-        this.validFields[field] = field;
+        this.validFields[field] = { name: field };
       }
     }
     this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
@@ -152,16 +155,19 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       ui.notifications?.error("DAE | No valid specs found");
       return context;
     }
-    this.validFields = { "__": "" }
+    this.validFields = { "__": { name: ""} }
     this.validFields = this.validSpecsToUse.allSpecs
       .filter(e => e._fieldSpec.includes(""))
       .reduce((mods, em) => {
-        mods[em._fieldSpec] = em._label;
+        mods[em._fieldSpec] = {
+          name: em._label,
+          description: em._description
+        };
         return mods;
       }, this.validFields);
     if (!isEnchantment(document)) {
       for (let field of otherFields) {
-        this.validFields[field] = field;
+        this.validFields[field] = {name: field };
       }
     }
     this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
@@ -191,7 +197,6 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       context.isItemEffect = document.parent instanceof CONFIG.Item.documentClass;
       context.isActorEffect = document.parent instanceof CONFIG.Actor.documentClass;
     }
-    context.validFields = this.validFields;
     context.submitText = "EFFECT.Submit";
 
     (context.source!.changes as DAEChange[]).forEach(change => {
@@ -387,7 +392,6 @@ interface DAEActiveEffectConfigRenderContext extends foundry.applications.sheets
   stackableOptions?: Record<string, string>;
   isItemEffect?: boolean;
   isActorEffect?: boolean;
-  validFields?: Record<string, string>;
   submitText?: string;
   startTimeString?: string;
   durationString?: string;

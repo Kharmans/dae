@@ -137,13 +137,17 @@ declare global {
         label: string;
       }>;
       abilityConsumptionTypes: Record<string, string>;
+      activityActivationTypes: Record<string, {label: string}>;
       actorSizes: Record<string, {
         label: string;
       }>;
+      areaTargetTypes: Record<string, {label: string}>;
       armorClasses: Record<string, {
         label: string
       }>;
       armorProficiencies: Record<string, string>;
+      attackClassifications: Record<string, {label: string}>;
+      attackTypes: Record<string, {label: string}>;
       attunementTypes: Record<string, string>;
       characterFlags: Record<string, {
         name: string;
@@ -162,13 +166,16 @@ declare global {
       }>;
       // This one's added by midi
       customDamageResistanceTypes: Record<string, string>;
+      damageScalingModes: Record<string, {label: string}>;
       damageTypes: Record<string, {
         label: string;
         isPhysical: boolean;
       }>;
+      distanceUnits: Record<string, {label: string}>;
       healingTypes: Record<string, {
         label: string;
       }>;
+      individualTargetTypes: Record<string, {label: string}>;
       itemActionTypes: Record<string, string>;
       itemProperties: Record<string, {
         label: string;
@@ -190,11 +197,15 @@ declare global {
       }
       targetTypes: Record<string, string>;
       timePeriods: Record<string, string>;
+      timeUnits: Record<string, {label: string}>;
       toolProficiencies: Record<string, string>;
       tools: Record<string, {
         ability: string;
         id: string;
       }>;
+      transformation: {
+        presets: Record<string, {label: string}>;
+      }
       vehicleTypes: Record<string, string>;
       weaponProficiencies: Record<string, string>;
     }
