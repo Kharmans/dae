@@ -404,7 +404,7 @@
   },
   "dae.D&D5E.fieldData": {
     "flags.dnd5e.DamageBonusMacro": {
-      "name": "Bonus Damage Macros",
+      "name": "(Midi) Bonus Damage Macro",
       "description": "See \"Special Traits\" for details."
     },
     "flags.dnd5e.diamondSoul": {
@@ -419,24 +419,16 @@
       "name": "Halfling Lucky",
       "description": "See \"Special Traits\" for details."
     },
-    "flags.dnd5e.initiativeAdv": {
-      "name": "Advantage on Initiative",
-      "description": "See \"Special Traits\" for details."
-    },
     "flags.dnd5e.initiativeAlert": {
       "name": "Alert Feat",
       "description": "See \"Special Traits\" for details."
     },
     "flags.dnd5e.initiativeDisadv": {
-      "name": "Disadvantage on Initiative",
+      "name": "(Midi) Disadvantage on Initiative",
       "description": "See \"Special Traits\" for details."
     },
-    "flags.dnd5e.initiativeHalfProf": {
-      "name": "",
-      "description": ""
-    },
     "flags.dnd5e.initiativeHalfProficiency": {
-      "name": "Half Proficiency for Initiative",
+      "name": "(Midi) Half Proficiency for Initiative",
       "description": "See \"Special Traits\" for details."
     },
     "flags.dnd5e.jackOfAllTrades": {
@@ -468,7 +460,7 @@
       "description": "See \"Special Traits\" for details."
     },
     "flags.dnd5e.spellSniper": {
-      "name": "Spell Sniper",
+      "name": "(Midi) Spell Sniper",
       "description": "See \"Special Traits\" for details."
     },
     "flags.dnd5e.tavernBrawlerFeat": {
@@ -482,48 +474,48 @@
   },
   "dae.Macros.fieldData": {
     "macro.actorUpdate": {
-      "name": "",
-      "description": ""
+      "name": "Update Actor Field",
+      "description": "See DAE readme for details."
     },
     "macro.CE": {
-      "name": "",
+      "name": "Apply Convenient Effect",
       "description": ""
     },
     "macro.createItem": {
-      "name": "",
-      "description": ""
+      "name": "Create Item",
+      "description": "Create an item on the Actor, value should be the item's uuid."
     },
     "macro.createItemRunMacro": {
-      "name": "",
-      "description": ""
+      "name": "Create Item & Run Macro",
+      "description": "Create an item on the Actor and run the item's DIME with \"onCreate\", value should be the item's uuid."
     },
     "macro.execute": {
-      "name": "",
-      "description": ""
+      "name": "Macro to Execute",
+      "description": "Which macro to execute on application/removal, referenced by name. Can also provide additional arguments to be used by the macro. The execution will be socketed to the GM if the target actor isn't owned."
     },
     "macro.execute.GM": {
-      "name": "",
-      "description": ""
+      "name": "Macro for GM to Execute",
+      "description": "Same as \"macro.execute\", except macro execution is forced to the GM."
     },
     "macro.execute.local": {
-      "name": "",
-      "description": ""
+      "name": "Macro to Execute Locally",
+      "description": "Same as \"macro.execute\", except macro execution is forced to be local."
     },
     "macro.itemMacro": {
-      "name": "",
-      "description": ""
+      "name": "Execute ItemMacro/DIME",
+      "description": "On effect application/removal, run ItemMacro/DIME stored on the parent item. Can also provide additional arguments to be used by the macro. The execution will be socketed to the GM if the target actor isn't owned."
     },
     "macro.itemMacro.GM": {
-      "name": "",
-      "description": ""
+      "name": "Execute ItemMacro/DIME as GM",
+      "description": "Same as \"macro.itemMacro\", except macro execution is forced to the GM."
     },
     "macro.itemMacro.local": {
-      "name": "",
-      "description": ""
+      "name": "Execute ItemMacro/DIME Locally",
+      "description": "Same as \"macro.itemMacro\", except macro execution is forced to be local."
     },
     "macro.StatusEffect": {
-      "name": "",
-      "description": ""
+      "name": "Apply Status Effect",
+      "description": "Effectively identical to simply selecting a status on the details page, but creates the status programmatically, and doesn't force visibility of a passive effect."
     }
   },
   "dae.SystemAbilities.fieldData": {
@@ -535,9 +527,17 @@
       "name": "Charisma Save Bonus",
       "description": ""
     },
-    "system.abilities.cha.dc": {
-      "name": "Charisma Save DC",
-      "description": ""
+    "system.abilities.cha.check.roll.max": {
+      "name": "Charisma Check Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Charisma check."
+    },
+    "system.abilities.cha.check.roll.min": {
+      "name": "Charisma Check Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Charisma check."
+    },
+    "system.abilities.cha.check.roll.mode": {
+      "name": "Charisma Check Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Charisma checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.cha.max": {
       "name": "Charisma Max Score",
@@ -549,7 +549,19 @@
     },
     "system.abilities.cha.proficient": {
       "name": "Charisma Save Proficiency",
-      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+      "description": ""
+    },
+    "system.abilities.cha.save.roll.max": {
+      "name": "Charisma Save Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Charisma save."
+    },
+    "system.abilities.cha.save.roll.min": {
+      "name": "Charisma Save Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Charisma save."
+    },
+    "system.abilities.cha.save.roll.mode": {
+      "name": "Charisma Save Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Charisma saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.cha.save": {
       "name": "Charisma Save Mod",
@@ -567,9 +579,17 @@
       "name": "Constitution Save Bonus",
       "description": ""
     },
-    "system.abilities.con.dc": {
-      "name": "Constitution Save DC",
-      "description": ""
+    "system.abilities.con.check.roll.max": {
+      "name": "Constitution Check Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Constitution check."
+    },
+    "system.abilities.con.check.roll.min": {
+      "name": "Constitution Check Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Constitution check."
+    },
+    "system.abilities.con.check.roll.mode": {
+      "name": "Constitution Check Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Constitution checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.con.max": {
       "name": "Constitution Max Score",
@@ -581,7 +601,19 @@
     },
     "system.abilities.con.proficient": {
       "name": "Constitution Save Proficiency",
-      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+      "description": ""
+    },
+    "system.abilities.con.save.roll.max": {
+      "name": "Constitution Save Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Constitution save."
+    },
+    "system.abilities.con.save.roll.min": {
+      "name": "Constitution Save Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Constitution save."
+    },
+    "system.abilities.con.save.roll.mode": {
+      "name": "Constitution Save Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Constitution saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.con.save": {
       "name": "Constitution Save Mod",
@@ -599,9 +631,17 @@
       "name": "Dexterity Save Bonus",
       "description": ""
     },
-    "system.abilities.dex.dc": {
-      "name": "Dexterity Save DC",
-      "description": ""
+    "system.abilities.dex.check.roll.max": {
+      "name": "Dexterity Check Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Dexterity check."
+    },
+    "system.abilities.dex.check.roll.min": {
+      "name": "Dexterity Check Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Dexterity check."
+    },
+    "system.abilities.dex.check.roll.mode": {
+      "name": "Dexterity Check Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Dexterity checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.dex.max": {
       "name": "Dexterity Max Score",
@@ -613,7 +653,19 @@
     },
     "system.abilities.dex.proficient": {
       "name": "Dexterity Save Proficiency",
-      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+      "description": ""
+    },
+    "system.abilities.dex.save.roll.max": {
+      "name": "Dexterity Save Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Dexterity save."
+    },
+    "system.abilities.dex.save.roll.min": {
+      "name": "Dexterity Save Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Dexterity save."
+    },
+    "system.abilities.dex.save.roll.mode": {
+      "name": "Dexterity Save Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Dexterity saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.dex.save": {
       "name": "Dexterity Save Mod",
@@ -631,9 +683,17 @@
       "name": "Intelligence Save Bonus",
       "description": ""
     },
-    "system.abilities.int.dc": {
-      "name": "Intelligence Save DC",
-      "description": ""
+    "system.abilities.int.check.roll.max": {
+      "name": "Intelligence Check Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for an Intelligence check."
+    },
+    "system.abilities.int.check.roll.min": {
+      "name": "Intelligence Check Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for an Intelligence check."
+    },
+    "system.abilities.int.check.roll.mode": {
+      "name": "Intelligence Check Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Intelligence checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.int.max": {
       "name": "Intelligence Max Score",
@@ -645,7 +705,19 @@
     },
     "system.abilities.int.proficient": {
       "name": "Intelligence Save Proficiency",
-      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+      "description": ""
+    },
+    "system.abilities.int.save.roll.max": {
+      "name": "Intelligence Save Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for an Intelligence save."
+    },
+    "system.abilities.int.save.roll.min": {
+      "name": "Intelligence Save Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for an Intelligence save."
+    },
+    "system.abilities.int.save.roll.mode": {
+      "name": "Intelligence Save Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Intelligence saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.int.save": {
       "name": "Intelligence Save Mod",
@@ -663,9 +735,17 @@
       "name": "Strength Save Bonus",
       "description": ""
     },
-    "system.abilities.str.dc": {
-      "name": "Strength Save DC",
-      "description": ""
+    "system.abilities.str.check.roll.max": {
+      "name": "Strength Check Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Strength check."
+    },
+    "system.abilities.str.check.roll.min": {
+      "name": "Strength Check Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Strength check."
+    },
+    "system.abilities.str.check.roll.mode": {
+      "name": "Strength Check Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Strength checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.str.max": {
       "name": "Strength Max Score",
@@ -677,7 +757,19 @@
     },
     "system.abilities.str.proficient": {
       "name": "Strength Save Proficiency",
-      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+      "description": ""
+    },
+    "system.abilities.str.save.roll.max": {
+      "name": "Strength Save Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Strength save."
+    },
+    "system.abilities.str.save.roll.min": {
+      "name": "Strength Save Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Strength save."
+    },
+    "system.abilities.str.save.roll.mode": {
+      "name": "Strength Save Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Strength saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.str.save": {
       "name": "Strength Save Mod",
@@ -695,9 +787,17 @@
       "name": "Wisdom Save Bonus",
       "description": ""
     },
-    "system.abilities.wis.dc": {
-      "name": "Wisdom Save DC",
-      "description": ""
+    "system.abilities.wis.check.roll.max": {
+      "name": "Wisdom Check Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Wisdom check."
+    },
+    "system.abilities.wis.check.roll.min": {
+      "name": "Wisdom Check Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Wisdom check."
+    },
+    "system.abilities.wis.check.roll.mode": {
+      "name": "Wisdom Check Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Wisdom checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.wis.max": {
       "name": "Wisdom Max Score",
@@ -709,7 +809,19 @@
     },
     "system.abilities.wis.proficient": {
       "name": "Wisdom Save Proficiency",
-      "description": "0: Not Proficient. 1: Proficient. 2: Expertise. 0.5: Half Proficient."
+      "description": ""
+    },
+    "system.abilities.wis.save.roll.max": {
+      "name": "Wisdom Save Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Wisdom save."
+    },
+    "system.abilities.wis.save.roll.min": {
+      "name": "Wisdom Save Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Wisdom save."
+    },
+    "system.abilities.wis.save.roll.mode": {
+      "name": "Wisdom Save Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Wisdom saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.abilities.wis.save": {
       "name": "Wisdom Save Mod",
@@ -722,650 +834,638 @@
   },
   "dae.SystemSkills.fieldData": {
     "system.skills.acr.ability": {
-      "name": "",
-      "description": ""
+      "name": "Acrobatics Ability",
+      "description": "Which ability to use for Acrobatics checks."
     },
     "system.skills.acr.bonuses.check": {
-      "name": "",
+      "name": "Acrobatics Check Bonus",
       "description": ""
     },
     "system.skills.acr.bonuses.passive": {
-      "name": "",
+      "name": "Passive Acrobatics Bonus",
       "description": ""
     },
     "system.skills.acr.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Acrobatics Max",
+      "description": "The maximum rollable on a d20 for an Acrobatics check."
     },
     "system.skills.acr.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Acrobatics Min",
+      "description": "The minimum rollable on a d20 for an Acrobatics check."
     },
     "system.skills.acr.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Acrobatics Roll Mode",
+      "description": "Roll mode for Acrobatics checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.acr.value": {
-      "name": "",
+      "name": "Acrobatics Proficiency",
       "description": ""
     },
     "system.skills.ani.ability": {
-      "name": "",
-      "description": ""
+      "name": "Animal Handling Ability",
+      "description": "Which ability to use for Animal Handling checks."
     },
     "system.skills.ani.bonuses.check": {
-      "name": "",
+      "name": "Animal Handling Check Bonus",
       "description": ""
     },
     "system.skills.ani.bonuses.passive": {
-      "name": "",
+      "name": "Passive Animal Handling Bonus",
       "description": ""
     },
     "system.skills.ani.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Animal Handling Max",
+      "description": "The maximum rollable on a d20 for an Animal Handling check."
     },
     "system.skills.ani.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Animal Handling Min",
+      "description": "The minimum rollable on a d20 for an Animal Handling check."
     },
     "system.skills.ani.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Animal Handling Roll Mode",
+      "description": "Roll mode for Animal Handling checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.ani.value": {
-      "name": "",
+      "name": "Animal Handling Proficiency",
       "description": ""
     },
     "system.skills.arc.ability": {
-      "name": "",
-      "description": ""
+      "name": "Arcana Ability",
+      "description": "Which ability to use for Arcana checks."
     },
     "system.skills.arc.bonuses.check": {
-      "name": "",
+      "name": "Arcana Check Bonus",
       "description": ""
     },
     "system.skills.arc.bonuses.passive": {
-      "name": "",
+      "name": "Passive Arcana Bonus",
       "description": ""
     },
     "system.skills.arc.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Arcana Max",
+      "description": "The maximum rollable on a d20 for an Arcana check."
     },
     "system.skills.arc.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Arcana Min",
+      "description": "The minimum rollable on a d20 for an Arcana check."
     },
     "system.skills.arc.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Arcana Roll Mode",
+      "description": "Roll mode for Arcana checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.arc.value": {
-      "name": "",
+      "name": "Arcana Proficiency",
       "description": ""
     },
     "system.skills.ath.ability": {
-      "name": "",
-      "description": ""
+      "name": "Athletics Ability",
+      "description": "Which ability to use for Athletics checks."
     },
     "system.skills.ath.bonuses.check": {
-      "name": "",
+      "name": "Athletics Check Bonus",
       "description": ""
     },
     "system.skills.ath.bonuses.passive": {
-      "name": "",
+      "name": "Passive Athletics Bonus",
       "description": ""
     },
     "system.skills.ath.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Athletics Max",
+      "description": "The maximum rollable on a d20 for an Athletics check."
     },
     "system.skills.ath.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Athletics Min",
+      "description": "The minimum rollable on a d20 for an Athletics check."
     },
     "system.skills.ath.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Athletics Roll Mode",
+      "description": "Roll mode for Athletics checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.ath.value": {
-      "name": "",
+      "name": "Athletics Proficiency",
       "description": ""
     },
     "system.skills.dec.ability": {
-      "name": "",
-      "description": ""
+      "name": "Deception Ability",
+      "description": "Which ability to use for Deception checks."
     },
     "system.skills.dec.bonuses.check": {
-      "name": "",
+      "name": "Deception Check Bonus",
       "description": ""
     },
     "system.skills.dec.bonuses.passive": {
-      "name": "",
+      "name": "Passive Deception Bonus",
       "description": ""
     },
     "system.skills.dec.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Deception Max",
+      "description": "The maximum rollable on a d20 for a Deception check."
     },
     "system.skills.dec.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Deception Min",
+      "description": "The minimum rollable on a d20 for a Deception check."
     },
     "system.skills.dec.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Deception Roll Mode",
+      "description": "Roll mode for Deception checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.dec.value": {
-      "name": "",
+      "name": "Deception Proficiency",
       "description": ""
     },
     "system.skills.his.ability": {
-      "name": "",
-      "description": ""
+      "name": "History Ability",
+      "description": "Which ability to use for History checks."
     },
     "system.skills.his.bonuses.check": {
-      "name": "",
+      "name": "History Check Bonus",
       "description": ""
     },
     "system.skills.his.bonuses.passive": {
-      "name": "",
+      "name": "Passive History Bonus",
       "description": ""
     },
     "system.skills.his.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "History Max",
+      "description": "The maximum rollable on a d20 for a History check."
     },
     "system.skills.his.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "History Min",
+      "description": "The minimum rollable on a d20 for a History check."
     },
     "system.skills.his.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "History Roll Mode",
+      "description": "Roll mode for History checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.his.value": {
-      "name": "",
+      "name": "History Proficiency",
       "description": ""
     },
     "system.skills.ins.ability": {
-      "name": "",
-      "description": ""
+      "name": "Insight Ability",
+      "description": "Which ability to use for Insight checks."
     },
     "system.skills.ins.bonuses.check": {
-      "name": "",
+      "name": "Insight Check Bonus",
       "description": ""
     },
     "system.skills.ins.bonuses.passive": {
-      "name": "",
+      "name": "Passive Insight Bonus",
       "description": ""
     },
     "system.skills.ins.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Insight Max",
+      "description": "The maximum rollable on a d20 for an Insight check."
     },
     "system.skills.ins.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Insight Min",
+      "description": "The minimum rollable on a d20 for an Insight check."
     },
     "system.skills.ins.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Insight Roll Mode",
+      "description": "Roll mode for Insight checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.ins.value": {
-      "name": "",
+      "name": "Insight Proficiency",
       "description": ""
     },
     "system.skills.inv.ability": {
-      "name": "",
-      "description": ""
+      "name": "Investigation Ability",
+      "description": "Which ability to use for Investigation checks."
     },
     "system.skills.inv.bonuses.check": {
-      "name": "",
+      "name": "Investigation Check Bonus",
       "description": ""
     },
     "system.skills.inv.bonuses.passive": {
-      "name": "",
+      "name": "Passive Investigation Bonus",
       "description": ""
     },
     "system.skills.inv.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Investigation Max",
+      "description": "The maximum rollable on a d20 for an Investigation check."
     },
     "system.skills.inv.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Investigation Min",
+      "description": "The minimum rollable on a d20 for an Investigation check."
     },
     "system.skills.inv.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Investigation Roll Mode",
+      "description": "Roll mode for Investigation checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.inv.value": {
-      "name": "",
+      "name": "Investigation Proficiency",
       "description": ""
     },
     "system.skills.itm.ability": {
-      "name": "",
-      "description": ""
+      "name": "Intimidation Ability",
+      "description": "Which ability to use for Intimidation checks."
     },
     "system.skills.itm.bonuses.check": {
-      "name": "",
+      "name": "Intimidation Check Bonus",
       "description": ""
     },
     "system.skills.itm.bonuses.passive": {
-      "name": "",
+      "name": "Passive Intimidation Bonus",
       "description": ""
     },
     "system.skills.itm.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Intimidation Max",
+      "description": "The maximum rollable on a d20 for an Intimidation check."
     },
     "system.skills.itm.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Intimidation Min",
+      "description": "The minimum rollable on a d20 for an Intimidation check."
     },
     "system.skills.itm.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Intimidation Roll Mode",
+      "description": "Roll mode for Intimidation checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.itm.value": {
-      "name": "",
+      "name": "Intimidation Proficiency",
       "description": ""
     },
     "system.skills.med.ability": {
-      "name": "",
-      "description": ""
+      "name": "Medicine Ability",
+      "description": "Which ability to use for Medicine checks."
     },
     "system.skills.med.bonuses.check": {
-      "name": "",
+      "name": "Medicine Check Bonus",
       "description": ""
     },
     "system.skills.med.bonuses.passive": {
-      "name": "",
+      "name": "Passive Medicine Bonus",
       "description": ""
     },
     "system.skills.med.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Medicine Max",
+      "description": "The maximum rollable on a d20 for a Medicine check."
     },
     "system.skills.med.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Medicine Min",
+      "description": "The minimum rollable on a d20 for a Medicine check."
     },
     "system.skills.med.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Medicine Roll Mode",
+      "description": "Roll mode for Medicine checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.med.value": {
-      "name": "",
+      "name": "Medicine Proficiency",
       "description": ""
     },
     "system.skills.nat.ability": {
-      "name": "",
-      "description": ""
+      "name": "Nature Ability",
+      "description": "Which ability to use for Nature checks."
     },
     "system.skills.nat.bonuses.check": {
-      "name": "",
+      "name": "Nature Check Bonus",
       "description": ""
     },
     "system.skills.nat.bonuses.passive": {
-      "name": "",
+      "name": "Passive Nature Bonus",
       "description": ""
     },
     "system.skills.nat.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Nature Max",
+      "description": "The maximum rollable on a d20 for a Nature check."
     },
     "system.skills.nat.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Nature Min",
+      "description": "The minimum rollable on a d20 for a Nature check."
     },
     "system.skills.nat.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Nature Roll Mode",
+      "description": "Roll mode for Nature checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.nat.value": {
-      "name": "",
+      "name": "Nature Proficiency",
       "description": ""
     },
     "system.skills.per.ability": {
-      "name": "",
-      "description": ""
+      "name": "Persuasion Ability",
+      "description": "Which ability to use for Persuasion checks."
     },
     "system.skills.per.bonuses.check": {
-      "name": "",
+      "name": "Persuasion Check Bonus",
       "description": ""
     },
     "system.skills.per.bonuses.passive": {
-      "name": "",
+      "name": "Passive Persuasion Bonus",
       "description": ""
     },
     "system.skills.per.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Persuasion Max",
+      "description": "The maximum rollable on a d20 for a Persuasion check."
     },
     "system.skills.per.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Persuasion Min",
+      "description": "The minimum rollable on a d20 for a Persuasion check."
     },
     "system.skills.per.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Persuasion Roll Mode",
+      "description": "Roll mode for Persuasion checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.per.value": {
-      "name": "",
+      "name": "Persuasion Proficiency",
       "description": ""
     },
     "system.skills.prc.ability": {
-      "name": "",
-      "description": ""
+      "name": "Perception Ability",
+      "description": "Which ability to use for Perception checks."
     },
     "system.skills.prc.bonuses.check": {
-      "name": "",
+      "name": "Perception Check Bonus",
       "description": ""
     },
     "system.skills.prc.bonuses.passive": {
-      "name": "",
+      "name": "Passive Perception Bonus",
       "description": ""
     },
     "system.skills.prc.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Perception Max",
+      "description": "The maximum rollable on a d20 for a Perception check."
     },
     "system.skills.prc.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Perception Min",
+      "description": "The minimum rollable on a d20 for a Perception check."
     },
     "system.skills.prc.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Perception Roll Mode",
+      "description": "Roll mode for Perception checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.prc.value": {
-      "name": "",
+      "name": "Perception Proficiency",
       "description": ""
     },
     "system.skills.prf.ability": {
-      "name": "",
-      "description": ""
+      "name": "Performance Ability",
+      "description": "Which ability to use for Performance checks."
     },
     "system.skills.prf.bonuses.check": {
-      "name": "",
+      "name": "Performance Check Bonus",
       "description": ""
     },
     "system.skills.prf.bonuses.passive": {
-      "name": "",
+      "name": "Passive Performance Bonus",
       "description": ""
     },
     "system.skills.prf.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Performance Max",
+      "description": "The maximum rollable on a d20 for a Performance check."
     },
     "system.skills.prf.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Performance Min",
+      "description": "The minimum rollable on a d20 for a Performance check."
     },
     "system.skills.prf.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Performance Roll Mode",
+      "description": "Roll mode for Performance checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.prf.value": {
-      "name": "",
+      "name": "Performance Proficiency",
       "description": ""
     },
     "system.skills.rel.ability": {
-      "name": "",
-      "description": ""
+      "name": "Religion Ability",
+      "description": "Which ability to use for Religion checks."
     },
     "system.skills.rel.bonuses.check": {
-      "name": "",
+      "name": "Religion Check Bonus",
       "description": ""
     },
     "system.skills.rel.bonuses.passive": {
-      "name": "",
+      "name": "Passive Religion Bonus",
       "description": ""
     },
     "system.skills.rel.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Religion Max",
+      "description": "The maximum rollable on a d20 for a Religion check."
     },
     "system.skills.rel.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Religion Min",
+      "description": "The minimum rollable on a d20 for a Religion check."
     },
     "system.skills.rel.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Religion Roll Mode",
+      "description": "Roll mode for Religion checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.rel.value": {
-      "name": "",
+      "name": "Religion Proficiency",
       "description": ""
     },
     "system.skills.slt.ability": {
-      "name": "",
-      "description": ""
+      "name": "Sleight of Hand Ability",
+      "description": "Which ability to use for Sleight of Hand checks."
     },
     "system.skills.slt.bonuses.check": {
-      "name": "",
+      "name": "Sleight of Hand Check Bonus",
       "description": ""
     },
     "system.skills.slt.bonuses.passive": {
-      "name": "",
+      "name": "Passive Sleight of Hand Bonus",
       "description": ""
     },
     "system.skills.slt.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Sleight of Hand Max",
+      "description": "The maximum rollable on a d20 for a Sleight of Hand check."
     },
     "system.skills.slt.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Sleight of Hand Min",
+      "description": "The minimum rollable on a d20 for a Sleight of Hand check."
     },
     "system.skills.slt.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Sleight of Hand Roll Mode",
+      "description": "Roll mode for Sleight of Hand checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.slt.value": {
-      "name": "",
+      "name": "Sleight of Hand Proficiency",
       "description": ""
     },
     "system.skills.ste.ability": {
-      "name": "",
-      "description": ""
+      "name": "Stealth Ability",
+      "description": "Which ability to use for Stealth checks."
     },
     "system.skills.ste.bonuses.check": {
-      "name": "",
+      "name": "Stealth Check Bonus",
       "description": ""
     },
     "system.skills.ste.bonuses.passive": {
-      "name": "",
+      "name": "Passive Stealth Bonus",
       "description": ""
     },
     "system.skills.ste.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Stealth Max",
+      "description": "The maximum rollable on a d20 for a Stealth check."
     },
     "system.skills.ste.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Stealth Min",
+      "description": "The minimum rollable on a d20 for a Stealth check."
     },
     "system.skills.ste.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Stealth Roll Mode",
+      "description": "Roll mode for Stealth checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.ste.value": {
-      "name": "",
+      "name": "Stealth Proficiency",
       "description": ""
     },
     "system.skills.sur.ability": {
-      "name": "",
-      "description": ""
+      "name": "Survival Ability",
+      "description": "Which ability to use for Survival checks."
     },
     "system.skills.sur.bonuses.check": {
-      "name": "",
+      "name": "Survival Check Bonus",
       "description": ""
     },
     "system.skills.sur.bonuses.passive": {
-      "name": "",
+      "name": "Passive Survival Bonus",
       "description": ""
     },
     "system.skills.sur.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Survival Max",
+      "description": "The maximum rollable on a d20 for a Survival check."
     },
     "system.skills.sur.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Survival Min",
+      "description": "The minimum rollable on a d20 for a Survival check."
     },
     "system.skills.sur.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Survival Roll Mode",
+      "description": "Roll mode for Survival checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.skills.sur.value": {
-      "name": "",
+      "name": "Survival Proficiency",
       "description": ""
     }
   },
   "dae.SystemAttributes.fieldData": {
     "system.attributes.ac.AR": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) Armor Reduction",
+      "description": "See \"Challenge Mode\" details in midi-qol readme."
     },
     "system.attributes.ac.armor": {
-      "name": "",
-      "description": "AC armor bonus (usually provided only via equipped armor item - will only have an effect if not wearing armor)."
-    },
-    "system.attributes.ac.base": {
-      "name": "",
-      "description": "Deprecated derived field - do not use."
+      "name": "AC (Armor)",
+      "description": "Bonus to AC provided by worn armor (usually provided only via equipped armor item - will only have an effect if not wearing armor)."
     },
     "system.attributes.ac.bonus": {
-      "name": "",
+      "name": "AC Bonus",
       "description": "Numerical bonus to AC."
     },
     "system.attributes.ac.calc": {
-      "name": "",
-      "description": "AC calculation method."
+      "name": "AC Calculation Method",
+      "description": ""
     },
     "system.attributes.ac.cover": {
-      "name": "",
+      "name": "AC (Cover)",
       "description": "AC cover bonus (usually provided only via cover status effects)."
     },
     "system.attributes.ac.EC": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) Evasion Class",
+      "description": "See \"Challenge Mode\" details in midi-qol readme."
     },
     "system.attributes.ac.flat": {
-      "name": "",
-      "description": "Flat AC (requires system.attributes.ac.calc to be \"flat\")."
+      "name": "AC (Flat)",
+      "description": "Requires system.attributes.ac.calc to be Flat (AC = this) or Natural Armor (AC = this + any shield bonus)."
     },
     "system.attributes.ac.formula": {
-      "name": "",
-      "description": "AC calculation formula (requires system.attributes.ac.calc to be \"custom\")."
+      "name": "AC Formula",
+      "description": "Requires system.attributes.ac.calc to be Custom Formula."
     },
     "system.attributes.ac.min": {
-      "name": "",
-      "description": "Minimum AC value (if calculated lower, will upgrade to this number)."
+      "name": "Minimum AC",
+      "description": "If calculated lower, will upgrade to this number."
     },
     "system.attributes.ac.shield": {
-      "name": "",
+      "name": "AC (Shield)",
       "description": "AC shield bonus (usually provided only via equipped shield item)."
     },
     "system.attributes.ac.value": {
-      "name": "",
-      "description": "Use system.attributes.ac.calc as \"flat\" and system.attributes.ac.flat as your desired value instead if overriding ac.bonus if adding."
+      "name": "AC (Total)",
+      "description": "Don't use this: Use system.attributes.ac.calc as Flat or Natural Armor and system.attributes.ac.flat as your desired value instead in order to override AC value, or use system.attributes.ac.bonus in order to add a bonus."
     },
     "system.attributes.attunement.max": {
-      "name": "",
+      "name": "Max Attunements",
       "description": ""
     },
     "system.attributes.concentration.ability": {
-      "name": "",
-      "description": ""
+      "name": "Concentration Ability",
+      "description": "Which ability to use for Concentration saves."
     },
     "system.attributes.concentration.bonuses.save": {
-      "name": "",
+      "name": "Concentration Save Bonus",
       "description": ""
     },
     "system.attributes.concentration.limit": {
-      "name": "",
-      "description": ""
+      "name": "Concentration Limit",
+      "description": "Maximum number of spells that can be concentrated on."
     },
     "system.attributes.concentration.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Concentration Max",
+      "description": "The maximum rollable on a d20 for a Concentration save."
     },
     "system.attributes.concentration.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Concentration Min",
+      "description": "The maximum rollable on a d20 for a Concentration save."
     },
     "system.attributes.concentration.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Concentration Roll Mode",
+      "description": "Roll mode for Concentration saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
-    "system.attributes.death.ability": {
-      "name": "",
+    "system.attributes.death.bonuses.save": {
+      "name": "Death Save Bonus",
       "description": ""
     },
     "system.attributes.death.failure": {
-      "name": "",
-      "description": ""
+      "name": "Death Save Failures",
+      "description": "Number of death save failures. Not particularly useful to modify via an active effect."
     },
     "system.attributes.death.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Death Save Max",
+      "description": "The maximum rollable on a d20 for a Death save."
     },
     "system.attributes.death.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Death Save Max",
+      "description": "The minimum rollable on a d20 for a Death save."
     },
     "system.attributes.death.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Death Save Roll Mode",
+      "description": "Roll mode for Death saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.attributes.death.success": {
-      "name": "",
-      "description": ""
+      "name": "Death Save Successes",
+      "description": "Number of death save successes. Not particularly useful to modify via an active effect."
     },
     "system.attributes.encumbrance.bonuses.encumbered": {
-      "name": "",
-      "description": ""
+      "name": "Encumbered Bonus",
+      "description": "Bonus to \"encumbered\" threshold."
     },
     "system.attributes.encumbrance.bonuses.heavilyEncumbered": {
-      "name": "",
-      "description": ""
+      "name": "Heavily Encumbered Bonus",
+      "description": "Bonus to \"heavily encumbered\" threshold."
     },
     "system.attributes.encumbrance.bonuses.maximum": {
-      "name": "",
-      "description": ""
+      "name": "Maximum Encumbrance Bonus",
+      "description": "Bonus to maximum encumbrance."
     },
     "system.attributes.encumbrance.bonuses.overall": {
-      "name": "",
-      "description": ""
+      "name": "Overall Encumbrance Bonus",
+      "description": "Bonus to each encumbrance threshold, and maximum encumbrance."
     },
     "system.attributes.encumbrance.multipliers.encumbered": {
-      "name": "",
-      "description": ""
+      "name": "Encumbered Multiplier",
+      "description": "Multiplier to \"encumbered\" threshold."
     },
     "system.attributes.encumbrance.multipliers.heavilyEncumbered": {
-      "name": "",
-      "description": ""
+      "name": "Heavily Encumbered Multiplier",
+      "description": "Multiplier to \"heavily encumbered\" threshold."
     },
     "system.attributes.encumbrance.multipliers.maximum": {
-      "name": "",
-      "description": ""
+      "name": "Maximum Encumbrance Multiplier",
+      "description": "Multiplier to maximum encumbrance."
     },
     "system.attributes.encumbrance.multipliers.overall": {
-      "name": "",
-      "description": ""
-    },
-    "system.attributes.exhaustion": {
-      "name": "",
-      "description": ""
-    },
-    "system.attributes.hd.max": {
-      "name": "",
-      "description": ""
+      "name": "Overall Encumbrance Multiplier",
+      "description": "Multiplier to each encumbrance threshold, and maximum encumbrance."
     },
     "system.attributes.hp.bonuses.level": {
       "name": "HP Bonus Per Level",
@@ -1381,7 +1481,7 @@
     },
     "system.attributes.hp.temp": {
       "name": "Temp HP",
-      "description": "This should never be modified in an active effect - apply temphp damage instead."
+      "description": "This should never be modified in an active effect - use a \"Heal\" activity instead."
     },
     "system.attributes.hp.tempmax": {
       "name": "Temporary Max HP",
@@ -1389,443 +1489,559 @@
     },
     "system.attributes.hp.value": {
       "name": "Current HP",
-      "description": "This should never be modified in an active effect - apply damage instead."
+      "description": "This should never be modified in an active effect - apply damage via an activity instead."
     },
     "system.attributes.init.ability": {
-      "name": "",
-      "description": ""
+      "name": "Initiative Ability",
+      "description": "Which ability to use for Initiative rolls."
     },
     "system.attributes.init.bonus": {
-      "name": "",
+      "name": "Initiative Bonus",
       "description": ""
     },
     "system.attributes.init.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Initiative Max",
+      "description": "The maximum rollable on a d20 for an Initiative roll."
     },
     "system.attributes.init.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Initiative Min",
+      "description": "The minimum rollable on a d20 for an Initiative roll."
     },
     "system.attributes.init.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.attributes.inspiration": {
-      "name": "Inspiration",
-      "description": ""
+      "name": "Initiative Roll Mode",
+      "description": "Roll mode for Initiative rolls. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
     "system.attributes.movement.all": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) Movement Speed (All)",
+      "description": "A flat number will result in all movement types being set to that number. Otherwise, \"+5\" or \"*2\" for instance would add 5 to or multiply by 2 all existing movement types (ignoring types which the actor has no movement in), respectively."
     },
     "system.attributes.movement.burrow": {
-      "name": "",
+      "name": "Movement Speed (Burrow)",
       "description": ""
     },
     "system.attributes.movement.climb": {
-      "name": "",
+      "name": "Movement Speed (Climb)",
       "description": ""
     },
     "system.attributes.movement.fly": {
-      "name": "",
+      "name": "Movement Speed (Fly)",
       "description": ""
     },
     "system.attributes.movement.hover": {
-      "name": "",
-      "description": ""
+      "name": "Movement (Hover)",
+      "description": "Can hover?"
     },
     "system.attributes.movement.swim": {
-      "name": "",
+      "name": "Movement Speed (Swim)",
       "description": ""
     },
     "system.attributes.movement.units": {
-      "name": "",
+      "name": "Movement Units",
       "description": ""
     },
     "system.attributes.movement.walk": {
-      "name": "",
+      "name": "Movement Speed (Walk)",
       "description": ""
     },
     "system.attributes.prof": {
-      "name": "",
+      "name": "Proficiency Bonus",
       "description": ""
     },
     "system.attributes.senses.blindsight": {
-      "name": "",
+      "name": "Senses (Blindsight)",
       "description": ""
     },
     "system.attributes.senses.darkvision": {
-      "name": "",
+      "name": "Senses (Darkvision)",
       "description": ""
     },
     "system.attributes.senses.special": {
-      "name": "",
-      "description": ""
+      "name": "Senses (Special)",
+      "description": "Accepts semicolon-separated values."
     },
     "system.attributes.senses.tremorsense": {
-      "name": "",
+      "name": "Senses (Tremorsense)",
       "description": ""
     },
     "system.attributes.senses.truesight": {
-      "name": "",
+      "name": "Senses (Truesight)",
       "description": ""
     },
     "system.attributes.senses.units": {
-      "name": "",
+      "name": "Senses Units",
       "description": ""
     },
     "system.attributes.spellcasting": {
-      "name": "",
+      "name": "Spellcasting Ability",
       "description": ""
+    },
+    "system.attributes.hd.max": {
+      "name": "Maximum Hit Dice",
+      "description": "Only available for NPCs"
     }
   },
   "dae.SystemBonuses.fieldData": {
-    "system.bonuses.abil.damage": {
-      "name": "",
-      "description": ""
-    },
     "system.bonuses.abilities.check": {
-      "name": "",
+      "name": "Checks Bonus",
       "description": "Bonus to all ability checks."
     },
     "system.bonuses.abilities.save": {
-      "name": "",
+      "name": "Saves Bonus",
       "description": "Bonus to all ability saves."
     },
     "system.bonuses.abilities.skill": {
-      "name": "",
+      "name": "Skills Bonus",
       "description": "Bonus to all skill checks."
     },
     "system.bonuses.All-Attacks": {
-      "name": "",
+      "name": "(DAE) Attacks Bonus",
       "description": "Bonus to all attack rolls."
     },
     "system.bonuses.All-Damage": {
-      "name": "",
-      "description": "Bonus to all damage rolls."
+      "name": "(DAE) Attack Damage Bonus",
+      "description": "Bonus to all Attack-activity damage rolls."
     },
     "system.bonuses.check.damage": {
-      "name": "",
+      "name": "(DAE) Check Damage Bonus",
       "description": "Bonus to all Check-activity damage rolls."
     },
-    "system.bonuses.heal.attack": {
-      "name": "",
-      "description": ""
-    },
     "system.bonuses.heal.damage": {
-      "name": "",
+      "name": "(DAE) Heal Damage Bonus",
       "description": "Bonus to all Heal-activity damage rolls."
     },
     "system.bonuses.msak.attack": {
-      "name": "",
+      "name": "Melee Spell Attack Bonus",
       "description": "Bonus to all \"melee spell attack\" attack rolls."
     },
     "system.bonuses.msak.damage": {
-      "name": "",
+      "name": "Melee Spell Attack Damage Bonus",
       "description": "Bonus to all \"melee spell attack\" damage rolls."
     },
     "system.bonuses.mwak.attack": {
-      "name": "",
+      "name": "Melee Weapon Attack Bonus",
       "description": "Bonus to all \"melee weapon attack\" attack rolls."
     },
     "system.bonuses.mwak.damage": {
-      "name": "",
+      "name": "Melee Weapon Attack Damage Bonus",
       "description": "Bonus to all \"melee weapon attack\" damage rolls."
     },
-    "system.bonuses.other.damage": {
-      "name": "",
-      "description": ""
-    },
     "system.bonuses.rsak.attack": {
-      "name": "",
+      "name": "Ranged Spell Attack Bonus",
       "description": "Bonus to all \"ranged spell attack\" attack rolls."
     },
     "system.bonuses.rsak.damage": {
-      "name": "",
+      "name": "Ranged Spell Attack Damage Bonus",
       "description": "Bonus to all \"ranged spell attack\" damage rolls."
     },
     "system.bonuses.rwak.attack": {
-      "name": "",
+      "name": "Ranged Weapon Attack Bonus",
       "description": "Bonus to all \"ranged weapon attack\" attack rolls."
     },
     "system.bonuses.rwak.damage": {
-      "name": "",
+      "name": "Ranged Weapon Attack Damage Bonus",
       "description": "Bonus to all \"ranged weapon attack\" damage rolls."
     },
     "system.bonuses.save.damage": {
-      "name": "",
+      "name": "(DAE) Save Damage Bonus",
       "description": "Bonus to all Save-activity damage rolls."
     },
     "system.bonuses.spell.all.damage": {
-      "name": "",
+      "name": "(DAE) Spell Damage Bonus",
       "description": "Bonus to all spell damage rolls."
     },
     "system.bonuses.spell.attack": {
-      "name": "",
+      "name": "(DAE) Spell Attack Bonus",
       "description": "Bonus to all spell attack rolls."
     },
     "system.bonuses.spell.damage": {
-      "name": "",
+      "name": "(DAE) Spell Attack Damage Bonus",
       "description": "Bonus to all Attack-activity spell damage rolls."
     },
     "system.bonuses.spell.dc": {
-      "name": "",
+      "name": "Spell DC Bonus",
       "description": "Bonus to spell save DC."
     },
-    "system.bonuses.util.damage": {
-      "name": "",
-      "description": ""
-    },
     "system.bonuses.weapon.attack": {
-      "name": "",
+      "name": "(DAE) Weapon Attack Bonus",
       "description": "Bonus to all weapon attack rolls."
     },
     "system.bonuses.weapon.damage": {
-      "name": "",
+      "name": "(DAE) Weapon Attack Damage Bonus",
       "description": "Bonus to all Attack-activity weapon damage rolls."
     }
   },
   "dae.SystemTraits.fieldData": {
     "system.traits.armorProf.all": {
-      "name": "All Armor Proficiency",
-      "description": ""
+      "name": "(DAE) All Armor Proficiency",
+      "description": "Having this key at all grants armor proficiency with all armors."
     },
     "system.traits.armorProf.custom": {
       "name": "Custom Armor Proficiency",
-      "description": ""
+      "description": "Accepts semicolon-separated values."
     },
     "system.traits.armorProf.value": {
-      "name": "Armor Proficiency Value",
-      "description": ""
+      "name": "Individual Armor Proficiency",
+      "description": "Use mode Add and choose armor proficiency to add. -proficiency removes it."
     },
     "system.traits.ci.all": {
-      "name": "Immune to all conditions",
-      "description": "Immune to all conditions."
+      "name": "(DAE) All Condition Immunity",
+      "description": "Having this key at all grants immunity to all conditions."
     },
     "system.traits.ci.custom": {
       "name": "Custom Condition Immunity",
-      "description": ""
+      "description": "Accepts semicolon-separated values."
     },
     "system.traits.ci.value": {
       "name": "Individual Condition Immunity",
       "description": "Use mode Add and choose condition immunity to add. -condition removes it."
     },
     "system.traits.da.all": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) All Damage Absorption",
+      "description": "Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
     },
     "system.traits.da.custom": {
-      "name": "",
+      "name": "(Midi) Custom Damage Absorption",
+      "description": "Accepts semicolon-separated values."
+    },
+    "system.traits.da.amount.acid": {
+      "name": "(Midi) Damage Absorption (Acid)",
+      "description": "Damage Absorption for Acid damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.bludgeoning": {
+      "name": "(Midi) Damage Absorption (Bludgeoning)",
+      "description": "Damage Absorption for Bludgeoning damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.cold": {
+      "name": "(Midi) Damage Absorption (Cold)",
+      "description": "Damage Absorption for Cold damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.fire": {
+      "name": "(Midi) Damage Absorption (Fire)",
+      "description": "Damage Absorption for Fire damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.force": {
+      "name": "(Midi) Damage Absorption (Force)",
+      "description": "Damage Absorption for Force damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.healing": {
+      "name": "(Midi) Damage Absorption (Healing)",
+      "description": "Damage Absorption for Healing. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.lightning": {
+      "name": "(Midi) Damage Absorption (Lightning)",
+      "description": "Damage Absorption for Lightning damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.midi-none": {
+      "name": "(Midi) Damage Absorption (Midi-None)",
       "description": ""
     },
-    "system.traits.da.value": {
-      "name": "",
+    "system.traits.da.amount.necrotic": {
+      "name": "(Midi) Damage Absorption (Necrotic)",
+      "description": "Damage Absorption for Necrotic damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.none": {
+      "name": "(Midi) Damage Absorption (None)",
       "description": ""
     },
-    "system.traits.damageTypes.custom": {
-      "name": "",
-      "description": ""
+    "system.traits.da.amount.piercing": {
+      "name": "(Midi) Damage Absorption (Piercing)",
+      "description": "Damage Absorption for Piercing damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
     },
-    "system.traits.damageTypes.value": {
-      "name": "",
-      "description": ""
+    "system.traits.da.amount.poison": {
+      "name": "(Midi) Damage Absorption (Poison)",
+      "description": "Damage Absorption for Poison damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.psychic": {
+      "name": "(Midi) Damage Absorption (Psychic)",
+      "description": "Damage Absorption for Psychic damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.radiant": {
+      "name": "(Midi) Damage Absorption (Radiant)",
+      "description": "Damage Absorption for Radiant damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.slashing": {
+      "name": "(Midi) Damage Absorption (Slashing)",
+      "description": "Damage Absorption for Slashing damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.temphp": {
+      "name": "(Midi) Damage Absorption (TempHP)",
+      "description": "Damage Absorption for TempHP healing. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.amount.thunder": {
+      "name": "(Midi) Damage Absorption (Thunder)",
+      "description": "Damage Absorption for Thunder damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.bypasses": {
+      "name": "(Midi) Damage Absorption Bypasses",
+      "description": "Item/weapon properties which bypass Damage Absorption."
+    },
+    "system.traits.da.midi.all": {
+      "name": "(Midi) Damage Absorption (All)",
+      "description": "Damage Absorption for all damage types. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.heal": {
+      "name": "(Midi) Damage Absorption (Heal Activities)",
+      "description": "Damage Absorption for Heal activities. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.magical": {
+      "name": "(Midi) Damage Absorption (Magical)",
+      "description": "Damage Absorption for Magical damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.msak": {
+      "name": "(Midi) Damage Absorption (msak)",
+      "description": "Damage Absorption for melee spell attacks. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.mwak": {
+      "name": "(Midi) Damage Absorption (mwak)",
+      "description": "Damage Absorption for melee weapon attacks. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.non-adamant-physical": {
+      "name": "(Midi) Damage Absorption (Non-Adamant Physical)",
+      "description": "Damage Absorption for Non-Adamant Physical damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.non-magical": {
+      "name": "(Midi) Damage Absorption (Non-Magical)",
+      "description": "Damage Absorption for Non-Magical damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.non-magical-physical": {
+      "name": "(Midi) Damage Absorption (Non-Magical Physical)",
+      "description": "Damage Absorption for Non-Magical Physical damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.non-physical": {
+      "name": "(Midi) Damage Absorption (Non-Physical)",
+      "description": "Damage Absorption for Non-Physical damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.non-silver-physical": {
+      "name": "(Midi) Damage Absorption (Non-Silver Physical)",
+      "description": "Damage Absorption for Non-Silver Physical damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.non-spell": {
+      "name": "(Midi) Damage Absorption (Non-Spell)",
+      "description": "Damage Absorption for Non-Spell damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.physical": {
+      "name": "(Midi) Damage Absorption (Physical)",
+      "description": "Damage Absorption for Physical damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.rsak": {
+      "name": "(Midi) Damage Absorption (rsak)",
+      "description": "Damage Absorption for ranged spell attacks. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.rwak": {
+      "name": "(Midi) Damage Absorption (rwak)",
+      "description": "Damage Absorption for ranged weapon attacks. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    },
+    "system.traits.da.midi.save": {
+      "name": "(Midi) Damage Absorption (Save Activities)",
+      "description": "Damage Absorption for Save activities. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
     },
     "system.traits.di.all": {
-      "name": "",
-      "description": "Immune to all damage types."
+      "name": "(DAE) All Damage Immunity",
+      "description": "Having this key at all grants immunity to all damage types."
     },
     "system.traits.di.bypasses": {
-      "name": "",
+      "name": "Damage Immunity Bypasses",
       "description": "Item/weapon properties which bypass damage immunity."
     },
     "system.traits.di.custom": {
-      "name": "",
-      "description": ""
+      "name": "Custom Damage Immunity",
+      "description": "Accepts semicolon-separated values."
     },
     "system.traits.di.value": {
-      "name": "",
-      "description": "Use mode Add and choose type immunity to add. -type removes it."
+      "name": "Individual Damage Immunity",
+      "description": "Use mode Add and choose type damage immunity to add. -type removes it."
     },
     "system.traits.dm.amount.acid": {
-      "name": "",
+      "name": "Damage Modification (Acid)",
       "description": "Damage Modification for Acid damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.bludgeoning": {
-      "name": "",
+      "name": "Damage Modification (Bludgeoning)",
       "description": "Damage Modification for Bludgeoning damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.cold": {
-      "name": "",
+      "name": "Damage Modification (Cold)",
       "description": "Damage Modification for Cold damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.fire": {
-      "name": "",
+      "name": "Damage Modification (Fire)",
       "description": "Damage Modification for Fire damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.force": {
-      "name": "",
+      "name": "Damage Modification (Force)",
       "description": "Damage Modification for Force damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.healing": {
-      "name": "",
+      "name": "Damage Modification (Healing)",
       "description": "Damage Modification for Healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.lightning": {
-      "name": "",
+      "name": "Damage Modification (Lightning)",
       "description": "Damage Modification for Lightning damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.midi-none": {
-      "name": "",
+      "name": "Damage Modification (Midi-None)",
       "description": ""
     },
     "system.traits.dm.amount.necrotic": {
-      "name": "",
+      "name": "Damage Modification (Necrotic)",
       "description": "Damage Modification for Necrotic damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.none": {
-      "name": "",
+      "name": "Damage Modification (None)",
       "description": ""
     },
     "system.traits.dm.amount.piercing": {
-      "name": "",
+      "name": "Damage Modification (Piercing)",
       "description": "Damage Modification for Piercing damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.poison": {
-      "name": "",
+      "name": "Damage Modification (Poison)",
       "description": "Damage Modification for Poison damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.psychic": {
-      "name": "",
+      "name": "Damage Modification (Psychic)",
       "description": "Damage Modification for Psychic damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.radiant": {
-      "name": "",
+      "name": "Damage Modification (Radiant)",
       "description": "Damage Modification for Radiant damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.slashing": {
-      "name": "",
+      "name": "Damage Modification (Slashing)",
       "description": "Damage Modification for Slashing damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.temphp": {
-      "name": "",
-      "description": "Damage Modification for Temphp healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+      "name": "Damage Modification (TempHP)",
+      "description": "Damage Modification for TempHP healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.amount.thunder": {
-      "name": "",
+      "name": "Damage Modification (Thunder)",
       "description": "Damage Modification for Thunder damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.bypasses": {
-      "name": "",
+      "name": "Damage Modification Bypasses",
       "description": "Item/weapon properties which bypass damage modification."
     },
-    "system.traits.dm.midi.abil": {
-      "name": "",
-      "description": ""
-    },
     "system.traits.dm.midi.all": {
-      "name": "",
+      "name": "(Midi) Damage Modification (All)",
       "description": "Damage Modification for all damage types. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
-    "system.traits.dm.midi.ench": {
-      "name": "",
-      "description": ""
-    },
     "system.traits.dm.midi.heal": {
-      "name": "",
+      "name": "(Midi) Damage Modification (Heal Activities)",
       "description": "Damage Modification for Heal activities. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
+    "system.traits.dm.midi.magical": {
+      "name": "(Midi) Damage Modification (Magical)",
+      "description": "Damage Modification for Magical damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
     "system.traits.dm.midi.msak": {
-      "name": "",
+      "name": "(Midi) Damage Modification (msak)",
       "description": "Damage Modification for melee spell attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.midi.mwak": {
-      "name": "",
+      "name": "(Midi) Damage Modification (mwak)",
       "description": "Damage Modification for melee weapon attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
-    "system.traits.dm.midi.other": {
-      "name": "",
-      "description": ""
+    "system.traits.dm.midi.non-adamant-physical": {
+      "name": "(Midi) Damage Modification (Non-Adamant Physical)",
+      "description": "Damage Modification for Non-Adamant Physical damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.non-magical": {
+      "name": "(Midi) Damage Modification (Non-Magical)",
+      "description": "Damage Modification for Non-Magical damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.non-magical-physical": {
+      "name": "(Midi) Damage Modification (Non-Magical Physical)",
+      "description": "Damage Modification for Non-Magical Physical damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.non-physical": {
+      "name": "(Midi) Damage Modification (Non-Physical)",
+      "description": "Damage Modification for Non-Physical damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.non-silver-physical": {
+      "name": "(Midi) Damage Modification (Non-Silver Physical)",
+      "description": "Damage Modification for Non-Silver Physical damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.non-spell": {
+      "name": "(Midi) Damage Modification (Non-Spell)",
+      "description": "Damage Modification for Non-Spell damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    },
+    "system.traits.dm.midi.physical": {
+      "name": "(Midi) Damage Modification (Physical)",
+      "description": "Damage Modification for Physical damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.midi.rsak": {
-      "name": "",
+      "name": "(Midi) Damage Modification (rsak)",
       "description": "Damage Modification for ranged spell attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.midi.rwak": {
-      "name": "",
+      "name": "(Midi) Damage Modification (rwak)",
       "description": "Damage Modification for ranged weapon attacks. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.midi.save": {
-      "name": "",
+      "name": "(Midi) Damage Modification (Save Activities)",
       "description": "Damage Modification for Save activities. Positive numbers mean additional damage taken, negative mean reduced damage taken"
     },
-    "system.traits.dm.midi.summ": {
-      "name": "",
-      "description": ""
-    },
-    "system.traits.dm.midi.util": {
-      "name": "",
-      "description": ""
-    },
     "system.traits.dr.all": {
-      "name": "",
-      "description": "Damage Resistance to all damage types."
+      "name": "(DAE) All Damage Resistance",
+      "description": "Having this key at all grants resistance to all damage types."
     },
     "system.traits.dr.bypasses": {
-      "name": "",
+      "name": "Damage Resistance Bypasses",
       "description": "Item/weapon properties which bypass damage reduction."
     },
     "system.traits.dr.custom": {
-      "name": "",
-      "description": ""
+      "name": "Custom Damage Resistance",
+      "description": "Accepts semicolon-separated values."
     },
     "system.traits.dr.value": {
-      "name": "",
-      "description": "Use mode Add and choose type reduction to add. -type removes it."
+      "name": "Individual Damage Resistance",
+      "description": "Use mode Add and choose damage type reduction to add. -type removes it."
     },
     "system.traits.dv.all": {
-      "name": "",
-      "description": "Damage Vulnerability to all damage types."
+      "name": "(DAE) All Damage Vulnerability",
+      "description": "Having this key at all grants vulnerability to all damage types."
     },
     "system.traits.dv.bypasses": {
-      "name": "",
+      "name": "Damage Vulnerability Bypasses",
       "description": "Item/weapon properties which bypass damage vulnerability."
     },
     "system.traits.dv.custom": {
-      "name": "",
-      "description": ""
+      "name": "Custom Damage Vulnerability",
+      "description": "Accepts semicolon-separated values."
     },
     "system.traits.dv.value": {
-      "name": "",
-      "description": "Use mode Add and choose type vulnerability to add. -type removes it."
+      "name": "Individual Damage Vulnerability",
+      "description": "Use mode Add and choose damage type vulnerability to add. -type removes it."
     },
     "system.traits.languages.all": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) All Languages",
+      "description": "Having this key at all grants all languages."
     },
     "system.traits.languages.custom": {
-      "name": "",
-      "description": ""
+      "name": "Custom Languages",
+      "description": "Accepts semicolon-separated values."
     },
     "system.traits.languages.value": {
-      "name": "",
-      "description": ""
+      "name": "Individual Languages",
+      "description": "Use mode Add and choose language to add."
     },
     "system.traits.size": {
-      "name": "",
+      "name": "Actor Size",
       "description": ""
     },
     "system.traits.weaponProf.all": {
-      "name": "All Weapon Proficiency",
-      "description": ""
+      "name": "(DAE) All Weapon Proficiency",
+      "description": "Having this key at all grants weapon proficiency with all armors."
     },
     "system.traits.weaponProf.custom": {
       "name": "Custom Weapon Proficiency",
-      "description": ""
+      "description": "Accepts semicolon-separated values."
     },
     "system.traits.weaponProf.value": {
-      "name": "Weapon Proficiency Value",
-      "description": ""
+      "name": "Individual Weapon Proficiency",
+      "description": "Use mode Add and choose weapon proficiency to add. -proficiency removes it."
     }
   },
   "dae.Other.fieldData": {
@@ -1846,12 +2062,12 @@
       "description": ""
     },
     "flags.dae.onUpdateSource": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) On Update Source",
+      "description": "See DAE readme for details."
     },
     "flags.dae.onUpdateTarget": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) On Update Target",
+      "description": "See DAE readme for details."
     },
     "system.favorites": {
       "name": "Favorites",
@@ -1886,71 +2102,71 @@
       "description": ""
     },
     "system.attributes.hd.spent": {
-      "name": "",
-      "description": ""
+      "name": "Hit Dice Spent",
+      "description": "Not particularly useful to modify via an active effect."
     },
     "system.attributes.hp.formula": {
-      "name": "",
+      "name": "HP Formula",
       "description": ""
     },
     "system.details.cr": {
-      "name": "",
+      "name": "Challenge Rating",
       "description": ""
     },
     "system.details.environment": {
-      "name": "",
+      "name": "Environment",
       "description": ""
     },
     "system.details.source.book": {
-      "name": "",
+      "name": "Source Book",
       "description": ""
     },
     "system.details.source.custom": {
-      "name": "",
+      "name": "Source Custom Label",
       "description": ""
     },
     "system.details.source.license": {
-      "name": "",
+      "name": "Source License",
       "description": ""
     },
     "system.details.source.page": {
-      "name": "",
+      "name": "Source Page",
       "description": ""
     },
-    "system.details.spellLevel": {
-      "name": "",
+    "system.attributes.spell.level": {
+      "name": "Spell Level",
       "description": ""
     },
     "system.details.type.custom": {
-      "name": "",
+      "name": "Custom Type",
       "description": ""
     },
     "system.details.type.subtype": {
-      "name": "",
+      "name": "Subtype",
       "description": ""
     },
     "system.details.type.swarm": {
-      "name": "",
+      "name": "Swarm Size",
       "description": ""
     },
     "system.details.type.value": {
-      "name": "",
+      "name": "Type",
       "description": ""
     },
     "system.resources.lair.initiative": {
-      "name": "",
+      "name": "Lair Action",
       "description": ""
     },
     "system.resources.lair.value": {
-      "name": "",
+      "name": "Has Lair",
       "description": ""
     },
     "system.resources.legact.value": {
-      "name": "",
+      "name": "Legendary Actions",
       "description": ""
     },
     "system.resources.legres.value": {
-      "name": "",
+      "name": "Legendary Resistances",
       "description": ""
     },
     "system.attributes.ac.motionless": {
@@ -2010,31 +2226,31 @@
       "description": ""
     },
     "system.currency.cp": {
-      "name": "",
-      "description": ""
+      "name": "CP",
+      "description": "Do not use this, it will update every time the actor does."
     },
     "system.currency.ep": {
-      "name": "",
-      "description": ""
+      "name": "EP",
+      "description": "Do not use this, it will update every time the actor does."
     },
     "system.currency.gp": {
-      "name": "",
-      "description": ""
+      "name": "GP",
+      "description": "Do not use this, it will update every time the actor does."
     },
     "system.currency.pp": {
-      "name": "",
-      "description": ""
+      "name": "PP",
+      "description": "Do not use this, it will update every time the actor does."
     },
     "system.currency.sp": {
-      "name": "",
-      "description": ""
+      "name": "SP",
+      "description": "Do not use this, it will update every time the actor does."
     },
     "system.details.age": {
       "name": "Age",
       "description": ""
     },
     "system.details.alignment": {
-      "name": "",
+      "name": "Alignment",
       "description": ""
     },
     "system.details.appearance": {
@@ -2046,15 +2262,15 @@
       "description": ""
     },
     "system.details.biography.public": {
-      "name": "",
+      "name": "Biography (Public)",
       "description": ""
     },
     "system.details.biography.value": {
-      "name": "",
+      "name": "Biography (Full)",
       "description": ""
     },
     "system.details.bond": {
-      "name": "",
+      "name": "Bond",
       "description": ""
     },
     "system.details.eyes": {
@@ -2066,7 +2282,7 @@
       "description": ""
     },
     "system.details.flaw": {
-      "name": "",
+      "name": "Flaw",
       "description": ""
     },
     "system.details.gender": {
@@ -2082,19 +2298,19 @@
       "description": ""
     },
     "system.details.ideal": {
-      "name": "",
+      "name": "Ideal",
       "description": ""
     },
     "system.details.level": {
-      "name": "",
-      "description": ""
+      "name": "Level",
+      "description": "This changes only the appearance on the character sheet and letting you increase level beyond 20. All other level-based properties (such as proficiency) are already derived."
     },
     "system.details.originalClass": {
       "name": "Original Class",
       "description": ""
     },
     "system.details.race": {
-      "name": "",
+      "name": "Race/Species",
       "description": ""
     },
     "system.details.skin": {
@@ -2114,635 +2330,635 @@
       "description": ""
     },
     "system.resources.legact.max": {
-      "name": "",
+      "name": "Maximum Legendary Actions",
       "description": ""
     },
     "system.resources.legres.max": {
-      "name": "",
+      "name": "Maximum Legendary Resistances",
       "description": ""
     },
     "system.resources.primary.label": {
-      "name": "",
-      "description": ""
+      "name": "Primary Resource Label",
+      "description": "Note: Resources are long deprecated."
     },
     "system.resources.primary.lr": {
       "name": "Primary Resource Long Rest",
-      "description": "Recover on Long Rest (1/0)"
+      "description": "Note: Resources are long deprecated. Recover on Long Rest (1/0)."
     },
     "system.resources.primary.max": {
-      "name": "",
-      "description": ""
+      "name": "Primary Resource Max",
+      "description": "Note: Resources are long deprecated."
     },
     "system.resources.primary.sr": {
       "name": "Primary Resource Short Rest",
-      "description": "Recover on Short Rest (1/0)"
+      "description": "Note: Resources are long deprecated. Recover on Short Rest (1/0)."
     },
     "system.resources.primary.value": {
       "name": "Primary Resource Value",
-      "description": "Should not set this via an active effect"
+      "description": "Note: Resources are long deprecated. Should not set this via an active effect."
     },
     "system.resources.secondary.label": {
-      "name": "",
-      "description": ""
+      "name": "Secondary Resource Label",
+      "description": "Note: Resources are long deprecated."
     },
     "system.resources.secondary.lr": {
       "name": "Secondary Resource Long Rest",
-      "description": "Recover on Long Rest (1/0)"
+      "description": "Note: Resources are long deprecated. Recover on Long Rest (1/0)."
     },
     "system.resources.secondary.max": {
-      "name": "",
-      "description": ""
+      "name": "Secondary Resource Max",
+      "description": "Note: Resources are long deprecated."
     },
     "system.resources.secondary.sr": {
       "name": "Secondary Resource Short Rest",
-      "description": "Recover on Short Rest (1/0)"
+      "description": "Note: Resources are long deprecated. Recover on Short Rest (1/0)."
     },
     "system.resources.secondary.value": {
       "name": "Secondary Resource Value",
-      "description": "Should not set this via an active effect"
+      "description": "Note: Resources are long deprecated. Should not set this via an active effect."
     },
     "system.resources.tertiary.label": {
-      "name": "",
-      "description": ""
+      "name": "Tertiary Resource Label",
+      "description": "Note: Resources are long deprecated."
     },
     "system.resources.tertiary.lr": {
       "name": "Tertiary Resource Long Rest",
-      "description": "Recover on Long Rest (1/0)"
+      "description": "Note: Resources are long deprecated. Recover on Long Rest (1/0)."
     },
     "system.resources.tertiary.max": {
-      "name": "",
-      "description": ""
+      "name": "Tertiary Resource Max",
+      "description": "Note: Resources are long deprecated."
     },
     "system.resources.tertiary.sr": {
       "name": "Tertiary Resource Short Rest",
-      "description": "Recover on Short Rest (1/0)"
+      "description": "Note: Resources are long deprecated. Recover on Short Rest (1/0)."
     },
     "system.resources.tertiary.value": {
       "name": "Tertiary Resource Value",
-      "description": "Should not set this via an active effect"
+      "description": "Note: Resources are long deprecated. Should not set this via an active effect."
     },
     "system.spells.pact.level": {
-      "name": "",
+      "name": "Pact Spell Level",
       "description": ""
     },
     "system.spells.pact.max": {
-      "name": "",
+      "name": "Max Pact Slots",
       "description": ""
     },
     "system.spells.pact.override": {
-      "name": "",
+      "name": "Override Pact Slots",
       "description": ""
     },
     "system.spells.spell1.max": {
-      "name": "",
+      "name": "Max Level 1 Spell Slots",
       "description": ""
     },
     "system.spells.spell1.override": {
-      "name": "",
+      "name": "Override Level 1 Spell Slots",
       "description": ""
     },
     "system.spells.spell2.max": {
-      "name": "",
+      "name": "Max Level 2 Spell Slots",
       "description": ""
     },
     "system.spells.spell2.override": {
-      "name": "",
+      "name": "Override Level 2 Spell Slots",
       "description": ""
     },
     "system.spells.spell3.max": {
-      "name": "",
+      "name": "Max Level 3 Spell Slots",
       "description": ""
     },
     "system.spells.spell3.override": {
-      "name": "",
+      "name": "Override Level 3 Spell Slots",
       "description": ""
     },
     "system.spells.spell4.max": {
-      "name": "",
+      "name": "Max Level 4 Spell Slots",
       "description": ""
     },
     "system.spells.spell4.override": {
-      "name": "",
+      "name": "Override Level 4 Spell Slots",
       "description": ""
     },
     "system.spells.spell5.max": {
-      "name": "",
+      "name": "Max Level 5 Spell Slots",
       "description": ""
     },
     "system.spells.spell5.override": {
-      "name": "",
+      "name": "Override Level 5 Spell Slots",
       "description": ""
     },
     "system.spells.spell6.max": {
-      "name": "",
+      "name": "Max Level 6 Spell Slots",
       "description": ""
     },
     "system.spells.spell6.override": {
-      "name": "",
+      "name": "Override Level 6 Spell Slots",
       "description": ""
     },
     "system.spells.spell7.max": {
-      "name": "",
+      "name": "Max Level 7 Spell Slots",
       "description": ""
     },
     "system.spells.spell7.override": {
-      "name": "",
+      "name": "Override Level 7 Spell Slots",
       "description": ""
     },
     "system.spells.spell8.max": {
-      "name": "",
+      "name": "Max Level 8 Spell Slots",
       "description": ""
     },
     "system.spells.spell8.override": {
-      "name": "",
+      "name": "Override Level 8 Spell Slots",
       "description": ""
     },
     "system.spells.spell9.max": {
-      "name": "",
+      "name": "Max Level 9 Spell Slots",
       "description": ""
     },
     "system.spells.spell9.override": {
-      "name": "",
+      "name": "Override Level 9 Spell Slots",
       "description": ""
     },
     "system.tools.alchemist.ability": {
-      "name": "",
-      "description": ""
+      "name": "Alchemist's Supplies Ability",
+      "description": "Which ability to use for Alchemist's Supplies checks."
     },
     "system.tools.alchemist.bonuses.check": {
-      "name": "",
+      "name": "Alchemist's Supplies Check Bonus",
       "description": ""
     },
     "system.tools.alchemist.prof": {
-      "name": "",
+      "name": "Alchemist's Supplies Proficiency",
       "description": ""
     },
     "system.tools.art.ability": {
-      "name": "",
-      "description": ""
+      "name": "Artisan's Tools Ability",
+      "description": "Which ability to use for Artisan's Tools checks."
     },
     "system.tools.art.bonuses.check": {
-      "name": "",
+      "name": "Artisan's Tools Check Bonus",
       "description": ""
     },
     "system.tools.art.prof": {
-      "name": "",
+      "name": "Artisan's Tools Proficiency",
       "description": ""
     },
     "system.tools.bagpipes.ability": {
-      "name": "",
-      "description": ""
+      "name": "Bagpipes Ability",
+      "description": "Which ability to use for Bagpipes checks."
     },
     "system.tools.bagpipes.bonuses.check": {
-      "name": "",
+      "name": "Bagpipes Check Bonus",
       "description": ""
     },
     "system.tools.bagpipes.prof": {
-      "name": "",
+      "name": "Bagpipes Proficiency",
       "description": ""
     },
     "system.tools.brewer.ability": {
-      "name": "",
-      "description": ""
+      "name": "Brewer's Supplies Ability",
+      "description": "Which ability to use for Brewer's Supplies checks."
     },
     "system.tools.brewer.bonuses.check": {
-      "name": "",
+      "name": "Brewer's Supplies Check Bonus",
       "description": ""
     },
     "system.tools.brewer.prof": {
-      "name": "",
+      "name": "Brewer's Supplies Proficiency",
       "description": ""
     },
     "system.tools.calligrapher.ability": {
-      "name": "",
-      "description": ""
+      "name": "Calligrapher's Supplies Ability",
+      "description": "Which ability to use for Calligrapher's Supplies checks."
     },
     "system.tools.calligrapher.bonuses.check": {
-      "name": "",
+      "name": "Calligrapher's Supplies Check Bonus",
       "description": ""
     },
     "system.tools.calligrapher.prof": {
-      "name": "",
+      "name": "Calligrapher's Supplies Proficiency",
       "description": ""
     },
     "system.tools.card.ability": {
-      "name": "",
-      "description": ""
+      "name": "Playing Cards Ability",
+      "description": "Which ability to use for Playing Cards checks."
     },
     "system.tools.card.bonuses.check": {
-      "name": "",
+      "name": "Playing Cards Check Bonus",
       "description": ""
     },
     "system.tools.card.prof": {
-      "name": "",
+      "name": "Playing Cards Proficiency",
       "description": ""
     },
     "system.tools.carpenter.ability": {
-      "name": "",
-      "description": ""
+      "name": "Carpenter's Tools Ability",
+      "description": "Which ability to use for Carpenter's Tools checks."
     },
     "system.tools.carpenter.bonuses.check": {
-      "name": "",
+      "name": "Carpenter's Tools Check Bonus",
       "description": ""
     },
     "system.tools.carpenter.prof": {
-      "name": "",
+      "name": "Carpenter's Tools Proficiency",
       "description": ""
     },
     "system.tools.cartographer.ability": {
-      "name": "",
-      "description": ""
+      "name": "Cartographer's Tools Ability",
+      "description": "Which ability to use for Cartographer's Tools checks."
     },
     "system.tools.cartographer.bonuses.check": {
-      "name": "",
+      "name": "Cartographer's Tools Check Bonus",
       "description": ""
     },
     "system.tools.cartographer.prof": {
-      "name": "",
+      "name": "Cartographer's Tools Proficiency",
       "description": ""
     },
     "system.tools.chess.ability": {
-      "name": "",
-      "description": ""
+      "name": "Dragonchess Ability",
+      "description": "Which ability to use for Dragonchess checks."
     },
     "system.tools.chess.bonuses.check": {
-      "name": "",
+      "name": "Dragonchess Check Bonus",
       "description": ""
     },
     "system.tools.chess.prof": {
-      "name": "",
+      "name": "Dragonchess Proficiency",
       "description": ""
     },
     "system.tools.cobbler.ability": {
-      "name": "",
-      "description": ""
+      "name": "Cobbler's Tools Ability",
+      "description": "Which ability to use for Cobbler's Tools checks."
     },
     "system.tools.cobbler.bonuses.check": {
-      "name": "",
+      "name": "Cobbler's Tools Check Bonus",
       "description": ""
     },
     "system.tools.cobbler.prof": {
-      "name": "",
+      "name": "Cobbler's Tools Proficiency",
       "description": ""
     },
     "system.tools.cook.ability": {
-      "name": "",
-      "description": ""
+      "name": "Cook's Utensils Ability",
+      "description": "Which ability to use for Cook's Utensils checks."
     },
     "system.tools.cook.bonuses.check": {
-      "name": "",
+      "name": "Cook's Utensils Check Bonus",
       "description": ""
     },
     "system.tools.cook.prof": {
-      "name": "",
+      "name": "Cook's Utensils Proficiency",
       "description": ""
     },
     "system.tools.dice.ability": {
-      "name": "",
-      "description": ""
+      "name": "Dice Ability",
+      "description": "Which ability to use for Dice checks."
     },
     "system.tools.dice.bonuses.check": {
-      "name": "",
+      "name": "Dice Check Bonus",
       "description": ""
     },
     "system.tools.dice.prof": {
-      "name": "",
+      "name": "Dice Proficiency",
       "description": ""
     },
     "system.tools.disg.ability": {
-      "name": "",
-      "description": ""
+      "name": "Disguise Kit Ability",
+      "description": "Which ability to use for Disguise Kit checks."
     },
     "system.tools.disg.bonuses.check": {
-      "name": "",
+      "name": "Disguise Kit Check Bonus",
       "description": ""
     },
     "system.tools.disg.prof": {
-      "name": "",
+      "name": "Disguise Kit Proficiency",
       "description": ""
     },
     "system.tools.drum.ability": {
-      "name": "",
-      "description": ""
+      "name": "Drum Ability",
+      "description": "Which ability to use for Drum checks."
     },
     "system.tools.drum.bonuses.check": {
-      "name": "",
+      "name": "Drum Check Bonus",
       "description": ""
     },
     "system.tools.drum.prof": {
-      "name": "",
+      "name": "Drum Proficiency",
       "description": ""
     },
     "system.tools.dulcimer.ability": {
-      "name": "",
-      "description": ""
+      "name": "Dulcimer Ability",
+      "description": "Which ability to use for Dulcimer checks."
     },
     "system.tools.dulcimer.bonuses.check": {
-      "name": "",
+      "name": "Dulcimer Check Bonus",
       "description": ""
     },
     "system.tools.dulcimer.prof": {
-      "name": "",
+      "name": "Dulcimer Proficiency",
       "description": ""
     },
     "system.tools.flute.ability": {
-      "name": "",
-      "description": ""
+      "name": "Flute Ability",
+      "description": "Which ability to use for Flute checks."
     },
     "system.tools.flute.bonuses.check": {
-      "name": "",
+      "name": "Flute Check Bonus",
       "description": ""
     },
     "system.tools.flute.prof": {
-      "name": "",
+      "name": "Flute Proficiency",
       "description": ""
     },
     "system.tools.forg.ability": {
-      "name": "",
-      "description": ""
+      "name": "Forgery Kit Ability",
+      "description": "Which ability to use for Forgery Kit checks."
     },
     "system.tools.forg.bonuses.check": {
-      "name": "",
+      "name": "Forgery Kit Check Bonus",
       "description": ""
     },
     "system.tools.forg.prof": {
-      "name": "",
+      "name": "Forgery Kit Proficiency",
       "description": ""
     },
     "system.tools.game.ability": {
-      "name": "",
-      "description": ""
+      "name": "Gaming Set Ability",
+      "description": "Which ability to use for Gaming Set checks."
     },
     "system.tools.game.bonuses.check": {
-      "name": "",
+      "name": "Gaming Set Check Bonus",
       "description": ""
     },
     "system.tools.game.prof": {
-      "name": "",
+      "name": "Gaming Set Proficiency",
       "description": ""
     },
     "system.tools.glassblower.ability": {
-      "name": "",
-      "description": ""
+      "name": "Glassblower's Tools Ability",
+      "description": "Which ability to use for Glassblower's Tools checks."
     },
     "system.tools.glassblower.bonuses.check": {
-      "name": "",
+      "name": "Glassblower's Tools Check Bonus",
       "description": ""
     },
     "system.tools.glassblower.prof": {
-      "name": "",
+      "name": "Glassblower's Tools Proficiency",
       "description": ""
     },
     "system.tools.herb.ability": {
-      "name": "",
-      "description": ""
+      "name": "Herbalism Kit Ability",
+      "description": "Which ability to use for Herbalism Kit checks."
     },
     "system.tools.herb.bonuses.check": {
-      "name": "",
+      "name": "Herbalism Kit Check Bonus",
       "description": ""
     },
     "system.tools.herb.prof": {
-      "name": "",
+      "name": "Herbalism Kit Proficiency",
       "description": ""
     },
     "system.tools.horn.ability": {
-      "name": "",
-      "description": ""
+      "name": "Horn Ability",
+      "description": "Which ability to use for Horn checks."
     },
     "system.tools.horn.bonuses.check": {
-      "name": "",
+      "name": "Horn Check Bonus",
       "description": ""
     },
     "system.tools.horn.prof": {
-      "name": "",
+      "name": "Horn Proficiency",
       "description": ""
     },
     "system.tools.jeweler.ability": {
-      "name": "",
-      "description": ""
+      "name": "Jeweler's Tools Ability",
+      "description": "Which ability to use for Jeweler's Tools checks."
     },
     "system.tools.jeweler.bonuses.check": {
-      "name": "",
+      "name": "Jeweler's Tools Check Bonus",
       "description": ""
     },
     "system.tools.jeweler.prof": {
-      "name": "",
+      "name": "Jeweler's Tools Proficiency",
       "description": ""
     },
     "system.tools.leatherworker.ability": {
-      "name": "",
-      "description": ""
+      "name": "Leatherworker's Tools Ability",
+      "description": "Which ability to use for Leatherworker's Tools checks."
     },
     "system.tools.leatherworker.bonuses.check": {
-      "name": "",
+      "name": "Leatherworker's Tools Check Bonus",
       "description": ""
     },
     "system.tools.leatherworker.prof": {
-      "name": "",
+      "name": "Leatherworker's Tools Proficiency",
       "description": ""
     },
     "system.tools.lute.ability": {
-      "name": "",
-      "description": ""
+      "name": "Lute Ability",
+      "description": "Which ability to use for Lute checks."
     },
     "system.tools.lute.bonuses.check": {
-      "name": "",
+      "name": "Lute Check Bonus",
       "description": ""
     },
     "system.tools.lute.prof": {
-      "name": "",
+      "name": "Lute Proficiency",
       "description": ""
     },
     "system.tools.lyre.ability": {
-      "name": "",
-      "description": ""
+      "name": "Lyre Ability",
+      "description": "Which ability to use for Lyre checks."
     },
     "system.tools.lyre.bonuses.check": {
-      "name": "",
+      "name": "Lyre Check Bonus",
       "description": ""
     },
     "system.tools.lyre.prof": {
-      "name": "",
+      "name": "Lyre Proficiency",
       "description": ""
     },
     "system.tools.mason.ability": {
-      "name": "",
-      "description": ""
+      "name": "Mason's Tools Ability",
+      "description": "Which ability to use for Mason's Tools checks."
     },
     "system.tools.mason.bonuses.check": {
-      "name": "",
+      "name": "Mason's Tools Check Bonus",
       "description": ""
     },
     "system.tools.mason.prof": {
-      "name": "",
+      "name": "Mason's Tools Proficiency",
       "description": ""
     },
     "system.tools.music.ability": {
-      "name": "",
-      "description": ""
+      "name": "Musical Instrument Ability",
+      "description": "Which ability to use for Musical Instrument checks."
     },
     "system.tools.music.bonuses.check": {
-      "name": "",
+      "name": "Musical Instrument Check Bonus",
       "description": ""
     },
     "system.tools.music.prof": {
-      "name": "",
+      "name": "Musical Instrument Proficiency",
       "description": ""
     },
     "system.tools.navg.ability": {
-      "name": "",
-      "description": ""
+      "name": "Navigator's Tools Ability",
+      "description": "Which ability to use for Navigator's Tools checks."
     },
     "system.tools.navg.bonuses.check": {
-      "name": "",
+      "name": "Navigator's Tools Check Bonus",
       "description": ""
     },
     "system.tools.navg.prof": {
-      "name": "",
+      "name": "Navigator's Tools Proficiency",
       "description": ""
     },
     "system.tools.painter.ability": {
-      "name": "",
-      "description": ""
+      "name": "Painter's Supplies Ability",
+      "description": "Which ability to use for Painter's Supplies checks."
     },
     "system.tools.painter.bonuses.check": {
-      "name": "",
+      "name": "Painter's Supplies Check Bonus",
       "description": ""
     },
     "system.tools.painter.prof": {
-      "name": "",
+      "name": "Painter's Supplies Proficiency",
       "description": ""
     },
     "system.tools.panflute.ability": {
-      "name": "",
-      "description": ""
+      "name": "Pan Flute Ability",
+      "description": "Which ability to use for Pan Flute checks."
     },
     "system.tools.panflute.bonuses.check": {
-      "name": "",
+      "name": "Pan Flute Check Bonus",
       "description": ""
     },
     "system.tools.panflute.prof": {
-      "name": "",
+      "name": "Pan Flute Proficiency",
       "description": ""
     },
     "system.tools.pois.ability": {
-      "name": "",
-      "description": ""
+      "name": "Poisoner's Kit Ability",
+      "description": "Which ability to use for Poisoner's Kit checks."
     },
     "system.tools.pois.bonuses.check": {
-      "name": "",
+      "name": "Poisoner's Kit Check Bonus",
       "description": ""
     },
     "system.tools.pois.prof": {
-      "name": "",
+      "name": "Poisoner's Kit Proficiency",
       "description": ""
     },
     "system.tools.potter.ability": {
-      "name": "",
-      "description": ""
+      "name": "Potter's Tools Ability",
+      "description": "Which ability to use for Potter's Tools checks."
     },
     "system.tools.potter.bonuses.check": {
-      "name": "",
+      "name": "Potter's Tools Check Bonus",
       "description": ""
     },
     "system.tools.potter.prof": {
-      "name": "",
+      "name": "Potter's Tools Proficiency",
       "description": ""
     },
     "system.tools.shawm.ability": {
-      "name": "",
-      "description": ""
+      "name": "Shawm Ability",
+      "description": "Which ability to use for Shawm checks."
     },
     "system.tools.shawm.bonuses.check": {
-      "name": "",
+      "name": "Shawm Check Bonus",
       "description": ""
     },
     "system.tools.shawm.prof": {
-      "name": "",
+      "name": "Shawm Proficiency",
       "description": ""
     },
     "system.tools.smith.ability": {
-      "name": "",
-      "description": ""
+      "name": "Smith's Tools Ability",
+      "description": "Which ability to use for Smith's Tools checks."
     },
     "system.tools.smith.bonuses.check": {
-      "name": "",
+      "name": "Smith's Tools Check Bonus",
       "description": ""
     },
     "system.tools.smith.prof": {
-      "name": "",
+      "name": "Smith's Tools Proficiency",
       "description": ""
     },
     "system.tools.thief.ability": {
-      "name": "",
-      "description": ""
+      "name": "Thieves' Tools Ability",
+      "description": "Which ability to use for Thieves' Tools checks."
     },
     "system.tools.thief.bonuses.check": {
-      "name": "",
+      "name": "Thieves' Tools Check Bonus",
       "description": ""
     },
     "system.tools.thief.prof": {
-      "name": "",
+      "name": "Thieves' Tools Proficiency",
       "description": ""
     },
     "system.tools.tinker.ability": {
-      "name": "",
-      "description": ""
+      "name": "Tinker's Tools Ability",
+      "description": "Which ability to use for Tinker's Tools checks."
     },
     "system.tools.tinker.bonuses.check": {
-      "name": "",
+      "name": "Tinker's Tools Check Bonus",
       "description": ""
     },
     "system.tools.tinker.prof": {
-      "name": "",
+      "name": "Tinker's Tools Proficiency",
       "description": ""
     },
     "system.tools.vehicle.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vehicles Ability",
+      "description": "Which ability to use for Vehicles checks."
     },
     "system.tools.vehicle.bonuses.check": {
-      "name": "",
+      "name": "Vehicles Check Bonus",
       "description": ""
     },
     "system.tools.vehicle.prof": {
-      "name": "",
+      "name": "Vehicles Proficiency",
       "description": ""
     },
     "system.tools.viol.ability": {
-      "name": "",
-      "description": ""
+      "name": "Viol Ability",
+      "description": "Which ability to use for Viol checks."
     },
     "system.tools.viol.bonuses.check": {
-      "name": "",
+      "name": "Viol Check Bonus",
       "description": ""
     },
     "system.tools.viol.prof": {
-      "name": "",
+      "name": "Viol Proficiency",
       "description": ""
     },
     "system.tools.weaver.ability": {
-      "name": "",
-      "description": ""
+      "name": "Weaver's Tools Ability",
+      "description": "Which ability to use for Weaver's Tools checks."
     },
     "system.tools.weaver.bonuses.check": {
-      "name": "",
+      "name": "Weaver's Tools Check Bonus",
       "description": ""
     },
     "system.tools.weaver.prof": {
-      "name": "",
+      "name": "Weaver's Tools Proficiency",
       "description": ""
     },
     "system.tools.woodcarver.ability": {
-      "name": "",
-      "description": ""
+      "name": "Woodcarver's Tools Ability",
+      "description": "Which ability to use for Woodcarver's Tools checks."
     },
     "system.tools.woodcarver.bonuses.check": {
-      "name": "",
+      "name": "Woodcarver's Tools Check Bonus",
       "description": ""
     },
     "system.tools.woodcarver.prof": {
-      "name": "",
+      "name": "Woodcarver's Tools Proficiency",
       "description": ""
     }
   }

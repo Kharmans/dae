@@ -155,6 +155,7 @@ declare global {
         choices?: Record<string, string>;
         skills?: string[];
       }>;
+      creatureTypes: Record<string, {label: string}>;
       conditionEffects: Record<string, Set<string>>;
       conditionTypes: Record<string, {
         name: string;
@@ -176,6 +177,7 @@ declare global {
       languages: Record<string, Record<string, unknown>>;
       limitedUsePeriods: Record<string, Record<string, string>>;
       movementTypes: Record<string, string>;
+      movementUnits: Record<string, {label: string}>;
       skills: Record<string, {
         label: string;
         ability: string;

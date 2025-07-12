@@ -1,7 +1,6 @@
 import { AnyMutableObject } from "fvtt-types/utils";
 import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
-import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig.js";
-import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAESetupComplete, DAEReadyComplete, enumerateBaseValues, geti18nOptions, DoEffectsOptions } from "../dae.js";
+import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAEReadyComplete, geti18nOptions, DoEffectsOptions, ceInterface } from "../dae.js";
 
 const { ArrayField, BooleanField, NumberField, StringField } = foundry.data.fields;
 
@@ -89,7 +88,7 @@ export class ValidSpec {
       }
 
       var specials: any = {};
-      specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      if (ceInterface) specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       //specials["StatusEffectLabel"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];

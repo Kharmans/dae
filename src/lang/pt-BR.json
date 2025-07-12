@@ -1236,10 +1236,6 @@
       "name": "Bônus CA (Armadura)",
       "description": "Bônus de CA de armaduras. Geralmente fornecido apenas por Armadura equipada."
     },
-    "system.attributes.ac.base": {
-      "name": "",
-      "description": "Campo derivado obsoleto. NÃO USAR"
-    },
     "system.attributes.ac.bonus": {
       "name": "Bônus CA",
       "description": "Bônus de CA"

@@ -90,7 +90,7 @@ export class DAEFieldBrowser {
 
         // If we have a localization, use it, otherwise use the default field's name, or finally the key itself
         // Logic looks a bit weird because DAE already sets the value of the validFields kvp to its key if missing.
-        const finalName = localizedName !== nameLocalizationPath
+        const finalName = (localizedName !== "") && (localizedName !== nameLocalizationPath)
           ? localizedName
           : (typeof name === "string" && name !== "" && name !== key)
             ? name
@@ -101,7 +101,7 @@ export class DAEFieldBrowser {
           ? localizedDescription
           : '';
 
-        if (daeSystemClass.fieldMappings[key]) finalDescription += ` use ${daeSystemClass.fieldMappings[key]} instead`
+        if (daeSystemClass.fieldMappings[key]) finalDescription += ` deprecated: use ${daeSystemClass.fieldMappings[key]} instead`
         return {
           key,
           name: finalName,

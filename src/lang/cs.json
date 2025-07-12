@@ -1235,10 +1235,6 @@
       "name": "",
       "description": "Bonus k OČ zbroje (obvykle poskytován pouze nošenou zbrojí, bude tedy mít efekt pouze v případě, kdy postava nenosí zbroj)."
     },
-    "system.attributes.ac.base": {
-      "name": "",
-      "description": "Zastaralé odvozené pole - nepoužívat."
-    },
     "system.attributes.ac.bonus": {
       "name": "",
       "description": "Číselný bonus k OČ."
