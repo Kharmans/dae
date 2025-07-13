@@ -1,6 +1,6 @@
+import { AnyMutableObject } from "fvtt-types/utils";
 import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
-import { DAEActiveEffectConfig } from "../apps/DAEActiveEffectConfig.js";
-import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAESetupComplete, DAEReadyComplete, enumerateBaseValues, geti18nOptions, DoEffectsOptions } from "../dae.js";
+import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAEReadyComplete, geti18nOptions, DoEffectsOptions, ceInterface } from "../dae.js";
 
 const { ArrayField, BooleanField, NumberField, StringField } = foundry.data.fields;
 
@@ -26,6 +26,10 @@ export class ValidSpec {
   get label(): string { return this._label }
   set label(label: string) { this._label = label }
 
+  _description: string;
+  get description(): string { return this._description }
+  set description(description: string) { this._description = description }
+
   _forcedMode: number;
   get forcedMode(): number { return this._forcedMode }
   set forcedMode(mode: number) { this._forcedMode = mode }
@@ -34,10 +38,11 @@ export class ValidSpec {
   get options(): any { return this._options }
   set options(options: any) { this._options = options }
 
-  constructor(fs: string, sv: FieldType, forcedMode = -1, label = undefined, options: any = undefined) {
+  constructor(fs: string, sv: FieldType, forcedMode = -1, label?: string, description?: string, options?: any) {
     this._fieldSpec = fs;
     this._fieldType = sv;
     this._label = label ?? fs;
+    this._description = description ?? "";
     this._forcedMode = forcedMode;
     this._options = options;
   }
@@ -88,7 +93,7 @@ export class ValidSpec {
       }
 
       var specials: any = {};
-      specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      if (ceInterface) specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       //specials["StatusEffectLabel"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -116,9 +121,6 @@ export class ValidSpec {
         }
       }
 
-      // TODO reactivate when cond vis is v10 ready
-      // specials["macro.ConditionalVisibility"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-      // specials["macro.ConditionalVisibilityVision"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["flags.dae.onUpdateTarget"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["flags.dae.onUpdateSource"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
@@ -147,8 +149,8 @@ export class ValidSpec {
       })
       this.actorSpecs[specKey].allSpecs = this.actorSpecs[specKey].baseSpecs.concat(this.actorSpecs[specKey].derivedSpecs);
 
-      // TDO come back and clean this up
-      if (["dnd5e", "sw5e"].includes(game.system.id ?? "")) {
+      // TODO come back and clean this up
+      if (["dnd5e"].includes(game.system.id ?? "")) {
         // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
         // and initiative bonus depends on advantage on initiative
         this.actorSpecs[specKey].allSpecs.forEach(m => {
@@ -182,7 +184,7 @@ export class ValidSpec {
     this.actorSpecs["union"].allSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
     this.actorSpecs["union"].baseSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
     this.actorSpecs["union"].derivedSpecs.sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 });
-    this.itemSpecs = daeSystemClass?.getItemSpecs() ?? {};
+    this.itemSpecs = "getItemSpecs" in daeSystemClass ? daeSystemClass?.getItemSpecs() : {};
   }
 
 
@@ -263,7 +265,7 @@ export class ValidSpec {
   }
 }
 
-function getRollData(wrapped, ...args): any {
+function getRollData(wrapped, ...args): AnyMutableObject {
   // need to be careful - default foundry getRollData() returns the "live" actor.system
   return wrapped(...args);
 }
@@ -274,7 +276,7 @@ export class DAESystem {
   static attackTypes: string[];
   static bonusSelectors: any;
   static daeActionTypeKeys: string[];
-  static detectionModeList: any;
+  static detectionModeList: Record<string, string>;
   public static fieldMappings: any = {};
 
   public static get systemConfig() {
@@ -282,7 +284,7 @@ export class DAESystem {
     return game.system.config;
   }
 
-  public static getActorDataModelFields(actorType: string): any {
+  public static getActorDataModelFields(actorType: string): Record<string, foundry.data.fields.DataField<any>> {
     return CONFIG.Actor.dataModels[actorType]?.schema?.fields;
     /*
     const dataModels: any = game.system.dataModels;
@@ -301,15 +303,15 @@ export class DAESystem {
    * Keys are valid options for the field specification and the value is the user facing text for that option 
    * e.g. {common: "Common"}
    * */
-  public static getOptionsForSpec(specification): any {
-    if (!specification.key) return undefined;
+  public static getOptionsForSpec(specification?: ActiveEffect.ChangeData): Record<string, string> | undefined {
+    if (!specification?.key) return undefined;
     if (specification?.key === "ATE.detectionMode") {
       return this.detectionModeList;
     }
     return undefined;
   }
   // Configure any lookup lists that might be required by getOptionsForSpec.
-  public static configureLists(daeConfig: DAEActiveEffectConfig) {
+  public static configureLists() {
     this.detectionModeList = {};
     Object.values(CONFIG.Canvas.detectionModes).forEach(dm => {
       this.detectionModeList[dm.id as string] = i18n(`${dm.label}`);
@@ -522,7 +524,7 @@ export class DAESystem {
     return output; // depth ? this.safeEval(output, context) : output;
   }
 
-  public static daeCustomEffect(actor, change): any {
+  public static daeCustomEffect(actor, change, _current?: never, _delta?: never, _changes?: never): any {
     if (typeof change.value === "string" && (change.value?.includes("dae.eval(") || change.value?.includes("dae.roll("))) {
       const context = actor.getRollData();
       context.actor = actor;
@@ -562,6 +564,7 @@ export class DAESystem {
     // Might have to be tailored to other systems.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // This supplies DAE custom effects
+    // @ts-expect-error types is missing some args here
     Hooks.on("applyActiveEffect", daeSystemClass.daeCustomEffect.bind(daeSystemClass));
 
   }
@@ -613,7 +616,6 @@ function prepareData(wrapped) {
   // this._prepareOwnedItems(this.items)
   debug("prepare data: after passes", this);
 }
-
 
 foundry.utils.setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
 

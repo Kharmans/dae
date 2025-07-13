@@ -1,25 +1,14 @@
 import { socketlibSocket } from "./GMAction.js";
 import { warn, error, debug, i18n } from "../dae.js";
+import { TokenOrDocument } from "../globals.js";
 
-export let applyActive = (itemName: string, activate: boolean = true, itemType: string = "") => {
-}
-
-function getTokenUuid(token: foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation) {
+function getTokenUuid(token: TokenOrDocument) {
   if (token instanceof foundry.canvas.placeables.Token) return token.document.uuid;
   if (token instanceof TokenDocument) return token.uuid;
   return undefined;
 }
-export let activateItem = () => {
-  const speaker = ChatMessage.getSpeaker();
-  const token = canvas?.tokens?.get(speaker.token ?? "");
-  if (!token) {
-    ui.notifications?.warn(i18n("dae.noSelection"))
-    return;
-  }
-  // return new ActiveItemSelector(token.actor, {}).render(true);
-}
 
-let tokenScene = (tokenName, sceneName) => {
+let tokenScene = (tokenName: string, sceneName: string) => {
   if (!sceneName) {
     for (let scene of game.scenes ?? []) {
       let found = scene.tokens.getName(tokenName);
@@ -43,10 +32,10 @@ let tokenScene = (tokenName, sceneName) => {
   return { scene: null, tokenDocument: null };
 }
 
-export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
+export let moveToken = async (token: TokenOrDocument, targetTokenName: string, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
   let { scene, found } = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
-    warn("Dynmaiceffects | moveToken: Token not found");
+    warn("dae | moveToken: Token not found");
     return ("Token not found")
   }
   if (!found) {
@@ -59,30 +48,30 @@ export let moveToken = async (token, targetTokenName, xGridOffset: number = 0, y
       startSceneId: canvas?.scene?.id,
       tokenUuid: getTokenUuid(token),
       targetSceneId: scene?.id, 
-      tokenData: token.document.toObject(false),
+      tokenData: (token instanceof TokenDocument ? token : token.document).toObject(false),
       x: found.x + xGridOffset * (canvas.scene?.grid.size ?? 100),
       y: found.y + yGridOffset * (canvas.scene?.grid.size ?? 100)
     });
 }
 
-export let renameToken = async (token: Token, newName: string) => {
+export let renameToken = async (token: foundry.canvas.placeables.Token.Implementation, newName: string) => {
   socketlibSocket.executeAsGM("renameToken", { userId: game.user?.id, startSceneId: canvas.scene?.id, tokenData: token.document.toObject(false), newName });
 }
 
-export async function teleportToken(token: Token, scene: Scene | string, position: {x:number, y: number}) {
-  let theScene: Scene;
-  if (typeof scene === "string") theScene = game.scenes?.get(scene) as Scene;
+export async function teleportToken(token: TokenOrDocument, scene: Scene.Implementation | string, position: {x:number, y: number}) {
+  let theScene: Scene.Implementation | undefined;
+  if (typeof scene === "string") theScene = game.scenes?.get(scene);
   else theScene = scene;
   return teleport(token, theScene, position.x, position.y)
 }
-export let teleportToToken = async (token, targetTokenName, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
+export let teleportToToken = async (token: TokenOrDocument, targetTokenName: string, xGridOffset: number = 0, yGridOffset: number = 0, targetSceneName: string = "") => {
   let { scene, found } = tokenScene(targetTokenName, targetSceneName);
   if (!token) {
-    error("dae| teleportToToken: Token not found");
+    error("dae | teleportToToken: Token not found");
     return ("Token not found")
   }
   if (!found || !scene) {
-    error("dae| teleportToToken: Target Not found");
+    error("dae | teleportToToken: Target Not found");
     return `Token ${targetTokenName} not found`;
   }
   return await teleport(token, scene, found.x + xGridOffset * (canvas.scene?.grid.size ?? 100), found.y + yGridOffset * (canvas.scene?.grid.size ?? 100))
@@ -94,18 +83,24 @@ export async function createToken(tokenData: TokenDocument.CreateData, x: number
   return socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, targetSceneId, tokenData, x, y })
 }
 
-export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
+export let teleport = async (token: TokenOrDocument, targetScene: Scene | undefined, xpos: number, ypos: number) => {
+  token = token instanceof TokenDocument ? token.object! : token;
   let x = Number(xpos);
   let y = Number(ypos);
 
   if (isNaN(x) || isNaN(y)) {
-    error("dae| teleport: Invalid co-ords", xpos, ypos);
+    error("dae | teleport: Invalid co-ords", xpos, ypos);
     return `Invalid target co-ordinates (${xpos}, ${ypos})`;
   }
 
   if (!token) {
     console.warn("dae | teleport: No Token");
-    return "No active token"
+    return "No active token";
+  }
+
+  if (!targetScene) {
+    console.warn("dae | teleport: No Scene");
+    return "No scene";
   }
 
   // Hide the current token
@@ -133,31 +128,28 @@ export let teleport = async (token: Token, targetScene: Scene, xpos, ypos) => {
   return await targetScene.view();
 }
 
-export async function setTokenVisibility(tokenOrId: string | Token, visible: boolean) {
+export async function setTokenVisibility(tokenOrId: string | TokenOrDocument, visible: boolean) {
   let tokenUuid: string;
   if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId) as string;
   else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
-  else tokenUuid = `Scene.${canvas?.scene?.id}.Token.${tokenOrId}`;
+  else tokenUuid = `Scene.${canvas.scene?.id}.Token.${tokenOrId}`;
   return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
 }
 
-export async function setTileVisibility(tileOrId: TileDocument | string, visible: boolean) {
-  let tileUuid: string;
-  let tile: TileDocument;
-  if (typeof tileOrId !== "string") {
-    tileUuid = tileOrId.uuid;
-    tile = tileOrId
-  } else {
-    if (!(tileOrId.startsWith("Scene."))) {
-      tileUuid = `Scene.${canvas?.scene?.id}.Tile.${tileOrId}`;
-    } else tileUuid = tileOrId;
-    tile = await fromUuid(tileUuid) as TileDocument;
+export async function setTileVisibility(tileOrId: TileDocument.Implementation | string, visible: boolean) {
+  let tileUuid: string | undefined;
+  if (tileOrId instanceof TileDocument) tileUuid = tileOrId.uuid;
+  else {
+    let tile = fromUuidSync(tileOrId) as TileDocument.Implementation | undefined;
+    if (!tile) tile = canvas.scene?.tiles.get(tileOrId);
+    if (tile) tileUuid = tile.uuid;
   }
+  if (!tileUuid) return;
   return socketlibSocket.executeAsGM("setTileVisibility", { tileUuid, hidden: !visible });
 }
 
 // TODO fix this for v10
-export async function blindToken(tokenOrId: Token | string) {
+export async function blindToken(tokenOrId: TokenOrDocument | string) {
   let tokenUuid: string | undefined;
   if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
   else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
@@ -166,7 +158,7 @@ export async function blindToken(tokenOrId: Token | string) {
 }
 
 // TODO fix this for v10
-export async function restoreVision(tokenOrId: Token | string) {
+export async function restoreVision(tokenOrId: TokenOrDocument | string) {
   let tokenUuid: string | undefined;
   if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
   else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
@@ -174,15 +166,12 @@ export async function restoreVision(tokenOrId: Token | string) {
   return socketlibSocket.executeAsGM("restoreVision", { tokenUuid });
 }
 
-export let macroReadySetup = () => {
+export function getTokenFlag(token: TokenOrDocument, flagName: string) {
+  const tokenDocument = token instanceof TokenDocument ? token : token.document;
+  return foundry.utils.getProperty(tokenDocument, `flags.dae.${flagName}`);
 }
 
-export function getTokenFlag(token: Token | any /* TokenDocument*/, flagName: string) {
-  const tokenDocument = token.document ? token.document: token;
-  return foundry.utils.getProperty(token.document, `flags.dae.${flagName}`);
-}
-
-export async function deleteItemActiveEffects(tokens: Array<string | foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
+export async function deleteItemActiveEffects(tokens: Array<string | TokenOrDocument>, origin: string, ignore: string[] = [], deleteEffects: string[] = [], removeSequencer: boolean = true, options?: any) {
   const targets = tokens.map(t => ({"uuid": typeof t === "string" ? t : getTokenUuid(t)}));
   return socketlibSocket.executeAsGM("deleteEffects", { targets, origin, ignore, deleteEffects, removeSequencer, options});
 }
@@ -191,7 +180,7 @@ export async function deleteActiveEffect(uuid: string, origin: string, ignore: s
   return socketlibSocket.executeAsGM("deleteEffects", { targets: [{ uuid }], origin, ignore, deleteEffects, removeSequencer, options });
 }
 
-export async function setTokenFlag(tokenOrId: foundry.canvas.placeables.Token.Implementation | string | TokenDocument.Implementation, flagName: string, flagValue: any) {
+export async function setTokenFlag(tokenOrId: TokenOrDocument | string, flagName: string, flagValue: any) {
   let tokenUuid: string = "";
   if (typeof tokenOrId === "string") {
     if (tokenOrId.startsWith("Scene.")) tokenUuid = tokenOrId;
@@ -201,18 +190,21 @@ export async function setTokenFlag(tokenOrId: foundry.canvas.placeables.Token.Im
   return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
 }
 
-export function getFlag(entity: Actor | Token | string, flagId: string) {
-  let theActor: Actor | undefined  | null;
-  if (!entity) return error(`dae.getFlag: actor not defined`);
+export function getFlag(entity: Actor.Implementation | TokenOrDocument | string, flagId: string) {
+  let theActor: Actor.Implementation | undefined | null;
+  if (!entity) return error(`dae.getFlag: entity not defined`);
   if (typeof entity === "string") { 
-    theActor = (fromUuidSync(entity) as TokenDocument)?.actor;
-    // assume string === tokenId
-    if (!theActor) theActor = canvas?.tokens?.get(entity)?.actor;
-    if (!theActor) theActor = game.actors?.get(entity); // if not a token maybe an actor
-    if (!theActor) {
-      const actor = fromUuidSync(entity);
-      // @ts-expect-error
-      theActor = actor?.actor ?? actor;
+    // Try as UUID, see if actor
+    let retrievedDocument = fromUuidSync(entity);
+    if (retrievedDocument instanceof Actor)
+      theActor = retrievedDocument;
+    else if (retrievedDocument instanceof TokenDocument)
+      theActor = retrievedDocument.actor;
+    else {
+      // Try as token ID
+      theActor = canvas.tokens?.get(entity)?.actor;
+      // Try as actor ID
+      if (!theActor) theActor = game.actors!.get(entity);
     }
   } else {
     if (entity instanceof Actor)
@@ -225,7 +217,7 @@ export function getFlag(entity: Actor | Token | string, flagId: string) {
   return foundry.utils.getProperty(theActor, `flags.dae.${flagId}`)
 }
 
-export async function setFlag(tactor: Actor | Token | string, flagId: string, value: any) {
+export async function setFlag(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string, flagId: string, value: any) {
   if (typeof tactor === "string" && (tactor.startsWith("Scene") || tactor.startsWith("Actor"))) {
     return socketlibSocket.executeAsGM("setFlag", { actorUuid: tactor, flagId, value });
   } if (typeof tactor === "string") {
@@ -240,7 +232,7 @@ export async function setFlag(tactor: Actor | Token | string, flagId: string, va
   // return requestGMAction(GMAction.actions.setFlag, { actorId: actor.id, actorUuid: actor.uuid, flagId, value})
 }
 
-export async function unsetFlag(tactor: Actor | Token | string, flagId) {
+export async function unsetFlag(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string, flagId: string) {
   if (typeof tactor === "string" && (tactor.startsWith("Scene") || tactor.startsWith("Actor"))) {
     return socketlibSocket.executeAsGM("unsetFlag", { actorUuid: tactor, flagId });
   } if (typeof tactor === "string") {

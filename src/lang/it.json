@@ -272,8 +272,6 @@
   "dae.startEndEveryTurnAny": "Inizio e Fine di ogni Turno: esegui macro di effetti all'inizio e alla fine del turno del personaggio, anche se l'effetto è disabilitato",
   "dae.endEveryTurn": "Fine di ogni Turno: esegui le macro degli effetti alla fine del turno del personaggio",
   "dae.endEveryTurnAny": "Fine di ogni Turno: esegui le macro degli effetti alla fine del turno del personaggio anche se l'effetto è disabilitato",
-  "dae.ConditionalVisibility": "Visibilità Condizionale",
-  "dae.ConditionalVisibilityVision": "Visione VC",
   "dae.noDupDamageMacro.Name": "Non Duplicare macro danno",
   "dae.noDupDamageMacro.Hint": "Se selezionato, le macro di danno duplicate verranno ignorate",
   "dae.DisableEffects.Name": "Disabilita tutta l'elaborazione degli effetti attivi",

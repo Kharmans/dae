@@ -237,8 +237,8 @@ async function _blindToken(data: { tokenUuid: string }) {
   const dfreds = game.dfreds;
   if (!tokenDocument?.actor) return;
   if (dfreds?.effects?._blinded) {
-    ceInterface.addEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor?.uuid })
-  } else if (ceInterface.findEffect && ceInterface.findEffect({ effectId: "ce-blinded" })) {
+    ceInterface?.addEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor?.uuid })
+  } else if (ceInterface?.findEffect && ceInterface.findEffect({ effectId: "ce-blinded" })) {
     if (!ceInterface.hasEffectApplied({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid }))
       ceInterface.addEffect({ effectId: "ce-blinded", uuid: tokenDocument.actor?.uuid })
   } else {
@@ -255,8 +255,8 @@ async function _restoreVision(data: { tokenUuid: string }) {
   const dfreds = game.dfreds;
   if (!tokenDocument?.actor) return;
   if (dfreds?.effects?._blinded) {
-    dfreds.effectInterface?.removeEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor.uuid })
-  } else if (ceInterface.findEffect && ceInterface.findEffect({ effectId: "ce-blinded" })) {
+    ceInterface?.removeEffect({ effectName: dfreds.effects._blinded.name, uuid: tokenDocument.actor.uuid })
+  } else if (ceInterface?.findEffect && ceInterface.findEffect({ effectId: "ce-blinded" })) {
     if (ceInterface.hasEffectApplied({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid }))
       ceInterface.removeEffect({ effectId: "ce-blinded", uuid: tokenDocument.actor.uuid })
   } else {

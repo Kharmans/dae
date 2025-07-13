@@ -66,16 +66,16 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static async #processSubmitData(this: DIMEditor, _event: Event, form: HTMLFormElement) {
-    const command = new foundry.applications.ux.FormDataExtended(form)?.get("command");
-    await this.updateMacro(foundry.utils.mergeObject({ command, type: "script" }));
+    const command = new foundry.applications.ux.FormDataExtended(form)?.get("command") as string;
+    await this.updateMacro(command);
   }
 
-  async updateMacro({ command, type }) {
+  async updateMacro(command: string) {
     let item = this.document;
-    let macro: any = this.getMacro();
+    let macro: Macro.Implementation = this.getMacro();
 
-    debug("DIMEditor | updateMacro  | ", { command, type, item, macro });
-    if (macro.command != command) {
+    debug("DIMEditor | updateMacro  | ", { command, item, macro });
+    if (macro.command !== command) {
         await this.setMacro(new Macro({
           name: this.document.name,
           img: this.document.img,
@@ -89,11 +89,11 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   hasMacro() {
-    const command = foundry.utils.getProperty(this.document, "flags.dae.macro.command") ?? foundry.utils.getProperty(this.document, "flags.itemacro.macro");
+    const command = this.document.flags?.dae?.macro?.command ?? this.document.flags?.itemacro?.macro?.command;
     return !!command;
   }
 
-  getMacro(): Macro {
+  getMacro(): Macro.Implementation {
     // @ts-expect-error `macroData` is on the Activity pseudo-document with midi installed
     if (globalThis.MidiQOL?.activityTypes && this.document?.macroData) return this.document.macro;
     let macroData = this.document.flags?.dae?.macro ?? this.document.flags?.itemacro?.macro;
@@ -103,7 +103,7 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     return new Macro.implementation(macroData, {});
   }
 
-  async setMacro(macro: Macro) {
+  async setMacro(macro: Macro.Implementation) {
     // @ts-expect-error `macroData` is on the Activity pseudo-document with midi installed
     if (this.document.macroData) {
       // @ts-expect-error `macroData` is on the Activity pseudo-document with midi installed
@@ -114,7 +114,7 @@ export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     }
   }
 
-  public static preUpdateItemHook(item: Item.Implementation, updates: Item.UpdateData, context, user): boolean {
+  public static preUpdateItemHook(item: Item.Implementation, updates: Item.UpdateData, _options: Partial<foundry.abstract.DatabaseBackend.UpdateOperation<any>>, _userId: string): boolean {
     if (!game.settings.get("dae", "DIMESyncItemacro") /*|| !game.modules.get("itemacro") */) return true;
     const existing = item.flags?.dae?.macro
       ?? item?.flags?.itemacro?.macro

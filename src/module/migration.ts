@@ -46,123 +46,6 @@ export async function loadPacks() {
   packsLoaded = true;
 }
 
-export async function migrateAllActorsDAESRD(includeSRD = false) {
-  if (!game.settings.get("dae", "disableEffects")) {
-    ui.notifications?.error("Please set DAE disable all effect processing")
-    error("Please set DAE disable all effect processing")
-    return;
-  }
-  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
-    ui.notifications?.warn("DAE SRD Module not active");
-    error("DAE SRD Module not active");
-    return;
-  }
-  for (let a of game.actors ?? []) {
-    await migrateActorDAESRD(a, includeSRD);
-  };
-}
-
-export async function migrateAllNPCDAESRD(includeSRD = false) {
-  if (!game.settings.get("dae", "disableEffects")) {
-    ui.notifications?.error("Please set DAE disable all effect processing")
-    error("Please set DAE disable all effect processing")
-    return;
-  }
-  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
-    ui.notifications?.warn("DAE SRD Module not active");
-    error("DAE SRD Module not active");
-    return;
-  }
-  for (let a of game.actors ?? []) {
-    // @ts-expect-error no dnd5e-types
-    if (a.type !== "character") {
-      await migrateActorDAESRD(a, includeSRD);
-    };
-  }
-}
-
-export async function migrateActorDAESRD(actor, includeSRD = false) {
-  if (!game.settings.get("dae", "disableEffects")) {
-    ui.notifications?.error("Please set DAE disable all effect processing")
-    error("Please set DAE disable all effect processing")
-    return;
-  }
-  if (!game.modules.get("Dynamic-Effects-SRD")?.active) {
-    ui.notifications?.warn("DAE SRD Module not active");
-    error("DAE SRD Module not active");
-    return;
-  }
-  if (!packsLoaded) await loadPacks();
-  const items = actor._source.items;
-  let replaceItems: any[] = [];
-  let count = 0;
-  items.forEach(item => {
-    let replaceData: any;
-    switch (item.type) {
-      case "feat":
-        let srdFeats = (actor?.type === "npc") ? dndSRDMonsterfeaturesPack : dndSRDClassfeaturesPack;
-        if (includeSRD) replaceData = findDAEItem(item, [daeFeatsPack, midiFeatsPack, dndSRDclassesPack, srdFeats]);
-        else replaceData = findDAEItem(item, [midiFeatsPack, daeFeatsPack]);
-        if (replaceData) console.warn("migrating", actor.name, replaceData.name, replaceData)
-        if (replaceData) {
-          foundry.utils.setProperty(replaceData, "equipped", item.equipped)
-          foundry.utils.setProperty(replaceData, "attunement", item.attunement)
-          foundry.utils.setProperty(replaceData.flags, "dae.migrated", true);
-          replaceItems.push(replaceData.toObject());
-          count++;
-        }
-        else replaceItems.push(item)
-        break;
-      case "spell":
-        if (includeSRD) replaceData = findDAEItem(item, [daeSpellPack, midiSpellPack, dndSRDSpellsPack]);
-        else replaceData = findDAEItem(item, [midiSpellPack, daeSpellPack]);
-        if (replaceData) console.warn("migrating ", actor.name, replaceData.name, replaceData)
-        if (replaceData) {
-          foundry.utils.setProperty(replaceData, "prepared", item.prepared)
-          foundry.utils.setProperty(replaceData.flags, "dae.migrated", true);
-          replaceItems.push(replaceData.toObject());
-          count++;
-        }
-        else replaceItems.push(item)
-        break;
-      case "equipment":
-      case "weapon":
-      case "loot":
-      case "consumable":
-      case "tool":
-      case "backpack":
-        if (includeSRD) replaceData = findDAEItem(item, [midiItemPack, daeItemPack, magicItemsPack, dndSRDItemsPack]);
-        else replaceData = findDAEItem(item, [midiItemPack, daeItemPack, magicItemsPack]);
-        if (replaceData) console.warn("migrated", actor.name, replaceData.name, replaceData)
-        if (replaceData) {
-          foundry.utils.setProperty(replaceData, "data.equipped", item.equipped)
-          foundry.utils.setProperty(replaceData, "data.attunement", item.attunement)
-          foundry.utils.setProperty(replaceData.flags, "dae.migrated", true);
-          replaceItems.push(replaceData.toObject());
-          count++;
-        }
-        else replaceItems.push(item);
-        break;
-      default:
-        replaceItems.push(item);
-        break;
-    }
-  })
-  let removeItems = actor.items.map(i => i.id);
-  await actor.deleteEmbeddedDocuments("ActiveEffect", [], { deleteAll: true });
-  await actor.deleteEmbeddedDocuments("Item", [], { deleteAll: true });
-  // Adding all at once seems to create a problem.
-  // await actor.createEmbeddedDocuments("Item", replaceItems, { addFeatures: true, promptAddFeatures: false });
-  for (let item of replaceItems) {
-    await actor.createEmbeddedDocuments("Item", [item], { addFeatures: false, promptAddFeatures: false });
-  }
-  console.warn(actor.name, "replaced ", count, " out of ", replaceItems.length, " items from the DAE SRD");
-}
-
-function removeDynamiceffects(actor) {
-  actor.update({ "flags.-=dynamiceffects": null })
-}
-
 export function checkLibWrapperVersion() {
   if (foundry.utils.isNewerVersion("1.8.0", game.modules.get("lib-wrapper")?.version)) {
     let d = new foundry.appv1.api.Dialog({
@@ -357,27 +240,27 @@ export async function tobMapper(iconsPath = "icons/TOBTokens") {
     });
 }
 
-export async function fixTransferEffects(actor) {
+export async function fixTransferEffects(actor: Actor.Implementation) {
   if (!actor) {
     return;
   }
-  let items = actor.items || [];
+  let items = Array.from(actor.items) || [];
   return await _fixTransferEffects(actor, items);
 }
 
-async function _fixTransferEffects(actor, itemsToCheck) {
+async function _fixTransferEffects(actor: Actor.Implementation, itemsToCheck: Item.Implementation[]) {
   let items = itemsToCheck.filter(i => i.effects.some(e => effectIsTransfer(e)));
-  let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && e.origin.includes("Item."));
+  let transferEffects = actor.effects.filter(e => (!e.isTemporary || effectIsTransfer(e)) && !!e.origin?.includes("Item."));
   console.warn("Deleting effects", transferEffects)
-  await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id));
+  await actor.deleteEmbeddedDocuments("ActiveEffect", transferEffects.map(e => e.id!));
   const toCreate = items.map(i => i.toObject())
   console.warn("Deleting items ", items.map(i => i.id))
-  await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id));
+  await actor.deleteEmbeddedDocuments("Item", items.map(i => i.id!));
   console.warn("Creating items ", toCreate)
   await actor.createEmbeddedDocuments("Item", toCreate);
 }
 
-export async function fixTransferEffect(actor, item) {
+export async function fixTransferEffect(actor: Actor.Implementation, item: Item.Implementation) {
   if (!item) {
     return;
   }
