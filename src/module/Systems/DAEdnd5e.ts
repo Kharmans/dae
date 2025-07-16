@@ -2,8 +2,8 @@
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, midiActive, noDupDamageMacro, removeEffectChange, useDetermineSuppression } from "../dae.js";
-import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
+import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, removeEffectChange, useDetermineSuppression } from "../dae.js";
+import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
 
@@ -56,8 +56,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         if (["_id", "type"].includes(key)) continue;
         activitySpecs[`activities[${activityKey}].${key}`] = activitySpecsRaw[rawActivityKey][rawKey];
         // activitySpecs[`activities[${activityKey}].${key}`][0].label = `${activityLabel} ${i18n("DND5E.ACTIVITY.Title.other")} ${key}`;
-        activitySpecs[`activities[${activityKey}].${key}`][0].label = i18n(`dae.genericSuffixes.${key}.name`);
-        activitySpecs[`activities[${activityKey}].${key}`][0].hint = i18n(`dae.genericSuffixes.${key}.description`);
+        localizationMap[`activities[${activityKey}].${key}`] ??= {
+          name: i18n(`dae.genericSuffixes.${key}.name`),
+          description: i18n(`dae.genericSuffixes.${key}.description`)
+        };
         if (overrideSuffixes.some(k => key.endsWith(k))) activitySpecs[`activities[${activityKey}].${key}`][1] = CONST.ACTIVE_EFFECT_MODES.OVERRIDE;
       }
       if (game.modules.get("midi-qol")?.active) {
@@ -135,11 +137,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
         for (let k1 of Object.keys(finalSpecs)) {
           switch (k1) {
-            case "system.duration.units": finalSpecs[k1].options = { "": null, ...this.systemConfig.timePeriods }; break;
-            case "system.target.type":    finalSpecs[k1].options = { "": null, ...this.systemConfig.targetTypes }; break;
-            case "system.actionType":     finalSpecs[k1].options = { "": null, ...this.systemConfig.itemActionTypes }; break;
-            case "system.uses.per":       finalSpecs[k1].options = { "": null, ...this.systemConfig.limitedUsePeriods }; break;
-            case "system.consume.type":   finalSpecs[k1].options = { "": null, ...this.systemConfig.abilityConsumptionTypes }; break;
+            case "system.duration.units": finalSpecs[k1].options = { "": "", ...this.systemConfig.timePeriods }; break;
+            case "system.target.type":    finalSpecs[k1].options = { "": "", ...this.systemConfig.targetTypes }; break;
+            case "system.actionType":     finalSpecs[k1].options = { "": "", ...this.systemConfig.itemActionTypes }; break;
+            case "system.uses.per":       finalSpecs[k1].options = { "": "", ...this.systemConfig.limitedUsePeriods }; break;
+            case "system.consume.type":   finalSpecs[k1].options = { "": "", ...this.systemConfig.abilityConsumptionTypes }; break;
             case "system.attunement":     finalSpecs[k1].options = { "": "", ...this.systemConfig.attunementTypes }; break;
           }
         }
@@ -190,7 +192,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (debugEnabled > 0) warn("modifyBaseValues", actorType, baseValues, characterSpec);
     const modes = CONST.ACTIVE_EFFECT_MODES;
 
-    //@ts-expect-error
+    //@ts-expect-error no dnd5e-types
     const dataModels: any = game.system.dataModels;
     const MappingField = dataModels.fields.MappingField;
     const actorDataModel = this.getActorDataModelFields(actorType);
@@ -246,6 +248,49 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => modelField instanceof fieldType)) {
         baseValues[`system.${key}`] = [modelField.initial as foundry.data.fields.DataField, -1];
       } else console.error("Unexpected field ", key, modelField)
+    }
+    // Generate all repeated `system.abilities` fields
+    for (const [key, {label: ability}] of Object.entries(this.systemConfig.abilities)) {
+      const genericPrefix = `system.abilities.${key}.`
+      const genericKeys = Object.keys(baseValues).filter(k => k.startsWith(genericPrefix));
+      for (const genericKey of genericKeys) {
+        const innerPrefix = `dae.SystemAbilities.fieldData.${genericKey.slice(genericPrefix.length)}`;
+        localizationMap[genericKey] ??= {
+          name: i18nFormat(`${innerPrefix}.name`, {ability}),
+          description: i18nFormat(`${innerPrefix}.description`, {ability})
+        };
+        if (localizationMap[genericKey].name === `${innerPrefix}.name`) delete localizationMap[genericKey].name;
+        if (localizationMap[genericKey].description === `${innerPrefix}.description`) delete localizationMap[genericKey].description;
+      }
+    }
+    // Generate all repeated `system.skills` fields
+    for (const [key, {label: skill}] of Object.entries(this.systemConfig.skills)) {
+      const genericPrefix = `system.skills.${key}.`
+      const genericKeys = Object.keys(baseValues).filter(k => k.startsWith(genericPrefix));
+      for (const genericKey of genericKeys) {
+        const innerPrefix = `dae.SystemSkills.fieldData.${genericKey.slice(genericPrefix.length)}`;
+        localizationMap[genericKey] ??= {
+          name: i18nFormat(`${innerPrefix}.name`, {skill}),
+          description: i18nFormat(`${innerPrefix}.description`, {skill})
+        };
+        if (localizationMap[genericKey].name === `${innerPrefix}.name`) delete localizationMap[genericKey].name;
+        if (localizationMap[genericKey].description === `${innerPrefix}.description`) delete localizationMap[genericKey].description;
+      }
+    }
+    // Generate all repeated midi `system.traits.da` and system `dm` fields
+    if (midiActive) {
+      for (const [key, {label: damage}] of Object.entries(this.systemConfig.damageTypes as Record<string, {label: string}>).concat(Object.entries(this.systemConfig.healingTypes))) {
+        const absorptionKey = `system.traits.da.${key}`;
+        localizationMap[absorptionKey] ??= {
+          name: i18nFormat('dae.SystemTraits.fieldData.da.name', {damage}),
+          description: i18nFormat('dae.SystemTraits.fieldData.da.description', {damage})
+        };
+        const modKey = `system.traits.dm.amount.${key}`;
+        localizationMap[modKey] ??= {
+          name: i18nFormat('dae.SystemTraits.fieldData.dm.amount.name', {damage}),
+          description: i18nFormat('dae.SystemTraits.fieldData.dm.amount.description', {damage})
+        }
+      }
     }
     if (!baseValues["system.attributes.prof"])          baseValues["system.attributes.prof"]          = [new NumberField(), -1];
     if (!baseValues["system.details.level"])            baseValues["system.details.level"]            = [new NumberField(), -1];
@@ -526,7 +571,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isSuppressed", isSuppressed, "WRAPPER");
     }
     // This supplies DAE custom effects - the main game
-    // @ts-expect-error hook needs to be fixed in types-land
+    // @ts-expect-error our custom stuff in the changes makes types mad
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
@@ -741,10 +786,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return this.languageList;
     if (spec.key === "system.traits.ci.value")
       return this.conditionList;
+    
+    // TODO: Maybe don't force these (| Add | 1 is perfectly valid here)
     if (spec.key.match(/system.tools..*prof/))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.key.match(/system.abilities..*proficient/))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
+    if (spec.key.includes("system.skills") && spec.key.includes("value"))
+      return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
+    
     if (spec.key.match(/system.tools..*ability/))
       return abilitiesList;
     if (spec.key === "system.traits.armorProf.value")
@@ -764,8 +814,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
     if (["system.traits.dm.bypasses", "system.traits.di.bypasses", "system.traits.dr.bypasses", "system.traits.dv.bypasses", "system.traits.da.bypasses"].includes(spec.key))
       return this.bypassesList;
-    if (spec.key.includes("system.skills") && spec.key.includes("value"))
-      return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.key.includes("system.skills") && spec.key.includes("ability")) {
       return abilitiesList;
     }
@@ -846,7 +894,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       for (let { type, list } of profs) {
         if (type === "tool") {
           for (const [key, { ability, id }] of Object.entries(this.systemConfig[`${type}s`] as Record<string, { ability: string, id: string }>)) {
-            //@ts-expect-error .documents
+            //@ts-expect-error no dnd5e-types
             const item = game.system.documents.Trait.getBaseItem(id, { indexOnly: true })
             list[key] = item.name;
           }
@@ -854,7 +902,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           const ids = this.systemConfig[`${type}Ids`];
           if (ids !== undefined) {
             for (const [key, id] of Object.entries(ids)) {
-              //@ts-expect-error .documents
+              //@ts-expect-error no dnd5e-types
               const item = game.system.documents.Trait.getBaseItem(id, { indexOnly: true })
               list[key] = item.name;
             }
@@ -1191,7 +1239,7 @@ function applyBaseEffects(this: Actor.Implementation) {
 
   // Handle traits.ci specially
   // CI disable other effects so need to be processed before other effects
-  const traitsCI = {};
+  const traitsCI: Record<string, ValidSpec> = {};
   traitsCI["system.traits.ci.all"] = ValidSpec.actorSpecs[this.type].allSpecsObj["system.traits.ci.all"];
   traitsCI["system.traits.ci.value"] = ValidSpec.actorSpecs[this.type].allSpecsObj["system.traits.ci.value"];
   applyDaeEffects.bind(this)({ specList: traitsCI, excludeSpecs: {}, allowAllSpecs: false, wildCardsInclude: [], wildCardsExclude: [], doStatusEffects: false });
@@ -1286,16 +1334,17 @@ function _baseItemApplyEffects() {
   // It seems that this is called with embedded preparation when first initialising and also when cloning.
   // Since we can't tell if it will later get called from prepareData the best we can do is apply all effects now
   return doItemApplyEffects.bind(this)(undefined, undefined, {});
-
+  /*
   if (this.isOwned)
     return doItemApplyEffects.bind(this)(undefined, [...ValidSpec.itemSpecs["union"].derivedSpecKeys, ...ValidSpec.itemSpecs["union"].excludeKeys], {});
   else // item is a sidebar.compendium item so don't ignore anything
     return doItemApplyEffects.bind(this)(undefined, undefined, {});
+  */
 }
 function _itemApplyActiveEffects() {
   // since baseItemApplyEffects will apply all effects we can't do it gain here
   return;
-  return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].derivedSpecKeys, ValidSpec.itemSpecs["union"].excludeKeys, this.overrides ?? {});
+  // return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].derivedSpecKeys, ValidSpec.itemSpecs["union"].excludeKeys, this.overrides ?? {});
 }
 
 function doItemApplyEffects(this: Item.Implementation, includeKeys: string[] | undefined, excludeKeys: string[] | undefined, overrides: any) {
@@ -1305,7 +1354,7 @@ function doItemApplyEffects(this: Item.Implementation, includeKeys: string[] | u
     excludeKeys = undefined;
   }
   // Organize non-disabled changes by their application priority
-  let changes: (ActiveEffect.ChangeData & {effect?: ActiveEffect.Implementation})[] = [];
+  let changes: DAEChangeData[] = [];
 
   // @ts-expect-error no dnd5e-types
   for (const effect of (this.allApplicableEffects() as Iterable<ActiveEffect.Implementation>)) {
@@ -1319,7 +1368,7 @@ function doItemApplyEffects(this: Item.Implementation, includeKeys: string[] | u
         ? this.system.schema.getField(change.key.slice(7))
         : this.schema.getField(change.key);
       const targetType = getTargetType(field);
-      const c = foundry.utils.deepClone(change) as ActiveEffect.ChangeData & {effect?: ActiveEffect.Implementation};
+      const c = foundry.utils.deepClone(change) as DAEChangeData;
       if (typeof c.value === "string" && this.actor?.items.has(this.id!)) {
         const rollData = this.getRollData();
         // @ts-expect-error no dnd5e-types

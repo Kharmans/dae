@@ -519,822 +519,86 @@
     }
   },
   "dae.SystemAbilities.fieldData": {
-    "system.abilities.cha.bonuses.check": {
-      "name": "Charisma Check Bonus",
+    "bonuses.check": {
+      "name": "{ability} Check Bonus",
       "description": ""
     },
-    "system.abilities.cha.bonuses.save": {
-      "name": "Charisma Save Bonus",
+    "bonuses.save": {
+      "name": "{ability} Save Bonus",
       "description": ""
     },
-    "system.abilities.cha.check.roll.max": {
-      "name": "Charisma Check Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Charisma check."
+    "check.roll.max": {
+      "name": "{ability} Check Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a {ability} check."
     },
-    "system.abilities.cha.check.roll.min": {
-      "name": "Charisma Check Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Charisma check."
+    "check.roll.min": {
+      "name": "{ability} Check Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a {ability} check."
     },
-    "system.abilities.cha.check.roll.mode": {
-      "name": "Charisma Check Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Charisma checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
+    "check.roll.mode": {
+      "name": "{ability} Check Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for {ability} checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
-    "system.abilities.cha.max": {
-      "name": "Charisma Max Score",
+    "max": {
+      "name": "{ability} Max Score",
       "description": ""
     },
-    "system.abilities.cha.mod": {
-      "name": "Charisma Mod",
+    "mod": {
+      "name": "{ability} Mod",
       "description": ""
     },
-    "system.abilities.cha.proficient": {
-      "name": "Charisma Save Proficiency",
+    "proficient": {
+      "name": "{ability} Save Proficiency",
       "description": ""
     },
-    "system.abilities.cha.save.roll.max": {
-      "name": "Charisma Save Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Charisma save."
+    "save.roll.max": {
+      "name": "{ability} Save Max",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a {ability} save."
     },
-    "system.abilities.cha.save.roll.min": {
-      "name": "Charisma Save Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Charisma save."
+    "save.roll.min": {
+      "name": "{ability} Save Min",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a {ability} save."
     },
-    "system.abilities.cha.save.roll.mode": {
-      "name": "Charisma Save Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Charisma saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
+    "save.roll.mode": {
+      "name": "{ability} Save Roll Mode",
+      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for {ability} saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
     },
-    "system.abilities.cha.save": {
-      "name": "Charisma Save Mod",
+    "save": {
+      "name": "{ability} Save Mod",
       "description": ""
     },
-    "system.abilities.cha.value": {
-      "name": "Charisma Score",
-      "description": ""
-    },
-    "system.abilities.con.bonuses.check": {
-      "name": "Constitution Check Bonus",
-      "description": ""
-    },
-    "system.abilities.con.bonuses.save": {
-      "name": "Constitution Save Bonus",
-      "description": ""
-    },
-    "system.abilities.con.check.roll.max": {
-      "name": "Constitution Check Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Constitution check."
-    },
-    "system.abilities.con.check.roll.min": {
-      "name": "Constitution Check Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Constitution check."
-    },
-    "system.abilities.con.check.roll.mode": {
-      "name": "Constitution Check Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Constitution checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.con.max": {
-      "name": "Constitution Max Score",
-      "description": ""
-    },
-    "system.abilities.con.mod": {
-      "name": "Constitution Mod",
-      "description": ""
-    },
-    "system.abilities.con.proficient": {
-      "name": "Constitution Save Proficiency",
-      "description": ""
-    },
-    "system.abilities.con.save.roll.max": {
-      "name": "Constitution Save Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Constitution save."
-    },
-    "system.abilities.con.save.roll.min": {
-      "name": "Constitution Save Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Constitution save."
-    },
-    "system.abilities.con.save.roll.mode": {
-      "name": "Constitution Save Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Constitution saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.con.save": {
-      "name": "Constitution Save Mod",
-      "description": ""
-    },
-    "system.abilities.con.value": {
-      "name": "Constitution Score",
-      "description": ""
-    },
-    "system.abilities.dex.bonuses.check": {
-      "name": "Dexterity Check Bonus",
-      "description": ""
-    },
-    "system.abilities.dex.bonuses.save": {
-      "name": "Dexterity Save Bonus",
-      "description": ""
-    },
-    "system.abilities.dex.check.roll.max": {
-      "name": "Dexterity Check Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Dexterity check."
-    },
-    "system.abilities.dex.check.roll.min": {
-      "name": "Dexterity Check Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Dexterity check."
-    },
-    "system.abilities.dex.check.roll.mode": {
-      "name": "Dexterity Check Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Dexterity checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.dex.max": {
-      "name": "Dexterity Max Score",
-      "description": ""
-    },
-    "system.abilities.dex.mod": {
-      "name": "Dexterity Mod",
-      "description": ""
-    },
-    "system.abilities.dex.proficient": {
-      "name": "Dexterity Save Proficiency",
-      "description": ""
-    },
-    "system.abilities.dex.save.roll.max": {
-      "name": "Dexterity Save Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Dexterity save."
-    },
-    "system.abilities.dex.save.roll.min": {
-      "name": "Dexterity Save Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Dexterity save."
-    },
-    "system.abilities.dex.save.roll.mode": {
-      "name": "Dexterity Save Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Dexterity saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.dex.save": {
-      "name": "Dexterity Save Mod",
-      "description": ""
-    },
-    "system.abilities.dex.value": {
-      "name": "Dexterity Score",
-      "description": ""
-    },
-    "system.abilities.int.bonuses.check": {
-      "name": "Intelligence Check Bonus",
-      "description": ""
-    },
-    "system.abilities.int.bonuses.save": {
-      "name": "Intelligence Save Bonus",
-      "description": ""
-    },
-    "system.abilities.int.check.roll.max": {
-      "name": "Intelligence Check Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for an Intelligence check."
-    },
-    "system.abilities.int.check.roll.min": {
-      "name": "Intelligence Check Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for an Intelligence check."
-    },
-    "system.abilities.int.check.roll.mode": {
-      "name": "Intelligence Check Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Intelligence checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.int.max": {
-      "name": "Intelligence Max Score",
-      "description": ""
-    },
-    "system.abilities.int.mod": {
-      "name": "Intelligence Mod",
-      "description": ""
-    },
-    "system.abilities.int.proficient": {
-      "name": "Intelligence Save Proficiency",
-      "description": ""
-    },
-    "system.abilities.int.save.roll.max": {
-      "name": "Intelligence Save Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for an Intelligence save."
-    },
-    "system.abilities.int.save.roll.min": {
-      "name": "Intelligence Save Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for an Intelligence save."
-    },
-    "system.abilities.int.save.roll.mode": {
-      "name": "Intelligence Save Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Intelligence saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.int.save": {
-      "name": "Intelligence Save Mod",
-      "description": ""
-    },
-    "system.abilities.int.value": {
-      "name": "Intelligence Score",
-      "description": ""
-    },
-    "system.abilities.str.bonuses.check": {
-      "name": "Strength Check Bonus",
-      "description": ""
-    },
-    "system.abilities.str.bonuses.save": {
-      "name": "Strength Save Bonus",
-      "description": ""
-    },
-    "system.abilities.str.check.roll.max": {
-      "name": "Strength Check Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Strength check."
-    },
-    "system.abilities.str.check.roll.min": {
-      "name": "Strength Check Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Strength check."
-    },
-    "system.abilities.str.check.roll.mode": {
-      "name": "Strength Check Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Strength checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.str.max": {
-      "name": "Strength Max Score",
-      "description": ""
-    },
-    "system.abilities.str.mod": {
-      "name": "Strength Mod",
-      "description": ""
-    },
-    "system.abilities.str.proficient": {
-      "name": "Strength Save Proficiency",
-      "description": ""
-    },
-    "system.abilities.str.save.roll.max": {
-      "name": "Strength Save Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Strength save."
-    },
-    "system.abilities.str.save.roll.min": {
-      "name": "Strength Save Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Strength save."
-    },
-    "system.abilities.str.save.roll.mode": {
-      "name": "Strength Save Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Strength saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.str.save": {
-      "name": "Strength Save Mod",
-      "description": ""
-    },
-    "system.abilities.str.value": {
-      "name": "Strength Score",
-      "description": ""
-    },
-    "system.abilities.wis.bonuses.check": {
-      "name": "Wisdom Check Bonus",
-      "description": ""
-    },
-    "system.abilities.wis.bonuses.save": {
-      "name": "Wisdom Save Bonus",
-      "description": ""
-    },
-    "system.abilities.wis.check.roll.max": {
-      "name": "Wisdom Check Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Wisdom check."
-    },
-    "system.abilities.wis.check.roll.min": {
-      "name": "Wisdom Check Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Wisdom check."
-    },
-    "system.abilities.wis.check.roll.mode": {
-      "name": "Wisdom Check Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Wisdom checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.wis.max": {
-      "name": "Wisdom Max Score",
-      "description": ""
-    },
-    "system.abilities.wis.mod": {
-      "name": "Wisdom Mod",
-      "description": ""
-    },
-    "system.abilities.wis.proficient": {
-      "name": "Wisdom Save Proficiency",
-      "description": ""
-    },
-    "system.abilities.wis.save.roll.max": {
-      "name": "Wisdom Save Max",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The maximum rollable on a d20 for a Wisdom save."
-    },
-    "system.abilities.wis.save.roll.min": {
-      "name": "Wisdom Save Min",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. The minimum rollable on a d20 for a Wisdom save."
-    },
-    "system.abilities.wis.save.roll.mode": {
-      "name": "Wisdom Save Roll Mode",
-      "description": "NOTE: Nonfunctional prior to 5.1.0. Roll mode for Wisdom saves. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.abilities.wis.save": {
-      "name": "Wisdom Save Mod",
-      "description": ""
-    },
-    "system.abilities.wis.value": {
-      "name": "Wisdom Score",
+    "value": {
+      "name": "{ability} Score",
       "description": ""
     }
   },
   "dae.SystemSkills.fieldData": {
-    "system.skills.acr.ability": {
-      "name": "Acrobatics Ability",
-      "description": "Which ability to use for Acrobatics checks."
+    "ability": {
+      "name": "{skill} Ability",
+      "description": "Which ability to use for {skill} checks."
     },
-    "system.skills.acr.bonuses.check": {
-      "name": "Acrobatics Check Bonus",
+    "bonuses.check": {
+      "name": "{skill} Check Bonus",
       "description": ""
     },
-    "system.skills.acr.bonuses.passive": {
-      "name": "Passive Acrobatics Bonus",
+    "bonuses.passive": {
+      "name": "Passive {skill} Bonus",
       "description": ""
     },
-    "system.skills.acr.roll.max": {
-      "name": "Acrobatics Max",
-      "description": "The maximum rollable on a d20 for an Acrobatics check."
-    },
-    "system.skills.acr.roll.min": {
-      "name": "Acrobatics Min",
-      "description": "The minimum rollable on a d20 for an Acrobatics check."
-    },
-    "system.skills.acr.roll.mode": {
-      "name": "Acrobatics Roll Mode",
-      "description": "Roll mode for Acrobatics checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.acr.value": {
-      "name": "Acrobatics Proficiency",
-      "description": ""
-    },
-    "system.skills.ani.ability": {
-      "name": "Animal Handling Ability",
-      "description": "Which ability to use for Animal Handling checks."
-    },
-    "system.skills.ani.bonuses.check": {
-      "name": "Animal Handling Check Bonus",
-      "description": ""
-    },
-    "system.skills.ani.bonuses.passive": {
-      "name": "Passive Animal Handling Bonus",
-      "description": ""
-    },
-    "system.skills.ani.roll.max": {
-      "name": "Animal Handling Max",
-      "description": "The maximum rollable on a d20 for an Animal Handling check."
-    },
-    "system.skills.ani.roll.min": {
-      "name": "Animal Handling Min",
-      "description": "The minimum rollable on a d20 for an Animal Handling check."
-    },
-    "system.skills.ani.roll.mode": {
-      "name": "Animal Handling Roll Mode",
-      "description": "Roll mode for Animal Handling checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.ani.value": {
-      "name": "Animal Handling Proficiency",
-      "description": ""
-    },
-    "system.skills.arc.ability": {
-      "name": "Arcana Ability",
-      "description": "Which ability to use for Arcana checks."
-    },
-    "system.skills.arc.bonuses.check": {
-      "name": "Arcana Check Bonus",
-      "description": ""
-    },
-    "system.skills.arc.bonuses.passive": {
-      "name": "Passive Arcana Bonus",
-      "description": ""
-    },
-    "system.skills.arc.roll.max": {
-      "name": "Arcana Max",
-      "description": "The maximum rollable on a d20 for an Arcana check."
-    },
-    "system.skills.arc.roll.min": {
-      "name": "Arcana Min",
-      "description": "The minimum rollable on a d20 for an Arcana check."
-    },
-    "system.skills.arc.roll.mode": {
-      "name": "Arcana Roll Mode",
-      "description": "Roll mode for Arcana checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.arc.value": {
-      "name": "Arcana Proficiency",
-      "description": ""
-    },
-    "system.skills.ath.ability": {
-      "name": "Athletics Ability",
-      "description": "Which ability to use for Athletics checks."
-    },
-    "system.skills.ath.bonuses.check": {
-      "name": "Athletics Check Bonus",
-      "description": ""
-    },
-    "system.skills.ath.bonuses.passive": {
-      "name": "Passive Athletics Bonus",
-      "description": ""
-    },
-    "system.skills.ath.roll.max": {
-      "name": "Athletics Max",
-      "description": "The maximum rollable on a d20 for an Athletics check."
-    },
-    "system.skills.ath.roll.min": {
-      "name": "Athletics Min",
-      "description": "The minimum rollable on a d20 for an Athletics check."
-    },
-    "system.skills.ath.roll.mode": {
-      "name": "Athletics Roll Mode",
-      "description": "Roll mode for Athletics checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.ath.value": {
-      "name": "Athletics Proficiency",
-      "description": ""
-    },
-    "system.skills.dec.ability": {
-      "name": "Deception Ability",
-      "description": "Which ability to use for Deception checks."
-    },
-    "system.skills.dec.bonuses.check": {
-      "name": "Deception Check Bonus",
-      "description": ""
-    },
-    "system.skills.dec.bonuses.passive": {
-      "name": "Passive Deception Bonus",
-      "description": ""
-    },
-    "system.skills.dec.roll.max": {
-      "name": "Deception Max",
-      "description": "The maximum rollable on a d20 for a Deception check."
-    },
-    "system.skills.dec.roll.min": {
-      "name": "Deception Min",
-      "description": "The minimum rollable on a d20 for a Deception check."
-    },
-    "system.skills.dec.roll.mode": {
-      "name": "Deception Roll Mode",
-      "description": "Roll mode for Deception checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.dec.value": {
-      "name": "Deception Proficiency",
-      "description": ""
-    },
-    "system.skills.his.ability": {
-      "name": "History Ability",
-      "description": "Which ability to use for History checks."
-    },
-    "system.skills.his.bonuses.check": {
-      "name": "History Check Bonus",
-      "description": ""
-    },
-    "system.skills.his.bonuses.passive": {
-      "name": "Passive History Bonus",
-      "description": ""
-    },
-    "system.skills.his.roll.max": {
-      "name": "History Max",
-      "description": "The maximum rollable on a d20 for a History check."
-    },
-    "system.skills.his.roll.min": {
-      "name": "History Min",
-      "description": "The minimum rollable on a d20 for a History check."
-    },
-    "system.skills.his.roll.mode": {
-      "name": "History Roll Mode",
-      "description": "Roll mode for History checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.his.value": {
-      "name": "History Proficiency",
-      "description": ""
-    },
-    "system.skills.ins.ability": {
-      "name": "Insight Ability",
-      "description": "Which ability to use for Insight checks."
-    },
-    "system.skills.ins.bonuses.check": {
-      "name": "Insight Check Bonus",
-      "description": ""
-    },
-    "system.skills.ins.bonuses.passive": {
-      "name": "Passive Insight Bonus",
-      "description": ""
-    },
-    "system.skills.ins.roll.max": {
-      "name": "Insight Max",
-      "description": "The maximum rollable on a d20 for an Insight check."
-    },
-    "system.skills.ins.roll.min": {
-      "name": "Insight Min",
-      "description": "The minimum rollable on a d20 for an Insight check."
-    },
-    "system.skills.ins.roll.mode": {
-      "name": "Insight Roll Mode",
-      "description": "Roll mode for Insight checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.ins.value": {
-      "name": "Insight Proficiency",
-      "description": ""
-    },
-    "system.skills.inv.ability": {
-      "name": "Investigation Ability",
-      "description": "Which ability to use for Investigation checks."
-    },
-    "system.skills.inv.bonuses.check": {
-      "name": "Investigation Check Bonus",
-      "description": ""
-    },
-    "system.skills.inv.bonuses.passive": {
-      "name": "Passive Investigation Bonus",
-      "description": ""
-    },
-    "system.skills.inv.roll.max": {
-      "name": "Investigation Max",
-      "description": "The maximum rollable on a d20 for an Investigation check."
-    },
-    "system.skills.inv.roll.min": {
-      "name": "Investigation Min",
-      "description": "The minimum rollable on a d20 for an Investigation check."
-    },
-    "system.skills.inv.roll.mode": {
-      "name": "Investigation Roll Mode",
-      "description": "Roll mode for Investigation checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.inv.value": {
-      "name": "Investigation Proficiency",
-      "description": ""
-    },
-    "system.skills.itm.ability": {
-      "name": "Intimidation Ability",
-      "description": "Which ability to use for Intimidation checks."
-    },
-    "system.skills.itm.bonuses.check": {
-      "name": "Intimidation Check Bonus",
-      "description": ""
-    },
-    "system.skills.itm.bonuses.passive": {
-      "name": "Passive Intimidation Bonus",
-      "description": ""
-    },
-    "system.skills.itm.roll.max": {
-      "name": "Intimidation Max",
-      "description": "The maximum rollable on a d20 for an Intimidation check."
-    },
-    "system.skills.itm.roll.min": {
-      "name": "Intimidation Min",
-      "description": "The minimum rollable on a d20 for an Intimidation check."
-    },
-    "system.skills.itm.roll.mode": {
-      "name": "Intimidation Roll Mode",
-      "description": "Roll mode for Intimidation checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.itm.value": {
-      "name": "Intimidation Proficiency",
-      "description": ""
-    },
-    "system.skills.med.ability": {
-      "name": "Medicine Ability",
-      "description": "Which ability to use for Medicine checks."
-    },
-    "system.skills.med.bonuses.check": {
-      "name": "Medicine Check Bonus",
-      "description": ""
-    },
-    "system.skills.med.bonuses.passive": {
-      "name": "Passive Medicine Bonus",
-      "description": ""
-    },
-    "system.skills.med.roll.max": {
-      "name": "Medicine Max",
-      "description": "The maximum rollable on a d20 for a Medicine check."
-    },
-    "system.skills.med.roll.min": {
-      "name": "Medicine Min",
-      "description": "The minimum rollable on a d20 for a Medicine check."
-    },
-    "system.skills.med.roll.mode": {
-      "name": "Medicine Roll Mode",
-      "description": "Roll mode for Medicine checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.med.value": {
-      "name": "Medicine Proficiency",
-      "description": ""
-    },
-    "system.skills.nat.ability": {
-      "name": "Nature Ability",
-      "description": "Which ability to use for Nature checks."
-    },
-    "system.skills.nat.bonuses.check": {
-      "name": "Nature Check Bonus",
-      "description": ""
-    },
-    "system.skills.nat.bonuses.passive": {
-      "name": "Passive Nature Bonus",
-      "description": ""
-    },
-    "system.skills.nat.roll.max": {
-      "name": "Nature Max",
-      "description": "The maximum rollable on a d20 for a Nature check."
-    },
-    "system.skills.nat.roll.min": {
-      "name": "Nature Min",
-      "description": "The minimum rollable on a d20 for a Nature check."
-    },
-    "system.skills.nat.roll.mode": {
-      "name": "Nature Roll Mode",
-      "description": "Roll mode for Nature checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.nat.value": {
-      "name": "Nature Proficiency",
-      "description": ""
-    },
-    "system.skills.per.ability": {
-      "name": "Persuasion Ability",
-      "description": "Which ability to use for Persuasion checks."
-    },
-    "system.skills.per.bonuses.check": {
-      "name": "Persuasion Check Bonus",
-      "description": ""
-    },
-    "system.skills.per.bonuses.passive": {
-      "name": "Passive Persuasion Bonus",
-      "description": ""
-    },
-    "system.skills.per.roll.max": {
-      "name": "Persuasion Max",
-      "description": "The maximum rollable on a d20 for a Persuasion check."
-    },
-    "system.skills.per.roll.min": {
-      "name": "Persuasion Min",
-      "description": "The minimum rollable on a d20 for a Persuasion check."
-    },
-    "system.skills.per.roll.mode": {
-      "name": "Persuasion Roll Mode",
-      "description": "Roll mode for Persuasion checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.per.value": {
-      "name": "Persuasion Proficiency",
-      "description": ""
-    },
-    "system.skills.prc.ability": {
-      "name": "Perception Ability",
-      "description": "Which ability to use for Perception checks."
-    },
-    "system.skills.prc.bonuses.check": {
-      "name": "Perception Check Bonus",
-      "description": ""
-    },
-    "system.skills.prc.bonuses.passive": {
-      "name": "Passive Perception Bonus",
-      "description": ""
-    },
-    "system.skills.prc.roll.max": {
-      "name": "Perception Max",
-      "description": "The maximum rollable on a d20 for a Perception check."
-    },
-    "system.skills.prc.roll.min": {
-      "name": "Perception Min",
-      "description": "The minimum rollable on a d20 for a Perception check."
-    },
-    "system.skills.prc.roll.mode": {
-      "name": "Perception Roll Mode",
-      "description": "Roll mode for Perception checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.prc.value": {
-      "name": "Perception Proficiency",
-      "description": ""
-    },
-    "system.skills.prf.ability": {
-      "name": "Performance Ability",
-      "description": "Which ability to use for Performance checks."
-    },
-    "system.skills.prf.bonuses.check": {
-      "name": "Performance Check Bonus",
-      "description": ""
-    },
-    "system.skills.prf.bonuses.passive": {
-      "name": "Passive Performance Bonus",
-      "description": ""
-    },
-    "system.skills.prf.roll.max": {
-      "name": "Performance Max",
-      "description": "The maximum rollable on a d20 for a Performance check."
-    },
-    "system.skills.prf.roll.min": {
-      "name": "Performance Min",
-      "description": "The minimum rollable on a d20 for a Performance check."
-    },
-    "system.skills.prf.roll.mode": {
-      "name": "Performance Roll Mode",
-      "description": "Roll mode for Performance checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.prf.value": {
-      "name": "Performance Proficiency",
-      "description": ""
-    },
-    "system.skills.rel.ability": {
-      "name": "Religion Ability",
-      "description": "Which ability to use for Religion checks."
-    },
-    "system.skills.rel.bonuses.check": {
-      "name": "Religion Check Bonus",
-      "description": ""
-    },
-    "system.skills.rel.bonuses.passive": {
-      "name": "Passive Religion Bonus",
-      "description": ""
-    },
-    "system.skills.rel.roll.max": {
-      "name": "Religion Max",
-      "description": "The maximum rollable on a d20 for a Religion check."
-    },
-    "system.skills.rel.roll.min": {
-      "name": "Religion Min",
-      "description": "The minimum rollable on a d20 for a Religion check."
-    },
-    "system.skills.rel.roll.mode": {
-      "name": "Religion Roll Mode",
-      "description": "Roll mode for Religion checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.rel.value": {
-      "name": "Religion Proficiency",
-      "description": ""
-    },
-    "system.skills.slt.ability": {
-      "name": "Sleight of Hand Ability",
-      "description": "Which ability to use for Sleight of Hand checks."
-    },
-    "system.skills.slt.bonuses.check": {
-      "name": "Sleight of Hand Check Bonus",
-      "description": ""
-    },
-    "system.skills.slt.bonuses.passive": {
-      "name": "Passive Sleight of Hand Bonus",
-      "description": ""
-    },
-    "system.skills.slt.roll.max": {
-      "name": "Sleight of Hand Max",
-      "description": "The maximum rollable on a d20 for a Sleight of Hand check."
-    },
-    "system.skills.slt.roll.min": {
-      "name": "Sleight of Hand Min",
-      "description": "The minimum rollable on a d20 for a Sleight of Hand check."
-    },
-    "system.skills.slt.roll.mode": {
-      "name": "Sleight of Hand Roll Mode",
-      "description": "Roll mode for Sleight of Hand checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.slt.value": {
-      "name": "Sleight of Hand Proficiency",
-      "description": ""
-    },
-    "system.skills.ste.ability": {
-      "name": "Stealth Ability",
-      "description": "Which ability to use for Stealth checks."
-    },
-    "system.skills.ste.bonuses.check": {
-      "name": "Stealth Check Bonus",
-      "description": ""
-    },
-    "system.skills.ste.bonuses.passive": {
-      "name": "Passive Stealth Bonus",
-      "description": ""
-    },
-    "system.skills.ste.roll.max": {
-      "name": "Stealth Max",
-      "description": "The maximum rollable on a d20 for a Stealth check."
-    },
-    "system.skills.ste.roll.min": {
-      "name": "Stealth Min",
-      "description": "The minimum rollable on a d20 for a Stealth check."
-    },
-    "system.skills.ste.roll.mode": {
-      "name": "Stealth Roll Mode",
-      "description": "Roll mode for Stealth checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.ste.value": {
-      "name": "Stealth Proficiency",
-      "description": ""
-    },
-    "system.skills.sur.ability": {
-      "name": "Survival Ability",
-      "description": "Which ability to use for Survival checks."
-    },
-    "system.skills.sur.bonuses.check": {
-      "name": "Survival Check Bonus",
-      "description": ""
-    },
-    "system.skills.sur.bonuses.passive": {
-      "name": "Passive Survival Bonus",
-      "description": ""
-    },
-    "system.skills.sur.roll.max": {
-      "name": "Survival Max",
-      "description": "The maximum rollable on a d20 for a Survival check."
-    },
-    "system.skills.sur.roll.min": {
-      "name": "Survival Min",
-      "description": "The minimum rollable on a d20 for a Survival check."
-    },
-    "system.skills.sur.roll.mode": {
-      "name": "Survival Roll Mode",
-      "description": "Roll mode for Survival checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
-    },
-    "system.skills.sur.value": {
-      "name": "Survival Proficiency",
+    "roll.max": {
+      "name": "{skill} Max",
+      "description": "The maximum rollable on a d20 for {skill} checks."
+    },
+    "roll.min": {
+      "name": "{skill} Min",
+      "description": "The minimum rollable on a d20 for {skill} checks."
+    },
+    "roll.mode": {
+      "name": "{skill} Roll Mode",
+      "description": "Roll mode for {skill} checks. \"Add\" adds a source of advantage (1) or disadvantage (-1). Override forces advantage (1), disadvantage (-1), or straight roll (0)."
+    },
+    "value": {
+      "name": "{skill} Proficiency",
       "description": ""
     }
   },
@@ -1401,11 +665,11 @@
     },
     "system.attributes.concentration.roll.max": {
       "name": "Concentration Max",
-      "description": "The maximum rollable on a d20 for a Concentration save."
+      "description": "The maximum rollable on a d20 for Concentration saves."
     },
     "system.attributes.concentration.roll.min": {
       "name": "Concentration Min",
-      "description": "The maximum rollable on a d20 for a Concentration save."
+      "description": "The maximum rollable on a d20 for Concentration saves."
     },
     "system.attributes.concentration.roll.mode": {
       "name": "Concentration Roll Mode",
@@ -1421,11 +685,11 @@
     },
     "system.attributes.death.roll.max": {
       "name": "Death Save Max",
-      "description": "The maximum rollable on a d20 for a Death save."
+      "description": "The maximum rollable on a d20 for Death saves."
     },
     "system.attributes.death.roll.min": {
       "name": "Death Save Max",
-      "description": "The minimum rollable on a d20 for a Death save."
+      "description": "The minimum rollable on a d20 for Death saves."
     },
     "system.attributes.death.roll.mode": {
       "name": "Death Save Roll Mode",
@@ -1703,73 +967,9 @@
       "name": "(Midi) Custom Damage Absorption",
       "description": "Accepts semicolon-separated values."
     },
-    "system.traits.da.amount.acid": {
-      "name": "(Midi) Damage Absorption (Acid)",
-      "description": "Damage Absorption for Acid damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.bludgeoning": {
-      "name": "(Midi) Damage Absorption (Bludgeoning)",
-      "description": "Damage Absorption for Bludgeoning damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.cold": {
-      "name": "(Midi) Damage Absorption (Cold)",
-      "description": "Damage Absorption for Cold damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.fire": {
-      "name": "(Midi) Damage Absorption (Fire)",
-      "description": "Damage Absorption for Fire damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.force": {
-      "name": "(Midi) Damage Absorption (Force)",
-      "description": "Damage Absorption for Force damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.healing": {
-      "name": "(Midi) Damage Absorption (Healing)",
-      "description": "Damage Absorption for Healing. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.lightning": {
-      "name": "(Midi) Damage Absorption (Lightning)",
-      "description": "Damage Absorption for Lightning damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.midi-none": {
-      "name": "(Midi) Damage Absorption (Midi-None)",
-      "description": ""
-    },
-    "system.traits.da.amount.necrotic": {
-      "name": "(Midi) Damage Absorption (Necrotic)",
-      "description": "Damage Absorption for Necrotic damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.none": {
-      "name": "(Midi) Damage Absorption (None)",
-      "description": ""
-    },
-    "system.traits.da.amount.piercing": {
-      "name": "(Midi) Damage Absorption (Piercing)",
-      "description": "Damage Absorption for Piercing damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.poison": {
-      "name": "(Midi) Damage Absorption (Poison)",
-      "description": "Damage Absorption for Poison damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.psychic": {
-      "name": "(Midi) Damage Absorption (Psychic)",
-      "description": "Damage Absorption for Psychic damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.radiant": {
-      "name": "(Midi) Damage Absorption (Radiant)",
-      "description": "Damage Absorption for Radiant damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.slashing": {
-      "name": "(Midi) Damage Absorption (Slashing)",
-      "description": "Damage Absorption for Slashing damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.temphp": {
-      "name": "(Midi) Damage Absorption (TempHP)",
-      "description": "Damage Absorption for TempHP healing. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
-    },
-    "system.traits.da.amount.thunder": {
-      "name": "(Midi) Damage Absorption (Thunder)",
-      "description": "Damage Absorption for Thunder damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
+    "da": {
+      "name": "(Midi) Damage Absorption ({damage})",
+      "description": "Damage Absorption for {damage} damage. Acts as a multiplier to all damage received. For instance, a value of -1 would result in all damage healing for the amount instead of damaging by it."
     },
     "system.traits.da.bypasses": {
       "name": "(Midi) Damage Absorption Bypasses",
@@ -1851,73 +1051,9 @@
       "name": "Individual Damage Immunity",
       "description": "Use mode Add and choose type damage immunity to add. -type removes it."
     },
-    "system.traits.dm.amount.acid": {
-      "name": "Damage Modification (Acid)",
-      "description": "Damage Modification for Acid damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.bludgeoning": {
-      "name": "Damage Modification (Bludgeoning)",
-      "description": "Damage Modification for Bludgeoning damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.cold": {
-      "name": "Damage Modification (Cold)",
-      "description": "Damage Modification for Cold damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.fire": {
-      "name": "Damage Modification (Fire)",
-      "description": "Damage Modification for Fire damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.force": {
-      "name": "Damage Modification (Force)",
-      "description": "Damage Modification for Force damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.healing": {
-      "name": "Damage Modification (Healing)",
-      "description": "Damage Modification for Healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.lightning": {
-      "name": "Damage Modification (Lightning)",
-      "description": "Damage Modification for Lightning damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.midi-none": {
-      "name": "Damage Modification (Midi-None)",
-      "description": ""
-    },
-    "system.traits.dm.amount.necrotic": {
-      "name": "Damage Modification (Necrotic)",
-      "description": "Damage Modification for Necrotic damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.none": {
-      "name": "Damage Modification (None)",
-      "description": ""
-    },
-    "system.traits.dm.amount.piercing": {
-      "name": "Damage Modification (Piercing)",
-      "description": "Damage Modification for Piercing damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.poison": {
-      "name": "Damage Modification (Poison)",
-      "description": "Damage Modification for Poison damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.psychic": {
-      "name": "Damage Modification (Psychic)",
-      "description": "Damage Modification for Psychic damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.radiant": {
-      "name": "Damage Modification (Radiant)",
-      "description": "Damage Modification for Radiant damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.slashing": {
-      "name": "Damage Modification (Slashing)",
-      "description": "Damage Modification for Slashing damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.temphp": {
-      "name": "Damage Modification (TempHP)",
-      "description": "Damage Modification for TempHP healing. Positive numbers mean additional damage taken, negative mean reduced damage taken."
-    },
-    "system.traits.dm.amount.thunder": {
-      "name": "Damage Modification (Thunder)",
-      "description": "Damage Modification for Thunder damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
+    "dm.amount": {
+      "name": "Damage Modification ({damage})",
+      "description": "Damage Modification for {damage} damage. Positive numbers mean additional damage taken, negative mean reduced damage taken."
     },
     "system.traits.dm.bypasses": {
       "name": "Damage Modification Bypasses",

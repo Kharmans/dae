@@ -2,69 +2,6 @@
 import { debug, warn, log, i18n, error } from "../dae.js";
 import { effectIsTransfer } from "./dae.js";
 
-const EFFECTMODES = CONST.ACTIVE_EFFECT_MODES;
-
-function findDAEItem(item, packs) {
-  for (let pack of packs) {
-    let matchItem = pack?.find(pd => pd.name === item.name && pd.type === item.type);
-    if (matchItem) return matchItem;
-  }
-  return undefined;
-}
-
-var packsLoaded = false;
-var daeItemPack;
-var midiItemPack
-var daeSpellPack;
-var midiSpellPack
-var daeFeatsPack;
-var midiFeatsPack;
-var magicItemsPack;
-var dndSRDItemsPack;
-var dndSRDSpellsPack;
-var dndSRDclassesPack;
-var dndSRDClassfeaturesPack;
-var dndSRDMonsterfeaturesPack;
-
-export async function loadPacks() {
-  if (packsLoaded) return;
-  daeItemPack = await game.packs?.get("Dynamic-Effects-SRD.DAE SRD Items")?.getDocuments();
-  midiItemPack = await game.packs?.get("midi-srd.Midi SRD Items")?.getDocuments();
-
-  daeSpellPack = await game.packs?.get("Dynamic-Effects-SRD.DAE SRD Spells")?.getDocuments();
-  midiSpellPack = await game.packs?.get("midi-srd.Midi SRD Spells")?.getDocuments();
-
-  daeFeatsPack = await game.packs?.get("Dynamic-Effects-SRD.DAE SRD Feats")?.getDocuments();
-  midiFeatsPack = await game.packs?.get("midi-srd.Midi SRD Feats")?.getDocuments();
-
-  magicItemsPack = await game.packs?.get("Dynamic-Effects-SRD.DAE SRD Magic Items")?.getDocuments();
-  dndSRDItemsPack = await game.packs?.get(`${game.system.id}.items`)?.getDocuments();
-  dndSRDSpellsPack = await game.packs?.get(`${game.system.id}.spells`)?.getDocuments();
-  dndSRDclassesPack = await game.packs?.get(`${game.system.id}.classes`)?.getDocuments();
-  dndSRDMonsterfeaturesPack = await game.packs?.get(`${game.system.id}.monsterfeatures`)?.getDocuments();
-  dndSRDClassfeaturesPack = await game.packs?.get(`${game.system.id}.classfeatures`)?.getDocuments();
-  packsLoaded = true;
-}
-
-export function checkLibWrapperVersion() {
-  if (foundry.utils.isNewerVersion("1.8.0", game.modules.get("lib-wrapper")?.version)) {
-    let d = new foundry.appv1.api.Dialog({
-      // localize this text
-      title: i18n("dae.confirm"),
-      content: `<h2>DAE requires libWrapper version 1.8.0 or later</p>`,
-      buttons: {
-        one: {
-          label: "one",
-          icon: '<i class="fas fa-cross"></i>',
-        },
-      },
-      default: "one"
-    });
-    d.render(true);
-  }
-}
-
-
 export async function cleanDAEArmorWorld() {
   await removeAllActorArmorItems();
   await removeAllTokenArmorItems();
@@ -359,7 +296,7 @@ export async function migrateCompendium(pack) {
   }
   // Apply the original locked status for the pack
   await pack.configure({ locked: wasLocked });
-  //@ts-expect-error
+  //@ts-expect-error no dnd5e-types
   game.dnd5e.moduleArt.suppressArt = false;
   ui.notifications?.notify(`Removed Passive effects for all ${documentName} documents from Compendium ${pack.collection}`);
 };
@@ -371,7 +308,6 @@ export async function removeCompendiaPassiveEffects() {
   }
   // Migrate World Compendium Packs
   for (let p of game.packs ?? []) {
-    //@ ts-expect-error
     // if (p.metadata.packageType !== "world") continue;
     if (!["Actor"].includes(p.documentName)) continue;
     console.log("doing compendium", p.collection)
