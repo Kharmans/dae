@@ -5,7 +5,6 @@ import { preloadTemplates } from './module/preloadTemplates.js';
 import { daeSetupActions, daeInitActions, fetchParams } from "./module/dae.js";
 import { daeReadyActions } from "./module/dae.js";
 import { setupSocket } from './module/GMAction.js';
-import { checkLibWrapperVersion } from './module/migration.js';
 import { setupPatching, initPatching } from './module/patching.js';
 import API from './module/API/api.js';
 
@@ -16,11 +15,11 @@ export let setDebugLevel = (debugText: string) => {
   if (debugEnabled >= 3) CONFIG.debug.hooks = true;
 }
 // 0 = none, warnings = 1, debug = 2, all = 3
-export let debug = (...args) => { if (debugEnabled > 1) console.log("DEBUG: dae | ", ...args) };
-export let log = (...args) => console.log("dae | ", ...args);
-export let warn = (...args) => { if (debugEnabled > 0) console.warn("dae | ", ...args) };
-export let error = (...args) => console.error("dae | ", ...args)
-export let timelog = (...args) => warn("dae | ", Date.now(), ...args);
+export let debug = (...args: any[]) => { if (debugEnabled > 1) console.log("DEBUG: dae | ", ...args) };
+export let log = (...args: any[]) => console.log("dae | ", ...args);
+export let warn = (...args: any[]) => { if (debugEnabled > 0) console.warn("dae | ", ...args) };
+export let error = (...args: any[]) => console.error("dae | ", ...args)
+export let timelog = (...args: any[]) => warn("dae | ", Date.now(), ...args);
 export function i18n(key: string) {
   return game.i18n?.localize(key) ?? key;
 };
@@ -65,7 +64,6 @@ Hooks.once('ready', () => {
     if ("maybe" === gameSystemCompatible) {
       if (game.user?.isGM) ui.notifications?.warn(`DAE is has not been tested with ${game.system.title}. Disable DAE if there are problems`);
     }
-    checkLibWrapperVersion();
     fetchParams();
     debug("ready setup actions")
     daeSpecialDurations = { "None": "" };
@@ -180,16 +178,19 @@ export async function createDAEMacros() {
         if (existingMacros.length > 0) {
           for (let macro of existingMacros) {
             if (macroSpec.checkVersion
-              && !foundry.utils.isNewerVersion(macroSpec.version, (macro.flags["dae-version"] ?? "0.0.0")))
+              && !foundry.utils.isNewerVersion(macroSpec.version, (macro.flags?.dae?.version ?? "0.0.0")))
               continue; // already up to date
             await macro.update({
               command: macroSpec.commandText,
-              // @ts-expect-error
-              "flags.dae-version": macroSpec.version
+              flags: {
+                dae: {
+                  version: macroSpec.version
+                }
+              }
             });
           }
         } else {
-          const macroData = {
+          const macroData: Macro.CreateData = {
             _id: null,
             name: macroSpec.name,
             type: "script",
@@ -199,12 +200,12 @@ export async function createDAEMacros() {
             command: macroSpec.commandText,
             folder: null,
             sort: 0,
-            permission: {
-              default: 1,
-            },
-            flags: { "dae-version": macroSpec.version ?? daeVersion }
+            flags: {
+              dae: {
+                version: macroSpec.version ?? daeVersion
+              }
+            }
           };
-          // @ts-expect-error types silliness
           await Macro.createDocuments([macroData]);
           log(`Macro ${macroData.name} created`);
         }

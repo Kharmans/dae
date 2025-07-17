@@ -159,11 +159,11 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
   }
 
   static #onDeleteEffect(this: ActiveEffects, _event: PointerEvent, target: HTMLElement) {
-    const effectId = target.closest<HTMLElement>("[data-effect-id]")?.dataset.effectId;
+    const effectId = target.closest<HTMLElement>("[data-effect-id]")?.dataset.effectId ?? "";
     // Note: This means transfer effects can't be deleted via the Actor's ActiveEffects app
-    const effect = this.document.effects.get(effectId ?? "");
+    const effect = this.document.effects.get(effectId);
     if (effect) {
-      // @ts-expect-error types confused about item vs actor
+      // @ts-expect-error types confused about actor vs item, and our adding expiry-reason
       this.document.deleteEmbeddedDocuments("ActiveEffect", [effectId], { "expiry-reason": "manual-deletion" });
     }
   }

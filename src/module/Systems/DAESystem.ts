@@ -1,18 +1,27 @@
-import { AnyMutableObject } from "fvtt-types/utils";
+import { AnyMutableObject, AnyObject } from "fvtt-types/utils";
 import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
-import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAEReadyComplete, geti18nOptions, DoEffectsOptions, ceInterface } from "../dae.js";
+import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAEReadyComplete, geti18nOptions, DoEffectsOptions, ceInterface, BaseValuesInner } from "../dae.js";
 
 const { ArrayField, BooleanField, NumberField, StringField } = foundry.data.fields;
 
 export let wildcardEffects: RegExp[] = [];
-export let _characterSpec: { data: any, flags: any } = { data: {}, flags: {} }
+// TODO (Michael): Can this be removed entirely?
+export let _characterSpec: { data: unknown, flags: unknown } = { data: {}, flags: {} }
 
 
-export type FieldType = foundry.data.fields.DataField | "number" | "string" | "boolean" | "object" | "Array" | "Set";
+export type FieldType = foundry.data.fields.DataField | "number" | "string" | "boolean" | "object" | "Array" | "Set" | 0;
+export type Specs = {
+  allSpecs: ValidSpec[];
+  allSpecsObj: Record<string, ValidSpec>;
+  baseSpecs: ValidSpec[];
+  baseSpecsObj: Record<string, ValidSpec>;
+  derivedSpecs: ValidSpec[]; 
+  derivedSpecsObj: Record<string, ValidSpec>;
+}
 export class ValidSpec {
   //  static specs: {allSpecs: ValidSpec[], allSpecsObj: {}, baseSpecs: ValidSpec[], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: ValidSpec[]}; 
-  static actorSpecs: {};
-  static itemSpecs: {};
+  static actorSpecs: Record<string, Specs>;
+  static itemSpecs: Record<string, Specs>;
 
   _fieldSpec: string;
   get fieldSpec(): string { return this._fieldSpec };
@@ -34,11 +43,11 @@ export class ValidSpec {
   get forcedMode(): number { return this._forcedMode }
   set forcedMode(mode: number) { this._forcedMode = mode }
 
-  _options: any;
-  get options(): any { return this._options }
-  set options(options: any) { this._options = options }
+  _options: Record<string, string> | undefined;
+  get options(): Record<string, string> | undefined { return this._options }
+  set options(options: Record<string, string> | undefined) { this._options = options }
 
-  constructor(fs: string, sv: FieldType, forcedMode = -1, label?: string, description?: string, options?: any) {
+  constructor(fs: string, sv: FieldType, forcedMode = -1, label?: string, description?: string, options?: Record<string, string>) {
     this._fieldSpec = fs;
     this._fieldType = sv;
     this._label = label ?? fs;
@@ -50,14 +59,10 @@ export class ValidSpec {
   static createValidMods() {
     this.actorSpecs = {};
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-    // @ts-expect-error
-    const system = globalThis.CONFIG.DAE.systemClass;
 
-    // for (let specKey of Object.keys(game.system.model.Actor)) {
     for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
       this.actorSpecs[specKey] = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecsObj: {}, derivedSpecs: [] };
-      // @ts-expect-error
-      _characterSpec["system"] = game.system.model ? foundry.utils.duplicate(game.system.model.Actor[specKey] ?? {}) : {};
+      _characterSpec["system"] = game.model ? foundry.utils.duplicate(game.model.Actor[specKey] ?? {}) : {};
       let baseValues = foundry.utils.flattenObject(_characterSpec) as Record<string, any>;
       for (let prop in baseValues) {
         baseValues[prop] = [baseValues[prop], -1];
@@ -80,7 +85,7 @@ export class ValidSpec {
         }
         if (baseValue[0] instanceof Array) {
           console.warn("wrong baseValue", key, baseValue[0]);
-          // @ts-expect-error
+          // @ts-expect-error Dunno if this can actually happen
           baseValue[0] = new ArrayField({ initial: baseValues[0] });
         }
       }
@@ -92,7 +97,7 @@ export class ValidSpec {
         baseValues["system.att"]
       }
 
-      var specials: any = {};
+      let specials: BaseValuesInner = {};
       if (ceInterface) specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["macro.StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
       specials["StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -104,20 +109,20 @@ export class ValidSpec {
         const special = specials[key];
         if (typeof special[0] === "string") {
           console.warn("wrong special", key, special[0]);
-          special[0] = new StringField({ initial: specials[0] });
+          special[0] = new StringField({ initial: special[0] });
         }
         if (typeof special[0] === "number") {
           console.warn("wrong special", key, special[0]);
-          special[0] = new NumberField({ initial: specials[0] });
+          special[0] = new NumberField({ initial: special[0] });
         }
         if (typeof special[0] === "boolean") {
           console.warn("wrong special", key, special[0]);
-          special[0] = new BooleanField({ initial: specials[0] });
+          special[0] = new BooleanField({ initial: special[0] });
         }
         if (special[0] instanceof Array) {
           console.warn("wrong special", key, special[0]);
-          // @ts-expect-error
-          special[0] = new ArrayField({ initial: specials[0] });
+          // @ts-expect-error Dunno if this can actually happen
+          special[0] = new ArrayField({ initial: special[0] });
         }
       }
 
@@ -129,9 +134,9 @@ export class ValidSpec {
         delete baseValues[key]
       })
 
-      // baseSpecs are all those fields defined in template.json game.system.model and are things the user can directly change
+      // baseSpecs are all those fields defined in template.json game.model and are things the user can directly change
       this.actorSpecs[specKey].baseSpecs = Object.keys(baseValues).map(spec => {
-        let validSpec = new ValidSpec(spec, baseValues[spec][0] ?? baseValues[spec], baseValues[spec][1], baseValues[spec][2], baseValues[spec][3]);
+        let validSpec = new ValidSpec(spec, baseValues[spec][0] ?? baseValues[spec], baseValues[spec][1], baseValues[spec][0]?.label, baseValues[spec][0]?.hint);
         validSpec = daeSystemClass.modifyValidSpec(spec, validSpec); // System specific modifations
         this.actorSpecs[specKey].baseSpecsObj[spec] = validSpec;
         return validSpec;
@@ -143,15 +148,14 @@ export class ValidSpec {
       daeSystemClass.modifyDerivedSpecs(specKey, this.actorSpecs[specKey].derivedSpecs, _characterSpec)
       Hooks.callAll("dae.modifyDerivedSpecs", specKey, this.actorSpecs[specKey].derivedSpecs, _characterSpec);
       Object.entries(specials).forEach(special => {
-        //@ts-expect-error
-        let validSpec = new ValidSpec(special[0], special[1][0], special[1][1], special[1][2], special[1][3]);
+        let validSpec = new ValidSpec(special[0], special[1][0], special[1][1], special[1][0].label, special[1][0].hint);
         this.actorSpecs[specKey].derivedSpecs.push(validSpec);
       })
       this.actorSpecs[specKey].allSpecs = this.actorSpecs[specKey].baseSpecs.concat(this.actorSpecs[specKey].derivedSpecs);
 
       // TODO come back and clean this up
       if (["dnd5e"].includes(game.system.id ?? "")) {
-        // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constituion mod
+        // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constitution mod
         // and initiative bonus depends on advantage on initiative
         this.actorSpecs[specKey].allSpecs.forEach(m => {
           if (["attributes.hp", "attributes.ac"].includes(m._fieldSpec)) {
@@ -201,23 +205,23 @@ export class ValidSpec {
       const fieldStart = `flags.${game.system.id}.`;
       this.actorSpecs[specKey].allSpecs = this.actorSpecs[specKey].allSpecs.map(m => {
         // Turns out the dnd5e field labels are not all that good.
-        if (false && (m.fieldType?.label ?? "") !== "") m._label = i18n(m.fieldType.label);
-        else {
+        // if (false && (m.fieldType?.label ?? "") !== "") m._label = i18n(m.fieldType.label);
+        // else {
           m._label = m._label.replace("data.", "").replace("system.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => i18n(`dae.${str}`).replaceAll("dae.", "")).join(" ");
 
           if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
             const fieldId = m.fieldSpec.replace(fieldStart, "");
-            //@ts-expect-error
+            //@ts-expect-error no dnd5e-types
             const characterFlags = game.system.config?.characterFlags ?? {};
             const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
             m._label = `Flags ${localizedString}`;
           }
-        }
+        // }
 
-        const saveBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).save/);
-        const checkBonus = m._fieldSpec.match(/system.abilities.(\w\w\w).mod/);
-        const skillMod = m._fieldSpec.match(/system.skills.(\w\w\w).mod/);
-        const skillPassive = m._fieldSpec.match(/system.skills.(\w\w\w).passive/);
+        const saveBonus = m._fieldSpec.match(/^system.abilities.(\w\w\w).save$/);
+        const checkBonus = m._fieldSpec.match(/^system.abilities.(\w\w\w).mod$/);
+        const skillMod = m._fieldSpec.match(/^system.skills.(\w\w\w).mod$/);
+        const skillPassive = m._fieldSpec.match(/^system.skills.(\w\w\w).passive$/);
         if (saveBonus) m._label = `${m._label} (Deprecated)`;
         else if (checkBonus) m._label = `${m._label} (Deprecated)`;
         else if (skillMod) m._label = `${m._label} (Deprecated)`;
@@ -232,22 +236,22 @@ export class ValidSpec {
       for (let m of this.itemSpecs[specKey].allSpecs) {
         const fieldStart = `flags.${game.system.id}.`;
         // Turns out the dnd5e field labels are not all that good.
-        if ((m.fieldType?.label ?? "") !== "") m.label = i18n(m.fieldType.label);
+        if (m.fieldType instanceof foundry.data.fields.DataField && (m.fieldType?.label ?? "") !== "") m.label = i18n(m.fieldType.label);
         else {
           m.label = m.label.replace("data.", "").replace("system.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => i18n(`dae.${str}`).replaceAll("dae.", "")).join(" ");
 
           if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
             const fieldId = m.fieldSpec.replace(fieldStart, "");
-            // @ts-expect-error
+            // @ts-expect-error no dnd5e-types
             const characterFlags = game.system.config?.characterFlags ?? {};
             const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
             m.label = `Flags ${localizedString}`;
           }
         }
-        const saveBonus = m.fieldSpec.match(/system.abilities.(\w\w\w).save/);
-        const checkBonus = m.fieldSpec.match(/system.abilities.(\w\w\w).mod/);
-        const skillMod = m.fieldSpec.match(/system.skills.(\w\w\w).mod/);
-        const skillPassive = m.fieldSpec.match(/system.skills.(\w\w\w).passive/);
+        const saveBonus = m.fieldSpec.match(/^system.abilities.(\w\w\w).save$/);
+        const checkBonus = m.fieldSpec.match(/^system.abilities.(\w\w\w).mod$/);
+        const skillMod = m.fieldSpec.match(/^system.skills.(\w\w\w).mod$/);
+        const skillPassive = m.fieldSpec.match(/^system.skills.(\w\w\w).passive$/);
         if (saveBonus) m.label = `${m.label} (Deprecated)`;
         else if (checkBonus) m.label = `${m.label} (Deprecated)`;
         else if (skillMod) m.label = `${m.label} (Deprecated)`;
@@ -257,6 +261,7 @@ export class ValidSpec {
         else if (this.itemSpecs[specKey].derivedSpecsObj[m.fieldSpec]) m.label = `${m.label} (*)`;
         let newOptions = m.options;
         if (typeof m.options === "string") newOptions = geti18nOptions(m.options, MODULE_ID);
+        // @ts-expect-error TODO (Michael): is this actually possible?
         if (!newOptions && typeof m.options === "string") newOptions = i18n(m.options);
         m.options = newOptions;
         m.label = i18n(m.label ?? "");
@@ -274,13 +279,17 @@ export class DAESystem {
   static spellAttacks: string[];
   static weaponAttacks: string[];
   static attackTypes: string[];
-  static bonusSelectors: any;
+  static bonusSelectors: Record<string, {
+    attacks: string[];
+    selector: string;
+    replaceList?: string[];
+  }>;
   static daeActionTypeKeys: string[];
   static detectionModeList: Record<string, string>;
-  public static fieldMappings: any = {};
+  public static fieldMappings: Record<string, string> = {};
 
   public static get systemConfig() {
-    //@ts-expect-error
+    //@ts-expect-error no dnd5e-types
     return game.system.config;
   }
 
@@ -325,7 +334,7 @@ export class DAESystem {
   public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
 
   };
-  public static modifySpecials(actorType: string, specials: {}, characterSpec: any): void {
+  public static modifySpecials(actorType: string, specials: BaseValuesInner, characterSpec: any): void {
     const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
     specials["macro.execute"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     specials["macro.execute.local"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -341,22 +350,23 @@ export class DAESystem {
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
   }
 
-  public static effectDisabled(actor, effect, itemData = null) {
+  public static effectDisabled(actor: Actor.Implementation, effect: ActiveEffect.Implementation, itemData = null) {
     return effect.disabled;
   }
 
-  public static modifyValidSpec(spec, validSpec: ValidSpec): ValidSpec {
+  public static modifyValidSpec(spec: string, validSpec: ValidSpec): ValidSpec {
     return validSpec;
   }
 
-  public static doCustomValue(actor, current, change, validValues) {
+  // TODO (Michael): Is this used anywhere?
+  public static doCustomValue(actor: Actor.Implementation, current: any[], change: ActiveEffect.ChangeData, validValues: any[]) {
     if ((current || []).includes(change.value)) return true;
     if (!validValues.includes(change.value)) return true;
     foundry.utils.setProperty(actor, change.key, current.concat([change.value]))
     return true;
   }
 
-  public static doCustomArrayValue(actor, current, change, validValues: string[] | undefined) {
+  public static doCustomArrayValue(actor: Actor.Implementation, current: any, change: ActiveEffect.ChangeData, validValues: string[] | undefined) {
     if (current instanceof Array) {
       if (foundry.utils.getType(change.value) === "string" && change.value[0] === "-") {
         const checkValue = change.value.slice(1);
@@ -406,27 +416,27 @@ export class DAESystem {
 
   }
   public static getAttributeValue(documentRef: string, attribute: string) {
-    let actor;
-    let value = "";
+    let actor: Actor.Implementation | undefined;
+    // TODO: Type this better
+    let value: any = "";
     if (typeof (documentRef) == 'string') {
-      function getActor(doc, nesting = 0, maxDepth = 3) {
+      function getActor(doc: GetActorType, nesting = 0, maxDepth = 3) {
         nesting++;
         if (nesting > maxDepth) return undefined;
 
         if (doc instanceof Actor) return doc;
-        else if (doc.actor && (doc instanceof foundry.canvas.placeables.Token || doc instanceof Item)) return doc.actor;
-        else if (doc.parent && doc instanceof ActiveEffect) return getActor(doc.parent, nesting)
+        else if ((doc instanceof foundry.canvas.placeables.Token || doc instanceof Item) && doc.actor) return doc.actor;
+        else if ((doc instanceof ActiveEffect) && doc.parent) return getActor(doc.parent, nesting)
         else return undefined;
       }
-      const doc = fromUuidSync(documentRef);
+      const doc = fromUuidSync(documentRef) as GetActorType;
       actor = getActor(doc);
-      // @ts-expect-error TODO: type this better
       if (actor) value = foundry.utils.getProperty(actor, `${attribute}`) ?? null;
     }
     return value;
   }
   public static safeEval(expression: string, sandbox: any, onErrorReturn: any | undefined = undefined) {
-    let result;
+    let result: any;
     const preSetupError = "MidiQOL or fromUuidSync used before setup complete";
     try {
       const src = 'with (sandbox) { return ' + expression + '}';
@@ -439,8 +449,7 @@ export class DAESystem {
       const sandboxProxy = new Proxy(sandbox, {
         has: () => true, // Include everything
         get: (t, k) => k === Symbol.unscopables ? undefined : (t[k] ?? Math[k]),
-        //@ts-expect-error
-        set: () => console.error("You may not set properties of the sandbox environment") // No-op
+        set: () => false && console.error("You may not set properties of the sandbox environment") // No-op
       });
       result = evl(sandboxProxy);
     } catch (err: any) {
@@ -461,7 +470,7 @@ export class DAESystem {
     return result;
   }
 
-  public static safeEvalExpression(input: string, context: any, depth = 0) {
+  public static safeEvalExpression(input: string, context: AnyObject, depth = 0) {
     if (typeof input !== "string") return input;
     input = Roll.replaceFormulaData(input, context);
     let validFunctionName = /^[a-zA-Z_$][0-9a-zA-Z_$.]*$/; // regex for valid JS function name
@@ -471,7 +480,7 @@ export class DAESystem {
     }
     let stack: any[] = [];
     let output = '';
-    let temp;
+    let temp: string;
     let functionStack: any[] = []; // additional stack for function name
 
     for (let char of input) {
@@ -490,7 +499,7 @@ export class DAESystem {
         stack.push('(');
       } else if (char === ')') {
         temp = '';
-        let poppedChar;
+        let poppedChar: string;
 
         // Pop elements from the stack until we find the matching opening parenthesis
         while ((poppedChar = stack.pop()) !== '(') {
@@ -524,9 +533,15 @@ export class DAESystem {
     return output; // depth ? this.safeEval(output, context) : output;
   }
 
-  public static daeCustomEffect(actor, change, _current?: never, _delta?: never, _changes?: never): any {
+  public static daeCustomEffect(
+    actor: Actor.Implementation,
+    change: DAEChangeData,
+    _current?: never,
+    _delta?: never,
+    _changes?: never
+  ): any {
     if (typeof change.value === "string" && (change.value?.includes("dae.eval(") || change.value?.includes("dae.roll("))) {
-      const context = actor.getRollData();
+      const context = actor.getRollData() as AnyMutableObject;
       context.actor = actor;
       change.value = this.safeEvalExpression(change.value, context, 0);
       foundry.utils.setProperty(actor, change.key, change.value);
@@ -564,7 +579,7 @@ export class DAESystem {
     // Might have to be tailored to other systems.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // This supplies DAE custom effects
-    // @ts-expect-error types is missing some args here
+    // @ts-expect-error our custom stuff in the change data makes types angry
     Hooks.on("applyActiveEffect", daeSystemClass.daeCustomEffect.bind(daeSystemClass));
 
   }
@@ -587,7 +602,7 @@ function applyBaseActiveEffects() {
 * call applyDaeEffects
 * add an additional pass after derivfed data
 */
-function prepareData(wrapped) {
+function prepareData(this: Actor.Implementation, wrapped) {
   if (!ValidSpec.actorSpecs) {
     ValidSpec.createValidMods();
   }
@@ -605,11 +620,12 @@ function prepareData(wrapped) {
   wrapped();
   // Add an extra pass after prepareData has completed for "specials" to be applied
   applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].derivedSpecsObj, excludeSpecs: ValidSpec.actorSpecs[this.type].baseSpecsObj, allowAllSpecs: true, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
-  let tokens;
+  let tokens: foundry.canvas.placeables.Token[] | undefined;
   for (const [statusId, wasActive] of specialStatuses) {
     const isActive = this.statuses.has(statusId);
     if (isActive === wasActive) continue;
     if (!tokens) tokens = this.getActiveTokens();
+    // @ts-expect-error protected - do we need this?
     for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
   }
   //TODO find another way to tdo this
@@ -620,8 +636,6 @@ function prepareData(wrapped) {
 foundry.utils.setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
 
 Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
-  // Prelim support for ATE v10 - need some more detail.
-
   const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
   if (game.modules.get("ATL")?.active) {
     for (let label of ["dimSight", "brightSight"]) {
@@ -680,3 +694,6 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
     specials["ATL.preset"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
   }
 });
+
+type GetActorType = Actor.Implementation | foundry.canvas.placeables.Token.Implementation | ActiveEffect.Implementation | Item.Implementation;
+export type DAEChangeData = ActiveEffect.ChangeData & {count?: number, effect?: ActiveEffect.Implementation}

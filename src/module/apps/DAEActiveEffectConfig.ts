@@ -1,4 +1,4 @@
-import { ceInterface, atlActive, daeSystemClass, geti18nOptions } from "../dae.js";
+import { ceInterface, atlActive, daeSystemClass, geti18nOptions, localizationMap } from "../dae.js";
 import { i18n, daeSpecialDurations, daeMacroRepeats } from "../../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
@@ -77,8 +77,8 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       .filter(e => e._fieldSpec.includes(""))
       .reduce((mods, em) => {
         mods[em._fieldSpec] = {
-          name: em._label,
-          description: em._description
+          name: localizationMap[em._fieldSpec]?.name ?? em._label,
+          description: localizationMap[em._fieldSpec]?.description ?? em._description
         };
         return mods;
       }, this.validFields);
@@ -160,8 +160,8 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       .filter(e => e._fieldSpec.includes(""))
       .reduce((mods, em) => {
         mods[em._fieldSpec] = {
-          name: em._label,
-          description: em._description
+          name: localizationMap[em._fieldSpec]?.name ?? em._label,
+          description: localizationMap[em._fieldSpec]?.description ?? em._description
         };
         return mods;
       }, this.validFields);
@@ -266,7 +266,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   }
 
   async _onRender(context, options) {
-    // @ts-expect-error
+    // @ts-expect-error wait 'til types de-stubs, then type this properly
     const currTabId: string | undefined = Object.values(context.tabs)?.find(i => i.active)?.id;
     if (currTabId !== "changes") this.position.height = this.element.offsetHeight ?? "auto";
     const keyInputs = Array.from(this.element.querySelectorAll(".key-input"));
@@ -310,27 +310,25 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
   _onDragStart(ev) { }
 
+  // TODO: What is this actually for?
   async _onDrop(ev: DragEvent) {
     ev.preventDefault();
     const data: any = foundry.applications.ux.TextEditor.getDragEventData(ev);
     const item = await fromUuid(data.uuid);
-    // @ts-expect-error doesn't like `value`
-    const targetValue = ev.target?.value?.split(",")[1];
-    // @ts-expect-error doesn't like `value`
-    if (data.uuid && ev.target) ev.target.value = data.uuid + (targetValue ? `, ${targetValue}` : "");
+    const targetValue = (ev.target as HTMLInputElement)?.value?.split(",")[1];
+    if (data.uuid && ev.target) (ev.target as HTMLInputElement).value = data.uuid + (targetValue ? `, ${targetValue}` : "");
     if (data.fieldName) {
-      // @ts-expect-error doesn't like `value`
-      if (ev.target) ev.target.value = data.fieldName;
+      if (ev.target) (ev.target as HTMLInputElement).value = data.fieldName;
       this.daeFieldBrowser.debouncedUpdateBrowser();
       // TODO need to update the description when selected.
     }
   }
 
   static #onAddSpecialDuration() {
-    // @ts-expect-error static doesn't seem to inherit
+    // @ts-expect-error v13 stubby
     const submitData = this._processFormData(null, this.form, new foundry.applications.ux.FormDataExtended(this.form));
     const specialDuration = Object.values(submitData.flags?.dae?.specialDuration ?? {}) as string[];
-    // @ts-expect-error as above
+    // @ts-expect-error v13 stubby
     return this.submit({
       preventClose: true,
       updateData: {
@@ -340,12 +338,12 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   }
 
   static #onDeleteSpecialDuration(event) {
-    // @ts-expect-error as above
+    // @ts-expect-error v13 stubby
     const submitData = this._processFormData(null, this.form, new foundry.applications.ux.FormDataExtended(this.form));
     const specialDuration = Object.values(submitData.flags?.dae?.specialDuration ?? {}) as string[];
     const idx = Number(event.target.closest("li").dataset.index) || 0;
     specialDuration.splice(idx, 1);
-    // @ts-expect-error as above
+    // @ts-expect-error v13 stubby
     return this.submit({
       preventClose: true,
       updateData: {
@@ -404,8 +402,7 @@ interface DAEActiveEffectConfigRenderContext extends foundry.applications.sheets
 
 export function geti18nTranslations() {
   let translations = game.i18n?.translations["dae"];
-  // @ts-expect-error protected
-  if (!translations) translations = game.i18n._fallback["dae"];
+  // if (!translations) translations = game.i18n._fallback["dae"];
   return translations ?? {};
 }
 

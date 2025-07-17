@@ -1,6 +1,7 @@
 import { socketlibSocket } from "./GMAction.js";
 import { warn, error, debug, i18n } from "../dae.js";
 import { TokenOrDocument } from "../globals.js";
+import { AnyMutableObject } from "fvtt-types/utils";
 
 function getTokenUuid(token: TokenOrDocument) {
   if (token instanceof foundry.canvas.placeables.Token) return token.document.uuid;
@@ -112,7 +113,7 @@ export let teleport = async (token: TokenOrDocument, targetScene: Scene | undefi
     return true;
   }
   // deletes and recreates the token
-  var sourceSceneId = canvas?.scene?.id;
+  let sourceSceneId = canvas?.scene?.id;
   Hooks.once("canvasReady", () => {
     socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos })
       .then(async () => {
@@ -248,11 +249,12 @@ export async function unsetFlag(tactor: Actor.Implementation | foundry.canvas.pl
 }
 
 export async function macroActorUpdate(...args) {
-  let [onOff, actorUuid, type, value, targetField, undo] = args;
+  let [action, actorUuid, type, value, targetField, undo] = args as [string, string, string, string | boolean | number, string, string | boolean];
+  
   //if (args.length>6) undo = args.slice(5,-1).join('');    //someone might have forgotten to wrap the undo within ""
   const lastArg =  args[args.length -1];
   if (!(actorUuid && type && value && targetField)) {
-    console.warn("dae | invalid arguments passed ", ...args)
+    console.warn("dae | invalid arguments passed ", ...args);
     console.warn(`dae | macro.actorUpdate expects the following arguments:
       actorUuid: string
       type: "number", "boolean", "string"
@@ -267,27 +269,30 @@ export async function macroActorUpdate(...args) {
     return;
   }
 
-  let tactor: any = await fromUuid(actorUuid);
-  let actor;
-  actor = tactor.actor ? tactor.actor : tactor;
+  const tactor = await fromUuid(actorUuid) as Actor.Implementation | TokenDocument.Implementation;
+  const actor = tactor instanceof TokenDocument ? tactor.actor : tactor;
+  if (!actor) {
+    console.warn("dae | invalid argument passed", actorUuid);
+    console.warn("dae | no corresponding actor or token document found");
+    return;
+  }
   // const fieldDef = `flags.dae.save.${targetField}`;
   const fieldDef = `flags.dae.actorUpdate.${lastArg.effectId}.${targetField}`;
   let actorValue = foundry.utils.getProperty(actor, targetField);
-  if (args[0] === "each") {
-    // for subsequent executions we have to recover the origianl actor value from the saved value.
-    const fieldValue = foundry.utils.getProperty(actor, fieldDef);
-    // @ts-expect-error
+  if (action === "each") {
+    // for subsequent executions we have to recover the original actor value from the saved value.
+    const fieldValue = foundry.utils.getProperty(actor, fieldDef) as { actorValue: unknown };
     actorValue = fieldValue.actorValue;
   }
-  const rollContext = actor.getRollData();
+  const rollContext = actor.getRollData() as AnyMutableObject;
   rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? 1;
-  if (["on", "each"].includes(args[0])) {
+  if (["on", "each"].includes(action)) {
     if (!game.user?.isGM) {
       console.warn(`dae | macro.actorUpdate user ${game.user?.name} is updating ${actor.name} ${targetField}`);
     }
     switch (type) {
       case 'boolean':
-        value = JSON.parse(value) ? true : false;
+        value = JSON.parse(value as string) ? true : false;
         break;
       case 'number':
         let op = ' ';
@@ -308,10 +313,9 @@ export async function macroActorUpdate(...args) {
     update[targetField] = value;
     if (actor.isOwner) return await actor.update(update);
     else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update});
-  } else if (args[0] === "off") {
-    // @ts-expect-error
-    const {oldValue = undefined, updateValue} = foundry.utils.getProperty(actor, fieldDef);
-    let restoreValue;
+  } else if (action === "off") {
+    const {oldValue = 0, updateValue} = foundry.utils.getProperty(actor, fieldDef) as {oldValue: number, updateValue: number };
+    let restoreValue: number | undefined;
     if (undo === undefined) undo = true;
     if (typeof undo === "string") undo = undo.replace(/(\*\*(.+?)\*\*)/g, "@$2");
     if (typeof undo === "string") {
@@ -321,8 +325,7 @@ export async function macroActorUpdate(...args) {
       undo = true;
     }
     if (typeof undo === "string" && undo === "remove") {
-      // @ts-expect-error
-      restoreValue = Math.max(0, actorValue - (updateValue - oldValue))
+      restoreValue = Math.max(0, (actorValue as number) - (updateValue - oldValue))
     } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
       restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
     } else if (typeof undo === "string" /*&&!undo.includes("Actor") && !undo.includes("Token")*/ && type === "number") {

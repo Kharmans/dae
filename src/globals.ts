@@ -1,5 +1,6 @@
+import { BaseValuesInner } from "./module/dae";
 import { DAESystemDND5E } from "./module/Systems/DAEdnd5e";
-import { DAESystem } from "./module/Systems/DAESystem";
+import { DAESystem, ValidSpec } from "./module/Systems/DAESystem";
 
 export type TokenOrDocument = foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation;
 
@@ -11,11 +12,11 @@ declare module "fvtt-types/configuration" {
   namespace Hooks {
     interface HookConfig {
       "DAE.setupComplete": () => void;
-      "dae.addFieldMappings": (fieldMappings: unknown) => void;
+      "dae.addFieldMappings": (fieldMappings: Record<string, string>) => void;
       "dae.addSpecialDurations": (specialDurations: unknown) => void;
-      "dae.modifyBaseValues": (specKey: unknown, baseValues: Record<string, unknown>, charSpec: unknown) => void;
-      "dae.modifyDerivedSpecs": (specKey: unknown, derivedSpecs: Record<string, unknown>, charSpec: unknown) => void;
-      "dae.modifySpecials": (speKey: unknown, specials: Record<string, unknown>, charSpec: unknown) => void;
+      "dae.modifyBaseValues": (specKey: string, baseValues: BaseValuesInner, charSpec: unknown) => void;
+      "dae.modifyDerivedSpecs": (specKey: string, derivedSpecs: ValidSpec[], charSpec: unknown) => void;
+      "dae.modifySpecials": (speKey: string, specials: BaseValuesInner, charSpec: unknown) => void;
       "dae.setFieldData": (fieldData: unknown) => void;
       "dae.setupComplete": () => void;
       "dae.settingsChanged": () => void;
@@ -47,9 +48,12 @@ declare module "fvtt-types/configuration" {
         durationExpression?: string;
         enableCondition?: string;
         itemData?: Item.InitializedData;
+        itemMacro?: string;
         itemUuid?: string;
+        itemsToDelete?: string[];
         selfTarget?: boolean;
         selfTargetAlways?: boolean;
+        showIcon?: boolean;
         specialDuration?: string | string[];
         stackable?: "noneName" | "noneNameOnly" | "none" | "multi" | "count" | "countDeleteDecrement";
         stacks?: number;
@@ -88,6 +92,9 @@ declare module "fvtt-types/configuration" {
       }
     }
     Macro: {
+      dae?: {
+        version?: string; // TODO: probably remove this if/when `createDAEMacros` removed
+      }
       dnd5e?: {
         itemMacro?: boolean;
       }
