@@ -1,0 +1,22 @@
+import { TokenOrDocument } from "../globals.js";
+export declare let moveToken: (token: TokenOrDocument, targetTokenName: string, xGridOffset?: number, yGridOffset?: number, targetSceneName?: string) => Promise<string | undefined>;
+export declare let renameToken: (token: foundry.canvas.placeables.Token.Implementation, newName: string) => Promise<void>;
+export declare function teleportToken(token: TokenOrDocument, scene: Scene.Implementation | string, position: {
+    x: number;
+    y: number;
+}): Promise<string | number | true | Scene>;
+export declare let teleportToToken: (token: TokenOrDocument, targetTokenName: string, xGridOffset?: number, yGridOffset?: number, targetSceneName?: string) => Promise<string | number | true | Scene>;
+export declare function createToken(tokenData: TokenDocument.CreateData, x: number, y: number): Promise<any>;
+export declare let teleport: (token: TokenOrDocument, targetScene: Scene | undefined, xpos: number, ypos: number) => Promise<string | number | true | Scene>;
+export declare function setTokenVisibility(tokenOrId: string | TokenOrDocument, visible: boolean): Promise<any>;
+export declare function setTileVisibility(tileOrId: TileDocument.Implementation | string, visible: boolean): Promise<any>;
+export declare function blindToken(tokenOrId: TokenOrDocument | string): Promise<any>;
+export declare function restoreVision(tokenOrId: TokenOrDocument | string): Promise<any>;
+export declare function getTokenFlag(token: TokenOrDocument, flagName: string): unknown;
+export declare function deleteItemActiveEffects(tokens: Array<string | TokenOrDocument>, origin: string, ignore?: string[], deleteEffects?: string[], removeSequencer?: boolean, options?: any): Promise<any>;
+export declare function deleteActiveEffect(uuid: string, origin: string, ignore?: string[], deleteEffects?: string[], removeSequencer?: boolean, options?: any): Promise<any>;
+export declare function setTokenFlag(tokenOrId: TokenOrDocument | string, flagName: string, flagValue: any): Promise<any>;
+export declare function getFlag(entity: Actor.Implementation | TokenOrDocument | string, flagId: string): unknown;
+export declare function setFlag(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string, flagId: string, value: any): Promise<any>;
+export declare function unsetFlag(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string, flagId: string): Promise<any>;
+export declare function macroActorUpdate(...args: any[]): Promise<any>;

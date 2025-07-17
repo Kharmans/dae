@@ -1,0 +1,16 @@
+export declare let debugEnabled: number;
+export declare let setDebugLevel: (debugText: string) => void;
+export declare let debug: (...args: any[]) => void;
+export declare let log: (...args: any[]) => void;
+export declare let warn: (...args: any[]) => void;
+export declare let error: (...args: any[]) => void;
+export declare let timelog: (...args: any[]) => void;
+export declare function i18n(key: string): string;
+export declare function i18nFormat(key: string, data: any): string;
+export declare let gameSystemCompatible: string;
+export declare let daeUntestedSystems: boolean;
+export declare const MODULE_ID = "dae";
+export declare let daeSpecialDurations: Record<string, string>;
+export declare let daeMacroRepeats: Record<string, string>;
+export declare function confirmAction(toCheck: boolean, confirmFunction: any, title?: string): Promise<any>;
+export declare function createDAEMacros(): Promise<void>;

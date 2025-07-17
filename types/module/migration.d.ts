@@ -1,0 +1,18 @@
+export declare function cleanDAEArmorWorld(): Promise<void>;
+export declare function removeAllActorArmorItems(): Promise<void>;
+export declare function removeAllTokenArmorItems(): Promise<void>;
+export declare function removeActorArmorItems(actor: Actor): Promise<void>;
+export declare function cleanEffectOrigins(processItems?: boolean): Promise<void>;
+export declare function cleanAllActorEffectOrigins(): Promise<void>;
+export declare function cleanAllTokenItemEffectOrigins(): Promise<void>;
+export declare function cleanAllActorItemsEffectOrigins(): Promise<void>;
+export declare function cleanActorItemsEffectOrigins(actor: Actor.Implementation): Promise<void>;
+export declare function cleanAllTokenEffectOrigins(): Promise<void>;
+export declare function tobMapper(iconsPath?: string): Promise<void>;
+export declare function fixTransferEffects(actor: Actor.Implementation): Promise<void>;
+export declare function fixTransferEffect(actor: Actor.Implementation, item: Item.Implementation): Promise<void>;
+export declare function removeScenePassiveEffects(): Promise<void>;
+export declare function removeActorsPassiveEffects(): Promise<void>;
+export declare function migrateCompendium(pack: any): Promise<void>;
+export declare function removeCompendiaPassiveEffects(): Promise<void>;
+export declare function removeAllScenesPassiveEffects(): Promise<void>;

@@ -11,7 +11,8 @@
       "build:bundle": "gulp bundle --dbg",
       "clean": "gulp clean && gulp link --clean",
       "prettier-format": "prettier --config .prettierrc --write \"./src/**/*.{ts,js,json,scss,css}\"",
-      "tag": "git tag -a v$(jq .version -r src/module.json) -m \"version $(jq .version -r src/module.json) release tag\" && git push origin --follow-tags"
+      "tag": "git tag -a v$(jq .version -r src/module.json) -m \"version $(jq .version -r src/module.json) release tag\" && git push origin --follow-tags",
+      "generate:types": "tsc --project tsconfig.types.json"
    },
    "keywords": [
       "foundryvtt",
