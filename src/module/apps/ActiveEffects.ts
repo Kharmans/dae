@@ -1,12 +1,20 @@
 import { effectIsTransfer, simpleCalendarInstalled } from "../dae.js"
 import { i18n, daeSpecialDurations } from "../../dae.js";
-import { ValidSpec } from "../Systems/DAESystem.js";
-const { DocumentSheetV2, HandlebarsApplicationMixin } = foundry.applications.api;
+import { Specs, ValidSpec } from "../Systems/DAESystem.js";
+import DocumentSheetV2 = foundry.applications.api.DocumentSheetV2;
+import HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
 
-export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
+const WeirdIntermediate: HandlebarsApplicationMixin.Mix<
+  typeof DocumentSheetV2<
+    Actor.Implementation | Item.Implementation,
+    DocumentSheetV2.RenderContext<any>
+  >
+> = HandlebarsApplicationMixin(DocumentSheetV2<
   Actor.Implementation | Item.Implementation,
-  foundry.applications.api.DocumentSheetV2.RenderContext<any>
-> {
+  DocumentSheetV2.RenderContext<any>
+>);
+
+export class ActiveEffects extends WeirdIntermediate {
   static filters: Set<FilterEntry> = new Set();
   effectHookId: number | null = null;
   declare effectList: Record<string, string>;
@@ -118,9 +126,9 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
       });
   
     const isItem = this.document instanceof CONFIG.Item.documentClass;
-    const context = foundry.utils.mergeObject(await super._prepareContext(options), {
+    const context: ActiveEffectsRenderContext = foundry.utils.mergeObject(await super._prepareContext(options), {
       actives: actives,
-      isGM: game.user?.isGM,
+      isGM: !!game.user?.isGM,
       isItem,
       isOwned: this.document instanceof Item && this.document.isOwned,
       flags: this.document.flags,
@@ -213,6 +221,25 @@ export class ActiveEffects extends HandlebarsApplicationMixin(DocumentSheetV2)<
     await super._preClose(options);
     if (this.effectHookId) Hooks.off("deleteActiveEffect", this.effectHookId);
   }
+}
+
+interface ActiveEffectsRenderContext extends DocumentSheetV2.RenderContext<any> {
+  actives: ActivesEntry[];
+  isGM: boolean;
+  isItem: boolean;
+  isOwned: boolean;
+  flags: any;
+  modes: string[];
+  validSpecs: Record<string, ValidSpec> | Specs;
+  // canEdit: boolean;
+  canEdit: boolean;
+  // showEffects: boolean;
+  showEffects: boolean;
+  effectList: Record<string, string>;
+  effect: string;
+  summaryActive: boolean;
+  enabledActive: boolean;
+  temporaryActive: boolean;
 }
 
 interface ActivesEntry extends Omit<foundry.data.fields.SchemaField.SourceData<ActiveEffect.Schema>, "duration" | "changes"> {

@@ -1537,7 +1537,7 @@ function patchPrepareArmorClassAttribution() {
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
 }
 
-export function getActorItemForEffect(effect: ActiveEffect.Implementation) {
+export function getActorItemForEffect(effect: ActiveEffect.Implementation): Item.Implementation | undefined {
   if (effect.parent instanceof CONFIG.Item.documentClass && effect.parent.isEmbedded) return effect.parent;
   if (!effect.origin) return undefined;
   const parts = effect.origin?.split(".") ?? [];
