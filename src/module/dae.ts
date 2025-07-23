@@ -39,7 +39,7 @@ export let ceInterface: {
     uuid?: string,
     overlay?: boolean,
     origin?: string | null,
-  }) => Promise<ActiveEffect.Implementation>;
+  }) => Promise<ActiveEffect.Implementation[]>;
   removeEffect: (input: {
     effectId?: string,
     effectName?: string,
@@ -376,7 +376,7 @@ async function myAddCEEffectWith(effectData: any, uuid: string, origin: string |
   return await ceInterface.addEffect({ effectName: effectData.name, uuid, origin, effectData, overlay });
 }
 
-export async function addConvenientEffectsChange(effectName: string, uuid: string, origin: string | undefined | null, context: any, isToken: boolean): Promise<ActiveEffect.Implementation | undefined> {
+export async function addConvenientEffectsChange(effectName: string, uuid: string, origin: string | undefined | null, context: any, isToken: boolean): Promise<ActiveEffect.Implementation[] | undefined> {
   if (!ceInterface) return;
   let ceEffect: ActiveEffect.Implementation | null;
   ceEffect = ceInterface.findEffect({ effectName });
@@ -386,7 +386,7 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
   return await actionQueue.add(myAddCEEffectWith, effectData, uuid, origin, false, isToken);
 }
 
-export async function addConditionChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, token: foundry.canvas.placeables.Token.Implementation | undefined, effect: ActiveEffect.Implementation): Promise<ActiveEffect.Implementation | undefined> {
+export async function addConditionChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, token: foundry.canvas.placeables.Token.Implementation | undefined, effect: ActiveEffect.Implementation): Promise<ActiveEffect.Implementation[] | undefined> {
   // This is from macro.statusEffect
   const condition = CONFIG.statusEffects.find(se => se.id === change.value);
   if (!condition) return;
@@ -429,7 +429,7 @@ export async function addStatusEffectChange(actor: Actor.Implementation, change:
     const effectId = change.value.replace("zce-", "ce-")
     const effect = ceInterface?.findEffect && ceInterface.findEffect({ effectId });
     if (effect) {
-      return [await ceInterface!.addEffect({ effectId, uuid: actor.uuid, origin: sourceEffect.uuid, overlay: false })];
+      return await ceInterface!.addEffect({ effectId, uuid: actor.uuid, origin: sourceEffect.uuid, overlay: false });
     }
   } else {
     let statusEffect: any = CONFIG.statusEffects.find(se => se.id === change.value);
