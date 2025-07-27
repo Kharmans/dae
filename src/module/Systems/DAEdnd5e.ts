@@ -63,18 +63,18 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         if (overrideSuffixes.some(k => key.endsWith(k))) activitySpecs[`activities[${activityKey}].${key}`][1] = CONST.ACTIVE_EFFECT_MODES.OVERRIDE;
       }
       if (game.modules.get("midi-qol")?.active) {
-        activitySpecs[`activities[${activityKey}].useConditionText`]                              = [new StringField({ label: i18n("midi-qol.FIELDS.useConditionText.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].effectConditionText`]                           = [new StringField({ label: i18n("midi-qol.FIELDS.effectConditionText.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].macroData.name`]                                = [new StringField({ label: "Macro Name" }), -1];
-        activitySpecs[`activities[${activityKey}].macroData.command`]                             = [new StringField({ label: "Macro Command" }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.ignoreTraits`]                   = [new ArrayField(new StringField(), { label: "Ignore Traits" }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`]            = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityId.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].useConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.useConditionText.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].effectConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.effectConditionText.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].macroData.name`] = [new StringField({ label: "Macro Name" }), -1];
+        activitySpecs[`activities[${activityKey}].macroData.command`] = [new StringField({ label: "Macro Command" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.ignoreTraits`] = [new ArrayField(new StringField(), { label: "Ignore Traits" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityId.hint") }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityConditionText`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityConditionText.hint") }), -1];
         // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityTargets`]    = [new StringField({ label: "Triggered Activity Targets" }), -1];
         // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityRollAs`]     = [new StringField({ label: "Triggered Activity Roll As" }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.forceDialog`]                    = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.forceDialog.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.confirmTargets`]                 = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.confirmTargets.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.automationOnly`]                 = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.automationOnly.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.forceDialog`] = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.forceDialog.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.confirmTargets`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.confirmTargets.hint") }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.automationOnly`] = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.automationOnly.hint") }), -1];
         // activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`]     = [new BooleanField({ label: "midi-qol.SHARED.FIELDS.midiProperties.otherActivityCompatible.hint" }), -1];
       }
 
@@ -138,11 +138,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         for (let k1 of Object.keys(finalSpecs)) {
           switch (k1) {
             case "system.duration.units": finalSpecs[k1].options = { "": "", ...this.systemConfig.timePeriods }; break;
-            case "system.target.type":    finalSpecs[k1].options = { "": "", ...this.systemConfig.targetTypes }; break;
-            case "system.actionType":     finalSpecs[k1].options = { "": "", ...this.systemConfig.itemActionTypes }; break;
-            case "system.uses.per":       finalSpecs[k1].options = { "": "", ...this.systemConfig.limitedUsePeriods }; break;
-            case "system.consume.type":   finalSpecs[k1].options = { "": "", ...this.systemConfig.abilityConsumptionTypes }; break;
-            case "system.attunement":     finalSpecs[k1].options = { "": "", ...this.systemConfig.attunementTypes }; break;
+            case "system.target.type": finalSpecs[k1].options = { "": "", ...this.systemConfig.targetTypes }; break;
+            case "system.actionType": finalSpecs[k1].options = { "": "", ...this.systemConfig.itemActionTypes }; break;
+            case "system.uses.per": finalSpecs[k1].options = { "": "", ...this.systemConfig.limitedUsePeriods }; break;
+            case "system.consume.type": finalSpecs[k1].options = { "": "", ...this.systemConfig.abilityConsumptionTypes }; break;
+            case "system.attunement": finalSpecs[k1].options = { "": "", ...this.systemConfig.attunementTypes }; break;
           }
         }
 
@@ -250,28 +250,28 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       } else console.error("Unexpected field ", key, modelField)
     }
     // Generate all repeated `system.abilities` fields
-    for (const [key, {label: ability}] of Object.entries(this.systemConfig.abilities)) {
+    for (const [key, { label: ability }] of Object.entries(this.systemConfig.abilities)) {
       const genericPrefix = `system.abilities.${key}.`
       const genericKeys = Object.keys(baseValues).filter(k => k.startsWith(genericPrefix));
       for (const genericKey of genericKeys) {
         const innerPrefix = `dae.SystemAbilities.fieldData.${genericKey.slice(genericPrefix.length)}`;
         localizationMap[genericKey] ??= {
-          name: i18nFormat(`${innerPrefix}.name`, {ability}),
-          description: i18nFormat(`${innerPrefix}.description`, {ability})
+          name: i18nFormat(`${innerPrefix}.name`, { ability }),
+          description: i18nFormat(`${innerPrefix}.description`, { ability })
         };
         if (localizationMap[genericKey].name === `${innerPrefix}.name`) delete localizationMap[genericKey].name;
         if (localizationMap[genericKey].description === `${innerPrefix}.description`) delete localizationMap[genericKey].description;
       }
     }
     // Generate all repeated `system.skills` fields
-    for (const [key, {label: skill}] of Object.entries(this.systemConfig.skills)) {
+    for (const [key, { label: skill }] of Object.entries(this.systemConfig.skills)) {
       const genericPrefix = `system.skills.${key}.`
       const genericKeys = Object.keys(baseValues).filter(k => k.startsWith(genericPrefix));
       for (const genericKey of genericKeys) {
         const innerPrefix = `dae.SystemSkills.fieldData.${genericKey.slice(genericPrefix.length)}`;
         localizationMap[genericKey] ??= {
-          name: i18nFormat(`${innerPrefix}.name`, {skill}),
-          description: i18nFormat(`${innerPrefix}.description`, {skill})
+          name: i18nFormat(`${innerPrefix}.name`, { skill }),
+          description: i18nFormat(`${innerPrefix}.description`, { skill })
         };
         if (localizationMap[genericKey].name === `${innerPrefix}.name`) delete localizationMap[genericKey].name;
         if (localizationMap[genericKey].description === `${innerPrefix}.description`) delete localizationMap[genericKey].description;
@@ -279,44 +279,44 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
     // Generate all repeated midi `system.traits.da` and system `dm` fields
     if (midiActive) {
-      for (const [key, {label: damage}] of Object.entries(this.systemConfig.damageTypes as Record<string, {label: string}>).concat(Object.entries(this.systemConfig.healingTypes))) {
+      for (const [key, { label: damage }] of Object.entries(this.systemConfig.damageTypes as Record<string, { label: string }>).concat(Object.entries(this.systemConfig.healingTypes))) {
         const absorptionKey = `system.traits.da.${key}`;
         localizationMap[absorptionKey] ??= {
-          name: i18nFormat('dae.SystemTraits.fieldData.da.name', {damage}),
-          description: i18nFormat('dae.SystemTraits.fieldData.da.description', {damage})
+          name: i18nFormat('dae.SystemTraits.fieldData.da.name', { damage }),
+          description: i18nFormat('dae.SystemTraits.fieldData.da.description', { damage })
         };
         const modKey = `system.traits.dm.amount.${key}`;
         localizationMap[modKey] ??= {
-          name: i18nFormat('dae.SystemTraits.fieldData.dm.amount.name', {damage}),
-          description: i18nFormat('dae.SystemTraits.fieldData.dm.amount.description', {damage})
+          name: i18nFormat('dae.SystemTraits.fieldData.dm.amount.name', { damage }),
+          description: i18nFormat('dae.SystemTraits.fieldData.dm.amount.description', { damage })
         }
       }
     }
-    if (!baseValues["system.attributes.prof"])          baseValues["system.attributes.prof"]          = [new NumberField(), -1];
-    if (!baseValues["system.details.level"])            baseValues["system.details.level"]            = [new NumberField(), -1];
-    if (!baseValues["system.attributes.ac.bonus"])      baseValues["system.attributes.ac.bonus"]      = [new StringField(), -1];
+    if (!baseValues["system.attributes.prof"]) baseValues["system.attributes.prof"] = [new NumberField(), -1];
+    if (!baseValues["system.details.level"]) baseValues["system.details.level"] = [new NumberField(), -1];
+    if (!baseValues["system.attributes.ac.bonus"]) baseValues["system.attributes.ac.bonus"] = [new StringField(), -1];
     // if (!baseValues["system.attributes.ac.base"])    baseValues["system.attributes.ac.base"]       = [new NumberField({ initial: 10 }), -1];
-    if (!baseValues["system.attributes.ac.armor"])      baseValues["system.attributes.ac.armor"]      = [new NumberField(), -1];
-    if (!baseValues["system.attributes.ac.shield"])     baseValues["system.attributes.ac.shield"]     = [new NumberField(), -1];
-    if (!baseValues["system.attributes.ac.cover"])      baseValues["system.attributes.ac.cover"]      = [new NumberField(), -1];
-    if (!baseValues["system.attributes.ac.min"])        baseValues["system.attributes.ac.min"]        = [new NumberField(), -1];
+    if (!baseValues["system.attributes.ac.armor"]) baseValues["system.attributes.ac.armor"] = [new NumberField(), -1];
+    if (!baseValues["system.attributes.ac.shield"]) baseValues["system.attributes.ac.shield"] = [new NumberField(), -1];
+    if (!baseValues["system.attributes.ac.cover"]) baseValues["system.attributes.ac.cover"] = [new NumberField(), -1];
+    if (!baseValues["system.attributes.ac.min"]) baseValues["system.attributes.ac.min"] = [new NumberField(), -1];
     // system.attributes.prof/system.details.level and system.attributes.hd are all calced in prepareBaseData
-    if (!baseValues["system.bonuses.All-Attacks"])      baseValues["system.bonuses.All-Attacks"]      = [new StringField(), -1];
-    if (!baseValues["system.bonuses.weapon.attack"])    baseValues["system.bonuses.weapon.attack"]    = [new StringField(), -1];
-    if (!baseValues["system.bonuses.spell.attack"])     baseValues["system.bonuses.spell.attack"]     = [new StringField(), -1];
-    if (!baseValues["system.bonuses.All-Damage"])       baseValues["system.bonuses.All-Damage"]       = [new StringField(), -1];
-    if (!baseValues["system.bonuses.weapon.damage"])    baseValues["system.bonuses.weapon.damage"]    = [new StringField(), -1];
-    if (!baseValues["system.bonuses.spell.damage"])     baseValues["system.bonuses.spell.damage"]     = [new StringField(), -1];
+    if (!baseValues["system.bonuses.All-Attacks"]) baseValues["system.bonuses.All-Attacks"] = [new StringField(), -1];
+    if (!baseValues["system.bonuses.weapon.attack"]) baseValues["system.bonuses.weapon.attack"] = [new StringField(), -1];
+    if (!baseValues["system.bonuses.spell.attack"]) baseValues["system.bonuses.spell.attack"] = [new StringField(), -1];
+    if (!baseValues["system.bonuses.All-Damage"]) baseValues["system.bonuses.All-Damage"] = [new StringField(), -1];
+    if (!baseValues["system.bonuses.weapon.damage"]) baseValues["system.bonuses.weapon.damage"] = [new StringField(), -1];
+    if (!baseValues["system.bonuses.spell.damage"]) baseValues["system.bonuses.spell.damage"] = [new StringField(), -1];
     if (!baseValues["system.bonuses.spell.all.damage"]) baseValues["system.bonuses.spell.all.damage"] = [new StringField(), -1];
     // These are for item action types - works by accident.
-    if (!baseValues["system.bonuses.heal.damage"])      baseValues["system.bonuses.heal.damage"]      = [new StringField(), -1];
-    if (!baseValues["system.bonuses.save.damage"])      baseValues["system.bonuses.save.damage"]      = [new StringField(), -1];
+    if (!baseValues["system.bonuses.heal.damage"]) baseValues["system.bonuses.heal.damage"] = [new StringField(), -1];
+    if (!baseValues["system.bonuses.save.damage"]) baseValues["system.bonuses.save.damage"] = [new StringField(), -1];
     if (!baseValues["system.bonuses.check.damage"]) {
       // Only through midi can check activities deal damage
-      if (midiActive)                                   baseValues["system.bonuses.check.damage"]     = [new StringField(), -1];
+      if (midiActive) baseValues["system.bonuses.check.damage"] = [new StringField(), -1];
     }
     baseValues["system.attributes.hp.bonuses.overall"] = [new StringField(), -1];
-    baseValues["system.attributes.hp.bonuses.level"]   = [new StringField(), -1];
+    baseValues["system.attributes.hp.bonuses.level"] = [new StringField(), -1];
     // Don't do anything with system.attributes.hp.max - it will be set by parsing the actor schema
     if (!baseValues["system.attributes.hd.max"] && actorType === "npc") baseValues["system.attributes.hd.max"] = [new NumberField(), -1];
     const actorModelSchemaFields = this.getActorDataModelFields(actorType);
@@ -333,12 +333,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         }
       }
       for (let key of Object.keys(toolProfList)) {
-        baseValues[`system.tools.${key}.prof`]          = [new NumberField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
-        baseValues[`system.tools.${key}.ability`]       = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+        baseValues[`system.tools.${key}.prof`] = [new NumberField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+        baseValues[`system.tools.${key}.ability`] = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
         baseValues[`system.tools.${key}.bonuses.check`] = [new StringField(), -1];
       }
       for (let vehicleKey of Object.keys(this.systemConfig.vehicleTypes)) {
-        baseValues[`system.tools.${vehicleKey}.value`]  = [new NumberField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+        baseValues[`system.tools.${vehicleKey}.value`] = [new NumberField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
       }
     }
     // move all the character flags to specials so that the can be custom effects only
@@ -353,8 +353,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         delete baseValues[theKey];
       }
       else if (this.systemConfig.characterFlags[key].type === Boolean) baseValues[theKey] = [new BooleanField(), -1];
-      else if (this.systemConfig.characterFlags[key].type === Number) baseValues[theKey]  = [new NumberField(), -1];
-      else if (this.systemConfig.characterFlags[key].type === String) baseValues[theKey]  = [new StringField(), -1];
+      else if (this.systemConfig.characterFlags[key].type === Number) baseValues[theKey] = [new NumberField(), -1];
+      else if (this.systemConfig.characterFlags[key].type === String) baseValues[theKey] = [new StringField(), -1];
     });
     delete baseValues[`flags.${game.system.id}.weaponCriticalThreshold`];
     delete baseValues[`flags.${game.system.id}.powerCriticalThreshold`];
@@ -384,13 +384,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     delete baseValues["system.attributes.inspiration"];
 
     // Misc things to add/correct
-    baseValues["system.attributes.ac.calc"]         = [new StringField(), modes.OVERRIDE];
-    baseValues["system.attributes.movement.units"]  = [new StringField(), modes.OVERRIDE];
-    baseValues["system.attributes.senses.units"]    = [new StringField(), modes.OVERRIDE];
-    baseValues["system.attributes.spellcasting"]    = [new StringField(), modes.OVERRIDE];
+    baseValues["system.attributes.ac.calc"] = [new StringField(), modes.OVERRIDE];
+    baseValues["system.attributes.movement.units"] = [new StringField(), modes.OVERRIDE];
+    baseValues["system.attributes.senses.units"] = [new StringField(), modes.OVERRIDE];
+    baseValues["system.attributes.spellcasting"] = [new StringField(), modes.OVERRIDE];
     if (actorType === "npc") {
-      baseValues["system.details.type.swarm"]       = [new StringField(), modes.OVERRIDE];
-      baseValues["system.details.type.value"]       = [new StringField(), modes.OVERRIDE];
+      baseValues["system.details.type.swarm"] = [new StringField(), modes.OVERRIDE];
+      baseValues["system.details.type.value"] = [new StringField(), modes.OVERRIDE];
     }
 
     baseValues["system.traits.ci.all"] = [new BooleanField(), modes.CUSTOM];
@@ -408,15 +408,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       baseValues["system.traits.armorProf.custom"] = [new StringField(), modes.CUSTOM];
       baseValues["system.attributes.hp.tempmax"] = [new NumberField(), -1];
     }
-    baseValues["system.attributes.encumbrance.bonuses.encumbered"]            = [new StringField(), -1];
-    baseValues["system.attributes.encumbrance.bonuses.heavilyEncumbered"]     = [new StringField(), -1];
-    baseValues["system.attributes.encumbrance.bonuses.maximum"]               = [new StringField(), -1];
-    baseValues["system.attributes.encumbrance.bonuses.overall"]               = [new StringField(), -1];
-    baseValues["system.attributes.encumbrance.multipliers.encumbered"]        = [new StringField(), -1];
+    baseValues["system.attributes.encumbrance.bonuses.encumbered"] = [new StringField(), -1];
+    baseValues["system.attributes.encumbrance.bonuses.heavilyEncumbered"] = [new StringField(), -1];
+    baseValues["system.attributes.encumbrance.bonuses.maximum"] = [new StringField(), -1];
+    baseValues["system.attributes.encumbrance.bonuses.overall"] = [new StringField(), -1];
+    baseValues["system.attributes.encumbrance.multipliers.encumbered"] = [new StringField(), -1];
     baseValues["system.attributes.encumbrance.multipliers.heavilyEncumbered"] = [new StringField(), -1];
-    baseValues["system.attributes.encumbrance.multipliers.maximum"]           = [new StringField(), -1];
-    baseValues["system.attributes.encumbrance.multipliers.overall"]           = [new StringField(), -1];
-    baseValues["system.traits.size"]                                          = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+    baseValues["system.attributes.encumbrance.multipliers.maximum"] = [new StringField(), -1];
+    baseValues["system.attributes.encumbrance.multipliers.overall"] = [new StringField(), -1];
+    baseValues["system.traits.size"] = [new StringField(), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
     if (this.systemConfig.languages) {
       baseValues["system.traits.languages.all"] = [new BooleanField(), -1];
     }
@@ -433,45 +433,45 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     } else {
       specials["system.attributes.ac.value"] = [new NumberField(), -1];
     }
-    specials["macro.activityMacro"]                       = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.di.all"]                      = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.di.value"]                    = [new StringField(), -1];
-    specials["system.traits.di.custom"]                   = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.di.bypasses"]                 = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dr.all"]                      = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dr.value"]                    = [new StringField(), -1];
-    specials["system.traits.dr.custom"]                   = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dr.bypasses"]                 = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dv.all"]                      = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dv.value"]                    = [new StringField(), -1];
-    specials["system.traits.dv.custom"]                   = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.traits.dv.bypasses"]                 = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.activityMacro"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.di.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.di.value"] = [new StringField(), -1];
+    specials["system.traits.di.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.di.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dr.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dr.value"] = [new StringField(), -1];
+    specials["system.traits.dr.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dr.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dv.all"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dv.value"] = [new StringField(), -1];
+    specials["system.traits.dv.custom"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.traits.dv.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
     if (midiActive) specials["system.traits.da.bypasses"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
-    specials["system.spells.pact.level"]                  = [new NumberField(), -1];
-    specials["flags.dae"]                                 = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.spells.pact.level"] = [new NumberField(), -1];
+    specials["flags.dae"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
-    specials["system.attributes.movement.all"]            = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.attributes.movement.hover"]          = [new NumberField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.attributes.movement.all"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.attributes.movement.hover"] = [new NumberField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
     if (midiActive) {
-      specials["system.attributes.ac.EC"]                 = [new NumberField(), -1];
-      specials["system.attributes.ac.AR"]                 = [new NumberField(), -1];
+      specials["system.attributes.ac.EC"] = [new NumberField(), -1];
+      specials["system.attributes.ac.AR"] = [new NumberField(), -1];
     }
 
     if (foundry.utils.getProperty(actorModelSchemaFields, "resources")) {
-      specials["system.resources.primary.max"]      = [new NumberField(), -1];
-      specials["system.resources.primary.label"]    = [new StringField(), -1];
-      specials["system.resources.secondary.max"]    = [new NumberField(), -1];
-      specials["system.resources.secondary.label"]  = [new StringField(), -1];
-      specials["system.resources.tertiary.max"]     = [new NumberField(), -1];
-      specials["system.resources.tertiary.label"]   = [new StringField(), -1];
-      specials["system.resources.legact.max"]       = [new NumberField(), -1];
-      specials["system.resources.legres.max"]       = [new NumberField(), -1];
+      specials["system.resources.primary.max"] = [new NumberField(), -1];
+      specials["system.resources.primary.label"] = [new StringField(), -1];
+      specials["system.resources.secondary.max"] = [new NumberField(), -1];
+      specials["system.resources.secondary.label"] = [new StringField(), -1];
+      specials["system.resources.tertiary.max"] = [new NumberField(), -1];
+      specials["system.resources.tertiary.label"] = [new StringField(), -1];
+      specials["system.resources.legact.max"] = [new NumberField(), -1];
+      specials["system.resources.legres.max"] = [new NumberField(), -1];
 
       if (game.modules.get("resourcesplus")?.active) {
         for (let res of ["fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]) {
-          specials[`system.resources.${res}.max`]   = [new NumberField(), -1];
+          specials[`system.resources.${res}.max`] = [new NumberField(), -1];
           specials[`system.resources.${res}.label`] = [new StringField(), -1];
         }
       }
@@ -483,16 +483,16 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     if (["character", "npc"].includes(actorType)) {
       if (game.settings.get("dnd5e", "honorScore")) {
-        specials[`system.abilities.hon.mod`]  = [new NumberField(), -1];
+        specials[`system.abilities.hon.mod`] = [new NumberField(), -1];
         // specials[`system.abilities.hon.save`] = [new NumberField(), -1]; // No longer a thing
         // specials[`system.abilities.hon.min`] = [new NumberField(), -1]; There is no min attribute yet
-        specials[`system.abilities.hon.max`]  = [new NumberField(), -1];
+        specials[`system.abilities.hon.max`] = [new NumberField(), -1];
       }
       if (game.settings.get("dnd5e", "sanityScore")) {
-        specials[`system.abilities.san.mod`]  = [new NumberField(), -1];
+        specials[`system.abilities.san.mod`] = [new NumberField(), -1];
         // specials[`system.abilities.san.save`] = [new NumberField(), -1]; // No longer a thing
         // specials[`system.abilities.san.min`] = [new NumberField(), -1]; There is no min attribute yet
-        specials[`system.abilities.san.max`]  = [new NumberField(), -1];
+        specials[`system.abilities.san.max`] = [new NumberField(), -1];
       }
     }
 
@@ -522,10 +522,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // Do the system specific part
     // 1. abilities add mod and save to each;
     if (this.systemConfig.abilities && foundry.utils.getProperty(actorModelSchemaFields, "abilities")) Object.keys(this.systemConfig.abilities).forEach(ablKey => {
-      specials[`system.abilities.${ablKey}.mod`]  = [new NumberField(), -1];
+      specials[`system.abilities.${ablKey}.mod`] = [new NumberField(), -1];
       // specials[`system.abilities.${ablKey}.save`] = [new NumberField(), -1]; // No longer a thing
       // specials[`system.abilities.${ablKey}.min`] = [new NumberField(), -1]; There is no min attribute yet
-      specials[`system.abilities.${ablKey}.max`]  = [new NumberField(), -1];
+      specials[`system.abilities.${ablKey}.max`] = [new NumberField(), -1];
     })
   }
 
@@ -576,16 +576,19 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
     this.configureLists();
-    Hooks.once("babel.ready", () => { this.configureLists(); });
+    const hookName = game.modules.get("babel")?.active ? "babel.ready" : "ready";
+    Hooks.once(hookName, () => { this.configureLists(); });
     if (this.systemConfig.conditionEffects && this.systemConfig.conditionEffects["halfHealth"] && game.settings.get("dae", "DAEAddHalfHealthEffect")) {
       this.systemConfig.conditionEffects["halfHealth"].add("halfHealthEffect");
-      CONFIG.statusEffects.push({
-        id: "halfHealthEffect",
-        _id: getStaticID("halfHealthEffect"),
-        name: i18n("dae.halfHealthEffectLabel"),
-        img: "modules/dae/icons/half-health.webp",
-        flags: { dnd5e: { halfHealth: true } }
-      });
+      Hooks.once(hookName, () => {
+        CONFIG.statusEffects.push({
+          id: "halfHealthEffect",
+          _id: getStaticID("halfHealthEffect"),
+          name: i18n("dae.halfHealthEffectLabel"),
+          img: "modules/dae/icons/half-health.webp",
+          flags: { dnd5e: { halfHealth: true } }
+        });
+      })
     }
 
     // enchantments don't seem to get their world time set when applied to an item
@@ -611,8 +614,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     // checkArmorDisabled();
     // Modify armor attribution for DAE specific cases
     patchPrepareArmorClassAttribution();
-    if (atlActive) {
-      const atlFields = Object.keys(CONFIG.Canvas.detectionModes).map(dm => `ATL.detectionModes.${dm}.range`);
+    if (atlActive || game.modules.get("vision-5e")?.active) {
+      const detectionModes: Set<string> = new Set();
+      Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
+        if (CONFIG.Canvas.detectionModes[dm].tokenConfig) {
+          detectionModes.add(`ATL.detectionModes.${dm}.range`);
+        }
+      });
+      if (game.modules.get("vision-5e")?.active) {
+        Object.keys(CONFIG.Canvas.visionModes).forEach(vm => {
+          if (CONFIG.Canvas.visionModes[vm].tokenConfig) {
+            detectionModes.add(`ATL.detectionModes.${vm}.range`);
+          }
+        });
+      }
+      const atlFields = Array.from(detectionModes);
       addAutoFields(atlFields);
     }
     Hooks.callAll("dae.addSpecialDurations", daeSpecialDurations)
@@ -715,7 +731,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     return disabled;
   }
 
-  public static enumerateLanguages(systemLanguages: Record<string, {label?: string, children?: Record<string, Record<string, unknown>>}>): any {
+  public static enumerateLanguages(systemLanguages: Record<string, { label?: string, children?: Record<string, Record<string, unknown>> }>): any {
     const languages = { "ALL": "All" };
     Object.entries(systemLanguages).forEach(([key, language]) => {
       if (typeof language === "string") {
@@ -734,8 +750,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   // For DAE Editor
   public static configureLists() {
-    this.traitList = Object.fromEntries(Object.entries(this.systemConfig.damageTypes).map(([key, {label}]) => [[key, label], [`-${key}`, `- ${label}`]]).flat(1));
-    for (const [key, {label}] of Object.entries(this.systemConfig.healingTypes)) {
+    this.traitList = Object.fromEntries(Object.entries(this.systemConfig.damageTypes).map(([key, { label }]) => [[key, label], [`-${key}`, `- ${label}`]]).flat(1));
+    for (const [key, { label }] of Object.entries(this.systemConfig.healingTypes)) {
       this.traitList[key] = label;
       this.traitList[`-${key}`] = `- ${label}`;
     }
@@ -755,11 +771,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     }
 
     this.conditionList = {};
-    Object.entries(this.systemConfig.conditionTypes).forEach(([type, {name}]) => {
+    Object.entries(this.systemConfig.conditionTypes).forEach(([type, { name }]) => {
       this.conditionList[type] = name;
     });
     // Separate loop so that things are prettier (all normal, all `-` rather than alternating)
-    Object.entries(this.systemConfig.conditionTypes).forEach(([type, {name}]) => {
+    Object.entries(this.systemConfig.conditionTypes).forEach(([type, { name }]) => {
       this.conditionList[`-${type}`] = `- ${name}`;
     });
 
@@ -786,7 +802,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return this.languageList;
     if (spec.key === "system.traits.ci.value")
       return this.conditionList;
-    
+
     // TODO: Maybe don't force these (| Add | 1 is perfectly valid here)
     if (spec.key.match(/system.tools..*prof/))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
@@ -794,7 +810,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
     if (spec.key.includes("system.skills") && spec.key.includes("value"))
       return { 0: "Not Proficient", 0.5: "Half Proficiency", 1: "Proficient", 2: "Expertise" };
-    
+
     if (spec.key.match(/system.tools..*ability/))
       return abilitiesList;
     if (spec.key === "system.traits.armorProf.value")
@@ -823,8 +839,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return sizes;
       }, {});
     }
-    function extractLabels(orig: Record<string, {label: string}>) {
-      return Object.fromEntries(Object.entries(orig).map(([key, {label}]) => [key, label]));
+    function extractLabels(orig: Record<string, { label: string }>) {
+      return Object.fromEntries(Object.entries(orig).map(([key, { label }]) => [key, label]));
     }
     if (["system.attributes.movement.units", "system.attributes.senses.units"].includes(spec.key)) {
       return extractLabels(this.systemConfig.movementUnits);
@@ -836,7 +852,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return Object.keys(this.systemConfig?.actorSizes).reduce((sizes, size) => {
         sizes[size] = this.systemConfig.actorSizes[size].label;
         return sizes;
-      }, {'': ''});
+      }, { '': '' });
     }
     if (spec.key === "system.details.type.value") {
       return extractLabels(this.systemConfig.creatureTypes);
@@ -924,7 +940,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
    */
   public static daeCustomEffect(
     actor: Actor.Implementation,
-    change: ActiveEffect.ChangeData & {count?: number, effect: ActiveEffect.Implementation},
+    change: ActiveEffect.ChangeData & { count?: number, effect: ActiveEffect.Implementation },
     current: any,
     delta: unknown,
     changes: unknown
@@ -1510,9 +1526,9 @@ function procAdvantageSkill(actor: Actor.Implementation, abilityId: string, skil
 }
 
 
-async function _prepareActorArmorClassAttribution(this: Actor.Implementation, wrapped, data: {title: string}) {
+async function _prepareActorArmorClassAttribution(this: Actor.Implementation, wrapped, data: { title: string }) {
   let attributionHtml = await wrapped(data);
-  const attributions: {label: string, mode: CONST.ACTIVE_EFFECT_MODES, value: string}[] = [];
+  const attributions: { label: string, mode: CONST.ACTIVE_EFFECT_MODES, value: string }[] = [];
   for (let effect of this.appliedEffects) {
     for (let change of effect.changes) {
       if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
@@ -1537,7 +1553,7 @@ function patchPrepareArmorClassAttribution() {
   libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._prepareArmorClassAttribution", _prepareActorArmorClassAttribution, "WRAPPER");
 }
 
-export function getActorItemForEffect(effect: ActiveEffect.Implementation) {
+export function getActorItemForEffect(effect: ActiveEffect.Implementation): Item.Implementation | undefined {
   if (effect.parent instanceof CONFIG.Item.documentClass && effect.parent.isEmbedded) return effect.parent;
   if (!effect.origin) return undefined;
   const parts = effect.origin?.split(".") ?? [];

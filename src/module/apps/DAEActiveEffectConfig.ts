@@ -107,7 +107,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     }
   };
 
-  static PARTS = foundry.utils.mergeObject(super.PARTS ?? {}, {
+  static PARTS: Record<string, foundry.applications.api.HandlebarsApplicationMixin.HandlebarsTemplatePart> = foundry.utils.mergeObject(super.PARTS ?? {}, {
     details: { template: "./modules/dae/templates/DAESheetConfig/Details.hbs", scrollable: [""] },
     duration: { template: "./modules/dae/templates/DAESheetConfig/Duration.hbs" },
     changes: { template: "./modules/dae/templates/DAESheetConfig/Changes.hbs", scrollable: ["scrollable"] }

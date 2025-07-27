@@ -1,5 +1,6 @@
 import { debug } from "../../dae.js";
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+import ApplicationV2 = foundry.applications.api.ApplicationV2;
+import HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
 
 declare module "fvtt-types/configuration" {
   namespace Hooks {
@@ -9,7 +10,9 @@ declare module "fvtt-types/configuration" {
   }
 }
 
-export class DIMEditor extends HandlebarsApplicationMixin(ApplicationV2) {
+const WeirdIntermediate: HandlebarsApplicationMixin.Mix<typeof ApplicationV2> = HandlebarsApplicationMixin(ApplicationV2);
+
+export class DIMEditor extends WeirdIntermediate {
   document: Item.Implementation; // could be an activity too
 
   static override DEFAULT_OPTIONS = {

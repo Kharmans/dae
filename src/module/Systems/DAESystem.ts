@@ -351,7 +351,7 @@ export class DAESystem {
   }
 
   public static effectDisabled(actor: Actor.Implementation, effect: ActiveEffect.Implementation, itemData = null) {
-    return effect.disabled;
+    return effect.disabled as boolean;
   }
 
   public static modifyValidSpec(spec: string, validSpec: ValidSpec): ValidSpec {
@@ -662,12 +662,7 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
     specials["ATL.light.shadows"] = [new NumberField(), -1];
     specials["ATL.light.darkness.max"] = [new NumberField(), -1];
     specials["ATL.light.darkness.min"] = [new NumberField(), -1];
-    // specials["ATL.detectionModes.basicSight.range"] = [new NumberField(), -1];
-    // specials["ATL.detectionModes.seeInvisibility.range"] = [new NumberField(), -1];
-    // specials["ATL.detectionModes.senseInvisibility.range"] = [new NumberField(), -1];
-    // specials["ATL.detectionModes.feelTremor.range"] = [new NumberField(), -1];
-    // specials["ATL.detectionModes.seeAll.range"] = [new NumberField(), -1];
-    // specials["ATL.detectionModes.senseAll.range"] = [new NumberField(), -1];
+    // detection modes are set in "ready" hook to allow for detection mode configuration
     specials["ATL.sight.visionMode"] = [new StringField(), 0]; // selection list
     specials["ATL.light.animation"] = [new StringField(), -1]; // json string
     specials["ATL.preset"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
@@ -679,18 +674,6 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
     specials["ATL.sight.range"] = [new NumberField(), -1];
     specials["ATL.sight.saturation"] = [new NumberField(), -1];
     specials["ATL.sight.color"] = [new StringField(), 0 - 1];
-
-  } else if (game.modules.get("ATL")?.active) {
-    // support new version of ATL
-    if (foundry.utils.isNewerVersion("0.3.04", game.modules.get("ATL")?.version)) {
-      for (let label of ["dimLight", "brightLight", "dimSight", "brightSight", "sightAngle", "lightColor", "lightAnimation", "lightAlpha", "lightAngle"]) {
-        specials[`ATL.${label}`] = [new NumberField(), -1];
-      }
-    } else {
-      for (let label of ["light.dim", "light.bright", "dimSight", "brightSight", "sightAngle", "light.color", "light.animation", "light.alpha", "light.angle"]) {
-        specials[`ATL.${label}`] = [new NumberField(), -1];
-      }
-    }
     specials["ATL.preset"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
   }
 });
