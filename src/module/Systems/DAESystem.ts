@@ -351,7 +351,7 @@ export class DAESystem {
   }
 
   public static effectDisabled(actor: Actor.Implementation, effect: ActiveEffect.Implementation, itemData = null) {
-    return effect.disabled;
+    return effect.disabled as boolean;
   }
 
   public static modifyValidSpec(spec: string, validSpec: ValidSpec): ValidSpec {
