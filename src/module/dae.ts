@@ -827,6 +827,7 @@ export function updateActiveEffectHook(
   if (!actor) return true;
   let changeLoop = async () => {
     try {
+      if (!actor) return;
       // const item = await fromUuid(effect.origin);
       const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
       const token = tokens[0];
@@ -1053,6 +1054,7 @@ export function deleteActiveEffectHook(effect: ActiveEffect.Implementation, opti
   if (!actor) return true;
 
   let changesLoop = async () => {
+    if (!actor) return;
     const tokens = actor.token ? [actor.token.object] : actor.getActiveTokens();
     const token = tokens[0];
     const tokenMagic = globalThis.TokenMagic;
@@ -2097,9 +2099,9 @@ Hooks.on("spotlightOmnisearch.indexBuilt", async (index) => {
 })
 
 export function daeInitActions() {
-  atlActive = game.modules.get("ATL")?.active;
-  itemacroActive = game.modules.get("itemacro")?.active;
-  midiActive = game.modules.get("midi-qol")?.active;
+  atlActive = game.modules.get("ATL")?.active ?? false;
+  itemacroActive = game.modules.get("itemacro")?.active ?? false;
+  midiActive = game.modules.get("midi-qol")?.active ?? false;
   useDetermineSuppression = game.system.id === "dnd5e" && foundry.utils.isNewerVersion("5.1", game.system.version);
 
   // Default system class is setup, this overrides with system specific class
@@ -2748,7 +2750,7 @@ export async function processConditionalEffects(actor: Actor.Implementation, upd
   const token = tokenDocument?.object;
   // while (token?.animationContexts?.get(token.animationName)?.to) await delay(100);
   // @ts-expect-error missing in fvtt-types currently
-  await token.movementAnimationPromise;
+  await token?.movementAnimationPromise;
   const rollData = actor.getRollData() as AnyMutableObject;
   const effectItem = game.items?.getName(i18n("dae.ConditionalEffectsItem"));
   if (effectItem) {
