@@ -111,9 +111,8 @@ export class DIMEditor extends WeirdIntermediate {
     if (this.document.macroData) {
       // @ts-expect-error `macroData` is on the Activity pseudo-document with midi installed
       await this.document.update({ "macroData.name": macro.name, "macroData.command": macro.command });
-    }
-    if (macro instanceof Macro) {
-      await this.document.setFlag("dae", "macro", macro.toObject());
+    } else if (macro instanceof Macro) {
+      await this.document.setFlag?.("dae", "macro", macro.toObject());
     }
   }
 
