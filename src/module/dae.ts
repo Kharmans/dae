@@ -76,14 +76,6 @@ export let macroDestination = {
   "macro.activityMacro": "mixed"
 };
 
-export function geti18nOptions(key: string, moduleId: string): Record<string, string> {
-  const translations = game.i18n?.translations[moduleId] ?? {};
-  // TODO: Why was this needed?
-  // const fallback = game.i18n._fallback[moduleId] ?? {};
-  let translation = foundry.utils.mergeObject(/*fallback[key] ?? */{}, translations[key] ?? {}, { overwrite: true, inplace: false });
-  return translation;
-};
-
 export let daeSystemClass: typeof DAESystem | typeof DAESystemDND5E;
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 

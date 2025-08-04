@@ -1,4 +1,4 @@
-import { ceInterface, atlActive, daeSystemClass, geti18nOptions, localizationMap } from "../dae.js";
+import { ceInterface, atlActive, daeSystemClass, localizationMap } from "../dae.js";
 import { i18n, daeSpecialDurations, daeMacroRepeats } from "../../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
@@ -9,6 +9,15 @@ export function addAutoFields(fields: string[]) {
   let newFields = new Set(fields);
   newFields = newFields.union(new Set(otherFields));
   otherFields = Array.from(newFields).toSorted();
+}
+
+const stackableOptions = {
+  noneName: "dae.StackableOptions.noneName",
+  noneNameOnly: "dae.StackableOptions.noneNameOnly",
+  none: "dae.StackableOptions.none",
+  multi: "dae.StackableOptions.multi",
+  count: "dae.StackableOptions.count",
+  countDeleteDecrement: "dae.StackableOptions.countDeleteDecrement"
 }
 
 export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEffectConfig {
@@ -191,7 +200,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     context.specialDuration = daeSpecialDurations;
     context.showSpecialDurations = Object.keys(daeSpecialDurations)?.length > 1;
     context.macroRepeats = daeMacroRepeats;
-    context.stackableOptions = geti18nOptions("StackableOptions", "dae");
+    context.stackableOptions = stackableOptions;
 
     if (document.parent) {
       context.isItemEffect = document.parent instanceof CONFIG.Item.documentClass;
