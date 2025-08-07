@@ -1,7 +1,15 @@
 ### 13.0.8
+* reinstate the stackable options drop down in other languages.
+* fix system.traits.idm.value change key.
+* fix for spurious "system" being added as a change key.
+* Update cs.json thanks @Lethrendis
+
+
+### 13.0.7
 * Reinstated half health status effect, which will set the targets health to half the current max when applied.
 * Lots of localisation changes - thanks @micheal.
 * Fix for ATL/vision-5e keys being incorrectly set. Tested with unreleased version of ATL.
+* Fix for Active Effect tool not opening for items.
 
 ### 13.0.6
 * Fix for deleting effects with macro.createItem throwing an error/warning on deletion.

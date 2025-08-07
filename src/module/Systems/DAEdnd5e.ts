@@ -420,7 +420,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (this.systemConfig.languages) {
       baseValues["system.traits.languages.all"] = [new BooleanField(), -1];
     }
-
+    // A dummy spec "system" is being created and must be removed to avoid errors
+    if (baseValues.system) delete baseValues.system;
   }
 
   public static modifySpecials(actorType: string, specials: BaseValuesInner, characterSpec: any): void {
@@ -820,7 +821,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (["system.traits.di.value", "system.traits.dr.value", "system.traits.dv.value",
       "system.traits.da.value",
       "system.traits.idi.value", "system.traits.idr.value", "system.traits.idv.value",
-      "system.traits.ida.value"].includes(spec.key))
+      "system.traits.ida.value", "system.traits.idm.value"].includes(spec.key))
       return this.traitList;
     if (["system.traits.di.custom", "system.traits.dr.custom", "system.traits.dv.custom", "system.traits.da.custom"].includes(spec.key)) {
       return this.systemConfig.customDamageResistanceTypes ?? {};
@@ -1053,6 +1054,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.idr.value":
       case "system.traits.idv.value":
       case "system.traits.ida.value":
+      case "system.traits.idm.value":
         return super.doCustomArrayValue(actor, current, change, Object.keys(this.systemConfig.damageTypes));
       case "system.traits.di.bypasses":
       case "system.traits.dr.bypasses":
@@ -1277,7 +1279,7 @@ function prepareData(this: Actor.Implementation, wrapped) {
     this.statuses.clear(); // need to do this here since core foundry does this in applyActiveEffects, but we do multiple calls to applyEffects
     // @ts-expect-error no dnd5e-types
     if (this.system.traits) {
-      for (let key of ["da", "ida", "idr", "idv", "idi"]) {
+      for (let key of ["da", "ida", "idr", "idv", "idi", "idm"]) {
         // @ts-expect-error no dnd5e-types
         if (!(this.system.traits[key]?.value instanceof Set)) {
           // @ts-expect-error no dnd5e-types
@@ -1642,12 +1644,14 @@ function isSuppressed(this: ActiveEffect.Implementation, wrapped): boolean {
     isSuppressed ||= globalThis.MidiQOL.checkIncapacitated(actor);
   }
 
-  // Note (Michael): I copied this, but I can't think of how this could ever happen, so commented it out
-  // if (this.parent instanceof Actor && effectIsTransfer(this)) {
-  //   const item = getActorItemForEffect(this);
-  //   // @ts-expect-error no dnd5e-types
-  //   if (item) isSuppressed ||= item.areEffectsSuppressed;
-  // }
+  // This is only relevant if legacyTransfer is true (not so for dnd5e) or legacy effects exist on the actor i.e. having hung around since before legacyTransfer got set to false in dnd
+  // In the olden days transfer effects were created on the actor with dae setting a flag to indicate they are transfer effects
+
+   if (this.parent instanceof Actor && effectIsTransfer(this)) {
+     const item = getActorItemForEffect(this);
+     // @ts-expect-error no dnd5e-types
+     if (item) isSuppressed ||= item.areEffectsSuppressed;
+   }
 
   // @ts-expect-error no dnd5e-types
   const ciTraits = actor.system.traits?.ci;

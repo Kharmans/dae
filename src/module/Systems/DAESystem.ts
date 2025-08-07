@@ -150,9 +150,10 @@ export class ValidSpec {
       Object.entries(specials).forEach(special => {
         let validSpec = new ValidSpec(special[0], special[1][0], special[1][1], special[1][0].label, special[1][0].hint);
         this.actorSpecs[specKey].derivedSpecs.push(validSpec);
-      })
-      this.actorSpecs[specKey].allSpecs = this.actorSpecs[specKey].baseSpecs.concat(this.actorSpecs[specKey].derivedSpecs);
+      });
+      this.actorSpecs[specKey].baseSpecs = this.actorSpecs[specKey].baseSpecs.filter(m => m._fieldSpec !== "system");
 
+      this.actorSpecs[specKey].allSpecs = this.actorSpecs[specKey].baseSpecs.concat(this.actorSpecs[specKey].derivedSpecs);
       // TODO come back and clean this up
       if (["dnd5e"].includes(game.system.id ?? "")) {
         // Special case for armor/hp which can depend on derived attributes - like dexterity mod or constitution mod
@@ -169,6 +170,8 @@ export class ValidSpec {
       this.actorSpecs[specKey].allSpecs.forEach(ms => this.actorSpecs[specKey].allSpecsObj[ms._fieldSpec] = ms);
       this.actorSpecs[specKey].baseSpecs.forEach(ms => this.actorSpecs[specKey].baseSpecsObj[ms._fieldSpec] = ms);
       this.actorSpecs[specKey].derivedSpecs.forEach(ms => this.actorSpecs[specKey].derivedSpecsObj[ms._fieldSpec] = ms);
+      if (this.actorSpecs[specKey].allSpecsObj.system) delete this.actorSpecs[specKey].allSpecsObj.system;
+
     }
     let allSpecsObj = {};
     let baseSpecsObj = {}
@@ -294,12 +297,6 @@ export class DAESystem {
 
   public static getActorDataModelFields(actorType: string): Record<string, foundry.data.fields.DataField<any>> {
     return CONFIG.Actor.dataModels[actorType]?.schema?.fields;
-    /*
-    const dataModels: any = game.system.dataModels;
-    const actorModel: any = dataModels.actor;
-    let actorModels = { "character": actorModel.CharacterData.schema.fields, "npc": actorModel.NPCData.schema.fields, "group": actorModel.GroupData.schema.fields, "vehicle": actorModel.VehicleData.schema.fields }
-    return actorModels[actorType];
-    */
   }
 
   public static getRollDataFunc() {
