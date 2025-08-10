@@ -246,7 +246,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       } else if (modelField instanceof MappingField) {
         processMappingField(`system.${key}`, modelField);
       } else if ([ArrayField, ObjectField, BooleanField, NumberField, StringField].some(fieldType => modelField instanceof fieldType)) {
-        baseValues[`system.${key}`] = [modelField.initial as foundry.data.fields.DataField, -1];
+        baseValues[`system.${key}`] = [modelField, -1];
       } else console.error("Unexpected field ", key, modelField)
     }
     // Generate all repeated `system.abilities` fields

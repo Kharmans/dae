@@ -422,7 +422,8 @@ export async function applyActiveEffects({
         let newChanges: ActiveEffect.ChangeData[] = [];
         for (let change of aeData.changes) {
           if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
-            let originEntity = fromUuidSync(aeData.origin);
+            let originEntity = fromUuidSync(aeData.origin) as AnyObject | undefined;
+            if (!originEntity) continue;
             let originItem: Item.Implementation;
             let sourceActor: Actor.Implementation | null | undefined;
             if (originEntity instanceof Item) {
@@ -432,6 +433,8 @@ export async function applyActiveEffects({
             else if (originEntity instanceof ActiveEffect && originEntity.transfer) sourceActor = (originEntity?.parent as Item.Implementation)?.parent;
             else if (originEntity instanceof ActiveEffect) {
               sourceActor = originEntity?.parent instanceof Item ? originEntity.parent.actor : originEntity.parent;
+            } else if (originEntity) { // originEntity is an activity
+              sourceActor = originEntity?.actor as Actor.Implementation| undefined;
             }
             if (!sourceActor) continue;
             if (change.key === "flags.dae.onUpdateTarget") {

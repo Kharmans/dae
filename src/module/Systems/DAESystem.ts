@@ -73,20 +73,15 @@ export class ValidSpec {
         const baseValue = baseValues[key];
         if (typeof baseValue[0] === "string") {
           console.warn("wrong baseValue", key, baseValue[0]);
-          baseValue[0] = new StringField({ initial: baseValues[0] });
+          baseValue[0] = new StringField({ initial: baseValue[0] });
         }
         if (typeof baseValue[0] === "number") {
           console.warn("wrong baseValue", key, baseValue[0]);
-          baseValue[0] = new NumberField({ initial: baseValues[0] });
+          baseValue[0] = new NumberField({ initial: baseValue[0] });
         }
         if (typeof baseValue[0] === "boolean") {
           console.warn("wrong baseValue", key, baseValue[0]);
-          baseValue[0] = new BooleanField({ initial: baseValues[0] });
-        }
-        if (baseValue[0] instanceof Array) {
-          console.warn("wrong baseValue", key, baseValue[0]);
-          // @ts-expect-error Dunno if this can actually happen
-          baseValue[0] = new ArrayField({ initial: baseValues[0] });
+          baseValue[0] = new BooleanField({ initial: baseValue[0] });
         }
       }
 
@@ -118,11 +113,6 @@ export class ValidSpec {
         if (typeof special[0] === "boolean") {
           console.warn("wrong special", key, special[0]);
           special[0] = new BooleanField({ initial: special[0] });
-        }
-        if (special[0] instanceof Array) {
-          console.warn("wrong special", key, special[0]);
-          // @ts-expect-error Dunno if this can actually happen
-          special[0] = new ArrayField({ initial: special[0] });
         }
       }
 

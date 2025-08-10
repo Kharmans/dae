@@ -6,7 +6,7 @@ import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e.js";
 import { DIMEditor } from "./apps/DIMEditor.js";
 import { isEnchantment } from "./apps/DAEActiveEffectConfig.js";
-import { AnyMutableObject, AnyObject, InexactPartial } from "fvtt-types/utils";
+import { AnyMutableObject, AnyObject, InexactPartial, InvalidUuid } from "fvtt-types/utils";
 import { TokenOrDocument } from "../globals.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
@@ -1126,7 +1126,7 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
   }
   if (lastArgOptions.item) theItem = lastArgOptions.item;
   if (!theItem) { // follow the origin trail backwards
-    let source = effectData.origin ? await fromUuid(effectData.origin) : undefined;
+    let source: any | undefined = effectData.origin ? await fromUuid(effectData.origin) : undefined;
     let count: number;
     for (count = 0; count < 10 && source instanceof ActiveEffect && !(source.parent instanceof Item); count++) {
       const newSource: any = await fromUuid(source.origin);
@@ -1138,6 +1138,7 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
     }
     else if (source instanceof Item) theItem = source;
     else if (source?.parent instanceof Item) theItem = source.parent;
+    else if (source?.item instanceof Item) theItem = source.item;
   }
 
   if (!theItem && effectData.flags?.dae?.itemUuid) {

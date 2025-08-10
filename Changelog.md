@@ -1,9 +1,12 @@
+### 13.0.9
+* Fix a bug in applying effects with macros
+* A few clean ups to creating valid specs - thanks @michael
+
 ### 13.0.8
 * reinstate the stackable options drop down in other languages.
 * fix system.traits.idm.value change key.
 * fix for spurious "system" being added as a change key.
 * Update cs.json thanks @Lethrendis
-
 
 ### 13.0.7
 * Reinstated half health status effect, which will set the targets health to half the current max when applied.
