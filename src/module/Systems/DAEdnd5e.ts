@@ -859,9 +859,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return extractLabels(this.systemConfig.creatureTypes);
     }
     // Enchant stuff
-    if ((spec.key === "system.ability") || (spec.key.includes("activities") && spec.key.endsWith(".ability"))) {
+    if (spec.key === "system.ability") {
       return abilitiesList;
     }
+    if (spec.key.includes("activities") && spec.key.endsWith(".ability")) {
+      const abilitiesList = Object.keys(this.systemConfig.abilities).reduce((obj: {}, key: string) => { obj[key] = this.systemConfig.abilities[key].label; return obj }, {"": `item default`});
+      return abilitiesList;
+    }
+
     if (["system.damage.types", "system.damage.base.types"].includes(spec.key) || (spec.key.includes("activities") && spec.key.endsWith("damage.types"))) {
       return this.traitList;
     }
@@ -1174,6 +1179,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
 
       case "system.attributes.movement.all":
+        // disable until fixed
+        return true;
         // @ts-expect-error no dnd5e-types
         const movement = actor.system.attributes.movement;
         let op = "";
