@@ -1,3 +1,9 @@
+### 13.0.11
+* Fix for system.attributes.movement.all
+
+### 13.0.10
+* Disable system.attributes.movement.all key as it causes no tokens to load in dnd54e 5.1.0
+
 ### 13.0.9
 * Fix a bug in applying effects with macros
 * A few clean ups to creating valid specs - thanks @michael

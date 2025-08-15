@@ -1179,8 +1179,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         return true;
 
       case "system.attributes.movement.all":
-        // disable until fixed
-        return true;
         // @ts-expect-error no dnd5e-types
         const movement = actor.system.attributes.movement;
         let op = "";
@@ -1191,6 +1189,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         }
         for (let key of Object.keys(movement)) {
+          if (typeof movement[key] !== "number") continue;
           if (["units", "hover"].includes(key)) continue;
           let valueString = change.value;
           if (op !== "") {
