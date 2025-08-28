@@ -1,6 +1,8 @@
+### 13.0.12
+* Added dae.ready hook when ready setup is complete
+
 ### 13.0.11
 * Fix for system.attributes.movement.all
-* Added dae.ready hook when ready setup is complete
 
 ### 13.0.10
 * Disable system.attributes.movement.all key as it causes no tokens to load in dnd54e 5.1.0
