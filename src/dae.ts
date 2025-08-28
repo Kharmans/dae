@@ -91,6 +91,7 @@ Hooks.once('ready', () => {
    } else {
     ui.notifications?.error(`DAE is not compatible with ${game.system.id} - module disabled`);
   }
+  Hooks.callAll("dae.ready", API);
 })
 /* ------------------------------------ */
 /* Setup module							*/
@@ -117,12 +118,17 @@ Hooks.once('setup', () => {
       );
       Hooks.callAll("DAE.setupComplete");
     }
-    Hooks.callAll("dae.setupComplete");
+    Hooks.callAll("dae.setupComplete", API);
   }
 });
 
 // TODO (Michael): Do we really need this? Very similar to just using `DialogV2.confirm`
+// It's only here as a convenience to macro writers and I would not be surprised if it is not used at all
 export async function confirmAction(toCheck: boolean, confirmFunction: any, title = i18n("dae.confirm")) {
+  foundry.utils.logCompatibilityWarning(
+    "`confirmAction` is deprecated and will be removed in a future release. Please use `DialogV2.confirm` instead.",
+    { since: "DAE 13.0.11", until: "DAE 13.1.0" }
+  );
   if (toCheck || await foundry.applications.api.DialogV2.confirm({
     window: {title},
     content: `<p>${i18n("dae.sure")}</p>`,
@@ -169,6 +175,7 @@ const DAEMacros = [
 ];
 
 // TODO (Michael) Is this necessary? If so, is this the ideal way of doing this?
+// I'm open to suggestions
 export async function createDAEMacros() {
   if (game.user?.isGM) {
     const daeVersion = "11.2.0";

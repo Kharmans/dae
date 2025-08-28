@@ -45,9 +45,9 @@ export let ceInterface: {
     effectName?: string,
     uuid?: string,
     origin?: string | null,
-  }) => Promise<void>; 
+  }) => Promise<void>;
 } | undefined;
-export let localizationMap: Record<string, {name?: string, description?: string}> = {};
+export let localizationMap: Record<string, { name?: string, description?: string }> = {};
 // export let useAbilitySave;
 // export let expireRealTime
 export let noDupDamageMacro: boolean;
@@ -338,7 +338,7 @@ export async function addTokenMagicChange(actor: Actor.Implementation, change: A
   }
 }
 
-export async function removeTokenMagicChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, tokens: (TokenOrDocument| null | undefined)[], context: any = {}) {
+export async function removeTokenMagicChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, tokens: (TokenOrDocument | null | undefined)[], context: any = {}) {
   const tokenMagic = globalThis.TokenMagic;
   if (!tokenMagic) return;
   for (let token of tokens) {
@@ -1215,7 +1215,7 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
             author: game.user?.id,
             command: `return await ${functionMatch}.bind(this)({ speaker, actor, token, character, item, args, scope })`,
           });
-        // TODO (Michael) `theItem` is treated as mandatory in `getMacro`, but here isn't guaranteed - or is it?
+          // TODO (Michael) `theItem` is treated as mandatory in `getMacro`, but here isn't guaranteed - or is it?
         } else macro = await getMacro({ change, name: args[0] }, theItem!, effectData);
         if (!macro) {
           //TODO localize this
@@ -1397,7 +1397,7 @@ export async function evalArgs({
 }
 
 export async function getMacro(
-  { change, name }: { change: ActiveEffect.ChangeData, name: string},
+  { change, name }: { change: ActiveEffect.ChangeData, name: string },
   item: Item.Implementation,
   effectData?: ActiveEffect.Source
 ): Promise<Macro.Implementation | undefined> {
@@ -1786,9 +1786,9 @@ function updateItemEffects(candidate: Item.Implementation, updates: Item.UpdateD
   // @ts-expect-error Can this happen?
   if (options.isUndo) return true;
   // if (updates.system?.equipped !== undefined || updates.system?.attuned !== undefined || updates.system?.attunement !== undefined) {
-    // // equipped / attuned updated.
-    // const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && ((updates.system.attuned ?? candidate.system.attuned) || (updates.system?.attunment ?? candidate.system.attunment) !== "");
-    // const effects = candidate.effects.filter(ef => !!(ef.transfer || ef.flags?.dae?.transfer))
+  // // equipped / attuned updated.
+  // const isEnabled = (updates.system.equipped ?? candidate.system.equipped) && ((updates.system.attuned ?? candidate.system.attuned) || (updates.system?.attunment ?? candidate.system.attunment) !== "");
+  // const effects = candidate.effects.filter(ef => !!(ef.transfer || ef.flags?.dae?.transfer))
   // }
   // @ts-expect-error Can this happen?
   if (options.isAdvancement) {
@@ -2239,7 +2239,6 @@ export function daeInitActions() {
   // Add the active effects title bar actions
   Hooks.on("getHeaderControlsItemSheet5e", appendDocumentSheetHeaderControls)
   Hooks.on("getHeaderControlsActorSheetV2", appendDocumentSheetHeaderControls)
-  Hooks.on("getActivitySheetHeaderButtons", attachActivitySheetHeaderButton);
 
   Hooks.on("preDeleteCombat", preDeleteCombatHook);
   Hooks.on("preCreateCombatant", preCreateCombatantHook);
@@ -2452,19 +2451,6 @@ async function applyStatusEffectChanges(actor, effect: any | undefined, currentS
   }
 }
 
-function attachActivitySheetHeaderButton(app, buttons) {
-  if (DIMETitleBar) {
-    const DIMtitle = i18n('dae.DIMEditor.Name');
-    const DIMtitleText = daeNoTitleText ? "" : DIMtitle;
-    buttons.unshift({
-      label: DIMtitleText,
-      class: 'dae-dimeditor',
-      icon: 'fas fa-file-pen',
-      tooltip: DIMtitle,
-      onclick: (ev) => new DIMEditor({ document: app.document }).render({ force: true })
-    });
-  }
-}
 Hooks.once("tidy5e-sheet.ready", api => {
   api.registerItemHeaderControls?.({
     controls: [
@@ -2484,7 +2470,21 @@ Hooks.once("tidy5e-sheet.ready", api => {
       }
     ]
   });
+  /* enable this when available
+  api.registerActivityHeaderControls?.({
+    controls: [
+      {
+        icon: 'fas fa-file-pen',
+        label: "DIME",
+        async onClickAction() {
+          new DIMEditor({ document: this.document }).render({ force: true });
+        }
+      }
+    ]
+  });
+  */
 });
+
 function appendDocumentSheetHeaderControls(app, controls) {
   const daeTitle = i18n("dae.ActiveEffectName");
   const DIMETitle = i18n("dae.DIMEditor.Name");
@@ -2501,7 +2501,7 @@ function appendDocumentSheetHeaderControls(app, controls) {
       icon: "fa-solid fa-file-pen",
       onClick: () => new DIMEditor({ document: app.document }).render({ force: true })
     });
-  }
+  };
   // I hate this but can see no way around it
   setTimeout(() => {
     const contextItems = document.querySelectorAll<HTMLElement>("nav#context-menu .context-item");
@@ -2728,8 +2728,8 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, { 
   if (!active && active !== undefined) return false;
   const effect = await ActiveEffect.implementation.fromStatusEffect(statusId);
   if (origin) effect.updateSource({ origin });
-  if (enableCondition?.length) effect.updateSource({flags: {dae: {enableCondition: enableCondition}}});
-  if (overlay) effect.updateSource({flags: {core: {overlay: true}}});
+  if (enableCondition?.length) effect.updateSource({ flags: { dae: { enableCondition: enableCondition } } });
+  if (overlay) effect.updateSource({ flags: { core: { overlay: true } } });
   flags = foundry.utils.mergeObject(effect.flags ?? {}, flags ?? {}, { inplace: false });
   effect.updateSource({ flags });
   const returnEffect = await ActiveEffect.implementation.create(effect.toObject(), { parent: actor, keepId: true });
@@ -2915,7 +2915,7 @@ export interface DoEffectsOptions extends InexactPartial<{
   toggleEffect: boolean;
   tokenId: string;
   whisper: boolean;
-}> {}
+}> { }
 
 interface ToggleStatusEffectOptions {
   active?: boolean;

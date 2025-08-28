@@ -1,3 +1,4 @@
+import API from "./module/API/api";
 import { BaseValuesInner } from "./module/dae";
 import { DAESystemDND5E } from "./module/Systems/DAEdnd5e";
 import { DAESystem, ValidSpec } from "./module/Systems/DAESystem";
@@ -12,20 +13,22 @@ declare module "fvtt-types/configuration" {
   namespace Hooks {
     interface HookConfig {
       "DAE.setupComplete": () => void;
+      "dae.ready": (api: typeof API) => void;
       "dae.addFieldMappings": (fieldMappings: Record<string, string>) => void;
       "dae.addSpecialDurations": (specialDurations: unknown) => void;
       "dae.modifyBaseValues": (specKey: string, baseValues: BaseValuesInner, charSpec: unknown) => void;
       "dae.modifyDerivedSpecs": (specKey: string, derivedSpecs: ValidSpec[], charSpec: unknown) => void;
       "dae.modifySpecials": (speKey: string, specials: BaseValuesInner, charSpec: unknown) => void;
       "dae.setFieldData": (fieldData: unknown) => void;
-      "dae.setupComplete": () => void;
+      "dae.setupComplete": (api: typeof API) => void;
       "dae.settingsChanged": () => void;
 
       // Other module hooks that might exist
       "spotlightOmnisearch.indexBuilt": (index: unknown[]) => void;
       "dfreds-convenient-effects.createEffects": () => void;
       "tidy5e-sheet.ready": (api: {
-        registerItemHeaderControls?: (unknown) => void
+        registerItemHeaderControls?: (unknown) => void,
+        registerActivityHeaderControls?: (unknown) => void
       }) => void;
       "babel.ready": () => void;
     }
