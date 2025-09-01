@@ -1,3 +1,7 @@
+### 13.0.13
+* Fix for some PHB/SRD features having string fields enclosed in quotes which confuses DAE
+* Allow disable to condition to work on more effects
+
 ### 13.0.12
 * Added dae.ready hook when ready setup is complete
 

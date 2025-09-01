@@ -2802,7 +2802,6 @@ export async function processConditionalEffects(actor: Actor.Implementation, upd
   }
 
   for (let effect of actor.allApplicableEffects()) {
-    if (!effect.transfer) continue;
     const disableCondition = foundry.utils.getProperty(effect, "flags.dae.disableCondition");
     if (typeof disableCondition === "string" && disableCondition.trim() !== "") {
       const rollData = (effect.parent?.getRollData() ?? {}) as AnyMutableObject;

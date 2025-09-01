@@ -232,7 +232,11 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         // Could not find the key so set the name to <UNKNOWN>
         change.fieldName = "<UNKNOWN>";
       }
-
+      // Some SRD/Player's Handbook effects have string fields enclosed in quotes which confuses DAEs selection process
+      // Stripping them off is safe since the field is still a string
+      if (typeof change.value === "string") {
+        change.value = change.value.replace(/^(["'])(.*)\1$/, "$2")
+      }
     });
 
     // TODO (Michael): Foundry calendar here?
