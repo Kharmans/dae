@@ -23,6 +23,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   public static getItemSpecs() {
+    // const { AppliedEffectField } = globalThis.dnd5e.dataModels.activity.AppliedEffectField;
+
     // Setup Item Specs
     let itemSpecs = enumerateBaseValues(CONFIG.Item.dataModels);
     const activitySpecsRaw = enumerateBaseValues(globalThis.dnd5e.dataModels.activity, false);
@@ -70,19 +72,19 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         activitySpecs[`activities[${activityKey}].midiProperties.ignoreTraits`] = [new ArrayField(new StringField(), { label: "Ignore Traits" }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityId.hint") }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityConditionText`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityConditionText.hint") }), -1];
-        // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityTargets`]    = [new StringField({ label: "Triggered Activity Targets" }), -1];
-        // activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityRollAs`]     = [new StringField({ label: "Triggered Activity Roll As" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityTargets`]    = [new StringField({ label: "Triggered Activity Targets"}), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityRollAs`]     = [new StringField({ label: "Triggered Activity Roll As" }), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
         activitySpecs[`activities[${activityKey}].midiProperties.forceDialog`] = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.forceDialog.hint") }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.confirmTargets`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.confirmTargets.hint") }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.automationOnly`] = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.automationOnly.hint") }), -1];
-        // activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`]     = [new BooleanField({ label: "midi-qol.SHARED.FIELDS.midiProperties.otherActivityCompatible.hint" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`]     = [new BooleanField({ label: "midi-qol.SHARED.FIELDS.midiProperties.otherActivityCompatible.hint" }), -1];
       }
 
       if (game.modules.get("midi-qol")?.active) {
         activitySpecs["activities[attack].attackMode"] = [new StringField({ label: "Attack Mode" }), -1];
       }
+      delete activitySpecs[`activities[${activityKey}].effects`];// = [new ObjectField(), -1];
     }
-
     for (let itemKey of Object.keys(itemSpecs)) {
       itemSpecs[itemKey] = foundry.utils.mergeObject(itemSpecs[itemKey], activitySpecs, { insertValues: true, insertKeys: true, inplace: false, overwrite: false });
     }
@@ -841,7 +843,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       }, {});
     }
     function extractLabels(orig: Record<string, { label: string }>) {
-      return Object.fromEntries(Object.entries(orig).map(([key, { label }]) => [key, label]));
+      return Object.fromEntries(Object.entries(orig).map(([key, { label }]) => [key, i18n(label)]));
     }
     if (["system.attributes.movement.units", "system.attributes.senses.units"].includes(spec.key)) {
       return extractLabels(this.systemConfig.movementUnits);
@@ -900,6 +902,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (spec.key.endsWith("[transform].settings.preset")) {
       return extractLabels(this.systemConfig.transformation.presets)
     }
+    if (spec.key.endsWith("triggeredActivityTargets") && globalThis.MidiQOL) {
+      return globalThis.MidiQOL.midiPropertiesOptions.triggeredActivityTargetOptions;
+    }
+    if (spec.key.endsWith("triggeredActivityRollAs") && globalThis.MidiQOL) {
+      return globalThis.MidiQOL.midiPropertiesOptions.triggeredActivityRollAsOptions;
+    }
+
     // TODO: dc.calculation
     // TODO: damage.onSave
     // TODO: summon.mode

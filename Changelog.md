@@ -1,3 +1,6 @@
+### 13.0.14
+* Added drop downs for a couple of midi activity fields in enchantment effect config.
+
 ### 13.0.13
 * Fix for some PHB/SRD features having string fields enclosed in quotes which confuses DAE
 * Allow disable to condition to work on more effects
