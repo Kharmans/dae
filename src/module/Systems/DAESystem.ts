@@ -221,7 +221,7 @@ export class ValidSpec {
         else if (skillPassive) m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "StatusEffectLabel") m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "system.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
-        else if (this.actorSpecs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label} (*)`;
+        else if (this.actorSpecs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label ? m._label :  m._fieldSpec} (*)`;
         return m;
       });
     }

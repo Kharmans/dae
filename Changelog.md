@@ -1,3 +1,7 @@
+### 13.0.15
+* Move dae effects/dime buttons to sheet header instead of ... menu.
+* Fix for some effects displaying as (*) rather than the field name in effect editor.
+
 ### 13.0.14
 * Added drop downs for a couple of midi activity fields in enchantment effect config.
 

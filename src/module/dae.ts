@@ -2467,6 +2467,22 @@ Hooks.once("tidy5e-sheet.ready", api => {
         async onClickAction() {
           new DIMEditor({ document: this.document }).render({ force: true });
         }
+      },
+           {
+        icon: 'fas fa-wrench',
+        label: "DAE",
+        position: "header",
+        async onClickAction() {
+          new ActiveEffects({ document: this.document }).render({ force: true });
+        }
+      },
+      {
+        icon: 'fas fa-file-pen',
+        label: "DIME",
+        position: "header",
+        async onClickAction() {
+          new DIMEditor({ document: this.document }).render({ force: true });
+        }
       }
     ]
   });

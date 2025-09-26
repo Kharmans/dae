@@ -87,7 +87,6 @@ export class DAEFieldBrowser {
         
         const localizedName = i18n(nameLocalizationPath);
         const localizedDescription = i18n(descriptionLocalizationPath);
-
         // If we have a localization, use it, otherwise use the default field's name, or finally the key itself
         // Logic looks a bit weird because DAE already sets the value of the validFields kvp to its key if missing.
         const finalName = (localizedName !== "") && (localizedName !== nameLocalizationPath)
