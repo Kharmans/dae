@@ -865,7 +865,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return abilitiesList;
     }
     if (spec.key.includes("activities") && spec.key.endsWith(".ability")) {
-      const abilitiesList = Object.keys(this.systemConfig.abilities).reduce((obj: {}, key: string) => { obj[key] = this.systemConfig.abilities[key].label; return obj }, {"": `item default`});
+      const abilitiesList = Object.keys(this.systemConfig.abilities).reduce((obj: {}, key: string) => { obj[key] = this.systemConfig.abilities[key].label; return obj }, {
+        "": i18n("DND5E.Default"),
+        "spellcasting": i18n("DND5E.Spellcasting")
+      });
       return abilitiesList;
     }
 
