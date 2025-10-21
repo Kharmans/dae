@@ -245,13 +245,12 @@ export function applyDaeEffects(this: Actor.Implementation, {
         //      if ((fieldType === "number" || fieldType === "boolean") && typeof c.value === "string") {
         const fieldType = getTargetType(field) ?? "none";
         if (["number", "boolean"].includes(fieldType) && typeof c.value === "string") {
-          debug("appplyDaeEffects: Doing eval of ", c, c.value);
-
           const rollData = this.getRollData() as AnyMutableObject;
           rollData.stackCount = stackCount;
           c.value = c.value.replace("@item.level", "@itemLevel");
 
           let value = Roll.replaceFormulaData(c.value, rollData, { missing: "0", warn: false });
+          debug("applyDaeEffects: after replaceFormulaData ", c, value, c.value);
           try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
             c.value = `${daeSystemClass.safeEval(value, rollData)}`;
           } catch (err) { // safeEval failed try a roll

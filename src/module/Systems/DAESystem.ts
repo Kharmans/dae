@@ -399,7 +399,6 @@ export class DAESystem {
       foundry.utils.setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
     foundry.utils.setProperty(activeEffectData, "flags.dae.transfer", false);
     if (options.metaData) foundry.utils.mergeObject(activeEffectData, options.metaData);
-
   }
   public static getAttributeValue(documentRef: string, attribute: string) {
     let actor: Actor.Implementation | undefined;

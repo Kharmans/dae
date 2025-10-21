@@ -1,5 +1,5 @@
 import { ceInterface, atlActive, daeSystemClass, localizationMap } from "../dae.js";
-import { i18n, daeSpecialDurations, daeMacroRepeats } from "../../dae.js";
+import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
 
@@ -210,19 +210,24 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
     (context.source!.changes as DAEChange[]).forEach(change => {
       if ([-1, undefined].includes(this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
+        if (change.modes && options.force) error("DAE | change already has modes set", this.document, change);
         change.modes = allModes;
       } else if (this.validSpecsToUse.allSpecsObj[change.key]) {
         const mode = {};
         mode[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
+        if (change.modes && options.force) error("DAE | change already has modes set", this.document, change);
         change.modes = mode;
       } /*else if (!this.validSpecsToUse.allSpecsObj[change.key].startsWith("flags.midi-qol")) {
         change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
       }*/
 
-      if (this.validSpecsToUse.allSpecsObj[change.key]?.options)
+      if (this.validSpecsToUse.allSpecsObj[change.key]?.options){
+        if (change.options && options.force) error("DAE | change already has options set", this.document, change);
         change.options = this.validSpecsToUse.allSpecsObj[change.key]?.options;
-      else
+      } else {
+        if (change.options && options.force) error("DAE | change already has options set", this.document, change);
         change.options = this.getOptionsForSpec(change);
+      }
       if (!change.priority) change.priority = change.mode * 10;
 
       const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
@@ -367,7 +372,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
   async _processSubmitData(event, form, submitData) {
     const document = this.document;
-    for (let change of (submitData.changes ?? []) as ActiveEffect.ChangeData[]) {
+    for (let change of (submitData.changes ?? []) as DAEChange[]) {
       if (typeof change.priority === "string") change.priority = Number(change.priority);
       if (change.priority === undefined || isNaN(change.priority ?? NaN)) change.priority = change.mode ? change.mode * 10 : 0;
     }
@@ -379,9 +384,9 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     else delete submitData.origin;
     if (isEnchantment(document)) submitData.transfer = false;
     submitData.statuses ??= [];
-
     foundry.utils.setProperty(submitData, "flags.dae.specialDuration", Array.from(Object.values(submitData.flags?.dae?.specialDuration ?? {})))
     await this.document.update(submitData);
+
   }
   /* ----------------------------------------- */
 
@@ -391,6 +396,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     if (this.daeFieldBrowser && this.daeFieldBrowser.browserElement) {
       this.daeFieldBrowser.browserElement.remove();
       this.daeFieldBrowser.browserElement = null;
+    }
+    for (let change of this.document._source.changes as DAEChange[]) {
+      delete change.modes;
+      delete change.options;
     }
   }
 }

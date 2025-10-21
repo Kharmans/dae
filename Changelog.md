@@ -1,3 +1,6 @@
+### 13.0.16
+* Fix for effects that modify proficiency throwing an error when first dropped after edit.
+
 ### 13.0.15
 * Move dae effects/dime buttons to sheet header instead of ... menu.
 * Fix for some effects displaying as (*) rather than the field name in effect editor.
