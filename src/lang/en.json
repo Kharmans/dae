@@ -289,6 +289,8 @@
   "dae.StatusEffect": "Status Effect",
   "dae.ShowDeprecation.Name": "Show Deprecation Errors",
   "dae.ShowDeprecation.Hint": "Show Deprecation Errors in console",
+  "dae.maxShortDuration.Name": "Max Short Duration",
+  "dae.maxShortDuration.Hint": "Maximum duration in rounds for short duration effects",
   "dae.CE": "Convenient Effects",
   "dae.ShowInline.Name": "Display results of inline rolls",
   "dae.ShowInline.Hint": "Effects with an inline roll will display the roll results if set",
