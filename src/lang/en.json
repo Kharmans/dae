@@ -367,7 +367,7 @@
   "dae.SelfTarget.Hint": "Effect is applied to the user of the item, not the targets if the item is applying effects to targets",
   "dae.SelfTargetAlways.Name": "Apply to self when item is rolled",
   "dae.SelfTargetAlways.Hint": "Effect is applied to the user of the item, not the targets whenever the item is rolled",
-  "dae.ShowIcon.Name": "Always Show Effect Icon",
+  "dae.ShowIcon.Name": "Effect Icon Visibility",
   "dae.ShowIcon.Hint": "Display the effect Icon on the token and combat display",
   "dae.ShowIcon.Options.Default": "Only show icon for temporary effects (system default)",
   "dae.ShowIcon.Options.Always": "Always show icon",
