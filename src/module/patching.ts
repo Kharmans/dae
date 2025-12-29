@@ -19,7 +19,7 @@ export function setupPatching() {
 function isTemporary(this: ActiveEffect.Implementation, wrapped) {
   // if (this.parent instanceof CONFIG.Actor.documentClass && this.data.flags?.dae?.transfer) return false;
   this._prepareDuration();
-  return wrapped() || this.flags?.dae?.showIcon === "always";
+  return wrapped() || this.flags?.dae?.showIcon === "always" || this.flags?.dae?.showIcon === true; // workaround for migration purposes
 }
 function isConcealed(this: ActiveEffect.Implementation, wrapped) {
   return wrapped() || this.flags?.dae?.showIcon === "never";
