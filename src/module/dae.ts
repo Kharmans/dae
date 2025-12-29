@@ -396,9 +396,11 @@ export async function addConditionChange(actor: Actor.Implementation, change: Ac
   if ((condition.statuses as string[])?.length > 1 && !condition?._id) {
     condition._id = condition.id.replaceAll(/[ :,.\+\-\*\&\^\%\$\#\@\!\[\]{}\(\)]/g, "").padEnd(16, "0").slice(-16);
   }
-  const effects: boolean | any[] = await toggleActorStatusEffect(actor, condition.id, { active: true, origin: effect.uuid });
-  // @ts-expect-error no dnd5e-types
-  if (effect.addDependent && effects instanceof Array) effect.addDependent(...effects)
+  const effects: boolean | any[] = await toggleActorStatusEffect(actor, condition.id, { active: true, origin: effect.uuid, flags: {dnd5e: {dependentOn: effect.uuid}} });
+  if (game.system.id !== "dnd5e" || foundry.utils.isNewerVersion("5.1.99", game.system.version)) {
+    // @ts-expect-error no dnd5e-types
+    if (effect.addDependent && effects instanceof Array) effect.addDependent(...effects)
+  }
 }
 
 export async function removeConditionChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, token: foundry.canvas.placeables.Token.Implementation | null, effect: ActiveEffect.Implementation, context: any = {}) {
@@ -2463,22 +2465,6 @@ Hooks.once("tidy5e-sheet.ready", api => {
       {
         icon: 'fas fa-file-pen',
         label: "DIME",
-        async onClickAction() {
-          new DIMEditor({ document: this.document }).render({ force: true });
-        }
-      },
-           {
-        icon: 'fas fa-wrench',
-        label: "DAE",
-        position: "header",
-        async onClickAction() {
-          new ActiveEffects({ document: this.document }).render({ force: true });
-        }
-      },
-      {
-        icon: 'fas fa-file-pen',
-        label: "DIME",
-        position: "header",
         async onClickAction() {
           new DIMEditor({ document: this.document }).render({ force: true });
         }

@@ -455,7 +455,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     specials["flags.dae"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
     specials["system.attributes.movement.all"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["system.attributes.movement.hover"] = [new NumberField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["system.attributes.movement.hover"] = [new BooleanField(), ACTIVE_EFFECT_MODES.CUSTOM];
 
     if (midiActive) {
       specials["system.attributes.ac.EC"] = [new NumberField(), -1];
@@ -505,11 +505,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     if (game.modules.get("tidy5e-sheet")?.active)
       specials["system.details.maxPreparedSpells"] = [new NumberField(), -1];
     // change movement effects to be after prepareDerivedData
-    if (foundry.utils.getProperty(actorModelSchemaFields, "attributes.fields.movement")) {
-      for (let key of Object.keys(this.systemConfig.movementTypes)) {
-        specials[`system.attributes.movement.${key}`] = [new NumberField(), -1];
-      }
-    }
+    // if (foundry.utils.getProperty(actorModelSchemaFields, "attributes.fields.movement")) {
+    //  for (let key of Object.keys(this.systemConfig.movementTypes)) {
+    //    specials[`system.attributes.movement.${key}`] = [new StringField(), -1];
+    //  }
+    // }
 
     // move all the character flags to specials so that they can be custom effects only
     let charFlagKeys = Object.keys(this.systemConfig.characterFlags);
@@ -1418,8 +1418,14 @@ function doItemApplyEffects(this: Item.Implementation, includeKeys: string[] | u
           let result = expression.replaceAll("##", "@");
           if (targetType && ["boolean", "number"].includes(targetType)) {
             result = DAESystemDND5E.safeEval(expression, rollData, expression) ?? expression;
-          }
-          c.value = typeof result === "string" ? result : JSON.stringify(result);
+            if (typeof result === "string") {
+              c.value = result;
+            } else if (targetType === "number") {
+              c.value = JSON.stringify(Number(result));
+            } else if (targetType === "boolean") {
+              c.value = JSON.stringify(Boolean(result));
+            }
+          } else  c.value = typeof result === "string" ? result : JSON.stringify(result);
         }
       }
       c.effect = effect;

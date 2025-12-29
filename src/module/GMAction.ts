@@ -262,7 +262,7 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
-async function _deleteEffects(data: { targets: {uuid: string}[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options?: ActiveEffect.Database.DeleteOperation }) {
+async function _deleteEffects(data: { targets: { uuid: string }[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options?: ActiveEffect.Database.DeleteOperation }) {
   if (data.options === undefined) data.options = {};
   for (let idData of data.targets) {
     const actor = actorFromUuid(idData.uuid);
@@ -313,8 +313,10 @@ export async function applyActiveEffects({
         effectData.transfer = false;
         if (effectData.flags?.dae?.transfer !== undefined) delete effectData.flags.dae.transfer;
         // New effect so remove the source effects dependents
-        foundry.utils.setProperty(effectData, "flags.dnd5e.dependents", []);
-        effectData.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StatusEffect" })
+        if (game.system.id === "dnd5e" && foundry.utils.isNewerVersion("5.1.99", game.system.version)) {
+          foundry.utils.setProperty(effectData, "flags.dnd5e.dependents", []);
+        }
+        effectData.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StqatusEffect" })
       });
       for (let aeData of dupEffects) {
         if (activityUuid) foundry.utils.setProperty(aeData, "flags.dae.activity", activityUuid);
@@ -339,7 +341,7 @@ export async function applyActiveEffects({
             item = origin.parent;
             macroCommand = item.flags?.dae?.macro?.command ?? item.flags?.itemacro?.macro?.command;
           }
-          
+
           if (!macroCommand && aeData.flags?.dae?.itemData) {
             const itemData = aeData.flags.dae.itemData;
             if (itemData)
@@ -351,7 +353,7 @@ export async function applyActiveEffects({
           const activity = fromUuidSync(activityUuid);
           if (activity) {
             // @ts-expect-error no dnd5e-types
-           const macroCommand = activity.macro?.command;
+            const macroCommand = activity.macro?.command;
             foundry.utils.setProperty(aeData, "flags.dae.ActivityMacro", macroCommand)
           }
         }
@@ -409,16 +411,16 @@ export async function applyActiveEffects({
           context = source?.getRollData();
         }
         context = foundry.utils.mergeObject(context, {
-          target: getTokenDocument(targetActor)?.id, 
-          targetUuid: getTokenDocument(targetActor)?.uuid, 
-          targetActorUuid: targetActor?.uuid, 
-          itemCardUuid: itemCardUuid, 
-          "@target": "target", 
-          stackCount: "@stackCount", 
-          item: "@item", 
+          target: getTokenDocument(targetActor)?.id,
+          targetUuid: getTokenDocument(targetActor)?.uuid,
+          targetActorUuid: targetActor?.uuid,
+          itemCardUuid: itemCardUuid,
+          "@target": "target",
+          stackCount: "@stackCount",
+          item: "@item",
           itemData: "@itemData"
         });
-      
+
         let newChanges: ActiveEffect.ChangeData[] = [];
         for (let change of aeData.changes) {
           if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
@@ -434,7 +436,7 @@ export async function applyActiveEffects({
             else if (originEntity instanceof ActiveEffect) {
               sourceActor = originEntity?.parent instanceof Item ? originEntity.parent.actor : originEntity.parent;
             } else if (originEntity) { // originEntity is an activity
-              sourceActor = originEntity?.actor as Actor.Implementation| undefined;
+              sourceActor = originEntity?.actor as Actor.Implementation | undefined;
             }
             if (!sourceActor) continue;
             if (change.key === "flags.dae.onUpdateTarget") {
@@ -445,14 +447,19 @@ export async function applyActiveEffects({
               const newEffectData = foundry.utils.duplicate(aeData);
               newEffectData.changes = [foundry.utils.duplicate(change)];
               newEffectData.changes[0].key = "flags.dae.onUpdateTarget";
+              if (game.system.id === "dnd5e" && aeData.origin) {
+                foundry.utils.setProperty(newEffectData, "flags.dnd5e.dependentOn", aeData.origin)
+              }
               // @ts-expect-error TODO (Michael) What's up with this metaData
               const effects = await sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData as ActiveEffect.CreateData], { metaData });
-              if (effects) for (let effect of effects) {
-                const origin = fromUuidSync(effect.origin);
-                //@ts-expect-error no dnd5e-types
-                if (origin instanceof ActiveEffect && origin.addDependent) {
+              if (effects && (game.system.id !== "dnd5e" || foundry.utils.isNewerVersion("5.1.99", game.system.version))) {
+                for (let effect of effects) {
+                  const origin = fromUuidSync(effect.origin);
                   //@ts-expect-error no dnd5e-types
-                  await origin.addDependent(effect);
+                  if (origin instanceof ActiveEffect && origin.addDependent) {
+                    //@ts-expect-error no dnd5e-types
+                    await origin.addDependent(effect);
+                  }
                 }
               }
             }
@@ -480,16 +487,21 @@ export async function applyActiveEffects({
           newChanges.push(change as ActiveEffect.ChangeData);
         }
         aeData.changes = newChanges
+        if (game.system.id === "dnd5e" && aeData.origin) {
+          foundry.utils.setProperty(aeData, "flags.dnd5e.dependentOn", aeData.origin)
+        }
       }
 
       if (dupEffects.length > 0) {
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
-          // @ts-expect-error TODO (Michael) What's up with this toggleEffect/metaData
-          let createdEffects = (await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects as ActiveEffect.CreateData[], { toggleEffect, metaData })) ?? [];
-        for (let effect of createdEffects) {
-          const origin = fromUuidSync(effect.origin as string);
-          // @ts-expect-error no dnd5e-types
-          if (origin?.addDependent) await origin.addDependent(effect);
+        // @ts-expect-error TODO (Michael) What's up with this toggleEffect/metaData
+        let createdEffects = (await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects as ActiveEffect.CreateData[], { toggleEffect, metaData })) ?? [];
+        if ((game.system.id !== "dnd5e" || foundry.utils.isNewerVersion("5.1.99", game.system.version))) {
+          for (let effect of createdEffects) {
+            const origin = fromUuidSync(effect.origin as string);
+            // @ts-expect-error no dnd5e-types
+            if (origin?.addDependent) await origin.addDependent(effect);
+          }
         }
       }
     }
@@ -511,7 +523,7 @@ export function convertDuration(durationData: { units: string, value: number }, 
     // Calcs for durations above 1 day are just wrong - but there is no core support for it that works.
     // TODO Once core timeToComponents(game.time.worldTime).add(components).componentsToTime() works correctly it can be fixed
     const calendar = game.time.calendar;
-    const secondsPerDay = calendar.days.secondsPerMinute * calendar.days.minutesPerHour * calendar.days.hoursPerDay 
+    const secondsPerDay = calendar.days.secondsPerMinute * calendar.days.minutesPerHour * calendar.days.hoursPerDay
 
     switch (durationData.units) {
       case "turn":
@@ -536,15 +548,25 @@ export function convertDuration(durationData: { units: string, value: number }, 
       case "week":
       case "weeks": return { type: "seconds", seconds: durationData.value * secondsPerDay * calendar.days.values.length, rounds: 0, turns: 0 };
       case "month":
-      case "months": 
-      const averageMonth = calendar.months.values.reduce((acc, month) => acc + month.days, 0) / calendar.months.values.length;
-      return { type: "seconds", seconds: durationData.value * secondsPerDay * averageMonth, rounds: 0, turns: 0 };
+      case "months":
+        const currentMonth = game.time.calendar.timeToComponents(game.time.worldTime).month;
+        let numDays = 0;
+        for (let i = 0; i < durationData.value; i++) {
+          const nextMonth = (currentMonth + i) % calendar.months.values.length;
+          numDays += calendar.months.values[nextMonth].days;
+        }
+        return { type: "seconds", seconds: numDays * secondsPerDay, rounds: 0, turns: 0 };
       case "year":
-      case "years": return { type: "seconds", seconds: durationData.value * secondsPerDay * calendar.days.daysPerYear, rounds: 0, turns: 0 };
+      case "years":
+        const currentYear = game.time.calendar.timeToComponents(game.time.worldTime).year;
+        const endYear = currentYear + durationData.value;
+        //@ts-expect-error countLeapYears not in types
+        let totalLeapDays = game.time.calendar.countLeapYears(endYear) - game.time.calendar.countLeapYears(currentYear);
+        return { type: "seconds", seconds: (durationData.value * calendar.days.daysPerYear + totalLeapDays) * secondsPerDay, rounds: 0, turns: 0 };
       case "inst":
-        case "inst":
-          return { type: useTurns ? "turns" : "seconds", seconds: 0, rounds: 0, turns: 0 };
-      case "spec": 
+      case "inst":
+        return { type: useTurns ? "turns" : "seconds", seconds: 0, rounds: 0, turns: 0 };
+      case "spec":
       case "perm":
       case "disp":
       case "distr":

@@ -1,3 +1,10 @@
+### 13.0.17
+* Switch to using core calendar functions when converting durations to/from rounds/minutes etc.
+* Fix for enchantments that apply to boolean fields.
+* Fix for evaluating expressions that check for null/undefined like activity?.use(...) etc.
+* Support for new dnd5e movement formulas - requires dnd5e 5.2
+* Support new dnd5e (5.2.0) dependency behavior but backwards compatible with 5.1.x
+
 ### 13.0.16
 * Fix for effects that modify proficiency throwing an error when first dropped after edit.
 
