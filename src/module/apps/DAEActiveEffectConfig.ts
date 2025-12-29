@@ -200,6 +200,11 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     context.specialDuration = daeSpecialDurations;
     context.showSpecialDurations = Object.keys(daeSpecialDurations)?.length > 1;
     context.macroRepeats = daeMacroRepeats;
+    context.showIconOptions = {
+      "none": i18n("dae.ShowIcon.Options.Default"),
+      "always": i18n("dae.ShowIcon.Options.Always"),
+      "never": i18n("dae.ShowIcon.Options.Never")
+    };
     context.stackableOptions = stackableOptions;
 
     if (document.parent) {
