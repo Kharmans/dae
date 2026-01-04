@@ -1,3 +1,7 @@
+### 13.0.18
+* reinstate drag and drop of item uuids in changes editor.
+* typo fix in GMAction, thanks @Elwin
+
 ### 13.0.17
 * Switch to using core calendar functions when converting durations to/from rounds/minutes etc.
 * Fix for enchantments that apply to boolean fields.

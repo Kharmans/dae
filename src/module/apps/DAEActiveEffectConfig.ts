@@ -298,6 +298,13 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         this.submit({ preventClose: true })?.then(() => this.render());
       });
     }
+    new foundry.applications.ux.DragDrop.implementation({
+      // dragSelector: ".dae-change-drag-handle",
+      dropSelector: ".value",
+      callbacks: {
+        drop: this._onDrop.bind(this)
+      }
+    }).bind(this.element);
   }
   changeTab(tab: string, group: string, options) {
     let autoPos: foundry.applications.api.ApplicationV2.Position = { ...this.position, height: "auto" };
@@ -334,7 +341,11 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const data: any = foundry.applications.ux.TextEditor.getDragEventData(ev);
     const item = await fromUuid(data.uuid);
     const targetValue = (ev.target as HTMLInputElement)?.value?.split(",")[1];
-    if (data.uuid && ev.target) (ev.target as HTMLInputElement).value = data.uuid + (targetValue ? `, ${targetValue}` : "");
+    if (data.uuid && ev.target) {
+      (ev.target as HTMLInputElement).value = data.uuid + (targetValue ? `, ${targetValue}` : "");
+      this.submit({ preventClose: true })?.then(() => this.render());
+    }
+
     if (data.fieldName) {
       if (ev.target) (ev.target as HTMLInputElement).value = data.fieldName;
       this.daeFieldBrowser.debouncedUpdateBrowser();

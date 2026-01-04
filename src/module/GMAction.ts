@@ -316,7 +316,7 @@ export async function applyActiveEffects({
         if (game.system.id === "dnd5e" && foundry.utils.isNewerVersion("5.1.99", game.system.version)) {
           foundry.utils.setProperty(effectData, "flags.dnd5e.dependents", []);
         }
-        effectData.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StqatusEffect" })
+        effectData.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StatusEffect" })
       });
       for (let aeData of dupEffects) {
         if (activityUuid) foundry.utils.setProperty(aeData, "flags.dae.activity", activityUuid);
