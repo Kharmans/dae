@@ -256,8 +256,6 @@
   "dae.endEveryTurn": "Na koniec tury: Uruchamiaj makra efektu aktywnego na koniec tury postaci",
   "dae.displayTraits.Name": "Dołącz aktywne efekty do listy cech specjalnych",
   "dae.displayTraits.Hint": "Lista cech specjalnych zawierać będzie zmiany efektów aktywnych. Wpisane wartości będą aplikowane do bazowej liczby, przed zaaplikowaniem efektów aktywnych.",
-  "dae.ConditionalVisibility": "Warunkowa Widoczność",
-  "dae.ConditionalVisibilityVision": "Warunkowa Wizja",
   "dae.noDupDamageMacro.Name": "Bez Duplikatów Makro Obrażeń",
   "dae.noDupDamageMacro.Hint": "Jeśli włączone duplikaty Makr Obrażeń będą ignorowane",
   "dae.DisableEffects.Name": "Wyłącz przetważanie wszystkich efektów aktywnych",

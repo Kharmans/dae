@@ -1,3 +1,57 @@
+### 13.0.18
+* reinstate drag and drop of item uuids in changes editor.
+* typo fix in GMAction, thanks @Elwin
+
+### 13.0.17
+* Switch to using core calendar functions when converting durations to/from rounds/minutes etc.
+* Fix for enchantments that apply to boolean fields.
+* Fix for evaluating expressions that check for null/undefined like activity?.use(...) etc.
+* Support for new dnd5e movement formulas - requires dnd5e 5.2
+* Support new dnd5e (5.2.0) dependency behavior but backwards compatible with 5.1.x
+
+### 13.0.16
+* Fix for effects that modify proficiency throwing an error when first dropped after edit.
+
+### 13.0.15
+* Move dae effects/dime buttons to sheet header instead of ... menu.
+* Fix for some effects displaying as (*) rather than the field name in effect editor.
+
+### 13.0.14
+* Added drop downs for a couple of midi activity fields in enchantment effect config.
+
+### 13.0.13
+* Fix for some PHB/SRD features having string fields enclosed in quotes which confuses DAE
+* Allow disable to condition to work on more effects
+
+### 13.0.12
+* Added dae.ready hook when ready setup is complete
+
+### 13.0.11
+* Fix for system.attributes.movement.all
+
+### 13.0.10
+* Disable system.attributes.movement.all key as it causes no tokens to load in dnd54e 5.1.0
+
+### 13.0.9
+* Fix a bug in applying effects with macros
+* A few clean ups to creating valid specs - thanks @michael
+
+### 13.0.8
+* reinstate the stackable options drop down in other languages.
+* fix system.traits.idm.value change key.
+* fix for spurious "system" being added as a change key.
+* Update cs.json thanks @Lethrendis
+
+### 13.0.7
+* Reinstated half health status effect, which will set the targets health to half the current max when applied.
+* Lots of localisation changes - thanks @micheal.
+* Fix for ATL/vision-5e keys being incorrectly set. Tested with unreleased version of ATL.
+* Fix for Active Effect tool not opening for items.
+
+### 13.0.6
+* Fix for deleting effects with macro.createItem throwing an error/warning on deletion.
+* Use foundry calendar for seconds per minute/hour/day etc.
+
 ### 13.0.5
 * Little cleanup of duration conversion
 

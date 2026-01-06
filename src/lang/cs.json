@@ -26,7 +26,7 @@
   "dae.dec": "Klamání",
   "dae.his": "Historie",
   "dae.ins": "Vhled",
-  "dae.inv": "Vyšetřování",
+  "dae.inv": "Pátrání",
   "dae.itm": "Zastrašování",
   "dae.med": "Lékařství",
   "dae.nat": "Příroda",
@@ -104,7 +104,7 @@
   "dae.spell5": "Pozice 5. stupně",
   "dae.spell6": "Pozice 6. stupně",
   "dae.spell7": "Pozice 7. stupně",
-  "dae.spell8": "Pozice 8. stupně.",
+  "dae.spell8": "Pozice 8. stupně",
   "dae.spell9": "Pozice 9. stupně",
   "dae.pact": "Pozice kouzel magie paktu",
   "dae.Attuned": "Naladěno",
@@ -200,23 +200,23 @@
   "dae.attackAdvantage": "Výhoda k útoku",
   "dae.conditions": "Stav",
   "dae.calculateArmor.Name": "Automatický výpočet obranného čísla",
-  "dae.calculateArmor.Hint": "Pokud je zaškr tnuto, bude DAE automaticky počítat OČ podle zbroje/štítů v inventáři. Ostatní položky mohou OČ stále upravovat.",
+  "dae.calculateArmor.Hint": "Po zaškrtnutí bude DAE automaticky počítat OČ podle zbroje/štítů v inventáři. Ostatní položky mohou OČ stále upravovat.",
   "dae.applyBaseAC.Name": "Automatický výpočet základního OČ",
-  "dae.applyBaseAC.Hint": "Pokud je zaškrtnuto, bude postavám (nikoliv NP) nastaveno základní OČ na 10 + oprava Obratnosti",
+  "dae.applyBaseAC.Hint": "Po zaškrtnutí bude hráčským postavám (nikoliv NP) nastaveno základní OČ na 10 + oprava Obratnosti",
   "dae.applyingEffects": "Aplikování efektů",
   "dae.removingEffects": "Odstraňování efektů",
   "dae.tokenMagic": "TokenMagic",
   "dae.transfer.Name": "Aplikace efektu na postavu",
-  "dae.transfer.Hint": "Pokud je zaškrtnuto, efekt se aplikuje na vlastníka položky při jejím vybavení. Pokud chceš efekt aplikovat na cíl při použití položky, pak tuto možnost odškrtni.",
+  "dae.transfer.Hint": "Po zaškrtnutí se efekt aplikuje na vlastníka položky při jejím vybavení. Pokud chceš efekt aplikovat na cíl při použití položky, pak tuto možnost odškrtni.",
   "dae.effectName": "Název efektu",
   "dae.readOnly": "EFEKT POUZE KE ČTENÍ",
   "dae.legact": "Legendární akce",
   "dae.legres": "Legendární odolání",
   "dae.encumbrance": "Zatížení",
   "dae.useAbilitySave.Name": "Při hodu na záchranu používat pole záchrany vlastností",
-  "dae.useAbilitySave.Hint": "Výchozí nastavení DND5e používá pouze opravu schopnosti, zapnutím této možnosti se při hodech na záchranu použije příslušné pole a lze ho pomocí DAE upravovat.",
+  "dae.useAbilitySave.Hint": "Výchozí nastavení DND5e používá pouze opravu vlastnosti, zapnutím této možnosti se při hodech na záchranu použije příslušné pole a lze ho pomocí DAE upravovat.",
   "dae.Debug.Name": "Množství informací ladění",
-  "dae.Debug.Hint": "Zobrazí v konzoli více informací o ladění podle nastavení: Žádné < Varování < Ladění < Vše.",
+  "dae.Debug.Hint": "Zobrazí v konzoli více informací o ladění podle nastavení: Nic < Warning < Debug < Vše.",
   "dae.summaryFilter": "Souhrn efektů",
   "dae.enabledFilter": "Povolené efekty",
   "dae.temporaryFilter": "Časově omezené efekty",
@@ -236,8 +236,8 @@
   "dae.walk": "Chůze",
   "dae.diamondSoul": "Diamantová duše",
   "dae.noGM": "Není připojen žádný klient PJ",  
-  "dae.expireRealTime.Name": "Vypršení časovaných efektů v reálném čase",
-  "dae.expireRealTime.Hint": "Pokud je zaškrtnuto a nejsou nainstalovány moduly about-time či times-up, časované efekty vyprší v reálném čase.",
+  "dae.expireRealTime.Name": "Nechat efekty vypršet v reálném čase?",
+  "dae.expireRealTime.Hint": "Pokud je zaškrtnuto a nejsou nainstalovány moduly About-time či Times-up, časované efekty vyprší v reálném čase.",
   "dae.isAttacked": "je napaden(a): Vyprší, pokud je postava napadena",
   "dae.isMoved": "Přesunutí: Vyprší, když je token přesunut",
   "dae.isDamaged": "je zraněn(a): Vyprší, pokud je postava zraněna",
@@ -272,29 +272,26 @@
   "dae.startEndEveryTurnAny": "Začátek a konec každého kola: Spustí makra efektu na začátku a na konci kola postavy, i když je efekt deaktivován",
   "dae.endEveryTurn": "Konec každého kola: Spustí makra efektu na konci kola postavy",
   "dae.endEveryTurnAny": "Konec každého kola: Spustí makra efektu na konci kola postavy, i když je efekt deaktivován",
-  "dae.ConditionalVisibility": "Podmíněná viditelnost",
-  "dae.ConditionalVisibilityVision": "PV Vidění",
-  "dae.noDupDamageMacro.Name": "Žádná duplicitní makra zranění",
-  "dae.noDupDamageMacro.Hint": "Pokud je zaškrtnuto, budou duplicitní makra zranění ignorována.",
-  "dae.DisableEffects.Name": "Zákaz zpracování všech aktivních efektů",
-  "dae.DisableEffects.Hint": "Pokud je zaškrtnuto, nebudou na postavy žádné aktivní efekty aplikovány. Je to užitečné, pokud chceš měnit hodnoty postav ovlivněné aktivními efekty.",
+  "dae.noDupDamageMacro.Name": "Zakázat duplicitní makra zranění?",
+  "dae.noDupDamageMacro.Hint": "Po zaškrtnutí budou duplicitní makra zranění ignorována.",
+  "dae.DisableEffects.Name": "Zakázat zpracování aktivních efektů?",
+  "dae.DisableEffects.Hint": "Po zaškrtnutí nebudou na postavy aplikovány žádné aktivní efekty. Je to užitečné, pokud chceš měnit hodnoty postav ovlivněné aktivními efekty.",
   "dae.HandleEquip.Name": "Spravovat aktivní efekty při vybavení/sejmutí předmětu",
-  "dae.HandleEquip.Hint": "Pokud je zaškrtnuto, bude DAE spravovat aktivaci/deaktivaci efektů při vybavení/sejmutí předmětu a přepnutí aktivního efektu přepne i stav vybavení.",
-  "dae.DAETitleBar.Name": "Titulková lišta DAE",
+  "dae.HandleEquip.Hint": "Po zaškrtnutí bude DAE spravovat aktivaci/deaktivaci efektů při vybavení/sejmutí a přepnutí aktivního efektu přepne i stav vybavení/sejmutí.",
+  "dae.DAETitleBar.Name": "Zobrazovat ikonku DAE na liště?",
   "dae.DAETitleBar.Hint": "Zobrazí tlačítko editoru efektů DAE v titulkové liště.",
-  "dae.DIMETitleBar.Name": "Titulková lišta DIME ",
+  "dae.DIMETitleBar.Name": "Zobrazovat ikonku DIME na liště?",
   "dae.DIMETitleBar.Hint": "Zobrazí editor makra položek DAE v titulkové liště.",
-  "dae.DAEColorTitleBar.Name": "Barevná titulková lišta DAE",
-  "dae.DAEColorTitleBar.Hint": "Aplikuje barvu na tlačítko editoru efektů DAE/DIME, pokud jsou v dokumentu přítomny efekty/makra položek (vyžaduje zaškrtnutí ´Titulkové lišty DAE´).",
-  "dae.DAENoTitleText.Name": "Pouze ikona",
-  "dae.DAENoTitleText.Hint": "Zobrazí v titulkové liště pouze hlavní ikonu, jinak ikonu + DAE.",
+  "dae.DAEColorTitleBar.Name": "Barvit ikonku DAE na liště?",
+  "dae.DAEColorTitleBar.Hint": "Aplikuje barvu na ikonky editorů efektů DAE/DIME, pokud jsou v dokumentu přítomny efekty/makra položek (vyžaduje zaškrtnutí ´Ikonky DAE v titulkové liště´).",
+  "dae.DAENoTitleText.Name": "Zobrazovat pouze ikonku?",
+  "dae.DAENoTitleText.Hint": "Zobrazí v titulkové liště pouze hlavní ikonu, jinak ikonku + DAE.",
   "dae.StatusEffect": "Stavový efekt",
   "dae.ShowDeprecation.Name": "Zobrazení chyb zastaralosti",
   "dae.ShowDeprecation.Hint": "Bude v konzoli zobrazovat chyby zastaralosti.",
   "dae.CE": "Convenient Effects",
-  "dae.CUB": "Combat Utility Belt",
-  "dae.ShowInline.Name": "Zobrazení výsledků vnořených hodů",
-  "dae.ShowInline.Hint": "Pokud je zaškrtnuto, tak budou efekty s vnořeným hodem zobrazovat výsledky hodu.",
+  "dae.ShowInline.Name": "Zobrazovat výsledky vnořených hodů?",
+  "dae.ShowInline.Hint": "Po zaškrtnutí budou efekty s vnořeným hodem zobrazovat výsledky hodu.",
   "dae.StackableOptions": {
     "noneName": "Efekty se nesčítají podle názvu efektu a původu efektu",
     "noneNameOnly": "Efekty se nesčítají podle názvu efektu",
@@ -303,7 +300,7 @@
     "count": "Každé sčítání zvyšuje počet sčítání o 1",
     "countDeleteDecrement": "Při aplikaci zvyšuje počet sčítání o 1, při odstranění snižuje počet sčítání o 1, odstraněno při 0 sčítáních"
   },
-  "dae.SW5EHint": "Poznámka pro překladatele - Následující řetězce jsou vyžadovány POUZE pro systém SW5E.", 
+  "dae.SW5EHint": "Poznámka pro překladatele: Následující řetězce jsou vyžadovány POUZE pro systém SW5E.", 
   "dae.SW5E": "SW5e",
   "dae.force": "Síla",
   "dae.tech": "Technologie",
@@ -344,7 +341,7 @@
   "dae.DurationExpression": "Hod kostkou v sekundách pro dobu trvání efektu",
   "dae.not-reflected": "Efekt položky uložen. Tyto změny nebudou odráženy v původně přeneseném efektu.",
   "dae.not-transferred": "Efekt položky uložen. Nastavení efektu vlastněného položkou na Přenos nebude efekt automaticky přenášet.",
-  "dae.ATLHint": "Poznámka pro překladatele - Tyto řetězce jsou vyžadovány POUZE pro ´Active Token Lighting´.",
+  "dae.ATLHint": "Poznámka pro překladatele: Tyto řetězce jsou vyžadovány POUZE pro modul ATL (Active Token Lighting = Aktivní osvětlení tokenů).",
   "dae.ATL": "ATL",
   "dae.dimLight": "Tlumené světlo",
   "dae.brightLight": "Jasné světlo",
@@ -362,32 +359,32 @@
   "dae.lightAnimation": "Animace světla",
   "dae.lightAlpha": "Průhlednost světla",
   "dae.lightAngle": "Úhel světla",
-  "dae.DAEUntestedSystems.Name": "Načtení DAE i pro netestované herní systémy",
-  "dae.DAEUntestedSystems.Hint": "Pokud je zaškrtnuto, načte se DAE pro jakýkoli systém, který není označen jako kompatibilní. Pokud není zaškrtnuto, DAE se načte pouze pro systémy označené jako kompatibilní. Vyžaduje restart.",
-  "dae.SelfTarget.Name": "Používání na sebe, když položka aplikuje efekty na cíle",
+  "dae.DAEUntestedSystems.Name": "Načítat DAE i pro netestované systémy?",
+  "dae.DAEUntestedSystems.Hint": "Po zaškrtnutí se načte DAE i pro všechny systémy, který nejsou označeny jako kompatibilní. Pokud není zaškrtnuto, bude se DAE načítat pouze pro systémy označené jako kompatibilní. Vyžaduje znovunačtení.",
+  "dae.SelfTarget.Name": "Použít efekt aplikovaný položkou na sebe?",
   "dae.SelfTarget.Hint": "Efekt se aplikuje na uživatele položky, nikoli na cíle, pokud položka aplikuje efekty na cíle.",
-  "dae.SelfTargetAlways.Name": "Používání na sebe, když je položka vyvolána",
-  "dae.SelfTargetAlways.Hint": "Efekt se aplikuje na uživatele položky, nikoli na cíle, kdykoli je položka vyvolána.",
-  "dae.ShowIcon.Name": "Vždy zobrazovat ikonu efektu",
+  "dae.SelfTargetAlways.Name": "Použít vyvolanou položku na sebe?",
+  "dae.SelfTargetAlways.Hint": "Efekt se aplikuje na uživatele položky, nikoli na cíle, kdykoli je položka házena.",
+  "dae.ShowIcon.Name": "Zobrazovat vždy ikonu efektu?",
   "dae.ShowIcon.Hint": "Zobrazí ikonu efektu na tokenu a v bojovém zobrazení.",
-  "dae.DontApply.Name": "Neaplikovat efekt",
+  "dae.DontApply.Name": "Neaplikovat efekt?",
   "dae.DontApply.Hint": "Když DAE (a Midi) aplikuje aktivní efekty, tento efekt přeskočí.",
   "dae.DIMEditor.Name": "DIME",
-  "dae.IncapacitatedDisabled": "Pokud je aktér neschopný akce, bude efekt deaktivován",
-  "dae.DIMESyncItemacro.Name": "Synchronizace DIME a Itemacra",
-  "dae.DIMESyncItemacro.Hint": "Pokud je zaškrtnuto, budou makra DIME a makra Itemacro synchronizovány – lze je pak upravovat v kterémkoli z nich. Pokud není zaškrtnuto, bude mít prioritu editor DIME.",
+  "dae.IncapacitatedDisabled": "Deaktivovat efekt, když je aktér neschopný akce?",
+  "dae.DIMESyncItemacro.Name": "Synchronizovat DIME a Itemacro?",
+  "dae.DIMESyncItemacro.Hint": "Po zaškrtnutí budou makra DIME a makra Itemacro synchronizovány. Lze je pak upravovat v kterémkoli z nich. Pokud není zaškrtnuto, bude mít prioritu editor DIME.",
   "dae.halfHealthEffectLabel": "Poloviční výdrž",
-  "dae.DAEAddHalfHealthEffect.Name": "Přidání efektu poloviční výdrže",
+  "dae.DAEAddHalfHealthEffect.Name": "Přidávat efekt poloviční výdrže?",
   "dae.DAEAddHalfHealthEffect.Hint": "Přidá stavový efekt poloviční výdrže nastavující maximální body výdrže aktéra na polovinu jeho běžného maxima.",
   "dae.TabChanges": "Změny",
-  "dae.DisableCondition": "Výraz, jehož vyhodnocení jako ´pravda´ efekt deaktivuje",
-  "dae.EnableCondition": "Výraz, jehož vyhodnocení jako ´nepravda´ efekt deaktivuje",
+  "dae.DisableCondition": "Výraz, jehož vyhodnocení coby pravdivého efekt deaktivuje",
+  "dae.EnableCondition": "Výraz, jehož vyhodnocení coby nepravdivého efekt deaktivuje",
   "dae.ConditionalEffectsItem": "Podmíněné efekty DAE",
   "dae.IconTint": "Odstín ikony",
-  "dae.IconOverlay.Name": "Překryv ikony",
-  "dae.IconOverlay.Hint": "Zobrazí ikonu stavu efektu jako překryv.",
-  "dae.DependentConditions.Name": "Přidružené stavy",
-  "dae.DependentConditions.Hint": "Stavové efekty (otrávený/paralyzovaný) přidávají také přidružené stavy, jako je ´zneschopněný´.",
+  "dae.IconOverlay.Name": "Překryv ikony?",
+  "dae.IconOverlay.Hint": "Zda se má zobrazovat ikona stavu efektu formou překryvu.",
+  "dae.DependentConditions.Name": "Přidružovat stavy?",
+  "dae.DependentConditions.Hint": "Stavové efekty (otrávený/á a paralyzovaný/á) přidávají také přidružené stavy, jako je ´zneschopněný/á´.",
   "__Comment__": "Následující řetězce jsou určeny pro systém DAE. Překlad je volitelný.",
   "dae.fieldData": {
     "fieldCategories.All": "Vše",
@@ -422,24 +419,16 @@
       "name": "Štěstí půlčíků",
       "description": "Podrobnosti viz \"Zvláštní rysy\"."
     },
-    "flags.dnd5e.initiativeAdv": {
-      "name": "Výhoda k iniciativě",
-      "description": "Podrobnosti viz \"Zvláštní rysy\"."
-    },
     "flags.dnd5e.initiativeAlert": {
       "name": "Hlídač",
       "description": "Podrobnosti viz \"Zvláštní rysy\"."
     },
     "flags.dnd5e.initiativeDisadv": {
-      "name": "Nevýhoda k iniciativě",
+      "name": "(Midi) Nevýhoda na iniciativu", 
       "description": "Podrobnosti viz \"Zvláštní rysy\"."
     },
-    "flags.dnd5e.initiativeHalfProf": {
-      "name": "",
-      "description": ""
-    },
     "flags.dnd5e.initiativeHalfProficiency": {
-      "name": "Poloviční zdatnost k iniciativě",
+      "name": "Poloviční zdatnost v iniciativě",
       "description": "Podrobnosti viz \"Zvláštní rysy\"."
     },
     "flags.dnd5e.jackOfAllTrades": {
@@ -471,7 +460,7 @@
       "description": "Podrobnosti viz \"Zvláštní rysy\"."
     },
     "flags.dnd5e.spellSniper": {
-      "name": "Kouzelný ostřelovač",
+      "name": "Vrhač kouzel",
       "description": "Podrobnosti viz \"Zvláštní rysy\"."
     },
     "flags.dnd5e.tavernBrawlerFeat": {
@@ -485,1358 +474,710 @@
   },
   "dae.Macros.fieldData": {
     "macro.actorUpdate": {
-      "name": "",
-      "description": ""
+      "name": "Aktualizovat pole aktéra",
+      "description": "Podrobnosti viz README DAE."
     },
     "macro.CE": {
-      "name": "",
-      "description": ""
-    },
-    "macro.CLT": {
-      "name": "",
-      "description": ""
+      "name": "Aplikovat CE?",
+      "description": "Modul Convenient Effect = Pohodlné efekty"
     },
     "macro.createItem": {
-      "name": "",
-      "description": ""
+      "name": "Vytvořit položku",
+      "description": "Vytvoří u aktéra položku, hodnota by měla být uuid položky."
     },
     "macro.createItemRunMacro": {
-      "name": "",
-      "description": ""
-    },
-    "macro.CUB": {
-      "name": "",
-      "description": ""
+      "name": "Vytvořit položku a spustit makro",
+      "description": "Vytvoří u aktéra položku a spustí DIME položky s parametrem \"onCreate\", hodnota by měla být UUID položky."
     },
     "macro.execute": {
-      "name": "",
-      "description": ""
+      "name": "Makro ke spuštění",
+      "description": "Které makro se má spustit při aplikaci/odebrání, odkazováno podle názvu. Lze také zadat dodatečné argumenty makra. Spuštění bude přeneseno PJ, pokud cílový aktér není vlastněn."
     },
     "macro.execute.GM": {
-      "name": "",
-      "description": ""
+      "name": "Makro ke spuštění PJ",
+      "description": "Stejné jako \"macro.execute\", ale spuštění makra je vynuceno u PJ."
     },
     "macro.execute.local": {
-      "name": "",
-      "description": ""
+      "name": "Makro lokálního spuštění",
+      "description": "Stejné jako \"macro.execute\", ale spuštění makra je vynuceno lokálně."
     },
     "macro.itemMacro": {
-      "name": "",
-      "description": ""
+      "name": "Spustit ItemMacro/DIME",
+      "description": "Při aplikaci/odebrání efektu spustí ItemMacro/DIME uložené u nadřazené položky. Lze také zadat dodatečné argumenty makra. Spuštění bude přeneseno PJ, pokud cílový aktér není vlastněn."
     },
     "macro.itemMacro.GM": {
-      "name": "",
-      "description": ""
+      "name": "Spustit ItemMacro/DIME jako PJ",
+      "description": "Stejné jako \"macro.itemMacro\", ale spuštění makra je vynuceno u PJ."
     },
     "macro.itemMacro.local": {
-      "name": "",
-      "description": ""
+      "name": "Spustit ItemMacro/DIME lokálně",
+      "description": "Stejné jako \"macro.itemMacro\", ale spuštění makra je vynuceno lokálně."
     },
     "macro.StatusEffect": {
-      "name": "",
-      "description": ""
+      "name": "Aplikovat stavový efekt",
+      "description": "Funkčně totožné s prostým výběrem stavu v okně Detaily, ale stav vytvoří programově a nevynucuje viditelnost pasivního efektu."
     }
   },
   "dae.SystemAbilities.fieldData": {
-    "system.abilities.cha.bonuses.check": {
-      "name": "Bonus k ověření Charismatu",
+    "bonuses.check": {
+      "name": "Bonus k ověření vlastnosti{ability}",
       "description": ""
     },
-    "system.abilities.cha.bonuses.save": {
-      "name": "Bonus k záchraně Charismatem",
+    "bonuses.save": {
+      "name": "Bonus k záchraně vlastností {ability}",
       "description": ""
     },
-    "system.abilities.cha.dc": {
-      "name": "SO záchrany Charismatem",
+    "check.roll.max": {
+      "name": "Maximální hod při ověření {ability}",
+      "description": "POZNÁMKA: Ne zcela funkční před verzí modulu DnD 5.1.0. Maximální hod na k20 při ověření vlastnosti {ability}."
+    },
+    "check.roll.min": {
+      "name": "Minimální hod při ověření {ability}",
+      "description": "POZNÁMKA: Ne zcela funkční před verzí modulu DnD 5.1.0. Minimální hod na k20 při ověření vlastnosti {ability}."
+    },
+    "check.roll.mode": {
+      "name": "Režim hodu při ověření {ability}",
+      "description": "POZNÁMKA: Ne zcela funkční před verzí modulu DnD 5.1.0. Režim hodu při ověření vlastnosti {ability}. \"Přidat\" přidá Výhodu (1), nebo Nevýhodu (-1). Přepsání vynutí Výhodu (1), Nevýhodu (-1), nebo normální hod (0)."
+    },
+    "max": {
+      "name": "Maximální hodnota vlastnosti {ability}",
       "description": ""
     },
-    "system.abilities.cha.max": {
-      "name": "Maximální hodnota Charismatu",
+    "mod": {
+      "name": "Oprava vlastnosti {ability}",
       "description": ""
     },
-    "system.abilities.cha.mod": {
-      "name": "Oprava Charismatu",
+    "proficient": {
+      "name": "Zdatnost v záchraně vlastností {ability}",
       "description": ""
     },
-    "system.abilities.cha.proficient": {
-      "name": "Zdatnost v záchraně Charismatem",
-      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
+    "save.roll.max": {
+      "name": "Maximální hod při záchraně vlastností {ability}",
+      "description": "POZNÁMKA: Ne zcela funkční před verzí modulu DnD5.1.0. Maximální hod na k20 pro záchranu vlastnosti {ability}."
     },
-    "system.abilities.cha.save": {
-      "name": "Oprava záchrany Charismatem",
+    "save.roll.min": {
+      "name": "Minimální hod pro záchranu {ability}",
+      "description": "POZNÁMKA: Ne zcela funkční před verzí modulu DnD 5.1.0. Minimální hod na k20 pro záchranu vlastností {ability}."
+    },
+    "save.roll.mode": {
+      "name": "Režim hodu pro záchranu {ability}",
+      "description": "POZNÁMKA: Ne zcela funkční před verzí modulu DnD 5.1.0. Režim hodu při záchraně vlastností {ability}. \"Přidat\" přidá Výhodu (1), nebo Nevýhodu (-1). Přepsání vynutí Výhodu (1), Nevýhodu (-1), nebo normální hod (0)."
+    },
+    "save": {
+      "name": "Oprava záchrany vlastností {ability}",
       "description": ""
     },
-    "system.abilities.cha.value": {
-      "name": "Hodnota Charismatu",
-      "description": ""
-    },
-    "system.abilities.con.bonuses.check": {
-      "name": "Bonus k ověření Odolnosti",
-      "description": ""
-    },
-    "system.abilities.con.bonuses.save": {
-      "name": "Bonus k záchrannému hodu Odolností",
-      "description": ""
-    },
-    "system.abilities.con.dc": {
-      "name": "SO záchrany Odolností",
-      "description": ""
-    },
-    "system.abilities.con.max": {
-      "name": "Maximální hodnota Odolnosti",
-      "description": ""
-    },
-    "system.abilities.con.mod": {
-      "name": "Oprava Odolnosti",
-      "description": ""
-    },
-    "system.abilities.con.proficient": {
-      "name": "Zdatnost v záchraně Odolností",
-      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
-    },
-    "system.abilities.con.save": {
-      "name": "Oprava záchrany Odolností",
-      "description": ""
-    },
-    "system.abilities.con.value": {
-      "name": "Hodnota Odolnosti",
-      "description": ""
-    },
-    "system.abilities.dex.bonuses.check": {
-      "name": "Bonus k ověření Obratnosti",
-      "description": ""
-    },
-    "system.abilities.dex.bonuses.save": {
-      "name": "Bonus k záchraně Obratností",
-      "description": ""
-    },
-    "system.abilities.dex.dc": {
-      "name": "SO záchrany Obratností",
-      "description": ""
-    },
-    "system.abilities.dex.max": {
-      "name": "Maximální hodnota Obratnosti",
-      "description": ""
-    },
-    "system.abilities.dex.mod": {
-      "name": "Oprava Obratnosti",
-      "description": ""
-    },
-    "system.abilities.dex.proficient": {
-      "name": "Zdatnost v záchraně Obratností",
-      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
-    },
-    "system.abilities.dex.save": {
-      "name": "Oprava záchrany Obratností",
-      "description": ""
-    },
-    "system.abilities.dex.value": {
-      "name": "Hodnota Obratnosti",
-      "description": ""
-    },
-    "system.abilities.int.bonuses.check": {
-      "name": "Bonus k ověření Inteligence",
-      "description": ""
-    },
-    "system.abilities.int.bonuses.save": {
-      "name": "Bonus k záchraně Inteligencí",
-      "description": ""
-    },
-    "system.abilities.int.dc": {
-      "name": "SO záchrany Inteligencí",
-      "description": ""
-    },
-    "system.abilities.int.max": {
-      "name": "Maximální hodnota Inteligence",
-      "description": ""
-    },
-    "system.abilities.int.mod": {
-      "name": "Oprava Inteligence",
-      "description": ""
-    },
-    "system.abilities.int.proficient": {
-      "name": "Zdatnost v záchraně Inteligencí",
-      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
-    },
-    "system.abilities.int.save": {
-      "name": "Oprava záchrany Inteligencí",
-      "description": ""
-    },
-    "system.abilities.int.value": {
-      "name": "Hodnota Inteligence",
-      "description": ""
-    },
-    "system.abilities.str.bonuses.check": {
-      "name": "Bonus k ověření Síly",
-      "description": ""
-    },
-    "system.abilities.str.bonuses.save": {
-      "name": "Bonus k záchraně Silou",
-      "description": ""
-    },
-    "system.abilities.str.dc": {
-      "name": "SO záchrany Silou",
-      "description": ""
-    },
-    "system.abilities.str.max": {
-      "name": "Maximální hodnota Síly",
-      "description": ""
-    },
-    "system.abilities.str.mod": {
-      "name": "Oprava Síly",
-      "description": ""
-    },
-    "system.abilities.str.proficient": {
-      "name": "Zdatnost v záchraně Silou",
-      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
-    },
-    "system.abilities.str.save": {
-      "name": "Oprava záchrany Silou",
-      "description": ""
-    },
-    "system.abilities.str.value": {
-      "name": "Hodnota Síly",
-      "description": ""
-    },
-    "system.abilities.wis.bonuses.check": {
-      "name": "Bonus k ověření Moudrosti",
-      "description": ""
-    },
-    "system.abilities.wis.bonuses.save": {
-      "name": "Bonus k záchraně Moudrostí",
-      "description": ""
-    },
-    "system.abilities.wis.dc": {
-      "name": "SO záchrany Moudrostí",
-      "description": ""
-    },
-    "system.abilities.wis.max": {
-      "name": "Maximální hodnota Moudrosti",
-      "description": ""
-    },
-    "system.abilities.wis.mod": {
-      "name": "Oprava Moudrosti",
-      "description": ""
-    },
-    "system.abilities.wis.proficient": {
-      "name": "Zdatnost v záchraně na Moudrost",
-      "description": "0: Bez zdatnosti. 1: Zdatný/á. 2: Kvalifikovaný/á. 0.5: Poloviční zdatnost."
-    },
-    "system.abilities.wis.save": {
-      "name": "Oprava záchrany Moudrostí",
-      "description": ""
-    },
-    "system.abilities.wis.value": {
-      "name": "Hodnota Moudrosti",
+    "value": {
+      "name": "Hodnota vlastnosti {ability}",
       "description": ""
     }
   },
   "dae.SystemSkills.fieldData": {
-    "system.skills.acr.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.acr.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.acr.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.acr.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.acr.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.acr.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.acr.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ani.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ani.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ani.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ani.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ani.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ani.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ani.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.arc.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.arc.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.arc.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.arc.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.arc.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.arc.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.arc.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ath.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ath.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ath.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ath.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ath.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ath.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ath.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.dec.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.dec.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.dec.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.dec.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.dec.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.dec.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.dec.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.his.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.his.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.his.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.his.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.his.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.his.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.his.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ins.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ins.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ins.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ins.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ins.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ins.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ins.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.inv.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.inv.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.inv.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.inv.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.inv.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.inv.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.inv.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.itm.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.itm.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.itm.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.itm.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.itm.roll.min": {
-      "name": "",
-      "description": ""
+    "ability": {
+      "name": "Vlastnost dovednosti {skill}",
+      "description": "Která vlastnost se použije při ověření dovednosti {skill}."
     },
-    "system.skills.itm.roll.mode": {
-      "name": "",
+    "bonuses.check": {
+      "name": "Bonus k ověření dovednosti {skill}",
       "description": ""
     },
-    "system.skills.itm.value": {
-      "name": "",
+    "bonuses.passive": {
+      "name": "Pasivní bonus dovednosti {skill}",
       "description": ""
     },
-    "system.skills.med.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.med.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.med.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.med.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.med.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.med.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.med.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.nat.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.nat.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.nat.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.nat.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.nat.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.nat.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.nat.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.per.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.per.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.per.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.per.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.per.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.per.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.per.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prc.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prc.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prc.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prc.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prc.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prc.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prc.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prf.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prf.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prf.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prf.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prf.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prf.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.prf.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.rel.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.rel.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.rel.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.rel.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.rel.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.rel.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.rel.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.slt.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.slt.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.slt.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.slt.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.slt.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.slt.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.slt.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ste.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ste.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ste.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ste.roll.max": {
-      "name": "",
-      "description": ""
+    "roll.max": {
+      "name": "Maximální hod při ověření dovednosti {skill}",
+      "description": "Maximální hod na k20 při ověření dovednosti {skill}."
     },
-    "system.skills.ste.roll.min": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ste.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.ste.value": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.sur.ability": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.sur.bonuses.check": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.sur.bonuses.passive": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.sur.roll.max": {
-      "name": "",
-      "description": ""
-    },
-    "system.skills.sur.roll.min": {
-      "name": "",
-      "description": ""
+    "roll.min": {
+      "name": "Minimální hod při ověření dovednosti {skill}",
+      "description": "Minimální hod na k20 ppři ověření dovednosti {skill}."
     },
-    "system.skills.sur.roll.mode": {
-      "name": "",
-      "description": ""
+    "roll.mode": {
+      "name": "Režim hodu při ověření dovednosti {skill}",
+      "description": "Režim hodu při ověření dovednosti {skill}. \"Přidat\" přidá Výhodu (1), nebo Nevýhodu (-1). Přepsání vynutí Výhodu (1), Nevýhodu (-1), nebo normální hod (0)."
     },
-    "system.skills.sur.value": {
-      "name": "",
+    "value": {
+      "name": "Zdatnost v dovednosti {skill}",
       "description": ""
     }
   },
   "dae.SystemAttributes.fieldData": {
     "system.attributes.ac.AR": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) Redukce obranného čísla",
+      "description": "Viz podrobnosti o \"Režimu výzvy\" v README modulu Midi-QoL."
     },
     "system.attributes.ac.armor": {
-      "name": "",
-      "description": "Bonus k OČ zbroje (obvykle poskytován pouze nošenou zbrojí, bude tedy mít efekt pouze v případě, kdy postava nenosí zbroj)."
-    },
-    "system.attributes.ac.base": {
-      "name": "",
-      "description": "Zastaralé odvozené pole - nepoužívat."
+      "name": "OČ (Zbroj)",
+      "description": "Bonus k OČ poskytovaný nošenou zbrojí (obvykle se uděluje jen prostřednictvím vybavené položky, bude tedy mít efekt pouze v případě, že aktér nenosí zbroj)."
     },
     "system.attributes.ac.bonus": {
-      "name": "",
+      "name": "Bonus k OČ",
       "description": "Číselný bonus k OČ."
     },
     "system.attributes.ac.calc": {
-      "name": "",
-      "description": "Metoda výpočtu OČ."
-    },
-    "system.attributes.ac.cover": {
-      "name": "",
-      "description": "Bonus k OČ za kryt (obvykle poskytován pouze efekty krytu)."
-    },
-    "system.attributes.ac.EC": {
-      "name": "",
+      "name": "Metoda výpočtu OČ",
       "description": ""
     },
+    "system.attributes.ac.cover": {
+      "name": "OČ (Kryt)",
+      "description": "Bonus k OČ daný krytem (obvykle udělovaný jen efektem stavu v krytu)."
+    },
+    "system.attributes.ac.EC": {
+      "name": "(Midi) Uhýbání povolání",
+      "description": "Viz podrobnosti o \"Režimu výzvy\" v README modulu Midi-QoL."
+    },
     "system.attributes.ac.flat": {
-      "name": "",
-      "description": "Pevná hodnota OČ (vyžaduje, aby system.attributes.ac.calc bylo nastaveno na \"pevné\")."
+      "name": "OČ (Pevná hodnota)",
+      "description": "Vyžaduje nastavit system.attributes.ac.calc na hodnotu Pevná hodnota (OČ = tato hodnota), nebo Vrozený pancíř (OČ = tato hodnota + bonus za štít)."
     },
     "system.attributes.ac.formula": {
-      "name": "",
-      "description": "Vzorec pro výpočet OČ (vyžaduje, aby system.attributes.ac.calc bylo nastaveno na \"vlastní\")."
+      "name": "Vzorec výpočtu OČ",
+      "description": "Vyžaduje nastavit system.attributes.ac.calc na hodnotu Vlastní vzorec."
     },
     "system.attributes.ac.min": {
-      "name": "",
-      "description": "Minimální hodnota OČ (pokud je vypočtená hodnota nižší, bude nastavena na tuto hodnotu)."
+      "name": "Minimální OČ",
+      "description": "Pokud by výpočet OČ vyšel nižší, zvýší se na tuto hodnotu."
     },
     "system.attributes.ac.shield": {
-      "name": "",
-      "description": "Bonus k OČ ze štítu (obvykle poskytován pouze nošeným štítem)."
+      "name": "OČ (Štítu)",
+      "description": "Bonus k OČ za štít (obvykle jen pokud je nasazen štít)."
     },
     "system.attributes.ac.value": {
-      "name": "",
-      "description": "Použije system.attributes.ac.calc jako \"pevné\" a system.attributes.ac.flat jako požadovanou hodnotu."
+      "name": "OČ (Celkem)",
+      "description": "Nepoužívej to: Chceš-li přepsat hodnotu OČ, nastav system.attributes.ac.calc na Pevná hodnota nebo Vrozený pancíř a system.attributes.ac.flat na požadovanou hodnotu, nebo použij system.attributes.ac.bonus pro přidání bonusu."
     },
     "system.attributes.attunement.max": {
-      "name": "",
+      "name": "Maximální počet sladění",
       "description": ""
     },
     "system.attributes.concentration.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost soustředění",
+      "description": "Která vlastnost se použije při záchranách udržení soustředění."
     },
     "system.attributes.concentration.bonuses.save": {
-      "name": "",
+      "name": "Bonus k záchraně soustředění",
       "description": ""
     },
     "system.attributes.concentration.limit": {
-      "name": "",
-      "description": ""
+      "name": "Limit soustředění",
+      "description": "Maximální počet kouzel, na která se může postava současně soustředit."
     },
     "system.attributes.concentration.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Maximální záchrana soustředění",
+      "description": "Maximální hod na k20 pro záchranu soustředění."
     },
     "system.attributes.concentration.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Minimální záchrana soustředění",
+      "description": "Minimální hod na dk20 pro záchranu soustředění."
     },
     "system.attributes.concentration.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Režim hodu na soustředění",
+      "description": "Režim hodu záchrany soustředění. \"Přidat\" přidá Výhodu (1), nebo Nevýhodu (-1). Přepsání vynutí Výhodu (1), Nevýhodu (-1), nebo normální hod (0)."
     },
-    "system.attributes.death.ability": {
-      "name": "",
+    "system.attributes.death.bonuses.save": {
+      "name": "Bonus k záchraně před smrtí",
       "description": ""
     },
     "system.attributes.death.failure": {
-      "name": "",
-      "description": ""
+      "name": "Selhání při záchraně před smrtí",
+      "description": "Počet selhání při záchraně před smrtí. Není příliš vhodné měnit pomocí aktivního efektu."
     },
     "system.attributes.death.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Maximální záchrana před smrtí",
+      "description": "Maximální hod na k20 při záchraně před smrtí."
     },
     "system.attributes.death.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Minimální záchrana před smrtí",
+      "description": "Minimální hod na k20 při záchraně před smrtí."
     },
     "system.attributes.death.roll.mode": {
-      "name": "",
-      "description": ""
+      "name": "Režim hodu na záchranu před smrtí",
+      "description": "Režim hodu pro záchranu před smrtí. \"Přidat\" přidá Výhodu (1), nebo Nevýhodu (-1). Přepsání vynutí Výhodu (1), Nevýhodu (-1), nebo normální hod (0)."
     },
     "system.attributes.death.success": {
-      "name": "",
-      "description": ""
+      "name": "Úspěchy při záchraně před smrtí",
+      "description": "Počet úspěchů při záchraně před smrtí. Není příliš vhodné měnit pomocí aktivního efektu."
     },
     "system.attributes.encumbrance.bonuses.encumbered": {
-      "name": "",
-      "description": ""
+      "name": "Bonus stavu zatížený/á",
+      "description": "Bonus k prahu stavu \"zatížený/á\"."
     },
     "system.attributes.encumbrance.bonuses.heavilyEncumbered": {
-      "name": "",
-      "description": ""
+      "name": "Bonus stavu těžce zatížený/á",
+      "description": "Bonus k prahu stavu \"těžce zatížený/á\"."
     },
     "system.attributes.encumbrance.bonuses.maximum": {
-      "name": "",
-      "description": ""
+      "name": "Bonus maximálního zatížení",
+      "description": "Bonus maximálního možného zatížení."
     },
     "system.attributes.encumbrance.bonuses.overall": {
-      "name": "",
-      "description": ""
+      "name": "Celkový bonus zatížení",
+      "description": "Bonus ke všem prahům zatížení i k maximálnímu zatížení."
     },
     "system.attributes.encumbrance.multipliers.encumbered": {
-      "name": "",
-      "description": ""
+      "name": "Násobitel stavu zatížený/á",
+      "description": "Násobitel prahu stavu \"zatížený/á\"."
     },
     "system.attributes.encumbrance.multipliers.heavilyEncumbered": {
-      "name": "",
-      "description": ""
+      "name": "Násobitel stavu těžce zatížený/á",
+      "description": "Násobitel prahu stavu \"těžce zatížený/á\"."
     },
     "system.attributes.encumbrance.multipliers.maximum": {
-      "name": "",
-      "description": ""
+      "name": "Násobitel maximálního zatížení",
+      "description": "Násobitel maximálního možného zatížení."
     },
     "system.attributes.encumbrance.multipliers.overall": {
-      "name": "",
-      "description": ""
-    },
-    "system.attributes.exhaustion": {
-      "name": "",
-      "description": ""
-    },
-    "system.attributes.hd.max": {
-      "name": "",
-      "description": ""
+      "name": "Celkový násobitel zatížení",
+      "description": "Násobitel všech prahů zatížení a maximálního zatížení."
     },
     "system.attributes.hp.bonuses.level": {
-      "name": "Bonus k BV za úroveň",
-      "description": "Bonus k bodům výdrže přidávaný za každou úroveň postavy (funguje pouze pro postavy s povoláním)."
+      "name": "Bonus BV za úroveň",
+      "description": "Bonus k BV přidělený za každou úroveň postavy (funguje jen u aktérů s úrovněmi)."
     },
     "system.attributes.hp.bonuses.overall": {
       "name": "Celkový bonus k BV",
-      "description": "Bonus k bodům výdrže (funguje pouze pro postavy s povoláním)."
+      "description": "Bonus k BV (funguje jen u aktérů s úrovněmi)."
     },
     "system.attributes.hp.max": {
       "name": "Maximální BV",
-      "description": "Tato hodnota by neměla být upravována aktérem s povoláním - místo toho použij některý z .bonuses nebo .tempmax."
+      "description": "Tato hodnota by neměla být u postavy s úrovněmi měněna. Místo toho použij některý z bonusů (.bonuses), nebo tempmax (.tempmax)."
     },
     "system.attributes.hp.temp": {
       "name": "Dočasné BV",
-      "description": "Tato hodnota by nikdy neměla být upravována aktivním efektem - místo toho aplikuj zranění temphp."
+      "description": "Tuto hodnotu by nikdy neměl měnit aktivní efekt. Místo toho použij aktivitu typu \"Léčení\"."
     },
     "system.attributes.hp.tempmax": {
-      "name": "Dočasné max. BV",
-      "description": "Dočasná úprava maximálních bodům výdrže."
+      "name": "Dočasné maximum BV",
+      "description": "Dočasná úprava maximálního počtu BV."
     },
     "system.attributes.hp.value": {
       "name": "Aktuální BV",
-      "description": "Tato hodnota by nikdy neměla být upravována aktivním efektem - místo toho aplikuj zranění."
+      "description": "Tuto hodnotu by nikdy neměl měnit aktivní efekt. Místo toho aplikuj zranění pomocí aktivity."
     },
     "system.attributes.init.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost na iniciativu",
+      "description": "Která vlastnost se použije pro hod na iniciativu."
     },
     "system.attributes.init.bonus": {
-      "name": "",
+      "name": "Bonus k iniciativě",
       "description": ""
     },
     "system.attributes.init.roll.max": {
-      "name": "",
-      "description": ""
+      "name": "Maximální iniciativa",
+      "description": "Maximální hod na k20 při hodu na iniciativu."
     },
     "system.attributes.init.roll.min": {
-      "name": "",
-      "description": ""
+      "name": "Minimální iniciativa",
+      "description": "Minimální hod na k20 při hodu na iniciativu."
     },
-    "system.attributes.init.roll.mode": {
-      "name": "",
-      "description": ""
-    },
-    "system.attributes.inspiration": {
-      "name": "Inspirace",
-      "description": ""
+      "system.attributes.init.roll.mode": {
+      "name": "Režim hodu na iniciativu",
+      "description": "Režim hodu na iniciativu. „Přidat“ přidá Výhodu (1), nebo Nevýhodu (-1). Přepsání vynutí Výhodu (1), Nevýhodu (-1), nebo normální hod (0)."
     },
     "system.attributes.movement.all": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) Rychlost pohybu (Vše)",
+      "description": "Zadané pevné číslo nastaví všechny typy pohybu na tuto hodnotu. Jinak například \"+5\" či \"*2\" buď přičte 5, nebo vynásobí 2 všechny existující typy pohybu (ignoruje typy, kterými postava nedisponuje)."
     },
     "system.attributes.movement.burrow": {
-      "name": "",
+      "name": "Rychlost pohybu (hrabání)",
       "description": ""
     },
     "system.attributes.movement.climb": {
-      "name": "",
+      "name": "Rychlost pohybu (šplh)",
       "description": ""
     },
     "system.attributes.movement.fly": {
-      "name": "",
+      "name": "Rychlost pohybu (let)",
       "description": ""
     },
     "system.attributes.movement.hover": {
-      "name": "",
-      "description": ""
+      "name": "Pohyb (vznášení se)",
+      "description": "Může se vznášet?"
     },
     "system.attributes.movement.swim": {
-      "name": "",
+      "name": "Rychlost pohybu (plavání)",
       "description": ""
     },
     "system.attributes.movement.units": {
-      "name": "",
+      "name": "Jednotky pohybu",
       "description": ""
     },
     "system.attributes.movement.walk": {
-      "name": "",
+      "name": "Rychlost pohybu (chůze)",
       "description": ""
     },
     "system.attributes.prof": {
-      "name": "",
+      "name": "Zdatnostní bonus",
       "description": ""
     },
     "system.attributes.senses.blindsight": {
-      "name": "",
+      "name": "Smysly (mimozrakové vnímání)",
       "description": ""
     },
     "system.attributes.senses.darkvision": {
-      "name": "",
+      "name": "Smysly (vidění ve tmě)",
       "description": ""
     },
     "system.attributes.senses.special": {
-      "name": "",
-      "description": ""
+      "name": "Smysly (speciální)",
+      "description": "Přijímá hodnoty oddělené středníkem."
     },
     "system.attributes.senses.tremorsense": {
-      "name": "",
+      "name": "Smysly (citlivost na otřesy)",
       "description": ""
     },
     "system.attributes.senses.truesight": {
-      "name": "",
+      "name": "Smysly (pravdivé vidění)",
       "description": ""
     },
     "system.attributes.senses.units": {
-      "name": "",
+      "name": "Jednotky smyslů",
       "description": ""
     },
     "system.attributes.spellcasting": {
-      "name": "",
+      "name": "Sesílací vlastnost",
       "description": ""
+    },
+    "system.attributes.hd.max": {
+      "name": "Maximální počet kostek obnovy",
+      "description": "Dostupné pouze pro NP."
     }
   },
   "dae.SystemBonuses.fieldData": {
-    "system.bonuses.abil.damage": {
-      "name": "",
-      "description": ""
-    },
     "system.bonuses.abilities.check": {
-      "name": "",
+      "name": "Bonus k ověření",
       "description": "Bonus ke všem ověřením vlastností."
     },
     "system.bonuses.abilities.save": {
-      "name": "",
+      "name": "Bonus k záchranám",
       "description": "Bonus ke všem záchranám vlastnostmi."
     },
     "system.bonuses.abilities.skill": {
-      "name": "",
+      "name": "Bonus k dovednostem",
       "description": "Bonus ke všem ověřením dovedností."
     },
     "system.bonuses.All-Attacks": {
-      "name": "",
-      "description": "Bonus ke všem hodům na útok."
+      "name": "(DAE) Bonus k útokům",
+      "description": "Bonus ke všem ověřením útoku."
     },
     "system.bonuses.All-Damage": {
-      "name": "",
-      "description": "Bonus ke všem hodům na zásah."
+      "name": "(DAE) Bonus ke všem hodům na zásah",
+      "description": "Bonus ke všem hodům na zásah v rámci útoku."
     },
     "system.bonuses.check.damage": {
-      "name": "",
-      "description": "Bonus ke všem ověřením aktivit hodů na zásah."
-    },
-    "system.bonuses.heal.attack": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) Bonus k ověření zranění",
+      "description": "Bonus ke všem hodům na ověření zranění v rámci útoku."
     },
     "system.bonuses.heal.damage": {
-      "name": "",
-      "description": "Bonus ke všem hodům na zásah aktivit léčení."
+      "name": "(DAE) Bonus k léčení zranění",
+      "description": "Bonus ke všem hodům na léčení."
     },
     "system.bonuses.msak.attack": {
-      "name": "",
-      "description": "Bonus ke všem hodům na útok u \"útoků kouzlem na blízko\"."
+      "name": "Bonus k útoku kouzlem na blízko",
+      "description": "Bonus ke všem ověřením útoku typu „útok kouzlem na blízko“."
     },
     "system.bonuses.msak.damage": {
-      "name": "",
-      "description": "Bonus ke všem hodům na zásah u \"útoků kouzlem na blízko\"."
+      "name": "Bonus k zásahu kouzlem na blízko",
+      "description": "Bonus ke všem hodům na zásah typu „útok kouzlem na blízko“."
     },
     "system.bonuses.mwak.attack": {
-      "name": "",
-      "description": "Bonus ke všem hodům na útok u \"útoků zbraní na blízko\"."
+      "name": "Bonus k útoku zbraní na blízko",
+      "description": "Bonus ke všem ověřením útoku typu „útok zbraní na blízko“."
     },
     "system.bonuses.mwak.damage": {
-      "name": "",
-      "description": "Bonus ke všem hodům na zásah u \"útoků zbraní na blízko\"."
-    },
-    "system.bonuses.other.damage": {
-      "name": "",
-      "description": ""
+      "name": "Bonus k zásahu zbraní na blízko",
+      "description": "Bonus ke všem hodům na zásah typu „útok zbraní na blízko“."
     },
     "system.bonuses.rsak.attack": {
-      "name": "",
-      "description": "Bonus ke všem hodům na útok \"útoků kouzlem na dálku\"."
+      "name": "Bonus k útoku kouzlem na dálku",
+      "description": "Bonus ke všem ověřením útoku typu „útok kouzlem na dálku“."
     },
     "system.bonuses.rsak.damage": {
-     "name": "",
-      "description": "Bonus ke všem hodům na zásah \"útoků kouzlem na dálku\"."
+      "name": "Bonus k zásahu kouzlem na dálku",
+      "description": "Bonus ke všem hodům na zásah typu „útok kouzlem na dálku“."
     },
     "system.bonuses.rwak.attack": {
-      "name": "",
-      "description": "Bonus ke všem hodům na útok \"útoků zbraní na dálku\"."
+      "name": "Bonus k útoku zbraní na dálku",
+      "description": "Bonus ke všem ověřením útoku typu „útok zbraní na dálku“."
     },
     "system.bonuses.rwak.damage": {
-      "name": "",
-      "description": "Bonus ke všem hodům na zásah \"útoků zbraní na dálku\"."
+      "name": "Bonus k zásahu zbraní na dálku",
+      "description": "Bonus ke všem hodům na zásah typu „útok zbraní na dálku“."
     },
     "system.bonuses.save.damage": {
-      "name": "",
-      "description": "Bonus ke všem hodům na zásah aktivit záchranných hodů."
+      "name": "(DAE) Bonus k záchraně zranění",
+      "description": "Bonus ke všem hodům na zranění v rámci záchrany."
     },
     "system.bonuses.spell.all.damage": {
-      "name": "",
-      "description": "Bonus ke všem hodům na zásah kouzel."
+      "name": "(DAE) Bonus k zásahu kouzlem",
+      "description": "Bonus ke všem hodům na zásah kouzlem."
     },
     "system.bonuses.spell.attack": {
-      "name": "",
-      "description": "Bonus ke všem hodům na útok kouzlem."
+      "name": "(DAE) Bonus k útoku kouzlem",
+      "description": "Bonus ke všem ověřením útoku kouzlem."
     },
     "system.bonuses.spell.damage": {
-      "name": "",
-      "description": "Bonus ke všem hodům na zásah aktivit útoků kouzlem."
+      "name": "(DAE) Bonus k zásahu útoku kouzlem",
+      "description": "Bonus ke všem hodům na zásah kouzlem v rámci útoku."
     },
     "system.bonuses.spell.dc": {
-      "name": "",
-      "description": "Bonus ke Stupni obtížnosti záchrany proti kouzlům."
+      "name": "Bonus k SO kouzla",
+      "description": "Bonus k cílovému číslu záchrany před kouzlem."
     },
-      "system.bonuses.util.damage": {
-        "name": "",
-        "description": ""
-      },
-      "system.bonuses.weapon.attack": {
-        "name": "",
-        "description": "Bonus ke všem hodům na útok zbraní."
-      },
-      "system.bonuses.weapon.damage": {
-        "name": "",
-        "description": "Bonus ke všem hodům na zásah aktivit útoků zbraní."
+    "system.bonuses.weapon.attack": {
+      "name": "(DAE) Bonus k útoku zbraní",
+      "description": "Bonus ke všem ověřením útoku zbraní."
+    },
+    "system.bonuses.weapon.damage": {
+      "name": "(DAE) Bonus k zásahu zbraní",
+      "description": "Bonus ke všem hodům na zásah zbraní v rámci útoku."
     }
   },
   "dae.SystemTraits.fieldData": {
     "system.traits.armorProf.all": {
-      "name": "Výcvik se všemi typy zbrojí",
-      "description": ""
+      "name": "(DAE) Výcvik se všemi zbrojemi",
+      "description": "Přítomnost tohoto klíče zajišťuje výcvik se všemi zbrojemi."
     },
     "system.traits.armorProf.custom": {
       "name": "Vlastní výcvik se zbrojí",
-      "description": ""
+      "description": "Přijímá hodnoty oddělené středníkem."
     },
     "system.traits.armorProf.value": {
-      "name": "Hodnota výcviku se zbrojí",
-      "description": ""
+      "name": "Jednotlivý výcvik se zbrojí",
+      "description": "Použij režim Přidat a vyber výcvik se zbrojí, kterou chceš přidat. -proficiency jej odebere."
     },
     "system.traits.ci.all": {
-      "name": "Imunita vůči všem stavům",
-      "description": "Imunita vůči všem stavům."
+      "name": "(DAE) Imunita vůči všem stavům",
+      "description": "Přítomnost tohoto klíče zajišťuje imunitu vůči všem stavům."
     },
     "system.traits.ci.custom": {
-      "name": "Vlastní imunita vůči stavu",
-      "description": ""
+      "name": "Vlastní imunita vůči stavům",
+      "description": "Přijímá hodnoty oddělené středníkem."
     },
     "system.traits.ci.value": {
-      "name": "Individuální imunita vůči stavu",
-      "description": "Použij režim ´Přidat´ a vyber imunitu vůči stavu, kterou chceš přidat. ´-condition´ ji odstraní."
+      "name": "Jednotlivá imunita vůči stavu",
+      "description": "Použij režim Přidat a vyber stav, vůči němuž chceš přidat imunitu. -condition ji odebere."
     },
     "system.traits.da.all": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) Absorpce všech typů zranění",
+      "description": "Chová se jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
     },
     "system.traits.da.custom": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) Vlastní absorpce zranění",
+      "description": "Přijímá hodnoty oddělené středníkem."
     },
-    "system.traits.da.value": {
-      "name": "",
-      "description": ""
+    "da": {
+      "name": "(Midi) Absorpce zranění ({damage})",
+      "description": "Absorpce zranění typu {damage}. Chová se jako násobitel přijímaného zranění. Například hodnota -1 způsobí, že zranění postavu bude namísto zraňování léčit."
     },
-    "system.traits.damageTypes.custom": {
-      "name": "",
-      "description": ""
+    "system.traits.da.bypasses": {
+      "name": "(Midi) Obejití absorpce zranění",
+      "description": "Parametry položky/zbraně, které obcházejí absorpci zranění."
     },
-    "system.traits.damageTypes.value": {
-      "name": "",
-      "description": ""
+    "system.traits.da.midi.all": {
+      "name": "(Midi) Absorpce zranění (Veškerého)",
+      "description": "Absorpce všech typů zranění. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.heal": {
+      "name": "(Midi) Absorpce zranění (Léčivé aktivity)",
+      "description": "Absorpce léčivých aktivit. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.magical": {
+      "name": "(Midi) Absorpce zranění (Magické)",
+      "description": "Absorpce magického zranění. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.msak": {
+      "name": "(Midi) Absorpce zranění (Kouzlem na blízko = msak)",
+      "description": "Absorpce útoků kouzlem na blízko. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.mwak": {
+      "name": "(Midi) Absorpce zranění (Zbraní na blízko = mwak)",
+      "description": "Absorpce útoků zbraní na blízko. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.non-adamant-physical": {
+      "name": "(Midi) Absorpce zranění (Nemagické fyzické bez adamantia)",
+      "description": "Absorpce nemagického fyzického zranění bez adamantia. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.non-magical": {
+      "name": "(Midi) Absorpce zranění (Nemagické)",
+      "description": "Absorpce nemagického zranění. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.non-magical-physical": {
+      "name": "(Midi) Absorpce zranění (Nemagické fyzické)",
+      "description": "Absorpce nemagického fyzického zranění. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.non-physical": {
+      "name": "(Midi) Absorpce zranění (Nefyzické)",
+      "description": "Absorpce nefyzického zranění. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.non-silver-physical": {
+      "name": "(Midi) Absorpce zranění (Fyzická nepostříbřená zbraň)",
+      "description": "Absorpce fyzického zranění nepostříbřenou zbraní. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.non-spell": {
+      "name": "(Midi) Absorpce zranění (Nemagické Efekty)",
+      "description": "Absorpce nemagických efektů. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.physical": {
+      "name": "(Midi) Absorpce zranění (Fyzické)",
+      "description": "Absorpce fyzického zraněníí. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.rsak": {
+      "name": "(Midi) Absorpce zranění (Kouzlem na dálku = rsak)",
+      "description": "Absorpce útoků kouzlem na dálku. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
+    },
+    "system.traits.da.midi.rwak": {
+      "name": "(Midi) Absorpce zranění (Zbraní na dálku = rwak)",
+      "description": "Absorpce útoků zbraní na dálku. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit"
+    },
+    "system.traits.da.midi.save": {
+      "name": "(Midi) Absorpce zranění (Záchrany)",
+      "description": "Absorpce zranění aktivit se záchranami. Funguje jako násobitel veškerého přijímaného zranění. Například hodnota -1 způsobí, že veškeré zranění bude namísto zraňování léčit."
     },
     "system.traits.di.all": {
-      "name": "",
-      "description": "Imunita vůči všem typům zranění."
+      "name": "(DAE) Imunita vůči všem typům zranění",
+      "description": "Přítomnost tohoto klíče uděluje imunitu vůči všem typům zranění."
     },
     "system.traits.di.bypasses": {
-      "name": "",
-      "description": "Vlastnosti položky/zbraně obcházející imunitu vůči zranění."
+      "name": "Obejití imunity vůči zranění",
+      "description": "Parametry položky/zbraně obcházející imunitu vůči zranění."
     },
     "system.traits.di.custom": {
-      "name": "",
-      "description": ""
+      "name": "Vlastní imunita vůči zranění",
+      "description": "Přijímá hodnoty oddělené středníkem."
     },
     "system.traits.di.value": {
-      "name": "",
-      "description": "Použij režim ´Přidat´ a vyber typ imunity, kterou chceš přidat. ´-type´ ji odstraní."
+      "name": "Jednotlivá imunita vůči zranění",
+      "description": "Použij režim Přidat a vyber typ imunity, který se má přidat. -type ji odebere."
     },
-    "system.traits.dm.amount.acid": {
-      "name": "",
-      "description": "Úprava zranění kyselinou. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.bludgeoning": {
-      "name": "",
-      "description": "Úprava zranění drtivým útokem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.cold": {
-      "name": "",
-      "description": "Úprava zranění chladem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.fire": {
-      "name": "",
-      "description": "Úprava zranění ohněm. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.force": {
-      "name": "",
-      "description": "Úprava zranění silou. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.healing": {
-      "name": "",
-      "description": "Úprava léčení. Kladná čísla znamenají zvýšené léčení, záporná snížené."
-    },
-    "system.traits.dm.amount.lightning": {
-      "name": "",
-      "description": "Úprava zranění bleskem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.midi-none": {
-      "name": "",
-      "description": ""
-    },
-    "system.traits.dm.amount.necrotic": {
-      "name": "",
-      "description": "Úprava nekrotického zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.none": {
-      "name": "",
-      "description": ""
-    },
-    "system.traits.dm.amount.piercing": {
-      "name": "",
-      "description": "Úprava zranění bodným útokem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.poison": {
-      "name": "",
-      "description": "Úprava zranění jedem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.psychic": {
-      "name": "",
-      "description": "Úprava psychického zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.radiant": {
-      "name": "",
-      "description": "Úprava zářivého zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.slashing": {
-      "name": "",
-      "description": "Úprava sečného zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.amount.temphp": {
-      "name": "",
-      "description": "Úprava léčení dočasných bodů výdrže. Kladná čísla znamenají zvýšené léčení, záporná snížené."
-    },
-    "system.traits.dm.amount.thunder": {
-      "name": "",
-      "description": "Úprava zranění hromem. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+    "dm.amount": {
+      "name": "Úprava zranění ({damage})",
+      "description": "Úprava zranění pro zranění typu {damage}. Kladné hodnoty znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
     "system.traits.dm.bypasses": {
-      "name": "",
-      "description": "Parametry položek/zbraně obcházejících úpravy zranění."
-    },
-    "system.traits.dm.midi.abil": {
-      "name": "",
-      "description": ""
+      "name": "Obejití úpravy zranění",
+      "description": "Parametry položky/zbraně obcházející úpravu zranění."
     },
     "system.traits.dm.midi.all": {
-      "name": "",
-      "description": "Úprava zranění pro všechny typy zranění. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.midi.ench": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) Úprava zranění (Veškerého)",
+      "description": "Úprava zranění všechmy typy zranění. Kladné hodnoty znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
     "system.traits.dm.midi.heal": {
-      "name": "",     
-      "description": "Úprava zranění u aktivit léčení. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+      "name": "(Midi) Úprava zranění (Léčivé aktivity)",
+      "description": "Úprava zranění léčivými aktivitami. Kladné hodnoty znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
+    },
+    "system.traits.dm.midi.magical": {
+      "name": "(Midi) Úprava zranění (Magické)",
+      "description": "Úprava zranění magickým zraněním. Kladné hodnoty znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
     "system.traits.dm.midi.msak": {
-      "name": "",
-      "description": "Úprava zranění u útoků kouzlem na blízko. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+      "name": "(Midi) Úprava zranění (Kouzlem na blízko = msak)",
+      "description": "Úprava zranění útoků kouzlem na blízko. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
     "system.traits.dm.midi.mwak": {
-      "name": "",
-      "description": "Úprava zranění u útoků zbraní na blízko. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+      "name": "(Midi) Úprava poškození (Zbraní na blízko = mwak)",
+      "description": "Úprava zranění útoků zbraní na blízko. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
-    "system.traits.dm.midi.other": {
-      "name": "",
-      "description": ""
+    "system.traits.dm.midi.non-adamant-physical": {
+      "name": "(Midi) Úprava zranění (Neadamantiové fyzické)",
+      "description": "Úprava neadamantinového fyzického zranění. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
+    },
+    "system.traits.dm.midi.non-magical": {
+      "name": "(Midi) Úprava zranění (Nemagické)",
+      "description": "Úprava nemagického zranění. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
+    },
+    "system.traits.dm.midi.non-magical-physical": {
+      "name": "(Midi) Úprava zranění (Nemagické fyzické)",
+      "description": "Úprava nemagického fyzického zranění. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
+    },
+    "system.traits.dm.midi.non-physical": {
+      "name": "(Midi) Úprava zranění (Nefyzické)",
+      "description": "Úprava nefyzického zranění. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
+    },
+    "system.traits.dm.midi.non-silver-physical": {
+      "name": "(Midi) Úprava (Fyzická nepostříbřená zbraň)",
+      "description": "Úprava fyzického zranění nepostříbřenou zbraní. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
+    },
+    "system.traits.dm.midi.non-spell": {
+      "name": "(Midi) Úprava zranění (Ne-kouzla)",
+      "description": "Úprava zranění nezpůsobeného kouzelm. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
+    },
+    "system.traits.dm.midi.physical": {
+      "name": "(Midi) Úprava zranění (Fyzické)",
+      "description": "Úprava fyzického zranění. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
     "system.traits.dm.midi.rsak": {
-      "name": "",
-      "description": "Úprava zranění u útoků kouzlem na dálku. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+      "name": "(Midi) Úprava zranění (Kouzlem na dálku = rsak)",
+      "description": "Úprava útoků kouzlem na dálku. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
     "system.traits.dm.midi.rwak": {
-      "name": "",
-      "description": "Úprava zranění u útoků zbraní na dálku. Kladná čísla znamenají zvýšené zranění, záporná snížené."
+      "name": "(Midi) Úprava zranění (Zbraní na dálku = rwak)",
+      "description": "Úprava útoků zbraní na dálku. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
     "system.traits.dm.midi.save": {
-      "name": "",
-      "description": "Úprava zranění u záchranných hodů. Kladná čísla znamenají zvýšené zranění, záporná snížené."
-    },
-    "system.traits.dm.midi.summ": {
-      "name": "",
-      "description": ""
-    },
-    "system.traits.dm.midi.util": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) Úprava zranění (Záchrany)",
+      "description": "Úprava zranění aktivit se záchranami. Kladná čísla znamenají více utrpěného zranění, záporné hodnoty znamenají snížení zranění."
     },
     "system.traits.dr.all": {
-      "name": "",
-      "description": "Odolání vůči všem typům zranění."
+      "name": "(DAE) Odolání vůči veškerému zranění",
+      "description": "Přítomnost tohoto klíče uděluje odolání vůči všem typům zranění."
     },
     "system.traits.dr.bypasses": {
-      "name": "",
-      "description": "Parametry položky/zbraně obcházejících snížení zranění."
+      "name": "Obcházení odolání vůči zranění",
+      "description": "Parametry položek/zbraní obcházejících odolání vůči zranění."
     },
     "system.traits.dr.custom": {
-      "name": "",
-      "description": ""
+      "name": "Vlastní odolání vůči zranění",
+      "description": "Přijímá hodnoty oddělené středníky."
     },
     "system.traits.dr.value": {
-      "name": "",
-      "description": "Použij režim ´Přidat´ a vyber typ redukce, kterou chceš přidat. ´-typ´ ji odstraní."
+      "name": "Jednotlivé odolání vůči zranění",
+      "description": "Použij režim Přidat a zvol typ odolání vůči zranění, který chceš přidat. -type je odebere."
     },
     "system.traits.dv.all": {
-      "name": "",
-      "description": "Zranitelnost vůči všem typům zranění."
+      "name": "(DAE) Zranitelnost vůči veškerému zranění",
+      "description": "Přítomnost tohoto klíče uděluje zranitelnost vůči všem typům zranění."
     },
     "system.traits.dv.bypasses": {
-      "name": "",
-      "description": "Parametry předmětu/zbraně obcházejících zranitelnost vůči zranění."
+      "name": "Obcházení zranitelnosti vůči zranění",
+      "description": "Parametry položek/zbraní obcházejících zranitelnost vůči zranění."
     },
     "system.traits.dv.custom": {
-      "name": "",
-      "description": ""
+      "name": "Vlastní zranitelnosti vůči zranění",
+      "description": "Přijímá hodnoty oddělené středníky."
     },
     "system.traits.dv.value": {
-      "name": "",
-      "description": "Použij režim ´Přidat´ a vyber typ zranitelnosti, kterou chceš přidat. ´-typ´ jej odstraní."
+      "name": "Jednotlivá zranitelnost vůči zranění",
+      "description": "Použij režim Přidat a zvol typ zranitelnosti, který chceš přidat. -type ji odebere."
     },
     "system.traits.languages.all": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) Všechny jazyky",
+      "description": "Přítomnost tohoto klíče uděluje všechny jazyky."
     },
     "system.traits.languages.custom": {
-      "name": "",
-      "description": ""
+      "name": "Vlastní jazyky",
+      "description": "Přijímá hodnoty oddělené středníky."
     },
     "system.traits.languages.value": {
-      "name": "",
-      "description": ""
+      "name": "Jednotlivý jazyk",
+      "description": "Použij režim Přidat a zvol jazyk, který chceš přidat."
     },
     "system.traits.size": {
-      "name": "",
+      "name": "Velikost postavy",
       "description": ""
     },
     "system.traits.weaponProf.all": {
-      "name": "Zdatnost se všemi zbraněmi",
-      "description": ""
+      "name": "(DAE) Zdatnost se všemi zbraněmi",
+      "description": "Přítomnost tohoto klíče uděluje zdatnost se všemi zbraněmi."
     },
     "system.traits.weaponProf.custom": {
       "name": "Vlastní zdatnost se zbraní",
-      "description": ""
+      "description": "Přijímá hodnoty oddělené středníkem."
     },
     "system.traits.weaponProf.value": {
-      "name": "Hodnota zdatnosti se zbraní",
-      "description": ""
+      "name": "Jednotlivá zdatnost se zbraní",
+      "description": "Použij režim Přidat a vyber zdatnost se zbraní, kterou chceš přidat. -proficiency ji odebere."
     }
   },
   "dae.Other.fieldData": {
@@ -1857,12 +1198,12 @@
       "description": ""
     },
     "flags.dae.onUpdateSource": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) Při změně zdroje",
+      "description": "Podrobnosti viz README modulu DAE."
     },
     "flags.dae.onUpdateTarget": {
-      "name": "",
-      "description": ""
+      "name": "(DAE) Při změně cíle",
+      "description": "Podrobnosti viz README modulu DAE."
     },
     "system.favorites": {
       "name": "Oblíbené",
@@ -1877,7 +1218,7 @@
       "description": ""
     },
     "system.attributes.movement.water": {
-      "name": "Pohyb ve vodě",
+      "name": "Pohyb vodou",
       "description": ""
     },
     "system.description.full": {
@@ -1885,7 +1226,7 @@
       "description": ""
     },
     "system.description.summary": {
-      "name": "Stručný popis",
+      "name": "Shrnutí popisu",
       "description": ""
     },
     "system.members": {
@@ -1897,79 +1238,79 @@
       "description": ""
     },
     "system.attributes.hd.spent": {
-      "name": "",
-      "description": ""
+      "name": "Utracené kostky obnovy",
+      "description": "Není obzvlášť užitečné pro úpravy pomocí aktivních efektů."
     },
     "system.attributes.hp.formula": {
-      "name": "",
+      "name": "Vzorec BV",
       "description": ""
     },
     "system.details.cr": {
-      "name": "",
+      "name": "Nebezpečnost",
       "description": ""
     },
     "system.details.environment": {
-      "name": "",
+      "name": "Prostředí",
       "description": ""
     },
     "system.details.source.book": {
-      "name": "",
+      "name": "Zdrojová kniha",
       "description": ""
     },
     "system.details.source.custom": {
-      "name": "",
+      "name": "Vlastní popisek zdroje",
       "description": ""
     },
     "system.details.source.license": {
-      "name": "",
+      "name": "Licence zdroje",
       "description": ""
     },
     "system.details.source.page": {
-      "name": "",
+      "name": "Stránka zdroje",
       "description": ""
     },
-    "system.details.spellLevel": {
-      "name": "",
+    "system.attributes.spell.level": {
+      "name": "Stupeň kouzla",
       "description": ""
     },
     "system.details.type.custom": {
-      "name": "",
+      "name": "Vlastní typ",
       "description": ""
     },
     "system.details.type.subtype": {
-      "name": "",
+      "name": "Podtyp",
       "description": ""
     },
     "system.details.type.swarm": {
-      "name": "",
+      "name": "Velikost roje",
       "description": ""
     },
     "system.details.type.value": {
-      "name": "",
+      "name": "Typ",
       "description": ""
     },
     "system.resources.lair.initiative": {
-      "name": "",
+      "name": "Akce doupěte",
       "description": ""
     },
     "system.resources.lair.value": {
-      "name": "",
+      "name": "Má doupě",
       "description": ""
     },
     "system.resources.legact.value": {
-      "name": "",
+      "name": "Legendární akce",
       "description": ""
     },
     "system.resources.legres.value": {
-      "name": "",
+      "name": "Legendární odolání",
       "description": ""
     },
     "system.attributes.ac.motionless": {
-      "name": "OČ při nehybnosti",
+      "name": "OČ v nehybném stavu",
       "description": ""
     },
     "system.attributes.actions.stations": {
-      "name": "Bojová stanoviště",
+      "name": "Akční stanice",
       "description": ""
     },
     "system.attributes.actions.thresholds.0": {
@@ -2021,31 +1362,31 @@
       "description": ""
     },
     "system.currency.cp": {
-      "name": "",
-      "description": ""
+      "name": "MD",
+      "description": "Nepoužívej to, bude se aktualizovat při každé změně aktéra."
     },
     "system.currency.ep": {
-      "name": "",
-      "description": ""
+      "name": "EL",
+      "description": "Nepoužívej to, bude se aktualizovat při každé změně aktéra."
     },
     "system.currency.gp": {
-      "name": "",
-      "description": ""
+      "name": "ZL",
+      "description": "Nepoužívej to, bude se aktualizovat při každé změně aktéra."
     },
     "system.currency.pp": {
-      "name": "",
-      "description": ""
+      "name": "PL",
+      "description": "Nepoužívej to, bude se aktualizovat při každé změně aktéra."
     },
     "system.currency.sp": {
-      "name": "",
-      "description": ""
+      "name": "ST",
+      "description": "Nepoužívej to, bude se aktualizovat při každé změně aktéra."
     },
     "system.details.age": {
       "name": "Věk",
       "description": ""
     },
     "system.details.alignment": {
-      "name": "",
+      "name": "Přesvědčení",
       "description": ""
     },
     "system.details.appearance": {
@@ -2053,19 +1394,19 @@
       "description": ""
     },
     "system.details.background": {
-      "name": "Zázemí",
+      "name": "Původ",
       "description": ""
     },
     "system.details.biography.public": {
-      "name": "",
+      "name": "Životopis (Veřejný)",
       "description": ""
     },
     "system.details.biography.value": {
-      "name": "",
+      "name": "Životopis (Úplný)",
       "description": ""
     },
     "system.details.bond": {
-      "name": "",
+      "name": "Pouto",
       "description": ""
     },
     "system.details.eyes": {
@@ -2077,7 +1418,7 @@
       "description": ""
     },
     "system.details.flaw": {
-      "name": "",
+      "name": "Vada",
       "description": ""
     },
     "system.details.gender": {
@@ -2093,19 +1434,19 @@
       "description": ""
     },
     "system.details.ideal": {
-      "name": "",
+      "name": "Ideál",
       "description": ""
     },
     "system.details.level": {
-      "name": "",
-      "description": ""
+      "name": "Úroveň",
+      "description": "Toto mění pouze vzhled na kartě postavy a umožňuje zvyšovat úroveň nad 20. Všechny ostatní rysy závislé na úrovni (např. zdatnosti) jsou již odvozeny."
     },
     "system.details.originalClass": {
       "name": "Původní povolání",
       "description": ""
     },
     "system.details.race": {
-      "name": "",
+      "name": "Rasa/druh",
       "description": ""
     },
     "system.details.skin": {
@@ -2113,647 +1454,1115 @@
       "description": ""
     },
     "system.details.trait": {
-      "name": "Rysy",
+      "name": "Rys",
       "description": ""
     },
     "system.details.weight": {
-      "name": "Váha",
+      "name": "Hmotnost",
       "description": ""
     },
     "system.details.xp.value": {
-      "name": "Hodnota bodů zkušeností",
+      "name": "Hodnota ZK",
       "description": ""
     },
     "system.resources.legact.max": {
-      "name": "",
+      "name": "Maximální počet legendárních akcí",
       "description": ""
     },
     "system.resources.legres.max": {
-      "name": "",
+      "name": "Maximální počet legendárních odolání",
       "description": ""
     },
     "system.resources.primary.label": {
-      "name": "",
-      "description": ""
+      "name": "Štítek primárního zdroje",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé."
     },
     "system.resources.primary.lr": {
-      "name": "Primarní zdroj po důkladném odpočinku",
-      "description": "Obnova při důkladném odpočinku (1/0)"
+      "name": "Primární zdroj (Důkladný odpočinek)",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Obnovit po důkladném odpočinku (1/0)."
     },
     "system.resources.primary.max": {
-      "name": "",
-      "description": ""
+      "name": "Maximum primárního zdroje",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé."
     },
     "system.resources.primary.sr": {
-      "name": "Primární zdroj po krátkém odpočinku",
-      "description": "Obnova při krátkém odpočinku (1/0)"
+      "name": "Primární zdroj (Krátký odpočinek)",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Obnovit po krátkém odpočinku (1/0)."
     },
     "system.resources.primary.value": {
       "name": "Hodnota primárního zdroje",
-      "description": "Toto by se nemělo nastavovat pomocí aktivního efektu!"
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Nemělo by být nastavováno pomocí aktivního efektu."
     },
     "system.resources.secondary.label": {
-      "name": "",
-      "description": ""
+      "name": "Štítek sekundárního zdroje",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé."
     },
     "system.resources.secondary.lr": {
-      "name": "Sekundární zdroj po důkladném odpočinku",
-      "description": "Obnova při důkladném odpočinku (1/0)"
+      "name": "Sekundární zdroj (Důkldný odpočinek)",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Obnovit po důkladném odpočinku (1/0)."
     },
     "system.resources.secondary.max": {
-      "name": "",
-      "description": ""
+      "name": "Maximum sekundárního zdroje",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé."
     },
     "system.resources.secondary.sr": {
-      "name": "Sekundární zdroj po krátkém odpočinku",
-      "description": "Obnova při krátkém odpočinkuu (1/0)"
+      "name": "Sekundární zdroj (Krátký odpočinek)",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Obnovit po krátkém odpočinku (1/0)."
     },
     "system.resources.secondary.value": {
       "name": "Hodnota sekundárního zdroje",
-      "description": "Toto by se nemělo nastavovat pomocí aktivního efektu!"
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Nemělo by být nastavováno pomocí aktivního efektu."
     },
     "system.resources.tertiary.label": {
-      "name": "",
-      "description": ""
+      "name": "Štítek terciárního zdroje",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé."
     },
     "system.resources.tertiary.lr": {
-      "name": "Terciární zdroj po důkladném odpočinku",
-      "description": "Obnova při důkladném odpočinku (1/0)"
+      "name": "Terciární zdroj (Důkladný odpočinek)",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Obnovit po důkladném odpočinku (1/0)."
     },
     "system.resources.tertiary.max": {
-      "name": "",
-      "description": ""
+      "name": "Maximum terciárního zdroje",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé."
     },
     "system.resources.tertiary.sr": {
-      "name": "Terciární zdroj po krátkém odpočinku",
-      "description": "Obnova při krátkém odpočinku (1/0)"
+      "name": "Terciární zdroj (Krátký odpočinek)",
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Obnovit po krátkém odpočinku (1/0)."
     },
     "system.resources.tertiary.value": {
       "name": "Hodnota terciárního zdroje",
-      "description": "Toto by se nemělo nastavovat pomocí aktivního efektu!"
+      "description": "Poznámka: Zdroje jsou dlouhodobě zastaralé. Nemělo by být nastavováno pomocí aktivního efektu."
     },
     "system.spells.pact.level": {
-      "name": "",
+      "name": "Stupeň magie paktu",
       "description": ""
     },
     "system.spells.pact.max": {
-      "name": "",
+      "name": "Maximální počet pozic magie paktu",
       "description": ""
     },
     "system.spells.pact.override": {
-      "name": "",
+      "name": "Přepsat pozice magie paktu",
       "description": ""
     },
     "system.spells.spell1.max": {
-      "name": "",
+      "name": "Maximální počet pozic 1. stupně",
       "description": ""
     },
     "system.spells.spell1.override": {
-      "name": "",
+      "name": "Přepsat pozice 1. stupně",
       "description": ""
     },
     "system.spells.spell2.max": {
-      "name": "",
+      "name": "Maximální počet pozic 2. stupně",
       "description": ""
     },
     "system.spells.spell2.override": {
-      "name": "",
+      "name": "Přepsat pozice 2. stupně",
       "description": ""
     },
     "system.spells.spell3.max": {
-      "name": "",
+      "name": "Maximální počet pozic 3. stupně",
       "description": ""
     },
     "system.spells.spell3.override": {
-      "name": "",
+      "name": "Přepsat pozice 3. stupně",
       "description": ""
     },
     "system.spells.spell4.max": {
-      "name": "",
+      "name": "Maximální počet pozic 4. stupně",
       "description": ""
     },
     "system.spells.spell4.override": {
-      "name": "",
+      "name": "Přepsat pozice 4. stupně",
       "description": ""
     },
     "system.spells.spell5.max": {
-      "name": "",
+      "name": "Maximální počet pozic 5. stupně",
       "description": ""
     },
     "system.spells.spell5.override": {
-      "name": "",
+      "name": "Přepsat pozic 5. stupně",
       "description": ""
     },
     "system.spells.spell6.max": {
-      "name": "",
+      "name": "Maximální počet pozic 6. stupně",
       "description": ""
     },
     "system.spells.spell6.override": {
-      "name": "",
+      "name": "Přepsat pozice 6. stupně",
       "description": ""
     },
     "system.spells.spell7.max": {
-      "name": "",
+      "name": "Maximální počet pozic 7. stupně",
       "description": ""
     },
     "system.spells.spell7.override": {
-      "name": "",
+      "name": "Přepsat pozice 7. stupně",
       "description": ""
     },
     "system.spells.spell8.max": {
-      "name": "",
+      "name": "Maximální počet pozic 8. stupně",
       "description": ""
     },
     "system.spells.spell8.override": {
-      "name": "",
+      "name": "Přepsat pozice 8. stupně",
       "description": ""
     },
     "system.spells.spell9.max": {
-      "name": "",
+      "name": "Maximální počet pozic 9. stupně",
       "description": ""
     },
     "system.spells.spell9.override": {
-      "name": "",
+      "name": "Přepsat pozice 9. stupně",
       "description": ""
     },
     "system.tools.alchemist.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro alchymistické pomůcky",
+      "description": "Která vlastnost se má použít pro ověřování s alchymistickými pomůckami."
     },
     "system.tools.alchemist.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s alchymistickými pomůckami",
       "description": ""
     },
     "system.tools.alchemist.prof": {
-      "name": "",
+      "name": "Zdatnost s alchymistickými pomůckami",
       "description": ""
     },
     "system.tools.art.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro řemeslnické nářadí",
+      "description": "Která vlastnost se má použít pro ověřování s řemeslnickým nářadím."
     },
     "system.tools.art.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s řemeslnickým nářadím",
       "description": ""
     },
     "system.tools.art.prof": {
-      "name": "",
+      "name": "Zdatnsot s řemeslnickým nářadím",
       "description": ""
     },
     "system.tools.bagpipes.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na dudy",
+      "description": "Která vlastnost se má použít pro ověřování hraní na dudy."
     },
     "system.tools.bagpipes.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní na dudy",
       "description": ""
     },
     "system.tools.bagpipes.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na dudy",
       "description": ""
     },
     "system.tools.brewer.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro pivovarnické potřeby",
+      "description": "Která vlastnost se má používat pro ověřování s pivovarnickými potřebami."
     },
     "system.tools.brewer.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s pivovarnickými potřebami",
       "description": ""
     },
     "system.tools.brewer.prof": {
-      "name": "",
+      "name": "Zdatnost s pivovarnickými potřebami",
       "description": ""
     },
     "system.tools.calligrapher.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro kaligrafické potřeby",
+      "description": "Která vlastnost se má použít pro ověřování s kaligrafickými potřebami."
     },
     "system.tools.calligrapher.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s kaligrafickými potřebami",
       "description": ""
     },
     "system.tools.calligrapher.prof": {
-      "name": "",
+      "name": "Zdatnost s kaligrafickými potřebami",
       "description": ""
     },
     "system.tools.card.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní karet",
+      "description": "Která vlastnost se má použít pro ověřování hraní karet."
     },
     "system.tools.card.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní kartami",
       "description": ""
     },
     "system.tools.card.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní karet",
       "description": ""
     },
     "system.tools.carpenter.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro tesařské nástroje",
+      "description": "Která vlastnost se má použít pro ověřování s tesařskými nástroji."
     },
     "system.tools.carpenter.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s tesařskými nástroji",
       "description": ""
     },
     "system.tools.carpenter.prof": {
-      "name": "",
+      "name": "Zdatnost s tesařskými nástroji",
       "description": ""
     },
     "system.tools.cartographer.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro kartografické pomůcky",
+      "description": "Která vlastnost se má použít pro ověřování s kartografickými pomůckami."
     },
     "system.tools.cartographer.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s kartografickými pomůckami",
       "description": ""
     },
     "system.tools.cartographer.prof": {
-      "name": "",
+      "name": "Zdatnost s kartografickými pomůckami",
       "description": ""
     },
     "system.tools.chess.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní dračích šachů",
+      "description": "Která vlastnost se má použít pro ověřování hraní dračích šachů."
     },
     "system.tools.chess.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní dračích šachů",
       "description": ""
     },
     "system.tools.chess.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní dračích šachů",
       "description": ""
     },
     "system.tools.cobbler.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro ševcovské nářadí",
+      "description": "Která vlastnost se má použít pro ověřování se ševcovským nářadím."
     },
     "system.tools.cobbler.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s ševcovským nářadím",
       "description": ""
     },
     "system.tools.cobbler.prof": {
-      "name": "",
+      "name": "Zdatnost se ševcovským nářadím",
       "description": ""
     },
     "system.tools.cook.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro kuchařské nástroje",
+      "description": "Která vlastnost se má použít pro ověřování s kuchařskými nástroji."
     },
     "system.tools.cook.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s kuchařskými nástroji",
       "description": ""
     },
     "system.tools.cook.prof": {
-      "name": "",
+      "name": "Zdatnost s kuchařskými nástroji",
       "description": ""
     },
     "system.tools.dice.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní kostek",
+      "description": "Která vlastnost se má použiít pro ověřování hry s kostkami."
     },
     "system.tools.dice.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření hry s kostkami",
       "description": ""
     },
     "system.tools.dice.prof": {
-      "name": "",
+      "name": "Zdatnost ve hře s kostkami",
       "description": ""
     },
     "system.tools.disg.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnsot pro soupravu na přestrojování",
+      "description": "Která vlastnost se má použít pro ověřování se soupravou na přestrojování."
     },
     "system.tools.disg.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření se soupravou na přestrojování",
       "description": ""
     },
     "system.tools.disg.prof": {
-      "name": "",
+      "name": "Zdatnost se soupravou na přestrojování",
       "description": ""
     },
     "system.tools.drum.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro bubnování",
+      "description": "Která vlastnost se má použít pro ověřování bubnování."
     },
     "system.tools.drum.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při bubnování",
       "description": ""
     },
     "system.tools.drum.prof": {
-      "name": "",
+      "name": "Zdatnost v bubnování",
       "description": ""
     },
     "system.tools.dulcimer.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na cimbál",
+      "description": "Která vlastnost se má použiít pro ověřování hraní na cimbál."
     },
     "system.tools.dulcimer.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní na cimbál",
       "description": ""
     },
     "system.tools.dulcimer.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na cimbál",
       "description": ""
     },
     "system.tools.flute.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na flétnu",
+      "description": "Která vlastnost se má použít pro ověřování hraní na flétnu."
     },
     "system.tools.flute.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní flétnu",
       "description": ""
     },
     "system.tools.flute.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na flétnu",
       "description": ""
     },
     "system.tools.forg.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro padělatelskou souporavu",
+      "description": "Která vlastnost se má použít pro ověřování s padělatelskou soupravou."
     },
     "system.tools.forg.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s padělatelskou soupravou",
       "description": ""
     },
     "system.tools.forg.prof": {
-      "name": "",
+      "name": "Zdatnost s padělatelskou soupravou",
       "description": ""
     },
     "system.tools.game.ability": {
-      "name": "",
-      "description": ""
-    },
+      "name": "Vlastnost pro herní soupravu",
+      "description": "Která vlastnost se má použíte pro ověřování s herní soupravou."
+          },
     "system.tools.game.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s herní soupravou",
       "description": ""
     },
     "system.tools.game.prof": {
-      "name": "",
+      "name": "Zdatnost s herní soupravou",
       "description": ""
     },
     "system.tools.glassblower.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro sklářské nástroje",
+      "description": "Která vlastnost se má použít pro ověřování se sklářskými nástroji."
     },
     "system.tools.glassblower.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření se sklářskými nástroji",
       "description": ""
     },
     "system.tools.glassblower.prof": {
-      "name": "",
+      "name": "Zdatnost se sklářskými nástroji",
       "description": ""
     },
     "system.tools.herb.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro bylinkářskou soupravuu",
+      "description": "Která vlastnost se má použít pro ověřování s bylinkářskou soupravou."
     },
     "system.tools.herb.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s bylinkářskou soupravou",
       "description": ""
     },
     "system.tools.herb.prof": {
-      "name": "",
+      "name": "Zdatnost s bylinkářskou soupravou",
       "description": ""
     },
     "system.tools.horn.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na roh",
+      "description": "Která vlastnost se má použít pro ověřování hraní na roh."
     },
     "system.tools.horn.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření hraní na roh",
       "description": ""
     },
     "system.tools.horn.prof": {
-      "name": "",
+      "name": "Zdatnost bv hraní na roh",
       "description": ""
     },
     "system.tools.jeweler.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro klenotnické nářadí",
+      "description": "Která vlastnost se má použít pro ověřování s klenotnickým nářadím."
     },
     "system.tools.jeweler.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s klenotnickým nářadím",
       "description": ""
     },
     "system.tools.jeweler.prof": {
-      "name": "",
+      "name": "Zdatnost s klenotnickým nářadím",
       "description": ""
     },
     "system.tools.leatherworker.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro koželužnické pomůcky",
+      "description": "Která vlastnost se má použít pro ověřování s koželužnickými pomůckami."
     },
     "system.tools.leatherworker.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s koželužnickými pomůckami",
       "description": ""
     },
     "system.tools.leatherworker.prof": {
-      "name": "",
+      "name": "Zdatnost s koželužnickými pomůckami",
       "description": ""
-    },
+        },
     "system.tools.lute.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na loutnu",
+      "description": "Která vlastnost se má použít pro ověřování hraní na loutnu."
     },
     "system.tools.lute.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní na loutnu",
       "description": ""
     },
     "system.tools.lute.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na loutnu",
       "description": ""
     },
     "system.tools.lyre.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na lyru",
+      "description": "Která vlastnost se má použít pro ověřování hraní na lyru."
     },
     "system.tools.lyre.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření hraní na lyru",
       "description": ""
     },
     "system.tools.lyre.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na lyru",
       "description": ""
     },
     "system.tools.mason.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro zednické nářadí",
+      "description": "Která vlastnost se má použít pro ověřování se zednickým nářadím."
     },
     "system.tools.mason.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření se zednickým nářadím",
       "description": ""
     },
     "system.tools.mason.prof": {
-      "name": "",
+      "name": "Zdatnost se zednickým nářadím",
       "description": ""
     },
     "system.tools.music.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na hudební nástroj",
+      "description": "Která vlastnost se má použít pro ověřování hraní na hudební nástroj."
     },
     "system.tools.music.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní na hudební nástroj",
       "description": ""
     },
     "system.tools.music.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na hudební nástroj",
       "description": ""
     },
     "system.tools.navg.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro navigační pomůcky",
+      "description": "Která vlastnost se má použít pro ověřování s navigačními pomůckami."
     },
     "system.tools.navg.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s navigačními pomůckami",
       "description": ""
     },
     "system.tools.navg.prof": {
-      "name": "",
+      "name": "Zdatnost s navigačními pomůckami",
       "description": ""
     },
     "system.tools.painter.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro malířské potřeby",
+      "description": "Která vlastnost se má použít pro ověřování s malířskými potřebami."
     },
     "system.tools.painter.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s malířskými potřebami",
       "description": ""
     },
     "system.tools.painter.prof": {
-      "name": "",
+      "name": "Zdatnost s malířskými potřebami",
       "description": ""
     },
     "system.tools.panflute.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na panovu flétnu",
+      "description": "Která vlastnost se má použít pro ověřování hraní na panovu flétnu."
     },
     "system.tools.panflute.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní na panovu flétnu",
       "description": ""
     },
     "system.tools.panflute.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na panovu flétnu",
       "description": ""
     },
     "system.tools.pois.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro travičskou soupravu",
+      "description": "Která vlastnost se má použít pro ověřování s travičskou soupravou."
     },
     "system.tools.pois.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s travičskou soupravou",
       "description": ""
     },
     "system.tools.pois.prof": {
-      "name": "",
+      "name": "Zdatnost s travičskou soupravou",
       "description": ""
     },
     "system.tools.potter.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hrnčířské nástroje",
+      "description": "Která vlastnost se má použít pro ověřování s hrnčířskými nástroji."
     },
     "system.tools.potter.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s hrnčířskými nástroji",
       "description": ""
     },
     "system.tools.potter.prof": {
-      "name": "",
+      "name": "Zdatnost s hrnčířskými nástroji",
       "description": ""
     },
     "system.tools.shawm.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na šalmaj",
+      "description": "Která vlastnost se má použít pro ověřování hraní na šalmaj."
     },
     "system.tools.shawm.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní na šalmaj",
       "description": ""
     },
     "system.tools.shawm.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na šalmaj",
       "description": ""
     },
     "system.tools.smith.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro kovářské nástroje",
+      "description": "Která vlastnost se má použít pro ověřování s kovářskými nástroji."
     },
     "system.tools.smith.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s kovářskými nástroji",
       "description": ""
     },
     "system.tools.smith.prof": {
-      "name": "",
+      "name": "Zdatnost s kovářskými nástroji",
       "description": ""
     },
     "system.tools.thief.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro zlodějské náčiní",
+      "description": "Která vlastnost se má použít pro ověření se zlodějským náčiním."
     },
     "system.tools.thief.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření se zlodějským náčiním",
       "description": ""
     },
     "system.tools.thief.prof": {
-      "name": "",
+      "name": "Zdatnost se zlodějským náčiním",
       "description": ""
     },
     "system.tools.tinker.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro kutilské pomůcky",
+      "description": "Která vlastnost se má použít pro ověření s kutilskými pomůckami."
     },
     "system.tools.tinker.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s kutilskými pomůckami",
       "description": ""
     },
     "system.tools.tinker.prof": {
-      "name": "",
+      "name": "Zdatnost s kutilskými pomůckami",
       "description": ""
     },
     "system.tools.vehicle.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro řízení dopravních prostředků",
+      "description": "Která vlastnost se má použít pro ověření řízení dopravních prostředků."
     },
     "system.tools.vehicle.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření řízení dopravních prostředků",
       "description": ""
     },
     "system.tools.vehicle.prof": {
-      "name": "",
+      "name": "Zdatnost v řízení dopravních prostředků",
       "description": ""
     },
     "system.tools.viol.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro hraní na violu",
+      "description": "Která vlastnost se má použít pro ověření hraní na violu."
     },
     "system.tools.viol.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření při hraní na violu",
       "description": ""
     },
     "system.tools.viol.prof": {
-      "name": "",
+      "name": "Zdatnost v hraní na violu",
       "description": ""
     },
     "system.tools.weaver.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro tkalcovské potřeby",
+      "description": "Která vlastnost se má použít pro ověření s tkalcovskými potřebami."
     },
     "system.tools.weaver.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s tkalcovskými potřebami",
       "description": ""
     },
     "system.tools.weaver.prof": {
-      "name": "",
+      "name": "Zdatnost s tkalcovskými potřebami",
       "description": ""
     },
     "system.tools.woodcarver.ability": {
-      "name": "",
-      "description": ""
+      "name": "Vlastnost pro řezbářské nástroje",
+      "description": "Která vlastnost se má použít pro ověření s řezbářskými nástroj."
     },
     "system.tools.woodcarver.bonuses.check": {
-      "name": "",
+      "name": "Bonus k ověření s řezbářskými nástroji",
       "description": ""
     },
     "system.tools.woodcarver.prof": {
-      "name": "",
+      "name": "Zdatnost s řezbářskými nástroji",
+      "description": ""
+    }
+  },
+  "dae.Unknown.fieldData": {
+    "system.ability": {
+      "name": "Vlastnost použitá při útoku",
+      "description": "Poznámka: Mělo by se místo toho použít \"activities[attack].attack.ability\"."
+    },
+    "system.attack.bonus": {
+      "name": "Bonus k útoku",
+      "description": "Poznámka: Mělo by se místo toho použít \"activities[attack].attack.bonus\"."
+    },
+    "system.attack.flat": {
+      "name": "Pevný zásah útoku",
+      "description": "Pravda, nebo nepravda. Poznámka: Mělo by se místo toho použít \"activities[attack].attack.flat\"."
+    },
+    "system.damage.bonus": {
+      "name": "Bonus k zásahu",
+      "description": "Poznámka: Mělo by se místo toho použít \"system.damageBonus\"."
+    },
+    "system.damageBonus": {
+      "name": "Bonus k zásahu",
+      "description": "Bonus ke všem aktivitám způsobujícím zranění."
+    },
+    "system.damage.parts": {
+      "name": "Části zranění",
+      "description": "Umožňuje přidat části zranění v zastaralém formátu (např. [[\"1d6\", \"fire\"]]). Přidá části ke všem aktivitám způsobujícím zranění, nejen k útokům."
+    },
+    "system.damage.types": {
+      "name": "Typy zranění",
+      "description": ""
+    },
+    "activities[attack].attack.ability": {
+      "name": "Vlastnost použitá při útoku",
+      "description": ""
+    },
+    "activities[attack].attack.bonus": {
+      "name": "Bonus k útoku",
+      "description": ""
+    },
+    "activities[attack].attack.critical.threshold": {
+      "name": "Práh kritického zásahu útoku",
+      "description": ""
+    },
+    "activities[attack].attack.flat": {
+      "name": "Pevný zásah útoku",
+      "description": "Pravda, nebo nepravda."
+    },
+    "activities[attack].attack.type.value": {
+      "name": "Typ útoku",
+      "description": ""
+    },
+    "activities[attack].attack.type.classification": {
+      "name": "Klasifikace útoku",
+      "description": ""
+    },
+    "activities[attack].damage.includeBase": {
+      "name": "Zahrnout základní zranění",
+      "description": ""
+    },
+    "activities[cast].spell.ability": {
+      "name": "Sesilatelská vlastnost",
+      "description": ""
+          },
+    "activities[cast].spell.challenge.attack": {
+      "name": "Bonus k útoku kouzlem",
+      "description": "Nastav také \"activities[cast].spell.challenge.override\" na \"true\"."
+    },
+    "activities[cast].spell.challenge.save": {
+      "name": "Vzorec záchrany před kouzlem",
+      "description": "Nastav také \"activities[cast].spell.challenge.override\" na \"true\"."
+    },
+    "activities[cast].spell.challenge.override": {
+      "name": "Přepsání útoku/záchrany kouzla",
+      "description": ""
+    },
+    "activities[cast].spell.level": {
+      "name": "Stupeň kouzla",
+      "description": ""
+    },
+    "activities[cast].spell.properties": {
+      "name": "Parametry kouzla",
+      "description": ""
+    },
+    "activities[cast].spell.spellbook": {
+      "name": "Zobrazit kouzlo v knize kouzel",
+      "description": ""
+    },
+    "activities[cast].spell.uuid": {
+      "name": "UUID kouzla",
+      "description": ""
+    },
+    "activities[check].check.ability": {
+      "name": "Ověření vlastnosti",
+      "description": ""
+    },
+    "activities[check].check.associated": {
+      "name": "Přiřazené dovednosti či nástroje",
+      "description": ""
+    },
+    "activities[check].check.dc.calculation": {
+      "name": "Výpočet SO",
+      "description": ""
+    },
+    "activities[check].check.dc.formula": {
+      "name": "Vzorec SO",
+      "description": "Pokud používáš tento klíč, tak by \"activities[check].check.dc.calculation\" mělo být nastaveno na \"Vlastní vzorec\"."
+    },
+    "activities[damage].damage.critical.allow": {
+      "name": "Povolit kritické zásahy",
+      "description": ""
+    },
+    "activities[enchant].enchant.identifier": {
+      "name": "Identifikátor povolání očarování",
+      "description": ""
+    },
+    "activities[enchant].restrictions.allowMagical": {
+      "name": "Omezení: Povolit magické",
+      "description": ""
+    },
+    "activities[enchant].restrictions.categories": {
+      "name": "Omezení: Přípustné kategorie položek",
+      "description": ""
+    },
+    "activities[enchant].restrictions.properties": {
+      "name": "Omezení: Přípustné parametry položek",
+      "description": ""
+    },
+    "activities[enchant].restrictions.type": {
+      "name": "Omezení: Typ položky",
+      "description": ""
+    },
+    "activities[forward].activity.id": {
+      "name": "ID přeposlané aktivity",
+      "description": ""
+    },
+    "activities[heal].healing.number": {
+      "name": "Léčení: Počet kostek",
+      "description": ""
+    },
+    "activities[heal].healing.denomination": {
+      "name": "Léčení: Typ kostek",
+      "description": ""
+    },
+    "activities[heal].healing.bonus": {
+      "name": "Léčení: Bonus",
+      "description": ""
+    },
+    "activities[heal].healing.types": {
+      "name": "Typy léčení",
+      "description": ""
+    },
+    "activities[heal].healing.custom.enabled": {
+      "name": "Léčení: Povolit vlastní vzorec",
+      "description": ""
+    },
+    "activities[heal].healing.custom.formula": {
+      "name": "Léčení: Vlastní vzorec",
+      "description": "Nastav také \"activities[heal].healing.custom.enabled\" na \"true\"."
+    },
+    "activities[heal].healing.scaling.mode": {
+      "name": "Léčení: Režim škálování",
+      "description": ""
+    },
+    "activities[heal].healing.scaling.number": {
+      "name": "Léčení: Škálující počet kostek",
+      "description": "Další kostky házené za každou úroveň škálování."
+    },
+    "activities[heal].healing.scaling.formula": {
+      "name": "Léčení: Vzorec škálování",
+      "description": "Další vzorec přidaný za každou úroveň škálování."
+    },
+    "activities[save].damage.onSave": {
+      "name": "Zranění při úspěšné záchraněu",
+      "description": ""
+    },
+    "activities[save].save.ability": {
+      "name": "Vlastnost záchrany",
+      "description": ""
+    },
+    "activities[save].save.dc.calculation": {
+      "name": "Výpočet SO",
+      "description": ""
+    },
+    "activities[save].save.dc.formula": {
+      "name": "Vzorec SO",
+      "description": "Pokud používáš tento klíč, tak by \"activities[save].save.dc.calculation\" mělo být nastaveno na \"Vlastní vzorec\"."
+    },
+    "activities[summon].bonuses.ac": {
+      "name": "Vzorec bonusu k OČ",
+      "description": ""
+    },
+    "activities[summon].bonuses.hd": {
+      "name": "Vzorec bonusu kostek obnovy",
+      "description": ""
+    },
+    "activities[summon].bonuses.hp": {
+      "name": "Vzorec bonusu k BV",
+      "description": ""
+    },
+    "activities[summon].bonuses.attackDamage": {
+      "name": "Bonus k zásahu útoku",
+      "description": ""
+    },
+    "activities[summon].bonuses.saveDamage": {
+      "name": "Bonus ke zranění záchran",
+      "description": ""
+    },
+    "activities[summon].bonuses.healing": {
+      "name": "Bonus k léčení",
+      "description": ""
+    },
+        "activities[summon].creatureSizes": {
+      "name": "Platné velikosti bytostí",
+      "description": ""
+    },
+    "activities[summon].creatureTypes": {
+      "name": "Platné typy bytostí",
+      "description": ""
+    },
+    "activities[summon].match.ability": {
+      "name": "Vlastnost sjednocení",
+      "description": "Vlastnost přivolavače, která se použije pro útoky/záchrany přivolaných bytostí."
+    },
+    "activities[summon].match.attacks": {
+      "name": "Sjednotit bonusy k útoku",
+      "description": ""
+    },
+    "activities[summon].match.proficiency": {
+      "name": "Sjednotit zdatnosti",
+      "description": ""
+    },
+    "activities[summon].match.saves": {
+      "name": "Sjednotit SO záchran",
+      "description": ""
+    },
+    "activities[summon].summon.identifier": {
+      "name": "Identifikátor povolání přivolávače",
+      "description": ""
+    },
+    "activities[summon].summon.mode": {
+      "name": "Režim přivolání",
+      "description": ""
+    },
+    "activities[summon].summon.prompt": {
+      "name": "Výzva k přivolání",
+      "description": ""
+    },
+    "activities[transform].settings.effects": {
+      "name": "Transformace: Efekty",
+      "description": "Jaké typy efektů zachovat při transformaci."
+    },
+    "activities[transform].settings.keep": {
+      "name": "Transformace: Zachovat",
+      "description": "Jaké vlastnosti zachovat při transformaci."
+    },
+    "activities[transform].settings.merge": {
+      "name": "Transformace: Sloučit",
+      "description": "Jaké zdatnosti sloučit při transformaci."
+    },
+    "activities[transform].settings.other": {
+      "name": "Transformace: Ostatní",
+      "description": ""
+    },
+    "activities[transform].settings.preset": {
+      "name": "Transformace: Přednastavení",
+      "description": ""
+    },
+    "activities[transform].settings.tempFormula": {
+      "name": "Transformace: Vzorec dočasných BV",
+      "description": ""
+    },
+    "activities[transform].settings.transformTokens": {
+      "name": "Transformace: Transformovat propojené tokeny",
+      "description": ""
+    },
+    "activities[transform].transform.customize": {
+      "name": "Transformace: Přizpůsobit",
+      "description": ""
+    },
+    "activities[transform].transform.identifier": {
+      "name": "Identifikátor povolání transformace",
+      "description": ""
+    },
+    "activities[transform].transform.preset": {
+      "name": "Transformace: Přednastavení",
+      "description": ""
+    },
+    "activities[utility].roll.formula": {
+      "name": "Vzorec hodu",
+      "description": ""
+    },
+    "activities[utility].roll.name": {
+      "name": "Název hodu",
+      "description": ""
+    },
+    "activities[utility].roll.prompt": {
+      "name": "Výzva k hodu",
+      "description": ""
+    },
+    "activities[utility].roll.visible": {
+      "name": "Hod: Viditelnost",
+      "description": ""
+    }
+  },
+  "dae.genericSuffixes": {
+    "name": {
+      "name": "Název",
+      "description": ""
+    },
+    "img": {
+      "name": "Ikona",
+      "description": ""
+    },
+    "sort": {
+      "name": "Řazení",
+      "description": ""
+    },
+    "activation.type": {
+      "name": "Typ aktivace",
+      "description": ""
+    },
+    "activation.value": {
+      "name": "Hodnota aktivace",
+      "description": "Počet aktivací daného typu (pokud je to relevantní)"
+    },
+    "activation.condition": {
+      "name": "Podmínka aktivace",
+      "description": ""
+    },
+    "activation.override": {
+      "name": "Přepsání aktivace",
+      "description": "Nerelevantní v kontextu očarování."
+    },
+    "consumption.scaling.allowed": {
+      "name": "Povolené škálování spotřeby",
+      "description": ""
+    },
+    "consumption.scaling.max": {
+      "name": "Maximální škálování spotřeby",
+      "description": ""
+    },
+    "consumption.spellSlot": {
+      "name": "Spotřeba pozice kouzla",
+      "description": ""
+    },
+    "consumption.targets": {
+      "name": "Cíle spotřeby",
+      "description": ""
+    },
+    "description.chatFlavor": {
+      "name": "Popis v chatu",
+      "description": ""
+    },
+    "duration.value": {
+      "name": "Doba trvání",
+      "description": ""
+    },
+    "duration.units": {
+      "name": "Jednotky doby trvání",
+      "description": ""
+    },
+    "duration.special": {
+      "name": "Speciální trvání",
+      "description": ""
+    },
+    "duration.concentration": {
+      "name": "Trvání soustředění",
+      "description": ""
+    },
+    "duration.override": {
+      "name": "Přepsání trvání",
+      "description": "Nerelevantní v kontextu očarování."
+    },
+    "effects": {
+      "name": "Efekty",
+      "description": "Pole objektů s \"_id\" odpovídající ID efektu na položce, jenž se má aplikovat při použití aktivity."
+          },
+    "range.value": {
+      "name": "Dosah",
+      "description": ""
+    },
+    "range.units": {
+      "name": "Jednotky dosahu",
+      "description": ""
+    },
+    "range.special": {
+      "name": "Speciální dosah",
+      "description": ""
+    },
+    "range.override": {
+      "name": "Přepsání dosahu",
+      "description": "Nerelevantní v kontextu očarování."
+    },
+    "target.template.count": {
+      "name": "Počet šablon",
+      "description": ""
+    },
+    "target.template.contiguous": {
+      "name": "Souvislé šablony",
+      "description": "True, nebo false."
+    },
+    "target.template.type": {
+      "name": "Typ šablony",
+      "description": ""
+    },
+    "target.template.size": {
+      "name": "Velikost šablony",
+      "description": ""
+    },
+    "target.template.width": {
+      "name": "Šířka šablony",
+      "description": ""
+    },
+    "target.template.height": {
+      "name": "Výška šablony",
+      "description": ""
+    },
+    "target.template.units": {
+      "name": "Jednotky šablony",
+      "description": ""
+    },
+    "target.affects.count": {
+      "name": "Cíle",
+      "description": ""
+    },
+    "target.affects.type": {
+      "name": "Typ cílů",
+      "description": ""
+    },
+    "target.affects.choice": {
+      "name": "Výběr cílů",
+      "description": ""
+    },
+    "target.affects.special": {
+      "name": "Cíle (speciální)",
+      "description": ""
+    },
+    "target.override": {
+      "name": "Přepsání cílů",
+      "description": "Nerelevantní v kontextu očarování."
+    },
+    "target.prompt": {
+      "name": "Výzva k umístění šablony",
+      "description": ""
+    },
+    "uses.spent": {
+      "name": "Spotřebovaná použití",
+      "description": ""
+    },
+    "uses.max": {
+      "name": "Maximální počet použití",
+      "description": ""
+    },
+    "uses.recovery": {
+      "name": "Obnovea použití",
+      "description": "Pole objektů představujících obnovení."
+    },
+    "damage.critical.bonus": {
+      "name": "Bonus kritického zranění",
+      "description": ""
+    },
+    "damage.parts": {
+      "name": "Části zranění",
+      "description": ""
+    },
+    "profiles": {
+      "name": "Profily",
       "description": ""
     }
   }

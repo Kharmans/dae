@@ -335,7 +335,6 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 |---------------------------------------	|:----------:	|-------- 	|
 | `system.bonuses.All-Attacks`	|    CUSTOM	| The specified string field will be appended to `bonuses.mwak.attack`, `bonuses.rwak.attack`, `bonuses.msak.attack`, `bonuses.rsak.attack`	|
 | `system.bonuses.All-Damage`	|    CUSTOM	| The specified string field will be appended to each of rwak/mwak/rsak/msak	|
-| `system.bonuses.abil.damage`          	|   CUSTOM   	| The specified string will appended to the damage roll for action type ability check	|
 | `system.bonuses.TYPE.attack`          	|   CUSTOM  	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon	|
 | `system.bonuses.TYPE.damage`          	|   CUSTOM  	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon 	|
 | `system.bonuses.save.damage`          	|            	| The specified string will appended to the damage roll for action type saving throw	|

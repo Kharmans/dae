@@ -536,7 +536,6 @@
   
   .dae-field-description {
     font-size: smaller;
-    max-height: 36px;
     overflow: auto;
     margin-top: 1px;
     padding-top: 2px;
@@ -583,12 +582,12 @@
 // START V13-SPECIFIC
 .dae.active-effect-config .tab.changes {
   header {
-    grid-template-columns: 400px 110px 250px 60px 1rem;
+    grid-template-columns: 400px 110px 1fr 60px 1rem;
     padding-right: 14px;
   }
 
   ol {
-    grid-template-columns: 400px 110px 250px 60px 1rem;
+    grid-template-columns: 400px 110px 1fr 60px 1rem;
     align-items: start;
   }
   
@@ -614,6 +613,7 @@
 
     input,textarea {
       min-width: 250px;
+      width: 100%;
     }
   }
   

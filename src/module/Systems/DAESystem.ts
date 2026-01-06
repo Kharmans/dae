@@ -399,7 +399,6 @@ export class DAESystem {
       foundry.utils.setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
     foundry.utils.setProperty(activeEffectData, "flags.dae.transfer", false);
     if (options.metaData) foundry.utils.mergeObject(activeEffectData, options.metaData);
-
   }
   public static getAttributeValue(documentRef: string, attribute: string) {
     let actor: Actor.Implementation | undefined;
@@ -465,7 +464,7 @@ export class DAESystem {
   public static safeEvalExpression(input: string, context: AnyObject, depth = 0) {
     if (typeof input !== "string") return input;
     input = Roll.replaceFormulaData(input, context);
-    let validFunctionName = /^[a-zA-Z_$][0-9a-zA-Z_$.]*$/; // regex for valid JS function name
+    let validFunctionName = /^[a-zA-Z_$][0-9a-zA-Z_$.?]*$/; // regex for valid JS function name
     if (depth > 20) {
       console.error("It's turtles all the way down....")
       return input;
@@ -479,7 +478,7 @@ export class DAESystem {
       if (char === '(') {
 
         let funcName = '';
-        while (stack.length > 0 && /[a-zA-Z_$0-9.]/.test(stack[stack.length - 1])) {
+        while (stack.length > 0 && /[a-zA-Z_$0-9.?]/.test(stack[stack.length - 1])) {
           funcName = stack.pop() + funcName;
         }
         // if (Math[funcName]) funcName = funcName = `Math.${funcName}`; - the proxy will look in Math if not found elsewhere

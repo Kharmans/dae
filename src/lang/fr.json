@@ -257,8 +257,6 @@
   "dae.endEveryTurn": "Fin de chaque tour : Exécuter les macros d'effets à la fin du tour des personnages.",
   "dae.displayTraits.Name": "Inclure les effets actifs dans l'affichage des traits spéciaux",
   "dae.displayTraits.Hint": "L'affichage des traits spéciaux comprend les changements d'effets actifs. Les valeurs saisies sont supposées correspondre à la valeur de l'effet pré-actif.",
-  "dae.ConditionalVisibility": "Visibilité conditionnelle",
-  "dae.ConditionalVisibilityVision": "CV Vision",
   "dae.noDupDamageMacro.Name": "No Duplicate Damage macros",
   "dae.noDupDamageMacro.Hint": "Si la case est cochée, les macros de dommages en double seront ignorées",
   "dae.DisableEffects.Name": "Désactiver tous les traitements d'effets actifs",
@@ -273,7 +271,6 @@
   "dae.ShowDeprecation.Name": "Afficher les erreurs de dépréciation",
   "dae.ShowDeprecation.Hint": "Afficher les erreurs de dépréciation dans la console",
   "dae.CE": "Convenient Effects",
-  "dae.CUB": "Combat Utility Belt",
   "dae.ShowInline.Name": "Afficher les résultats des jets en ligne",
   "dae.ShowInline.Hint": "Les effets avec un jet en ligne afficheront les résultats du jet s'ils sont définis",
   "dae.stackableOptions": {
