@@ -88,7 +88,7 @@ Hooks.once('ready', () => {
     createDAEMacros();
   } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
     ui.notifications?.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);
-   } else {
+  } else {
     ui.notifications?.error(`DAE is not compatible with ${game.system.id} - module disabled`);
   }
   Hooks.callAll("dae.ready", API);
@@ -110,6 +110,14 @@ Hooks.once('setup', () => {
     data.api = API;
     globalThis.DAE = API;
 
+    Hooks.on("macro-autocomplete.ready", ({ tree, objectToCompletions, mergeCompletions, rebuildSignatureMap }) => {
+      if (!tree.DAE) {
+        tree.DAE = { type: "object", detail: "object", info: "DAE's API" };
+      }
+      // objectToCompletions walks the runtime object; mergeCompletions overlays type enrichment
+      mergeCompletions(tree.DAE, objectToCompletions(API, 3));
+      rebuildSignatureMap();
+    });
     setupSocket();
     if ("DAE.setupComplete" in Hooks.events) {
       foundry.utils.logCompatibilityWarning(
@@ -130,7 +138,7 @@ export async function confirmAction(toCheck: boolean, confirmFunction: any, titl
     { since: "DAE 13.0.11", until: "DAE 13.1.0" }
   );
   if (toCheck || await foundry.applications.api.DialogV2.confirm({
-    window: {title},
+    window: { title },
     content: `<p>${i18n("dae.sure")}</p>`,
     rejectClose: false
   })) {
@@ -171,7 +179,7 @@ const DAEMacros = [
     version: "11.3.41",
     commandText: `itemData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/DAEConditionalEffects.json');
         CONFIG.Item.documentClass.create([itemData]);`
-    }
+  }
 ];
 
 // TODO (Michael) Is this necessary? If so, is this the ideal way of doing this?

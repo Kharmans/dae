@@ -11,6 +11,54 @@ export function addAutoFields(fields: string[]) {
   otherFields = Array.from(newFields).toSorted();
 }
 
+// --- Pluggable field editor registry ---
+
+export interface FieldEditorContext {
+  /** The full change key */
+  key: string;
+  /** The effect being edited */
+  effect: ActiveEffect;
+  /** The effect's parent document (Actor, Item, etc.) */
+  parent: Actor | Item | null;
+  /** Index in the changes array */
+  changeIndex: number;
+  /** The DAEActiveEffectConfig app instance */
+  app: DAEActiveEffectConfig;
+}
+
+export interface FieldEditorRegistration {
+  /** Exact key or prefix ending with "." to match (e.g. "flags.midi-qol.OverTime") */
+  keyMatch: string;
+  /**
+   * Called when the user clicks the edit button.
+   * Receives current value string + context, returns updated value or null to cancel.
+   */
+  editor: (currentValue: string, context: FieldEditorContext) => Promise<string | null>;
+  /** Optional icon class (default: "fas fa-edit") */
+  icon?: string;
+  /** Optional tooltip text */
+  tooltip?: string;
+}
+
+const fieldEditorRegistry: Map<string, FieldEditorRegistration> = new Map();
+
+export function registerFieldEditor(registration: FieldEditorRegistration): void {
+  fieldEditorRegistry.set(registration.keyMatch, registration);
+}
+
+export function getFieldEditor(key: string): FieldEditorRegistration | undefined {
+  // Exact match first
+  if (fieldEditorRegistry.has(key)) return fieldEditorRegistry.get(key);
+  // Then prefix match — walk up the key segments
+  const parts = key.split(".");
+  while (parts.length > 1) {
+    parts.pop();
+    const prefix = parts.join(".") + ".";
+    if (fieldEditorRegistry.has(prefix)) return fieldEditorRegistry.get(prefix);
+  }
+  return undefined;
+}
+
 const stackableOptions = {
   noneName: "dae.StackableOptions.noneName",
   noneNameOnly: "dae.StackableOptions.noneNameOnly",
@@ -95,7 +143,8 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       for (let field of otherFields) {
         this.validFields[field] = {
           name: localizationMap[field]?.name ?? field,
-          description: localizationMap[field]?.description
+          description: localizationMap[field]?.description || (localizationMap[field]?.name ?? field) 
+
         };
       }
     }
@@ -181,7 +230,8 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       for (let field of otherFields) {
         this.validFields[field] = {
           name: localizationMap[field]?.name ?? field,
-          description: localizationMap[field]?.description
+          description: localizationMap[field]?.description || (localizationMap[field]?.name ?? field) 
+
         };
       }
     }
@@ -248,6 +298,13 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       if (typeof change.value === "string") {
         change.value = change.value.replace(/^(["'])(.*)\1$/, "$2")
       }
+      // Mark changes that have a registered pluggable editor
+      const fieldEditor = getFieldEditor(change.key);
+      if (fieldEditor) {
+        change.hasEditor = true;
+        change.editorIcon = fieldEditor.icon ?? "fas fa-edit";
+        change.editorTooltip = fieldEditor.tooltip ?? "Edit";
+      }
     });
 
     // TODO (Michael): Foundry calendar here?
@@ -311,6 +368,11 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         drop: this._onDrop.bind(this)
       }
     }).bind(this.element);
+    // Pluggable editor buttons
+    const editButtons = Array.from(this.element.querySelectorAll<HTMLAnchorElement>(".dae-edit-value"));
+    for (const btn of editButtons) {
+      btn.addEventListener("click", this.#onEditValue.bind(this));
+    }
   }
   changeTab(tab: string, group: string, options) {
     let autoPos: foundry.applications.api.ApplicationV2.Position = { ...this.position, height: "auto" };
@@ -335,6 +397,35 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
   public onFieldSelected(): void {
     this.submit({ preventClose: true })?.then(() => this.render());
+  }
+
+  async #onEditValue(event: Event): Promise<void> {
+    const btn = event.currentTarget as HTMLElement;
+    const index = Number(btn.dataset.index);
+    const change = this.document.changes[index];
+    if (!change) return;
+
+    const registration = getFieldEditor(change.key);
+    if (!registration) return;
+
+    // Read current value from the textarea (may have unsaved edits)
+    const textarea = this.element.querySelector<HTMLTextAreaElement>(
+      `textarea[name="changes.${index}.value"]`
+    );
+    const currentValue = textarea?.value ?? change.value ?? "";
+
+    const result = await registration.editor(currentValue, {
+      key: change.key,
+      effect: this.document,
+      parent: this.document.parent as Actor | Item | null,
+      changeIndex: index,
+      app: this,
+    });
+
+    if (result !== null && result !== undefined) {
+      if (textarea) textarea.value = result;
+      this.submit({ preventClose: true })?.then(() => this.render());
+    }
   }
 
   /* ----------------------------------------- */
@@ -468,4 +559,7 @@ interface DAEChange extends ActiveEffect.ChangeData {
   options?: Record<string, string>;
   fieldName?: string;
   fieldDescription?: string;
+  hasEditor?: boolean;
+  editorIcon?: string;
+  editorTooltip?: string;
 }

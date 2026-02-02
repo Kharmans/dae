@@ -39,6 +39,9 @@
                         <div class="value flex-grow">
                             <textarea name="changes.{{i}}.value" rows="1">{{change.value}}</textarea>
                         </div>
+                        {{#if change.hasEditor}}
+                        <a class="dae-edit-value" data-index="{{i}}" data-tooltip="{{change.editorTooltip}}"><i class="{{change.editorIcon}}"></i></a>
+                        {{/if}}
                     {{/if}}
                 </div>
                 <div class="priority">

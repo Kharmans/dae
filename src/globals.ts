@@ -31,6 +31,18 @@ declare module "fvtt-types/configuration" {
         registerActivityHeaderControls?: (unknown) => void
       }) => void;
       "babel.ready": () => void;
+      "macro-autocomplete.ready": (api: {
+        tree: Record<string, any>,
+        objectToCompletions: (obj: any, maxDepth?: number) => Record<string, any>,
+        mergeCompletions: (target: any, additions: Record<string, any>) => void,
+        rebuildSignatureMap: () => void,
+        schemaToCompletions: (schema: any) => Record<string, any>,
+        classToCompletions: (cls: any) => { staticChildren: Record<string, any>, instanceChildren: Record<string, any>, constructorDetail?: string },
+        fieldToCompletionNode: (field: any, name: string) => any,
+        valueToCompletionEntry: (value: any, maxDepth?: number) => any,
+        setContextCompletions: (element: HTMLElement, completions: Record<string, any>) => void,
+        clearContextCompletions: (element: HTMLElement) => void,
+      }) => void;
     }
     // Temporary, 'til we try dnd5e-types
     interface ApplicationV2Config {

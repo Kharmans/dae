@@ -160,7 +160,6 @@ export function applyDaeEffects(this: Actor.Implementation, {
           foundry.utils.logCompatibilityWarning(
             `dae | Actor ${this.name} ${c.key} deprecated use ${daeSystemClass.fieldMappings[c.key]} instead.`, { once: true, stack: false }
           );
-          //console.warn(`dae | Actor ${this.name} ${c.key} deprecated use ${daeSystemClass.fieldMappings[c.key]} instead`, this)
           if (mappedField.startsWith("system.traits.da") && mappedField.endsWith(".value")) {
             const damageType = c.key.split(".").slice(-1)[0];
             c.key = mappedField;
@@ -220,8 +219,7 @@ export function applyDaeEffects(this: Actor.Implementation, {
         foundry.utils.mergeObject(conditionData, { stackCount, effect: c.effect?.toObject() })
         c.value = daeSystemClass.safeEvalExpression(c.value, conditionData)
       }
-      // let sampleValue = foundry.utils.getProperty(this, c.key) ?? ValidSpec.specs[this.type].allSpecsObj[c.key]?.fieldType ?? "";
-      //    let fieldType = "string";
+
       let field = c.key.startsWith("system.")
         // @ts-expect-error no dnd5e-types
         ? this.system.schema.getField(c.key.slice(7))
@@ -279,7 +277,7 @@ export function applyDaeEffects(this: Actor.Implementation, {
     }
   }
 
-  // Expand the set of final overrides + merge sincey
+  // Expand the set of final overrides + merge
   this.overrides = foundry.utils.mergeObject(this.overrides || {}, foundry.utils.expandObject(overrides) || {}, { inplace: true, overwrite: true });
 }
 

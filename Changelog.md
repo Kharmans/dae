@@ -1,5 +1,7 @@
 ### 13.0.19
-* Changes to support new field mapping/descriptions
+* Added `registerFieldEditor` API allowing modules to register custom editors for effect change keys. Editors are matched by exact key or prefix (key ending with `.`). Registration via `DAE.api.registerFieldEditor({ keyMatch, editor, icon?, tooltip? })`.
+* Changes to support new field mapping/descriptions.
+* Injects the DAE api into macro-autocomplete
 
 ### 13.0.18
 * reinstate drag and drop of item uuids in changes editor.
