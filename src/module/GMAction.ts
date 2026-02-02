@@ -1,4 +1,4 @@
-import { timesUpInstalled, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, maxShortDuration } from "./dae.js";
+import { timesUpActive, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, maxShortDuration } from "./dae.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
 
@@ -510,7 +510,7 @@ export async function applyActiveEffects({
 
 export function convertDuration(durationData: { units: string, value: number }, inCombat: boolean, maxSecondsToConvert = Number.POSITIVE_INFINITY) {
   // TODO rewrite this abomination - for v13 look at default calendar
-  let useTurns = inCombat && timesUpInstalled;
+  let useTurns = inCombat && timesUpActive;
   if (durationData.units === "second" && durationData.value > maxSecondsToConvert) useTurns = false;
   if (!durationData || (durationData.units === "second" && durationData.value < CONFIG.time.roundTime)) { // no duration or very short (less than 1 round)
     if (useTurns)

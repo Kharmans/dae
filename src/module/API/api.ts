@@ -4,7 +4,7 @@ import { convertDuration } from '../GMAction.js';
 import { ActiveEffects } from '../apps/ActiveEffects.js';
 import { DAEActiveEffectConfig, addAutoFields, otherFields } from '../apps/DAEActiveEffectConfig.js';
 import { DIMEditor } from '../apps/DIMEditor.js';
-import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets } from '../dae.js';
+import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets, localizationMap } from '../dae.js';
 import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration.js';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
 import { enumerateBaseValues } from '../dae.js';
@@ -30,6 +30,7 @@ const API = {
   evalExpression(): (input: string, context: any, depth?: number) => string {
     return daeSystemClass.safeEvalExpression.bind(daeSystemClass);
   },
+  get localizationMap() { return localizationMap },
   get otherValidSpecKeys() { return otherFields },
   get ValidSpec() { return ValidSpec },
   get wildcardBaseEffects(): RegExp[] {

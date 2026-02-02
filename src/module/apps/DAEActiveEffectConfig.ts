@@ -93,7 +93,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }, this.validFields);
     if (!isEnchantment(this.document)) {
       for (let field of otherFields) {
-        this.validFields[field] = { name: field };
+        this.validFields[field] = {
+          name: localizationMap[field]?.name ?? field,
+          description: localizationMap[field]?.description
+        };
       }
     }
     this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
@@ -176,7 +179,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }, this.validFields);
     if (!isEnchantment(document)) {
       for (let field of otherFields) {
-        this.validFields[field] = {name: field };
+        this.validFields[field] = {
+          name: localizationMap[field]?.name ?? field,
+          description: localizationMap[field]?.description
+        };
       }
     }
     this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);

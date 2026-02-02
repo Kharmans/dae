@@ -14,7 +14,7 @@ const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringF
 let templates = {};
 
 export let aboutTimeInstalled: boolean = false;
-export let timesUpInstalled: boolean = false;
+export let timesUpActive: boolean = false;
 export let simpleCalendarInstalled: boolean = false;
 export let atlActive: boolean = false;
 export let itemacroActive: boolean = false;
@@ -157,7 +157,10 @@ export function applyDaeEffects(this: Actor.Implementation, {
       .filter(c => {
         if (daeSystemClass.fieldMappings[c.key]) {
           const mappedField = daeSystemClass.fieldMappings[c.key]
-          console.warn(`dae | Actor ${this.name} ${c.key} deprecated use ${daeSystemClass.fieldMappings[c.key]} instead`, this)
+          foundry.utils.logCompatibilityWarning(
+            `dae | Actor ${this.name} ${c.key} deprecated use ${daeSystemClass.fieldMappings[c.key]} instead.`, { once: true, stack: false }
+          );
+          //console.warn(`dae | Actor ${this.name} ${c.key} deprecated use ${daeSystemClass.fieldMappings[c.key]} instead`, this)
           if (mappedField.startsWith("system.traits.da") && mappedField.endsWith(".value")) {
             const damageType = c.key.split(".").slice(-1)[0];
             c.key = mappedField;
@@ -2054,7 +2057,7 @@ export function daeReadyActions() {
   daeSystemClass.readyActions()
   aboutTimeInstalled = game.modules.get("about-time")?.active ?? false;
   simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.active ?? false;
-  timesUpInstalled = game.modules.get("times-up")?.active ?? false;
+  timesUpActive = game.modules.get("times-up")?.active ?? false;
   if (itemacroActive) {
     Hooks.on("preUpdateItem", DIMEditor.preUpdateItemHook);
   }

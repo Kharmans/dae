@@ -1,3 +1,6 @@
+### 13.0.19
+* Changes to support new field mapping/descriptions
+
 ### 13.0.18
 * reinstate drag and drop of item uuids in changes editor.
 * typo fix in GMAction, thanks @Elwin
