@@ -63,6 +63,9 @@ export let actionQueue: foundry.utils.Semaphore;
 export let DAEReadyComplete: boolean;
 export let dependentConditions: boolean;
 
+// Track actors with pending status reconciliation to avoid duplicate reconciliations
+const reconciliationPending = new Set<string>();
+
 export let allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate", "macro.activityMacro"];
 
 export let macroDestination = {
@@ -2187,7 +2190,7 @@ export function daeInitActions() {
         await this.createRiderConditions();
       }
       if (debugEnabled > 0) warn("_preCreateActiveEffect", this, context);
-      await applyStatusEffects(this, true, context);
+      // Status effect reconciliation now handled via queueStatusReconciliation hook
     }
     if (result) result = await wrapped(data, context, user);
     return result;
@@ -2200,7 +2203,7 @@ export function daeInitActions() {
     let result = await _preDeleteActiveEffectDecrement.bind(this)(options, user);
     if (this.active && dependentConditions && result) { // took this out 12.0.22 && !this.flags?.dae?.autoCreated)
       if (debugEnabled > 0) warn("_preDeleteActiveEffect", this, options);
-      await applyStatusEffects(this, false, options);
+      // Status effect reconciliation now handled via queueStatusReconciliation hook
     }
     if (result) result = wrapped(options, user);
     return result;
@@ -2217,7 +2220,7 @@ export function daeInitActions() {
       const statusesChanged = this.statuses.difference(changedStatuses).size > 0 && this.statuses.size !== changedStatuses.size;
       if (shouldInclude && (statusesChanged || changed.disabled !== undefined || changed.isSuppressed !== undefined)) {
         if (debugEnabled > 0) warn("preUpdateActiveEffect ", this, changed, options);
-        await applyStatusEffects(this, !changed.disabled && !changed.suppressed, { ...options, statuses: changed.statuses ? changedStatuses : this.statuses });
+        // Status effect reconciliation now handled via queueStatusReconciliation hook
       }
     }
     return wrapped(...args);
@@ -2237,6 +2240,17 @@ export function daeInitActions() {
   Hooks.on("preUpdateActiveEffect", recordDisabledSuppressedHook);
   Hooks.on("updateActiveEffect", updateActiveEffectHook);
   Hooks.on("updateActiveEffect", updateTransferEffectsHook);
+
+  // Queue status reconciliation after effect changes complete
+  Hooks.on("createActiveEffect", (effect: ActiveEffect.Implementation, options: object, userId: string) => {
+    queueStatusesReconciliation(effect, userId);
+  });
+  Hooks.on("deleteActiveEffect", (effect: ActiveEffect.Implementation, options: object, userId: string) => {
+    queueStatusesReconciliation(effect, userId);
+  });
+  Hooks.on("updateActiveEffect", (effect: ActiveEffect.Implementation, data: object, options: object, userId: string) => {
+    queueStatusesReconciliation(effect, userId);
+  });
 
   // Add the active effects title bar actions
   Hooks.on("getHeaderControlsItemSheet5e", appendDocumentSheetHeaderControls)
@@ -2450,6 +2464,117 @@ async function applyStatusEffectChanges(actor, effect: any | undefined, currentS
     if (!effect?.statuses.has(status)) continue; // Only deal with statuses that are on the effect
     // statuses present on the actor that should not be
     await toggleActorStatusEffect(actor, status, { active: false });
+  }
+}
+
+/**
+ * Queue a status reconciliation for an actor after effect changes complete.
+ * Uses the actionQueue semaphore to serialize reconciliations and avoid race conditions.
+ */
+function queueStatusesReconciliation(effect: ActiveEffect.Implementation, userId: string) {
+  if (!dependentConditions) return;
+  if (userId !== game.user?.id) return;
+  if (!effect.statuses?.size) return; // No statuses, nothing to reconcile
+
+  const actor = effect.parent instanceof Actor ? effect.parent : (effect.parent as Item)?.parent;
+  if (!(actor instanceof Actor)) return;
+
+  if (!reconciliationPending.has(actor.uuid)) {
+    reconciliationPending.add(actor.uuid);
+    actionQueue.add(async () => {
+      try {
+        reconciliationPending.delete(actor.uuid);
+        await reconcileActorStatuses(actor);
+      } catch (err) {
+        console.warn("dae | Error reconciling actor statuses:", err);
+      }
+    });
+  }
+}
+
+/**
+ * Reconcile the status effects on an actor based on all active effects.
+ * This calculates what statuses SHOULD exist based on current effects,
+ * then adds missing statuses and removes extra ones.
+ */
+async function reconcileActorStatuses(actor: Actor.Implementation) {
+  if (!dependentConditions) return;
+  if (debugEnabled > 0) warn("reconcileActorStatuses", actor.name);
+
+  const excludedStatuses = ["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"];
+
+  // Calculate expected statuses from all active effects
+  // EXCLUDE auto-created effects (those are the output, not the input)
+  let expectedStatuses = new Set<string>();
+  const existingAutoCreatedStatusIds = new Set<string>(); // Track which auto-created status effect documents exist
+
+  for (let effect of actor.allApplicableEffects()) {
+    if (effect.flags?.["dfreds-convenient-effects"]) continue;
+    // @ts-expect-error determineSuppression may not exist
+    if (effect.transfer && effect.parent instanceof Item && useDetermineSuppression) effect.determineSuppression?.();
+    if (!effect.active) continue;
+
+    // Check if this is an auto-created status effect document
+    if (effect.flags?.dae?.autoCreated) {
+      // Track the primary status ID so we don't try to recreate it
+      const configStatusEffect = CONFIG.statusEffects.find(se => se._id === effect.id);
+      if (configStatusEffect) {
+        existingAutoCreatedStatusIds.add(configStatusEffect.id);
+        // Add its statuses EXCEPT its own primary status - those are dependencies that need creating
+        // But don't add its own status, otherwise it would never get removed
+        for (const status of effect.statuses) {
+          if (status !== configStatusEffect.id) {
+            expectedStatuses.add(status);
+          }
+        }
+      }
+      continue; // Don't add all statuses via the union below
+    }
+
+    expectedStatuses = expectedStatuses.union(effect.statuses);
+  }
+
+  // Filter out statuses we don't manage
+  for (const status of excludedStatuses) {
+    expectedStatuses.delete(status);
+  }
+
+  // For each expected status, we need an auto-created status effect document to exist
+  // Add status effect documents that don't exist yet
+  for (let status of expectedStatuses) {
+    if (existingAutoCreatedStatusIds.has(status)) continue;
+
+    const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
+    if (!statusEffect) continue;
+    if (!statusEffect._id) continue;
+    if ((statusEffect.statuses as Array<string>)?.includes(status)) continue; // Self referential
+
+    try {
+      await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
+    } catch (err) {
+      if (!String(err).includes("does not exist")) {
+        console.warn("dae | Error adding status effect:", status, err);
+      }
+    }
+  }
+
+  // Remove auto-created status effect documents for statuses that are no longer expected
+  for (let statusEffectId of existingAutoCreatedStatusIds) {
+    if (expectedStatuses.has(statusEffectId)) {
+      continue;
+    }
+
+    const statusEffect = CONFIG.statusEffects.find(se => se.id === statusEffectId);
+    if (!statusEffect) continue;
+    if (!statusEffect._id) continue;
+
+    try {
+      await toggleActorStatusEffect(actor, statusEffectId, { active: false });
+    } catch (err) {
+      if (!String(err).includes("does not exist")) {
+        console.warn("dae | Error removing status effect:", statusEffectId, err);
+      }
+    }
   }
 }
 

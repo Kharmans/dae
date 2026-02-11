@@ -1,3 +1,6 @@
+### 13.0.20
+* Revised mechanism for dependent conditions in dae. Hopefully will reduce the instances of effect does not exist errors.
+
 ### 13.0.19
 * Added `registerFieldEditor` API allowing modules to register custom editors for effect change keys. Editors are matched by exact key or prefix (key ending with `.`). Registration via `DAE.api.registerFieldEditor({ keyMatch, editor, icon?, tooltip? })`.
 * Changes to support new field mapping/descriptions.
