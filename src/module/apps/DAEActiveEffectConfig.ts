@@ -3,12 +3,26 @@ import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js"
 import { ValidSpec } from "../Systems/DAESystem.js";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
 
-export let otherFields: string[] = [];
+export type AutoFieldEntry = { name: string, type?: import("../Systems/DAESystem.js").FieldType };
+export let otherFields: AutoFieldEntry[] = [];
 
-export function addAutoFields(fields: string[]) {
-  let newFields = new Set(fields);
-  newFields = newFields.union(new Set(otherFields));
-  otherFields = Array.from(newFields).toSorted();
+export function addAutoFields(fields: (string | AutoFieldEntry)[]) {
+  const existingNames = new Set(otherFields.map(f => f.name));
+  for (const field of fields) {
+    const entry = typeof field === "string" ? { name: field } : field;
+    if (!entry.name) continue;
+    if (existingNames.has(entry.name)) {
+      // Update type if a new type is provided for an existing entry
+      if (entry.type !== undefined) {
+        const existing = otherFields.find(f => f.name === entry.name);
+        if (existing) existing.type = entry.type;
+      }
+      continue;
+    }
+    existingNames.add(entry.name);
+    otherFields.push(entry);
+  }
+  otherFields.sort((a, b) => a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase() ? -1 : 1);
 }
 
 // --- Pluggable field editor registry ---
@@ -120,7 +134,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets![preset.name] = preset.name);
 
       Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
-        otherFields.push(`ATL.detectionModes.${dm}.range`);
+        otherFields.push({ name: `ATL.detectionModes.${dm}.range` });
       });
 
       this.ATLVisionModes = {};
@@ -140,10 +154,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         return mods;
       }, this.validFields);
     if (!isEnchantment(this.document)) {
-      for (let field of otherFields) {
-        this.validFields[field] = {
-          name: localizationMap[field]?.name ?? field,
-          description: localizationMap[field]?.description || (localizationMap[field]?.name ?? field) 
+      for (let { name: fieldName } of otherFields) {
+        this.validFields[fieldName] = {
+          name: localizationMap[fieldName]?.name ?? fieldName,
+          description: localizationMap[fieldName]?.description || (localizationMap[fieldName]?.name ?? fieldName)
 
         };
       }
@@ -227,10 +241,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         return mods;
       }, this.validFields);
     if (!isEnchantment(document)) {
-      for (let field of otherFields) {
-        this.validFields[field] = {
-          name: localizationMap[field]?.name ?? field,
-          description: localizationMap[field]?.description || (localizationMap[field]?.name ?? field) 
+      for (let { name: fieldName } of otherFields) {
+        this.validFields[fieldName] = {
+          name: localizationMap[fieldName]?.name ?? fieldName,
+          description: localizationMap[fieldName]?.description || (localizationMap[fieldName]?.name ?? fieldName)
 
         };
       }

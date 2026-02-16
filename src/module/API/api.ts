@@ -15,7 +15,7 @@ const API = {
   },
   get actionQueue() { return actionQueue },
   get allValidSpecKeys() {
-    return otherFields.concat(Object.keys(ValidSpec.actorSpecs["union"].allSpecsObj))
+    return otherFields.map(f => f.name).concat(Object.keys(ValidSpec.actorSpecs["union"].allSpecsObj))
   },
   DAEActiveEffectConfig(document: ActiveEffect.Implementation, options: Partial<foundry.applications.sheets.ActiveEffectConfig.Configuration> = {}) {
     return new DAEActiveEffectConfig({ document, ...options });
@@ -31,7 +31,7 @@ const API = {
     return daeSystemClass.safeEvalExpression.bind(daeSystemClass);
   },
   get localizationMap() { return localizationMap },
-  get otherValidSpecKeys() { return otherFields },
+  get otherValidSpecKeys() { return otherFields.map(f => f.name) },
   get ValidSpec() { return ValidSpec },
   get wildcardBaseEffects(): RegExp[] {
     return wildcardEffects;

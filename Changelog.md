@@ -1,3 +1,14 @@
+### 13.0.21
+* New `dae.addAutoFields` hook, fired at the end of DAE's `init` hook. This allows modules to register auto-fields (including typed fields) early enough for them to be available when actors are first prepared during `initializeDocuments()` (which runs between `init` and `setup`).
+  - The hook passes `addAutoFields` as its argument: `Hooks.once("dae.addAutoFields", (addAutoFields) => { ... })`.
+  - `addAutoFields` can also be called directly at any time via `DAE.addAutoFields(fields)` (after `setup`, when the API is available).
+  - Previously `addAutoFields` was only accessible via the `dae.ready` hook, which fired too late for fields to be present on first actor preparation.
+* New `booleanString` field type for `addAutoFields`. When multiple active effects target the same booleanString field:
+  - **ADD** mode composes values with `||` (OR): `(condition1) || (condition2)` — either condition grants the flag.
+  - **MULTIPLY** mode composes values with `&&` (AND): `(condition1) && (condition2)` — all conditions must be true.
+  - Register typed fields by passing structured entries: `addAutoFields([{ name: "flags.my-module.someFlag", type: "booleanString" }])`. Plain strings (without type) are still supported for backwards compatibility.
+  - if you have a combination of override/add/multiply modes for the same target field, he priority order will determine the behaviour
+
 ### 13.0.20
 * Revised mechanism for dependent conditions in dae. Hopefully will reduce the instances of effect does not exist errors.
 

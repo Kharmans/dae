@@ -5,7 +5,7 @@ import { macroActorUpdate } from "./daeMacros.js";
 import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e.js";
 import { DIMEditor } from "./apps/DIMEditor.js";
-import { isEnchantment } from "./apps/DAEActiveEffectConfig.js";
+import { isEnchantment, otherFields } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial, InvalidUuid } from "fvtt-types/utils";
 import { TokenOrDocument } from "../globals.js";
 
@@ -271,6 +271,23 @@ export function applyDaeEffects(this: Actor.Implementation, {
           }
         }
       }
+      // booleanString: OR semantics for ADD, AND semantics for MULTIPLY
+      const autoFieldType = otherFields.find(f => f.name === c.key)?.type;
+      if (autoFieldType === "booleanString" && (c.mode === CONST.ACTIVE_EFFECT_MODES.ADD || c.mode === CONST.ACTIVE_EFFECT_MODES.MULTIPLY)) {
+        const currentValue = foundry.utils.getProperty(this, c.key);
+        let newValue;
+        if (currentValue === null || currentValue === undefined || currentValue === "") {
+          newValue = c.value;
+        } else if (c.mode === CONST.ACTIVE_EFFECT_MODES.ADD) {
+          newValue = `(${currentValue}) || (${c.value})`; // OR: either condition grants the flag
+        } else {
+          newValue = `(${currentValue}) && (${c.value})`; // AND: both conditions required
+        }
+        foundry.utils.setProperty(this, c.key, newValue);
+        overrides[c.key] = newValue;
+        continue;
+      }
+
       const currentValue = foundry.utils.getProperty(this, c.key);
       if (ValidSpec.actorSpecs[this.type].allSpecsObj[c.key]?.fieldType === "number" && typeof currentValue !== "number") {
         foundry.utils.setProperty(this, c.key, 0);

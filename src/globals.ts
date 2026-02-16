@@ -13,6 +13,7 @@ declare module "fvtt-types/configuration" {
   namespace Hooks {
     interface HookConfig {
       "DAE.setupComplete": () => void;
+      "dae.addAutoFields": (addAutoFields: typeof API.addAutoFields) => void;
       "dae.ready": (api: typeof API) => void;
       "dae.addFieldMappings": (fieldMappings: Record<string, string>) => void;
       "dae.addSpecialDurations": (specialDurations: unknown) => void;

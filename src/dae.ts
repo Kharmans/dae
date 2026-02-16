@@ -7,6 +7,7 @@ import { daeReadyActions } from "./module/dae.js";
 import { setupSocket } from './module/GMAction.js';
 import { setupPatching, initPatching } from './module/patching.js';
 import API from './module/API/api.js';
+import { addAutoFields } from './module/apps/DAEActiveEffectConfig.js';
 
 export let debugEnabled: number;
 export let setDebugLevel = (debugText: string) => {
@@ -55,6 +56,10 @@ Hooks.once('init', () => {
       preloadTemplates();
     }
   };
+  // Fire during init so modules can register typed auto-fields before initializeDocuments()
+  // (which runs between init and setup and prepares actors).
+  // addAutoFields only pushes to an array and has no game-state dependencies.
+  Hooks.callAll("dae.addAutoFields", addAutoFields);
 });
 
 export let daeSpecialDurations: Record<string, string>;
