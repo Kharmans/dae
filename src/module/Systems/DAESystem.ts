@@ -9,7 +9,8 @@ export let wildcardEffects: RegExp[] = [];
 export let _characterSpec: { data: unknown, flags: unknown } = { data: {}, flags: {} }
 
 
-export type FieldType = foundry.data.fields.DataField | "number" | "string" | "boolean" | "booleanString" | "object" | "Array" | "Set" | 0;
+export type DataFieldClass = new (...args: any[]) => foundry.data.fields.DataField;
+export type FieldType = foundry.data.fields.DataField | DataFieldClass | "number" | "string" | "boolean" | "object" | "Array" | "Set" | 0;
 export type Specs = {
   allSpecs: ValidSpec[];
   allSpecsObj: Record<string, ValidSpec>;

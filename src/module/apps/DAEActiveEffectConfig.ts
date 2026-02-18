@@ -3,26 +3,53 @@ import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js"
 import { ValidSpec } from "../Systems/DAESystem.js";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
 
+/**
+ * A DataField for boolean formula strings that combine with || (OR) and && (AND) semantics
+ * via Active Effect change modes, analogous to dnd5e's FormulaField for arithmetic formulas.
+ */
+export class BooleanFormulaField extends foundry.data.fields.StringField {
+  _castChangeDelta(delta: string) {
+    return (this._cast(delta) ?? "").trim();
+  }
+
+  // ADD → OR semantics: either condition grants the flag
+  _applyChangeAdd(value: string, delta: string, model: any, change: any) {
+    if (!value) return delta;
+    return `(${value}) || (${delta})`;
+  }
+
+  // MULTIPLY → AND semantics: all conditions must be met
+  _applyChangeMultiply(value: string, delta: string, model: any, change: any) {
+    if (!value) return value;
+    return `(${value}) && (${delta})`;
+  }
+
+  // UPGRADE → OR (same as ADD for booleans)
+  _applyChangeUpgrade(value: string, delta: string, model: any, change: any) {
+    return this._applyChangeAdd(value, delta, model, change);
+  }
+
+  // DOWNGRADE → AND (same as MULTIPLY for booleans)
+  _applyChangeDowngrade(value: string, delta: string, model: any, change: any) {
+    return this._applyChangeMultiply(value, delta, model, change);
+  }
+}
+
 export type AutoFieldEntry = { name: string, type?: import("../Systems/DAESystem.js").FieldType };
-export let otherFields: AutoFieldEntry[] = [];
+export const otherFieldsMap: Map<string, AutoFieldEntry> = new Map();
 
 export function addAutoFields(fields: (string | AutoFieldEntry)[]) {
-  const existingNames = new Set(otherFields.map(f => f.name));
   for (const field of fields) {
     const entry = typeof field === "string" ? { name: field } : field;
     if (!entry.name) continue;
-    if (existingNames.has(entry.name)) {
+    const existing = otherFieldsMap.get(entry.name);
+    if (existing) {
       // Update type if a new type is provided for an existing entry
-      if (entry.type !== undefined) {
-        const existing = otherFields.find(f => f.name === entry.name);
-        if (existing) existing.type = entry.type;
-      }
+      if (entry.type !== undefined) existing.type = entry.type;
       continue;
     }
-    existingNames.add(entry.name);
-    otherFields.push(entry);
+    otherFieldsMap.set(entry.name, entry);
   }
-  otherFields.sort((a, b) => a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase() ? -1 : 1);
 }
 
 // --- Pluggable field editor registry ---
@@ -134,7 +161,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets![preset.name] = preset.name);
 
       Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
-        otherFields.push({ name: `ATL.detectionModes.${dm}.range` });
+        const name = `ATL.detectionModes.${dm}.range`;
+        if (!otherFieldsMap.has(name)) {
+          otherFieldsMap.set(name, { name });
+        }
       });
 
       this.ATLVisionModes = {};
@@ -154,7 +184,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         return mods;
       }, this.validFields);
     if (!isEnchantment(this.document)) {
-      for (let { name: fieldName } of otherFields) {
+      for (let fieldName of [...otherFieldsMap.keys()].sort((a, b) => a.toLocaleLowerCase() < b.toLocaleLowerCase() ? -1 : 1)) {
         this.validFields[fieldName] = {
           name: localizationMap[fieldName]?.name ?? fieldName,
           description: localizationMap[fieldName]?.description || (localizationMap[fieldName]?.name ?? fieldName)
@@ -241,7 +271,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         return mods;
       }, this.validFields);
     if (!isEnchantment(document)) {
-      for (let { name: fieldName } of otherFields) {
+      for (let fieldName of [...otherFieldsMap.keys()].sort((a, b) => a.toLocaleLowerCase() < b.toLocaleLowerCase() ? -1 : 1)) {
         this.validFields[fieldName] = {
           name: localizationMap[fieldName]?.name ?? fieldName,
           description: localizationMap[fieldName]?.description || (localizationMap[fieldName]?.name ?? fieldName)

@@ -13,7 +13,12 @@ declare module "fvtt-types/configuration" {
   namespace Hooks {
     interface HookConfig {
       "DAE.setupComplete": () => void;
-      "dae.addAutoFields": (addAutoFields: typeof API.addAutoFields) => void;
+      "dae.addAutoFields": (addAutoFields: typeof API.addAutoFields, fields: {
+        BooleanFormulaField: typeof import("./module/apps/DAEActiveEffectConfig.js").BooleanFormulaField;
+        FormulaField: (new (...args: any[]) => foundry.data.fields.StringField) | undefined;
+        NumberField: typeof foundry.data.fields.NumberField;
+        StringField: typeof foundry.data.fields.StringField;
+      }) => void;
       "dae.ready": (api: typeof API) => void;
       "dae.addFieldMappings": (fieldMappings: Record<string, string>) => void;
       "dae.addSpecialDurations": (specialDurations: unknown) => void;

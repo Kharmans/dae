@@ -1,3 +1,17 @@
+### 13.0.22
+* Replaced `booleanString` field type with `BooleanFormulaField`, a proper DataField class analogous to dnd5e's `FormulaField` but using boolean operators (`||`/`&&`) instead of arithmetic (`+`/`*`).
+  - **ADD** and **UPGRADE** modes compose values with `||` (OR).
+  - **MULTIPLY** and **DOWNGRADE** modes compose values with `&&` (AND).
+  - Register typed fields by passing a DataField class: `addAutoFields([{ name: "flags.my-module.someFlag", type: BooleanFormulaField }])`.
+  - The `booleanString` type string is no longer supported; use the `BooleanFormulaField` class instead.
+* The `dae.addAutoFields` hook now passes a `fields` object as its second argument containing reusable field classes:
+  - `fields.BooleanFormulaField` — boolean formula composition (OR/AND)
+  - `fields.FormulaField` — dnd5e's arithmetic formula field (may be `undefined` if not running dnd5e)
+  - `fields.NumberField` — Foundry core `NumberField`
+  - `fields.StringField` — Foundry core `StringField`
+  - Usage: `Hooks.once("dae.addAutoFields", (addAutoFields, fields) => { ... })`.
+  - Any DataField class (built-in or custom) can be used as the `type` in an auto-field entry; DAE will instantiate it and delegate Active Effect change mode handling to the field's `_applyChange*` methods.
+
 ### 13.0.21
 * New `dae.addAutoFields` hook, fired at the end of DAE's `init` hook. This allows modules to register auto-fields (including typed fields) early enough for them to be available when actors are first prepared during `initializeDocuments()` (which runs between `init` and `setup`).
   - The hook passes `addAutoFields` as its argument: `Hooks.once("dae.addAutoFields", (addAutoFields) => { ... })`.

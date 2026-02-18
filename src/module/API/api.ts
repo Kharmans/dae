@@ -2,7 +2,7 @@ import { confirmAction, daeSpecialDurations } from '../../dae.js';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken, deleteItemActiveEffects } from '../../module/daeMacros.js';
 import { convertDuration } from '../GMAction.js';
 import { ActiveEffects } from '../apps/ActiveEffects.js';
-import { DAEActiveEffectConfig, addAutoFields, otherFields, registerFieldEditor } from '../apps/DAEActiveEffectConfig.js';
+import { BooleanFormulaField, DAEActiveEffectConfig, addAutoFields, otherFieldsMap, registerFieldEditor } from '../apps/DAEActiveEffectConfig.js';
 import { DIMEditor } from '../apps/DIMEditor.js';
 import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets, localizationMap } from '../dae.js';
 import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration.js';
@@ -15,7 +15,7 @@ const API = {
   },
   get actionQueue() { return actionQueue },
   get allValidSpecKeys() {
-    return otherFields.map(f => f.name).concat(Object.keys(ValidSpec.actorSpecs["union"].allSpecsObj))
+    return [...otherFieldsMap.keys()].concat(Object.keys(ValidSpec.actorSpecs["union"].allSpecsObj))
   },
   DAEActiveEffectConfig(document: ActiveEffect.Implementation, options: Partial<foundry.applications.sheets.ActiveEffectConfig.Configuration> = {}) {
     return new DAEActiveEffectConfig({ document, ...options });
@@ -31,13 +31,14 @@ const API = {
     return daeSystemClass.safeEvalExpression.bind(daeSystemClass);
   },
   get localizationMap() { return localizationMap },
-  get otherValidSpecKeys() { return otherFields.map(f => f.name) },
+  get otherValidSpecKeys() { return [...otherFieldsMap.keys()] },
   get ValidSpec() { return ValidSpec },
   get wildcardBaseEffects(): RegExp[] {
     return wildcardEffects;
   },
   actorFromUuid,
   addAutoFields,
+  BooleanFormulaField,
   blindToken,
   cleanActorItemsEffectOrigins,
   cleanEffectOrigins,

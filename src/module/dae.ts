@@ -5,7 +5,7 @@ import { macroActorUpdate } from "./daeMacros.js";
 import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e.js";
 import { DIMEditor } from "./apps/DIMEditor.js";
-import { isEnchantment, otherFields } from "./apps/DAEActiveEffectConfig.js";
+import { isEnchantment, otherFieldsMap } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial, InvalidUuid } from "fvtt-types/utils";
 import { TokenOrDocument } from "../globals.js";
 
@@ -271,21 +271,27 @@ export function applyDaeEffects(this: Actor.Implementation, {
           }
         }
       }
-      // booleanString: OR semantics for ADD, AND semantics for MULTIPLY
-      const autoFieldType = otherFields.find(f => f.name === c.key)?.type;
-      if (autoFieldType === "booleanString" && (c.mode === CONST.ACTIVE_EFFECT_MODES.ADD || c.mode === CONST.ACTIVE_EFFECT_MODES.MULTIPLY)) {
-        const currentValue = foundry.utils.getProperty(this, c.key);
+      // DataField class dispatch: use the field's own change methods (e.g. BooleanFormulaField)
+      const autoFieldType = otherFieldsMap.get(c.key)?.type;
+      if (typeof autoFieldType === "function" && autoFieldType.prototype instanceof foundry.data.fields.DataField) {
+        const fieldInstance = (autoFieldType as any)._daeInstance ??= new (autoFieldType as any)();
+        const currentValue = foundry.utils.getProperty(this, c.key) ?? "";
         let newValue;
-        if (currentValue === null || currentValue === undefined || currentValue === "") {
-          newValue = c.value;
-        } else if (c.mode === CONST.ACTIVE_EFFECT_MODES.ADD) {
-          newValue = `(${currentValue}) || (${c.value})`; // OR: either condition grants the flag
-        } else {
-          newValue = `(${currentValue}) && (${c.value})`; // AND: both conditions required
+        switch (c.mode) {
+          case CONST.ACTIVE_EFFECT_MODES.ADD:
+            newValue = fieldInstance._applyChangeAdd(currentValue, c.value, this, c); break;
+          case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
+            newValue = fieldInstance._applyChangeMultiply(currentValue, c.value, this, c); break;
+          case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
+            newValue = fieldInstance._applyChangeUpgrade(currentValue, c.value, this, c); break;
+          case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
+            newValue = fieldInstance._applyChangeDowngrade(currentValue, c.value, this, c); break;
         }
-        foundry.utils.setProperty(this, c.key, newValue);
-        overrides[c.key] = newValue;
-        continue;
+        if (newValue !== undefined) {
+          foundry.utils.setProperty(this, c.key, newValue);
+          overrides[c.key] = newValue;
+          continue;
+        }
       }
 
       const currentValue = foundry.utils.getProperty(this, c.key);

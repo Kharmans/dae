@@ -7,7 +7,7 @@ import { daeReadyActions } from "./module/dae.js";
 import { setupSocket } from './module/GMAction.js';
 import { setupPatching, initPatching } from './module/patching.js';
 import API from './module/API/api.js';
-import { addAutoFields } from './module/apps/DAEActiveEffectConfig.js';
+import { addAutoFields, BooleanFormulaField } from './module/apps/DAEActiveEffectConfig.js';
 
 export let debugEnabled: number;
 export let setDebugLevel = (debugText: string) => {
@@ -59,7 +59,13 @@ Hooks.once('init', () => {
   // Fire during init so modules can register typed auto-fields before initializeDocuments()
   // (which runs between init and setup and prepares actors).
   // addAutoFields only pushes to an array and has no game-state dependencies.
-  Hooks.callAll("dae.addAutoFields", addAutoFields);
+  const FormulaField = globalThis.dnd5e?.dataModels?.fields?.FormulaField;
+  Hooks.callAll("dae.addAutoFields", addAutoFields, {
+    BooleanFormulaField,
+    FormulaField,
+    NumberField: foundry.data.fields.NumberField,
+    StringField: foundry.data.fields.StringField,
+  });
 });
 
 export let daeSpecialDurations: Record<string, string>;
