@@ -12,6 +12,9 @@ declare module "fvtt-types/configuration" {
   }
   namespace Hooks {
     interface HookConfig {
+      // Render hooks for coloring DAE/DIME header buttons
+      "renderItemSheetV2": (app: foundry.applications.sheets.ItemSheetV2, element: HTMLElement, ...args: any[]) => void;
+      "renderActorSheetV2": (app: foundry.applications.sheets.ActorSheetV2, element: HTMLElement, ...args: any[]) => void;
       "DAE.setupComplete": () => void;
       "dae.addAutoFields": (addAutoFields: typeof API.addAutoFields, fields: {
         BooleanFormulaField: typeof import("./module/apps/DAEActiveEffectConfig.js").BooleanFormulaField;
@@ -20,7 +23,7 @@ declare module "fvtt-types/configuration" {
         StringField: typeof foundry.data.fields.StringField;
       }) => void;
       "dae.ready": (api: typeof API) => void;
-      "dae.addFieldMappings": (fieldMappings: Record<string, string>) => void;
+      "dae.addFieldMappings": (fieldMappings: Record<string, string | { key: string, value?: string, mode?: number }>) => void;
       "dae.addSpecialDurations": (specialDurations: unknown) => void;
       "dae.modifyBaseValues": (specKey: string, baseValues: BaseValuesInner, charSpec: unknown) => void;
       "dae.modifyDerivedSpecs": (specKey: string, derivedSpecs: ValidSpec[], charSpec: unknown) => void;
@@ -33,8 +36,8 @@ declare module "fvtt-types/configuration" {
       "spotlightOmnisearch.indexBuilt": (index: unknown[]) => void;
       "dfreds-convenient-effects.createEffects": () => void;
       "tidy5e-sheet.ready": (api: {
-        registerItemHeaderControls?: (unknown) => void,
-        registerActivityHeaderControls?: (unknown) => void
+        registerItemHeaderControls?: (controls: unknown) => void,
+        registerActivityHeaderControls?: (controls: unknown) => void
       }) => void;
       "babel.ready": () => void;
       "macro-autocomplete.ready": (api: {
@@ -135,6 +138,7 @@ declare module "fvtt-types/configuration" {
     "dae.DAEUntestedSystems": boolean;
     "dae.ZZDebug": "none" | "warn" | "debug" | "all";
     "dae.disableEffects": boolean;
+    "dae.initMacrosOnLoad": boolean;
     "dae.maxShortDuration": number;
 
     // Other module settings

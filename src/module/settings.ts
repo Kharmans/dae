@@ -123,6 +123,16 @@ export const registerSettings = async function () {
     choices: { none: "None", warn: "warnings", debug: "debug", all: "all" }
   });
 
+  game.settings.register("dae", "initMacrosOnLoad", {
+    name: "dae.InitMacrosOnLoad.Name",
+    hint: "dae.InitMacrosOnLoad.Hint",
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    requiresReload: true
+  });
+
   game.settings.register("dae", "disableEffects", {
     name: "dae.DisableEffects.Name",
     hint: "dae.DisableEffects.Hint",

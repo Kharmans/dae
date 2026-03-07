@@ -66,6 +66,12 @@ export let dependentConditions: boolean;
 // Track actors with pending status reconciliation to avoid duplicate reconciliations
 const reconciliationPending = new Set<string>();
 
+// Track actor UUIDs that have had init macros fired (reset on world load)
+export const daeInitMacroActors = new Set<string>();
+
+// Effects pending init macro calls (queued before game.ready, processed in daeReadyActions)
+export const pendingInitMacroEffects: { effectUuid: string, actorUuid: string }[] = [];
+
 export let allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate", "macro.activityMacro"];
 
 export let macroDestination = {
@@ -159,20 +165,25 @@ export function applyDaeEffects(this: Actor.Implementation, {
     return changes.concat(expandEffectChanges(foundry.utils.duplicate(effect.changes) as ActiveEffect.ChangeData[])
       .filter(c => {
         if (daeSystemClass.fieldMappings[c.key]) {
-          const mappedField = daeSystemClass.fieldMappings[c.key]
+          const mapping = daeSystemClass.fieldMappings[c.key];
+          const displayMapping = typeof mapping === "string" ? mapping : `${mapping.key}${mapping.value !== undefined ? ` ${mapping.value}` : ""}`;
           foundry.utils.logCompatibilityWarning(
-            `dae | Actor ${this.name} ${c.key} deprecated use ${daeSystemClass.fieldMappings[c.key]} instead.`, { once: true, stack: false }
+            `dae | Actor ${this.name} ${c.key} deprecated use ${displayMapping} instead.`, { once: true, stack: false }
           );
-          if (mappedField.startsWith("system.traits.da") && mappedField.endsWith(".value")) {
+          if (typeof mapping !== "string") {
+            c.key = mapping.key;
+            if (mapping.value !== undefined) c.value = mapping.value;
+            if (mapping.mode !== undefined) c.mode = mapping.mode as typeof CONST.ACTIVE_EFFECT_MODES[keyof typeof CONST.ACTIVE_EFFECT_MODES];
+          } else if (mapping.startsWith("system.traits.da") && mapping.endsWith(".value")) {
             const damageType = c.key.split(".").slice(-1)[0];
-            c.key = mappedField;
+            c.key = mapping;
             c.value = damageType;
             if (c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM) c.mode = CONST.ACTIVE_EFFECT_MODES.ADD;
           } else {
             if (c.key.includes("DR") && c.value?.length > 0) c.value = `-(${c.value})`;
             if (debugEnabled > 0)
-              warn("Doing field mapping mapping ", c.key, daeSystemClass.fieldMappings[c.key]);
-            c.key = daeSystemClass.fieldMappings[c.key];
+              warn("Doing field mapping mapping ", c.key, mapping);
+            c.key = mapping;
           }
         }
         return !excludeSpecs[c.key]
@@ -542,8 +553,8 @@ function createActiveEffectHook(effect: ActiveEffect.Implementation, options: Ac
 
       } catch (err) {
         const message = "dae | createActiveEffectHook | create effect error";
-        if (globalThis.MidiQOL?.TroubleShooter) {
-          globalThis.MidiQOL.TroubleShooter.recordError(err, message);
+        if (globalThis.MidiQOL?.apps?.TroubleShooter) {
+          globalThis.MidiQOL.apps.TroubleShooter.recordError(err, message);
         }
         console.warn(message, err);
       } finally {
@@ -1244,7 +1255,7 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
             command: `return await ${functionMatch}.bind(this)({ speaker, actor, token, character, item, args, scope })`,
           });
           // TODO (Michael) `theItem` is treated as mandatory in `getMacro`, but here isn't guaranteed - or is it?
-        } else macro = await getMacro({ change, name: args[0] }, theItem!, effectData);
+        } else macro = await getMacro({ change, name: args[0] }, theItem!, effectData, lastArgOptions.effectUuid);
         if (!macro) {
           //TODO localize this
           if (action !== "off") {
@@ -1320,8 +1331,8 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
     } catch (err) {
       const message = `daeMacro | "${action}" macro "${macro?.name}" for actor ${actor?.name} in ${theItem ? "item " + theItem.name : ""} ${actor?.uuid} ${theItem?.uuid}`;
       console.warn(message, err);
-      if (globalThis.MidiQOL?.TroubleShooter)
-        globalThis.MidiQOL.TroubleShooter.recordError(err, message);
+      if (globalThis.MidiQOL?.apps?.TroubleShooter)
+        globalThis.MidiQOL.apps.TroubleShooter.recordError(err, message);
     }
   };
   return effectData;
@@ -1427,7 +1438,8 @@ export async function evalArgs({
 export async function getMacro(
   { change, name }: { change: ActiveEffect.ChangeData, name: string },
   item: Item.Implementation,
-  effectData?: ActiveEffect.Source
+  effectData?: ActiveEffect.Source,
+  effectUuid?: string
 ): Promise<Macro.Implementation | undefined> {
   if (change.key.includes("macro.execute")) {
     let macro = game.macros?.getName(name);
@@ -1454,9 +1466,14 @@ export async function getMacro(
         macroCommand = activity?.macro?.command;
       }
     } else if (change.key.startsWith("macro.itemMacro")) {
+      // Resolve item from effectUuid if not provided
+      if (!item && effectUuid) {
+        const effect = fromUuidSync(effectUuid);
+        if (effect instanceof ActiveEffect && effect.parent instanceof Item) item = effect.parent as Item.Implementation;
+      }
       macroCommand = effectData?.flags?.dae?.itemMacro
-        ?? item.flags?.dae?.macro?.command
-        ?? item.flags?.itemacro?.macro?.command
+        ?? item?.flags?.dae?.macro?.command
+        ?? item?.flags?.itemacro?.macro?.command
       const itemData = effectData?.flags?.dae?.itemData;
       if (!macroCommand && itemData) macroCommand = itemData.flags?.dae?.macro?.command;
       if (!macroCommand && itemData) macroCommand = itemData.flags?.itemacro?.macro?.command;
@@ -1469,7 +1486,7 @@ export async function getMacro(
           // @ts-expect-error no dnd5e-types
           if (activity) item = activity.item;
         }
-        macroCommand = item.flags?.dae?.macro?.command ?? item.flags?.itemacro?.macro?.command;
+        macroCommand = item?.flags?.dae?.macro?.command ?? item?.flags?.itemacro?.macro?.command;
       }
     }
     if (!macroCommand) {
@@ -2079,6 +2096,18 @@ export function daeReadyActions() {
     console.warn("dae disabled - no active effects")
   }
   daeSystemClass.readyActions()
+
+  // Process init macros that were deferred during prepareData before game.ready
+  if (pendingInitMacroEffects.length > 0) {
+    for (const { effectUuid, actorUuid } of pendingInitMacroEffects) {
+      const effect = fromUuidSync(effectUuid) as ActiveEffect.Implementation | null;
+      const actor = fromUuidSync(actorUuid) as Actor.Implementation | null;
+      if (!effect || !actor) continue;
+      actionQueue.add(daeMacro, "init", actor, effect.toObject(false), { effectUuid });
+    }
+    pendingInitMacroEffects.length = 0;
+  }
+
   aboutTimeInstalled = game.modules.get("about-time")?.active ?? false;
   simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.active ?? false;
   timesUpActive = game.modules.get("times-up")?.active ?? false;
@@ -2278,6 +2307,9 @@ export function daeInitActions() {
   // Add the active effects title bar actions
   Hooks.on("getHeaderControlsItemSheet5e", appendDocumentSheetHeaderControls)
   Hooks.on("getHeaderControlsActorSheetV2", appendDocumentSheetHeaderControls)
+  Hooks.on("renderItemSheetV2", colorSheetHeaderButtons) // tidy5e item sheets
+  Hooks.on("renderItemSheet5e", colorSheetHeaderButtons) // dnd5e item sheets
+  Hooks.on("renderActorSheetV2", colorSheetHeaderButtons)
 
   Hooks.on("preDeleteCombat", preDeleteCombatHook);
   Hooks.on("preCreateCombatant", preCreateCombatantHook);
@@ -2642,6 +2674,7 @@ function appendDocumentSheetHeaderControls(app, controls) {
     controls.push({
       label: daeTitle,
       icon: "fa-solid fa-wrench",
+      action: "dae-effects",
       onClick: () => new ActiveEffects({ document: app.document }).render({ force: true })
     });
   }
@@ -2649,47 +2682,74 @@ function appendDocumentSheetHeaderControls(app, controls) {
     controls.push({
       label: DIMETitle,
       icon: "fa-solid fa-file-pen",
+      action: "dae-dime",
       onClick: () => new DIMEditor({ document: app.document }).render({ force: true })
     });
-  };
-  // I hate this but can see no way around it
-  setTimeout(() => {
-    const contextItems = document.querySelectorAll<HTMLElement>("nav#context-menu .context-item");
-    const daeIcon = Array.from(contextItems).find(i => i.innerText.includes(daeTitle))?.querySelector("i");
-    const DIMEIcon = Array.from(contextItems).find(i => i.innerText.includes(DIMETitle))?.querySelector("i");
-    let hasEffects = false;
-    if (app.document instanceof Actor) hasEffects = app.document.allApplicableEffects().next().value !== undefined;
-    else hasEffects = app.document.effects?.size > 0;
-    if (daeIcon && hasEffects) {
-      daeIcon.style.color = "#36ba36";
-    }
+  }
+
+  // Color icons in the dnd5e context menu (nav#context-menu).
+  // dnd5e replaces the standard Foundry .controls-dropdown with a ContextMenu5e,
+  // and getHeaderControls fires when that context menu opens.
+  // Use setTimeout so the context menu DOM has been built.
+  if (!daeColorTitleBar) return;
+  const doc = app.document;
+  if (!doc) return;
+  const green = "#36ba36";
+
+  let hasEffects = false;
+  let hasMacro = false;
+  if (daeTitleBar) {
+    if (doc instanceof Actor) hasEffects = doc.allApplicableEffects().next().value !== undefined;
+    else hasEffects = doc.effects?.size > 0;
+  }
+  if (DIMETitleBar && doc instanceof Item) {
     const validMacroFlags = ["flags.dae.macro.command", "flags.itemacro.macro.command", "flags.itemacro.macro.data.command"];
-    if (DIMEIcon && validMacroFlags.some(f => foundry.utils.getProperty(app.document, f))) {
-      DIMEIcon.style.color = "#36ba36";
-    }
-  }, 50);
+    hasMacro = validMacroFlags.some(f => foundry.utils.getProperty(doc, f));
+  }
+  if (!hasEffects && !hasMacro) return;
+
+  setTimeout(() => {
+    const contextItems = document.querySelectorAll("nav#context-menu .context-item");
+    contextItems.forEach(item => {
+      const label = item.textContent?.trim() ?? "";
+      const icon = item.querySelector("i") as HTMLElement | null;
+      if (!icon) return;
+      if (hasEffects && label.includes(daeTitle)) {
+        icon.style.color = green;
+      }
+      if (hasMacro && label.includes(DIMETitle)) {
+        icon.style.color = green;
+      }
+    });
+  });
 }
 
-function updateSheetHeaderButton(app, [elem], options) {
-  if (!daeColorTitleBar || !daeTitleBar) return;
-  if (elem?.querySelector('.dae-config-actorsheet') || elem?.querySelector('.dae-config-itemsheet')) {
-    const daeActorSheetButton = elem.closest('.window-app').querySelector('.dae-config-actorsheet');
-    const daeItemSheetButton = elem.closest('.window-app').querySelector('.dae-config-itemsheet');
-    let hasEffects;
-    if (app.document instanceof CONFIG.Actor.documentClass)
-      hasEffects = app.document.allApplicableEffects().next().value !== undefined;
-    else
-      hasEffects = app.document.effects?.size > 0;
-    if (!!hasEffects) {
-      const sheetButtonToUpdate = !!daeActorSheetButton ? daeActorSheetButton : daeItemSheetButton;
-      sheetButtonToUpdate.style.color = '#36ba36';  //that could be added in another setting
+// Inject global CSS rules once for DAE/DIME icon coloring.
+// Color tidy5e header buttons on render (tidy5e puts buttons directly in .window-header)
+function colorSheetHeaderButtons(app, _element) {
+  if (!daeColorTitleBar) return;
+  const appElement = app.element;
+  if (!appElement) return;
+  const doc = app.document;
+  if (!doc) return;
+  const green = "#36ba36";
+
+  if (daeTitleBar) {
+    let hasEffects = false;
+    if (doc instanceof Actor) hasEffects = doc.allApplicableEffects().next().value !== undefined;
+    else hasEffects = doc.effects?.size > 0;
+    if (hasEffects) {
+      const tidyWrench = appElement.querySelector(".window-header .header-control.fa-wrench") as HTMLElement;
+      if (tidyWrench) tidyWrench.style.color = green;
     }
   }
-  if (elem?.querySelector('.dae-dimeditor')) {
-    const daeSheetButton = elem.closest('.window-app').querySelector('.dae-dimeditor');
-    const hasMacro = !!(foundry.utils.getProperty(app.object, "flags.dae.macro.command") ?? foundry.utils.getProperty(app.object, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(app.object, "flags.itemacro.macro.data.command"));
-    if (hasMacro)
-      daeSheetButton.style.color = '#36ba36';  //that could be added in another setting
+  if (DIMETitleBar && doc instanceof Item) {
+    const validMacroFlags = ["flags.dae.macro.command", "flags.itemacro.macro.command", "flags.itemacro.macro.data.command"];
+    const hasMacro = validMacroFlags.some(f => foundry.utils.getProperty(doc, f));
+    if (hasMacro) {
+      const tidyFilePen = appElement.querySelector(".window-header .header-control.fa-file-pen") as HTMLElement;
+      if (tidyFilePen) tidyFilePen.style.color = green;
+    }
   }
 }
 
@@ -2908,7 +2968,16 @@ export async function processConditionalEffects(actor: Actor.Implementation, upd
       const statusEffects: Set<string> = new Set();
 
       for (let change of ceData.changes) {
-        if (daeSystemClass.fieldMappings[change.key]) change.key = daeSystemClass.fieldMappings[change.key];
+        if (daeSystemClass.fieldMappings[change.key]) {
+          const mapping = daeSystemClass.fieldMappings[change.key];
+          if (typeof mapping === "string") {
+            change.key = mapping;
+          } else {
+            change.key = mapping.key;
+            if (mapping.value !== undefined) change.value = mapping.value;
+            if (mapping.mode !== undefined) change.mode = mapping.mode as typeof CONST.ACTIVE_EFFECT_MODES[keyof typeof CONST.ACTIVE_EFFECT_MODES];
+          }
+        }
 
       }
       ceData.changes = ceData.changes

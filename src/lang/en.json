@@ -387,6 +387,8 @@
   "dae.IconOverlay.Hint": "Display the effect status icon as an overlay",
   "dae.DependentConditions.Name": "Dependent Conditions",
   "dae.DependentConditions.Hint": "Status effects (poisoned/paralysed) will also add dependent conditions like incapacitated.",
+  "dae.InitMacrosOnLoad.Name": "Init Macros on World Load",
+  "dae.InitMacrosOnLoad.Hint": "Fire macro.itemMacro/macro.activityMacro effects with an 'init' action on world load so macros can re-register hooks.",
   "__Comment__": "The following strings are for the DAE system. Translation is optional",
   "dae.fieldData": {
     "fieldCategories.All": "All",

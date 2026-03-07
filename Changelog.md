@@ -1,3 +1,12 @@
+### 13.0.23
+* Support for new dr/di/dv.value of all as well as actual damage types.
+* Mark the existing system.traits.dr.all as deprecated in favour of system.traits.dr.value ALL when running dnd5e 5.3.0 or later
+* Renable colour coding of dae/dime buttons for the dnd5e sheets.
+* **Breaking For Macro Writers** By default all macro.ItemMacro/macro.activityMacro macros will be called the first time prepareData is called for the actor with args[0] === "init".
+  - There is a dae setting to disable this if it causes problems in your game.
+  - This means that if your macro registers any per session state, such as Hooks.on etc.,  you can reapply that on foundry reload. previously you would have to use a midi-qol onUseMacro to register the hooks or other shenanigans.
+  - also means you can write triggering effects that don't rely on any other way for the macro to be called.
+
 ### 13.0.22
 * Replaced `booleanString` field type with `BooleanFormulaField`, a proper DataField class analogous to dnd5e's `FormulaField` but using boolean operators (`||`/`&&`) instead of arithmetic (`+`/`*`).
   - **ADD** and **UPGRADE** modes compose values with `||` (OR).

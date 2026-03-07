@@ -102,7 +102,11 @@ export class DAEFieldBrowser {
             ? description
             : '';
 
-        if (daeSystemClass.fieldMappings[key]) finalDescription += ` deprecated: use ${daeSystemClass.fieldMappings[key]} instead`
+        if (daeSystemClass.fieldMappings[key]) {
+          const mapping = daeSystemClass.fieldMappings[key];
+          const displayMapping = typeof mapping === "string" ? mapping : `${mapping.key}${mapping.value !== undefined ? ` ${mapping.value}` : ""}`;
+          finalDescription += ` deprecated: use ${displayMapping} instead`;
+        }
         return {
           key,
           name: finalName,

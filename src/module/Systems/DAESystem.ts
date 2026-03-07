@@ -1,6 +1,6 @@
 import { AnyMutableObject, AnyObject } from "fvtt-types/utils";
 import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
-import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner } from "../dae.js";
+import { applyDaeEffects, daeSystemClass, libWrapper, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner, actionQueue, daeMacro, daeInitMacroActors, pendingInitMacroEffects } from "../dae.js";
 
 const { ArrayField, BooleanField, NumberField, StringField } = foundry.data.fields;
 
@@ -16,7 +16,7 @@ export type Specs = {
   allSpecsObj: Record<string, ValidSpec>;
   baseSpecs: ValidSpec[];
   baseSpecsObj: Record<string, ValidSpec>;
-  derivedSpecs: ValidSpec[]; 
+  derivedSpecs: ValidSpec[];
   derivedSpecsObj: Record<string, ValidSpec>;
 }
 export class ValidSpec {
@@ -201,15 +201,15 @@ export class ValidSpec {
         // Turns out the dnd5e field labels are not all that good.
         // if (false && (m.fieldType?.label ?? "") !== "") m._label = i18n(m.fieldType.label);
         // else {
-          m._label = m._label.replace("data.", "").replace("system.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => i18n(`dae.${str}`).replaceAll("dae.", "")).join(" ");
+        m._label = m._label.replace("data.", "").replace("system.", "").replace(`{game.system.id}.`, "").replace(".value", "").split(".").map(str => i18n(`dae.${str}`).replaceAll("dae.", "")).join(" ");
 
-          if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
-            const fieldId = m.fieldSpec.replace(fieldStart, "");
-            //@ts-expect-error no dnd5e-types
-            const characterFlags = game.system.config?.characterFlags ?? {};
-            const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
-            m._label = `Flags ${localizedString}`;
-          }
+        if (m.fieldSpec.includes(`flags.${game.system.id}`)) {
+          const fieldId = m.fieldSpec.replace(fieldStart, "");
+          //@ts-expect-error no dnd5e-types
+          const characterFlags = game.system.config?.characterFlags ?? {};
+          const localizedString = i18n(characterFlags[fieldId]?.name) ?? i18n(`dae.${fieldId}`)
+          m._label = `Flags ${localizedString}`;
+        }
         // }
 
         const saveBonus = m._fieldSpec.match(/^system.abilities.(\w\w\w).save$/);
@@ -222,7 +222,7 @@ export class ValidSpec {
         else if (skillPassive) m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "StatusEffectLabel") m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "system.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
-        else if (this.actorSpecs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label ? m._label :  m._fieldSpec} (*)`;
+        else if (this.actorSpecs[specKey].derivedSpecsObj[m._fieldSpec]) m._label = `${m._label ? m._label : m._fieldSpec} (*)`;
         return m;
       });
     }
@@ -279,7 +279,7 @@ export class DAESystem {
   }>;
   static daeActionTypeKeys: string[];
   static detectionModeList: Record<string, string>;
-  public static fieldMappings: Record<string, string> = {};
+  public static fieldMappings: Record<string, string | { key: string, value?: string, mode?: number }> = {};
 
   public static get systemConfig() {
     //@ts-expect-error no dnd5e-types
@@ -589,6 +589,7 @@ function applyBaseActiveEffects() {
 * add an additional pass after derivfed data
 */
 function prepareData(this: Actor.Implementation, wrapped) {
+  const initMacrosOnLoad = game.settings.get("dae", "initMacrosOnLoad");
   if (!ValidSpec.actorSpecs) {
     ValidSpec.createValidMods();
   }
@@ -614,8 +615,24 @@ function prepareData(this: Actor.Implementation, wrapped) {
     // @ts-expect-error protected - do we need this?
     for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
   }
-  //TODO find another way to tdo this
-  // this._prepareOwnedItems(this.items)
+  // On first prepareData for each actor, fire "init" for
+  // macro.itemMacro/macro.activityMacro so macros that register hooks can re-initialize after world load
+  if (initMacrosOnLoad && !daeInitMacroActors.has(this.uuid)) {
+    daeInitMacroActors.add(this.uuid);
+    const initEffects: ActiveEffect.Implementation[] = [];
+    for (const ef of this.allApplicableEffects()) {
+      if (ef.disabled || ef.isSuppressed) continue;
+      if (ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro"))) {
+        initEffects.push(ef);
+      }
+    }
+    for (const effect of initEffects) {
+      if (game.ready)
+        actionQueue.add(daeMacro, "init", this, effect.toObject(false), { effectUuid: effect.uuid });
+      else
+        pendingInitMacroEffects.push({ effectUuid: effect.uuid, actorUuid: this.uuid });
+    }
+  }
   debug("prepare data: after passes", this);
 }
 
@@ -665,4 +682,4 @@ Hooks.on("dae.modifySpecials", (specKey, specials, characterSpec) => {
 });
 
 type GetActorType = Actor.Implementation | foundry.canvas.placeables.Token.Implementation | ActiveEffect.Implementation | Item.Implementation;
-export type DAEChangeData = ActiveEffect.ChangeData & {count?: number, effect?: ActiveEffect.Implementation}
+export type DAEChangeData = ActiveEffect.ChangeData & { count?: number, effect?: ActiveEffect.Implementation }

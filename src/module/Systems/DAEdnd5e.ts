@@ -2,7 +2,7 @@
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, removeEffectChange, timesUpActive, useDetermineSuppression } from "../dae.js";
+import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, removeEffectChange, timesUpActive, useDetermineSuppression } from "../dae.js";
 import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
@@ -72,12 +72,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         activitySpecs[`activities[${activityKey}].midiProperties.ignoreTraits`] = [new ArrayField(new StringField(), { label: "Ignore Traits" }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityId`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityId.hint") }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityConditionText`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.triggeredActivityConditionText.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityTargets`]    = [new StringField({ label: "Triggered Activity Targets"}), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
-        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityRollAs`]     = [new StringField({ label: "Triggered Activity Roll As" }), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityTargets`] = [new StringField({ label: "Triggered Activity Targets" }), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
+        activitySpecs[`activities[${activityKey}].midiProperties.triggeredActivityRollAs`] = [new StringField({ label: "Triggered Activity Roll As" }), CONST.ACTIVE_EFFECT_MODES.OVERRIDE];
         activitySpecs[`activities[${activityKey}].midiProperties.forceDialog`] = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.forceDialog.hint") }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.confirmTargets`] = [new StringField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.confirmTargets.hint") }), -1];
         activitySpecs[`activities[${activityKey}].midiProperties.automationOnly`] = [new BooleanField({ label: i18n("midi-qol.SHARED.FIELDS.midiProperties.automationOnly.hint") }), -1];
-        activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`]     = [new BooleanField({ label: "midi-qol.SHARED.FIELDS.midiProperties.otherActivityCompatible.hint" }), -1];
+        activitySpecs[`activities[${activityKey}].midiProperties.otherActivityCompatible`] = [new BooleanField({ label: "midi-qol.SHARED.FIELDS.midiProperties.otherActivityCompatible.hint" }), -1];
       }
 
       if (game.modules.get("midi-qol")?.active) {
@@ -552,6 +552,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   // Any actions to be called on init Hook 
   public static initActions() {
     this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
+    if (foundry.utils.isNewerVersion(game.system.version, "5.2.99")) {
+      this.fieldMappings["system.traits.di.all"] = { key: "system.traits.di.value", value: "ALL", mode: CONST.ACTIVE_EFFECT_MODES.ADD };
+      this.fieldMappings["system.traits.dr.all"] = { key: "system.traits.dr.value", value: "ALL", mode: CONST.ACTIVE_EFFECT_MODES.ADD };
+      this.fieldMappings["system.traits.dv.all"] = { key: "system.traits.dv.value", value: "ALL", mode: CONST.ACTIVE_EFFECT_MODES.ADD };
+    }
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
     warn("system is ", game.system)
     if (game.modules.get("dnd5e-custom-skills")?.active) {
@@ -755,7 +760,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
   // For DAE Editor
   public static configureLists() {
-    this.traitList = Object.fromEntries(Object.entries(this.systemConfig.damageTypes).map(([key, { label }]) => [[key, label], [`-${key}`, `- ${label}`]]).flat(1));
+    // Start with "ALL" option at the top if the trait defines labels.all (dnd5e 5.3+)
+    const allLabel = (this.systemConfig as any).traits?.dr?.labels?.all;
+    this.traitList = {};
+    if (allLabel) {
+      this.traitList["ALL"] = i18n(allLabel);
+      this.traitList["-ALL"] = `- ${i18n(allLabel)}`;
+    }
+    Object.assign(this.traitList, Object.fromEntries(Object.entries(this.systemConfig.damageTypes).map(([key, { label }]) => [[key, label], [`-${key}`, `- ${label}`]]).flat(1)));
     for (const [key, { label }] of Object.entries(this.systemConfig.healingTypes)) {
       this.traitList[key] = label;
       this.traitList[`-${key}`] = `- ${label}`;
@@ -867,7 +879,7 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       return abilitiesList;
     }
     if (spec.key.includes("activities") && spec.key.endsWith(".ability")) {
-      const abilitiesList = Object.keys(this.systemConfig.abilities).reduce((obj: {}, key: string) => { obj[key] = this.systemConfig.abilities[key].label; return obj }, {"": `item default`});
+      const abilitiesList = Object.keys(this.systemConfig.abilities).reduce((obj: {}, key: string) => { obj[key] = this.systemConfig.abilities[key].label; return obj }, { "": `item default` });
       return abilitiesList;
     }
 
@@ -1057,7 +1069,11 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.traits.sdr.all":
       case "system.traits.sdv.all":
         const key = change.key.replace(".all", ".value")
-        foundry.utils.setProperty(actor, key, new Set(Object.keys(this.systemConfig.damageTypes).filter(k => !["healing", "temphp"].includes(k))));
+        if (foundry.utils.isNewerVersion(game.system.version, "5.2.99")) {
+          foundry.utils.setProperty(actor, key, new Set(["ALL"]));
+        } else {
+          foundry.utils.setProperty(actor, key, new Set(Object.keys(this.systemConfig.damageTypes).filter(k => !["healing", "temphp"].includes(k))));
+        }
         return true;
       case "system.traits.di.value":
       case "system.traits.dr.value":
@@ -1282,6 +1298,7 @@ function applyBaseEffects(this: Actor.Implementation) {
 }
 
 function prepareData(this: Actor.Implementation, wrapped) {
+  const initMacrosOnLoad = game.settings.get("dae", "initMacrosOnLoad");
   if (!ValidSpec.actorSpecs) {
     ValidSpec.createValidMods();
   }
@@ -1343,6 +1360,27 @@ function prepareData(this: Actor.Implementation, wrapped) {
       _itemApplyActiveEffects.bind(item)();
     }
 
+    // On first prepareData for each actor, fire "init" for
+    // macro.itemMacro/macro.activityMacro so macros that register hooks can re-initialize after world load
+    if (initMacrosOnLoad && !daeInitMacroActors.has(this.uuid)) {
+      daeInitMacroActors.add(this.uuid);
+      const initEffects: ActiveEffect.Implementation[] = [];
+      for (const ef of this.allApplicableEffects()) {
+        if (ef.disabled || ef.isSuppressed) continue;
+        // @ts-expect-error isAppliedEnchantment
+        if (ef.type === "enchantment" && !ef.isAppliedEnchantment) continue;
+        if (ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro"))) {
+          initEffects.push(ef);
+        }
+      }
+      for (const effect of initEffects) {
+        if (game.ready)
+          actionQueue.add(daeMacro, "init", this, effect.toObject(false), { effectUuid: effect.uuid });
+        else
+          pendingInitMacroEffects.push({ effectUuid: effect.uuid, actorUuid: this.uuid });
+      }
+    }
+
     // @ts-expect-error no dnd5e-types
     const conditionImmunities = this.system.traits?.ci?.value;
     if (conditionImmunities) {
@@ -1352,6 +1390,7 @@ function prepareData(this: Actor.Implementation, wrapped) {
     console.error("Could not prepare data ", this.name, err);
   }
 }
+
 const getTargetType = (field: foundry.data.fields.DataField | string) => {
   // @ts-expect-error no dnd5e-types
   const FormulaField = game.system.dataModels.fields.FormulaField;
@@ -1427,7 +1466,7 @@ function doItemApplyEffects(this: Item.Implementation, includeKeys: string[] | u
             } else if (targetType === "boolean") {
               c.value = JSON.stringify(Boolean(result));
             }
-          } else  c.value = typeof result === "string" ? result : JSON.stringify(result);
+          } else c.value = typeof result === "string" ? result : JSON.stringify(result);
         }
       }
       c.effect = effect;
@@ -1670,11 +1709,11 @@ function isSuppressed(this: ActiveEffect.Implementation, wrapped): boolean {
   // This is only relevant if legacyTransfer is true (not so for dnd5e) or legacy effects exist on the actor i.e. having hung around since before legacyTransfer got set to false in dnd
   // In the olden days transfer effects were created on the actor with dae setting a flag to indicate they are transfer effects
 
-   if (this.parent instanceof Actor && effectIsTransfer(this)) {
-     const item = getActorItemForEffect(this);
-     // @ts-expect-error no dnd5e-types
-     if (item) isSuppressed ||= item.areEffectsSuppressed;
-   }
+  if (this.parent instanceof Actor && effectIsTransfer(this)) {
+    const item = getActorItemForEffect(this);
+    // @ts-expect-error no dnd5e-types
+    if (item) isSuppressed ||= item.areEffectsSuppressed;
+  }
 
   // @ts-expect-error no dnd5e-types
   const ciTraits = actor.system.traits?.ci;
