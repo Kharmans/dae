@@ -628,7 +628,7 @@ function prepareData(this: Actor.Implementation, wrapped) {
     }
     for (const effect of initEffects) {
       if (game.ready)
-        actionQueue.add(daeMacro, "init", this, effect.toObject(false), { effectUuid: effect.uuid });
+        actionQueue.add(daeMacro, "init", this, effect, { effectUuid: effect.uuid });
       else
         pendingInitMacroEffects.push({ effectUuid: effect.uuid, actorUuid: this.uuid });
     }

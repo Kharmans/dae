@@ -2098,12 +2098,14 @@ export function daeReadyActions() {
   daeSystemClass.readyActions()
 
   // Process init macros that were deferred during prepareData before game.ready
+  // Pass the live ActiveEffect (not .toObject()) so daeMacro resolves theItem
+  // from effect.parent (the owned item) rather than following origin to a compendium.
   if (pendingInitMacroEffects.length > 0) {
     for (const { effectUuid, actorUuid } of pendingInitMacroEffects) {
       const effect = fromUuidSync(effectUuid) as ActiveEffect.Implementation | null;
       const actor = fromUuidSync(actorUuid) as Actor.Implementation | null;
       if (!effect || !actor) continue;
-      actionQueue.add(daeMacro, "init", actor, effect.toObject(false), { effectUuid });
+      actionQueue.add(daeMacro, "init", actor, effect, { effectUuid });
     }
     pendingInitMacroEffects.length = 0;
   }
@@ -2114,6 +2116,14 @@ export function daeReadyActions() {
   if (itemacroActive) {
     Hooks.on("preUpdateItem", DIMEditor.preUpdateItemHook);
   }
+
+  // Provide human-readable labels for module flags (midi-qol, etc.) to dnd5e's
+  // effect change display (PR #6820). Falls back to DAE's localizationMap which
+  // modules populate via the DAE API.
+  Hooks.on("dnd5e.getUnknownAttributeLabel", (attr: string, options: { label?: string }) => {
+    const entry = localizationMap[attr];
+    if (entry?.name) options.label = entry.name;
+  });
 }
 
 export function localDeleteFilters(tokenId: string, filterName: string) {

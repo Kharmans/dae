@@ -1366,16 +1366,17 @@ function prepareData(this: Actor.Implementation, wrapped) {
       daeInitMacroActors.add(this.uuid);
       const initEffects: ActiveEffect.Implementation[] = [];
       for (const ef of this.allApplicableEffects()) {
+        const hasMacro = ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro"));
         if (ef.disabled || ef.isSuppressed) continue;
         // @ts-expect-error isAppliedEnchantment
         if (ef.type === "enchantment" && !ef.isAppliedEnchantment) continue;
-        if (ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro"))) {
+        if (hasMacro) {
           initEffects.push(ef);
         }
       }
       for (const effect of initEffects) {
         if (game.ready)
-          actionQueue.add(daeMacro, "init", this, effect.toObject(false), { effectUuid: effect.uuid });
+          actionQueue.add(daeMacro, "init", this, effect, { effectUuid: effect.uuid });
         else
           pendingInitMacroEffects.push({ effectUuid: effect.uuid, actorUuid: this.uuid });
       }

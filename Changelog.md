@@ -1,3 +1,6 @@
+### 13.0.24
+* Support dnd5e's 5.3.x human readable labels for any change keys registered to dae, flags.midi and etc.
+
 ### 13.0.23
 * Support for new dr/di/dv.value of all as well as actual damage types.
 * Mark the existing system.traits.dr.all as deprecated in favour of system.traits.dr.value ALL when running dnd5e 5.3.0 or later

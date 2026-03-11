@@ -40,6 +40,7 @@ declare module "fvtt-types/configuration" {
         registerActivityHeaderControls?: (controls: unknown) => void
       }) => void;
       "babel.ready": () => void;
+      "dnd5e.getUnknownAttributeLabel": (attr: string, options: { actor?: Actor.Implementation, item?: Item.Implementation, label?: string }) => void;
       "macro-autocomplete.ready": (api: {
         tree: Record<string, any>,
         objectToCompletions: (obj: any, maxDepth?: number) => Record<string, any>,
