@@ -404,6 +404,19 @@ export async function applyActiveEffects({
             aeData.duration.startTurn = game.combat?.turn;
           }
         }
+        // Set v14 start.combatant based on combatActorOverride flag
+        const combatActorOverride = aeData.flags?.dae?.combatActorOverride;
+        if (combatActorOverride === "target" && game.combat?.started) {
+          const targetCombatant = game.combat.getCombatantsByActor(targetActor)?.[0];
+          if (targetCombatant) {
+            foundry.utils.setProperty(aeData, "start.combatant", targetCombatant.id);
+            foundry.utils.setProperty(aeData, "start.combat", game.combat.id);
+            foundry.utils.setProperty(aeData, "start.round", game.combat.round);
+            foundry.utils.setProperty(aeData, "start.turn", game.combat.turn);
+            foundry.utils.setProperty(aeData, "start.initiative", targetCombatant.initiative);
+            foundry.utils.setProperty(aeData, "start.time", game.time.worldTime);
+          }
+        }
         warn("Apply active effects ", aeData, itemCardUuid);
         let source = await fromUuid(aeData.origin);
         let context = targetActor.getRollData();

@@ -2,11 +2,6 @@
 import { debug, warn, log, i18n, error } from "../dae.js";
 import { effectIsTransfer } from "./dae.js";
 
-export async function cleanDAEArmorWorld() {
-  await removeAllActorArmorItems();
-  await removeAllTokenArmorItems();
-}
-
 export async function removeAllActorArmorItems() {
   let promises = [];
   if (game.actors) for (let actor of game.actors) {
@@ -53,69 +48,52 @@ export async function cleanEffectOrigins(processItems: boolean = false) {
   }
 }
 
-export async function cleanAllActorEffectOrigins() {
-  for (let actor of game.actors?.contents ?? []) {
-    let ownedItemEffects = actor.effects.filter(ef => ef.origin?.includes("OwnedItem") as boolean);
-    let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin?.replace("OwnedItem", "Item") } });
-    if (updates.length > 0) {
-      await actor.updateEmbeddedDocuments("ActiveEffect", updates)
-      console.warn("Updates are ", actor.name, updates)
-    }
-    const itemChanges: any[] = [];
-    for (let item of actor.items) {
-      if (!(item.effects.some(ef => ef.origin?.includes("OwnedItem") as boolean))) continue;
-      const itemData = item.toObject(true);
-      for (let effectData of itemData.effects)
-        if (typeof effectData.origin === "string") effectData.origin = effectData.origin.replace("OwnedItem", "Item")
-      itemChanges.push(itemData);
-    }
-    if (itemChanges.length > 0) {
-      await actor.updateEmbeddedDocuments("Item", itemChanges);
-      console.warn("Item changes are", actor.name, itemChanges)
-    }
+function replaceOwnedItemOrigins(effects: { origin?: string | null }[]) {
+  for (const ef of effects) {
+    if (typeof ef.origin === "string") ef.origin = ef.origin.replace("OwnedItem", "Item");
   }
 }
 
-export async function cleanAllTokenItemEffectOrigins() {
-  if (game.scenes) for (let scene of game.scenes) {
-    if (scene.tokens) for (let tokenDocument of (scene.tokens)) {
-      if (!tokenDocument.isLinked && tokenDocument.actor) {
-        const actor = tokenDocument.actor;
-        cleanActorItemsEffectOrigins(actor)
-      }
-    }
+async function cleanActorEffectOrigins(actor: Actor.Implementation) {
+  const ownedItemEffects = actor.effects.filter(ef => !!ef.origin?.includes("OwnedItem"));
+  const updates = ownedItemEffects.map(ef => ({ _id: ef.id, origin: ef.origin?.replace("OwnedItem", "Item") }));
+  if (updates.length > 0) {
+    await actor.updateEmbeddedDocuments("ActiveEffect", updates);
+    console.warn("Updates are ", actor.name, updates);
   }
 }
 
-export async function cleanAllActorItemsEffectOrigins() {
-  if (game.actors) for (let actor of game.actors)
-    await cleanActorItemsEffectOrigins(actor)
-}
 export async function cleanActorItemsEffectOrigins(actor: Actor.Implementation) {
   const itemChanges: Item.UpdateData[] = [];
-  for (let item of actor.items) {
-    if (!(item.effects.some(ef => !!ef.origin?.includes("OwnedItem")))) continue;
+  for (const item of actor.items) {
+    if (!item.effects.some(ef => !!ef.origin?.includes("OwnedItem"))) continue;
     const itemData = item.toObject(true);
-    for (let effectData of itemData.effects)
-      if (typeof effectData.origin === "string") effectData.origin = effectData.origin.replace("OwnedItem", "Item")
+    replaceOwnedItemOrigins(itemData.effects);
     itemChanges.push(itemData);
   }
   if (itemChanges.length > 0) {
     await actor.updateEmbeddedDocuments("Item", itemChanges);
-    console.warn("Item changes are", actor.name, itemChanges)
+    console.warn("Item changes are", actor.name, itemChanges);
   }
 }
 
+export async function cleanAllActorEffectOrigins() {
+  for (const actor of game.actors?.contents ?? []) {
+    await cleanActorEffectOrigins(actor);
+    await cleanActorItemsEffectOrigins(actor);
+  }
+}
+
+export async function cleanAllActorItemsEffectOrigins() {
+  if (game.actors) for (const actor of game.actors)
+    await cleanActorItemsEffectOrigins(actor);
+}
+
 export async function cleanAllTokenEffectOrigins() {
-  if (game.scenes) for (let scene of game.scenes) {
-    for (let tokenDocument of scene.tokens) {
+  if (game.scenes) for (const scene of game.scenes) {
+    for (const tokenDocument of scene.tokens) {
       if (!tokenDocument.isLinked && tokenDocument.actor) {
-        const actor = tokenDocument.actor;
-        let ownedItemEffects = actor.effects.filter(ef => !!ef.origin?.includes("OwnedItem"));
-        let updates = ownedItemEffects.map(ef => { return { _id: ef.id, origin: ef.origin?.replace("OwnedItem", "Item") } });
-        if (updates.length > 0) {
-          await actor.updateEmbeddedDocuments("ActiveEffect", updates)
-        }
+        await cleanActorEffectOrigins(tokenDocument.actor);
       }
     }
   }

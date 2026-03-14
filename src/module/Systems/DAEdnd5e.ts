@@ -2,7 +2,7 @@
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, applyDaeEffects, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, removeEffectChange, timesUpActive, useDetermineSuppression } from "../dae.js";
+import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, removeEffectChange, timesUpActive } from "../dae.js";
 import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
@@ -148,40 +148,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         }
 
-        const derivedSpecsObj = {
-          "name": finalSpecs["name"],
-          "system.magicalBonus": finalSpecs["system.magicalBonus"],
-          "system.formula": finalSpecs["system.formula"],
-          "flags.midi-qol.itemCondition": finalSpecs["flags.midi-qol.itemCondition"],
-          "flags.midi-qol.reactionCondition": finalSpecs["flags.midi-qol.reactionCondition"],
-          "flags.midi-qol.otherCondition": finalSpecs["flags.midi-qol.otherCondition"],
-          "flags.midi-qol.effectCondition": finalSpecs["flags.midi-qol.effectCondition"],
-        };
-
-        const baseSpecsObj: Record<string, ValidSpec> = {};
-        for (let k1 of Object.keys(finalSpecs)) {
-          if (!derivedSpecsObj[k1]) baseSpecsObj[k1] = finalSpecs[k1];
+        // Mark postDerived item specs with appropriate phase
+        const postDerivedKeys = [
+          "name", "system.magicalBonus", "system.formula",
+          "flags.midi-qol.itemCondition", "flags.midi-qol.reactionCondition",
+          "flags.midi-qol.otherCondition", "flags.midi-qol.effectCondition",
+        ];
+        for (const dk of postDerivedKeys) {
+          if (finalSpecs[dk]) finalSpecs[dk]._phase = "daePostDerived";
         }
+
         allSpecs[k] = {
           allSpecsObj: finalSpecs,
-          baseSpecsObj,
-          derivedSpecsObj,
-          allSpecs: Object.keys(finalSpecs).map(k => finalSpecs[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
-          baseSpecs: Object.keys(baseSpecsObj).map(k => baseSpecsObj[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
-          derivedSpecs: Object.keys(derivedSpecsObj).map(k => derivedSpecsObj[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
-          allSpecKeys: Object.keys(finalSpecs).sort(),
-          baseSpecKeys: Object.keys(baseSpecsObj).sort(),
-          derivedSpecKeys: Object.keys(derivedSpecsObj).sort()
+          allSpecs: Object.values(finalSpecs).sort((a, b) => a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1),
         }
       }
-      allSpecs["union"].excludeKeys = [
-        "system.currency.cp",
-        "system.currency.sp",
-        "system.currency.ep",
-        "system.currency.gp",
-        "system.currency.pp",
-        "system.currency.weight",
-      ]
     }
     catch (err) {
       console.error("Error in getItemSpecs", err);
@@ -567,17 +548,21 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     wildcardEffects.push(/system\.abilities\..*\.value/);
     wildcardEffects.push(/system\.scale\..*\.value/);
 
-    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.apply", daeApply, "WRAPPER");
-    // We will call this in prepareData
-    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", applyBaseEffects, "OVERRIDE");
-    // Override prepareData so it can add the extra pass
+    // Register custom DAE phase for post-derived data application
+    // @ts-expect-error v14 CONFIG.ActiveEffect.phases
+    CONFIG.ActiveEffect.phases ??= {};
+    // @ts-expect-error v14 CONFIG.ActiveEffect.phases
+    CONFIG.ActiveEffect.phases.daePostDerived = {
+      label: "DAE Post-Derived",
+      hint: "Applied after all derived data preparation"
+    };
+
+    // v14: OVERRIDE applyActiveEffects with phase-aware DAE version
+    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", daeApplyActiveEffects, "OVERRIDE");
+    // WRAPPER on prepareData to add post-derived phase call
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // support other things that can suppress an effect, like condition immunity
-    if (foundry.utils.isNewerVersion("5.1", game.system.version)) {
-      libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.determineSuppression", determineSuppression, "WRAPPER");
-    } else {
-      libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isSuppressed", isSuppressed, "WRAPPER");
-    }
+    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isSuppressed", isSuppressed, "WRAPPER");
     // This supplies DAE custom effects - the main game
     // @ts-expect-error our custom stuff in the changes makes types mad
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
@@ -736,7 +721,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   public static effectDisabled(actor, effect, itemData = null) {
-    if (useDetermineSuppression) effect.determineSuppression();
     const disabled = effect.disabled || effect.isSuppressed;
     return disabled;
   }
@@ -1279,23 +1263,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     return getRollData;
   }
 }
-// this function replaces applyActiveEffects in Actor
-function applyBaseEffects(this: Actor.Implementation) {
-  // @ts-expect-error no dnd5e-types
-  if (this._prepareScaleValues) this._prepareScaleValues();
-  // @ts-expect-error no dnd5e-types
-  if (this.system?.prepareEmbeddedData instanceof Function) this.system.prepareEmbeddedData();
-
-  // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
-
-  // Handle traits.ci specially
-  // CI disable other effects so need to be processed before other effects
-  const traitsCI: Record<string, ValidSpec> = {};
-  traitsCI["system.traits.ci.all"] = ValidSpec.actorSpecs[this.type].allSpecsObj["system.traits.ci.all"];
-  traitsCI["system.traits.ci.value"] = ValidSpec.actorSpecs[this.type].allSpecsObj["system.traits.ci.value"];
-  applyDaeEffects.bind(this)({ specList: traitsCI, excludeSpecs: {}, allowAllSpecs: false, wildCardsInclude: [], wildCardsExclude: [], doStatusEffects: false });
-  applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].baseSpecsObj, excludeSpecs: ValidSpec.actorSpecs[this.type].derivedSpecsObj, allowAllSpecs: true, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
-}
+// v14: applyBaseEffects removed — v14 core calls applyActiveEffects("initial") in prepareEmbeddedDocuments
+// and applyActiveEffects("final") after prepareDerivedData. Both are handled by the DAE OVERRIDE
+// in DAESystem.initActions. _prepareScaleValues and system.prepareEmbeddedData() are called by dnd5e itself.
+// CI traits now use priority: 0 on the "initial" phase to sort first automatically.
 
 function prepareData(this: Actor.Implementation, wrapped) {
   const initMacrosOnLoad = game.settings.get("dae", "initMacrosOnLoad");
@@ -1325,13 +1296,21 @@ function prepareData(this: Actor.Implementation, wrapped) {
     foundry.utils.setProperty(this, "flags.dae.onUpdateTarget", this._source.flags?.dae?.onUpdateTarget);
 
     this.overrides = {};
-    // Call the original prepare data - with foundry's apply effects replaced by dae's
+    // @ts-expect-error v14 _completedActiveEffectPhases
+    if (this._completedActiveEffectPhases) this._completedActiveEffectPhases.clear();
+
+    // Call the original prepareData — v14 core calls applyActiveEffects("initial") in
+    // prepareEmbeddedDocuments and applyActiveEffects("final") after prepareDerivedData.
+    // Both go through the DAE OVERRIDE (daeApplyActiveEffects).
     wrapped();
+
     // @ts-expect-error no dnd5e-types
     const hasHeavy = this.items.some(i => i.system.equipped && i.system.properties.has("stealthDisadvantage"));
     if (hasHeavy) foundry.utils.setProperty(this, "flags.midi-qol.disadvantage.skill.ste", true);
-    // Extra pass of applying effects after prepare data has run to support referencing derived data
-    applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].derivedSpecsObj, excludeSpecs: {}, allowAllSpecs: false, wildCardsInclude: [], wildCardsExclude: wildcardEffects, doStatusEffects: true });
+
+    // Run the DAE post-derived phase for effects that need derived data
+    // @ts-expect-error v14 phase parameter
+    this.applyActiveEffects("daePostDerived");
 
     // Allow for changes made by effects
     preparePassiveSkills.bind(this)();
@@ -1354,11 +1333,6 @@ function prepareData(this: Actor.Implementation, wrapped) {
       for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
     }
     if (debugEnabled > 1) debug("prepare data: after passes", this);
-
-    // Apply effects to items - moved after the rest of actor prepare data instead of default dnd5e behaviour
-    for (let item of this.items) {
-      _itemApplyActiveEffects.bind(item)();
-    }
 
     // On first prepareData for each actor, fire "init" for
     // macro.itemMacro/macro.activityMacro so macros that register hooks can re-initialize after world load
@@ -1392,98 +1366,51 @@ function prepareData(this: Actor.Implementation, wrapped) {
   }
 }
 
-const getTargetType = (field: foundry.data.fields.DataField | string) => {
-  // @ts-expect-error no dnd5e-types
-  const FormulaField = game.system.dataModels.fields.FormulaField;
-  // @ts-expect-error no dnd5e-types
-  const ActiveEffect5eFormulaFields: Set<string> = CONFIG.ActiveEffect.documentClass.FORMULA_FIELDS
-  if ((field instanceof FormulaField) || ActiveEffect5eFormulaFields.has(field as string)) return "formula";
-  else if (field instanceof foundry.data.fields.ArrayField) return "Array";
-  else if (field instanceof foundry.data.fields.ObjectField) return "Object";
-  else if (field instanceof foundry.data.fields.BooleanField) return "boolean";
-  else if (field instanceof foundry.data.fields.NumberField) return "number";
-  else if (field instanceof foundry.data.fields.StringField) return "string";
-};
+// v14: getTargetType removed — v14's getFieldForProperty + field.applyChange() handles field resolution natively
 
 function _baseItemApplyEffects() {
-  // It seems that this is called with embedded preparation when first initialising and also when cloning.
-  // Since we can't tell if it will later get called from prepareData the best we can do is apply all effects now
-  return doItemApplyEffects.bind(this)(undefined, undefined, {});
-  /*
-  if (this.isOwned)
-    return doItemApplyEffects.bind(this)(undefined, [...ValidSpec.itemSpecs["union"].derivedSpecKeys, ...ValidSpec.itemSpecs["union"].excludeKeys], {});
-  else // item is a sidebar.compendium item so don't ignore anything
-    return doItemApplyEffects.bind(this)(undefined, undefined, {});
-  */
-}
-function _itemApplyActiveEffects() {
-  // since baseItemApplyEffects will apply all effects we can't do it gain here
-  return;
-  // return doItemApplyEffects.bind(this)(ValidSpec.itemSpecs["union"].derivedSpecKeys, ValidSpec.itemSpecs["union"].excludeKeys, this.overrides ?? {});
+  return doItemApplyEffects.bind(this)({});
 }
 
-function doItemApplyEffects(this: Item.Implementation, includeKeys: string[] | undefined, excludeKeys: string[] | undefined, overrides: any) {
-  // @ts-expect-error no dnd5e-types
-  if (this.actor?._embeddedPreparation) { // embedded preparation means this is only called once after actor preparation - so allow all effects to be applied 
-    includeKeys = undefined;
-    excludeKeys = undefined;
-  }
+function doItemApplyEffects(this: Item.Implementation, overrides: any) {
   // Organize non-disabled changes by their application priority
   let changes: DAEChangeData[] = [];
 
   // @ts-expect-error no dnd5e-types
   for (const effect of (this.allApplicableEffects() as Iterable<ActiveEffect.Implementation>)) {
     if (!effect.active) continue;
-    let possibleChanges = effect.changes;
-    if (includeKeys) possibleChanges = possibleChanges.filter(c => includeKeys?.includes(c.key));
-    if (excludeKeys) possibleChanges = possibleChanges.filter(c => !excludeKeys?.includes(c.key));
+    // @ts-expect-error v14 effect.system.changes
+    let possibleChanges = (effect.system?.changes ?? effect.changes) as ActiveEffect.ChangeData[];
     changes.push(...possibleChanges.map(change => {
-      let field = change.key.startsWith("system.")
-        // @ts-expect-error no dnd5e-types
-        ? this.system.schema.getField(change.key.slice(7))
-        : this.schema.getField(change.key);
-      const targetType = getTargetType(field);
       const c = foundry.utils.deepClone(change) as DAEChangeData;
       if (typeof c.value === "string" && this.actor?.items.has(this.id!)) {
         const rollData = this.getRollData();
         // @ts-expect-error no dnd5e-types
         rollData.mod = rollData.abilities?.[this.abilityMod]?.mod ?? 0;
-        if (targetType !== "formula" && targetType !== "string")
-          c.value = c.value.replaceAll("##", "@"); // can't defer this evaluation
         const unmapped = ["UUID", "uuid"];
         for (let unmap of unmapped) {
           c.value = c.value.replaceAll(`@${unmap}`, `##${unmap}`);
         }
-        if (!["Array", "Object", "formula", undefined].includes(targetType)) {
-          let expressionPre = Roll.replaceFormulaData(c.value, rollData, { missing: "0" });
-          const expression = DAESystemDND5E.safeEvalExpression(expressionPre, rollData);
-          let result = expression.replaceAll("##", "@");
-          if (targetType && ["boolean", "number"].includes(targetType)) {
-            result = DAESystemDND5E.safeEval(expression, rollData, expression) ?? expression;
-            if (typeof result === "string") {
-              c.value = result;
-            } else if (targetType === "number") {
-              c.value = JSON.stringify(Number(result));
-            } else if (targetType === "boolean") {
-              c.value = JSON.stringify(Boolean(result));
-            }
-          } else c.value = typeof result === "string" ? result : JSON.stringify(result);
-        }
       }
       c.effect = effect;
-      c.priority ??= c.mode * 10;
+      // v14: use string type for priority defaults
+      const ActiveEffectDoc = CONFIG.ActiveEffect.documentClass;
+      // @ts-expect-error v14 CHANGE_TYPES
+      const typeDefaults = ActiveEffectDoc.CHANGE_TYPES ?? {};
+      c.priority ??= typeDefaults[c.type]?.defaultPriority ?? (c.mode !== undefined ? c.mode * 10 : 0);
       return c;
     }));
   }
 
   changes.sort((a, b) => (a.priority ?? 10) - (b.priority ?? 10));
 
-  // Apply all changes
+  // Apply all changes using v14's static applyChange
+  const replacementData = (this.actor ?? this).getRollData();
   for (const change of changes) {
     if (!change.key) continue;
-    // @ts-expect-error no dnd5e-types
-    const changes = change.effect!.apply(this, change);
-    Object.assign(overrides, changes);
+    // @ts-expect-error v14 static applyChange
+    const result = change.effect!.constructor.applyChange(this, change, { replacementData });
+    if (result && typeof result === "object") Object.assign(overrides, result);
   }
   // Expand the set of final overrides
   // @ts-expect-error no dnd5e-types
@@ -1646,51 +1573,6 @@ export function getActorItemForEffect(effect: ActiveEffect.Implementation): Item
   return item;
 }
 
-// This can be removed (as well as all other `determineSuppression` stuff) once we hit a release which no longer
-// supports 5.0.x
-function determineSuppression(this: ActiveEffect.Implementation, wrapped) {
-  wrapped();
-  // if (this.disabled) return; dnd5e does not do this check
-  if (isEnchantment(this)) return;
-
-  // DND5e currently does not work with unlinked tokens and suppression determination so this is overridden
-  // TODO make this a WRAPPER when dnd5e fixes the unlinked token bug
-
-  let actor: Actor.Implementation | undefined | null;
-  if (this.parent instanceof CONFIG.Actor.documentClass) actor = this.parent;
-  else if (this.parent instanceof CONFIG.Item.documentClass) actor = this.parent.parent;
-  if (!actor) return;
-
-  if (globalThis.MidiQOL && foundry.utils.getProperty(this, "flags.dae.disableIncapacitated")) {
-    // if (actor) this.isSuppressed = actor.statuses.has("incapacitated");
-    // @ts-expect-error old 5e weirdness
-    this.isSuppressed = this.isSuppressed || globalThis.MidiQOL.checkIncapacitated(actor);
-  }
-
-  //TODO revisit when dnd5e is fixed. When can this actually happen? 
-  // This is an actor effect and it's a transfer effect
-  if (this.parent instanceof CONFIG.Actor.documentClass && effectIsTransfer(this)) {
-    const item = getActorItemForEffect(this);
-    // @ts-expect-error no dnd5e-types
-    if (item) this.isSuppressed = this.isSuppressed || item.areEffectsSuppressed;
-  }
-
-  // @ts-expect-error no dnd5e-types
-  if (actor.system.traits) {
-    // @ts-expect-error no dnd5e-types
-    let customStats: Array<string> = actor.system.traits.ci?.custom?.split(';').map(s => s.trim().toLocaleLowerCase());
-    // @ts-expect-error no dnd5e-types
-    const ci = new Set([...(actor.system.traits?.ci?.value ?? []), ...customStats]);
-    const statusId = foundry.utils.duplicate(this.name ?? "no effect").toLocaleLowerCase();
-    const capStatusId = foundry.utils.duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
-    const ciSuppressed = ci?.has(statusId) || ci?.has(`Convenient Effect: ${capStatusId}`);
-    if (Boolean(ciSuppressed)) {
-      // @ts-expect-error no dnd5e-types
-      this.isSuppressed = true;
-      // this.disabled = true;
-    }
-  }
-}
 
 function isSuppressed(this: ActiveEffect.Implementation, wrapped): boolean {
   let isSuppressed = wrapped();
@@ -1802,33 +1684,11 @@ async function _onDropActiveEffect(event, data) {
   }, { parent: this.item });
 }
 
-function daeApply(this: ActiveEffect.Implementation, wrapped, actor: Actor.Implementation, change: ActiveEffect.ChangeData) {
-  try {
-    const { key, value } = change;
-    let originalReturn = wrapped(actor, change);
-    // Intercept the dnd5e behaviour for custom mode flags.dnd5e boolean flags.
-    if (change.mode !== 0 || !change.key.startsWith("flags.dnd5e.")) return originalReturn;
-    const data = DAESystemDND5E.systemConfig.characterFlags[key.replace("flags.dnd5e.", "")];
-    if (data?.type !== Boolean) return originalReturn;
-    // Need to avoid the dnd5e behaviour of "0" evaluating to true and forcing the change.value to a boolean
-    change.value = value; // restore the original change value since dnd5e will have forced it to boolean.
-    // ActiveEffect.apply will bypass the dnd5e apply
-    return ActiveEffect.prototype.apply.bind(this)(actor, change);
-  } catch (err) {
-    console.error("dae | daeApply ", err, change, actor)
-    throw err;
-  }
-}
+// v14: daeApply removed — v14 has no ActiveEffect.prototype.apply() instance method.
+// The boolean flag fix is handled by the custom effect handler (daeCustomEffect)
+// which runs via the applyActiveEffect hook for custom type changes.
 
 type ItemSpecs = Record<string, {
   allSpecsObj: Record<string, ValidSpec>;
-  baseSpecsObj: Record<string, ValidSpec>;
-  derivedSpecsObj: Record<string, ValidSpec>;
   allSpecs: ValidSpec[];
-  baseSpecs: ValidSpec[];
-  derivedSpecs: ValidSpec[];
-  allSpecKeys: string[];
-  baseSpecKeys: string[];
-  derivedSpecKeys: string[];
-  excludeKeys?: string[];
 }>;

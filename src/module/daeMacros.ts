@@ -9,26 +9,32 @@ function getTokenUuid(token: TokenOrDocument) {
   return undefined;
 }
 
+function resolveTokenUuid(tokenOrId: TokenOrDocument | string): string | undefined {
+  if (typeof tokenOrId !== "string") return getTokenUuid(tokenOrId);
+  if (tokenOrId.startsWith("Scene")) return tokenOrId;
+  return `Scene.${canvas?.scene?.id}.Token.${tokenOrId}`;
+}
+
+function resolveActorRef(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string): { actorId?: string | null; actorUuid?: string } | undefined {
+  if (typeof tactor === "string") {
+    if (tactor.startsWith("Scene") || tactor.startsWith("Actor")) return { actorUuid: tactor };
+    return { actorId: tactor };
+  }
+  const actor = tactor instanceof foundry.canvas.placeables.Token ? tactor.actor : tactor instanceof Actor ? tactor : undefined;
+  if (!actor) return undefined;
+  return { actorId: actor.id, actorUuid: actor.uuid };
+}
+
+function findTokenInScene(tokenName: string, scene: Scene): TokenDocument.Implementation | undefined {
+  return scene.tokens.getName(tokenName) ?? scene.tokens.get(tokenName) ?? undefined;
+}
+
 let tokenScene = (tokenName: string, sceneName: string) => {
-  if (!sceneName) {
-    for (let scene of game.scenes ?? []) {
-      let found = scene.tokens.getName(tokenName);
-      if (found) return { scene, found };
-      found = scene.tokens.get(tokenName);
-      if (found) return { scene, found };
-    }
-  } else {
-    let scene = game.scenes?.getName(sceneName)
-    if (scene) {
-      let found = scene.tokens.getName(tokenName)
-      if (found) {
-        return { scene, found };
-      }
-      found = scene.tokens.get(tokenName)
-      if (found) {
-        return { scene, found };
-      }
-    }
+  const scenes = sceneName ? [game.scenes?.getName(sceneName)] : (game.scenes ?? []);
+  for (const scene of scenes) {
+    if (!scene) continue;
+    const found = findTokenInScene(tokenName, scene);
+    if (found) return { scene, found };
   }
   return { scene: null, tokenDocument: null };
 }
@@ -130,11 +136,7 @@ export let teleport = async (token: TokenOrDocument, targetScene: Scene | undefi
 }
 
 export async function setTokenVisibility(tokenOrId: string | TokenOrDocument, visible: boolean) {
-  let tokenUuid: string;
-  if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId) as string;
-  else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
-  else tokenUuid = `Scene.${canvas.scene?.id}.Token.${tokenOrId}`;
-  return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid, hidden: !visible });
+  return socketlibSocket.executeAsGM("setTokenVisibility", { tokenUuid: resolveTokenUuid(tokenOrId), hidden: !visible });
 }
 
 export async function setTileVisibility(tileOrId: TileDocument.Implementation | string, visible: boolean) {
@@ -149,22 +151,12 @@ export async function setTileVisibility(tileOrId: TileDocument.Implementation | 
   return socketlibSocket.executeAsGM("setTileVisibility", { tileUuid, hidden: !visible });
 }
 
-// TODO fix this for v10
 export async function blindToken(tokenOrId: TokenOrDocument | string) {
-  let tokenUuid: string | undefined;
-  if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
-  else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
-  else tokenUuid = `Scene.${canvas?.scene?.id}.Token.${tokenOrId}`;
-  return socketlibSocket.executeAsGM("blindToken", { tokenUuid });
+  return socketlibSocket.executeAsGM("blindToken", { tokenUuid: resolveTokenUuid(tokenOrId) });
 }
 
-// TODO fix this for v10
 export async function restoreVision(tokenOrId: TokenOrDocument | string) {
-  let tokenUuid: string | undefined;
-  if (typeof tokenOrId !== "string") tokenUuid = getTokenUuid(tokenOrId);
-  else if (tokenOrId.startsWith("Scene")) tokenUuid = tokenOrId;
-  else tokenUuid = `Scene.${canvas?.scene?.id}.Token.${tokenOrId}`;
-  return socketlibSocket.executeAsGM("restoreVision", { tokenUuid });
+  return socketlibSocket.executeAsGM("restoreVision", { tokenUuid: resolveTokenUuid(tokenOrId) });
 }
 
 export function getTokenFlag(token: TokenOrDocument, flagName: string) {
@@ -182,13 +174,7 @@ export async function deleteActiveEffect(uuid: string, origin: string, ignore: s
 }
 
 export async function setTokenFlag(tokenOrId: TokenOrDocument | string, flagName: string, flagValue: any) {
-  let tokenUuid: string = "";
-  if (typeof tokenOrId === "string") {
-    if (tokenOrId.startsWith("Scene.")) tokenUuid = tokenOrId;
-    else tokenUuid = canvas?.scene?.tokens.get(tokenOrId)?.uuid ?? "";
-  } 
-  else tokenUuid = getTokenUuid(tokenOrId) ?? "";
-  return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: tokenUuid, flagName, flagValue });
+  return socketlibSocket.executeAsGM("setTokenFlag", { tokenUuid: resolveTokenUuid(tokenOrId) ?? "", flagName, flagValue });
 }
 
 export function getFlag(entity: Actor.Implementation | TokenOrDocument | string, flagId: string) {
@@ -219,33 +205,15 @@ export function getFlag(entity: Actor.Implementation | TokenOrDocument | string,
 }
 
 export async function setFlag(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string, flagId: string, value: any) {
-  if (typeof tactor === "string" && (tactor.startsWith("Scene") || tactor.startsWith("Actor"))) {
-    return socketlibSocket.executeAsGM("setFlag", { actorUuid: tactor, flagId, value });
-  } if (typeof tactor === "string") {
-    return socketlibSocket.executeAsGM("setFlag", { actorId: tactor, flagId, value });
-    // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
-  }
-  let actor: Actor | undefined | null;
-  if (tactor instanceof foundry.canvas.placeables.Token) actor = tactor.actor;
-  if (tactor instanceof Actor) actor = tactor;
-  if (!actor) return error(`dae.setFlag: actor not defined`);
-  return socketlibSocket.executeAsGM("setFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId, value });
-  // return requestGMAction(GMAction.actions.setFlag, { actorId: actor.id, actorUuid: actor.uuid, flagId, value})
+  const ref = resolveActorRef(tactor);
+  if (!ref) return error(`dae.setFlag: actor not defined`);
+  return socketlibSocket.executeAsGM("setFlag", { ...ref, flagId, value });
 }
 
 export async function unsetFlag(tactor: Actor.Implementation | foundry.canvas.placeables.Token.Implementation | string, flagId: string) {
-  if (typeof tactor === "string" && (tactor.startsWith("Scene") || tactor.startsWith("Actor"))) {
-    return socketlibSocket.executeAsGM("unsetFlag", { actorUuid: tactor, flagId });
-  } if (typeof tactor === "string") {
-    return socketlibSocket.executeAsGM("unsetFlag", { actorId: tactor, flagId });
-    // return requestGMAction(GMAction.actions.setFlag, { actorId: actor, flagId, value})
-  }
-  let actor: Actor | undefined | null;
-  if (tactor instanceof foundry.canvas.placeables.Token) actor = tactor.actor;
-  if (tactor instanceof Actor) actor = tactor;
-  if (!actor) return error(`dae.setFlag: actor not defined`)
-  return socketlibSocket.executeAsGM("unsetFlag", { actorId: actor.id, actorUuid: actor.uuid, flagId });
-  // return requestGMAction(GMAction.actions.unsetFlag, { actorId: actor.id, actorUuid: actor.uuid, flagId})
+  const ref = resolveActorRef(tactor);
+  if (!ref) return error(`dae.unsetFlag: actor not defined`);
+  return socketlibSocket.executeAsGM("unsetFlag", { ...ref, flagId });
 }
 
 export async function macroActorUpdate(...args) {
@@ -317,12 +285,9 @@ export async function macroActorUpdate(...args) {
     const {oldValue = 0, updateValue} = foundry.utils.getProperty(actor, fieldDef) as {oldValue: number, updateValue: number };
     let restoreValue: number | undefined;
     if (undo === undefined) undo = true;
-    if (typeof undo === "string") undo = undo.replace(/(\*\*(.+?)\*\*)/g, "@$2");
     if (typeof undo === "string") {
-      undo = undo.trim();
-    } 
-    if (typeof undo === "string" && undo === "restore") {
-      undo = true;
+      undo = undo.replace(/(\*\*(.+?)\*\*)/g, "@$2").trim();
+      if (undo === "restore") undo = true;
     }
     if (typeof undo === "string" && undo === "remove") {
       restoreValue = Math.max(0, (actorValue as number) - (updateValue - oldValue))

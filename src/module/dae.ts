@@ -5,11 +5,11 @@ import { macroActorUpdate } from "./daeMacros.js";
 import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e.js";
 import { DIMEditor } from "./apps/DIMEditor.js";
-import { isEnchantment, otherFieldsMap } from "./apps/DAEActiveEffectConfig.js";
+import { isEnchantment } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial, InvalidUuid } from "fvtt-types/utils";
 import { TokenOrDocument } from "../globals.js";
 
-const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
+const { SchemaField } = foundry.data.fields;
 
 let templates = {};
 
@@ -91,79 +91,83 @@ if (!globalThis.daeSystems) globalThis.daeSystems = {};
 // export let showDeprecation = true;
 export let showInline: boolean = false;
 
-function flagChangeKeys(actor: Actor.Implementation, change: ActiveEffect.ChangeData) { // this id dnd5e only and should be moved
+const deprecatedKeyPatterns: { pattern: RegExp; replacement: (id: string) => string }[] = [
+  { pattern: /^data\.abilities\.(\w{3})\.save$/, replacement: id => `system.abilities.${id}.bonuses.save` },
+  { pattern: /^data\.abilities\.(\w{3})\.mod$/, replacement: id => `system.abilities.${id}.bonuses.check` },
+  { pattern: /^data\.skills\.(\w{3})\.mod$/, replacement: id => `system.skills.${id}.bonuses.check` },
+  { pattern: /^data\.skills\.(\w{3})\.passive$/, replacement: id => `system.skills.${id}.bonuses.passive` },
+];
+
+function flagChangeKeys(actor: Actor.Implementation, change: ActiveEffect.ChangeData) {
   if (!(["dnd5e"].includes(game.system.id ?? ""))) return;
-  const hasSaveBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".save") && !change.key.endsWith(".bonuses.save");
-  if (hasSaveBonus) {
-    const saveBonus = change.key.match(/data.abilities.(\w\w\w).save/);
-    const abl = saveBonus?.[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.abilities.${abl}.bonuses.save instead`)
-    // change.key = `data.abilities.${abl}.bonuses.save`;
-    return;
-  }
-  const hasCheckBonus = change.key.startsWith("data.abilities.") && change.key.endsWith(".mod");
-  if (hasCheckBonus) {
-    const checkBonus = change.key.match(/data.abilities.(\w\w\w).mod/);
-    const abl = checkBonus?.[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.abilities.${abl}.bonuses.check instead`)
-    // change.key = `data.abilities.${abl}.bonuses.check`;
-    return;
-  }
-  const hasSkillMod = change.key.startsWith("data.skills") && change.key.endsWith(".mod");
-  if (hasSkillMod) {
-    const skillMod = change.key.match(/data.skills.(\w\w\w).mod/);
-    const abl = skillMod?.[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.skills.${abl}.bonuses.check instead`)
-    // change.key = `data.skills.${abl}.bonuses.check`;
-    return;
-  }
-  const hasSkillPassive = change.key.startsWith("data.skills.") && !change.key.endsWith(".bonuses.passive") && change.key.endsWith(".passive");
-  if (hasSkillPassive) {
-    const skillPassive = change.key.match(/data.skills.(\w\w\w).passive/);
-    const abl = skillPassive?.[1];
-    console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use system.skills.${abl}.bonuses.passive instead`)
-    // change.key = `data.dkills.${abl}.bonuses.passive`;
-    return;
+  for (const { pattern, replacement } of deprecatedKeyPatterns) {
+    const match = change.key.match(pattern);
+    if (match) {
+      console.error(`dae | deprecated change key ${change.key} found in ${actor.name} use ${replacement(match[1])} instead`);
+      return;
+    }
   }
 }
 
 
 /*
- * Replace default applyAffects to do value lookups
+ * v14 phase-based OVERRIDE for Actor.applyActiveEffects(phase)
+ * Replaces both the old applyBaseActiveEffects and applyDaeEffects.
+ * Handles: field mappings, dae.eval(), stacks, CI priority, expandEffectChanges,
+ * ATL exclusion, flagChangeKeys, and delegates to v14's ActiveEffect.applyChange().
  */
-export function applyDaeEffects(this: Actor.Implementation, {
-  specList = {},
-  excludeSpecs = {},
-  allowAllSpecs = false,
-  wildCardsInclude = [],
-  wildCardsExclude = [],
-  doStatusEffects = false
-}: {
-  specList: Record<string, ValidSpec>;
-  excludeSpecs: Record<string, ValidSpec>;
-  allowAllSpecs: boolean;
-  wildCardsInclude: Array<RegExp>;
-  wildCardsExclude: Array<RegExp>;
-  doStatusEffects: boolean;
-}) {
+export function daeApplyActiveEffects(this: Actor.Implementation, phase: string) {
   if (disableEffects) return;
-  const overrides = {};
-  debug("prepare data: before passes", this.name, this._source);
 
-  for (let effect of this.allApplicableEffects())
+  const ActiveEffectDoc = CONFIG.ActiveEffect.documentClass;
+
+  // Validate the phase
+  if (typeof phase !== "string") {
+    // @ts-expect-error v14 static getter
+    phase = this._completedActiveEffectPhases?.has("initial") ? "final" : "initial";
+    foundry.utils.logCompatibilityWarning(
+      'Actor#applyActiveEffects must be called with a string phase identifier.',
+      { since: 14, until: 16, once: true }
+    );
+  }
+  // @ts-expect-error v14 _completedActiveEffectPhases
+  if (this._completedActiveEffectPhases?.has(phase)) {
+    console.error(`dae | ActiveEffect application phase "${phase}" has already completed for ${this.name}`);
+    return;
+  }
+  // @ts-expect-error v14 _completedActiveEffectPhases
+  this._completedActiveEffectPhases?.add(phase);
+
+  const overrides = {};
+  debug("daeApplyActiveEffects: phase", phase, this.name);
+
+  for (let effect of this.allApplicableEffects()) {
     // @ts-expect-error no dnd5e-types
     if (useDetermineSuppression) effect.determineSuppression();
+    // Migrate deprecated flags.dae.showIcon to native showIcon field
+    if (effect.flags?.dae?.showIcon) {
+      foundry.utils.logCompatibilityWarning(`dae | Effect "${effect.name}" on actor "${this.name}" uses deprecated flags.dae.showIcon. Edit the effect to migrate to the native showIcon field.`, { once: true, stack: false });
+    }
+  }
   const effects = this.appliedEffects.filter(ef => !ef.disabled && !ef.isSuppressed);
   if (!effects || effects.length === 0) return this.overrides ?? {};
+
   const changes = effects.reduce((changes, effect) => {
-    if (doStatusEffects) {
+    // Status effects: handled in "initial" phase
+    if (phase === "initial") {
       for (const statusId of effect.statuses) {
         this.statuses.add(statusId);
       }
     }
-    // TODO find a solution for flags.? perhaps just a generic specList
-    return changes.concat(expandEffectChanges(foundry.utils.duplicate(effect.changes) as ActiveEffect.ChangeData[])
+    // @ts-expect-error v14 effect.system.changes
+    return changes.concat(expandEffectChanges(foundry.utils.duplicate(effect.system?.changes ?? effect.changes) as ActiveEffect.ChangeData[])
       .filter(c => {
+        if (!c.key) return false;
+        // Phase filtering — the sole timing filter in v14
+        if (c.phase !== phase) return false;
+        // ATL keys still excluded from DAE processing
+        if (c.key.startsWith("ATL.")) return false;
+        // Field mappings (deprecated key migration)
         if (daeSystemClass.fieldMappings[c.key]) {
           const mapping = daeSystemClass.fieldMappings[c.key];
           const displayMapping = typeof mapping === "string" ? mapping : `${mapping.key}${mapping.value !== undefined ? ` ${mapping.value}` : ""}`;
@@ -174,11 +178,12 @@ export function applyDaeEffects(this: Actor.Implementation, {
             c.key = mapping.key;
             if (mapping.value !== undefined) c.value = mapping.value;
             if (mapping.mode !== undefined) c.mode = mapping.mode as typeof CONST.ACTIVE_EFFECT_MODES[keyof typeof CONST.ACTIVE_EFFECT_MODES];
+            if ((mapping as any).type !== undefined) c.type = (mapping as any).type;
           } else if (mapping.startsWith("system.traits.da") && mapping.endsWith(".value")) {
             const damageType = c.key.split(".").slice(-1)[0];
             c.key = mapping;
             c.value = damageType;
-            if (c.mode === CONST.ACTIVE_EFFECT_MODES.CUSTOM) c.mode = CONST.ACTIVE_EFFECT_MODES.ADD;
+            if (c.type === "custom") c.type = "add";
           } else {
             if (c.key.includes("DR") && c.value?.length > 0) c.value = `-(${c.value})`;
             if (debugEnabled > 0)
@@ -186,10 +191,7 @@ export function applyDaeEffects(this: Actor.Implementation, {
             c.key = mapping;
           }
         }
-        return !excludeSpecs[c.key]
-          && (allowAllSpecs || specList[c.key] !== undefined || wildCardsInclude.some(re => c.key.match(re) !== null))
-          && (!wildCardsExclude.some(re => c.key.match(re) !== null))
-          && !c.key.startsWith("ATL.")
+        return true;
       })
       .map(c => {
         c = foundry.utils.duplicate(c) as DAEChangeData;
@@ -207,116 +209,65 @@ export function applyDaeEffects(this: Actor.Implementation, {
         c.effect = effect;
         if (["system.traits.ci.value", "system.traits.ci.all", "system.traits.ci.custom"].includes(c.key))
           c.priority = 0;
-        else
-          c.priority = c.priority ?? (c.mode * 10);
+        else {
+          // v14: use string type for priority defaults
+          // @ts-expect-error v14 CHANGE_TYPES
+          const typeDefaults = ActiveEffectDoc.CHANGE_TYPES ?? {};
+          c.priority = c.priority ?? typeDefaults[c.type]?.defaultPriority ?? (c.mode !== undefined ? c.mode * 10 : 0);
+        }
         return c;
       }));
   }, [] as DAEChangeData[]);
+
   // Organize non-disabled effects by their application priority
   changes.sort((a, b) => (a.priority ?? 50) - (b.priority ?? 50));
 
-  if (changes.length > 0 && debugEnabled > 0) warn("Applying effect ", this.name, changes)
-  // Apply all changes
+  if (changes.length > 0 && debugEnabled > 0) warn("Applying effect phase", phase, this.name, changes)
+
+  // Apply all changes using v14's field-aware application
+  const replacementData = this.getRollData() as AnyMutableObject;
   for (let c of changes) {
     if (!c.key || !c.count) continue;
 
     for (let i = 0; i < c.count; i++) {
-      //TODO remove @data sometime
+      // @data. deprecation
       if (typeof c.value === "string" && c.value.includes("@data.")) {
         const parentInfo = c.effect?.parent ? ` on ${c.effect.parent.name} (${c.effect.parent.id})` : '';
         console.warn(`dae | @data.key is deprecated, use @key instead (${c.effect?.name} (${c.effect?.id})${parentInfo} has value ${c.value})`);
         c.value = c.value.replace(/@data./g, "@");
       }
+
+      // dae.eval() and dae.roll() expression handling
       const stackCount = c.effect?.flags?.dae?.stacks ?? 1;
-      if (c.value.includes("dae.eval(") || c.value.includes("dae.roll(")) {
+      if (typeof c.value === "string" && (c.value.includes("dae.eval(") || c.value.includes("dae.roll("))) {
         const conditionData = this.getRollData();
         foundry.utils.mergeObject(conditionData, { stackCount, effect: c.effect?.toObject() })
         c.value = daeSystemClass.safeEvalExpression(c.value, conditionData)
       }
 
-      let field = c.key.startsWith("system.")
-        // @ts-expect-error no dnd5e-types
-        ? this.system.schema.getField(c.key.slice(7))
-        : this.schema.getField(c.key);
-
-      if (field === undefined) {
-        field = foundry.utils.getProperty(this, c.key) ?? ValidSpec.actorSpecs[this.type].allSpecsObj[c.key]?.fieldType;
+      // @stackCount substitution (for non-numeric fields — numeric fields handle via replacementData)
+      if (typeof c.value === "string") {
+        c.value = c.value.replace("@stackCount", String(stackCount));
       }
+      replacementData.stackCount = stackCount;
 
-      if (!(field instanceof NumberField))
-        c.value = c.value.replace("@stackCount", String(stackCount))
-
-      const getTargetType = field => {
-        //@ts-expect-error no dnd5e-types
-        if ((field instanceof game.system.dataModels.fields.FormulaField)) return "formula";
-        else if (field instanceof ArrayField) return "Array";
-        else if (field instanceof ObjectField) return "Object";
-        else if (field instanceof BooleanField) return "boolean";
-        else if (field instanceof NumberField) return "number";
-        else if (field instanceof StringField) return "string";
-      };
-
-      if (c.mode !== CONST.ACTIVE_EFFECT_MODES.CUSTOM) {
-        //      if ((fieldType === "number" || fieldType === "boolean") && typeof c.value === "string") {
-        const fieldType = getTargetType(field) ?? "none";
-        if (["number", "boolean"].includes(fieldType) && typeof c.value === "string") {
-          const rollData = this.getRollData() as AnyMutableObject;
-          rollData.stackCount = stackCount;
-          c.value = c.value.replace("@item.level", "@itemLevel");
-
-          let value = Roll.replaceFormulaData(c.value, rollData, { missing: "0", warn: false });
-          debug("applyDaeEffects: after replaceFormulaData ", c, value, c.value);
-          try { // Roll parser no longer accepts some expressions it used to so we will try and avoid using it
-            c.value = `${daeSystemClass.safeEval(value, rollData)}`;
-          } catch (err) { // safeEval failed try a roll
-            try {
-              let roll = new Roll(c.value, rollData);
-              if (!roll.isDeterministic) {
-                console.error(`%c dae | you are using dice expressions in a numeric field which is not supported in ${game.version} dice terms ignored`, "color: red;");
-                console.error(`Actor ${this.name} ${this.uuid} Change is ${c.key}: ${c.value}`)
-              }
-              c.value = `${new Roll(value).evaluateSync({ strict: false }).total}`;
-            } catch (err) {
-              console.warn("dae | change value calculation failed for", err, this, c);
-            }
-          }
-        }
-      }
-      // DataField class dispatch: use the field's own change methods (e.g. BooleanFormulaField)
-      const autoFieldType = otherFieldsMap.get(c.key)?.type;
-      if (typeof autoFieldType === "function" && autoFieldType.prototype instanceof foundry.data.fields.DataField) {
-        const fieldInstance = (autoFieldType as any)._daeInstance ??= new (autoFieldType as any)();
-        const currentValue = foundry.utils.getProperty(this, c.key) ?? "";
-        let newValue;
-        switch (c.mode) {
-          case CONST.ACTIVE_EFFECT_MODES.ADD:
-            newValue = fieldInstance._applyChangeAdd(currentValue, c.value, this, c); break;
-          case CONST.ACTIVE_EFFECT_MODES.MULTIPLY:
-            newValue = fieldInstance._applyChangeMultiply(currentValue, c.value, this, c); break;
-          case CONST.ACTIVE_EFFECT_MODES.UPGRADE:
-            newValue = fieldInstance._applyChangeUpgrade(currentValue, c.value, this, c); break;
-          case CONST.ACTIVE_EFFECT_MODES.DOWNGRADE:
-            newValue = fieldInstance._applyChangeDowngrade(currentValue, c.value, this, c); break;
-        }
-        if (newValue !== undefined) {
-          foundry.utils.setProperty(this, c.key, newValue);
-          overrides[c.key] = newValue;
-          continue;
-        }
-      }
-
-      const currentValue = foundry.utils.getProperty(this, c.key);
-      if (ValidSpec.actorSpecs[this.type].allSpecsObj[c.key]?.fieldType === "number" && typeof currentValue !== "number") {
-        foundry.utils.setProperty(this, c.key, 0);
-      }
-      const result = c.effect?.apply(this, c);
-      Object.assign(overrides, result);
+      // Delegate to v14's ActiveEffect.applyChange which handles:
+      // - field resolution via getFieldForProperty
+      // - type-aware casting (NumberField evaluates Roll expressions)
+      // - @ref replacement via replacementData
+      // - custom type dispatch via applyActiveEffect hook
+      // @ts-expect-error v14 static applyChange
+      const result = c.effect?.constructor.applyChange(this, c, { replacementData });
+      if (result && typeof result === "object") Object.assign(overrides, result);
     }
   }
 
   // Expand the set of final overrides + merge
   this.overrides = foundry.utils.mergeObject(this.overrides || {}, foundry.utils.expandObject(overrides) || {}, { inplace: true, overwrite: true });
 }
+
+// Keep the old name as an alias for backward compatibility with any external callers
+export const applyDaeEffects = daeApplyActiveEffects;
 
 function expandEffectChanges(changes: ActiveEffect.ChangeData[]) {
   let returnChanges = changes.reduce((list, change) => {
@@ -2126,12 +2077,6 @@ export function daeReadyActions() {
   });
 }
 
-export function localDeleteFilters(tokenId: string, filterName: string) {
-  let tokenMagic = globalThis.TokenMagic;
-  let token = canvas?.tokens?.get(tokenId);
-  if (token) tokenMagic?.deleteFilters(token, filterName);
-}
-
 export let tokenizer: any;
 
 Hooks.on("spotlightOmnisearch.indexBuilt", async (index) => {
@@ -2242,6 +2187,10 @@ export function daeInitActions() {
   })
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "MIXED");
   async function _preCreateActiveEffect(this: ActiveEffect, wrapped, data, context, user) {
+    // Migrate deprecated flags.dae.showIcon to native showIcon field
+    if (this.flags?.dae?.showIcon) {
+      console.error(`dae | Effect "${this.name}" uses deprecated flags.dae.showIcon. Edit the effect to migrate to the native showIcon field.`);
+    }
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
     if (result) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
     await _preCreateEnchantmentEffect.bind(this)(data, context, user);

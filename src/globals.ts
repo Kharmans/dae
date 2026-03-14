@@ -28,6 +28,7 @@ declare module "fvtt-types/configuration" {
       "dae.modifyBaseValues": (specKey: string, baseValues: BaseValuesInner, charSpec: unknown) => void;
       "dae.modifyDerivedSpecs": (specKey: string, derivedSpecs: ValidSpec[], charSpec: unknown) => void;
       "dae.modifySpecials": (speKey: string, specials: BaseValuesInner, charSpec: unknown) => void;
+      "dae.modifySpecs": (specKey: string, allSpecsObj: Record<string, ValidSpec>) => void;
       "dae.setFieldData": (fieldData: unknown) => void;
       "dae.setupComplete": (api: typeof API) => void;
       "dae.settingsChanged": () => void;
@@ -68,6 +69,7 @@ declare module "fvtt-types/configuration" {
         activity?: string;
         activityMacro?: string;
         autoCreated?: boolean;
+        combatActorOverride?: "source" | "target";
         disableIncapacitated?: boolean;
         dontApply?: boolean;
         durationExpression?: string;
@@ -78,6 +80,7 @@ declare module "fvtt-types/configuration" {
         itemsToDelete?: string[];
         selfTarget?: boolean;
         selfTargetAlways?: boolean;
+        /** @deprecated Use native ActiveEffect showIcon field instead */
         showIcon?: boolean;
         specialDuration?: string | string[];
         stackable?: "noneName" | "noneNameOnly" | "none" | "multi" | "count" | "countDeleteDecrement";

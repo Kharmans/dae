@@ -33,6 +33,16 @@
                 {{formInput fields.duration.fields.turns value=source.duration.turns id=(concat rootId "-duration.turns")}}
             </div>
         </div>
+        {{#if showCombatActorOverride}}
+            <div class="form-group">
+                <label>{{localize "dae.durationExpiry"}}</label>
+                <div class="form-fields">
+                    <select name="duration.expiry" data-dtype="String">
+                        {{selectOptions expiryOptions selected=source.duration.expiry}}
+                    </select>
+                </div>
+            </div>
+        {{/if}}
         <div class="form-group">
             <label>{{ localize "EFFECT.FIELDS.duration.combat.label" }}</label>
             <div class="form-fields">
@@ -52,6 +62,16 @@
     {{#if (ifThen showSpecialDurations true macroRepeats)}}
         <fieldset>
             <legend>DAE</legend>
+            {{#if showCombatActorOverride}}
+                <div class="form-group">
+                    <label>{{localize "dae.combatActorOverride"}}</label>
+                    <div class="form-fields">
+                        <select name="flags.dae.combatActorOverride" data-dtype="String">
+                            {{selectOptions combatActorOptions selected=source.flags.dae.combatActorOverride}}
+                        </select>
+                    </div>
+                </div>
+            {{/if}}
             {{#if macroRepeats}}
                 <div class="form-group">
                     <label>{{localize "dae.macroRepeat"}}</label>

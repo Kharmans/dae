@@ -118,10 +118,6 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   declare validSpecsToUse: {
     allSpecs: ValidSpec[];
     allSpecsObj: Record<string, ValidSpec>;
-    baseSpecs: ValidSpec[];
-    baseSpecsObj: Record<string, ValidSpec>;
-    derivedSpecs: ValidSpec[],
-    derivedSpecsObj: Record<string, ValidSpec>;
   };
   declare daeFieldBrowser: DAEFieldBrowser;
   ceEffectList: Record<string, string> = {};
@@ -284,6 +280,32 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     if (document.flags?.dae?.specialDuration === undefined)
       foundry.utils.setProperty(document, "flags.dae.specialDuration", []);
 
+    // Migrate deprecated turn start/end special durations to v14 duration.expiry + combatActorOverride
+    const turnSpecialDurMap: Record<string, { expiry: string, combatActor: "source" | "target" }> = {
+      "turnStart": { expiry: "turnStart", combatActor: "target" },
+      "turnEnd": { expiry: "turnEnd", combatActor: "target" },
+      "turnStartSource": { expiry: "turnStart", combatActor: "source" },
+      "turnEndSource": { expiry: "turnEnd", combatActor: "source" }
+    };
+    let specialDurs: string[] = Array.isArray(document.flags?.dae?.specialDuration) ? document.flags.dae.specialDuration : (document.flags?.dae?.specialDuration ? [document.flags.dae.specialDuration] : []);
+    if (typeof specialDurs === "string") specialDurs = [specialDurs];
+    const deprecatedDurs = specialDurs.filter(sd => sd in turnSpecialDurMap);
+    if (deprecatedDurs.length > 0) {
+      const migration = turnSpecialDurMap[deprecatedDurs[0]];
+      const remaining = specialDurs.filter(sd => !(sd in turnSpecialDurMap));
+      ui.notifications?.warn(`DAE | Effect "${document.name}": special duration "${deprecatedDurs.join(", ")}" is deprecated. Migrating to duration expiry + combat actor override.`);
+      foundry.utils.setProperty(document, "flags.dae.specialDuration", remaining);
+      foundry.utils.setProperty(document, "flags.dae.combatActorOverride", migration.combatActor);
+      foundry.utils.setProperty(document, "duration.expiry", migration.expiry);
+    }
+
+    // Migrate deprecated flags.dae.showIcon to native showIcon field
+    if (document.flags?.dae?.showIcon) {
+      ui.notifications?.warn(`DAE | Effect "${document.name}": flags.dae.showIcon is deprecated. Migrating to native showIcon field.`);
+      foundry.utils.setProperty(document, "showIcon", 2);
+      foundry.utils.setProperty(document, "flags.dae.-=showIcon", null);
+    }
+
     if (!document.flags?.dae?.stackable) {
       foundry.utils.setProperty(document, "flags.dae.stackable", "multi");
       foundry.utils.setProperty(context, "effect.flags.dae.stackable", "multi");
@@ -301,6 +323,17 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     context.showSpecialDurations = Object.keys(daeSpecialDurations)?.length > 1;
     context.macroRepeats = daeMacroRepeats;
     context.stackableOptions = stackableOptions;
+    context.combatActorOptions = {
+      "source": i18n("dae.combatActorSource"),
+      "target": i18n("dae.combatActorTarget")
+    };
+    context.expiryOptions = {
+      "turnStart": i18n("dae.expiryTurnStart"),
+      "turnEnd": i18n("dae.expiryTurnEnd")
+    };
+    const hasTurnDuration = !!(document.duration?.rounds || document.duration?.turns);
+    const hasTurnExpiry = ["turnStart", "turnEnd"].includes((document.duration as any)?.expiry);
+    context.showCombatActorOverride = hasTurnDuration || hasTurnExpiry;
 
     if (document.parent) {
       context.isItemEffect = document.parent instanceof CONFIG.Item.documentClass;
@@ -562,6 +595,9 @@ interface DAEActiveEffectConfigRenderContext extends foundry.applications.sheets
   showSpecialDurations?: boolean;
   macroRepeats?: Record<string, string>
   stackableOptions?: Record<string, string>;
+  combatActorOptions?: Record<string, string>;
+  expiryOptions?: Record<string, string>;
+  showCombatActorOverride?: boolean;
   isItemEffect?: boolean;
   isActorEffect?: boolean;
   submitText?: string;
