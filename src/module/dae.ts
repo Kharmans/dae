@@ -197,7 +197,9 @@ export function applyDaeEffects(this: Actor.Implementation, {
         flagChangeKeys(this, c);
         if (c.key.startsWith("flags.midi-qol.optional")) { // patch for optional effects
           const parts = c.key.split(".");
-          if (["save", "check", "skill", "damage", "attack"].includes(parts[parts.length - 1])) {
+          // Only apply deprecation fix for bare category keys like flags.midi-qol.optional.NAME.save (5 parts)
+          // Don't match deeper keys like flags.midi-qol.optional.NAME.damage.save where save is an action type
+          if (parts.length === 5 && ["save", "check", "skill", "damage", "attack"].includes(parts[4])) {
             console.error(`dae/midi-qol | deprecation error ${c.key} should be ${c.key}.all on actor ${this.name}`)
             c.key = `${c.key}.all`;
           }
@@ -2289,9 +2291,6 @@ export function daeInitActions() {
   }
 
   Hooks.on("createActiveEffect", createActiveEffectHook);
-  Hooks.on("preUpdateItem", (item, data, options, userId) => preUpdateStatusEffects(item, options, userId));
-  Hooks.on("preDeleteItem", (item, options, userId) => preUpdateStatusEffects(item, options, userId));
-  Hooks.on("preCreateItem", (item, data, options, userId) => preUpdateStatusEffects(item, options, userId));
   Hooks.on("updateItem", (item, data, options, userId) => updateStatusEffects(item, options, userId));
   Hooks.on("deleteItem", (item, options, userId) => updateStatusEffects(item, options, userId));
   Hooks.on("createItem", (item, options, userId) => updateStatusEffects(item, options, userId));
@@ -2331,20 +2330,7 @@ export function daeInitActions() {
   actionQueue = new foundry.utils.Semaphore();
 }
 
-function preUpdateStatusEffects(doc, options, userId) {
-  if (!dependentConditions) return true;
-  let actor = doc;
-  if (doc instanceof Item || doc instanceof ActiveEffect) {
-    actor = doc.parent;
-  }
-  if (actor instanceof Item) {
-    actor = actor.parent;
-  }
-  if (!actor) return true;
-  options["dae"] = foundry.utils.mergeObject(options.dae ?? {}, { currentStatuses: Array.from(actor.statuses) });
-  return true;
-}
-async function updateStatusEffects(doc, options, userId) {
+function updateStatusEffects(doc, options, userId) {
   if (!dependentConditions) return;
   if (userId !== game.user?.id) return;
   let actor = doc;
@@ -2354,181 +2340,18 @@ async function updateStatusEffects(doc, options, userId) {
   if (actor instanceof Item) {
     actor = actor.parent;
   }
-  if (!actor) return;
-  if (doc instanceof ActiveEffect && doc.flags?.dae?.autoCreated) return;
-  // let newStatuses: Set<string> = new Set();
-  if (!options.dae?.currentStatuses) return;
-  let currentStatuses: Set<string> = new Set(options.dae?.currentStatuses);
-  let newStatuses: Set<string> = new Set; // actor.statuses;
-  for (let effect of actor.allApplicableEffects()) {
-    if (effect.flags?.dae?.autoCreated) { // even if disabled auto created effects should be included in current statuses
-      currentStatuses = currentStatuses.union(effect.statuses)
-      continue;
-    }
-    if (effect.transfer && doc instanceof Item && useDetermineSuppression)
-      effect.determineSuppression();
-    if (!effect.active) continue;
-    if (effect.flags?.["dfreds-convenient-effects"]) continue;
-    newStatuses = newStatuses.union(effect.statuses);
-  }
-  await applyStatusEffectChanges(actor, undefined, currentStatuses, newStatuses, true);
-}
+  if (!(actor instanceof Actor)) return;
 
-// Not used
-async function applyRequiredStatusEffectsHook(effect, options, userId) {
-  if (game.user !== game.users?.activeGM) return;
-  if (effect.id === getStaticID("prone")) return;
-  const myid = foundry.utils.randomID();
-  try {
-    //  if (effect.flags?.dae?.autoCreated) return;
-    if (!dependentConditions) return;
-    if (effect.flags?.["condition-lab-triggler"]) return;
-    let actor = effect.parent;
-    if (actor instanceof Item) {
-      actor = actor.parent;
-    }
-    await busyWait(0.05); // Hopefully this will allow the rest of the updates to complete
-    const requiredStatuses: Set<string> = new Set(actor.statuses);
-    let appliedStatuses: Set<string> = actorAppliedStatues(actor);
-
-    if (CONFIG.statusEffects.find(se => se._id === effect._id))
-      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id)?.id ?? "");
-    // appliedStatuses = appliedStatuses.union(effect.statuses);
-    warn("applyRequiredStatusEffectsHook", myid, effect.name, effect._id, actor.name, requiredStatuses, appliedStatuses);
-    for (let status of requiredStatuses) {
-      if (debugEnabled > 0) warn("applyRequiredStatusEffectHook | checking status", myid, status);
-      if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status))
-        continue;
-      if (!appliedStatuses.has(status)) {
-        await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
-        appliedStatuses = actorAppliedStatues(actor);
-        if (CONFIG.statusEffects.find(se => se._id === effect._id))
-          appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id)?.id ?? "");
-        appliedStatuses = appliedStatuses.union(effect.statuses);
+  if (!reconciliationPending.has(actor.uuid)) {
+    reconciliationPending.add(actor.uuid);
+    actionQueue.add(async () => {
+      try {
+        reconciliationPending.delete(actor.uuid);
+        await reconcileActorStatuses(actor);
+      } catch (err) {
+        console.warn("dae | Error reconciling actor statuses (item change):", err);
       }
-    }
-    for (let status of appliedStatuses) {
-      if (!requiredStatuses.has(status)) await toggleActorStatusEffect(actor, status, { active: false });
-    }
-  } finally {
-    if (debugEnabled > 0) warn("applyRequiredStatusEffects", myid, "done");
-  }
-}
-
-function actorAppliedStatues(actor): Set<string> {
-  let appliedStatuses: Set<string> = new Set();
-  for (let effect of actor.allApplicableEffects()) {
-    if (useDetermineSuppression) effect.determineSuppression();
-    if (!effect.active) continue;
-    if (effect.flags?.["dfreds-convenient-effects"]) continue;
-    if (CONFIG.statusEffects.find(se => se._id === effect._id))
-      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id)?.id ?? "");
-  }
-  return appliedStatuses;
-
-}
-// Not used 12.0.22
-async function applyRequiredStatusEffects(wrapped, data, options, userId) {
-  const myid = foundry.utils.randomID();
-  await wrapped(data, options, userId);
-
-  try {
-    if (this.flags?.dae?.autoCreated) return;
-    if (!dependentConditions) return;
-    if (this.flags?.["condition-lab-triggler"]) return;
-    let actor = this.parent;
-    if (actor instanceof Item) {
-      actor = actor.parent;
-    }
-    const requiredStatuses: Set<string> = new Set(actor.statuses);
-    let appliedStatuses: Set<string> = new Set();
-    for (let effect of actor.allApplicableEffects()) {
-      if (useDetermineSuppression) effect.determineSuppression();
-      if (!effect.active) continue;
-      if (effect.flags?.["dfreds-convenient-effects"]) continue;
-      if (CONFIG.statusEffects.find(se => se._id === effect._id))
-        appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === effect._id)?.id ?? "");
-    }
-    if (CONFIG.statusEffects.find(se => se._id === this._id))
-      appliedStatuses.add(CONFIG.statusEffects.find(se => se._id === this._id)?.id ?? "");
-    warn("applyRequiredStatusEffects", myid, this.name, this._id, actor, requiredStatuses, appliedStatuses);
-    for (let status of requiredStatuses) {
-      warn("checking status", myid, status);
-      if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status))
-        continue;
-      if (!appliedStatuses.has(status)) await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
-    }
-    for (let status of appliedStatuses) {
-      if (!requiredStatuses.has(status)) await toggleActorStatusEffect(actor, status, { active: false });
-    }
-  } finally {
-    warn("applyRequiredStatusEffects", myid, "done");
-  }
-}
-
-async function applyStatusEffects(theEffect: any, includeEffect: boolean, context: any = {}) {
-  if (!dependentConditions) return true;
-  if (theEffect.flags?.["condition-lab-triggler"]) return;
-  let actor = theEffect.parent;
-  if (actor instanceof Item) {
-    actor = actor.parent;
-  }
-  if (!actor) return true;
-  let newStatuses: Set<string> = new Set();
-  let currentStatuses = foundry.utils.deepClone(actor.statuses);
-  for (let effect of actor.allApplicableEffects()) {
-    if (effect.flags?.dae?.autoCreated) { // even if disabled auto created effects should be included in current statuses
-      currentStatuses = currentStatuses.union(effect.statuses)
-      continue;
-    }
-    if (effect.transfer && effect.parent instanceof Item && useDetermineSuppression)
-      effect.determineSuppression();
-    if (!effect.active) continue;
-    if (effect.flags?.["dfreds-convenient-effects"]) continue;
-    if (effect.uuid === theEffect.uuid) continue; // skip existing effect it will be added in if needed
-
-    newStatuses = newStatuses.union(effect.statuses);
-  }
-  if (includeEffect && theEffect instanceof ActiveEffect) {
-    const docStatuses = context.statuses ?? theEffect.statuses;
-    newStatuses = newStatuses.union(docStatuses);
-  }
-  const doc_id = theEffect._id;
-  if (!includeEffect && theEffect instanceof ActiveEffect && newStatuses.has(doc_id)) {
-    newStatuses.delete(doc_id);
-    currentStatuses.delete(doc_id);
-  }
-  if (debugEnabled > 0) warn("applyStatusEffects", actor.name, currentStatuses, newStatuses, includeEffect);
-
-  await applyStatusEffectChanges(actor, theEffect, currentStatuses, newStatuses, includeEffect);
-}
-async function applyStatusEffectChanges(actor, effect: any | undefined, currentStatuses: Set<string>, newStatuses: Set<string>, includeEffect: boolean) {
-  if (currentStatuses.size === 0 && newStatuses.size === 0) return;
-  if (debugEnabled > 0)
-    warn("applyStatusEffectChanges", actor.name, currentStatuses, newStatuses, currentStatuses.difference(newStatuses), newStatuses.difference(currentStatuses), includeEffect);
-  for (let status of newStatuses.difference(currentStatuses)) {
-    if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status))
-      continue;
-    const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
-    if (!statusEffect) continue;
-    if (!statusEffect._id) continue; // status effects should have a fixed _id
-    if ((statusEffect.statuses as Array<string>)?.includes(status)) continue; // Self referential statuses cause problems
-    if (!statusEffect || (statusEffect._id === effect?._id && includeEffect)) continue; // includeEffect true means the status effect is being added so don't double up
-    if (!effect?.statuses.has(status)) continue; // Only deal with statuses that are on the effect
-    // statuses not present on the actor that should be
-    await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
-  }
-  for (let status of currentStatuses.difference(newStatuses)) {
-    if (["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"].includes(status))
-      continue;
-    const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
-    if (!statusEffect) continue;
-    if (!statusEffect._id) continue; // status effects should have a fixed _id
-    if ((statusEffect.statuses as Array<string>)?.includes(status)) continue; // Self referential statuses cause problems
-    if (!statusEffect || (statusEffect._id === effect?._id && !includeEffect)) continue; // includeEffect being false means the effect is being removed so don't double up
-    if (!effect?.statuses.has(status)) continue; // Only deal with statuses that are on the effect
-    // statuses present on the actor that should not be
-    await toggleActorStatusEffect(actor, status, { active: false });
+    });
   }
 }
 
@@ -2539,7 +2362,12 @@ async function applyStatusEffectChanges(actor, effect: any | undefined, currentS
 function queueStatusesReconciliation(effect: ActiveEffect.Implementation, userId: string) {
   if (!dependentConditions) return;
   if (userId !== game.user?.id) return;
-  if (!effect.statuses?.size) return; // No statuses, nothing to reconcile
+
+  // Reconcile if the effect has statuses OR if it has condition immunity changes
+  // (toggling a CI effect needs to create/remove auto-created status documents)
+  const hasStatuses = !!effect.statuses?.size;
+  const hasCIChanges = effect.changes?.some(c => c.key.startsWith("system.traits.ci"));
+  if (!hasStatuses && !hasCIChanges) return;
 
   const actor = effect.parent instanceof Actor ? effect.parent : (effect.parent as Item)?.parent;
   if (!(actor instanceof Actor)) return;
@@ -2561,6 +2389,11 @@ function queueStatusesReconciliation(effect: ActiveEffect.Implementation, userId
  * Reconcile the status effects on an actor based on all active effects.
  * This calculates what statuses SHOULD exist based on current effects,
  * then adds missing statuses and removes extra ones.
+ *
+ * Status effect documents use static _ids (e.g., staticID("dnd5eparalyzed")).
+ * The dnd5e character sheet determines active conditions by checking for these
+ * documents, not actor.statuses. So reconciliation must create/remove the
+ * actual documents to keep the sheet in sync.
  */
 async function reconcileActorStatuses(actor: Actor.Implementation) {
   if (!dependentConditions) return;
@@ -2569,24 +2402,29 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
   const excludedStatuses = ["concentrating", "bonusaction", "reaction", "encumbered", "heavilyEncumbered", "exceedingCarryingCapacity"];
 
   // Calculate expected statuses from all active effects
-  // EXCLUDE auto-created effects (those are the output, not the input)
+  // Skip status effect documents with static _ids (those are the output, not the input)
   let expectedStatuses = new Set<string>();
-  const existingAutoCreatedStatusIds = new Set<string>(); // Track which auto-created status effect documents exist
+  const existingStaticStatusIds = new Set<string>(); // Track which static-_id status effect documents exist
+  const autoCreatedStaticStatusIds = new Set<string>(); // Track which were created by DAE (vs manually by user)
 
   for (let effect of actor.allApplicableEffects()) {
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
     // @ts-expect-error determineSuppression may not exist
     if (effect.transfer && effect.parent instanceof Item && useDetermineSuppression) effect.determineSuppression?.();
-    if (!effect.active) continue;
 
-    // Check if this is an auto-created status effect document
-    if (effect.flags?.dae?.autoCreated) {
-      // Track the primary status ID so we don't try to recreate it
-      const configStatusEffect = CONFIG.statusEffects.find(se => se._id === effect.id);
-      if (configStatusEffect) {
-        existingAutoCreatedStatusIds.add(configStatusEffect.id);
-        // Add its statuses EXCEPT its own primary status - those are dependencies that need creating
-        // But don't add its own status, otherwise it would never get removed
+    // Check if this effect has a static _id matching a CONFIG status effect.
+    // These are status effect documents (created by toggleStatusEffect, fromStatusEffect,
+    // or by this reconciliation). They are the OUTPUT of reconciliation, not input.
+    // Track these REGARDLESS of active state — an inactive (disabled/suppressed) static-id
+    // document still needs to be removed if the actor is immune to that condition.
+    const configStatusEffect = CONFIG.statusEffects.find(se => se._id === effect.id);
+    if (configStatusEffect) {
+      existingStaticStatusIds.add(configStatusEffect.id);
+      if (effect.flags?.dae?.autoCreated) {
+        autoCreatedStaticStatusIds.add(configStatusEffect.id);
+      }
+      // Only count sub-statuses from ACTIVE static-id effects as expected
+      if (effect.active) {
         for (const status of effect.statuses) {
           if (status !== configStatusEffect.id) {
             expectedStatuses.add(status);
@@ -2596,6 +2434,8 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
       continue; // Don't add all statuses via the union below
     }
 
+    if (!effect.active) continue;
+
     expectedStatuses = expectedStatuses.union(effect.statuses);
   }
 
@@ -2604,10 +2444,18 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
     expectedStatuses.delete(status);
   }
 
-  // For each expected status, we need an auto-created status effect document to exist
-  // Add status effect documents that don't exist yet
+  // Filter out statuses the actor is immune to
+  // @ts-expect-error no dnd5e-types
+  const conditionImmunities: Set<string> | undefined = actor.system.traits?.ci?.value;
+  if (conditionImmunities) {
+    for (const condition of conditionImmunities) {
+      expectedStatuses.delete(condition);
+    }
+  }
+
+  // Add status effect documents that should exist but don't
   for (let status of expectedStatuses) {
-    if (existingAutoCreatedStatusIds.has(status)) continue;
+    if (existingStaticStatusIds.has(status)) continue;
 
     const statusEffect = CONFIG.statusEffects.find(se => se.id === status);
     if (!statusEffect) continue;
@@ -2623,11 +2471,12 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
     }
   }
 
-  // Remove auto-created status effect documents for statuses that are no longer expected
-  for (let statusEffectId of existingAutoCreatedStatusIds) {
-    if (expectedStatuses.has(statusEffectId)) {
-      continue;
-    }
+  // Remove status effect documents that should not exist
+  // Only remove auto-created documents (created by DAE reconciliation), not ones
+  // manually applied by the user from the character sheet
+  for (let statusEffectId of existingStaticStatusIds) {
+    if (expectedStatuses.has(statusEffectId)) continue;
+    if (!autoCreatedStaticStatusIds.has(statusEffectId) && !conditionImmunities?.has(statusEffectId)) continue;
 
     const statusEffect = CONFIG.statusEffects.find(se => se.id === statusEffectId);
     if (!statusEffect) continue;

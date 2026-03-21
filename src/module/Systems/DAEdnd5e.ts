@@ -1288,12 +1288,8 @@ function applyBaseEffects(this: Actor.Implementation) {
 
   // The Active Effects do not have access to their parent at preparation time, so we wait until this stage to
 
-  // Handle traits.ci specially
-  // CI disable other effects so need to be processed before other effects
-  const traitsCI: Record<string, ValidSpec> = {};
-  traitsCI["system.traits.ci.all"] = ValidSpec.actorSpecs[this.type].allSpecsObj["system.traits.ci.all"];
-  traitsCI["system.traits.ci.value"] = ValidSpec.actorSpecs[this.type].allSpecsObj["system.traits.ci.value"];
-  applyDaeEffects.bind(this)({ specList: traitsCI, excludeSpecs: {}, allowAllSpecs: false, wildCardsInclude: [], wildCardsExclude: [], doStatusEffects: false });
+  // CI changes get priority 0 (set in applyDaeEffects) so they sort first within the pass.
+  // The CI filter on actor.statuses runs after all passes complete (in prepareData).
   applyDaeEffects.bind(this)({ specList: ValidSpec.actorSpecs[this.type].baseSpecsObj, excludeSpecs: ValidSpec.actorSpecs[this.type].derivedSpecsObj, allowAllSpecs: true, wildCardsInclude: wildcardEffects, wildCardsExclude: [], doStatusEffects: true });
 }
 
@@ -1361,12 +1357,12 @@ function prepareData(this: Actor.Implementation, wrapped) {
     }
 
     // On first prepareData for each actor, fire "init" for
-    // macro.itemMacro/macro.activityMacro so macros that register hooks can re-initialize after world load
+    // macro.itemMacro/macro.activityMacro/macro.execute so macros that register hooks can re-initialize after world load
     if (initMacrosOnLoad && !daeInitMacroActors.has(this.uuid)) {
       daeInitMacroActors.add(this.uuid);
       const initEffects: ActiveEffect.Implementation[] = [];
       for (const ef of this.allApplicableEffects()) {
-        const hasMacro = ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro"));
+        const hasMacro = ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro") || c.key.startsWith("macro.execute"));
         if (ef.disabled || ef.isSuppressed) continue;
         // @ts-expect-error isAppliedEnchantment
         if (ef.type === "enchantment" && !ef.isAppliedEnchantment) continue;

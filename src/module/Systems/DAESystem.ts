@@ -616,13 +616,13 @@ function prepareData(this: Actor.Implementation, wrapped) {
     for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
   }
   // On first prepareData for each actor, fire "init" for
-  // macro.itemMacro/macro.activityMacro so macros that register hooks can re-initialize after world load
+  // macro.itemMacro/macro.activityMacro/macro.execute so macros that register hooks can re-initialize after world load
   if (initMacrosOnLoad && !daeInitMacroActors.has(this.uuid)) {
     daeInitMacroActors.add(this.uuid);
     const initEffects: ActiveEffect.Implementation[] = [];
     for (const ef of this.allApplicableEffects()) {
       if (ef.disabled || ef.isSuppressed) continue;
-      if (ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro"))) {
+      if (ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro") || c.key.startsWith("macro.execute"))) {
         initEffects.push(ef);
       }
     }

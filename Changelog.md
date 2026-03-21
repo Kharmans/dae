@@ -1,3 +1,14 @@
+### 13.0.25
+* Fix for `optional.NAME.damage.save` showing `[object Object]` in the bonus dialog and emitting a spurious deprecation warning.
+* `macro.execute` changes now fire on actor init (world load), alongside `macro.itemMacro` and `macro.activityMacro`.
+* Status effect reconciliation rewritten:
+  - Removed the `preUpdate/preDelete/preCreate Item` hooks that saved `currentStatuses` into options. Reconciliation now computes the full expected state from scratch rather than diffing against a snapshot.
+  - The old `applyStatusEffects`/`applyStatusEffectChanges`/`updateStatusEffects` functions replaced with a single `reconcileActorStatuses` approach, queued via `actionQueue` semaphore to avoid race conditions.
+  - Reconciliation now respects condition immunities (`system.traits.ci`): statuses the actor is immune to are removed even if an effect grants them.
+  - Effects with `system.traits.ci` changes now trigger status reconciliation (previously only effects with statuses did).
+  - Only auto-created status documents (those with `flags.dae.autoCreated`) are removed during reconciliation; manually-applied statuses are preserved unless the actor is immune to the condition.
+  - Static-ID status effect documents are tracked regardless of active state, so disabled/suppressed status documents are properly cleaned up when the actor becomes immune.
+
 ### 13.0.24
 * Support dnd5e's 5.3.x human readable labels for any change keys registered to dae, flags.midi and etc.
 
