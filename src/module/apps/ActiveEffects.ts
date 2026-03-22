@@ -1,4 +1,4 @@
-import { effectIsTransfer, simpleCalendarInstalled } from "../dae.js"
+import { effectIsTransfer, getStatusEffectsArray, simpleCalendarInstalled } from "../dae.js"
 import { i18n, daeSpecialDurations } from "../../dae.js";
 import { Specs, ValidSpec } from "../Systems/DAESystem.js";
 import DocumentSheetV2 = foundry.applications.api.DocumentSheetV2;
@@ -55,7 +55,13 @@ export class ActiveEffects extends WeirdIntermediate {
   get filters() { return ActiveEffects.filters }
 
   async _prepareContext(options) {
-    const modeKeys = Object.keys(CONST.ACTIVE_EFFECT_MODES);
+    // v14: build type label map for display in the list view
+    // @ts-expect-error v14 ActiveEffect.CHANGE_TYPES not in fvtt-types yet
+    const changeTypesRaw: Record<string, { label: string }> = ActiveEffect.CHANGE_TYPES ?? {};
+    const typeLabels: Record<string, string> = {};
+    for (const [type, config] of Object.entries(changeTypesRaw)) {
+      typeLabels[type] = i18n(config.label);
+    }
   
     function* effectsGenerator(this: Actor.Implementation | Item.Implementation) { for (const effect of this.effects) yield effect };
     let effects = effectsGenerator.bind(this.document);
@@ -64,12 +70,14 @@ export class ActiveEffects extends WeirdIntermediate {
     }
     let actives: ActivesEntry[] = [];
     for (const ae of effects()) {
+      // @ts-expect-error v14 toObject() type mismatch with ActivesEntry
       const newAe = ae.toObject() as ActivesEntry;
       newAe.uuid = ae.uuid;
       newAe.isSuppressed = ae.isSuppressed;
       newAe.duration = foundry.utils.duplicate(ae.duration) as ActiveEffect.Duration;
       const aeDuration = ae.updateDuration();
-      if (simpleCalendarInstalled && aeDuration.type === "seconds") {
+      // @ts-expect-error v14 duration.units
+      if (simpleCalendarInstalled && aeDuration.units === "seconds") {
         const simpleCalendar = globalThis.SimpleCalendar?.api;
         newAe.duration.label = simpleCalendar.formatTimestamp(aeDuration.remaining).time
       } else if (aeDuration.label) {
@@ -81,11 +89,11 @@ export class ActiveEffects extends WeirdIntermediate {
       newAe.isTemporary = ae.isTemporary;
       newAe.sourceName = `(${ae.sourceName ?? "Unknown"})`;
       if (this.filters.has("summary")) {
-        newAe.changes = [];
+        newAe.system.changes = [];
         actives.push(newAe);
         continue;
       }
-      newAe.changes.map(change => {
+      newAe.system.changes.map(change => {
         if (this.document instanceof CONFIG.Item.documentClass)
           change.label = ValidSpec.actorSpecs["union"].allSpecsObj[change.key]?.label || change.key;
         else
@@ -114,6 +122,7 @@ export class ActiveEffects extends WeirdIntermediate {
       else {
         foundry.utils.setProperty(e, "flags.dae.itemName", "????");
       }
+      // @ts-expect-error v14 ActivesEntry/Source type mismatch
       e.transfer = effectIsTransfer(e as ActiveEffect.Source) ?? true;
     });
   
@@ -132,7 +141,7 @@ export class ActiveEffects extends WeirdIntermediate {
       isItem,
       isOwned: this.document instanceof Item && this.document.isOwned,
       flags: this.document.flags,
-      modes: modeKeys,
+      typeLabels,
       validSpecs: isItem ? ValidSpec.actorSpecs["union"].allSpecsObj : ValidSpec.actorSpecs[this.document.type],
       // canEdit: game.user.isGM || (playersCanSeeEffects === "edit" && game.user.isTrusted),
       canEdit: true,
@@ -150,9 +159,10 @@ export class ActiveEffects extends WeirdIntermediate {
   async _processSubmitData(_event: SubmitEvent, _form: HTMLFormElement, submitDataOrig: foundry.applications.ux.FormDataExtended) {
     const document = this.document;
     const submitData = foundry.utils.expandObject(submitDataOrig) as Record<string, any>;
-    submitData.changes ??= [];
-    submitData.changes = Object.values(submitData.changes);
-    for (const c of submitData.changes) {
+    submitData.system ??= {};
+    submitData.system.changes ??= [];
+    submitData.system.changes = Object.values(submitData.system.changes);
+    for (const c of submitData.system.changes) {
       if (Number.isNumeric(c.value)) c.value = parseFloat(c.value);
     }
     await document.update(submitData);
@@ -189,14 +199,14 @@ export class ActiveEffects extends WeirdIntermediate {
     if (id === "new") {
       const AEData = {
         name: this.document.name,
-        changes: [],
+        system: { changes: [] },
         transfer: false,
         img: this.document.img || "icons/svg/mystery-man.svg"
       };
       // @ts-expect-error types confused about item vs actor
       await this.document.createEmbeddedDocuments("ActiveEffect", [AEData]);
     } else {
-      const statusEffect = CONFIG.statusEffects.find(se => se.id === id);
+      const statusEffect = getStatusEffectsArray().find(se => se.id === id);
       if (statusEffect && id) {
         if (!statusEffect._id) statusEffect._id = foundry.utils.randomID();
         const effect = await ActiveEffect.implementation.fromStatusEffect(id, { parent: this.document });
@@ -229,7 +239,7 @@ interface ActiveEffectsRenderContext extends DocumentSheetV2.RenderContext<any> 
   isItem: boolean;
   isOwned: boolean;
   flags: any;
-  modes: string[];
+  typeLabels: Record<string, string>;
   validSpecs: Record<string, ValidSpec> | Specs;
   // canEdit: boolean;
   canEdit: boolean;
@@ -248,9 +258,12 @@ interface ActivesEntry extends Omit<foundry.data.fields.SchemaField.SourceData<A
   duration: ActiveEffect.Duration;
   isTemporary: boolean;
   sourceName: string;
-  changes: (ActiveEffect.ChangeData & {
-    label: string;
-  })[]
+  system: {
+    changes: (ActiveEffect.ChangeData & {
+      label: string;
+    })[];
+    [key: string]: unknown;
+  };
 }
 
 type FilterEntry = "summary" | "temporary" | "enabled";

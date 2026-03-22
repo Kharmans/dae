@@ -8,6 +8,7 @@ import { setupSocket } from './module/GMAction.js';
 import { setupPatching, initPatching } from './module/patching.js';
 import API from './module/API/api.js';
 import { addAutoFields, BooleanFormulaField } from './module/apps/DAEActiveEffectConfig.js';
+import { migrateTimesUpSettings } from './module/specialDurations.js';
 
 export let debugEnabled: number;
 export let setDebugLevel = (debugText: string) => {
@@ -36,6 +37,12 @@ export const MODULE_ID = "dae";
 Hooks.once('init', () => {
   // CONFIG.ActiveEffect.legacyTransferral = false;
   debug('Init setup actions');
+
+  // Register "Time Elapsed" as a custom expiry event so effects can expire purely on world time advance.
+  // Core's schema forces expiry to "turnStart" when duration.value is set, but turnStart only fires in combat.
+  // This event matches the "updateWorldTime" refresh that the registry already receives on game.time.advance().
+  // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
+  CONFIG.ActiveEffect.expiryEvents.updateWorldTime = "dae.expiryEvent.updateWorldTime";
 
   const systemDaeFlag = game.system.flags?.daeCompatible;
   if (["dnd5e"].includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
@@ -78,24 +85,25 @@ Hooks.once('ready', () => {
     fetchParams();
     debug("ready setup actions")
     daeSpecialDurations = { "None": "" };
-    if (game.modules.get("times-up")?.active && foundry.utils.isNewerVersion(game.modules.get("times-up")?.version ?? "0", "0.0.9")) {
-      daeSpecialDurations["turnStart"] = i18n("dae.turnStart");
-      daeSpecialDurations["turnEnd"] = i18n("dae.turnEnd");
-      daeSpecialDurations["turnStartSource"] = i18n("dae.turnStartSource");
-      daeSpecialDurations["turnEndSource"] = i18n("dae.turnEndSource");
-      daeSpecialDurations["combatEnd"] = i18n("COMBAT.End");
-      daeSpecialDurations["joinCombat"] = i18n("COMBAT.CombatantCreate");
-      daeMacroRepeats = {
-        "none": "",
-        "startEveryTurn": i18n("dae.startEveryTurn"),
-        "endEveryTurn": i18n("dae.endEveryTurn"),
-        "startEndEveryTurn": i18n("dae.startEndEveryTurn"),
-        "startEveryTurnAny": i18n("dae.startEveryTurnAny"),
-        "endEveryTurnAny": i18n("dae.endEveryTurnAny"),
-        "startEndEveryTurnAny": i18n("dae.startEndEveryTurnAny")
-      };
-    }
+    // turnStart, turnEnd, turnStartSource, turnEndSource, combatEnd removed —
+    // now handled by v14 core duration.expiry + combatActorOverride
+    daeSpecialDurations["joinCombat"] = i18n("COMBAT.CombatantCreate");
+    daeMacroRepeats = {
+      "none": "",
+      "startEveryTurn": i18n("dae.startEveryTurn"),
+      "endEveryTurn": i18n("dae.endEveryTurn"),
+      "startEndEveryTurn": i18n("dae.startEndEveryTurn"),
+      "startEveryTurnAny": i18n("dae.startEveryTurnAny"),
+      "endEveryTurnAny": i18n("dae.endEveryTurnAny"),
+      "startEndEveryTurnAny": i18n("dae.startEndEveryTurnAny")
+    };
+    // Apply the core expiry action override from DAE settings
+    const coreExpiryAction = game.settings.get("dae", "coreExpiryAction");
+    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryAction not in fvtt-types yet
+    CONFIG.ActiveEffect.expiryAction = coreExpiryAction === "none" ? null : coreExpiryAction;
+
     daeReadyActions();
+    migrateTimesUpSettings();
     createDAEMacros();
   } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
     ui.notifications?.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);

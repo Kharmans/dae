@@ -21,17 +21,6 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "expireRealTime", {
-    name: "dae.expireRealTime.Name",
-    hint: "dae.expireRealTime.Hint",
-    scope: "world",
-    default: true,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
-
-
   game.settings.register("dae", "showInline", {
     scope: "client",
     name: "dae.ShowInline.Name",
@@ -60,15 +49,6 @@ export const registerSettings = async function () {
     type: Boolean,
     config: true,
     onChange: fetchParams
-  });
-
-  game.settings.register("dae", "DIMESyncItemacro", {
-    name: "dae.DIMESyncItemacro.Name",
-    hint: "dae.DIMESyncItemacro.Hint",
-    scope: "world",
-    default: true,
-    type: Boolean,
-    config: true
   });
 
   game.settings.register("dae", "DAEColorTitleBar", {
@@ -152,4 +132,81 @@ export const registerSettings = async function () {
     config: true,
     requiresReload: true
   })
+
+  game.settings.register("dae", "durationManagementEnabled", {
+    name: "dae.durationManagementEnabled.Name",
+    hint: "dae.durationManagementEnabled.Hint",
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
+  game.settings.register("dae", "enablePassiveEffects", {
+    name: "dae.enablePassiveEffects.Name",
+    hint: "dae.enablePassiveEffects.Hint",
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
+  game.settings.register("dae", "updatePassiveEffects", {
+    name: "dae.updatePassiveEffects.Name",
+    hint: "dae.updatePassiveEffects.Hint",
+    scope: "world",
+    default: true,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
+  game.settings.register("dae", "expireRoundEffectsOnCombatEnd", {
+    name: "dae.expireRoundEffectsOnCombatEnd.Name",
+    hint: "dae.expireRoundEffectsOnCombatEnd.Hint",
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: true,
+    onChange: fetchParams
+  });
+
+  game.settings.register("dae", "expiryAction", {
+    name: "dae.expiryAction.Name",
+    hint: "dae.expiryAction.Hint",
+    scope: "world",
+    default: "default",
+    type: String,
+    config: true,
+    choices: {
+      "default": "dae.expiryAction.default",
+      "delete": "dae.expiryAction.delete",
+      "update": "dae.expiryAction.update"
+    },
+    onChange: fetchParams
+  });
+
+  game.settings.register("dae", "coreExpiryAction", {
+    name: "dae.coreExpiryAction.Name",
+    hint: "dae.coreExpiryAction.Hint",
+    scope: "world",
+    default: "update",
+    type: String,
+    config: true,
+    choices: {
+      "update": "dae.coreExpiryAction.update",
+      "delete": "dae.coreExpiryAction.delete",
+      "none": "dae.coreExpiryAction.none"
+    },
+    requiresReload: true
+  });
+
+  game.settings.register("dae", "timesUpMigrated", {
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: false,
+  });
 };

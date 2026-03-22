@@ -2,7 +2,7 @@
   "id": "dae",
   "title": "Dynamic effects using Active Effects (DAE)",
   "description": "Replacement for dynamic effects",
-  "version": "13.0.24",
+  "version": "14.0.1",
   "authors": [
     {
       "name": "tposney",
@@ -96,9 +96,9 @@
     "css/field-browser.css"
   ],
   "compatibility": {
-    "minimum": "13.0",
-    "verified": "13.351",
-    "maximum": "13.999"
+    "minimum": "14.0",
+    "verified": "14.356",
+    "maximum": "14.999"
   },
   "url": "https://gitlab.com/tposney/dae",
   "manifest": "https://gitlab.com/tposney/dae/raw/v13/package/module.json",

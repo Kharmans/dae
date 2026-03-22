@@ -116,19 +116,4 @@ export class DIMEditor extends WeirdIntermediate {
     }
   }
 
-  public static preUpdateItemHook(item: Item.Implementation, updates: Item.UpdateData, _options: Partial<foundry.abstract.DatabaseBackend.UpdateOperation<any>>, _userId: string): boolean {
-    if (!game.settings.get("dae", "DIMESyncItemacro") /*|| !game.modules.get("itemacro") */) return true;
-    const existing = item.flags?.dae?.macro
-      ?? item?.flags?.itemacro?.macro
-      ?? { command: "" };
-
-    if (updates.flags?.dae?.macro) {
-      const macroData = foundry.utils.mergeObject(existing, updates.flags.dae.macro);
-      foundry.utils.setProperty(updates, "flags.itemacro.macro", macroData);
-    } else if (updates.flags?.itemacro?.macro) {
-      const macrodata = foundry.utils.mergeObject(existing, updates.flags.itemacro.macro);
-      foundry.utils.setProperty(updates, "flags.dae.macro", macrodata);
-    }
-    return true;
-  }
 }

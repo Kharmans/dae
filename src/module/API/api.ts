@@ -8,6 +8,7 @@ import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActi
 import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration.js';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
 import { enumerateBaseValues } from '../dae.js';
+import { expireEffect, isEffectExpired, isTransferEffect, hasDuration, hasExpiry } from '../specialDurations.js';
 
 const API = {
   ActiveEffects(document: Actor.Implementation | Item.Implementation) {
@@ -51,10 +52,15 @@ const API = {
   doActivityEffects,
   doEffects,
   enumerateBaseValues,
+  expireEffect,
   fixTransferEffect,
   fixTransferEffects,
   getFlag,
   getTokenFlag,
+  hasDuration,
+  hasExpiry,
+  isEffectExpired,
+  isTransferEffect,
   moveToken,
   removeActorsPassiveEffects,
   removeAllScenesPassiveEffects,

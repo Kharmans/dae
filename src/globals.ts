@@ -23,7 +23,7 @@ declare module "fvtt-types/configuration" {
         StringField: typeof foundry.data.fields.StringField;
       }) => void;
       "dae.ready": (api: typeof API) => void;
-      "dae.addFieldMappings": (fieldMappings: Record<string, string | { key: string, value?: string, mode?: number }>) => void;
+      "dae.addFieldMappings": (fieldMappings: Record<string, string | { key: string, value?: string, mode?: number | string }>) => void;
       "dae.addSpecialDurations": (specialDurations: unknown) => void;
       "dae.modifyBaseValues": (specKey: string, baseValues: BaseValuesInner, charSpec: unknown) => void;
       "dae.modifyDerivedSpecs": (specKey: string, derivedSpecs: ValidSpec[], charSpec: unknown) => void;
@@ -131,11 +131,9 @@ declare module "fvtt-types/configuration" {
   interface SettingConfig {
     "dae.DependentConditions": boolean;
     "dae.noDupDamageMacro": boolean;
-    "dae.expireRealTime": boolean;
     "dae.showInline": boolean;
     "dae.DAETitleBar": boolean;
     "dae.DIMETitleBar": boolean;
-    "dae.DIMESyncItemacro": boolean;
     "dae.DAEColorTitleBar": boolean;
     "dae.DAENoTitleText": boolean;
     "dae.DAEAddHalfHealthEffect": boolean;
@@ -144,6 +142,13 @@ declare module "fvtt-types/configuration" {
     "dae.disableEffects": boolean;
     "dae.initMacrosOnLoad": boolean;
     "dae.maxShortDuration": number;
+    "dae.durationManagementEnabled": boolean;
+    "dae.enablePassiveEffects": boolean;
+    "dae.updatePassiveEffects": boolean;
+    "dae.expireRoundEffectsOnCombatEnd": boolean;
+    "dae.expiryAction": string;
+    "dae.coreExpiryAction": string;
+    "dae.timesUpMigrated": boolean;
 
     // Other module settings
     "ATL.presets": {

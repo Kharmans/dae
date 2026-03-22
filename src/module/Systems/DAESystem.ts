@@ -2,7 +2,7 @@ import { AnyMutableObject, AnyObject } from "fvtt-types/utils";
 import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
 import { daeApplyActiveEffects, daeSystemClass, libWrapper, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner, actionQueue, daeMacro, daeInitMacroActors, pendingInitMacroEffects } from "../dae.js";
 
-const { ArrayField, BooleanField, NumberField, StringField } = foundry.data.fields;
+const { ArrayField, BooleanField, NumberField, ObjectField, SchemaField, SetField, StringField } = foundry.data.fields;
 
 export let wildcardEffects: RegExp[] = [];
 // TODO (Michael): Can this be removed entirely?
@@ -11,7 +11,7 @@ export let _characterSpec: { data: unknown, flags: unknown } = { data: {}, flags
 
 export type DataFieldClass = new (...args: any[]) => foundry.data.fields.DataField;
 export type FieldType = foundry.data.fields.DataField | DataFieldClass | "number" | "string" | "boolean" | "object" | "Array" | "Set" | 0;
-export type SpecPhase = "initial" | "final" | "daePostDerived" | "none";
+export type SpecPhase = "initial" | "final" | "none";
 
 export type Specs = {
   allSpecs: ValidSpec[];
@@ -38,9 +38,9 @@ export class ValidSpec {
   get description(): string { return this._description }
   set description(description: string) { this._description = description }
 
-  _forcedMode: number;
-  get forcedMode(): number { return this._forcedMode }
-  set forcedMode(mode: number) { this._forcedMode = mode }
+  _forcedMode: string;
+  get forcedMode(): string { return this._forcedMode }
+  set forcedMode(mode: string) { this._forcedMode = mode }
 
   _options: Record<string, string> | undefined;
   get options(): Record<string, string> | undefined { return this._options }
@@ -50,7 +50,7 @@ export class ValidSpec {
   get phase(): SpecPhase { return this._phase }
   set phase(phase: SpecPhase) { this._phase = phase }
 
-  constructor(fs: string, sv: FieldType, forcedMode = -1, label?: string, description?: string, phase: SpecPhase = "initial", options?: Record<string, string>) {
+  constructor(fs: string, sv: FieldType, forcedMode = "", label?: string, description?: string, phase: SpecPhase = "initial", options?: Record<string, string>) {
     this._fieldSpec = fs;
     this._fieldType = sv;
     this._label = label ?? fs;
@@ -62,7 +62,6 @@ export class ValidSpec {
 
   static createValidMods() {
     this.actorSpecs = {};
-    const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
 
     function coerceBaseValueField(map: Record<string, any>, label: string) {
       for (let key of Object.keys(map)) {
@@ -82,32 +81,45 @@ export class ValidSpec {
       }
     }
 
+    // Walk a DataModel schema tree, producing flat "system.x.y.z" → [DataField, ""] entries (empty string = allow all types)
+    function walkSchema(prefix: string, schemaField: foundry.data.fields.SchemaField<any>, baseValues: Record<string, any>) {
+      for (const [fieldKey, field] of Object.entries(schemaField.fields) as [string, foundry.data.fields.DataField][]) {
+        const key = `${prefix}.${fieldKey}`;
+        if (field instanceof SchemaField) {
+          walkSchema(key, field, baseValues);
+        } else {
+          baseValues[key] = [field, ""];
+        }
+      }
+    }
+
     for (let specKey of Object.keys(CONFIG.Actor.dataModels)) {
       this.actorSpecs[specKey] = { allSpecs: [], allSpecsObj: {} };
-      _characterSpec["system"] = game.model ? foundry.utils.duplicate(game.model.Actor[specKey] ?? {}) : {};
-      let baseValues = foundry.utils.flattenObject(_characterSpec) as Record<string, any>;
-      for (let prop in baseValues) {
-        baseValues[prop] = [baseValues[prop], -1];
+      // Build baseValues from the DataModel schema
+      let baseValues: Record<string, any> = {};
+      const dataModel = CONFIG.Actor.dataModels[specKey];
+      if (dataModel?.schema) {
+        walkSchema("system", dataModel.schema, baseValues);
       }
       daeSystemClass.modifyBaseValues(specKey, baseValues, _characterSpec);
       Hooks.callAll("dae.modifyBaseValues", specKey, baseValues, _characterSpec);
       coerceBaseValueField(baseValues, "baseValue");
 
       if (game.modules.get("gm-notes")?.active) {
-        baseValues["flags.gm-notes.notes"] = [new StringField(), -1];
-        baseValues["name"] = [new StringField(), -1];
+        baseValues["flags.gm-notes.notes"] = [new StringField(), ""];
+        baseValues["name"] = [new StringField(), ""];
       }
 
       let specials: BaseValuesInner = {};
-      if (ceInterface) specials["macro.CE"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["macro.StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["StatusEffect"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      if (ceInterface) specials["macro.CE"] = [new StringField(), "custom"];
+      specials["macro.StatusEffect"] = [new StringField(), "custom"];
+      specials["StatusEffect"] = [new StringField(), "custom"];
       daeSystemClass.modifySpecials(specKey, specials, _characterSpec);
       Hooks.callAll("dae.modifySpecials", specKey, specials, _characterSpec)
       coerceBaseValueField(specials, "special");
 
-      specials["flags.dae.onUpdateTarget"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-      specials["flags.dae.onUpdateSource"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+      specials["flags.dae.onUpdateTarget"] = [new StringField(), "custom"];
+      specials["flags.dae.onUpdateSource"] = [new StringField(), "custom"];
 
       Object.keys(specials).forEach(key => {
         if (debugEnabled > 0 && baseValues[key]) console.log(`DAE | specials ${key} is already defined in baseValues - removing from baseValues`)
@@ -124,19 +136,19 @@ export class ValidSpec {
       }
 
       if (game.modules.get("tokenmagic")?.active) {
-        specials["macro.tokenMagic"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+        specials["macro.tokenMagic"] = [new StringField(), "custom"];
       }
 
-      // Specials and derived specs get phase "daePostDerived"
+      // Specials and derived specs get phase "final" (applied after prepareDerivedData)
       const derivedSpecsList: ValidSpec[] = [];
       daeSystemClass.modifyDerivedSpecs(specKey, derivedSpecsList, _characterSpec)
       Hooks.callAll("dae.modifyDerivedSpecs", specKey, derivedSpecsList, _characterSpec);
       for (const vs of derivedSpecsList) {
-        vs._phase = "daePostDerived";
+        vs._phase = "final";
         allSpecsObj[vs._fieldSpec] = vs;
       }
       for (const [key, value] of Object.entries(specials)) {
-        const validSpec = new ValidSpec(key, value[0], value[1], value[0].label, value[0].hint, "daePostDerived");
+        const validSpec = new ValidSpec(key, value[0], value[1], value[0].label, value[0].hint, "final");
         allSpecsObj[key] = validSpec;
       }
 
@@ -209,7 +221,7 @@ export class ValidSpec {
         else if (skillPassive) m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "StatusEffectLabel") m._label = `${m._label} (Deprecated)`;
         else if (m._fieldSpec === "system.attributes.ac.value") m._label = `${m._label} (Deprecated)`;
-        else if (m._phase === "daePostDerived") m._label = `${m._label ? m._label : m._fieldSpec} (*)`;
+        else if (m._phase === "final") m._label = `${m._label ? m._label : m._fieldSpec} (*)`;
         else if (m._phase === "none") m._label = `${m._label ? m._label : m._fieldSpec} (ui)`;
         return m;
       });
@@ -240,7 +252,7 @@ export class ValidSpec {
         else if (skillPassive) m.label = `${m.label} (Deprecated)`;
         else if (m.fieldSpec === "StatusEffectLabel") m.label = `${m.label} (Deprecated)`;
         else if (m.fieldSpec === "system.attributes.ac.value") m.label = `${m.label} (Deprecated)`;
-        else if (m._phase === "daePostDerived") m.label = `${m.label} (*)`;
+        else if (m._phase === "final") m.label = `${m.label} (*)`;
         else if (m._phase === "none") m.label = `${m.label} (ui)`;
         let newOptions = m.options;
         // @ts-expect-error TODO (Michael): is this actually possible?
@@ -268,7 +280,7 @@ export class DAESystem {
   }>;
   static daeActionTypeKeys: string[];
   static detectionModeList: Record<string, string>;
-  public static fieldMappings: Record<string, string | { key: string, value?: string, mode?: number }> = {};
+  public static fieldMappings: Record<string, string | { key: string, value?: string, mode?: number | string }> = {};
 
   public static get systemConfig() {
     //@ts-expect-error no dnd5e-types
@@ -311,17 +323,16 @@ export class DAESystem {
 
   };
   public static modifySpecials(actorType: string, specials: BaseValuesInner, characterSpec: any): void {
-    const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-    specials["macro.execute"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.execute.local"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.execute.GM"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.itemMacro"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.itemMacro.local"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.itemMacro.GM"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.actorUpdate"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.createItem"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    specials["macro.createItemRunMacro"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
-    // specials["macro.createToken"] = [new StringField(), ACTIVE_EFFECT_MODES.CUSTOM];
+    specials["macro.execute"] = [new StringField(), "custom"];
+    specials["macro.execute.local"] = [new StringField(), "custom"];
+    specials["macro.execute.GM"] = [new StringField(), "custom"];
+    specials["macro.itemMacro"] = [new StringField(), "custom"];
+    specials["macro.itemMacro.local"] = [new StringField(), "custom"];
+    specials["macro.itemMacro.GM"] = [new StringField(), "custom"];
+    specials["macro.actorUpdate"] = [new StringField(), "custom"];
+    specials["macro.createItem"] = [new StringField(), "custom"];
+    specials["macro.createItemRunMacro"] = [new StringField(), "custom"];
+    // specials["macro.createToken"] = [new StringField(), "custom"];
   };
   public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
   }
@@ -545,23 +556,14 @@ export class DAESystem {
   /*
   * replace the default actor prepareData
   * call daeApplyActiveEffects (phase-based v14 OVERRIDE)
-  * add a daePostDerived pass after derived data
   */
   public static initActions() {
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
 
-    // Register custom DAE phase for post-derived data application
-    // @ts-expect-error v14 CONFIG.ActiveEffect.phases
-    CONFIG.ActiveEffect.phases ??= {};
-    // @ts-expect-error v14 CONFIG.ActiveEffect.phases
-    CONFIG.ActiveEffect.phases.daePostDerived = {
-      label: "DAE Post-Derived",
-      hint: "Applied after all derived data preparation"
-    };
-
-    // OVERRIDE applyActiveEffects with phase-aware DAE version
+    // OVERRIDE on applyActiveEffects — DAE fully replaces core + system effect application.
+    // DAE handles phase tracking, prepareEmbeddedData, and all effect processing.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", daeApplyActiveEffects, "OVERRIDE");
-    // WRAPPER on prepareData to add post-derived phase call
+    // WRAPPER on prepareData for DAE-specific pre/post work
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // This supplies DAE custom effects via the applyActiveEffect hook
     // @ts-expect-error our custom stuff in the change data makes types angry
@@ -575,58 +577,36 @@ export class DAESystem {
   public static setupActions(): void {
   }
 
+  public static async preCreateActiveEffect(effect: ActiveEffect): Promise<void> {
+  }
 
 }
 
 /*
 * replace the default actor prepareData
 * v14: wrapped() triggers core's initial + final phases via the OVERRIDE
-* Then call daePostDerived phase for DAE-specific post-derived application
+* Core handles: _clearData, initial phase, prepareDerivedData, final phase, specialStatuses
 */
 function prepareData(this: Actor.Implementation, wrapped) {
   const initMacrosOnLoad = game.settings.get("dae", "initMacrosOnLoad");
   if (!ValidSpec.actorSpecs) {
     ValidSpec.createValidMods();
   }
-  this.statuses ??= new Set();
-  // Identify which special statuses had been active
-  const specialStatuses = new Map();
 
-  for (const statusId of Object.values(CONFIG.specialStatusEffects)) {
-    specialStatuses.set(statusId, this.statuses.has(statusId));
-  }
-  this.statuses.clear(); // need to do this here since core foundry does this in applyActiveEffects, but we do multiple calls to applyEffects
   foundry.utils.setProperty(this, "flags.dae.onUpdateTarget", foundry.utils.getProperty(this._source, "flags.dae.onUpdateTarget"));
   debug("prepare data: before passes", this.name, this._source);
-  this.overrides = {};
-  // @ts-expect-error v14 _completedActiveEffectPhases
-  if (this._completedActiveEffectPhases) this._completedActiveEffectPhases.clear();
 
-  // Call the original prepareData — v14 core calls applyActiveEffects("initial") in prepareEmbeddedDocuments
-  // and applyActiveEffects("final") after prepareDerivedData. Both use the DAE OVERRIDE.
   wrapped();
 
-  // Run the DAE post-derived phase for effects that need derived data
-  // @ts-expect-error v14 phase parameter
-  this.applyActiveEffects("daePostDerived");
-
-  // Apply special statuses that changed to active tokens
-  let tokens: foundry.canvas.placeables.Token[] | undefined;
-  for (const [statusId, wasActive] of specialStatuses) {
-    const isActive = this.statuses.has(statusId);
-    if (isActive === wasActive) continue;
-    if (!tokens) tokens = this.getActiveTokens();
-    // @ts-expect-error protected - do we need this?
-    for (const token of tokens) token._onApplyStatusEffect(statusId, isActive);
-  }
   // On first prepareData for each actor, fire "init" for
-  // macro.itemMacro/macro.activityMacro so macros that register hooks can re-initialize after world load
+  // macro.itemMacro/macro.activityMacro/macro.execute so macros that register hooks can re-initialize after world load
   if (initMacrosOnLoad && !daeInitMacroActors.has(this.uuid)) {
     daeInitMacroActors.add(this.uuid);
     const initEffects: ActiveEffect.Implementation[] = [];
     for (const ef of this.allApplicableEffects()) {
       if (ef.disabled || ef.isSuppressed) continue;
-      if (ef.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro"))) {
+      // @ts-expect-error v14 system.changes
+      if (ef.system.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro") || c.key.startsWith("macro.execute"))) {
         initEffects.push(ef);
       }
     }
@@ -643,43 +623,42 @@ function prepareData(this: Actor.Implementation, wrapped) {
 foundry.utils.setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
 
 Hooks.on("dae.modifySpecs", (specKey, allSpecsObj) => {
-  const ACTIVE_EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
   if (game.modules.get("ATL")?.active) {
     for (let label of ["dimSight", "brightSight"]) {
-      allSpecsObj[`ATL.${label}`] = new ValidSpec(`ATL.${label}`, new NumberField(), -1, undefined, undefined, "daePostDerived");
+      allSpecsObj[`ATL.${label}`] = new ValidSpec(`ATL.${label}`, new NumberField(), "", undefined, undefined, "final");
     }
-    allSpecsObj["ATL.alpha"] = new ValidSpec("ATL.alpha", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.elevation"] = new ValidSpec("ATL.elevation", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.height"] = new ValidSpec("ATL.height", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.width"] = new ValidSpec("ATL.width", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.hidden"] = new ValidSpec("ATL.hidden", new BooleanField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.rotation"] = new ValidSpec("ATL.rotation", new NumberField(), -1, undefined, undefined, "daePostDerived");
+    allSpecsObj["ATL.alpha"] = new ValidSpec("ATL.alpha", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.elevation"] = new ValidSpec("ATL.elevation", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.height"] = new ValidSpec("ATL.height", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.width"] = new ValidSpec("ATL.width", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.hidden"] = new ValidSpec("ATL.hidden", new BooleanField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.rotation"] = new ValidSpec("ATL.rotation", new NumberField(), "", undefined, undefined, "final");
 
-    allSpecsObj["ATL.light.animation"] = new ValidSpec("ATL.light.animation", new StringField(), -1, undefined, undefined, "daePostDerived"); // json string
-    allSpecsObj["ATL.light.alpha"] = new ValidSpec("ATL.light.alpha", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.angle"] = new ValidSpec("ATL.light.angle", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.attenuation"] = new ValidSpec("ATL.light.attenuation", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.bright"] = new ValidSpec("ATL.light.bright", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.color"] = new ValidSpec("ATL.light.color", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.coloration"] = new ValidSpec("ATL.light.coloration", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.contrast"] = new ValidSpec("ATL.light.contrast", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.dim"] = new ValidSpec("ATL.light.dim", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.luminosity"] = new ValidSpec("ATL.light.luminosity", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.saturation"] = new ValidSpec("ATL.light.saturation", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.shadows"] = new ValidSpec("ATL.light.shadows", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.darkness.max"] = new ValidSpec("ATL.light.darkness.max", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.light.darkness.min"] = new ValidSpec("ATL.light.darkness.min", new NumberField(), -1, undefined, undefined, "daePostDerived");
+    allSpecsObj["ATL.light.animation"] = new ValidSpec("ATL.light.animation", new StringField(), "", undefined, undefined, "final"); // json string
+    allSpecsObj["ATL.light.alpha"] = new ValidSpec("ATL.light.alpha", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.angle"] = new ValidSpec("ATL.light.angle", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.attenuation"] = new ValidSpec("ATL.light.attenuation", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.bright"] = new ValidSpec("ATL.light.bright", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.color"] = new ValidSpec("ATL.light.color", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.coloration"] = new ValidSpec("ATL.light.coloration", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.contrast"] = new ValidSpec("ATL.light.contrast", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.dim"] = new ValidSpec("ATL.light.dim", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.luminosity"] = new ValidSpec("ATL.light.luminosity", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.saturation"] = new ValidSpec("ATL.light.saturation", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.shadows"] = new ValidSpec("ATL.light.shadows", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.darkness.max"] = new ValidSpec("ATL.light.darkness.max", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.light.darkness.min"] = new ValidSpec("ATL.light.darkness.min", new NumberField(), "", undefined, undefined, "final");
     // detection modes are set in "ready" hook to allow for detection mode configuration
-    allSpecsObj["ATL.sight.visionMode"] = new ValidSpec("ATL.sight.visionMode", new StringField(), 0, undefined, undefined, "daePostDerived"); // selection list
-    allSpecsObj["ATL.preset"] = new ValidSpec("ATL.preset", new StringField(), ACTIVE_EFFECT_MODES.CUSTOM, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.sight.angle"] = new ValidSpec("ATL.sight.angle", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.sight.attenuation"] = new ValidSpec("ATL.sight.attenuation", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.sight.brightness"] = new ValidSpec("ATL.sight.brightness", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.sight.contrast"] = new ValidSpec("ATL.sight.contrast", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.sight.enabled"] = new ValidSpec("ATL.sight.enabled", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.sight.range"] = new ValidSpec("ATL.sight.range", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.sight.saturation"] = new ValidSpec("ATL.sight.saturation", new NumberField(), -1, undefined, undefined, "daePostDerived");
-    allSpecsObj["ATL.sight.color"] = new ValidSpec("ATL.sight.color", new StringField(), -1, undefined, undefined, "daePostDerived");
+    allSpecsObj["ATL.sight.visionMode"] = new ValidSpec("ATL.sight.visionMode", new StringField(), "custom", undefined, undefined, "final"); // selection list
+    allSpecsObj["ATL.preset"] = new ValidSpec("ATL.preset", new StringField(), "custom", undefined, undefined, "final");
+    allSpecsObj["ATL.sight.angle"] = new ValidSpec("ATL.sight.angle", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.sight.attenuation"] = new ValidSpec("ATL.sight.attenuation", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.sight.brightness"] = new ValidSpec("ATL.sight.brightness", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.sight.contrast"] = new ValidSpec("ATL.sight.contrast", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.sight.enabled"] = new ValidSpec("ATL.sight.enabled", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.sight.range"] = new ValidSpec("ATL.sight.range", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.sight.saturation"] = new ValidSpec("ATL.sight.saturation", new NumberField(), "", undefined, undefined, "final");
+    allSpecsObj["ATL.sight.color"] = new ValidSpec("ATL.sight.color", new StringField(), "", undefined, undefined, "final");
   }
 });
 

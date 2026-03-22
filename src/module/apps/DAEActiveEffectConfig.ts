@@ -1,4 +1,4 @@
-import { ceInterface, atlActive, daeSystemClass, localizationMap } from "../dae.js";
+import { ceInterface, atlActive, daeSystemClass, getStatusEffectsArray, localizationMap } from "../dae.js";
 import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
@@ -140,7 +140,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     daeSystemClass.configureLists()
 
     this.statusEffectList = {};
-    CONFIG.statusEffects
+    getStatusEffectsArray()
       .filter(se => se.id)
       .map(se => ({ id: se.id, name: i18n(se.name) }))
       .toSorted((a, b) => a.name < b.name ? -1 : 1)
@@ -194,7 +194,6 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
   static DEFAULT_OPTIONS = {
     window: {
-      title: "EFFECT.ConfigTitle",
       resizable: true
     },
     position: {
@@ -203,8 +202,11 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     },
     classes: ["sheet", "active-effect-config", "window-app", "dae"],
     actions: {
+      addChange: DAEActiveEffectConfig.#onAddChange,
+      deleteChange: DAEActiveEffectConfig.#onDeleteChange,
       addSpecialDuration: DAEActiveEffectConfig.#onAddSpecialDuration,
-      deleteSpecialDuration: DAEActiveEffectConfig.#onDeleteSpecialDuration
+      deleteSpecialDuration: DAEActiveEffectConfig.#onDeleteSpecialDuration,
+      resetStartTime: DAEActiveEffectConfig.#onResetStartTime
     }
   };
 
@@ -280,23 +282,26 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     if (document.flags?.dae?.specialDuration === undefined)
       foundry.utils.setProperty(document, "flags.dae.specialDuration", []);
 
-    // Migrate deprecated turn start/end special durations to v14 duration.expiry + combatActorOverride
-    const turnSpecialDurMap: Record<string, { expiry: string, combatActor: "source" | "target" }> = {
+    // Migrate deprecated special durations to v14 duration.expiry + combatActorOverride
+    const deprecatedSpecialDurMap: Record<string, { expiry: string, combatActor: "source" | "target" | null }> = {
       "turnStart": { expiry: "turnStart", combatActor: "target" },
       "turnEnd": { expiry: "turnEnd", combatActor: "target" },
       "turnStartSource": { expiry: "turnStart", combatActor: "source" },
-      "turnEndSource": { expiry: "turnEnd", combatActor: "source" }
+      "turnEndSource": { expiry: "turnEnd", combatActor: "source" },
+      "combatEnd": { expiry: "combatEnd", combatActor: null }
     };
     let specialDurs: string[] = Array.isArray(document.flags?.dae?.specialDuration) ? document.flags.dae.specialDuration : (document.flags?.dae?.specialDuration ? [document.flags.dae.specialDuration] : []);
     if (typeof specialDurs === "string") specialDurs = [specialDurs];
-    const deprecatedDurs = specialDurs.filter(sd => sd in turnSpecialDurMap);
+    const deprecatedDurs = specialDurs.filter(sd => sd in deprecatedSpecialDurMap);
     if (deprecatedDurs.length > 0) {
-      const migration = turnSpecialDurMap[deprecatedDurs[0]];
-      const remaining = specialDurs.filter(sd => !(sd in turnSpecialDurMap));
-      ui.notifications?.warn(`DAE | Effect "${document.name}": special duration "${deprecatedDurs.join(", ")}" is deprecated. Migrating to duration expiry + combat actor override.`);
+      const migration = deprecatedSpecialDurMap[deprecatedDurs[0]];
+      const remaining = specialDurs.filter(sd => !(sd in deprecatedSpecialDurMap));
+      ui.notifications?.warn(`DAE | Effect "${document.name}": special duration "${deprecatedDurs.join(", ")}" is deprecated. Migrating to duration expiry.`);
       foundry.utils.setProperty(document, "flags.dae.specialDuration", remaining);
-      foundry.utils.setProperty(document, "flags.dae.combatActorOverride", migration.combatActor);
       foundry.utils.setProperty(document, "duration.expiry", migration.expiry);
+      if (migration.combatActor) {
+        foundry.utils.setProperty(document, "flags.dae.combatActorOverride", migration.combatActor);
+      }
     }
 
     // Migrate deprecated flags.dae.showIcon to native showIcon field
@@ -313,12 +318,26 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
     await daeSystemClass.editConfig();
 
-    const allModes = Object.entries(CONST.ACTIVE_EFFECT_MODES)
-      .reduce((obj, e) => {
-        obj[e[1]] = i18n("EFFECT.MODE_" + e[0]);
-        return obj;
-      }, {});
-    context.modes = allModes;
+    // v14: build change type options from ActiveEffect.CHANGE_TYPES (string-keyed)
+    // @ts-expect-error v14 ActiveEffect.CHANGE_TYPES not in fvtt-types yet
+    const changeTypesRaw: Record<string, { label: string, defaultPriority: number }> = ActiveEffect.CHANGE_TYPES ?? {};
+    const allTypes: Record<string, string> = {};
+    for (const [type, config] of Object.entries(changeTypesRaw)) {
+      allTypes[type] = i18n(config.label);
+    }
+    context.allTypes = allTypes;
+    // v14: provide default priorities keyed by type string (for placeholder in template)
+    const priorities: Record<string, number> = {};
+    for (const [type, config] of Object.entries(changeTypesRaw)) {
+      priorities[type] = config.defaultPriority;
+    }
+    context.priorities = priorities;
+    // v14: provide change schema fields from system.changes (not top-level changes)
+    // @ts-expect-error v14 system typed data model
+    context.changeFields = document.system.schema.fields.changes.element.fields;
+    // v14: duration units, expiry events, and start context are provided by the core's
+    // _preparePartContext("duration", ...) — no need to set them here.
+    // DAE-specific duration context:
     context.specialDuration = daeSpecialDurations;
     context.showSpecialDurations = Object.keys(daeSpecialDurations)?.length > 1;
     context.macroRepeats = daeMacroRepeats;
@@ -327,13 +346,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       "source": i18n("dae.combatActorSource"),
       "target": i18n("dae.combatActorTarget")
     };
-    context.expiryOptions = {
-      "turnStart": i18n("dae.expiryTurnStart"),
-      "turnEnd": i18n("dae.expiryTurnEnd")
-    };
-    const hasTurnDuration = !!(document.duration?.rounds || document.duration?.turns);
+    // v14: use native duration.units instead of shimmed duration.rounds/turns
+    const isCombatDuration = ["rounds", "turns"].includes((document.duration as any)?.units);
     const hasTurnExpiry = ["turnStart", "turnEnd"].includes((document.duration as any)?.expiry);
-    context.showCombatActorOverride = hasTurnDuration || hasTurnExpiry;
+    context.showCombatActorOverride = isCombatDuration || hasTurnExpiry;
 
     if (document.parent) {
       context.isItemEffect = document.parent instanceof CONFIG.Item.documentClass;
@@ -341,27 +357,28 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     }
     context.submitText = "EFFECT.Submit";
 
-    (context.source!.changes as DAEChange[]).forEach(change => {
-      if ([-1, undefined].includes(this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode)) {
-        if (change.modes && options.force) error("DAE | change already has modes set", this.document, change);
-        change.modes = allModes;
-      } else if (this.validSpecsToUse.allSpecsObj[change.key]) {
-        const mode = {};
-        mode[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode] = allModes[this.validSpecsToUse.allSpecsObj[change.key]?.forcedMode];
-        if (change.modes && options.force) error("DAE | change already has modes set", this.document, change);
-        change.modes = mode;
-      } /*else if (!this.validSpecsToUse.allSpecsObj[change.key].startsWith("flags.midi-qol")) {
-        change.modes = allModes; //change.mode ? allModes: [allModes[CONST.ACTIVE_EFFECT_MODES.CUSTOM]];
-      }*/
+    (context.source!.system.changes as DAEChange[]).forEach(change => {
+      const spec = this.validSpecsToUse.allSpecsObj[change.key];
+      if (!spec?.forcedMode) {
+        // No forced mode — allow all types
+        if (change.types && options.force) error("DAE | change already has types set", this.document, change);
+        change.types = allTypes;
+      } else if (spec) {
+        // Forced type — restrict dropdown to the single specified type
+        const restrictedTypes: Record<string, string> = {};
+        restrictedTypes[spec.forcedMode] = allTypes[spec.forcedMode] ?? spec.forcedMode;
+        if (change.types && options.force) error("DAE | change already has types set", this.document, change);
+        change.types = restrictedTypes;
+      }
 
-      if (this.validSpecsToUse.allSpecsObj[change.key]?.options){
+      if (spec?.options){
         if (change.options && options.force) error("DAE | change already has options set", this.document, change);
-        change.options = this.validSpecsToUse.allSpecsObj[change.key]?.options;
+        change.options = spec.options;
       } else {
         if (change.options && options.force) error("DAE | change already has options set", this.document, change);
         change.options = this.getOptionsForSpec(change);
       }
-      if (!change.priority) change.priority = change.mode * 10;
+      if (!change.priority) change.priority = changeTypesRaw[change.type ?? "add"]?.defaultPriority ?? 0;
 
       const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
       change.fieldName = fieldInfo.name;
@@ -384,16 +401,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }
     });
 
-    // TODO (Michael): Foundry calendar here?
-    const simpleCalendar = globalThis.SimpleCalendar?.api;
-    if (simpleCalendar && context.document.duration?.startTime) {
-      const dateTime = simpleCalendar.formatDateTime(simpleCalendar.timestampToDate(context.document.duration.startTime));
-      context.startTimeString = dateTime.date + " " + dateTime.time;
-      if (context.document.duration.seconds) {
-        const duration = simpleCalendar.formatDateTime(simpleCalendar.timestampToDate(context.document.duration.startTime + context.document.duration.seconds));
-        context.durationString = duration.date + " " + duration.time;
-      }
-    }
+    // v14: start time display is handled by core's _prepareStartContext() using game.time.calendar
     foundry.utils.setProperty(context.document, "flags.dae.durationExpression", document.flags?.dae?.durationExpression);
     if (!context.document.flags?.dae?.specialDuration || !(context.document.flags.dae.specialDuration instanceof Array))
       foundry.utils.setProperty(context.document.flags, "dae.specialDuration", []);
@@ -410,7 +418,8 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   }
 
   updateFieldInfo() {
-    const changes = this.document.changes;
+    // @ts-expect-error v14 system.changes
+    const changes = this.document.system.changes;
     changes.forEach((change, index) => {
       const fieldInfo = this.daeFieldBrowser.getFieldInfo(change.key);
       const row = this.element?.querySelector(`.effect-change[data-index="${index}"]`);
@@ -435,7 +444,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const transferCheckBox = Array.from(this.element.querySelectorAll(".transferCheckbox"));
     for (const checkbox of transferCheckBox) {
       checkbox.addEventListener("change", (event) => {
-        this.submit({ preventClose: true })?.then(() => this.render());
+        this.submit()?.then(() => this.render());
       });
     }
     new foundry.applications.ux.DragDrop.implementation({
@@ -473,13 +482,14 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   }
 
   public onFieldSelected(): void {
-    this.submit({ preventClose: true })?.then(() => this.render());
+    this.submit()?.then(() => this.render());
   }
 
   async #onEditValue(event: Event): Promise<void> {
     const btn = event.currentTarget as HTMLElement;
     const index = Number(btn.dataset.index);
-    const change = this.document.changes[index];
+    // @ts-expect-error v14 system.changes
+    const change = this.document.system.changes[index];
     if (!change) return;
 
     const registration = getFieldEditor(change.key);
@@ -487,7 +497,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
     // Read current value from the textarea (may have unsaved edits)
     const textarea = this.element.querySelector<HTMLTextAreaElement>(
-      `textarea[name="changes.${index}.value"]`
+      `textarea[name="system.changes.${index}.value"]`
     );
     const currentValue = textarea?.value ?? change.value ?? "";
 
@@ -501,7 +511,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
     if (result !== null && result !== undefined) {
       if (textarea) textarea.value = result;
-      this.submit({ preventClose: true })?.then(() => this.render());
+      this.submit()?.then(() => this.render());
     }
   }
 
@@ -517,14 +527,36 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const targetValue = (ev.target as HTMLInputElement)?.value?.split(",")[1];
     if (data.uuid && ev.target) {
       (ev.target as HTMLInputElement).value = data.uuid + (targetValue ? `, ${targetValue}` : "");
-      this.submit({ preventClose: true })?.then(() => this.render());
+      this.submit()?.then(() => this.render());
     }
 
     if (data.fieldName) {
       if (ev.target) (ev.target as HTMLInputElement).value = data.fieldName;
       this.daeFieldBrowser.debouncedUpdateBrowser();
-      // TODO need to update the description when selected.
     }
+  }
+
+  // v14: Override core's addChange — collect from system.changes and append a new empty change
+  static #onAddChange() {
+    // @ts-expect-error v13 stubby
+    const submitData = this._processFormData(null, this.form, new foundry.applications.ux.FormDataExtended(this.form));
+    const changes = Object.values(submitData.system?.changes ?? {});
+    // @ts-expect-error v14 system typed data model
+    changes.push(this.document.system.schema.fields.changes.element.getInitialValue());
+    // @ts-expect-error v13 stubby
+    return this.submit({ updateData: { system: { changes } } });
+  }
+
+  // v14: Override core's deleteChange — collect from system.changes and remove the target
+  static #onDeleteChange(event) {
+    // @ts-expect-error v13 stubby
+    const submitData = this._processFormData(null, this.form, new foundry.applications.ux.FormDataExtended(this.form));
+    const changes = Object.values(submitData.system?.changes ?? {});
+    const row = event.target.closest("li");
+    const index = Number(row.dataset.index) || 0;
+    changes.splice(index, 1);
+    // @ts-expect-error v13 stubby
+    return this.submit({ updateData: { system: { changes } } });
   }
 
   static #onAddSpecialDuration() {
@@ -533,7 +565,6 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const specialDuration = Object.values(submitData.flags?.dae?.specialDuration ?? {}) as string[];
     // @ts-expect-error v13 stubby
     return this.submit({
-      preventClose: true,
       updateData: {
         "flags.dae.specialDuration": specialDuration.concat("None")
       }
@@ -548,19 +579,27 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     specialDuration.splice(idx, 1);
     // @ts-expect-error v13 stubby
     return this.submit({
-      preventClose: true,
       updateData: {
         "flags.dae.specialDuration": specialDuration
       }
     });
   }
 
+  static #onResetStartTime() {
+    // @ts-expect-error v14 ActiveEffect.getEffectStart
+    const start = ActiveEffect.getEffectStart(game.combat);
+    // @ts-expect-error v13 stubby
+    return this.submit({
+      updateData: {
+        start,
+        "duration.expired": false
+      }
+    });
+  }
+
   async _processSubmitData(event, form, submitData) {
     const document = this.document;
-    for (let change of (submitData.changes ?? []) as DAEChange[]) {
-      if (typeof change.priority === "string") change.priority = Number(change.priority);
-      if (change.priority === undefined || isNaN(change.priority ?? NaN)) change.priority = change.mode ? change.mode * 10 : 0;
-    }
+
     if (!submitData.tint || submitData.tint === "") submitData.tint = null;
     // fixed for very old items
     if (document.origin?.includes("OwnedItem.")) submitData.origin = document.origin.replace("OwnedItem.", "Item.");
@@ -570,6 +609,16 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     if (isEnchantment(document)) submitData.transfer = false;
     submitData.statuses ??= [];
     foundry.utils.setProperty(submitData, "flags.dae.specialDuration", Array.from(Object.values(submitData.flags?.dae?.specialDuration ?? {})))
+
+    // Set the correct phase on each change based on the ValidSpec lookup.
+    // The schema defaults phase to "initial", but specials/derived fields need "final".
+    const changes = submitData.system?.changes;
+    if (changes && this.validSpecsToUse?.allSpecsObj) {
+      for (const change of Object.values(changes) as any[]) {
+        const spec = this.validSpecsToUse.allSpecsObj[change.key];
+        if (spec) change.phase = spec.phase;
+      }
+    }
     await this.document.update(submitData);
 
   }
@@ -582,27 +631,27 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       this.daeFieldBrowser.browserElement.remove();
       this.daeFieldBrowser.browserElement = null;
     }
-    for (let change of this.document._source.changes as DAEChange[]) {
-      delete change.modes;
+    // v14: changes are in system.changes, not top-level changes
+    for (let change of (this.document._source.system?.changes ?? []) as DAEChange[]) {
+      delete change.types;
       delete change.options;
     }
   }
 }
 
 interface DAEActiveEffectConfigRenderContext extends foundry.applications.sheets.ActiveEffectConfig.RenderContext {
-  modes?: Record<number, string>;
+  allTypes?: Record<string, string>;
+  priorities?: Record<string, number>;
+  changeFields?: any;
   specialDuration?: Record<string, string>;
   showSpecialDurations?: boolean;
   macroRepeats?: Record<string, string>
   stackableOptions?: Record<string, string>;
   combatActorOptions?: Record<string, string>;
-  expiryOptions?: Record<string, string>;
   showCombatActorOverride?: boolean;
   isItemEffect?: boolean;
   isActorEffect?: boolean;
   submitText?: string;
-  startTimeString?: string;
-  durationString?: string;
   sourceName?: string;
   midiActive?: boolean;
   isEnchantment?: boolean;
@@ -635,7 +684,8 @@ export function isEnchantment(effect: ActiveEffect): boolean {
 }
 
 interface DAEChange extends ActiveEffect.ChangeData {
-  modes?: Record<number, string>;
+  type?: string; // v14: string change type (replaces numeric mode)
+  types?: Record<string, string>;
   options?: Record<string, string>;
   fieldName?: string;
   fieldDescription?: string;
