@@ -172,6 +172,32 @@ The `expireRealTime` setting was already commented out in code (non-functional).
 
 `expireEffect()` concentration logic was simplified: instead of multiple nested `await effect.delete()` calls, it now computes whether the concentration origin has remaining duration and returns early if not (letting concentration removal handle dependents). The actual expiry action (delete vs mark expired) is applied once at the end.
 
+### 2026-03-22: Cross-Module Lessons from midi-qol Migration
+
+No DAE code changes needed, but the following behavioral differences were discovered during the midi-qol/tests migration and apply to DAE code and sample items too:
+
+1. **`AnyField` stores values as-is** — v14 effect change `value` is `AnyField`, no `JSON.parse` conversion. The v13 backward-compat shim's `#migrateChangeValue` converted `"-10"` → `-10`, `"true"` → `true`, but native v14 schema does not. **Always use string values** for effect changes (preserves Roll expression support). DAE's `applyDaeEffects` and consumers must handle string-typed numeric values.
+
+2. **`type: "override"` breaks Set fields** — For dnd5e Set-based trait fields (`system.traits.dr.value`, `system.traits.di.value`, `system.traits.ci.value`), `type: "override"` replaces the Set with a plain value/Array, breaking `.has()` downstream. **Use `type: "add"` for Set fields.** v14's `SetField._applyChangeAdd` properly adds elements to the existing Set. This affects any DAE ValidSpec options or sample items targeting trait value Sets.
+
+### 2026-03-24: DAE Effect Editor — Missing Core Template Fields
+
+**Files changed:**
+- `src/templates/DAESheetConfig/Details.hbs`
+- `src/templates/DAESheetConfig/Duration.hbs`
+
+**Problem:** DAE's custom PARTS templates for the effect editor were missing fields present in core Foundry v14's `ActiveEffectConfig` templates:
+
+1. **Details tab — `showIcon` dropdown missing**: Core's `details.hbs` has `{{formGroup fields.showIcon value=source.showIcon options=showIconOptions rootId=rootId}}` (line 13) — a dropdown controlling when the effect icon is shown on the token (Never / Conditional / Always, from `CONST.ACTIVE_EFFECT_SHOW_ICON`). DAE's Details.hbs omitted this entirely. The `showIconOptions` context variable is provided by the parent class's `_preparePartContext("details", ...)` which DAE inherits (it doesn't override `_preparePartContext`).
+
+2. **Duration tab — warning icon missing**: Core's `duration.hbs` uses `<label class="flexrow">` with a hidden `<span class="warning">` containing a triangle-exclamation icon. DAE's Duration.hbs had a plain `<label>` without the flexrow class or warning span.
+
+**Fix:**
+- Added `{{formGroup fields.showIcon ...}}` to Details.hbs after the `statuses` field
+- Added `class="flexrow"` and the warning `<span>` to the Duration label to match core
+
+**Note:** DAE's `_prepareContext()` (lines 307-312) already contains migration code for the deprecated `flags.dae.showIcon` → native `showIcon` field. The template addition makes this field editable in the UI.
+
 ---
 
 ## Pending / Known Issues

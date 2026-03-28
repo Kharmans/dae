@@ -76,6 +76,18 @@ export function resolveSpecialDurationExpiryAction(): string {
   return CONFIG.ActiveEffect.expiryAction ?? "update";
 }
 
+/**
+ * Resolve the expiry action for a specific effect, checking per-effect flag first.
+ * Per-effect flags.dae.expiryMode overrides the global setting.
+ */
+export function resolveEffectExpiryAction(effect: ActiveEffect.Implementation): "delete" | "update" {
+  const mode = effect.getFlag("dae", "expiryMode") as string | undefined;
+  if (mode === "delete") return "delete";
+  if (mode === "suppress") return "update";
+  // "default" or unset — use global setting
+  return resolveSpecialDurationExpiryAction() === "delete" ? "delete" : "update";
+}
+
 // Track actors with pending status reconciliation to avoid duplicate reconciliations
 const reconciliationPending = new Set<string>();
 
@@ -478,10 +490,19 @@ export async function expireEffects(actor: Actor.Implementation, effects: Active
       effectsToDelete.push(effect);
   }
   if (actorEffectsToExpire.length > 0) {
-    if (resolveSpecialDurationExpiryAction() === "delete") {
-      await actor.deleteEmbeddedDocuments("ActiveEffect", actorEffectsToExpire, context);
-    } else {
-      const updates = actorEffectsToExpire.map(id => ({ _id: id, "duration.expired": true }));
+    const toDelete: string[] = [];
+    const toSuppress: string[] = [];
+    for (const id of actorEffectsToExpire) {
+      const ef = actor.effects.get(id);
+      if (!ef) continue;
+      if (resolveEffectExpiryAction(ef) === "delete") toDelete.push(id);
+      else toSuppress.push(id);
+    }
+    if (toDelete.length > 0) {
+      await actor.deleteEmbeddedDocuments("ActiveEffect", toDelete, context);
+    }
+    if (toSuppress.length > 0) {
+      const updates = toSuppress.map(id => ({ _id: id, "duration.expired": true }));
       await actor.updateEmbeddedDocuments("ActiveEffect", updates, context);
     }
   }

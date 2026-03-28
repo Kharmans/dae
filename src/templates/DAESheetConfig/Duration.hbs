@@ -36,8 +36,9 @@
     <fieldset>
         <legend>{{localize "EFFECT.DURATION.Header"}}</legend>
         <div class="form-group slim duration" data-duration>
-            <label for="{{rootId}}-duration.value">
+            <label class="flexrow" for="{{rootId}}-duration.value">
                 <span>{{localize "EFFECT.DURATION.Label"}}</span>
+                <span class="warning" hidden><i class="fa-duotone fa-triangle-exclamation"></i></span>
             </label>
             <div class="form-fields">
                 {{formInput fields.duration.fields.value value=source.duration.value id=(concat rootId "-duration.value")
@@ -47,6 +48,16 @@
             </div>
         </div>
         {{formGroup fields.duration.fields.expiry choices=expiryEvents value=source.duration.expiry rootId=rootId}}
+
+        <div class="form-group">
+            <label>{{localize "dae.expiryMode.Name"}}</label>
+            <div class="form-fields">
+                <select name="flags.dae.expiryMode" data-dtype="String">
+                    {{selectOptions expiryModeOptions selected=source.flags.dae.expiryMode}}
+                </select>
+            </div>
+            <p class="hint">{{localize "dae.expiryMode.Hint"}}</p>
+        </div>
 
         {{!-- DAE: Duration Expression (item effects only) --}}
         {{#if isItemEffect}}

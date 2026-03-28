@@ -38,11 +38,24 @@ Hooks.once('init', () => {
   // CONFIG.ActiveEffect.legacyTransferral = false;
   debug('Init setup actions');
 
-  // Register "Time Elapsed" as a custom expiry event so effects can expire purely on world time advance.
-  // Core's schema forces expiry to "turnStart" when duration.value is set, but turnStart only fires in combat.
-  // This event matches the "updateWorldTime" refresh that the registry already receives on game.time.advance().
+  // Register "Time Elapsed" as a custom expiry event so effects can expire purely on duration.
+  // Core's isExpiryEvent special-cases the "updateWorldTime" event string as a trigger, not as an
+  // expiry value — so effects with expiry="updateWorldTime" never match any event. We patch
+  // isExpiryEvent below to treat expiry="updateWorldTime" as "expire on any event when duration
+  // reaches 0", letting the duration calculation handle the actual timing.
   // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
   CONFIG.ActiveEffect.expiryEvents.updateWorldTime = "dae.expiryEvent.updateWorldTime";
+
+  // Patch isExpiryEvent: core special-cases the "updateWorldTime" event parameter but doesn't
+  // handle it as an expiry value. Effects with expiry="updateWorldTime" ("Time Elapsed") should
+  // expire whenever their duration runs out, regardless of which event triggered the refresh.
+  // @ts-expect-error v14 isExpiryEvent not in fvtt-types yet
+  const origIsExpiryEvent = ActiveEffect.prototype.isExpiryEvent;
+  // @ts-expect-error v14 isExpiryEvent not in fvtt-types yet
+  ActiveEffect.prototype.isExpiryEvent = function(event, context) {
+    if (this.duration.expiry === "updateWorldTime") return true;
+    return origIsExpiryEvent.call(this, event, context);
+  };
 
   const systemDaeFlag = game.system.flags?.daeCompatible;
   if (["dnd5e"].includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
@@ -101,6 +114,56 @@ Hooks.once('ready', () => {
     const coreExpiryAction = game.settings.get("dae", "coreExpiryAction");
     // @ts-expect-error v14 CONFIG.ActiveEffect.expiryAction not in fvtt-types yet
     CONFIG.ActiveEffect.expiryAction = coreExpiryAction === "none" ? null : coreExpiryAction;
+
+    // Per-effect expiry mode: wrap registry.refresh() to intercept via pre-hooks.
+    // modifyBatch fires preDelete/preUpdate hooks (via dryRun pass), so we set a flag
+    // during refresh and use pre-hooks to redirect effects whose flags.dae.expiryMode
+    // differs from the global CONFIG.ActiveEffect.expiryAction.
+    // @ts-expect-error v14 ActiveEffect.registry not in fvtt-types yet
+    const registry: { refresh: Function } = foundry.documents.ActiveEffect.registry;
+    const origRefresh = registry.refresh;
+    const expiryRedirects: { effect: ActiveEffect.Implementation, targetAction: "delete" | "update" }[] = [];
+    let registryRefreshActive = false;
+
+    registry.refresh = async function(event, context) {
+      registryRefreshActive = true;
+      expiryRedirects.length = 0;
+      try {
+        await origRefresh.call(this, event, context);
+      } finally {
+        registryRefreshActive = false;
+      }
+      // Process any redirected operations (effects whose per-effect mode differs from global)
+      for (const { effect, targetAction } of expiryRedirects) {
+        if (targetAction === "delete") await effect.delete();
+        // @ts-expect-error v14 duration.expired not in fvtt-types yet
+        else await effect.update({ "duration.expired": true });
+      }
+      expiryRedirects.length = 0;
+    };
+
+    // Intercept registry expiry: redirect "delete" to "suppress" for effects with expiryMode=suppress
+    Hooks.on("preDeleteActiveEffect", (effect: ActiveEffect.Implementation, options: any) => {
+      if (!registryRefreshActive) return true;
+      const mode = effect.getFlag("dae", "expiryMode") as string | undefined;
+      if (mode === "suppress") {
+        expiryRedirects.push({ effect, targetAction: "update" });
+        return false;
+      }
+      return true;
+    });
+
+    // Intercept registry expiry: redirect "suppress" to "delete" for effects with expiryMode=delete
+    Hooks.on("preUpdateActiveEffect", (effect: ActiveEffect.Implementation, update: any, options: any) => {
+      if (!registryRefreshActive) return true;
+      if (!foundry.utils.hasProperty(update, "duration.expired")) return true;
+      const mode = effect.getFlag("dae", "expiryMode") as string | undefined;
+      if (mode === "delete") {
+        expiryRedirects.push({ effect, targetAction: "delete" });
+        return false;
+      }
+      return true;
+    });
 
     daeReadyActions();
     migrateTimesUpSettings();

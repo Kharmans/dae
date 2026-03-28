@@ -74,6 +74,7 @@ declare module "fvtt-types/configuration" {
         dontApply?: boolean;
         durationExpression?: string;
         enableCondition?: string;
+        expiryMode?: "default" | "delete" | "suppress";
         itemData?: Item.InitializedData;
         itemMacro?: string;
         itemUuid?: string;

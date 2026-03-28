@@ -1,5 +1,5 @@
 import { warn, debug, debugEnabled, error } from "../dae.js";
-import { expireEffects, getApplicableEffects, daeMacro, actionQueue, maxShortDuration, safeGetGameSetting, resolveSpecialDurationExpiryAction } from "./dae.js";
+import { expireEffects, getApplicableEffects, daeMacro, actionQueue, maxShortDuration, safeGetGameSetting, resolveSpecialDurationExpiryAction, resolveEffectExpiryAction } from "./dae.js";
 
 // ---- Duration management settings (populated by fetchDurationParams) ----
 export let durationManagementEnabled: boolean = true;
@@ -219,8 +219,8 @@ export async function expireEffect(effect, options = {}) {
         if (!hasRemaining) return; // concentration expired, let concentration removal handle dependents
       }
     }
-    // Respect special duration expiry action setting
-    if (resolveSpecialDurationExpiryAction() === "delete") {
+    // Respect per-effect expiry mode, falling back to global setting
+    if (resolveEffectExpiryAction(effect) === "delete") {
       await effect.delete(options);
     } else {
       await effect.update({ "duration.expired": true }, options);

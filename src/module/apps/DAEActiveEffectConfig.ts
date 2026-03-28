@@ -351,6 +351,12 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const hasTurnExpiry = ["turnStart", "turnEnd"].includes((document.duration as any)?.expiry);
     context.showCombatActorOverride = isCombatDuration || hasTurnExpiry;
 
+    context.expiryModeOptions = {
+      "default": i18n("dae.expiryMode.default"),
+      "delete": i18n("dae.expiryMode.delete"),
+      "suppress": i18n("dae.expiryMode.suppress"),
+    };
+
     if (document.parent) {
       context.isItemEffect = document.parent instanceof CONFIG.Item.documentClass;
       context.isActorEffect = document.parent instanceof CONFIG.Actor.documentClass;
@@ -649,6 +655,7 @@ interface DAEActiveEffectConfigRenderContext extends foundry.applications.sheets
   stackableOptions?: Record<string, string>;
   combatActorOptions?: Record<string, string>;
   showCombatActorOverride?: boolean;
+  expiryModeOptions?: Record<string, string>;
   isItemEffect?: boolean;
   isActorEffect?: boolean;
   submitText?: string;

@@ -513,9 +513,11 @@ export async function applyActiveEffects({
               });
             }
           } else {
-            const targetContext = { "targetUuid": getTokenDocument(targetActor)?.uuid, "target": getToken(targetActor)?.id, "tokenUuid": getTokenDocument(targetActor)?.uuid, "token": getToken(targetActor)?.id };
-            for (let key of Object.keys(targetContext)) {
-              change.value = change.value.replace(`@${key}`, targetContext[key])
+            if (typeof change.value === "string") {
+              const targetContext = { "targetUuid": getTokenDocument(targetActor)?.uuid, "target": getToken(targetActor)?.id, "tokenUuid": getTokenDocument(targetActor)?.uuid, "token": getToken(targetActor)?.id };
+              for (let key of Object.keys(targetContext)) {
+                change.value = change.value.replace(`@${key}`, targetContext[key])
+              }
             }
           }
           newChanges.push(change as ActiveEffect.ChangeData);
