@@ -2,7 +2,7 @@
    "name": "dae",
    "title": "Dynamic effects using Active Effects (DAE)",
    "description": "Replacement for dynamic effects",
-   "version": "11.0.20",
+   "version": "14.0.2",
    "scripts": {
       "package": "gulp package",
       "build": "gulp build --dbg",
