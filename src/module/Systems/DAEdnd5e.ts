@@ -1630,9 +1630,9 @@ function determineSuppression(this: ActiveEffect.Implementation, wrapped) {
   // @ts-expect-error no dnd5e-types
   if (actor.system.traits) {
     // @ts-expect-error no dnd5e-types
-    let customStats: Array<string> = actor.system.traits.ci?.custom?.split(';').map(s => s.trim().toLocaleLowerCase());
+    let customStats: Array<string> = actor.system.traits?.ci?.custom?.split(';').map(s => s.trim().toLocaleLowerCase());
     // @ts-expect-error no dnd5e-types
-    const ci = new Set([...(actor.system.traits?.ci?.value ?? []), ...customStats]);
+    const ci = new Set([...(actor.system.traits?.ci?.value ?? []), ...(customStats ?? [])]);
     const statusId = foundry.utils.duplicate(this.name ?? "no effect").toLocaleLowerCase();
     const capStatusId = foundry.utils.duplicate(statusId).replace(statusId[0], statusId[0].toUpperCase())
     const ciSuppressed = ci?.has(statusId) || ci?.has(`Convenient Effect: ${capStatusId}`);
@@ -1673,7 +1673,7 @@ function isSuppressed(this: ActiveEffect.Implementation, wrapped): boolean {
   // Suppress status conditions that the actor is immune to
   if (ciTraits) {
     const customStats: string[] = (ciTraits.custom as string)?.split(';').map(s => s.trim().toLocaleLowerCase());
-    const ci = new Set([...(ciTraits.value ?? []), ...customStats]);
+    const ci = new Set([...(ciTraits.value ?? []), ...(customStats ?? [])]);
     const statusId = (this.name ?? "no effect").toLocaleLowerCase();
     isSuppressed ||= ci.has(statusId);
   }
