@@ -2,7 +2,7 @@
   "id": "dae",
   "title": "Dynamic effects using Active Effects (DAE)",
   "description": "Replacement for dynamic effects",
-  "version": "14.0.3",
+  "version": "14.0.4",
   "authors": [
     {
       "name": "tposney",
@@ -102,7 +102,7 @@
   },
   "url": "https://gitlab.com/tposney/dae",
   "manifest": "https://gitlab.com/tposney/dae/raw/v14/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/v14/package/dae-v14.0.3.zip",
+  "download": "https://gitlab.com/tposney/dae/raw/v14/package/dae-v14.0.4.zip",
   "readme": "https://gitlab.com/tposney/dae/-/blob/v14/Readme.md",
   "changelog": "https://gitlab.com/tposney/dae/-/blob/v14/Changelog.md",
   "bugs": "https://gitlab.com/tposney/dae/-/issues",

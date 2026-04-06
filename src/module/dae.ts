@@ -267,11 +267,24 @@ export function daeApplyActiveEffects(this: Actor.Implementation, phase: string)
   // Organize non-disabled effects by their application priority
   changes.sort((a, b) => (a.priority ?? 50) - (b.priority ?? 50));
 
-  if (changes.length > 0 && debugEnabled > 0) warn("Applying effect phase", phase, this.name, changes)
+  // Separate token.* changes for TokenDocument.applyActiveEffects() to consume
+  const tokenChanges: DAEChangeData[] = [];
+  const actorChanges = changes.filter(c => {
+    if (c.key?.startsWith("token.")) {
+      c.key = c.key.slice(6);
+      tokenChanges.push(c);
+      return false;
+    }
+    return true;
+  });
+  // @ts-expect-error v14 tokenActiveEffectChanges
+  this.tokenActiveEffectChanges[phase] = tokenChanges;
+
+  if (actorChanges.length > 0 && debugEnabled > 0) warn("Applying effect phase", phase, this.name, actorChanges)
 
   // Apply all changes using v14's field-aware application
   const replacementData = this.getRollData() as AnyMutableObject;
-  for (let c of changes) {
+  for (let c of actorChanges) {
     if (!c.key || !c.count) continue;
 
     for (let i = 0; i < c.count; i++) {
@@ -1606,6 +1619,7 @@ export async function applyActivityEffects(
         doRolls
       })
       evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, { recursive: false });
+      evalArgsOptions.context.activity = activity.getRollData?.() ?? activity;
       evalArgsOptions.item = activity.item;
       if (activity.actor) evalArgsOptions.actor = activity.actor;
       let newChange = await evalArgs(evalArgsOptions)

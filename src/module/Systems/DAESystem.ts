@@ -152,6 +152,43 @@ export class ValidSpec {
         allSpecsObj[key] = validSpec;
       }
 
+      // Add token.* specs from TokenDocument schema for v14 token effect targeting
+      const tokenTargetableKeys: readonly string[] =
+        (CONFIG.Token.documentClass as any)._ACTIVE_EFFECT_TARGETABLE_KEYS ?? [];
+      if (tokenTargetableKeys.length > 0) {
+        const tokenSchema = CONFIG.Token.documentClass.schema;
+        function walkTokenSchema(prefix: string, schemaField: foundry.data.fields.SchemaField<any>) {
+          for (const [fieldKey, field] of Object.entries(schemaField.fields) as [string, foundry.data.fields.DataField][]) {
+            const key = `${prefix}.${fieldKey}`;
+            if (field instanceof SchemaField) {
+              walkTokenSchema(key, field);
+            } else {
+              allSpecsObj[key] = new ValidSpec(key, field, "", field.label, field.hint, "final");
+            }
+          }
+        }
+        for (const targetKey of tokenTargetableKeys) {
+          const field = tokenSchema.getField(targetKey);
+          if (!field) continue;
+          const prefixedKey = `token.${targetKey}`;
+          if (field instanceof SchemaField) {
+            walkTokenSchema(prefixedKey, field);
+          } else if ((field as any).element instanceof SchemaField) {
+            // TypedObjectField (e.g. detectionModes) — enumerate known keys from CONFIG
+            const elementSchema = (field as any).element as foundry.data.fields.SchemaField<any>;
+            const knownKeys = targetKey === "detectionModes"
+              ? Object.keys(CONFIG.Canvas?.detectionModes ?? {})
+              : [];
+            for (const entryKey of knownKeys) {
+              const entryPrefix = `${prefixedKey}.${entryKey}`;
+              walkTokenSchema(entryPrefix, elementSchema);
+            }
+          } else {
+            allSpecsObj[prefixedKey] = new ValidSpec(prefixedKey, field, "", field.label, field.hint, "final");
+          }
+        }
+      }
+
       // Fire new unified hook
       Hooks.callAll("dae.modifySpecs", specKey, allSpecsObj);
 

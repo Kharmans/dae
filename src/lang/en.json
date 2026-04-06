@@ -2133,23 +2133,23 @@
   "dae.Unknown.fieldData": {
     "system.ability": {
       "name": "Attack Ability",
-      "description": "Note: Should use \"activities[attack].attack.ability\" instead."
+      "description": "Note: Equivalent to \"activities[attack].attack.ability\"."
     },
     "system.attack.bonus": {
       "name": "Attack Bonus",
-      "description": "Note: Should use \"activities[attack].attack.bonus\" instead."
+      "description": "Note: Equivalent to \"activities[attack].attack.bonus\"."
     },
     "system.attack.flat": {
       "name": "Attack Flat To-Hit",
-      "description": "True or false. Note: Should use \"activities[attack].attack.flat\" instead."
+      "description": "True or false. Note: Equivalent to \"activities[attack].attack.flat\"."
     },
     "system.damage.bonus": {
       "name": "Damage Bonus",
-      "description": "Note: Should use \"system.damageBonus\" instead."
+      "description": "Bonus to all damage-dealing activities."
     },
     "system.damageBonus": {
       "name": "Damage Bonus",
-      "description": "Bonus to all damage-dealing activities."
+      "description": "Note: Should use \"system.damage.bonus\" instead."
     },
     "system.damage.parts": {
       "name": "Damage Parts",

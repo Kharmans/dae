@@ -1589,7 +1589,7 @@ function isSuppressed(this: ActiveEffect.Implementation, wrapped): boolean {
   // Suppress status conditions that the actor is immune to
   if (ciTraits) {
     const customStats: string[] = (ciTraits.custom as string)?.split(';').map(s => s.trim().toLocaleLowerCase());
-    const ci = new Set([...(ciTraits.value ?? []), ...customStats]);
+    const ci = new Set([...(ciTraits.value ?? []), ...(customStats ?? [])]);
     const statusId = (this.name ?? "no effect").toLocaleLowerCase();
     isSuppressed ||= ci.has(statusId);
   }
