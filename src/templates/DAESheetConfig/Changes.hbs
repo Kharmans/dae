@@ -7,7 +7,7 @@
         <div class="controls"><a data-action="addChange"><i class="fa-regular fa-plus-square"></i></a></div>
     </header>
     <ol class="scrollable">
-        {{#each source.system.changes as |change i|}}
+        {{#each enrichedChanges as |change i|}}
         {{#with @root.changeFields as |changeFields|}}
             <li data-index="{{i}}">
                 <div class="key">

@@ -1,4 +1,5 @@
 import { debug } from "../../dae.js";
+import { getItemMacroCommand } from "../dae.js";
 import ApplicationV2 = foundry.applications.api.ApplicationV2;
 import HandlebarsApplicationMixin = foundry.applications.api.HandlebarsApplicationMixin;
 
@@ -92,8 +93,7 @@ export class DIMEditor extends WeirdIntermediate {
   }
 
   hasMacro() {
-    const command = this.document.flags?.dae?.macro?.command ?? this.document.flags?.itemacro?.macro?.command;
-    return !!command;
+    return !!getItemMacroCommand(this.document);
   }
 
   getMacro(): Macro.Implementation {

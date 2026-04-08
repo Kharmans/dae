@@ -1,159 +1,4 @@
-
-import { debug, warn, log, i18n, error } from "../dae.js";
 import { effectIsTransfer } from "./dae.js";
-
-export async function removeAllActorArmorItems() {
-  let promises = [];
-  if (game.actors) for (let actor of game.actors) {
-    await removeActorArmorItems(actor);
-  }
-}
-
-export async function removeAllTokenArmorItems() {
-  let promises = [];
-  if (game.scenes) for (let scene of game.scenes) {
-    for (let tokenDocument of scene.tokens) {
-      if (!tokenDocument.isLinked && tokenDocument.actor) {
-        await removeActorArmorItems(tokenDocument.actor);
-      }
-    }
-  }
-}
-
-export async function removeActorArmorItems(actor: Actor) {
-  let promises = [];
-  for (let item of actor.items) {
-    let toDelete: string[] = [];
-    if (!item.effects) continue;
-    for (let effect of item.effects) {
-      for (let change of effect.changes) {
-        if (change.key === "data.attributes.ac.value" && change.value === "AutoCalc") {
-          console.warn("Removing DAE Item ", actor.name, item.name, item.id)
-          if (item.id) toDelete.push(item.id)
-        }
-      }
-    }
-    if (toDelete.length > 0) {
-      await actor.deleteEmbeddedDocuments("Item", toDelete)
-    }
-  }
-}
-
-export async function cleanEffectOrigins(processItems: boolean = false) {
-  await cleanAllActorEffectOrigins();
-  await cleanAllTokenEffectOrigins();
-  if (processItems) {
-    await cleanAllActorItemsEffectOrigins();
-    await cleanAllTokenEffectOrigins()
-  }
-}
-
-function replaceOwnedItemOrigins(effects: { origin?: string | null }[]) {
-  for (const ef of effects) {
-    if (typeof ef.origin === "string") ef.origin = ef.origin.replace("OwnedItem", "Item");
-  }
-}
-
-async function cleanActorEffectOrigins(actor: Actor.Implementation) {
-  const ownedItemEffects = actor.effects.filter(ef => !!ef.origin?.includes("OwnedItem"));
-  const updates = ownedItemEffects.map(ef => ({ _id: ef.id, origin: ef.origin?.replace("OwnedItem", "Item") }));
-  if (updates.length > 0) {
-    await actor.updateEmbeddedDocuments("ActiveEffect", updates);
-    console.warn("Updates are ", actor.name, updates);
-  }
-}
-
-export async function cleanActorItemsEffectOrigins(actor: Actor.Implementation) {
-  const itemChanges: Item.UpdateData[] = [];
-  for (const item of actor.items) {
-    if (!item.effects.some(ef => !!ef.origin?.includes("OwnedItem"))) continue;
-    const itemData = item.toObject(true);
-    replaceOwnedItemOrigins(itemData.effects);
-    itemChanges.push(itemData);
-  }
-  if (itemChanges.length > 0) {
-    await actor.updateEmbeddedDocuments("Item", itemChanges);
-    console.warn("Item changes are", actor.name, itemChanges);
-  }
-}
-
-export async function cleanAllActorEffectOrigins() {
-  for (const actor of game.actors?.contents ?? []) {
-    await cleanActorEffectOrigins(actor);
-    await cleanActorItemsEffectOrigins(actor);
-  }
-}
-
-export async function cleanAllActorItemsEffectOrigins() {
-  if (game.actors) for (const actor of game.actors)
-    await cleanActorItemsEffectOrigins(actor);
-}
-
-export async function cleanAllTokenEffectOrigins() {
-  if (game.scenes) for (const scene of game.scenes) {
-    for (const tokenDocument of scene.tokens) {
-      if (!tokenDocument.isLinked && tokenDocument.actor) {
-        await cleanActorEffectOrigins(tokenDocument.actor);
-      }
-    }
-  }
-}
-
-export async function tobMapper(iconsPath = "icons/TOBTokens") {
-  const pack = game.packs?.get("tome-of-beasts.beasts");
-  await pack?.getDocuments();
-  if (!pack) return;
-  let details: any[] = pack?.contents.map(a => a._source);
-  let detailNames = foundry.utils.duplicate(details).map(detail => {
-    let name = detail.name
-      .replace(/[_\-,'"]/g, "")
-      .replace(" of", "")
-      .replace(" the", "")
-      .replace(/\(.*\)/, "")
-      .replace(/\s\s*/g, " ")
-      .replace("Adult", "")
-      .replace("Chieftain", "Chieftan")
-      .toLocaleLowerCase();
-    name = name.split(" ");
-    detail.splitName = name;
-    return detail;
-  })
-  detailNames = detailNames.sort((a, b) => b.splitName.length - a.splitName.length)
-  let fields = details.map(a => { return { "name": a.name, "id": a._id, "tokenimg": a.prototypeToken.texture.src } });
-  let count = 0;
-  game.socket?.emit("manageFiles", { action: "browseFiles", storage: "data", target: iconsPath }, {},
-    async (result) => {
-      for (let fileEntry of result.files) {
-        let fileNameParts = fileEntry.split("/");
-        const name = fileNameParts[fileNameParts.length - 1]
-          .replace(".png", "")
-          .replace(/['",\-_,]/g, "")
-          .replace(/-/g, "")
-          .toLocaleLowerCase();
-        detailNames.filter(dtname => {
-          if (!dtname.splitName) return false;
-          for (let namePart of dtname.splitName) {
-            if (!name.includes(namePart)) return false
-          }
-          dtname.prototypeToken.texture.src = fileEntry;
-          // dtname.img = fileEntry;
-          delete dtname.splitName;
-          // dtname.img = fileEntry;
-          count += 1;
-          return true;
-        })
-      }
-      console.log("Matched ", count, "out of", detailNames.length, detailNames)
-      console.log("Unmatched ", detailNames.filter(dt => dt.splitName));
-      if (pack) {
-        for (let actorData of detailNames) {
-          if (actorData.splitName) continue;
-          let actor = pack.get(actorData._id);
-          if (actor) await actor.update(actorData);
-        }
-      }
-    });
-}
 
 export async function fixTransferEffects(actor: Actor.Implementation) {
   if (!actor) {
@@ -185,10 +30,6 @@ export async function fixTransferEffect(actor: Actor.Implementation, item: Item.
 
 
 async function removeDaePassiveEffectsActor(actor, skipOrigins = false) {
-  if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications?.error("Must be run in a world with legacy transferral false");
-    return;
-  }
   if (!actor) return;
   const effectsToDelete = actor.effects.filter(ef => foundry.utils.getProperty(ef, "flags.dae.transfer"));
   if (effectsToDelete?.length > 0) {
@@ -208,10 +49,6 @@ async function removeDaePassiveEffectsActor(actor, skipOrigins = false) {
   }
 }
 export async function removeScenePassiveEffects() {
-  if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications?.error("Must be run in a world with legacy transferral false");
-    return;
-  }
   for (let token of canvas?.scene?.tokens ?? []) {
     try {
       if (token.actor) await removeDaePassiveEffectsActor(token.actor, false);
@@ -223,10 +60,6 @@ export async function removeScenePassiveEffects() {
 }
 
 export async function removeActorsPassiveEffects() {
-  if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications?.error("Must be run in a world with legacy transferral false");
-    return;
-  }
   for (let actor of game.actors ?? []) {
     try {
       await removeDaePassiveEffectsActor(actor, false);
@@ -238,10 +71,6 @@ export async function removeActorsPassiveEffects() {
 }
 
 export async function migrateCompendium(pack) {
-  if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications?.error("Must be run in a world with legacy transferral false");
-    return;
-  }
   const documentName = pack.documentName;
   if (!["Actor"].includes(documentName)) return;
 
@@ -280,10 +109,6 @@ export async function migrateCompendium(pack) {
 };
 
 export async function removeCompendiaPassiveEffects() {
-  if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications?.error("Must be run in a world with legacy transferral false");
-    return;
-  }
   // Migrate World Compendium Packs
   for (let p of game.packs ?? []) {
     // if (p.metadata.packageType !== "world") continue;
@@ -291,14 +116,10 @@ export async function removeCompendiaPassiveEffects() {
     console.log("doing compendium", p.collection)
     await migrateCompendium(p);
   }
-  ui.notifications?.notify("Finsihed compendium clean up")
+  ui.notifications?.notify("Finished compendium clean up")
 }
 
 export async function removeAllScenesPassiveEffects() {
-  if (CONFIG.ActiveEffect.legacyTransferral === true) {
-    ui.notifications?.error("Must be run in a world with legacy transferral false");
-    return;
-  }
   if (game.scenes)
     for (let scene of game.scenes) {
       for (let token of scene.tokens) {

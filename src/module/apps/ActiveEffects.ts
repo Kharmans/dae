@@ -65,7 +65,7 @@ export class ActiveEffects extends WeirdIntermediate {
   
     function* effectsGenerator(this: Actor.Implementation | Item.Implementation) { for (const effect of this.effects) yield effect };
     let effects = effectsGenerator.bind(this.document);
-    if (this.document instanceof CONFIG.Actor.documentClass && CONFIG.ActiveEffect.legacyTransferral === false) {
+    if (this.document instanceof CONFIG.Actor.documentClass) {
       effects = this.document.allApplicableEffects.bind(this.document);
     }
     let actives: ActivesEntry[] = [];

@@ -39,26 +39,57 @@ Tracks all changes made to dae-14x for Foundry v14 compatibility.
 ### ApplicationV2
 - `preventClose` option on `submit()` is unnecessary (programmatic submit doesn't close)
 
+### v14 applyChange Architecture
+- `ActiveEffect.applyChange(targetDoc, change, options)` is now a static method
+- For keys with a DataModel field, core routes through `applyChangeField` → `field.applyChange()` — the `applyActiveEffect` hook still fires for `type: "custom"` via `DataField._applyChangeCustom`
+- For keys without a DataModel field, core uses `_applyChangeUnguided` (legacy heuristic path)
+- `AnyField` stores values as-is — no `JSON.parse` conversion. Always use string values for effect changes.
+- `type: "override"` breaks Set fields (replaces Set with plain value). Use `type: "add"` for Set-based trait fields.
+
 ---
 
 ## Completed Migrations
 
-### 2026-03-21: libWrapper OVERRIDE for applyActiveEffects
+### Effect Application Architecture (libWrapper Refactoring)
 
 **Files changed:**
-- `src/module/dae.ts` (~line 119)
-- `src/module/Systems/DAESystem.ts` (line 565)
-- `src/module/Systems/DAEdnd5e.ts` (line 549)
+- `src/module/dae.ts` — `daeApplyActiveEffects`, `daeApplyChange`, getRollData registration
+- `src/module/Systems/DAESystem.ts` — `initActions()` rewritten, removed `getRollData` pass-through and `getRollDataFunc()`
+- `src/module/Systems/DAEdnd5e.ts` — `initActions()` updated, removed `getRollDataFunc()` override, removed Item.applyActiveEffects OVERRIDE
 
-**Problem:** DAE used WRAPPER mode with a pre-marking hack — it added the current phase to `_completedActiveEffectPhases` before calling `wrapped()`, so core's `applyActiveEffects` would early-return. This broke when dnd5e 5.3's `applyActiveEffects()` dropped the `phase` argument when calling `super.applyActiveEffects()`, causing core to infer "final" instead of "initial".
+#### applyActiveEffects: WRAPPER (not OVERRIDE)
 
-**Fix:** Changed from WRAPPER to OVERRIDE:
-- Removed `wrapped` parameter from `daeApplyActiveEffects()`
-- Removed pre-marking hack
-- Added direct `this.system.prepareEmbeddedData()` call (the only useful work dnd5e's override did before delegating to core)
-- Changed `libWrapper.register()` third arg from `"WRAPPER"` to `"OVERRIDE"` in both DAESystem.ts and DAEdnd5e.ts
+DAE previously used an OVERRIDE on `Actor.applyActiveEffects` with a pre-marking hack — it added the current phase to `_completedActiveEffectPhases` before calling the original function, so core would early-return. This broke when dnd5e 5.3 dropped the `phase` argument when calling `super.applyActiveEffects()`.
 
-### 2026-03-21: DAE Effect Editor — v14 Schema Compliance
+The fix went through two iterations: first converting to a clean OVERRIDE that replicated core logic, then converting to a WRAPPER that lets core+dnd5e handle phase validation, change collection, sorting, and `applyChange` calls. DAE wraps to add:
+- Phase correction for "missed" changes (ValidSpec says a key belongs to a different phase than the change specifies)
+- `showIcon` deprecation warnings
+- CI priority enforcement (priority 0 for `system.traits.ci.*` keys)
+
+Both `DAESystem.initActions()` (base) and `DAEdnd5e.initActions()` now register as `"WRAPPER"`.
+
+#### applyChange: MIXED wrapper
+
+`daeApplyChange` is registered as a MIXED wrapper on the static `ActiveEffect.applyChange`. MIXED mode allows per-call decisions on whether to chain to `wrapped()`. Three paths legitimately skip core processing:
+- **ATL exclusion**: `ATL.*` keys return `{}` (ATL module handles these directly)
+- **Phase correction**: Changes whose ValidSpec phase differs from the current phase return `{}` (collected and applied later by `daeApplyActiveEffects`)
+- **bonusSelector expansion**: Synthetic keys like `system.bonuses.All-Attacks` expand into multiple real keys and recurse through the full `applyChange` chain
+
+All other paths chain to `wrapped()` after applying DAE transformations: field mappings, `dae.eval()`/`dae.roll()` expression evaluation, `@data.` deprecation rewrite, `@stackCount` substitution, OverTime key suffixing, `midi-qol.optional` `.all` suffix fix, and stack count multi-apply.
+
+**Item target handling** (previously a separate Item.applyActiveEffects OVERRIDE) is now in `daeApplyChange`: when `targetDoc` is an Item, `@UUID`/`@uuid` values are masked to `##UUID`/`##uuid` to prevent roll data mangling, and actor rollData is injected as `replacementData` so `@-expressions` resolve.
+
+#### Removed Item.applyActiveEffects OVERRIDE
+
+DAE had an OVERRIDE on `Item.prototype.applyActiveEffects` (~45 lines) that replicated core behavior with minor additions. In v14, dnd5e only calls `Item.applyActiveEffects` for enchantment effects during actor preparation (gated by `_embeddedPreparation`), so the OVERRIDE was unnecessary. The Item-specific handling was moved into the `daeApplyChange` MIXED wrapper (see above).
+
+#### getRollDataFunc indirection removed
+
+`DAESystem` had a `getRollData` function that just called `wrapped()` and a `getRollDataFunc()` method returning it. `DAEdnd5e.getRollData` called `DAESystem.getRollDataFunc().bind(this)(wrapped, ...args)` — an indirect way of calling `wrapped()`.
+
+Replaced with a `getRollDataWrapper: Function | null` static property. DAEdnd5e sets it to its enrichment function in `initActions()`. The registration site checks for non-null before registering. DAEdnd5e's `getRollData` now calls `wrapped(...args)` directly.
+
+### DAE Effect Editor — v14 Schema Compliance
 
 **Problem:** The DAE effect editor used v13 data paths for form fields and code, relying on backward-compatibility shims instead of the actual v14 data schema.
 
@@ -70,8 +101,14 @@ Tracks all changes made to dae-14x for Foundry v14 compatibility.
 - Changed data source: `source.changes` -> `source.system.changes`
 
 **`src/templates/DAESheetConfig/Duration.hbs`:**
-- Fixed localization keys: `EFFECT.Duration` -> `EFFECT.DURATION.Label`, `EFFECT.StartTurns` -> `EFFECT.START.Header`, `EFFECT.FIELDS.duration.combat.label` -> `DOCUMENT.Combat`
-- Duration field names (`duration.value`, `duration.units`, `start.time`, etc.) were already correct for v14
+- Full rewrite to v14 core layout
+- **Effect Start fieldset**: Read-only display via core `_prepareStartContext()` using `game.time.calendar.format()`. Removed editable `start.time`/`start.round`/`start.turn` number inputs. Removed SimpleCalendar dependency. Added "Reset Start to Now" button.
+- **Effect Duration fieldset**: Uses `formInput`/`formGroup` with schema fields for proper validation. Duration units grouped (Time vs Combat). Expiry Event dropdown always visible with all 6 core events.
+- **DAE fieldset**: Separate fieldset with Combat Actor Override, Macro Repeat, and Special Durations.
+- Added `class="flexrow"` and warning `<span>` to the Duration label to match core.
+
+**`src/templates/DAESheetConfig/Details.hbs`:**
+- Added `{{formGroup fields.showIcon ...}}` dropdown (Never / Conditional / Always) after the `statuses` field
 
 #### TypeScript Changes (`src/module/apps/DAEActiveEffectConfig.ts`)
 
@@ -85,30 +122,18 @@ Tracks all changes made to dae-14x for Foundry v14 compatibility.
 - Removed `MODES_TO_TYPES` constant (only used by removed migration block)
 - Removed all `preventClose: true` from `submit()` calls (unnecessary in v14 ApplicationV2)
 
-### 2026-03-21: Detection Modes (midi-qol-14x, not DAE)
-
-This change was in midi-qol-14x but noted here for reference:
-- `token.detectionModes.find(m => m.id === id)` -> direct property access `[id]`
-- `for (const detectionMode of tokenDetectionModes)` -> `for (const [modeId, detectionMode] of Object.entries(tokenDetectionModes))`
-
-### 2026-03-22: Duration Tab Redesign + Special Duration Migration
-
-**Files changed:**
-- `src/templates/DAESheetConfig/Duration.hbs` — full rewrite
-- `src/module/apps/DAEActiveEffectConfig.ts` — context cleanup
-- `src/module/specialDurations.ts` — application-time migration
-- `src/dae.ts` — removed deprecated entries from dropdown
-
-#### Duration Tab Template Rewrite
-
-Replaced v13-style raw inputs with v14 core layout:
-- **Effect Start fieldset**: Read-only display via core `_prepareStartContext()` using `game.time.calendar.format()`. Removed editable `start.time`/`start.round`/`start.turn` number inputs. Removed SimpleCalendar dependency.
-- **Effect Duration fieldset**: Uses `formInput`/`formGroup` with schema fields for proper validation. Duration units grouped (Time vs Combat). Expiry Event dropdown always visible with all 6 core events (combatStart/End, roundStart/End, turnStart/End).
-- **DAE fieldset**: Separate fieldset with Combat Actor Override, Macro Repeat, and Special Durations.
+### Duration & Expiry
 
 #### Special Duration Migration to v14 `duration.expiry`
 
-Removed 5 deprecated special duration types from the dropdown — these are now handled natively by v14's `duration.expiry` field + DAE's `combatActorOverride`:
+**Files changed:**
+- `src/module/specialDurations.ts` — application-time migration, `expireEffect()` rewritten
+- `src/module/dae.ts` — `expireEffects()` updated, `expireRealTime` references removed
+- `src/module/settings.ts` — removed `expireRealTime` setting
+- `src/globals.ts` — removed `expireRealTime` type
+- `src/dae.ts` — removed deprecated entries from dropdown
+
+Removed 5 deprecated special duration types — now handled natively by v14's `duration.expiry` + DAE's `combatActorOverride`:
 
 | Removed Special Duration | v14 Replacement |
 |---|---|
@@ -120,87 +145,228 @@ Removed 5 deprecated special duration types from the dropdown — these are now 
 
 Only `joinCombat` remains in the base special duration list (no v14 core equivalent).
 
-**Migration is applied in two places:**
-1. **Edit-time** (`_prepareContext`): When opening the effect config sheet, deprecated special durations are automatically converted to `duration.expiry` + `combatActorOverride`.
-2. **Application-time** (`preCreateActiveEffect` hook): When an effect with deprecated special durations is applied to an actor, the migration runs via `updateSource()` before creation completes.
-
-The `preDeleteCombat` hook handler for `combatEnd` special duration remains as a runtime fallback for any un-migrated effects.
-
-#### expiryAction Left at v14 Default
+Migration is applied at edit-time (`_prepareContext`) and application-time (`preCreateActiveEffect` hook). The `preDeleteCombat` hook handler for `combatEnd` remains as a runtime fallback for un-migrated effects.
 
 #### expiryAction Setting
 
-New DAE setting `expiryAction` configures `CONFIG.ActiveEffect.expiryAction` (applied via `fetchParams()`):
+New DAE setting `expiryAction` configures `CONFIG.ActiveEffect.expiryAction`:
 - **"update"** (default): v14 marks expired effects with `duration.expired = true` (suppressed but kept)
 - **"delete"**: v14 deletes expired effects immediately
-- **"none"**: Disables v14's automatic expiry handling; DAE/midi-qol handle expiry manually via `expireEffect()`
+- **"none"**: Disables v14's automatic expiry handling; DAE/midi-qol handle expiry manually
 
-#### Reset Start Time Button
+DAE's `expireEffect()`, `expireEffects()`, and midi-qol's `expireEffects()` respect this setting. Transfer effects still use the existing disable pattern. Applied enchantments are still deleted.
 
-Added a "Reset Start to Now" button (clock-rotate-left icon) in the Effect Start fieldset on the Duration tab. Calls `ActiveEffect.getEffectStart()` to get fresh start data (time, combat, combatant, round, turn) and also clears `duration.expired`.
+#### Per-Effect Expiry Mode
 
-### 2026-03-22: Expiry Respects expiryAction Setting + Remove expireRealTime
-
-**Files changed:**
-- `src/module/specialDurations.ts` — `expireEffect()` rewritten
-- `src/module/dae.ts` — `expireEffects()` updated, `expireRealTime` references removed
-- `src/module/settings.ts` — removed `expireRealTime` setting
-- `src/globals.ts` — removed `expireRealTime` type
-- `src/lang/en.json` — removed `expireRealTime` strings, updated `expiryAction` hint
-- `midi-qol-14x/src/module/utils.ts` — `expireEffects()` updated
-
-**Changes:**
-
-#### Expiry functions now respect `CONFIG.ActiveEffect.expiryAction`
-
-DAE's `expireEffect()`, `expireEffects()`, and midi-qol's `expireEffects()` now check the `expiryAction` setting when expiring non-transfer actor-owned effects:
-
-- **`"delete"`**: Deletes the effect (previous behavior for all settings)
-- **`"update"` or `null`**: Sets `duration.expired = true` — the effect is suppressed (changes stop applying) but remains on the actor
-
-Transfer effects still use the existing disable pattern. Applied enchantments are still deleted.
-
-#### `getApplicableEffects()` excludes expired effects
-
-Added `includeExpired` option (default `false`) to `getApplicableEffects()`. All duration management call sites automatically skip effects with `duration.expired = true`, preventing re-processing of already-expired effects.
+`src/dae.ts` wraps `ActiveEffect.registry.refresh()` to support per-effect `flags.dae.expiryMode` that overrides the global `CONFIG.ActiveEffect.expiryAction`. Uses pre-hooks (`preDeleteActiveEffect`, `preUpdateActiveEffect`) during registry refresh to redirect effects whose per-effect mode differs from the global setting.
 
 #### Removed `expireRealTime` setting
 
-The `expireRealTime` setting was already commented out in code (non-functional). Removed the setting registration, type definition, and all localization strings. v14's core `ActiveEffectRegistry` handles time-based expiry natively.
+The `expireRealTime` setting was non-functional (commented out in code). Removed entirely. v14's core `ActiveEffectRegistry` handles time-based expiry natively.
 
-#### Concentration check simplified
-
-`expireEffect()` concentration logic was simplified: instead of multiple nested `await effect.delete()` calls, it now computes whether the concentration origin has remaining duration and returns early if not (letting concentration removal handle dependents). The actual expiry action (delete vs mark expired) is applied once at the end.
-
-### 2026-03-22: Cross-Module Lessons from midi-qol Migration
-
-No DAE code changes needed, but the following behavioral differences were discovered during the midi-qol/tests migration and apply to DAE code and sample items too:
-
-1. **`AnyField` stores values as-is** — v14 effect change `value` is `AnyField`, no `JSON.parse` conversion. The v13 backward-compat shim's `#migrateChangeValue` converted `"-10"` → `-10`, `"true"` → `true`, but native v14 schema does not. **Always use string values** for effect changes (preserves Roll expression support). DAE's `applyDaeEffects` and consumers must handle string-typed numeric values.
-
-2. **`type: "override"` breaks Set fields** — For dnd5e Set-based trait fields (`system.traits.dr.value`, `system.traits.di.value`, `system.traits.ci.value`), `type: "override"` replaces the Set with a plain value/Array, breaking `.has()` downstream. **Use `type: "add"` for Set fields.** v14's `SetField._applyChangeAdd` properly adds elements to the existing Set. This affects any DAE ValidSpec options or sample items targeting trait value Sets.
-
-### 2026-03-24: DAE Effect Editor — Missing Core Template Fields
+### Dead Code, Legacy Cleanup, and Optimization
 
 **Files changed:**
-- `src/templates/DAESheetConfig/Details.hbs`
-- `src/templates/DAESheetConfig/Duration.hbs`
+- `src/module/dae.ts` — major cleanup and refactoring (~400 lines net reduction)
+- `src/module/GMAction.ts` — dead version checks removed, performance improvements, macro.createItem fix
+- `src/module/specialDurations.ts` — simplified `isTransferEffect`, merged duplicate branches, fixed variable shadowing
+- `src/module/apps/ActiveEffects.ts` — removed `legacyTransferral` condition
+- `src/module/migration.ts` — removed 6 precondition check blocks, removed obsolete OwnedItem migration and tobMapper
+- `src/module/Systems/DAESystem.ts` — removed `doCustomValue()`, `getRollData` pass-through, stale comments
+- `src/module/Systems/DAEdnd5e.ts` — removed commented-out blocks, `getRollDataFunc()`, consolidated trait handlers
+- `src/module/apps/FieldBrowser.ts` — removed dead v12 generation check
+- `src/css/field-browser.less` — removed dead `&.dae-v12` CSS block
+- `src/module/apps/DIMEditor.ts` — uses `getItemMacroCommand()` helper
+- `src/module/API/api.ts` — updated exports
+- `src/dae.ts` — removed commented-out `legacyTransferral = false`
 
-**Problem:** DAE's custom PARTS templates for the effect editor were missing fields present in core Foundry v14's `ActiveEffectConfig` templates:
+#### legacyTransferral cleanup (-243 lines)
 
-1. **Details tab — `showIcon` dropdown missing**: Core's `details.hbs` has `{{formGroup fields.showIcon value=source.showIcon options=showIconOptions rootId=rootId}}` (line 13) — a dropdown controlling when the effect icon is shown on the token (Never / Conditional / Always, from `CONST.ACTIVE_EFFECT_SHOW_ICON`). DAE's Details.hbs omitted this entirely. The `showIconOptions` context variable is provided by the parent class's `_preparePartContext("details", ...)` which DAE inherits (it doesn't override `_preparePartContext`).
+`CONFIG.ActiveEffect.legacyTransferral` is always `false` in dnd5e v5 (hardcoded at init). All code branches guarded by `legacyTransferral === true` were dead:
+- `effectIsTransfer` simplified to `return effect.transfer === true`
+- `updateItemEffects` and `updateTransferEffectsHook` gutted to no-ops, then removed entirely
+- Dead branches removed from `addEffectChange`, `removeEffectChange`, `deleteItemHook`, `createItemHook`
+- `isTransferEffect` (specialDurations.ts) simplified to `return effect.transfer`
+- 6 precondition check blocks removed from migration.ts
+- Removed stub functions `preUpdateItemHook`, `_preCreateEnchantmentEffect` and their hook registrations
 
-2. **Duration tab — warning icon missing**: Core's `duration.hbs` uses `<label class="flexrow">` with a hidden `<span class="warning">` containing a triangle-exclamation icon. DAE's Duration.hbs had a plain `<label>` without the flexrow class or warning span.
+#### Removed obsolete migration and utility code
+- `cleanEffectOrigins` and all supporting functions (`cleanActorEffectOrigins`, `cleanActorItemsEffectOrigins`, `cleanAllActorEffectOrigins`, `cleanAllActorItemsEffectOrigins`, `cleanAllTokenEffectOrigins`, `replaceOwnedItemOrigins`) — ancient `OwnedItem` → `Item` origin migration from pre-v10
+- `tobMapper` — one-off Tome of Beasts token image mapping utility
+- Both removed from API exports
+- Unused `dae.ts` imports cleaned up from `migration.ts`
+- Removed 3 unused armor migration functions (`removeAllActorArmorItems`, `removeAllTokenArmorItems`, `removeActorArmorItems`)
 
-**Fix:**
-- Added `{{formGroup fields.showIcon ...}}` to Details.hbs after the `statuses` field
-- Added `class="flexrow"` and the warning `<span>` to the Duration label to match core
+#### Dead version checks and compatibility code removed
+- `expandEffectChanges` function (dead code, bonusSelector expansion now in applyChange)
+- `useDetermineSuppression` variable and all 4 call sites (removed from both core v14 and dnd5e v5)
+- `doCustomValue()` function (DAESystem.ts, unused)
+- Commented-out code blocks: initiative flags, movement effects, modifyDerivedSpecs, character flags, `_preDeleteActiveEffectBeta`, `preCreateItemHook`, 4 libWrapper registrations
+- dnd5e 5.2.99 version checks (always true in v14, removed if-wrappers)
+- `dae.roll` error message updated (still referenced "foundry version 12")
+- Dead v12 generation check in `FieldBrowser.ts` and associated `&.dae-v12` CSS
+- 3 dead `addDependent` fallback blocks in GMAction.ts (dnd5e 5.2+ handles natively)
+- `_deleteEffects` null safety fix (continue instead of falling through when actor is null)
 
-**Note:** DAE's `_prepareContext()` (lines 307-312) already contains migration code for the deprecated `flags.dae.showIcon` → native `showIcon` field. The template addition makes this field editable in the UI.
+#### New utility functions
+- **`getItemMacroCommand(source)`**: Resolves macro command text from an item or raw item data, checking `flags.dae.macro.command`, `flags.itemacro.macro.command`, and `flags.itemacro.macro.data.command` in precedence order. Replaced ~10 inline resolution patterns across `dae.ts`, `GMAction.ts`, and `DIMEditor.ts`. Exported on the DAE API.
+- **`CREATE_ITEM_KEYS`**: `Set` constant for O(1) lookup of `macro.createItem` / `macro.createItemRunMacro`, replacing repeated array `includes()` calls.
+- **`allMacroEffects`** and **`macroDestination`**: Now exported on the DAE API for external module use.
+
+#### Consolidated trait handlers (DAEdnd5e.ts)
+- Merged 4 separate damage `.all` cases (`di.all`, `dr.all`, `dv.all`, `da.all`) and `sdi.all` into a single parameterized handler
+- Merged 7 separate damage `.custom` cases and 4 proficiency `.custom` cases into a single consolidated handler
+- Merged `armorProf.all` and `weaponProf.all` into a parameterized handler using trait key extraction
+- Merged dual-loop patterns in `configureLists()` for conditions, tools, armor, and weapons (each from 2 loops to 1)
+
+#### Performance improvements
+- **Merged duplicate `setEffectsExpiryToRounds` branches** (specialDurations.ts): Transfer and non-transfer branches executed identical code; merged into single condition `(!isTransferEffect(effect) || updatePassiveEffects)`
+- **Cached `getTokenDocument`/`getToken` in `applyActiveEffects`** (GMAction.ts): 6 repeated calls for the same `targetActor` in the per-effect loop body replaced with cached variables
+- **Filter before clone** (GMAction.ts): `duplicate(activeEffects).filter(...)` reordered to `duplicate(activeEffects.filter(...))` to avoid deep-cloning effects that are immediately discarded
+- **Fixed variable shadowing** (specialDurations.ts): Removed unused outer `let update = {}`, changed inner declarations to `const`
+
+#### macro.createItem fix
+- Removed blanket rejection of items with `system.advancement?.length` — items with advancements were incorrectly blocked with `DND5E.ActorWarningInvalidItem`
+- Advancements are now stripped from cloned item data before creation to prevent unprocessed advancements confusing users and to avoid orphaned advancement grants if the actor levels up while the temporary item exists
+- The `unsupportedItemTypes` check remains (vehicles/groups still can't receive certain item types)
+
+#### Bug fixes
+- Fixed typo in compendium cleanup notification ("Finsihed" → "Finished")
+
+### Detection Modes (midi-qol-14x, not DAE)
+
+This change was in midi-qol-14x but noted here for reference:
+- `token.detectionModes.find(m => m.id === id)` -> direct property access `[id]`
+- `for (const detectionMode of tokenDetectionModes)` -> `for (const [modeId, detectionMode] of Object.entries(tokenDetectionModes))`
+
+### Test Suite Expansion (dae-tests-14x)
+
+**Files added:**
+- `src/12-atl-and-field-mapping-tests.ts` (8 tests)
+- `src/13-trait-handler-tests.ts` (11 tests)
+- `src/14-proficiency-handler-tests.ts` (12 tests)
+- `src/15-movement-handler-tests.ts` (8 tests)
+- `src/16-expression-and-stack-tests.ts` (10 tests)
+- `src/18-refactored-code-tests.ts` (15 tests)
+- `src/19-macro-and-conditional-tests.ts` (16 tests)
+
+**Files changed:**
+- `src/dae-tests.ts` — registered 8 new test batches (12-19)
+- `src/06-custom-effect-tests.ts` — changed test 6.6 from tool proficiency to weapon proficiency
+- `src/10-item-effect-tests.ts` — complete rewrite with enchantment effect coverage (5 tests)
+
+**Coverage added (80 new tests):**
+- ATL exclusion (`ATL.*` keys not processed by DAE)
+- bonusSelector expansion (All-Attacks, weapon.attack, spell.attack, All-Damage)
+- Field mapping (di.all, dr.all -> value with "ALL")
+- Damage trait handlers (di/dr/dv `.value`, `.custom`, `.bypasses`)
+- Condition immunity (ci.all, ci.custom)
+- Language proficiency (value, all, custom)
+- Weapon/armor proficiency (value, all, custom)
+- Tool proficiency (prof, ability, bonus, all)
+- `movement.all` with operators (+, -, *, plain number), units/hover exclusion, no-negative
+- `@stackCount` substitution and multi-apply stacking
+- `dae.eval()` with arithmetic, `@abilities`, `@stackCount`
+- OverTime key unique suffix collision prevention
+- `midi-qol.optional` `.all` suffix auto-fix
+- Disabled effect no-op, empty value safety
+- Item enchantment effects (name override, `@UUID` unmapping, `@-expression` in FormulaField, multiple enchantments)
+- `getItemMacroCommand()` — all 3 flag paths, precedence, undefined/null handling (5 tests)
+- Consolidated `.all` damage traits (di.all, dr.all, dv.all, da.all) (4 tests)
+- Consolidated `.custom` traits (armorProf.custom, dr.custom, mixed traits on one effect) (3 tests)
+- Merged `armorProf.all` + `weaponProf.all` on same effect (1 test)
+- `configureLists()` output — condition and proficiency lists with negative variants (2 tests)
+- `allMacroEffects` and `macroDestination` API coverage (2 tests)
+- `macro.execute` — runs named macro on create ("on") and delete ("off") (1 test)
+- `macro.actorUpdate` — applies flag updates to actor (1 test)
+- `macro.StatusEffect` — applies status condition (1 test)
+- `macro.createItem` — creates item on actor from UUID (1 test)
+- `disableCondition` — flag-based and expression-based conditional disabling (3 tests)
+- `enableCondition` — removes effect when condition becomes false (1 test)
+- Effect expiry modes — `expiryMode: "delete"` vs `"suppress"`, flag storage (3 tests)
+- Multiple macro keys on one effect (1 test)
+- `macro.execute` formula substitution (`@details.level` resolved from rollData) (1 test)
+- DAE API expiry utilities (`hasDuration`, `isEffectExpired`, `isTransferEffect`) (1 test)
+
+**Key discovery:** "Special" keys (di.custom, dr.bypasses, ci.all, movement.all, etc.) get ValidSpec phase `"final"` because specials are constructed with `new ValidSpec(..., "final")`. Tests for these keys must use `phase: "final"` in the change data.
+
+### ActiveEffects List & CSS Improvements
+
+**Files changed:**
+- `src/templates/ActiveEffects.hbs` — `effect.changes` → `effect.system.changes`
+- `src/module/apps/ActiveEffects.ts` — minor update
+- `src/css/dae.less` — resizable columns and scrollable layout
+
+#### Template fix
+The ActiveEffects list template referenced `effect.changes` which returned empty in v14 (the shim on `toObject()` output only works via getter, not in Handlebars iteration). Changed to `effect.system.changes` to display effect change details correctly.
+
+#### CSS: Resizable columns
+Made `.effect-name`/`.effect-label` and `.effect-value`/`.effect-value-value` growable (`flex: 1 0 Npx`) so key and value columns expand when the window is resized. Mode column stays fixed width. Controls column uses `flex: 0 0 auto` to prevent dropdown expansion.
+
+#### CSS: Scrollable effect list
+Added flex column chain for `.dae-active-effects .window-content` through `form` → `section` → `.dae-item` → `.dae-effect-list` with `overflow-y: auto` so the effect list scrolls within the window.
+
+#### CSS: Changes tab resize
+Added `flex: 1; min-height: 0` on `.dae.active-effect-config .tab.changes` and its `ol` child with `overflow-y: auto`, so the changes tab expands when the editor window is resized. Fixed `changeTab()` to keep current height instead of setting to `"auto"` for the changes tab.
+
+### DAEActiveEffectConfig Cleanup
+
+**Files changed:**
+- `src/module/apps/DAEActiveEffectConfig.ts` — refactored (~79 lines net reduction)
+- `src/module/apps/BooleanFormulaField.ts` — new file (extracted class)
+- `src/templates/DAESheetConfig/Changes.hbs` — uses `enrichedChanges` instead of mutating `source`
+
+#### Extracted BooleanFormulaField
+Moved `BooleanFormulaField` class to its own file. Original location re-exports for backward compatibility.
+
+#### Migration guard
+Added `static #migratedEffects: Set<string>` to prevent re-running migration on every render. Extracted migration logic to `#migrateDeprecatedData(document)` method.
+
+#### enrichedChanges pattern
+Previously, `_prepareContext` mutated `context.source.system.changes` to add `fieldName`/`fieldDescription`/`type` fields for the template. Since `context.source` is `document._source` (same object reference, not a clone), this polluted the actual document data. Changed to build a separate `context.enrichedChanges` array, and `Changes.hbs` now iterates `enrichedChanges`.
+
+#### Other cleanup
+- Awaited `this.daeFieldBrowser.init()` instead of fire-and-forget
+- Removed `_onDragStart` no-op override
+- Removed `_preClose` source cleanup (no longer needed with enrichedChanges)
+- Removed redundant `#onAddChange`/`#onDeleteChange` (identical to parent class)
+
+### Redundant start.time Removal
+
+**Files changed:**
+- `src/module/GMAction.ts` — removed ~26 lines of `start.time`/`start.round`/`start.turn` assignments
+- `src/module/dae.ts` — removed 2 `activeEffectData.start = { time: game.time.worldTime }` lines
+
+Foundry v14 core's `ActiveEffect._preCreate` (for Actor-owned effects) calls `getEffectStart()` which sets `start.time` to `game.time.worldTime` and fills `start.combat`, `start.combatant`, `start.round`, `start.turn` from the active combat. It merges field-by-field, preserving any user-defined values.
+
+DAE was redundantly setting these same fields in three places:
+1. **GMAction.ts** `convertDuration()` — set `start.time`, `start.round`, `start.turn` across seconds/rounds/turns branches
+2. **dae.ts** `applyActivityEffects()` — set `start = { time: worldTime }`
+3. **dae.ts** `applyNonTransferEffects()` — set `start = { time: worldTime }`
+
+All removed. The `combatActorOverride` block in GMAction.ts (which sets `start.combatant` to the *target's* combatant, not current turn) is NOT redundant and was kept.
+
+### Test Suite: Start Time Tests (dae-tests-14x)
+
+**Files added:**
+- `src/17-start-time-tests.ts` (8 tests)
+
+**Files changed:**
+- `src/dae-tests.ts` — registered batch 17
+
+**Coverage:**
+- 17.1: Actor effect gets `start.time` set to worldTime by core
+- 17.2: Seconds duration effect gets `start.time`
+- 17.3: Rounds duration effect gets `start.time` and combat context
+- 17.4: User-defined `start.time` is preserved by core
+- 17.5: Core fills all start fields (time, combat, combatant, round, turn)
+- 17.6: User `start.time` doesn't prevent core setting combat fields
+- 17.7: Item effect without duration does NOT get `start.time` (core only sets for Actor-owned)
+- 17.8: Non-enchantment item effect with seconds duration has no `start.time` (DAE skips non-enchantment item effects)
 
 ---
 
-## Pending / Known Issues
+## Resolved Issues
 
-- `ActiveEffects.ts` (effect list app) still references `submitData.changes` and `newAe.changes` — uses shim getters, functional but should be updated
-- Many references to `effect.changes` throughout dae.ts, GMAction.ts, DAEdnd5e.ts — these use the v14 shim getter and work, but emit deprecation warnings. Bulk migration to `effect.system.changes` is a future task.
+- `ActiveEffects.ts` `submitData.changes` / `newAe.changes` references — resolved, no longer present in codebase.
+- `effect.changes` references throughout dae.ts, GMAction.ts, DAEdnd5e.ts — all 96 occurrences verified to use `effect.system.changes` (or `aeData.system.changes`) with `@ts-expect-error v14 system.changes` annotations. No deprecated shim usage remains.

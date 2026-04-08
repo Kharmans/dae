@@ -4,8 +4,8 @@ import { convertDuration } from '../GMAction.js';
 import { ActiveEffects } from '../apps/ActiveEffects.js';
 import { BooleanFormulaField, DAEActiveEffectConfig, addAutoFields, otherFieldsMap, registerFieldEditor } from '../apps/DAEActiveEffectConfig.js';
 import { DIMEditor } from '../apps/DIMEditor.js';
-import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets, localizationMap } from '../dae.js';
-import { cleanActorItemsEffectOrigins, cleanEffectOrigins, fixTransferEffect, fixTransferEffects, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects, tobMapper } from '../migration.js';
+import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets, localizationMap, getItemMacroCommand, allMacroEffects, macroDestination } from '../dae.js';
+import { fixTransferEffect, fixTransferEffects, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects } from '../migration.js';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
 import { enumerateBaseValues } from '../dae.js';
 import { expireEffect, isEffectExpired, isTransferEffect, hasDuration, hasExpiry } from '../specialDurations.js';
@@ -39,10 +39,9 @@ const API = {
   },
   actorFromUuid,
   addAutoFields,
+  get allMacroEffects() { return allMacroEffects },
   BooleanFormulaField,
   blindToken,
-  cleanActorItemsEffectOrigins,
-  cleanEffectOrigins,
   confirmAction,
   convertDuration,
   createToken,
@@ -56,11 +55,13 @@ const API = {
   fixTransferEffect,
   fixTransferEffects,
   getFlag,
+  getItemMacroCommand,
   getTokenFlag,
   hasDuration,
   hasExpiry,
   isEffectExpired,
   isTransferEffect,
+  get macroDestination() { return macroDestination },
   moveToken,
   removeActorsPassiveEffects,
   removeAllScenesPassiveEffects,
@@ -75,7 +76,6 @@ const API = {
   setTokenVisibility,
   teleportToken,
   teleportToToken,
-  tobMapper,
   unsetFlag,
 };
 

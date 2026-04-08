@@ -35,7 +35,6 @@ export const MODULE_ID = "dae";
 /* Initialize module					*/
 /* ------------------------------------ */
 Hooks.once('init', () => {
-  // CONFIG.ActiveEffect.legacyTransferral = false;
   debug('Init setup actions');
 
   // Register "Time Elapsed" as a custom expiry event so effects can expire purely on duration.

@@ -135,14 +135,9 @@ async function setEffectsExpiryToRounds(actor, combat) {
   for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
     effect.updateDuration();
     if (effect.disabled || effect.duration.units !== "seconds") continue;
-    let update = {};
-    if (isTransferEffect(effect) && updatePassiveEffects && (effect.duration.value ?? (maxShortDuration + 1)) <= maxShortDuration) {
+    if ((!isTransferEffect(effect) || updatePassiveEffects) && (effect.duration.value ?? (maxShortDuration + 1)) <= maxShortDuration) {
       if (debugEnabled > 0) warn("update effect setting expiry rounds", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
-      update = setDurationRounds(effect, combat);
-      if (!foundry.utils.isEmpty(update)) await effect.update(update);
-    } else if (!isTransferEffect(effect) && (effect.duration.value ?? (maxShortDuration + 1)) <= maxShortDuration) {
-      if (debugEnabled > 0) warn("update effect setting expiry rounds", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
-      update = setDurationRounds(effect, combat);
+      const update = setDurationRounds(effect, combat);
       if (!foundry.utils.isEmpty(update)) await effect.update(update);
     }
   }
@@ -161,11 +156,10 @@ async function setEffectsExpiryToRounds(actor, combat) {
 
 async function setEffectsExpiryToSeconds(actor, combat?) {
   for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
-    let update = {};
     const duration = effect.updateDuration();
     if (!["rounds", "turns"].includes(duration.units)) continue;
     if (isTransferEffect(effect)) {
-      let update = setDurationSeconds(effect);
+      const update = setDurationSeconds(effect);
       if (debugEnabled > 0) warn("update effect setting expiry seconds", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
       if (!foundry.utils.isEmpty(update)) await effect.update(update);
     } else if (!effect.transfer) {
@@ -174,7 +168,7 @@ async function setEffectsExpiryToSeconds(actor, combat?) {
         const effectValue = effect.duration.units === "rounds" ? effect.duration.value : 0;
         seconds = Math.max(Math.floor(((effect.start?.round ?? 0) + effectValue - combat.round) * CONFIG.time.roundTime), 0);
       }
-      update = setDurationSeconds(effect);
+      const update = setDurationSeconds(effect);
       update["duration.value"] = seconds;
       update["duration.units"] = "seconds";
       if (seconds <= 0) update["disabled"] = true;
@@ -239,9 +233,7 @@ export function isEffectExpired(effect: any /* ActiveEffect */): boolean {
 }
 
 export function isTransferEffect(effect): boolean {
-  let _isTransferEffect = effect.transfer;
-  if (CONFIG.ActiveEffect.legacyTransferral) _isTransferEffect = foundry.utils.getProperty(effect, "flags.dae.transfer") || foundry.utils.getProperty(effect, "flags.times-up.isPassive");
-  return _isTransferEffect;
+  return effect.transfer;
 }
 
 /**

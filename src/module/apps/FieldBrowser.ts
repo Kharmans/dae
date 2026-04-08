@@ -144,8 +144,7 @@ export class DAEFieldBrowser {
     const fullBrowserClass = DAEFieldBrowser.isFullBrowser ? 'active' : '';
     const descriptionsClass = DAEFieldBrowser.showDescriptions ? 'active' : '';
     const browserClasses = DAEFieldBrowser.isFullBrowser ? ['dae-fb-browser', 'dae-fb-full-browser'] : ['dae-fb-browser'];
-    if ((game.release?.generation ?? 12) < 13) browserClasses.push('dae-v12');
-    else browserClasses.push('application');
+    browserClasses.push('application');
   
     this.browserElement = document.createElement('div');
     this.browserElement.id = 'dae-fb-browser';

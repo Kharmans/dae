@@ -1,4 +1,4 @@
-import { timesUpActive, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, maxShortDuration } from "./dae.js";
+import { timesUpActive, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, maxShortDuration, getItemMacroCommand } from "./dae.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
 
@@ -54,7 +54,7 @@ async function _updateActor(data: { actorUuid: string, update: Actor.UpdateData,
 }
 
 async function _removeActorItem(data: { uuid: string, itemUuid: string, itemUuids: string[], context: Item.Database.DeleteOperation }) {
-  const { uuid, itemUuid, itemUuids, context } = data;
+  const { itemUuids, context } = data;
 
   for (let itemUuid of itemUuids ?? []) {
     const item = await fromUuid(itemUuid);
@@ -81,7 +81,7 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
   let itemData = item?.toObject(true);
   if (!itemData) return [];
   //@ts-expect-error no dnd5e-types
-  if (actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type) || itemData.system.advancement?.length) {
+  if (actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type)) {
     ui.notifications?.warn(i18nFormat("DND5E.ActorWarningInvalidItem", {
       itemType: i18n(CONFIG.Item.typeLabels[itemData.type]),
       actorType: i18n(CONFIG.Actor.typeLabels[actor.type])
@@ -89,6 +89,10 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
     return [];
   }
 
+  // Strip advancements from temporary items — they are removed when the effect ends,
+  // and unprocessed advancements would confuse users. Level-up could also trigger
+  // advancement processing on the temporary item, leaving orphaned grants behind.
+  if (itemData.system.advancement?.length) itemData.system.advancement = [];
   foundry.utils.setProperty(itemData, "flags.dae.DAECreated", true);
   const documents = await actor.createEmbeddedDocuments("Item", [itemData]);
   if (data.callItemMacro) {
@@ -268,13 +272,14 @@ async function _deleteEffects(data: { targets: { uuid: string }[], origin: strin
     const actor = actorFromUuid(idData.uuid);
     if (!actor) {
       error("could not find actor for ", idData);
+      continue;
     }
-    let effectsToDelete = actor?.effects?.filter(ef => ef.origin === data.origin && !data.ignore?.includes(ef.uuid));
-    if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete?.filter(ae => ae.id && data.deleteEffects.includes(ae.id))
-    if (effectsToDelete && effectsToDelete?.length > 0) {
+    let effectsToDelete = actor.effects.filter(ef => ef.origin === data.origin && !data.ignore?.includes(ef.uuid));
+    if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete.filter(ae => ae.id && data.deleteEffects.includes(ae.id))
+    if (effectsToDelete.length > 0) {
       try {
         if (!foundry.utils.getProperty(data, "options.expiry-reason")) foundry.utils.setProperty(data, "options.expiry-reason", "programmed-removal");
-        await actor?.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id ?? "XXX"), data.options);
+        await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToDelete.map(ef => ef.id ?? "XXX"), data.options);
       } catch (err) {
         warn("delete effects failed ", err)
         // TODO can get thrown since more than one thing tries to delete an effect
@@ -307,15 +312,11 @@ export async function applyActiveEffects({
     // Removal of existing is now handled by _preCreateActiveEffect override.
     // TODO workout what to do if activate is false? does not seem to be used anywhere to force delete effects
     if (activate) {
-      let dupEffects = foundry.utils.duplicate(activeEffects).filter(effectData => effectData.flags?.dae?.dontApply !== true);
+      let dupEffects = foundry.utils.duplicate(activeEffects.filter(effectData => effectData.flags?.dae?.dontApply !== true));
 
       dupEffects.forEach(effectData => {
         effectData.transfer = false;
         if (effectData.flags?.dae?.transfer !== undefined) delete effectData.flags.dae.transfer;
-        // New effect so remove the source effects dependents
-        if (game.system.id === "dnd5e" && foundry.utils.isNewerVersion("5.1.99", game.system.version)) {
-          foundry.utils.setProperty(effectData, "flags.dnd5e.dependents", []);
-        }
         // @ts-expect-error v14 system.changes
         effectData.system.changes.forEach(change => { if (change.key === "StatusEffect") change.key = "macro.StatusEffect" })
       });
@@ -338,16 +339,14 @@ export async function applyActiveEffects({
             console.warn("dae | applyActiveEffects: too many levels of active effects", aeData);
           } else if (origin instanceof Item) {
             item = origin;
-            macroCommand = item.flags?.dae?.macro?.command ?? item.flags?.itemacro?.macro?.command;
+            macroCommand = getItemMacroCommand(item);
           } else if (origin?.parent instanceof Item) {
             item = origin.parent;
-            macroCommand = item.flags?.dae?.macro?.command ?? item.flags?.itemacro?.macro?.command;
+            macroCommand = getItemMacroCommand(item);
           }
 
           if (!macroCommand && aeData.flags?.dae?.itemData) {
-            const itemData = aeData.flags.dae.itemData;
-            if (itemData)
-              macroCommand = itemData.flags?.dae?.macro?.command ?? itemData.flags?.itemacro?.macro?.command;
+            macroCommand = getItemMacroCommand(aeData.flags.dae.itemData);
           }
           foundry.utils.setProperty(aeData, "flags.dae.itemMacro", macroCommand)
         }
@@ -367,11 +366,8 @@ export async function applyActiveEffects({
         const aeUnits = aeData.duration.units;
         // @ts-expect-error v14 duration.value
         const aeValue = aeData.duration.value;
+        // Core's _preCreate sets start.time, start.round, start.turn for Actor-owned effects
         if (aeUnits === "seconds" && aeValue) {
-          // @ts-expect-error v14 effect.start
-          aeData.start ??= {};
-          // @ts-expect-error v14 effect.start
-          aeData.start.time = game.time.worldTime;
           const inCombat = targetActor.inCombat;
           let convertedDuration = convertDuration({ value: aeValue, units: "second" }, inCombat, maxShortDuration);
           if (aeValue === -1) { // special case duration of -1 seconds
@@ -383,20 +379,7 @@ export async function applyActiveEffects({
             aeData.duration.value = convertedDuration.value;
             // @ts-expect-error v14 duration.units
             aeData.duration.units = convertedDuration.units!;
-            // @ts-expect-error v14 effect.start
-            aeData.start ??= {};
-            // @ts-expect-error v14 effect.start
-            aeData.start.round = game.combat?.round;
-            // @ts-expect-error v14 effect.start
-            aeData.start.turn = game.combat?.turn;
           }
-        } else if (aeUnits === "rounds" || aeUnits === "turns") {
-          // @ts-expect-error v14 effect.start
-          aeData.start ??= {};
-          // @ts-expect-error v14 effect.start
-          aeData.start.round = game.combat?.round;
-          // @ts-expect-error v14 effect.start
-          aeData.start.turn = game.combat?.turn;
         } else if (!aeValue) { // no specific duration on effect use spell duration
           const inCombat = targetActor.inCombat;
           const convertedDuration = convertDuration(effectDuration, inCombat, maxShortDuration);
@@ -406,21 +389,11 @@ export async function applyActiveEffects({
             aeData.duration.value = convertedDuration.value;
             // @ts-expect-error v14 duration.units
             aeData.duration.units = "seconds";
-            // @ts-expect-error v14 effect.start
-            aeData.start ??= {};
-            // @ts-expect-error v14 effect.start
-            aeData.start.time = game.time.worldTime;
           } else if (convertedDuration.type === "turns") {
             // @ts-expect-error v14 duration.value
             aeData.duration.value = convertedDuration.value;
             // @ts-expect-error v14 duration.units
             aeData.duration.units = convertedDuration.units!;
-            // @ts-expect-error v14 effect.start
-            aeData.start ??= {};
-            // @ts-expect-error v14 effect.start
-            aeData.start.round = game.combat?.round;
-            // @ts-expect-error v14 effect.start
-            aeData.start.turn = game.combat?.turn;
           }
         }
         // Set v14 start.combatant based on combatActorOverride flag
@@ -442,9 +415,11 @@ export async function applyActiveEffects({
         if (source instanceof CONFIG.Item.documentClass) {
           context = source?.getRollData();
         }
+        const targetTokenDoc = getTokenDocument(targetActor);
+        const targetToken = getToken(targetActor);
         context = foundry.utils.mergeObject(context, {
-          target: getTokenDocument(targetActor)?.id,
-          targetUuid: getTokenDocument(targetActor)?.uuid,
+          target: targetTokenDoc?.id,
+          targetUuid: targetTokenDoc?.uuid,
           targetActorUuid: targetActor?.uuid,
           itemCardUuid: itemCardUuid,
           "@target": "target",
@@ -474,9 +449,9 @@ export async function applyActiveEffects({
             if (!sourceActor) continue;
             if (change.key === "flags.dae.onUpdateTarget") {
               // for onUpdateTarget effects, put the source actor, the target uuid, the origin and the original change.value
-              change.value = `${aeData.origin}, ${getTokenDocument(targetActor)?.uuid}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${sourceActor.uuid}, ${change.value}`;
+              change.value = `${aeData.origin}, ${targetTokenDoc?.uuid}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${sourceActor.uuid}, ${change.value}`;
             } else if (change.key === "flags.dae.onUpdateSource") {
-              change.value = `${aeData.origin}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${getTokenDocument(targetActor)?.uuid}, ${sourceActor.uuid}, ${change.value}`;
+              change.value = `${aeData.origin}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${targetTokenDoc?.uuid}, ${sourceActor.uuid}, ${change.value}`;
               const newEffectData = foundry.utils.duplicate(aeData);
               // @ts-expect-error v14 system.changes
               newEffectData.system.changes = [foundry.utils.duplicate(change)];
@@ -486,17 +461,7 @@ export async function applyActiveEffects({
                 foundry.utils.setProperty(newEffectData, "flags.dnd5e.dependentOn", aeData.origin)
               }
               // @ts-expect-error TODO (Michael) What's up with this metaData
-              const effects = await sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData as ActiveEffect.CreateData], { metaData });
-              if (effects && (game.system.id !== "dnd5e" || foundry.utils.isNewerVersion("5.1.99", game.system.version))) {
-                for (let effect of effects) {
-                  const origin = fromUuidSync(effect.origin);
-                  //@ts-expect-error no dnd5e-types
-                  if (origin instanceof ActiveEffect && origin.addDependent) {
-                    //@ts-expect-error no dnd5e-types
-                    await origin.addDependent(effect);
-                  }
-                }
-              }
+              await sourceActor.createEmbeddedDocuments("ActiveEffect", [newEffectData as ActiveEffect.CreateData], { metaData });
             }
 
             // if (["macro.execute", "macro.itemMacro", "roll", "macro.actorUpdate"].includes(change.key)) {
@@ -507,14 +472,14 @@ export async function applyActiveEffects({
             } else {
               change.value = foundry.utils.duplicate(change.value).map(f => {
                 if (f === "@itemCardUuid") return itemCardUuid;
-                if (f === "@target") return getToken(targetActor)?.id;
-                if (f === "@targetUuid") return getTokenDocument(targetActor)?.uuid;
+                if (f === "@target") return targetToken?.id;
+                if (f === "@targetUuid") return targetTokenDoc?.uuid;
                 return f;
               });
             }
           } else {
             if (typeof change.value === "string") {
-              const targetContext = { "targetUuid": getTokenDocument(targetActor)?.uuid, "target": getToken(targetActor)?.id, "tokenUuid": getTokenDocument(targetActor)?.uuid, "token": getToken(targetActor)?.id };
+              const targetContext = { "targetUuid": targetTokenDoc?.uuid, "target": targetToken?.id, "tokenUuid": targetTokenDoc?.uuid, "token": targetToken?.id };
               for (let key of Object.keys(targetContext)) {
                 change.value = change.value.replace(`@${key}`, targetContext[key])
               }
@@ -532,14 +497,7 @@ export async function applyActiveEffects({
       if (dupEffects.length > 0) {
         if (debugEnabled > 0) warn(`applyActiveEffects creating effects ${targetActor.name}`, dupEffects)
         // @ts-expect-error TODO (Michael) What's up with this toggleEffect/metaData
-        let createdEffects = (await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects as ActiveEffect.CreateData[], { toggleEffect, metaData })) ?? [];
-        if ((game.system.id !== "dnd5e" || foundry.utils.isNewerVersion("5.1.99", game.system.version))) {
-          for (let effect of createdEffects) {
-            const origin = fromUuidSync(effect.origin as string);
-            // @ts-expect-error no dnd5e-types
-            if (origin?.addDependent) await origin.addDependent(effect);
-          }
-        }
+        await targetActor.createEmbeddedDocuments("ActiveEffect", dupEffects as ActiveEffect.CreateData[], { toggleEffect, metaData });
       }
     }
   };
