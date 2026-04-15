@@ -81,7 +81,7 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
   let itemData = item?.toObject(true);
   if (!itemData) return [];
   //@ts-expect-error no dnd5e-types
-  if (actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type) || itemData.system.advancement?.length) {
+  if (actor?.sheet?.constructor.unsupportedItemTypes.has(itemData.type)) {
     ui.notifications?.warn(i18nFormat("DND5E.ActorWarningInvalidItem", {
       itemType: i18n(CONFIG.Item.typeLabels[itemData.type]),
       actorType: i18n(CONFIG.Actor.typeLabels[actor.type])
@@ -89,6 +89,10 @@ async function _createActorItem(data: { uuid: string, itemDetails: string, effec
     return [];
   }
 
+  // Strip advancements from temporary items — they are removed when the effect ends,
+  // and unprocessed advancements would confuse users. Level-up could also trigger
+  // advancement processing on the temporary item, leaving orphaned grants behind.
+  if (itemData.system.advancement?.length) itemData.system.advancement = [];
   foundry.utils.setProperty(itemData, "flags.dae.DAECreated", true);
   const documents = await actor.createEmbeddedDocuments("Item", [itemData]);
   if (data.callItemMacro) {

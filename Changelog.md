@@ -1,3 +1,9 @@
+### 13.0.26
+* Fix TypeError when `customStats` is not iterable in `isSuppressed` for Group actors without `system.traits.ci.custom` (MR !157, thanks @thatlonelybugbear).
+* Correct descriptions for shimmed enchant keys — swap `system.damage.bonus`/`system.damageBonus` descriptions and replace "Should use … instead" with "Equivalent to …" for attack shim keys (MR !159, thanks @Michael Roth).
+* `@activity` is now available in AE change value formulas when effects are applied via an activity (inspired by MR !156, thanks @thatlonelybugbear).
+* Strip advancements from temporary effects created on actors, rather than rejecting effects with advancement effects.
+
 ### 13.0.25
 * Fix for `optional.NAME.damage.save` showing `[object Object]` in the bonus dialog and emitting a spurious deprecation warning.
 * `macro.execute` changes now fire on actor init (world load), alongside `macro.itemMacro` and `macro.activityMacro`.

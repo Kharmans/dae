@@ -1288,7 +1288,7 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
         let macroArgs: any[] = [action];
         macroArgs = macroArgs.concat(args).concat(lastArg);
         const macroActivity = await fromUuid(activityUuid);
-        const effect = fromUuidSync(lastArgOptions.effectUuid) as ActiveEffect.Implementation;
+        const effect = await fromUuid(lastArgOptions.effectUuid) as ActiveEffect.Implementation;
         const scope: Macro.ExecuteScope<"script"> = {
           actor,
           token: selfTarget instanceof TokenDocument ? selfTarget.object : selfTarget,
@@ -1592,6 +1592,7 @@ export async function applyActivityEffects(
         doRolls
       })
       evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, { recursive: false });
+      evalArgsOptions.context.activity = activity.getRollData?.() ?? activity;
       evalArgsOptions.item = activity.item;
       if (activity.actor) evalArgsOptions.actor = activity.actor;
       let newChange = await evalArgs(evalArgsOptions)
