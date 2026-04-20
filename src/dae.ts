@@ -5,10 +5,9 @@ import { preloadTemplates } from './module/preloadTemplates.js';
 import { daeSetupActions, daeInitActions, fetchParams } from "./module/dae.js";
 import { daeReadyActions } from "./module/dae.js";
 import { setupSocket } from './module/GMAction.js';
-import { setupPatching, initPatching } from './module/patching.js';
 import API from './module/API/api.js';
 import { addAutoFields, BooleanFormulaField } from './module/apps/DAEActiveEffectConfig.js';
-import { migrateTimesUpSettings } from './module/specialDurations.js';
+import { registerActiveEffectPatches } from './module/patching.js';
 
 export let debugEnabled: number;
 export let setDebugLevel = (debugText: string) => {
@@ -30,6 +29,7 @@ export function i18nFormat(key: string, data) {
 }
 export let gameSystemCompatible = "maybe"; // no, yes, maybe
 export let daeUntestedSystems: boolean;
+export let daeManagesTurnExpiry: boolean = false; // true when dnd5e < 6.0.0 (dnd5e 6.0+ handles source/target turn expiry natively)
 export const MODULE_ID = "dae";
 /* ------------------------------------ */
 /* Initialize module					*/
@@ -37,24 +37,26 @@ export const MODULE_ID = "dae";
 Hooks.once('init', () => {
   debug('Init setup actions');
 
-  // Register "Time Elapsed" as a custom expiry event so effects can expire purely on duration.
-  // Core's isExpiryEvent special-cases the "updateWorldTime" event string as a trigger, not as an
-  // expiry value — so effects with expiry="updateWorldTime" never match any event. We patch
-  // isExpiryEvent below to treat expiry="updateWorldTime" as "expire on any event when duration
-  // reaches 0", letting the duration calculation handle the actual timing.
+  // Register custom expiry events:
+  // - "updateWorldTime" (Time Elapsed): expire purely on duration, not combat events
   // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
   CONFIG.ActiveEffect.expiryEvents.updateWorldTime = "dae.expiryEvent.updateWorldTime";
 
-  // Patch isExpiryEvent: core special-cases the "updateWorldTime" event parameter but doesn't
-  // handle it as an expiry value. Effects with expiry="updateWorldTime" ("Time Elapsed") should
-  // expire whenever their duration runs out, regardless of which event triggered the refresh.
-  // @ts-expect-error v14 isExpiryEvent not in fvtt-types yet
-  const origIsExpiryEvent = ActiveEffect.prototype.isExpiryEvent;
-  // @ts-expect-error v14 isExpiryEvent not in fvtt-types yet
-  ActiveEffect.prototype.isExpiryEvent = function(event, context) {
-    if (this.duration.expiry === "updateWorldTime") return true;
-    return origIsExpiryEvent.call(this, event, context);
-  };
+  // source/target turn expiry: dnd5e 6.0+ handles this natively, so only register when < 6.0.0
+  daeManagesTurnExpiry = game.system.id !== "dnd5e" || !foundry.utils.isNewerVersion(game.system.version, "5.99.99");
+  if (daeManagesTurnExpiry) {
+    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
+    CONFIG.ActiveEffect.expiryEvents.sourceStart = "dae.expiryEvent.sourceStart";
+    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
+    CONFIG.ActiveEffect.expiryEvents.sourceEnd = "dae.expiryEvent.sourceEnd";
+    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
+    CONFIG.ActiveEffect.expiryEvents.targetStart = "dae.expiryEvent.targetStart";
+    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
+    CONFIG.ActiveEffect.expiryEvents.targetEnd = "dae.expiryEvent.targetEnd";
+  }
+
+  // Register lib-wrapper patches for isExpiryEvent and _prepareDuration
+  registerActiveEffectPatches();
 
   const systemDaeFlag = game.system.flags?.daeCompatible;
   if (["dnd5e"].includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
@@ -68,7 +70,6 @@ Hooks.once('init', () => {
     if (gameSystemCompatible === "yes" || daeUntestedSystems) {
       if (gameSystemCompatible === "maybe") console.warn(`DAE compatibility warning for ${game.system.title}: not tested with DAE`);
       daeInitActions();
-      initPatching();
       fetchParams();
 
       // Preload Handlebars templates - async but no use awaiting
@@ -98,7 +99,7 @@ Hooks.once('ready', () => {
     debug("ready setup actions")
     daeSpecialDurations = { "None": "" };
     // turnStart, turnEnd, turnStartSource, turnEndSource, combatEnd removed —
-    // now handled by v14 core duration.expiry + combatActorOverride
+    // now handled by v14 core duration.expiry + DAE source/target expiry events
     daeSpecialDurations["joinCombat"] = i18n("COMBAT.CombatantCreate");
     daeMacroRepeats = {
       "none": "",
@@ -123,27 +124,40 @@ Hooks.once('ready', () => {
     const origRefresh = registry.refresh;
     const expiryRedirects: { effect: ActiveEffect.Implementation, targetAction: "delete" | "update" }[] = [];
     let registryRefreshActive = false;
+    let registryRefreshEvent = "";
+
+    function expiryReason(event: string, effect: ActiveEffect.Implementation): string {
+      const expiry = (effect.duration as any)?.expiry as string | undefined;
+      return `duration-expired:${expiry ?? event}`;
+    }
 
     registry.refresh = async function(event, context) {
       registryRefreshActive = true;
+      registryRefreshEvent = event;
       expiryRedirects.length = 0;
       try {
         await origRefresh.call(this, event, context);
+      } catch (err) {
+        console.error("dae | registry.refresh", err);
       } finally {
         registryRefreshActive = false;
+        registryRefreshEvent = "";
       }
       // Process any redirected operations (effects whose per-effect mode differs from global)
       for (const { effect, targetAction } of expiryRedirects) {
-        if (targetAction === "delete") await effect.delete();
+        const reason: any = { "expiry-reason": expiryReason(event, effect) };
+        if (targetAction === "delete") await effect.delete(reason);
         // @ts-expect-error v14 duration.expired not in fvtt-types yet
-        else await effect.update({ "duration.expired": true });
+        else await effect.update({ "duration.expired": true }, reason);
       }
       expiryRedirects.length = 0;
     };
 
-    // Intercept registry expiry: redirect "delete" to "suppress" for effects with expiryMode=suppress
+    // Intercept registry expiry: inject expiry-reason into options for core duration expiry,
+    // and redirect effects whose per-effect expiryMode differs from the global setting.
     Hooks.on("preDeleteActiveEffect", (effect: ActiveEffect.Implementation, options: any) => {
       if (!registryRefreshActive) return true;
+      if (!options["expiry-reason"]) options["expiry-reason"] = expiryReason(registryRefreshEvent, effect);
       const mode = effect.getFlag("dae", "expiryMode") as string | undefined;
       if (mode === "suppress") {
         expiryRedirects.push({ effect, targetAction: "update" });
@@ -152,10 +166,12 @@ Hooks.once('ready', () => {
       return true;
     });
 
-    // Intercept registry expiry: redirect "suppress" to "delete" for effects with expiryMode=delete
+    // Intercept registry expiry: inject expiry-reason into options for core duration expiry,
+    // and redirect effects whose per-effect expiryMode differs from the global setting.
     Hooks.on("preUpdateActiveEffect", (effect: ActiveEffect.Implementation, update: any, options: any) => {
       if (!registryRefreshActive) return true;
       if (!foundry.utils.hasProperty(update, "duration.expired")) return true;
+      if (!options["expiry-reason"]) options["expiry-reason"] = expiryReason(registryRefreshEvent, effect);
       const mode = effect.getFlag("dae", "expiryMode") as string | undefined;
       if (mode === "delete") {
         expiryRedirects.push({ effect, targetAction: "delete" });
@@ -165,7 +181,6 @@ Hooks.once('ready', () => {
     });
 
     daeReadyActions();
-    migrateTimesUpSettings();
     createDAEMacros();
   } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
     ui.notifications?.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);
@@ -184,7 +199,6 @@ Hooks.once('setup', () => {
     // Do anything after initialization but before ready
     debug("setup actions")
     daeSetupActions();
-    setupPatching();
 
     // Set API
     const data: any = game.modules.get("dae");
@@ -200,66 +214,19 @@ Hooks.once('setup', () => {
       rebuildSignatureMap();
     });
     setupSocket();
-    if ("DAE.setupComplete" in Hooks.events) {
-      foundry.utils.logCompatibilityWarning(
-        "The `DAE.setupComplete` hook has been deprecated and replaced with `dae.setupComplete`.",
-        { since: "DAE 13.0.7", until: "DAE 14.0.0" }
-      );
-      Hooks.callAll("DAE.setupComplete");
-    }
     Hooks.callAll("dae.setupComplete", API);
   }
 });
-
-// TODO (Michael): Do we really need this? Very similar to just using `DialogV2.confirm`
-// It's only here as a convenience to macro writers and I would not be surprised if it is not used at all
-export async function confirmAction(toCheck: boolean, confirmFunction: any, title = i18n("dae.confirm")) {
-  foundry.utils.logCompatibilityWarning(
-    "`confirmAction` is deprecated and will be removed in a future release. Please use `DialogV2.confirm` instead.",
-    { since: "DAE 13.0.11", until: "DAE 13.1.0" }
-  );
-  if (toCheck || await foundry.applications.api.DialogV2.confirm({
-    window: { title },
-    content: `<p>${i18n("dae.sure")}</p>`,
-    rejectClose: false
-  })) {
-    return confirmFunction();
-  }
-}
 
 
 // Revisit to find out how to set execute as GM
 const DAEMacros = [
   {
-    name: "DAE: Clear Scene DAE Passive Effects",
-    checkVersion: true,
-    version: "11.2.1",
-    commandText: `await game.modules.get("dae").api.removeScenePassiveEffects()`
-  },
-  {
-    name: "DAE: Clear All Actors DAE Passive Effects",
-    checkVersion: true,
-    version: "11.2.1",
-    commandText: `await game.modules.get("dae").api.removeActorsPassiveEffects()`
-  },
-  {
-    name: "DAE: Clear All Compendium DAE Passive Effects",
-    checkVersion: true,
-    version: "11.2.1",
-    commandText: `await game.modules.get("dae").api.removeCompendiaPassiveEffects()`
-  },
-  {
-    name: "DAE: Clear All Scenes DAE Passive Effects",
-    checkVersion: true,
-    version: "11.2.1",
-    commandText: `await game.modules.get("dae").api.removeAllScenesPassiveEffects()`
-  },
-  {
     name: "DAE: Create Sample DAEConditionalEffects",
     checkVersion: true,
-    version: "11.3.41",
-    commandText: `itemData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/DAEConditionalEffects.json');
-        CONFIG.Item.documentClass.create([itemData]);`
+    version: "14.0.5",
+    commandText: `const itemData = await foundry.utils.fetchJsonWithTimeout('modules/dae/data/DAEConditionalEffects.json');
+        await CONFIG.Item.documentClass.create([itemData]);`
   }
 ];
 

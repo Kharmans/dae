@@ -287,17 +287,13 @@
   "dae.StatusEffect": "Status Effect",
   "dae.ShowDeprecation.Name": "Show Deprecation Errors",
   "dae.ShowDeprecation.Hint": "Show Deprecation Errors in console",
-  "dae.maxShortDuration.Name": "Max Short Duration",
-  "dae.maxShortDuration.Hint": "Maximum duration in seconds for short duration effects that are converted to rounds during combat",
-  "dae.durationManagementEnabled.Name": "Duration Management Enabled",
-  "dae.durationManagementEnabled.Hint": "Enable automatic duration management: convert seconds to rounds in combat, handle effect expiry, and manage transfer effect lifecycle",
-  "dae.enablePassiveEffects.Name": "Enable Passive Effects",
-  "dae.enablePassiveEffects.Hint": "When enabled, transfer effects are disabled instead of deleted when they expire, and can be re-enabled with a fresh duration",
-  "dae.updatePassiveEffects.Name": "Update Passive Effects",
-  "dae.updatePassiveEffects.Hint": "When enabled, transfer effect durations are also converted between seconds and rounds when entering/leaving combat",
   "dae.expireRoundEffectsOnCombatEnd.Name": "Expire Round Effects on Combat End",
   "dae.expireRoundEffectsOnCombatEnd.Hint": "When enabled, effects with round/turn durations are expired when combat ends or a combatant is removed",
-  "dae.expiryEvent.updateWorldTime": "Time Elapsed",
+  "dae.expiryEvent.updateWorldTime": "Elapsed Time",
+  "dae.expiryEvent.sourceStart": "Source Turn Start",
+  "dae.expiryEvent.sourceEnd": "Source Turn End",
+  "dae.expiryEvent.targetStart": "Target Turn Start",
+  "dae.expiryEvent.targetEnd": "Target Turn End",
   "dae.deleteExpiredEffects": "Delete Expired Effects",
   "dae.expiryAction.Name": "Special Duration Expiry Action",
   "dae.expiryAction.Hint": "Controls what happens when special durations (1Hit, 1Action, DamageDealt, etc.) expire an effect. 'Default' uses the core Foundry expiry action setting. 'Delete' always removes the effect. 'Mark Expired' always suppresses the effect but keeps it on the actor.",
@@ -365,8 +361,9 @@
   "dae.forceToHud.Name": "Force display on token",
   "dae.forceToHud.Hint": "If non empty set the icon for the effect will be displayed on the token regardless of duration",
   "dae.DurationExpression": "Roll expression in seconds for the effect duration",
-  "dae.combatActorOverride": "Combat Actor",
-  "dae.combatActorSource": "Source Combatant (Default)",
+  "dae.combatActorOverride": "Expiry Combatant",
+  "dae.combatActorDefault": "Default (Active Combatant)",
+  "dae.combatActorSource": "Source Combatant",
   "dae.combatActorTarget": "Target Combatant",
   "dae.durationExpiry": "Expiry",
   "dae.expiryTurnStart": "Turn Start",
@@ -2597,5 +2594,6 @@
       "name": "Profiles",
       "description": ""
     }
-  }
+  },
+  "EFFECT.TABS.dae": "DAE"
 }

@@ -1,14 +1,15 @@
-import { confirmAction, daeSpecialDurations } from '../../dae.js';
+import { daeSpecialDurations } from '../../dae.js';
 import { teleportToToken, blindToken, restoreVision, setTokenVisibility, setTileVisibility, moveToken, renameToken, getTokenFlag, setTokenFlag, setFlag, unsetFlag, getFlag, deleteActiveEffect, createToken, teleportToken, deleteItemActiveEffects } from '../../module/daeMacros.js';
 import { convertDuration } from '../GMAction.js';
 import { ActiveEffects } from '../apps/ActiveEffects.js';
 import { BooleanFormulaField, DAEActiveEffectConfig, addAutoFields, otherFieldsMap, registerFieldEditor } from '../apps/DAEActiveEffectConfig.js';
 import { DIMEditor } from '../apps/DIMEditor.js';
 import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets, localizationMap, getItemMacroCommand, allMacroEffects, macroDestination } from '../dae.js';
-import { fixTransferEffect, fixTransferEffects, removeActorsPassiveEffects, removeAllScenesPassiveEffects, removeCompendiaPassiveEffects, removeScenePassiveEffects } from '../migration.js';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
 import { enumerateBaseValues } from '../dae.js';
 import { expireEffect, isEffectExpired, isTransferEffect, hasDuration, hasExpiry } from '../specialDurations.js';
+import { resolveItemFromEffect, resolveMacro, resolveWorldMacro, resolveItemMacroCommand, resolveActivityMacroCommand, createSyntheticMacro, createFunctionMacro } from '../lib/macroResolution.js';
+import { registerChangeHandler, getChangeHandler, changeHandlerRegistry } from '../lib/changeHandlerRegistry.js';
 
 const API = {
   ActiveEffects(document: Actor.Implementation | Item.Implementation) {
@@ -39,10 +40,12 @@ const API = {
   },
   actorFromUuid,
   addAutoFields,
+  get changeHandlerRegistry() { return changeHandlerRegistry },
+  createFunctionMacro,
+  createSyntheticMacro,
   get allMacroEffects() { return allMacroEffects },
   BooleanFormulaField,
   blindToken,
-  confirmAction,
   convertDuration,
   createToken,
   daeMacro,
@@ -52,8 +55,7 @@ const API = {
   doEffects,
   enumerateBaseValues,
   expireEffect,
-  fixTransferEffect,
-  fixTransferEffects,
+  getChangeHandler,
   getFlag,
   getItemMacroCommand,
   getTokenFlag,
@@ -63,12 +65,14 @@ const API = {
   isTransferEffect,
   get macroDestination() { return macroDestination },
   moveToken,
-  removeActorsPassiveEffects,
-  removeAllScenesPassiveEffects,
+  registerChangeHandler,
   registerFieldEditor,
-  removeCompendiaPassiveEffects,
-  removeScenePassiveEffects,
   renameToken,
+  resolveActivityMacroCommand,
+  resolveItemFromEffect,
+  resolveItemMacroCommand,
+  resolveMacro,
+  resolveWorldMacro,
   restoreVision,
   setFlag,
   setTileVisibility,

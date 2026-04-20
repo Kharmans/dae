@@ -1,184 +1,32 @@
-import { warn, debug, debugEnabled, error } from "../dae.js";
-import { expireEffects, getApplicableEffects, daeMacro, actionQueue, maxShortDuration, safeGetGameSetting, resolveSpecialDurationExpiryAction, resolveEffectExpiryAction } from "./dae.js";
+import { warn, debug, debugEnabled, error, daeManagesTurnExpiry } from "../dae.js";
+import { expireEffects, getApplicableEffects, daeMacro, actionQueue, resolveSpecialDurationExpiryAction, resolveEffectExpiryAction } from "./dae.js";
 
-// ---- Duration management settings (populated by fetchDurationParams) ----
-export let durationManagementEnabled: boolean = true;
-export let enablePassiveEffects: boolean = true;
-export let updatePassiveEffects: boolean = true;
 export let expireRoundEffectsOnCombatEnd: boolean = false;
 
 export function fetchDurationParams() {
-  durationManagementEnabled = game.settings.get("dae", "durationManagementEnabled");
-  enablePassiveEffects = game.settings.get("dae", "enablePassiveEffects");
-  updatePassiveEffects = game.settings.get("dae", "updatePassiveEffects");
   expireRoundEffectsOnCombatEnd = game.settings.get("dae", "expireRoundEffectsOnCombatEnd");
 }
 
-// ---- One-time migration from times-up settings ----
-export function migrateTimesUpSettings() {
-  // Only migrate if times-up settings exist and we haven't migrated before
-  const timesUpEnabled = safeGetGameSetting("times-up", "TimesUpEnabled");
-  if (timesUpEnabled === undefined) return; // times-up was never installed
-
-  // Check if we've already migrated
-  const migrated = safeGetGameSetting("dae", "timesUpMigrated");
-  if (migrated) return;
-
-  try {
-    const tuEnabled = safeGetGameSetting("times-up", "TimesUpEnabled");
-    if (tuEnabled !== undefined) game.settings.set("dae", "durationManagementEnabled", tuEnabled);
-
-    const tuPassive = safeGetGameSetting("times-up", "EnablePassiveEffects");
-    if (tuPassive !== undefined) game.settings.set("dae", "enablePassiveEffects", tuPassive);
-
-    const tuUpdatePassive = safeGetGameSetting("times-up", "UpdatePassiveEffects");
-    if (tuUpdatePassive !== undefined) game.settings.set("dae", "updatePassiveEffects", tuUpdatePassive);
-
-    const tuExpireOnEnd = safeGetGameSetting("times-up", "ExpireRoundEffectsOnCombatEnd");
-    if (tuExpireOnEnd !== undefined) game.settings.set("dae", "expireRoundEffectsOnCombatEnd", tuExpireOnEnd);
-
-    // Convert MaxRoundsToConvert (rounds) to maxShortDuration (seconds)
-    const tuMaxRounds = safeGetGameSetting("times-up", "MaxRoundsToConvert");
-    if (tuMaxRounds !== undefined) {
-      const seconds = tuMaxRounds * (CONFIG.time?.roundTime ?? 6);
-      game.settings.set("dae", "maxShortDuration", seconds);
-    }
-
-    // Mark migration complete and re-read the params
-    game.settings.set("dae", "timesUpMigrated", true);
-    fetchDurationParams();
-    console.log("dae | Migrated times-up settings to DAE duration management settings");
-  } catch (err) {
-    error("Failed to migrate times-up settings", err);
-  }
-}
-
-// ---- Duration conversion helpers ----
-
-function setDurationRounds(effect, combat, duration?): any {
-  duration = duration ?? effect.updateDuration();
-  if (duration.units !== "seconds" || (isTransferEffect(effect) && !updatePassiveEffects)) return {};
-  if (duration.value > maxShortDuration) return {};
-  let update = {};
-  let rounds = Math.floor(duration.remaining / CONFIG.time.roundTime);
-  update["duration.value"] = rounds > 0 ? rounds : 1;
-  update["duration.units"] = rounds > 0 ? "rounds" : "turns";
-  update["start.round"] = combat.round;
-  update["start.turn"] = combat.turn;
-  update["flags.times-up.durationSeconds"] = duration.value;
-  if (debugEnabled > 0) warn("set duration rounds", effect.uuid, update, effect.updateDuration());
-  return update;
-}
-
-function setDurationSeconds(effect): any {
-  let update = {};
-  let timesUpDurationSeconds = foundry.utils.getProperty(effect, "flags.times-up.durationSeconds");
-  if (timesUpDurationSeconds || timesUpDurationSeconds === 0) {
-    update = {
-      "duration.value": timesUpDurationSeconds,
-      "duration.units": "seconds",
-      "flags.times-up.durationSeconds": null,
-    };
-  }
-  if (debugEnabled > 0) warn("set duration seconds", effect.uuid, update, effect.updateDuration());
-  return update;
-}
+// ---- Duration helpers ----
 
 function getExpireTransferEffectUpdate(effect) {
-  const update = setDurationSeconds(effect);
-  update["disabled"] = true;
-  update["start.time"] = null;
-  update["start.round"] = null;
-  update["start.turn"] = null;
-  update["duration.expired"] = false;
-  return update;
+  return {
+    "disabled": true,
+    "start.time": null,
+    "start.round": null,
+    "start.turn": null,
+    "duration.expired": false
+  };
 }
 
-function noStartSet(effect) {
-  const duration = effect.duration;
-  const start = effect.start;
-  if (duration.units === "seconds" && duration.value != null && start?.time == null) return true;
-  if (start?.round == null && start?.turn == null) return true;
-  return false;
-}
-
-function getUnexpireEffectUpdate(effect, combat, duration?) {
-  let effectActor = getEffectActor(effect);
-  let isInCombat = combat && combat.combatants.find(c => c.actor === effectActor) !== undefined;
-  let update = {};
-
-  if (isTransferEffect(effect) && isEffectExpired(effect) || noStartSet(effect)) {
-    update["start.round"] = combat ? combat.round : game.combat?.round;
-    update["start.turn"] = combat ? combat.turn : game.combat?.turn;
-    update["start.time"] = game.time?.worldTime;
-    update["duration.expired"] = false;
-  }
-  duration = duration ?? effect.updateDuration();
-  const durationSeconds = duration.units === "seconds" ? duration.value : null;
-  if (isInCombat && (durationSeconds ?? maxShortDuration + 1) <= maxShortDuration) {
-    if (!isTransferEffect(effect) || updatePassiveEffects) {
-      update = foundry.utils.mergeObject(update, setDurationRounds(effect, combat, duration));
-      update["disabled"] = false;
-    }
-    if (debugEnabled > 0) warn("unexpire effect", effect.uuid, update, effect.updateDuration(), isTransferEffect(effect));
-  }
-  return update;
-}
-
-function getEffectActor(effect) {
-  let actor = effect.parent;
-  if (effect.parent instanceof Item) actor = actor.parent;
-  return actor;
-}
-
-async function setEffectsExpiryToRounds(actor, combat) {
-  for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
-    effect.updateDuration();
-    if (effect.disabled || effect.duration.units !== "seconds") continue;
-    if ((!isTransferEffect(effect) || updatePassiveEffects) && (effect.duration.value ?? (maxShortDuration + 1)) <= maxShortDuration) {
-      if (debugEnabled > 0) warn("update effect setting expiry rounds", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
-      const update = setDurationRounds(effect, combat);
-      if (!foundry.utils.isEmpty(update)) await effect.update(update);
-    }
-  }
-  // Set start values for effects with round/turn durations that are missing start.round
-  for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
-    if (effect.disabled) continue;
-    if (["rounds", "turns"].includes(effect.duration.units) && effect.start?.round == null) {
-      if (debugEnabled > 0) warn("update effect setting start round/turn", effect.uuid, effect.updateDuration());
-      await effect.update({
-        "start.round": combat.round,
-        "start.turn": combat.turn
-      });
-    }
-  }
-}
-
-async function setEffectsExpiryToSeconds(actor, combat?) {
-  for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
-    const duration = effect.updateDuration();
-    if (!["rounds", "turns"].includes(duration.units)) continue;
-    if (isTransferEffect(effect)) {
-      const update = setDurationSeconds(effect);
-      if (debugEnabled > 0) warn("update effect setting expiry seconds", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
-      if (!foundry.utils.isEmpty(update)) await effect.update(update);
-    } else if (!effect.transfer) {
-      let seconds = Math.floor(Math.max(Math.floor(effect.duration.remaining), 0) * CONFIG.time.roundTime);
-      if (Number.isNaN(seconds) && combat) {
-        const effectValue = effect.duration.units === "rounds" ? effect.duration.value : 0;
-        seconds = Math.max(Math.floor(((effect.start?.round ?? 0) + effectValue - combat.round) * CONFIG.time.roundTime), 0);
-      }
-      const update = setDurationSeconds(effect);
-      update["duration.value"] = seconds;
-      update["duration.units"] = "seconds";
-      if (seconds <= 0) update["disabled"] = true;
-      else {
-        update["start.time"] = game.time?.worldTime;
-      }
-      if (debugEnabled > 0) warn("update effect setting expiry seconds", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
-      await effect.update(update);
-    }
-  }
+function getUnexpireEffectUpdate(effect) {
+  return {
+    "start.round": game.combat?.round ?? null,
+    "start.turn": game.combat?.turn ?? null,
+    "start.time": game.time?.worldTime,
+    "duration.expired": false,
+    "disabled": false
+  };
 }
 
 // ---- Exported utility functions ----
@@ -187,14 +35,13 @@ async function setEffectsExpiryToSeconds(actor, combat?) {
  * Expire an effect. Transfer effects are disabled instead of deleted (except applied enchantments).
  */
 export async function expireEffect(effect, options = {}) {
-  if (!durationManagementEnabled) return;
   if (debugEnabled > 0) warn("Expire effect", effect.uuid, effect);
   if (isTransferEffect(effect)) {
     if (isAppliedEnchantment(effect)) {
       await effect.delete(options);
     } else {
       const update = getExpireTransferEffectUpdate(effect);
-      await effect.update(update);
+      await effect.update(update, options);
     }
   } else {
     if (game.system?.id === "dnd5e") {
@@ -384,13 +231,16 @@ export function processMacroRepeats(combat, update, options) {
 
 // ---- Expire round effects when combat ends ----
 async function expireRoundEffectsOnEnd(actor) {
-  if (!durationManagementEnabled || !expireRoundEffectsOnCombatEnd) return;
+  if (!expireRoundEffectsOnCombatEnd) return;
 
   const effectsToExpire: { effect: ActiveEffect, reason: string }[] = [];
   const expiringUuids = new Set<string>();
   for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
     const expiry = effect.duration?.expiry;
-    if (["roundStart", "roundEnd", "turnStart", "turnEnd"].includes(expiry) && !isTransferEffect(effect)) {
+    const turnExpiries = daeManagesTurnExpiry
+      ? ["roundStart", "roundEnd", "turnStart", "turnEnd", "sourceStart", "sourceEnd", "targetStart", "targetEnd"]
+      : ["roundStart", "roundEnd", "turnStart", "turnEnd"];
+    if (turnExpiries.includes(expiry) && !isTransferEffect(effect)) {
       effectsToExpire.push({ effect, reason: "dae:expired:combat-end-rounds" });
       expiringUuids.add(effect.uuid);
     }
@@ -402,30 +252,44 @@ async function expireRoundEffectsOnEnd(actor) {
 }
 
 // ---- Migrate deprecated special durations to v14 duration.expiry ----
-const deprecatedSpecialDurMap: Record<string, { expiry: string, combatActor: "source" | "target" | null }> = {
-  "turnStart": { expiry: "turnStart", combatActor: "target" },
-  "turnEnd": { expiry: "turnEnd", combatActor: "target" },
-  "turnStartSource": { expiry: "turnStart", combatActor: "source" },
-  "turnEndSource": { expiry: "turnEnd", combatActor: "source" },
-  "combatEnd": { expiry: "combatEnd", combatActor: null }
-};
+// When daeManagesTurnExpiry (dnd5e < 6.0), map to DAE's source/target expiry events.
+// Otherwise map to core turnStart/turnEnd (dnd5e 6.0+ handles source/target natively).
+function getDeprecatedSpecialDurMap(): Record<string, string> {
+  if (daeManagesTurnExpiry) {
+    return {
+      "turnStart": "targetStart",
+      "turnEnd": "targetEnd",
+      "turnStartSource": "sourceStart",
+      "turnEndSource": "sourceEnd",
+      "combatEnd": "combatEnd"
+    };
+  }
+  return {
+    "turnStart": "turnStart",
+    "turnEnd": "turnEnd",
+    "turnStartSource": "turnStart",
+    "turnEndSource": "turnEnd",
+    "combatEnd": "combatEnd"
+  };
+}
 
 function migrateDeprecatedSpecialDurations(effectData: any): void {
+  const update: Record<string, any> = {};
+
+  // Migrate old special duration flags to expiry events
+  const deprecatedSpecialDurMap = getDeprecatedSpecialDurMap();
   let specialDurs: string[] = effectData.flags?.dae?.specialDuration;
-  if (!specialDurs || !Array.isArray(specialDurs)) return;
-  const deprecated = specialDurs.filter(sd => sd in deprecatedSpecialDurMap);
-  if (deprecated.length === 0) return;
-  const migration = deprecatedSpecialDurMap[deprecated[0]];
-  const remaining = specialDurs.filter(sd => !(sd in deprecatedSpecialDurMap));
-  const update: Record<string, any> = {
-    "flags.dae.specialDuration": remaining,
-    "duration.expiry": migration.expiry
-  };
-  if (migration.combatActor) {
-    update["flags.dae.combatActorOverride"] = migration.combatActor;
+  if (specialDurs && Array.isArray(specialDurs)) {
+    const deprecated = specialDurs.filter(sd => sd in deprecatedSpecialDurMap);
+    if (deprecated.length > 0) {
+      const expiry = deprecatedSpecialDurMap[deprecated[0]];
+      update["flags.dae.specialDuration"] = specialDurs.filter(sd => !(sd in deprecatedSpecialDurMap));
+      update["duration.expiry"] = expiry;
+      if (debugEnabled > 0) warn("Migrating deprecated special durations on effect creation", effectData.name, deprecated, "→", expiry);
+    }
   }
-  if (debugEnabled > 0) warn("Migrating deprecated special durations on effect creation", effectData.name, deprecated, "→", migration.expiry);
-  effectData.updateSource(update);
+
+  if (Object.keys(update).length > 0) effectData.updateSource(update);
 }
 
 // ---- Combat End expiry (special duration) ----
@@ -450,8 +314,11 @@ export function preCreateCombatantHook(combatant: Combatant.Implementation, data
 }
 
 // ---- Hook registration ----
+
+// @ts-expect-error v14 game.users.activeGM not in fvtt-types yet
+function isResponsibleGM(): boolean { return game.users.activeGM?.isSelf; }
+
 export function setupSpecialDurationHooks() {
-  // --- Existing DAE hooks ---
   Hooks.on("preDeleteCombat", preDeleteCombatHook);
   Hooks.on("preCreateCombatant", preCreateCombatantHook);
 
@@ -462,7 +329,7 @@ export function setupSpecialDurationHooks() {
   });
 
   Hooks.on("updateCombat", async (combat, update, options, user) => {
-    //@ts-expect-error
+    // @ts-expect-error v14 game.users.activeGM not in fvtt-types yet
     if (!game.users.activeGM?.isSelf) return;
     if (update.round === undefined && update.turn === undefined) return;
     if (debugEnabled > 1) debug("updateCombat (macro repeats)", combat, update, options);
@@ -473,53 +340,7 @@ export function setupSpecialDurationHooks() {
 
   Hooks.on("preCreateActiveEffect", (effectData, options, user) => {
     try {
-      // Migrate deprecated special durations to v14 duration.expiry on effect creation
       migrateDeprecatedSpecialDurations(effectData);
-
-      if (!durationManagementEnabled) return true;
-
-      const parent = effectData.parent;
-      if (parent instanceof Item) {
-        if (!isAppliedEnchantment(effectData)) return true;
-      } else if (!(parent instanceof Actor)) return true;
-      const actor = parent instanceof Item ? parent.parent : parent;
-      if (!(actor instanceof Actor)) return true;
-
-      const combat = game.combat;
-      const inCombat = combat?.started && combat.getCombatantsByActor(actor).length > 0;
-
-      if (inCombat) {
-        // Convert short seconds-based durations to rounds
-        // @ts-expect-error v14 duration.units/value
-        if (effectData.duration?.units === "seconds" && effectData.duration.value != null && effectData.duration.value <= maxShortDuration) {
-          // @ts-expect-error v14 duration.value
-          const seconds = effectData.duration.value;
-          const rounds = Math.floor(seconds / CONFIG.time.roundTime);
-
-          effectData.updateSource({
-            "duration.value": rounds > 0 ? rounds : 1,
-            "duration.units": rounds > 0 ? "rounds" : "turns",
-            "flags.times-up.durationSeconds": seconds
-          } as any);
-        }
-        // Set start values for round/turn effects missing start.round
-        // @ts-expect-error v14 duration.units and effect.start
-        if (["rounds", "turns"].includes(effectData.duration?.units) && effectData.start?.round == null) {
-          if (debugEnabled > 0) warn("preCreateActiveEffect setting start round/turn for round/turn effect", effectData.uuid);
-          effectData.updateSource({
-            "start.round": combat.round,
-            "start.turn": combat.turn
-          } as any);
-        }
-      }
-
-      // Set start.time for seconds-based effects missing it
-      // @ts-expect-error v14 duration.units/value and effect.start
-      if (effectData.duration?.units === "seconds" && effectData.duration.value != null && effectData.start?.time == null) {
-        effectData.updateSource({
-          "start.time": game.time?.worldTime
-        } as any);
-      }
     } catch (err) {
       error("preCreateActiveEffect error", err);
     } finally {
@@ -528,7 +349,7 @@ export function setupSpecialDurationHooks() {
   });
 
   Hooks.on("preUpdateActiveEffect", (effect, update, options, user) => {
-    if (!durationManagementEnabled || !enablePassiveEffects || !isTransferEffect(effect)) return true;
+    if (!isTransferEffect(effect)) return true;
     const durationToUse = effect.updateDuration();
     if (update.duration) {
       // @ts-expect-error v14 duration.value
@@ -536,59 +357,32 @@ export function setupSpecialDurationHooks() {
       // @ts-expect-error v14 duration.units
       if (update.duration.units !== undefined) durationToUse.units = update.duration.units;
     }
-    if (hasExpiry(effect)) {
-      if (debugEnabled > 1) debug("Update active effect", effect.uuid, update, effect.updateDuration(), isTransferEffect(effect));
-      //@ts-expect-error v14 duration.expired not in fvtt-types yet
-      const isExpired = effect.duration?.expired || effect.start?.time == null;
-      if (!isExpired) return true;
-      if (update.disabled === false) {
-        if (debugEnabled > 0) warn("resetting duration", effect.uuid, durationToUse, isTransferEffect(effect));
-        const unexpireUpdate = getUnexpireEffectUpdate(effect, game.combat, durationToUse);
-        update = foundry.utils.mergeObject(update, unexpireUpdate, { inplace: true });
-      } else if (update.disabled ?? effect.disabled === true) {
-        if (debugEnabled > 0) warn("expiring effect", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
-        const expireUpdate = getExpireTransferEffectUpdate(effect);
-        update = foundry.utils.mergeObject(update, expireUpdate, { inplace: true });
-      }
+    if (!hasExpiry(effect)) return true;
+    if (debugEnabled > 1) debug("Update active effect", effect.uuid, update, effect.updateDuration(), isTransferEffect(effect));
+    //@ts-expect-error v14 duration.expired not in fvtt-types yet
+    const isExpired = effect.duration?.expired || effect.start?.time == null;
+    if (!isExpired) return true;
+    if (update.disabled === false) {
+      if (debugEnabled > 0) warn("resetting duration", effect.uuid, durationToUse, isTransferEffect(effect));
+      foundry.utils.mergeObject(update, getUnexpireEffectUpdate(effect), { inplace: true });
+    } else if (update.disabled ?? effect.disabled === true) {
+      if (debugEnabled > 0) warn("expiring effect", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
+      foundry.utils.mergeObject(update, getExpireTransferEffectUpdate(effect), { inplace: true });
     }
     if (debugEnabled > 0) warn("update effect", effect.uuid, update, effect.updateDuration(), isTransferEffect(effect));
     return true;
   });
 
-  Hooks.on("combatStart", (combat: Combat, updateData: any) => {
-    if (!durationManagementEnabled) return;
-    //@ts-expect-error
-    if (!game.users.activeGM?.isSelf) return;
-    for (let combatant of combat.combatants) {
-      if (combatant.actor) setEffectsExpiryToRounds(combatant.actor, combat);
-    }
-  });
-
-  Hooks.on("createCombatant", (combatant, options, user) => {
-    if (!durationManagementEnabled) return;
-    //@ts-expect-error
-    if (!game.users.activeGM?.isSelf) return;
-    if (combatant.actor) setEffectsExpiryToRounds(combatant.actor, combatant.combat);
-  });
-
-  Hooks.on("deleteCombatant", async (combatant, options, user) => {
-    if (!durationManagementEnabled) return;
-    //@ts-expect-error
-    if (!game.users.activeGM?.isSelf) return;
-    if (!combatant.actor) return;
+  Hooks.on("deleteCombatant", async (combatant) => {
+    if (!isResponsibleGM() || !combatant.actor) return;
     await expireRoundEffectsOnEnd(combatant.actor);
-    await setEffectsExpiryToSeconds(combatant.actor);
   });
 
-  Hooks.on("deleteCombat", async (combat, options, user) => {
-    if (!durationManagementEnabled) return;
-    //@ts-expect-error
-    if (!game.users.activeGM?.isSelf) return;
-
+  Hooks.on("deleteCombat", async (combat) => {
+    if (!isResponsibleGM()) return;
     for (let combatant of combat.combatants) {
       if (!combatant.actor) continue;
       await expireRoundEffectsOnEnd(combatant.actor);
-      if (combatant.actor) setEffectsExpiryToSeconds(combatant.actor, combat);
     }
   });
 }

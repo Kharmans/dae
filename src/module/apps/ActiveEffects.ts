@@ -83,8 +83,7 @@ export class ActiveEffects extends WeirdIntermediate {
       } else if (aeDuration.label) {
         newAe.duration.label = aeDuration.label.replace("Seconds", "s").replace("Rounds", "R").replace("Turns", "T");
       }
-      let specialDuration = ae.flags?.dae?.specialDuration || [daeSpecialDurations["None"]];
-      if (typeof specialDuration === "string") specialDuration = [specialDuration]
+      const specialDuration = ae.flags?.dae?.specialDuration ?? [daeSpecialDurations["None"]];
       newAe.duration.label += ", " + `[${specialDuration.map(dur => (daeSpecialDurations[dur], dur))}]`;
       newAe.isTemporary = ae.isTemporary;
       newAe.sourceName = `(${ae.sourceName ?? "Unknown"})`;

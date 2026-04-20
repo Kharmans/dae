@@ -15,7 +15,6 @@ declare module "fvtt-types/configuration" {
       // Render hooks for coloring DAE/DIME header buttons
       "renderItemSheetV2": (app: foundry.applications.sheets.ItemSheetV2, element: HTMLElement, ...args: any[]) => void;
       "renderActorSheetV2": (app: foundry.applications.sheets.ActorSheetV2, element: HTMLElement, ...args: any[]) => void;
-      "DAE.setupComplete": () => void;
       "dae.addAutoFields": (addAutoFields: typeof API.addAutoFields, fields: {
         BooleanFormulaField: typeof import("./module/apps/DAEActiveEffectConfig.js").BooleanFormulaField;
         FormulaField: (new (...args: any[]) => foundry.data.fields.StringField) | undefined;
@@ -69,7 +68,6 @@ declare module "fvtt-types/configuration" {
         activity?: string;
         activityMacro?: string;
         autoCreated?: boolean;
-        combatActorOverride?: "source" | "target";
         disableIncapacitated?: boolean;
         dontApply?: boolean;
         durationExpression?: string;
@@ -83,7 +81,7 @@ declare module "fvtt-types/configuration" {
         selfTargetAlways?: boolean;
         /** @deprecated Use native ActiveEffect showIcon field instead */
         showIcon?: boolean;
-        specialDuration?: string | string[];
+        specialDuration?: string[];
         stackable?: "noneName" | "noneNameOnly" | "none" | "multi" | "count" | "countDeleteDecrement";
         stacks?: number;
         transfer?: boolean;
@@ -142,14 +140,9 @@ declare module "fvtt-types/configuration" {
     "dae.ZZDebug": "none" | "warn" | "debug" | "all";
     "dae.disableEffects": boolean;
     "dae.initMacrosOnLoad": boolean;
-    "dae.maxShortDuration": number;
-    "dae.durationManagementEnabled": boolean;
-    "dae.enablePassiveEffects": boolean;
-    "dae.updatePassiveEffects": boolean;
     "dae.expireRoundEffectsOnCombatEnd": boolean;
     "dae.expiryAction": string;
     "dae.coreExpiryAction": string;
-    "dae.timesUpMigrated": boolean;
 
     // Other module settings
     "ATL.presets": {

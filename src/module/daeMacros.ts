@@ -123,11 +123,9 @@ export let teleport = async (token: TokenOrDocument, targetScene: Scene | undefi
   Hooks.once("canvasReady", () => {
     socketlibSocket.executeAsGM("createToken", { userId: game.user?.id, startSceneId: sourceSceneId, targetSceneId: targetScene.id, tokenData: token.document.toObject(false), x: xpos, y: ypos })
       .then(async () => {
-        // canvas.pan({ x: xpos, y: ypos });
-    
-        // await requestGMAction(GMAction.actions.deleteToken, { userId: game.user.id, tokenUuid: getTokenUuid(token)});
         await socketlibSocket.executeAsGM("deleteToken", { userId: game.user?.id, tokenUuid: getTokenUuid(token) })
-      });
+      })
+      .catch(err => console.error("dae | cross-scene teleport failed", err));
   });
 
   // Need to stop animation since we are going to delete the token and if that happens before the animation completes we get an error
@@ -218,97 +216,63 @@ export async function unsetFlag(tactor: Actor.Implementation | foundry.canvas.pl
 
 export async function macroActorUpdate(...args) {
   let [action, actorUuid, type, value, targetField, undo] = args as [string, string, string, string | boolean | number, string, string | boolean];
-  
-  //if (args.length>6) undo = args.slice(5,-1).join('');    //someone might have forgotten to wrap the undo within ""
-  const lastArg =  args[args.length -1];
+  const lastArg = args[args.length - 1];
   if (!(actorUuid && type && value && targetField)) {
-    console.warn("dae | invalid arguments passed ", ...args);
-    console.warn(`dae | macro.actorUpdate expects the following arguments:
-      actorUuid: string
-      type: "number", "boolean", "string"
-      expression: a roll expression, optionally starting with +-/*
-      targetField: "string", e.g. system.attrbutes.hp.value
-      undo: 
-          blank/true/restore: set the target field back to what it was before the effect was applied
-          false: don't change the target field when removing the effect
-          remove: remove the numeric effect of the change to the target field
-          "+-*/"newValue add/subtract/multiply/divide the value of the field with the newValue
-    `);
+    console.warn("dae | macro.actorUpdate: missing arguments (actorUuid, type, expression, targetField, [undo])", ...args);
     return;
   }
 
   const tactor = await fromUuid(actorUuid) as Actor.Implementation | TokenDocument.Implementation;
   const actor = tactor instanceof TokenDocument ? tactor.actor : tactor;
-  if (!actor) {
-    console.warn("dae | invalid argument passed", actorUuid);
-    console.warn("dae | no corresponding actor or token document found");
-    return;
-  }
-  // const fieldDef = `flags.dae.save.${targetField}`;
+  if (!actor) { console.warn("dae | macro.actorUpdate: actor not found", actorUuid); return; }
+
   const fieldDef = `flags.dae.actorUpdate.${lastArg.effectId}.${targetField}`;
   let actorValue = foundry.utils.getProperty(actor, targetField);
   if (action === "each") {
-    // for subsequent executions we have to recover the original actor value from the saved value.
-    const fieldValue = foundry.utils.getProperty(actor, fieldDef) as { actorValue: unknown };
-    actorValue = fieldValue.actorValue;
+    actorValue = (foundry.utils.getProperty(actor, fieldDef) as { actorValue: unknown })?.actorValue;
   }
   const rollContext = actor.getRollData() as AnyMutableObject;
   rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? 1;
+
+  const doUpdate = async (update) => {
+    if (actor.isOwner) return actor.update(update);
+    return socketlibSocket.executeAsGM("_updateActor", { actorUuid: actor.uuid, update });
+  };
+
   if (["on", "each"].includes(action)) {
-    if (!game.user?.isGM) {
-      console.warn(`dae | macro.actorUpdate user ${game.user?.name} is updating ${actor.name} ${targetField}`);
+    if (type === "boolean") value = !!JSON.parse(value as string);
+    else if (type === "number") {
+      let op = ' ';
+      if (typeof value === "string") { value = value.trim(); op = value[0]; }
+      value = `${value}`.replace(/(\*\*(.+?)\*\*)/g, "@$2");
+      value = (['+', '-', '*', '/'].includes(op) && Number.isNumeric(actorValue))
+        ? new Roll(`${actorValue}${value}`, rollContext).evaluateSync({ strict: false }).total
+        : new Roll(value as string, rollContext).evaluateSync({ strict: false }).total;
     }
-    switch (type) {
-      case 'boolean':
-        value = JSON.parse(value as string) ? true : false;
-        break;
-      case 'number':
-        let op = ' ';
-        if (typeof value === 'string') {
-          value = value.trim();
-          op = value[0];
-        }
-        value = `${value}`.replace(/(\*\*(.+?)\*\*)/g, '@$2');
-        if (['+', '-', '*', '/'].includes(op) && Number.isNumeric(actorValue)) 
-          value = new Roll(`${actorValue}${value}`, rollContext).evaluateSync({ strict: false }).total;
-        else 
-          value = new Roll(value, rollContext).evaluateSync({ strict: false }).total;
-        break;
-      default: // assume a string
-    }
-    const update = {};
-    update[fieldDef] = {oldValue: actorValue, updateValue: value};
-    update[targetField] = value;
-    if (actor.isOwner) return await actor.update(update);
-    else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update});
-  } else if (action === "off") {
-    const {oldValue = 0, updateValue} = foundry.utils.getProperty(actor, fieldDef) as {oldValue: number, updateValue: number };
-    let restoreValue: number | undefined;
+    return doUpdate({ [fieldDef]: { oldValue: actorValue, updateValue: value }, [targetField]: value });
+  }
+
+  if (action === "off") {
+    const { oldValue = 0, updateValue } = (foundry.utils.getProperty(actor, fieldDef) as { oldValue: number, updateValue: number }) ?? {};
     if (undo === undefined) undo = true;
     if (typeof undo === "string") {
       undo = undo.replace(/(\*\*(.+?)\*\*)/g, "@$2").trim();
       if (undo === "restore") undo = true;
     }
-    if (typeof undo === "string" && undo === "remove") {
-      restoreValue = Math.max(0, (actorValue as number) - (updateValue - oldValue))
-    } else if (typeof undo == "string" && type === "number" && ["+","-","/","*"].includes(undo[0])) {
-      restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
-    } else if (typeof undo === "string" /*&&!undo.includes("Actor") && !undo.includes("Token")*/ && type === "number") {
-      if (undo.includes("actorValue")) undo = undo.replace("actorValue",`${actorValue}`);
-      restoreValue = new Roll(`${undo}`, rollContext).evaluateSync({strict: false}).total;
-    } else if (undo === "undefined") {
-      restoreValue = undefined;
-    } else if (typeof undo === "string") {
-      restoreValue = JSON.parse(undo);
-    }
+    let restoreValue: number | string | boolean | undefined;
     if (undo === true) restoreValue = oldValue;
+    else if (undo === false) return;
+    else if (undo === "undefined") restoreValue = undefined;
+    else if (typeof undo === "string" && undo === "remove") restoreValue = Math.max(0, (actorValue as number) - (updateValue - oldValue));
+    else if (typeof undo === "string" && type === "number" && ["+", "-", "/", "*"].includes(undo[0]))
+      restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
+    else if (typeof undo === "string" && type === "number") {
+      if (undo.includes("actorValue")) undo = undo.replace("actorValue", `${actorValue}`);
+      restoreValue = new Roll(`${undo}`, rollContext).evaluateSync({ strict: false }).total;
+    } else if (typeof undo === "string") restoreValue = JSON.parse(undo);
 
-    if (undo !== false) {
-      const update = {};
-      foundry.utils.setProperty(update, `flags.dae.actorUpdate.-=${lastArg.effectId}`, null);
-      update[targetField] = restoreValue;
-      if (actor.isOwner) return await actor.update(update);
-      else return await socketlibSocket.executeAsGM("_updateActor", {actorUuid: actor.uuid, update})
-    }
+    const update = { [targetField]: restoreValue };
+    foundry.utils.setProperty(update, `flags.dae.actorUpdate.-=${lastArg.effectId}`, null);
+    return doUpdate(update);
   }
 }

@@ -1,4 +1,5 @@
-import { timesUpActive, simpleCalendarInstalled, allMacroEffects, getMacro, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, maxShortDuration, getItemMacroCommand } from "./dae.js";
+import { allMacroEffects, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, getItemMacroCommand } from "./dae.js";
+import { resolveMacro } from "./lib/macroResolution.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
 
@@ -143,7 +144,7 @@ async function _executeMacro(data: {
   token?: foundry.canvas.placeables.Token,
   item: Item.Implementation
 }) {
-  const macro = await getMacro({ change: data.macroData.change, name: data.macroData.name }, data.item, data.macroData.effectData);
+  const macro = await resolveMacro(data.macroData.change.key, data.macroData.name, data.item, data.macroData.effectData);
   let v11args: any = {};
   v11args[0] = "on";
   v11args[1] = data.lastArg;
@@ -360,54 +361,17 @@ export async function applyActiveEffects({
           }
         }
 
-        // convert item duration to seconds/rounds/turns according to combat
-        // v14 duration schema: { value, units } + separate start: { time, round, turn }
-        // @ts-expect-error v14 duration.units/value
-        const aeUnits = aeData.duration.units;
+        // If effect has no duration, inherit from activity/item duration
         // @ts-expect-error v14 duration.value
         const aeValue = aeData.duration.value;
-        // Core's _preCreate sets start.time, start.round, start.turn for Actor-owned effects
-        if (aeUnits === "seconds" && aeValue) {
-          const inCombat = targetActor.inCombat;
-          let convertedDuration = convertDuration({ value: aeValue, units: "second" }, inCombat, maxShortDuration);
-          if (aeValue === -1) { // special case duration of -1 seconds
-            delete convertedDuration.value;
-            delete convertedDuration.units;
-          }
-          if (convertedDuration.type === "turns") {
-            // @ts-expect-error v14 duration.value
-            aeData.duration.value = convertedDuration.value;
-            // @ts-expect-error v14 duration.units
-            aeData.duration.units = convertedDuration.units!;
-          }
-        } else if (!aeValue) { // no specific duration on effect use spell duration
-          const inCombat = targetActor.inCombat;
-          const convertedDuration = convertDuration(effectDuration, inCombat, maxShortDuration);
-          debug("converted duration ", convertedDuration, inCombat, effectDuration, maxShortDuration);
-          if (convertedDuration.type === "seconds") {
-            // @ts-expect-error v14 duration.value
-            aeData.duration.value = convertedDuration.value;
-            // @ts-expect-error v14 duration.units
-            aeData.duration.units = "seconds";
-          } else if (convertedDuration.type === "turns") {
-            // @ts-expect-error v14 duration.value
-            aeData.duration.value = convertedDuration.value;
-            // @ts-expect-error v14 duration.units
-            aeData.duration.units = convertedDuration.units!;
-          }
-        }
-        // Set v14 start.combatant based on combatActorOverride flag
-        const combatActorOverride = aeData.flags?.dae?.combatActorOverride;
-        if (combatActorOverride === "target" && game.combat?.started) {
-          const targetCombatant = game.combat.getCombatantsByActor(targetActor)?.[0];
-          if (targetCombatant) {
-            foundry.utils.setProperty(aeData, "start.combatant", targetCombatant.id);
-            foundry.utils.setProperty(aeData, "start.combat", game.combat.id);
-            foundry.utils.setProperty(aeData, "start.round", game.combat.round);
-            foundry.utils.setProperty(aeData, "start.turn", game.combat.turn);
-            foundry.utils.setProperty(aeData, "start.initiative", targetCombatant.initiative);
-            foundry.utils.setProperty(aeData, "start.time", game.time.worldTime);
-          }
+        if (!aeValue && effectDuration?.value && effectDuration?.units) {
+          // Map dnd5e singular units to Foundry v14 plural units
+          const mappedUnits = dnd5eToFoundryUnits[effectDuration.units] ?? effectDuration.units;
+          // @ts-expect-error v14 duration.value
+          aeData.duration.value = effectDuration.value;
+          // @ts-expect-error v14 duration.units
+          aeData.duration.units = mappedUnits;
+          debug("inherited duration from activity/item", effectDuration, "→", mappedUnits);
         }
         warn("Apply active effects ", aeData, itemCardUuid);
         let source = await fromUuid(aeData.origin);
@@ -503,111 +467,20 @@ export async function applyActiveEffects({
   };
 }
 
-export function convertDuration(durationData: { units: string, value: number }, inCombat: boolean, maxSecondsToConvert = Number.POSITIVE_INFINITY) {
-  // v14 duration schema: returns { type, value, units } matching ActiveEffect duration format
-  let useTurns = inCombat && timesUpActive;
-  if (durationData.units === "second" && durationData.value > maxSecondsToConvert) useTurns = false;
-  if (!durationData || (durationData.units === "second" && durationData.value < CONFIG.time.roundTime)) { // no duration or very short (less than 1 round)
-    if (useTurns)
-      return { type: "turns", value: 1, units: "turns" };
-    else
-      return { type: "seconds", value: Math.min(1, durationData?.value ?? 1), units: "seconds" };
-  }
+// Map dnd5e singular duration units to Foundry v14 plural units
+const dnd5eToFoundryUnits: Record<string, string> = {
+  turn: "turns", round: "rounds", second: "seconds", minute: "minutes",
+  hour: "hours", day: "days", week: "weeks", month: "months", year: "years"
+};
 
-  if (!simpleCalendarInstalled) {
-    const calendar = game.time.calendar;
-    const secondsPerDay = calendar.days.secondsPerMinute * calendar.days.minutesPerHour * calendar.days.hoursPerDay
-
-    switch (durationData.units) {
-      case "turn":
-      case "turns":
-        if (useTurns) return { type: "turns", value: durationData.value, units: "turns" };
-        return { type: "seconds", value: 1, units: "seconds" };
-      case "round":
-      case "rounds":
-        if (useTurns) return { type: "turns", value: durationData.value, units: "rounds" };
-        return { type: "seconds", value: durationData.value * CONFIG.time.roundTime, units: "seconds" };
-      case "second":
-      case "seconds":
-        if (useTurns) {
-          return { type: "turns", value: Math.floor(durationData.value / CONFIG.time.roundTime), units: "rounds" };
-        }
-        return { type: "seconds", value: durationData.value, units: "seconds" }
-      case "minute":
-      case "minutes":
-        let durSeconds = durationData.value * calendar.days.secondsPerMinute;
-        if (useTurns && durSeconds / CONFIG.time.roundTime <= 10) {
-          return { type: "turns", value: Math.floor(durSeconds / CONFIG.time.roundTime), units: "rounds" };
-        }
-        return { type: "seconds", value: durSeconds, units: "seconds" };
-      case "hour":
-      case "hours": return { type: "seconds", value: durationData.value * calendar.days.secondsPerMinute * calendar.days.minutesPerHour, units: "seconds" };
-      case "day":
-      case "days": return { type: "seconds", value: durationData.value * secondsPerDay, units: "seconds" };
-      case "week":
-      case "weeks": return { type: "seconds", value: durationData.value * secondsPerDay * calendar.days.values.length, units: "seconds" };
-      case "month":
-      case "months":
-        const currentMonth = game.time.calendar.timeToComponents(game.time.worldTime).month;
-        let numDays = 0;
-        for (let i = 0; i < durationData.value; i++) {
-          const nextMonth = (currentMonth + i) % calendar.months.values.length;
-          numDays += calendar.months.values[nextMonth].days;
-        }
-        return { type: "seconds", value: numDays * secondsPerDay, units: "seconds" };
-      case "year":
-      case "years":
-        const currentYear = game.time.calendar.timeToComponents(game.time.worldTime).year;
-        const endYear = currentYear + durationData.value;
-        //@ts-expect-error countLeapYears not in types
-        let totalLeapDays = game.time.calendar.countLeapYears(endYear) - game.time.calendar.countLeapYears(currentYear);
-        return { type: "seconds", value: (durationData.value * calendar.days.daysPerYear + totalLeapDays) * secondsPerDay, units: "seconds" };
-      case "inst":
-        if (useTurns) return { type: "turns", value: 0, units: "turns" };
-        return { type: "seconds", value: 0, units: "seconds" };
-      case "spec":
-      case "perm":
-      case "disp":
-      case "distr":
-        return { type: "none", value: undefined, units: undefined };
-      default:
-        warn("dae | unknown time unit found", durationData.units);
-        return { type: "none", value: undefined, units: undefined };
-    }
-  } else {
-    switch (durationData.units) {
-      case "perm":
-        return { type: "none", value: undefined, units: undefined };
-      case "turn":
-      case "turns":
-        if (useTurns) return { type: "turns", value: durationData.value, units: "turns" };
-        return { type: "seconds", value: 1, units: "seconds" };
-      case "round":
-      case "rounds":
-        if (useTurns) return { type: "turns", value: durationData.value, units: "rounds" };
-        return { type: "seconds", value: durationData.value * CONFIG.time.roundTime, units: "seconds" };
-      case "second":
-        if (useTurns) {
-          return { type: "turns", value: Math.floor(durationData.value / CONFIG.time.roundTime), units: "rounds" };
-        }
-        return { type: "seconds", value: durationData.value, units: "seconds" };
-      case "inst":
-        if (useTurns) return { type: "turns", value: 0, units: "turns" };
-        return { type: "seconds", value: 0, units: "seconds" };
-      case "spec":
-      case "disp":
-      case "distr":
-        return { type: "none", value: undefined, units: undefined };
-      default:
-        let interval = {}
-        interval[durationData.units] = durationData.value;
-        const durationSeconds = globalThis.SimpleCalendar.api.timestampPlusInterval(game.time.worldTime, interval) - (game.time.worldTime ?? 0);
-        if (useTurns && durationSeconds / CONFIG.time.roundTime <= 10) {
-          return { type: "turns", value: Math.floor(durationSeconds / CONFIG.time.roundTime), units: "rounds" };
-        }
-        return { type: "seconds", value: durationSeconds, units: "seconds" };
-    }
+/** @deprecated Foundry v14 handles duration natively. Use dnd5eToFoundryUnits map for unit conversion. */
+export function convertDuration(durationData: { units: string, value: number }, _inCombat?: boolean, _maxSecondsToConvert?: number) {
+  if (!durationData?.value || ["spec", "perm", "disp", "distr", "inst"].includes(durationData.units)) {
+    return { type: "none", value: undefined, units: undefined };
   }
+  const units = dnd5eToFoundryUnits[durationData.units] ?? durationData.units;
+  const type = ["rounds", "turns"].includes(units) ? "turns" : "seconds";
+  return { type, value: durationData.value, units };
 }
 
 interface ApplyActiveEffectsInput {

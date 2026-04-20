@@ -346,6 +346,86 @@ DAE was redundantly setting these same fields in three places:
 
 All removed. The `combatActorOverride` block in GMAction.ts (which sets `start.combatant` to the *target's* combatant, not current turn) is NOT redundant and was kept.
 
+### Duration Handling: Removed Seconds↔Rounds Conversion
+
+**Files changed:**
+- `src/module/dae.ts` — removed `updates["duration.units"] = "seconds"` from `durationExpression` handler
+
+Foundry v14 handles durations natively in whatever units they are specified (seconds, minutes, rounds, etc.) via `_prepareTimeBasedDuration` and `_prepareCombatBasedDuration`. The v13/times-up pattern of forcing all durations to seconds is no longer needed.
+
+The `durationExpression` handler previously set both `duration.value` (the evaluated roll total) and `duration.units = "seconds"`. The units override was removed — the effect now keeps whatever units were configured. Only `duration.value` is set from the expression result.
+
+### Duration Handling: Blank Duration Values
+
+**Files changed:**
+- `src/dae.ts` — patched `ActiveEffect.prototype._prepareDuration`
+
+**Problem:** Core's `_prepareDuration` treats a missing `duration.value` (null/undefined) as 0, routing it to `_prepareTimeBasedDuration` which computes `seconds = 0` and `remaining < 0`. This makes event-only effects (e.g. `expiry: "turnStart"` with no duration value, meaning "until the start of your next turn") expire immediately on the next time advance.
+
+**Fix:** DAE patches `_prepareDuration`: when `duration.value` is not a finite number and not `Infinity`, but an `expiry` event is set, returns `remaining: Infinity` and `seconds: Infinity`. The effect stays in the registry (because `isTemporary` is true via the `expiry` field) but won't expire based on time.
+
+### Duration Handling: Event-Only Effects and Time Advance
+
+**Files changed:**
+- `src/dae.ts` — extended `isExpiryEvent` patch
+
+**Problem:** Even with `remaining: Infinity` from the `_prepareDuration` patch, the registry's `refresh` method treats `remaining === Infinity` as "duration reached" (by design). Combined with core's `isExpiryEvent` treating `updateWorldTime` as satisfying combat events when not in combat, event-only effects are still deleted on any time advance.
+
+**Fix:** The `isExpiryEvent` patch was extended: when `event === "updateWorldTime"` and the effect has no finite `duration.value`, return `false`. Event-only effects only expire from the actual combat event, never from time advance.
+
+This does NOT affect effects with a finite `duration.value` — those continue to expire on time advance outside combat as core intends.
+
+### Expiry Combatant Override: Three-Option Model
+
+**Files changed:**
+- `src/dae.ts` — added `combatActorOverride` handling to `_preCreateActiveEffect`
+- `src/module/apps/DAEActiveEffectConfig.ts` — added `""` (default) option to `combatActorOptions`
+- `src/lang/en.json` — added `dae.combatActorDefault`, updated labels
+- `src/module/GMAction.ts` — existing `combatActorOverride` handling (unchanged)
+
+**Problem:** Core sets `start.combatant` to whoever's turn it is at effect creation time (`combat.combatant`). This is the "current combatant" — not the source (caster) and not the target (the actor the effect is on). In the common case where Actor A casts on their own turn, all three coincide. But for reactions, readied actions, or manual effect creation during another actor's turn, they diverge. The effect then expires on the wrong combatant's turn.
+
+**Fix:** DAE's `flags.dae.combatActorOverride` now has three options:
+
+| Value | UI Label | Behaviour |
+|-------|----------|-----------|
+| `""` (default) | Default (Active Combatant) | Core behaviour — `start.combatant` = whoever's turn it is at creation |
+| `"source"` | Source Combatant | Override to the originating actor's combatant (from `origin` UUID) |
+| `"target"` | Target Combatant | Override to the target actor's combatant (the actor the effect is on) |
+
+Previously only `"source"` and `"target"` existed, with `"source"` appearing first in the dropdown (making it the inadvertent default for new effects). The empty string default option was added and placed first.
+
+**Two code paths apply the override:**
+
+1. **Programmatic creation** (GMAction.ts, unchanged): When midi-qol applies effects to targets, checks `combatActorOverride` and sets `start.combatant` in the effect data before creation. For `""`, does nothing — core sets current combatant via `getEffectStart()`.
+
+2. **Manual/general creation** (`_preCreate` hook in dae.ts, new): Runs after core's `_preCreate` sets `start` from `getEffectStart()`. For `"source"`, resolves the origin actor, falling back to the parent actor if no origin. For `"target"`, uses the parent actor. For `""`, does nothing. Both `"source"` and `"target"` resolve to the parent actor's combatant for manually created effects (no distinct source/target).
+
+### Test Suite: Effect Expiry Tests (dae-tests-14x)
+
+**Files added:**
+- `src/22-effect-expiry-tests.ts` (13 tests)
+
+**Files changed:**
+- `src/dae-tests.ts` — registered batch 22
+
+**Coverage:**
+- 22.1: Seconds duration expires on time advance
+- 22.2: Seconds duration survives partial time advance
+- 22.3: Minutes duration expires on time advance
+- 22.4: `turnStart` expiry after 1 round of combat
+- 22.5: `turnEnd` expiry after 1 round of combat
+- 22.6: Rounds duration expires after N rounds
+- 22.7: `combatActorOverride: "source"` expires on source's turn
+- 22.8: Rounds-based effect expires outside combat via time elapsed
+- 22.9: `roundEnd` expiry
+- 22.10: Deprecated `turnStart` special duration migrated to `duration.expiry` on creation
+- 22.11: Deprecated `turnStartSource` sets `combatActorOverride: "source"`
+- 22.12: Non-deprecated special durations preserved during migration
+- 22.13: Effect with duration but no expiry expires on time elapsed
+
+**Registry cleanup helper**: `cleanRegistry()` added to `beforeEach` — removes stale deleted effects from `ActiveEffect.registry` that linger as `WeakRef`s. Without this, stale entries from prior tests can poison `modifyBatch` calls (one invalid ID fails the entire batch, preventing legitimate effects from being deleted).
+
 ### Test Suite: Start Time Tests (dae-tests-14x)
 
 **Files added:**

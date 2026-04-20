@@ -1,5 +1,5 @@
 import { applyActiveEffects, socketlibSocket } from "./GMAction.js";
-import { warn, error, debug, setDebugLevel, i18n, debugEnabled } from "../dae.js";
+import { warn, error, debug, setDebugLevel, i18n, debugEnabled, daeManagesTurnExpiry } from "../dae.js";
 import { ActiveEffects } from "./apps/ActiveEffects.js";
 import { macroActorUpdate } from "./daeMacros.js";
 import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
@@ -9,6 +9,10 @@ import { isEnchantment } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial, InvalidUuid } from "fvtt-types/utils";
 import { TokenOrDocument } from "../globals.js";
 import { setupSpecialDurationHooks, fetchDurationParams } from "./specialDurations.js";
+import { resolveItemFromEffect, resolveMacro, createFunctionMacro, getItemMacroCommand as _getItemMacroCommand } from "./lib/macroResolution.js";
+import { registerChangeHandler, getChangeHandler, isRegisteredMacroKey, getChangeDestination, getAllMacroEffectKeys, type ChangeHandlerContext } from "./lib/changeHandlerRegistry.js";
+import { filterEffectsForTargeting } from "./lib/effectFiltering.js";
+import { handleExistingEffects, handleStackIncrement } from "./lib/stackingPolicy.js";
 
 const { SchemaField } = foundry.data.fields;
 
@@ -89,6 +93,8 @@ export function resolveEffectExpiryAction(effect: ActiveEffect.Implementation): 
 
 // Track actors with pending status reconciliation to avoid duplicate reconciliations
 const reconciliationPending = new Set<string>();
+// Track actors with pending conditional effects processing to coalesce rapid-fire hook calls
+const conditionalEffectsPending = new Set<string>();
 
 // Track actor UUIDs that have had init macros fired (reset on world load)
 export const daeInitMacroActors = new Set<string>();
@@ -101,32 +107,47 @@ export function getStatusEffectsArray(): any[] {
   return Array.isArray(CONFIG.statusEffects) ? CONFIG.statusEffects : Object.values(CONFIG.statusEffects);
 }
 
-export let allMacroEffects = ["macro.execute", "macro.execute.local", "macro.execute.GM", "macro.itemMacro", "macro.itemMacro.local", "macro.itemMacro.GM", "macro.actorUpdate", "macro.activityMacro"];
+// Re-export from shared library for backward compatibility
+export const getItemMacroCommand = _getItemMacroCommand;
 
-const macroKeyPrefixes = ["macro.execute", "macro.itemMacro", "macro.actorUpdate", "macro.activityMacro"];
-export function isMacroChangeKey(key: string): boolean {
-  return macroKeyPrefixes.some(prefix => key.startsWith(prefix));
+// --- Change handler registration (data-driven) ---
+// Special change handlers: [key, onAdd, onRemove, destination]
+const specialHandlers: [string, (ctx: ChangeHandlerContext) => Promise<any>, (ctx: ChangeHandlerContext) => Promise<any>, "local" | "GM"][] = [
+  ["macro.CE",
+    ctx => addConvenientEffectsChange(ctx.change.value, ctx.actor.uuid, ctx.effect.origin, ctx.context ?? {}, ctx.actor.isToken),
+    ctx => removeConvenientEffectsChange(ctx.change.value, ctx.actor.uuid, ctx.effect.origin, ctx.actor.isToken), "local"],
+  ["macro.StatusEffect",
+    ctx => addConditionChange(ctx.actor, ctx.change, ctx.token, ctx.effect),
+    ctx => removeConditionChange(ctx.actor, ctx.change, ctx.token ?? null, ctx.effect, ctx.context), "local"],
+  ["StatusEffect",
+    ctx => addConditionChange(ctx.actor, ctx.change, ctx.token, ctx.effect),
+    ctx => removeConditionChange(ctx.actor, ctx.change, ctx.token ?? null, ctx.effect, ctx.context), "local"],
+  ["macro.tokenMagic",
+    ctx => addTokenMagicChange(ctx.actor, ctx.change, ctx.tokens),
+    ctx => removeTokenMagicChange(ctx.actor, ctx.change, ctx.tokens, ctx.context), "local"],
+  ["macro.createItem",
+    ctx => addCreateItemChange(ctx.change, ctx.actor, ctx.effect, ctx.context),
+    ctx => removeCreateItemChange(ctx.change.value, ctx.actor, ctx.effect, ctx.context), "GM"],
+  ["macro.createItemRunMacro",
+    ctx => addCreateItemChange(ctx.change, ctx.actor, ctx.effect, ctx.context),
+    ctx => removeCreateItemChange(ctx.change.value, ctx.actor, ctx.effect, ctx.context), "GM"],
+];
+for (const [key, on, off, destination] of specialHandlers) {
+  registerChangeHandler(key, { on, off, destination });
+}
+// Macro change handlers — batched through daeMacro (on/off are no-ops, dispatch handled by daeMacro)
+const noop = async () => {};
+for (const key of ["macro.execute", "macro.itemMacro", "macro.actorUpdate", "macro.activityMacro"]) {
+  registerChangeHandler(key, { on: noop, off: noop, destination: "mixed", isMacroKey: true });
 }
 
-const CREATE_ITEM_KEYS = new Set(["macro.createItem", "macro.createItemRunMacro"]);
-
-/** Resolve macro command text from an item or raw item data, checking dae and legacy itemacro flag paths. */
-export function getItemMacroCommand(source: any): string | undefined {
-  return source?.flags?.dae?.macro?.command
-    ?? source?.flags?.itemacro?.macro?.command
-    ?? source?.flags?.itemacro?.macro?.data?.command;
+// Backward-compatible exports derived from registry
+export let allMacroEffects = getAllMacroEffectKeys();
+export const isMacroChangeKey = isRegisteredMacroKey;
+export let macroDestination: Record<string, string> = {};
+for (const key of allMacroEffects) {
+  macroDestination[key] = getChangeDestination(key);
 }
-
-export let macroDestination = {
-  "macro.execute": "mixed",
-  "macro.execute.local": "local",
-  "macro.execute.GM": "GM",
-  "macro.itemMacro": "mixed",
-  "macro.itemMacro.local": "local",
-  "macro.itemMacro.GM": "GM",
-  "macro.actorUpdate": "mixed",
-  "macro.activityMacro": "mixed"
-};
 
 export let daeSystemClass: typeof DAESystem | typeof DAESystemDND5E;
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
@@ -171,11 +192,19 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
 
   debug("daeApplyActiveEffects: phase", phase, this.name);
 
-  // showIcon deprecation check (before core filters effects)
+  // Deprecation checks (before core filters effects)
+  const deprecatedSpecialDurs = ["turnStart", "turnEnd", "turnStartSource", "turnEndSource", "combatEnd"];
   for (let effect of this.allApplicableEffects()) {
     if (effect.flags?.dae?.showIcon) {
       foundry.utils.logCompatibilityWarning(
         `dae | Effect "${effect.name}" on actor "${this.name}" uses deprecated flags.dae.showIcon. Edit the effect to migrate to the native showIcon field.`,
+        { once: true, stack: false }
+      );
+    }
+    const specialDurs = effect.flags?.dae?.specialDuration;
+    if (specialDurs?.some(sd => deprecatedSpecialDurs.includes(sd))) {
+      foundry.utils.logCompatibilityWarning(
+        `dae | Effect "${effect.name}" on actor "${this.name}" uses deprecated dae special duration (${specialDurs.filter(sd => deprecatedSpecialDurs.includes(sd)).join(", ")}). Edit the effect to migrate to native duration.expiry.`,
         { once: true, stack: false }
       );
     }
@@ -428,7 +457,7 @@ export async function addCreateItemChange(change: { key: string, value: string }
   if (itemDetails.startsWith("@")) {
     itemDetails = Roll.replaceFormulaData(change.value, actor.getRollData() as AnyObject, { missing: "", warn: false });
   }
-  await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "createActorItem", { uuid: actor.uuid, itemDetails, effectUuid: effect.uuid, callItemMacro: change.key === "macro.createItemRunMacro" })
+  await socketlibSocket.executeAsGM("createActorItem", { uuid: actor.uuid, itemDetails, effectUuid: effect.uuid, callItemMacro: change.key === "macro.createItemRunMacro" })
 }
 
 export async function removeCreateItemChange(itemId: string, actor: Actor.Implementation, effect: ActiveEffect.Implementation, context: any = {}) {
@@ -439,7 +468,7 @@ export async function removeCreateItemChange(itemId: string, actor: Actor.Implem
   if (option === "permanent") return; // don't delete permanent items
   if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
   if (!(context.effectDeleted || context.itemDeleted)) await effect.setFlag("dae", "itemsToDelete", []);
-  await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete, context })
+  await socketlibSocket.executeAsGM("removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete, context })
 }
 
 export async function addTokenMagicChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, tokens: (TokenOrDocument | null | undefined)[]) {
@@ -448,9 +477,7 @@ export async function addTokenMagicChange(actor: Actor.Implementation, change: A
   for (let token of tokens) {
     if (token instanceof foundry.canvas.placeables.Token) token = token.document;
     const tokenUuid = token?.uuid;
-    // Put this back if TMFX does awaited calls
-    // await actionQueue.add(tokenMagic.addFilters, token, change.value); - see if gm execute solve problem
-    await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "applyTokenMagic", { tokenUuid, effectId: change.value })
+    await socketlibSocket.executeAsGM("applyTokenMagic", { tokenUuid, effectId: change.value })
   }
 }
 
@@ -459,10 +486,8 @@ export async function removeTokenMagicChange(actor: Actor.Implementation, change
   if (!tokenMagic) return;
   for (let token of tokens) {
     if (token instanceof foundry.canvas.placeables.Token) token = token.document;
-    // put this back if TMFX does awaited calls
-    // await actionQueue.add(tokenMagic.deleteFilters, token, change.value);
     const tokenUuid = token?.uuid;
-    await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeTokenMagic", { tokenUuid, effectId: change.value })
+    await socketlibSocket.executeAsGM("removeTokenMagic", { tokenUuid, effectId: change.value })
   }
 }
 
@@ -472,8 +497,7 @@ async function myRemoveCEEffect(effectName: string, uuid: string, origin: string
 }
 export async function removeConvenientEffectsChange(effectName: string, uuid: string, origin: string | undefined | null, isToken: boolean) {
   if (isToken) await delay(1); // let all of the stuff settle down
-  const returnValue = await actionQueue.add(myRemoveCEEffect, effectName, uuid, origin, isToken);
-  return returnValue;
+  return await myRemoveCEEffect(effectName, uuid, origin, isToken);
 }
 
 async function myAddCEEffectWith(effectData: any, uuid: string, origin: string | undefined | null, overlay: boolean, isToken: boolean) {
@@ -489,7 +513,7 @@ export async function addConvenientEffectsChange(effectName: string, uuid: strin
   if (!ceEffect) return;
   let effectData = foundry.utils.mergeObject(ceEffect.toObject(), context.metaData);
   effectData.origin = origin;
-  return await actionQueue.add(myAddCEEffectWith, effectData, uuid, origin, false, isToken);
+  return await myAddCEEffectWith(effectData, uuid, origin, false, isToken);
 }
 
 export async function addConditionChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, token: foundry.canvas.placeables.Token.Implementation | undefined, effect: ActiveEffect.Implementation): Promise<ActiveEffect.Implementation[] | undefined> {
@@ -548,7 +572,7 @@ export async function removeStatusEffectChange(actor: Actor.Implementation, chan
   // TODO this might remove too many effects
   const effectsToRemove = actor.effects.filter(ef => ef.origin === effect.uuid)?.map(ef => ef.id!);
   if (effectsToRemove && effectsToRemove.length > 0)
-    await actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", effectsToRemove, context);
+    await actor.deleteEmbeddedDocuments("ActiveEffect", effectsToRemove, context);
 }
 
 export async function expireEffects(actor: Actor.Implementation, effects: ActiveEffect.Implementation[], context: any): Promise<any> {
@@ -585,12 +609,12 @@ export async function expireEffects(actor: Actor.Implementation, effects: Active
   }
   if (effectsToDisable.length > 0) {
     for (let effect of effectsToDisable) {
-      await effect.update({ "disabled": true })
+      await effect.update({ "disabled": true }, context)
     }
   }
   if (effectsToDelete.length > 0) {
     for (let effect of effectsToDelete)
-      await effect.delete();
+      await effect.delete(context);
   }
   return { expired: actorEffectsToExpire, disabled: effectsToDisable, itemEffects: effectsToDelete };
 }
@@ -614,44 +638,21 @@ function createActiveEffectHook(effect: ActiveEffect.Implementation, options: Ac
   const token: foundry.canvas.placeables.Token.Implementation = tokens[0];
   // @ts-expect-error v14 effect.system.changes
   if (effect.system?.changes?.length && effect.active) {
-    let changeLoop = async () => {
-      try {
-        const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
-          && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
-          && effect.origin?.startsWith(actor.uuid);
-        // don't apply macro or macro like effects if active aura and not targeting self
-        if (selfAuraChange) return;
-        // @ts-expect-error v14 effect.system.changes
-        for (let change of effect.system.changes) {
-          if (ceInterface && change.key === "macro.CE") {
-            await addConvenientEffectsChange(change.value, actor.uuid, effect.origin as string, options, actor.isToken);
+    const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
+      && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
+      && effect.origin?.startsWith(actor.uuid);
+    // don't apply macro or macro like effects if active aura and not targeting self
+    if (!selfAuraChange) {
+      // @ts-expect-error v14 effect.system.changes
+      actionQueue.add(processEffectChanges, "on", actor, tokens, effect, undefined, effect.system.changes, options)
+        .catch(err => {
+          const message = "dae | createActiveEffectHook | create effect error";
+          if (globalThis.MidiQOL?.apps?.TroubleShooter) {
+            globalThis.MidiQOL.apps.TroubleShooter.recordError(err, message);
           }
-          if (CREATE_ITEM_KEYS.has(change.key)) {
-            await addCreateItemChange(change, actor, effect, options)
-          }
-          if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
-            await addConditionChange(actor, change, token, effect)
-          }
-          const tokenMagic = globalThis.TokenMagic;
-          if (tokenMagic && change.key === "macro.tokenMagic" && token)
-            await addTokenMagicChange(actor, change, tokens); //TODO check disabled
-        }
-        // @ts-expect-error v14 effect.system.changes
-        if (effect.system.changes.some(change => isMacroChangeKey(change.key))) {
-          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid }); // TODO revisit to see if passing the effect is ok
-        }
-
-      } catch (err) {
-        const message = "dae | createActiveEffectHook | create effect error";
-        if (globalThis.MidiQOL?.apps?.TroubleShooter) {
-          globalThis.MidiQOL.apps.TroubleShooter.recordError(err, message);
-        }
-        console.warn(message, err);
-      } finally {
-        return true;
-      }
-    };
-    changeLoop();
+          console.warn(message, err);
+        });
+    }
   }
   return true;
 }
@@ -661,54 +662,8 @@ async function _preCreateActiveEffectRemoveExisting(this: ActiveEffect.Implement
   let result = true;
   try {
     // @ts-expect-error Can this happen?
-    if (options.isUndo) return;
-    const parent = this.parent;
-
-    // @ts-expect-error Can this happen?
     options.deleted = false;
-    if (!(parent instanceof CONFIG.Actor.documentClass)) return;
-    const stackable = this.flags?.dae?.stackable ?? "";
-    if (["noneName", "none", "noneNameOnly"].includes(stackable)) {
-      if (!parent) return result = true;
-      const hasExisting = parent.effects.filter(ef => {
-        const efOrigin = ef.origin;
-        switch (stackable) {
-          case "noneName":
-            // Effects with no origin are ignored
-            return !!(this.origin && efOrigin === this.origin && ef.name === this.name);
-          case "count":
-          case "countDeleteDecrement":
-            // @ts-expect-error Can this happen?
-            if (options.toggleEffect)
-              return !!(this.origin && efOrigin === this.origin && ef.name === this.name);
-            break;
-          case "noneNameOnly":
-            return ef.name === this.name;
-          case "none":
-            return !!(this.origin && efOrigin === this.origin);
-        }
-        return false;
-      });
-      if (hasExisting.length === 0) return result = true;
-      // @ts-expect-error Can this happen?
-      if (options.toggleEffect) {
-        const updates = hasExisting.map(ef => ({ _id: ef.id, disabled: !ef.disabled }));
-        await parent.updateEmbeddedDocuments("ActiveEffect", updates, options);
-        return result = false;
-      }
-
-      if (debugEnabled > 0) warn("deleting existing effects ", parent.name, parent, hasExisting);
-      options["existing"] = "effect-stacking";
-      await parent.deleteEmbeddedDocuments("ActiveEffect", hasExisting.map(ef => ef.id ?? ""), options);
-
-      // We need to wait for the chain of dependents to be deleted before allowing things to continue.
-      let count = 0;
-      // @ts-expect-error no dnd5e-types
-      while (hasExisting.some(ef => ef.getDependents().length > 0) && count < 100) {
-        count += 1;
-        await busyWait(0.05);
-      }
-    }
+    result = await handleExistingEffects(this, options);
   } catch (err) {
     error("removeExistingEffects ", err);
     result = true;
@@ -735,28 +690,13 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
     }
 
     if (parent instanceof Actor) {
-      let existingEffect;
-      if (getStatusEffectsArray().find(se => se._id === this.id))
-        existingEffect = parent.effects.find(ef => ef.id === this.id);
-      else {
-        existingEffect = parent.effects.find(ef => ef.origin === this.origin && effectBaseName(ef) === effectBaseName(this));
-      }
-      if (["count", "countDeleteDecrement"].includes(this.flags?.dae?.stackable)) {
-        if (existingEffect) {
-          const stacks = (existingEffect.flags.dae.stacks ?? 1) + 1;
-          // const counter = globalThis.EffectCounter?.findCounter(getTokenDocument(this.parent), this.img ?? this.icon);
-          // await counter?.setValue(stacks);
+      // Handle count/countDeleteDecrement stacking
+      const shouldCreate = await handleStackIncrement(this, data, options);
+      if (!shouldCreate) return result = false;
 
-          await existingEffect.update({ "flags.dae.stacks": stacks, name: `${effectBaseName(existingEffect)} (${stacks})` });
-          if (existingEffect.getDependents && existingEffect.getDependents().length > 0) {
-            const deps = existingEffect.getDependents().filter(ef => ["count", "countDeleteDecrement"].includes(ef.flags?.dae?.stackable));
-            await parent.createEmbeddedDocuments("ActiveEffect", deps.map(ef => ef.toObject()), { keepId: true });
-          }
-          return result = false;
-        }
-      }
-      else if (getStatusEffectsArray().find(se => se._id === this.id) && parent.effects.find(ef => ef.id === this._id)) {
-        console.warn(`dae | Attempting to add ${this.id} when already presnt - ignoring`);
+      // Prevent duplicate status effects
+      if (getStatusEffectsArray().find(se => se._id === this.id) && parent.effects.find(ef => ef.id === this._id)) {
+        console.warn(`dae | Attempting to add ${this.id} when already present - ignoring`);
         return result = false;
       }
       let updates = {};
@@ -770,18 +710,11 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
         }
         let theDurationRoll = new Roll(`${this.flags.dae.durationExpression}`, sourceActor?.getRollData() as AnyObject);
         let theDuration = await theDurationRoll.evaluate();
-        const inCombat = game.combat?.turns?.some(turnData => turnData.actor?.uuid === parent.uuid);
-        if (inCombat) {
-          updates["duration.value"] = Math.floor(theDuration.total / CONFIG.time.roundTime + 0.5);
-          updates["duration.units"] = "rounds";
-        }
-        else {
-          updates["duration.value"] = theDuration.total;
-          updates["duration.units"] = "seconds";
-        }
+        updates["duration.value"] = theDuration.total;
       }
       let changesChanged = false;
       let newChanges: any = [];
+      debug("dae _preCreate changes input:", JSON.stringify(this.system.changes.map(c => ({key: c.key, value: c.value}))));
       for (let change of this.system.changes) {
         if (typeof change.value === "string") {
           const token = getSelfTarget(parent);
@@ -836,11 +769,12 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
       }
       if (changesChanged)
         updates["system.changes"] = newChanges;
+      debug("dae _preCreate changes output:", JSON.stringify(newChanges.map(c => ({key: c.key, value: c.value}))), "changesChanged:", changesChanged);
       this.updateSource(updates);
     }
   }
   catch (err) {
-    console.warn("dae | _preCreateActiveEffect", err);
+    console.error("dae | _preCreateActiveEffect", err);
   }
   finally {
     return result;
@@ -917,124 +851,80 @@ export function updateActiveEffectHook(
   if (parent instanceof Actor) actor = parent;
   // if (effect.disabled === context.dae?.active?.disabled && effect.isSuppressed === context.dae?.active?.isSuppressed) return true;
   if (!actor) return true;
-  let changeLoop = async () => {
-    try {
-      if (!actor) return;
-      // const item = await fromUuid(effect.origin);
-      const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
-      const token = tokens[0];
-      if (!(token instanceof foundry.canvas.placeables.Token)) return;
-      // Just deal with equipped etc
-      warn("add active effect actions", actor, updates)
+  actionQueue.add(async () => {
+    if (!actor) return;
+    const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
+    const token = tokens[0];
+    if (!(token instanceof foundry.canvas.placeables.Token)) return;
+    warn("add active effect actions", actor, updates)
 
-      const tokenMagic = globalThis.TokenMagic;
-
-      let addedChanges: ActiveEffect.ChangeData[] = [];
-      let removedChanges: ActiveEffect.ChangeData[] = [];
-      let existingChanges: ActiveEffect.ChangeData[] = [];
-      let oldChanges: ActiveEffect.ChangeData[] = [];
-      let newChanges: ActiveEffect.ChangeData[] = [];
-      // @ts-expect-error v14 updates.system?.changes
-      if (updates.system?.changes) {
-        // const removedChanges = (context.dae?.active?.oldChanges ?? []).filter(change => !effect.system.changes.some(c => c.key === change.key));
-        oldChanges = ((foundry.utils.getProperty(options, "dae.active.oldChanges") as ActiveEffect.ChangeData[]) ?? []).sort((a, b) => a.key < b.key ? -1 : 1);
-        // @ts-expect-error v14 effect.system.changes
-        newChanges = effect.system.changes.filter(c => c.key && c.key !== "").sort((a, b) => a.key < b.key ? -1 : 1);
-        // @ts-expect-error v14 change.type replaces change.mode
-        removedChanges = oldChanges.filter(change => !newChanges.some(c => c.key === change.key && c.type === change.type && c.value === change.value));
-        // @ts-expect-error v14 change.type replaces change.mode
-        existingChanges = oldChanges.filter(change => newChanges.some(c => c.key === change.key && c.type === change.type && c.value === change.value));
-        // @ts-expect-error v14 change.type replaces change.mode
-        addedChanges = newChanges.filter(change => !oldChanges.some(c => c.key === change.key && c.type === change.type && c.value === change.value));
-        if (debugEnabled > 0) {
-          warn("updateActiveEffect hook | old changes", oldChanges);
-          warn("updateActiveEffect hook | new changes", newChanges);
-          warn("updateActiveEffect hook | removed Changes ", removedChanges);
-          warn("updateActiveEffect hook | added changes ", addedChanges);
-          warn("updateActiveEffect hook | existing changes", existingChanges);
-        }
+    let addedChanges: ActiveEffect.ChangeData[] = [];
+    let removedChanges: ActiveEffect.ChangeData[] = [];
+    let existingChanges: ActiveEffect.ChangeData[] = [];
+    let oldChanges: ActiveEffect.ChangeData[] = [];
+    let newChanges: ActiveEffect.ChangeData[] = [];
+    // @ts-expect-error v14 updates.system?.changes
+    if (updates.system?.changes) {
+      oldChanges = ((foundry.utils.getProperty(options, "dae.active.oldChanges") as ActiveEffect.ChangeData[]) ?? []).sort((a, b) => a.key < b.key ? -1 : 1);
       // @ts-expect-error v14 effect.system.changes
-      } else existingChanges = effect.system.changes;
-      const wasDisabled = options.dae?.active?.wasDisabled ?? false;
-      const wasSuppressed = options.dae?.active?.wasSuppressed ?? false;
-      const becameDisabled = effect.disabled && !(options.dae?.active?.wasDisabled ?? false);
-      const becameSuppressed = effect.isSuppressed && !(options.dae?.active?.wasSuppressed ?? false);
-      // TODO Come back and make this use addEffectChange and removeEffectChange instead of the below
-      if (becameSuppressed || becameDisabled || removedChanges.length > 0) {
-        let changesToDisable: ActiveEffect.ChangeData[] = [];
-        if (becameSuppressed || becameDisabled) {
-          // newly disabled disable everything
-          changesToDisable = existingChanges.concat(removedChanges);
-        } else if (!wasDisabled && !wasSuppressed) {
-          // changes being removed were enabled so disable them
-          changesToDisable = removedChanges;
-        }
-        for (let change of changesToDisable) {
-          if (ceInterface && change.key === "macro.CE") {
-            await removeConvenientEffectsChange(change.value, actor.uuid, undefined, actor.isToken);
-          }
-          if (token && tokenMagic && change.key === "macro.tokenMagic") removeTokenMagicChange(actor, change, tokens, options);
-          if (CREATE_ITEM_KEYS.has(change.key)) {
-            await removeCreateItemChange(change.value, actor, effect, options)
-          }
-          if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
-            await removeConditionChange(actor, change, token, effect, options)
-          }
-        }
-        if (changesToDisable.some(change => isMacroChangeKey(change.key))) {
-          warn("dae add macro off", actionQueue.remaining);
-          const effectData = effect.toObject(false);
-          // @ts-expect-error v14 system.changes
-          if (updates.system?.changes) effectData.system.changes = oldChanges;
-          if (becameDisabled) options["expiry-reason"] = "effect-disabled";
-          else if (becameSuppressed) options["expiry-reason"] = { "expiry-reason": "effect-suppressed" };
-          else options["expiry-reason"] = { "expiry-reason": "change-deleted" };
-          options.effectUuid = effect.uuid;
-          await actionQueue.add(daeMacro, "off", actor, effectData, options);
-        }
+      newChanges = effect.system.changes.filter(c => c.key && c.key !== "").sort((a, b) => a.key < b.key ? -1 : 1);
+      // @ts-expect-error v14 change.type replaces change.mode
+      removedChanges = oldChanges.filter(change => !newChanges.some(c => c.key === change.key && c.type === change.type && c.value === change.value));
+      // @ts-expect-error v14 change.type replaces change.mode
+      existingChanges = oldChanges.filter(change => newChanges.some(c => c.key === change.key && c.type === change.type && c.value === change.value));
+      // @ts-expect-error v14 change.type replaces change.mode
+      addedChanges = newChanges.filter(change => !oldChanges.some(c => c.key === change.key && c.type === change.type && c.value === change.value));
+      if (debugEnabled > 0) {
+        warn("updateActiveEffect hook | old changes", oldChanges);
+        warn("updateActiveEffect hook | new changes", newChanges);
+        warn("updateActiveEffect hook | removed Changes ", removedChanges);
+        warn("updateActiveEffect hook | added changes ", addedChanges);
+        warn("updateActiveEffect hook | existing changes", existingChanges);
       }
-
-      const becameEnabled = (options.dae?.active?.wasDisabled ?? false) && !(effect.disabled ?? false);
-      const becameUnsuppressed = (options.dae?.active?.wasSuppressed ?? false) && !(effect.isSuppressed ?? false);
-      if (becameEnabled || becameUnsuppressed || addedChanges.length > 0) {
-        let changesToEnable: ActiveEffect.ChangeData[] = [];
-        if (becameEnabled || becameUnsuppressed) {
-          // newly enabled enable everything
-          changesToEnable = existingChanges.concat(addedChanges);
-        } else if (!effect.disabled && !effect.isSuppressed) {
-          // changes being added need to be enabled
-          changesToEnable = addedChanges;
-        }
-        for (let change of changesToEnable) {
-          if (ceInterface && change.key === "macro.CE") {
-            await addConvenientEffectsChange(change.value, actor.uuid, undefined, undefined, actor.isToken);
-          }
-          if (token && tokenMagic && change.key === "macro.tokenMagic") addTokenMagicChange(actor, change, tokens);
-          if (CREATE_ITEM_KEYS.has(change.key)) {
-            await addCreateItemChange(change, actor, effect, options)
-          }
-          if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
-            await addConditionChange(actor, change, token, effect)
-          }
-        }
-        if (changesToEnable.some(change => isMacroChangeKey(change.key))) {
-          warn("action queue add dae macro on ", actionQueue.remaining)
-          await actionQueue.add(daeMacro, "on", actor, effect.toObject(false), { effectUuid: effect.uuid });
-        }
+    // @ts-expect-error v14 effect.system.changes
+    } else existingChanges = effect.system.changes;
+    const wasDisabled = options.dae?.active?.wasDisabled ?? false;
+    const wasSuppressed = options.dae?.active?.wasSuppressed ?? false;
+    const becameDisabled = effect.disabled && !(options.dae?.active?.wasDisabled ?? false);
+    const becameSuppressed = effect.isSuppressed && !(options.dae?.active?.wasSuppressed ?? false);
+    if (becameSuppressed || becameDisabled || removedChanges.length > 0) {
+      let changesToDisable: ActiveEffect.ChangeData[] = [];
+      if (becameSuppressed || becameDisabled) {
+        changesToDisable = existingChanges.concat(removedChanges);
+      } else if (!wasDisabled && !wasSuppressed) {
+        changesToDisable = removedChanges;
       }
-      // @ts-expect-error no dnd5e-types
-      for (let dependent of effect.getDependents()) {
-        if (dependent.disabled !== undefined && (dependent.disabled !== effect.disabled || dependent.isSuppressed !== effect.isSuppressed)) {
-          await dependent.update({ "disabled": effect.disabled || effect.isSuppressed });
-        }
+      if (changesToDisable.length > 0) {
+        const disableContext: any = { ...options };
+        if (becameDisabled) disableContext["expiry-reason"] = "effect-disabled";
+        else if (becameSuppressed) disableContext["expiry-reason"] = "effect-suppressed";
+        else disableContext["expiry-reason"] = "change-deleted";
+        await processEffectChanges("off", actor, tokens, effect, undefined, changesToDisable, disableContext);
       }
-    } catch (err) {
-      console.warn("dae | updating active effect error", err)
-    } finally {
-      return result;
     }
-  };
-  changeLoop();
+
+    const becameEnabled = (options.dae?.active?.wasDisabled ?? false) && !(effect.disabled ?? false);
+    const becameUnsuppressed = (options.dae?.active?.wasSuppressed ?? false) && !(effect.isSuppressed ?? false);
+    if (becameEnabled || becameUnsuppressed || addedChanges.length > 0) {
+      let changesToEnable: ActiveEffect.ChangeData[] = [];
+      if (becameEnabled || becameUnsuppressed) {
+        changesToEnable = existingChanges.concat(addedChanges);
+      } else if (!effect.disabled && !effect.isSuppressed) {
+        changesToEnable = addedChanges;
+      }
+      if (changesToEnable.length > 0) {
+        await processEffectChanges("on", actor, tokens, effect, undefined, changesToEnable, options);
+      }
+    }
+    // @ts-expect-error no dnd5e-types
+    for (let dependent of effect.getDependents()) {
+      if (dependent.disabled !== undefined && (dependent.disabled !== effect.disabled || dependent.isSuppressed !== effect.isSuppressed)) {
+        await dependent.update({ "disabled": effect.disabled || effect.isSuppressed });
+      }
+    }
+  }).catch(err => {
+    console.warn("dae | updating active effect error", err);
+  });
 
   return result = true;
 }
@@ -1092,61 +982,44 @@ export function deleteActiveEffectHook(effect: ActiveEffect.Implementation, opti
   else if (effect.parent instanceof CONFIG.Item.documentClass && effect.transfer) actor = effect.parent.parent;
   if (!actor) return true;
 
-  let changesLoop = async () => {
-    if (!actor) return;
-    const tokens = actor.token ? [actor.token.object] : actor.getActiveTokens();
-    const token = tokens[0];
-    const tokenMagic = globalThis.TokenMagic;
-    /// if (actor.isToken) await delay(1);
-
-    let entityToDelete: string | null | undefined;
-    // @ts-expect-error v14 effect.system.changes
-    if (effect.system?.changes) {
+  // @ts-expect-error v14 effect.system.changes
+  if (effect.system?.changes) {
+    // @ts-expect-error Is this okay?
+    options.effectDeleted = true;
+    if (!foundry.utils.getProperty(options, "expiry-reason")) foundry.utils.setProperty(options, "expiry-reason", "effect-deleted");
+    actionQueue.add(async () => {
+      if (!actor) return;
       // @ts-expect-error v14 effect.system.changes
-      for (let change of effect.system.changes) {
+      const changes: ActiveEffect.ChangeData[] = effect.system.changes;
+      // Process standard change types and macro changes via processEffectChanges
+      await processEffectChanges("off", actor,
+        actor.token ? [actor.token.object] : actor.getActiveTokens(),
+        effect, undefined, changes, options);
+      // Handle special delete-only change keys not covered by processEffectChanges
+      let entityToDelete: string | null | undefined;
+      for (const change of changes) {
         try {
-          if (token && tokenMagic && change.key === "macro.tokenMagic") await removeTokenMagicChange(actor, change, tokens)
-          if (CREATE_ITEM_KEYS.has(change.key)) {
-            // @ts-expect-error Is this okay?
-            options.effectDeleted = true;
-            await removeCreateItemChange(change.value, actor, effect, options)
-          }
-          if (change.key === "macro.StatusEffect" || change.key === "StatusEffect") {
-            await removeConditionChange(actor, change, token, effect, options); // TODO this is not right
-          }
-          if (ceInterface && change.key === "macro.CE") {
-            await removeConvenientEffectsChange(change.value, actor.uuid, effect.origin as string, actor.isToken);
-          }
           if (change.key === "flags.dae.deleteUuid" && change.value) {
-            await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value })
+            await socketlibSocket.executeAsGM("deleteUuid", { uuid: change.value });
           }
           if (change.key === "flags.dae.suspendActiveEffect" && change.value) {
             await socketlibSocket.executeAsGM("suspendActiveEffect", { uuid: change.value });
           }
           if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.origin;
-          if (!foundry.utils.getProperty(options, "expiry-reason")) foundry.utils.setProperty(options, "expiry-reason", "effect-deleted");
-          // @ts-expect-error v14 effect.system.changes
-          if (effect.system.changes.some(change => isMacroChangeKey(change.key))) {
-            // @ts-expect-error Is this okay?
-            options.effectUuid = effect.uuid;
-            warn("action queue dae macro add off ", actionQueue.remaining)
-            await actionQueue.add(daeMacro, "off", actor, effect.toObject(false), options);
-          }
-          if (entityToDelete) await socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete })
+          if (entityToDelete) await socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete });
         } catch (err) {
           console.warn("dae | error deleting active effect ", effect, err);
         }
       }
       if (effect.origin) {
         let origin: any = await fromUuid(effect.origin);
-        // Remove the associated animation if the origin points to the actor or if the items actor is the effects actor
-        // Covers the spirit guardian case where all the aura's point back to the source item.
         if (globalThis.Sequencer && (origin === actor || origin?.parent === actor))
           globalThis.Sequencer.EffectManager.endEffects({ origin: effect.origin });
       }
-    }
-  };
-  changesLoop();
+    }).catch(err => {
+      console.warn("dae | deleteActiveEffectHook error", err);
+    });
+  }
   return true;
 }
 
@@ -1176,28 +1049,7 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
     effectData = effectData.toObject(false);
   }
   if (lastArgOptions.item) theItem = lastArgOptions.item;
-  if (!theItem) { // follow the origin trail backwards
-    let source: any | undefined = effectData.origin ? await fromUuid(effectData.origin) : undefined;
-    let count: number;
-    for (count = 0; count < 10 && source instanceof ActiveEffect && !(source.parent instanceof Item); count++) {
-      const newSource: any = await fromUuid(source.origin);
-      if (!newSource) source = source.parent;
-      else source = newSource;
-    }
-    if (count === 10) {
-      console.warn("dae | daeMacro | too many levels of origin", effectData);
-    }
-    else if (source instanceof Item) theItem = source;
-    else if (source?.parent instanceof Item) theItem = source.parent;
-    else if (source?.item instanceof Item) theItem = source.item;
-  }
-
-  if (!theItem && effectData.flags?.dae?.itemUuid) {
-    theItem = fromUuidSync(effectData.flags.dae.itemUuid) as Item.Implementation;
-  }
-  if (!theItem && effectData.flags?.dae?.itemData) {
-    theItem = new CONFIG.Item.documentClass(effectData.flags.dae.itemData, { parent: actor })
-  }
+  if (!theItem) theItem = await resolveItemFromEffect(effectData, actor);
 
   let context = actor.getRollData() as AnyMutableObject;
   if (theItem) {
@@ -1259,16 +1111,8 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
       } else args = [change.value];
       if (theChange.key.includes("macro.execute") || theChange.key.includes("macro.itemMacro") || change.key.startsWith("macro.activityMacro")) {
         if (functionMatch) {
-          macro = new CONFIG.Macro.documentClass({
-            name: "DAE-Item-Macro",
-            type: "script",
-            img: null,
-            ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
-            author: game.user?.id,
-            command: `return await ${functionMatch}.bind(this)({ speaker, actor, token, character, item, args, scope })`,
-          });
-          // TODO (Michael) `theItem` is treated as mandatory in `getMacro`, but here isn't guaranteed - or is it?
-        } else macro = await getMacro({ change, name: args[0] }, theItem!, effectData, lastArgOptions.effectUuid);
+          macro = createFunctionMacro(functionMatch);
+        } else macro = await resolveMacro(change.key, args[0], theItem, effectData, lastArgOptions.effectUuid);
         if (!macro) {
           //TODO localize this
           if (action !== "off") {
@@ -1448,85 +1292,6 @@ export async function evalArgs({
   return returnChange;
 }
 
-export async function getMacro(
-  { change, name }: { change: ActiveEffect.ChangeData, name: string },
-  item: Item.Implementation,
-  effectData?: ActiveEffect.Source,
-  effectUuid?: string
-): Promise<Macro.Implementation | undefined> {
-  if (change.key.includes("macro.execute")) {
-    let macro = game.macros?.getName(name);
-    if (macro) return macro;
-    let itemOrMacro: Item.Implementation | Macro.Implementation;
-    itemOrMacro = await fromUuid(name) as Item.Implementation | Macro.Implementation;
-    if (itemOrMacro) {
-      if (itemOrMacro instanceof Item) {
-        const macroData = itemOrMacro.flags?.dae?.macro ?? itemOrMacro.flags?.itemacro?.macro as Macro.CreateData;
-        macroData.flags = foundry.utils.mergeObject(macroData.flags ?? {}, { dnd5e: { itemMacro: true } })
-        return new CONFIG.Macro.documentClass(macroData);
-      } else if (itemOrMacro instanceof Macro) {
-        return itemOrMacro;
-      }
-      // Other uuids are not valid
-      return undefined;
-    }
-  } else if (change.key.startsWith("macro.activityMacro") || change.key.startsWith("macro.itemMacro")) {
-    let macroCommand: string | undefined | null;
-    if (change.key.startsWith("macro.activityMacro")) {
-      let activityUuid = effectData?.flags?.dae?.activity;
-      if (activityUuid) {
-        const activity: any = await fromUuid(activityUuid);
-        macroCommand = activity?.macro?.command;
-      }
-    } else if (change.key.startsWith("macro.itemMacro")) {
-      // Resolve item from effectUuid if not provided
-      if (!item && effectUuid) {
-        const effect = fromUuidSync(effectUuid);
-        if (effect instanceof ActiveEffect && effect.parent instanceof Item) item = effect.parent as Item.Implementation;
-      }
-      macroCommand = effectData?.flags?.dae?.itemMacro
-        ?? getItemMacroCommand(item);
-      const itemData = effectData?.flags?.dae?.itemData;
-      if (!macroCommand && itemData) macroCommand = getItemMacroCommand(itemData);
-      if (!macroCommand && !item) { // we never got an item do a last ditch attempt
-        warn("eval args: fetching item from effectData/origin ", effectData?.origin);
-        const itemOrEffect = fromUuidSync(effectData?.origin);
-        if (itemOrEffect instanceof CONFIG.Item.documentClass) item = itemOrEffect;
-        if (!item) {
-          const activity = fromUuidSync(effectData?.flags?.dae?.activity);
-          // @ts-expect-error no dnd5e-types
-          if (activity) item = activity.item;
-        }
-        macroCommand = getItemMacroCommand(item);
-      }
-    }
-    if (!macroCommand) {
-      const itemOrMacro = await fromUuid(name);
-      if (itemOrMacro instanceof Macro) macroCommand = itemOrMacro.command;
-      if (itemOrMacro instanceof Item) macroCommand = getItemMacroCommand(itemOrMacro);
-    }
-    if (!macroCommand) {
-      macroCommand = effectData?.flags?.dae?.itemMacro;
-    }
-    if (!macroCommand) {
-      macroCommand = `if (!args || args[0] === "on") {ui.notifications.warn("macro.itemMacro | No macro found for item ${item?.name}");}`;
-      warn(`No macro found for item ${item?.name}`);
-    }
-    return new CONFIG.Macro.documentClass({
-      name: "DAE-Item-Macro",
-      type: "script",
-      img: null,
-      command: macroCommand,
-      author: game.user?.id,
-      ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
-      // TODO see if this should change.
-      flags: { dnd5e: { itemMacro: true } }
-    });
-  } else if (change.key === "actorUpdate") {
-    console.error("Should not be trying to lookup the macro for actorUpdate")
-  }
-  return undefined;
-}
 /*
  * apply non-transfer effects to target tokens - provided for backwards compat
  */
@@ -1584,20 +1349,20 @@ export async function applyActivityEffects(
   for (let [aeIndex, activeEffectData] of activityEffects.entries()) {
     // @ts-expect-error v14 system.changes on toObject() data
     for (let [changeIndex, change] of activeEffectData.system.changes.entries()) {
-      const doRolls = allMacroEffects.includes(change.key);
+      const doRolls = isRegisteredMacroKey(change.key);
       if (doRolls) {
-        if (macroDestination[change.key] === "local" && macroLocation !== "GM") {
-          macroLocation = "local"
-        } else if (macroDestination[change.key] === "GM") macroLocation = "GM";
+        const dest = getChangeDestination(change.key);
+        if (dest === "local" && macroLocation !== "GM") macroLocation = "local";
+        else if (dest === "GM") macroLocation = "GM";
       }
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       rollData.stackCount = activeEffectData.flags?.dae?.stacks ?? 1;
-      const evalArgsOptions: any = foundry.utils.mergeObject(options, {
+      const evalArgsOptions: any = Object.assign({}, options, {
         effectData: activeEffectData,
         change,
         doRolls
-      })
+      });
       evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, { recursive: false });
       evalArgsOptions.context.activity = activity.getRollData?.() ?? activity;
       evalArgsOptions.item = activity.item;
@@ -1654,30 +1419,7 @@ export async function applyNonTransferEffects(
 ) {
   if (!targets) return;
   let macroLocation = "mixed";
-  let appliedEffects: ActiveEffect.Source[] = [];
-  switch (options.selfEffects) {
-    case "selfEffectsAlways":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !isEnchantment(ae) && !!ae.flags?.dae?.selfTargetAlways).map(ae => {
-        const data = ae.toObject(false);
-        foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent?.uuid);
-        return data
-      });
-      break;
-    case "selfEffectsAll":
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !isEnchantment(ae) && !!(ae.flags?.dae?.selfTargetAlways || ae.flags?.dae?.selfTarget)).map(ae => {
-        const data = ae.toObject(false);
-        foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent?.uuid);
-        return data;
-      });
-      break
-    case "none":
-    default:
-      appliedEffects = item.effects.filter(ae => ae.transfer !== true && !isEnchantment(ae) && !ae.flags?.dae?.selfTargetAlways && !ae.flags?.dae?.selfTarget).map(ae => {
-        const data = ae.toObject(false);
-        foundry.utils.setProperty(data, "flags.core.sourceId", ae.parent?.uuid);
-        return data;
-      });
-  }
+  let appliedEffects = filterEffectsForTargeting(item.effects, options.selfEffects ?? "none");
   if (!options.applyAll)
     appliedEffects = appliedEffects.filter(aeData => aeData.flags?.dae?.dontApply !== true);
   else
@@ -1690,20 +1432,20 @@ export async function applyNonTransferEffects(
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     // @ts-expect-error v14 system.changes on toObject() data
     for (let [changeIndex, change] of activeEffectData.system.changes.entries()) {
-      const doRolls = allMacroEffects.includes(change.key);
+      const doRolls = isRegisteredMacroKey(change.key);
       if (doRolls) {
-        if (macroDestination[change.key] === "local" && macroLocation !== "GM") {
-          macroLocation = "local"
-        } else if (macroDestination[change.key] === "GM") macroLocation = "GM";
+        const dest = getChangeDestination(change.key);
+        if (dest === "local" && macroLocation !== "GM") macroLocation = "local";
+        else if (dest === "GM") macroLocation = "GM";
       }
       // eval args before calling GMAction so macro arguments are evaluated in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       rollData.stackCount = activeEffectData.flags?.dae?.stacks ?? 1;
-      const evalArgsOptions: any = foundry.utils.mergeObject(options, {
+      const evalArgsOptions: any = Object.assign({}, options, {
         effectData: activeEffectData,
         change,
         doRolls
-      })
+      });
       evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, { recursive: false });
       evalArgsOptions.item = item;
       if (item.actor) evalArgsOptions.actor = item.actor;
@@ -1739,6 +1481,49 @@ export async function applyNonTransferEffects(
   }
 }
 
+/**
+ * Processes all effect changes for a single effect, dispatching to the appropriate
+ * async helper for each change type and running daeMacro for macro change keys.
+ * This function must be called from within actionQueue to ensure serialization.
+ * Inner helpers no longer use actionQueue internally, avoiding deadlock.
+ */
+export async function processEffectChanges(
+  action: "on" | "off",
+  actor: Actor.Implementation,
+  tokens: (foundry.canvas.placeables.Token | null | undefined)[],
+  effect: ActiveEffect.Implementation,
+  item: Item.Implementation | undefined,
+  changes: ActiveEffect.ChangeData[],
+  context: any
+): Promise<void> {
+  let token: foundry.canvas.placeables.Token | undefined = tokens[0] ?? undefined;
+  if (!token) {
+    token = getToken(actor);
+    tokens = token ? [token] : [];
+  }
+  if (debugEnabled > 0) warn(`processEffectChanges ${action}`, actor, changes, tokens, effect);
+
+  // Dispatch non-macro changes through the registry
+  for (const change of changes) {
+    const handler = getChangeHandler(change.key);
+    if (handler && !handler.isMacroKey) {
+      const handlerCtx: ChangeHandlerContext = { actor, change, effect, token, tokens, context };
+      await handler[action](handlerCtx);
+    }
+  }
+  // Batch macro change keys through daeMacro
+  if (changes.some(c => isRegisteredMacroKey(c.key))) {
+    if (debugEnabled > 0) warn(`processEffectChanges daeMacro ${action}`, actionQueue.remaining);
+    const macroContext: any = { effectUuid: effect.uuid };
+    if (item) macroContext.item = item;
+    if (action === "off") {
+      if (item) macroContext.origin = item.uuid;
+      if (context?.["expiry-reason"]) macroContext["expiry-reason"] = context["expiry-reason"];
+    }
+    await daeMacro(action, actor, effect.toObject(false), macroContext);
+  }
+}
+
 export function addEffectChange(
   actor: Actor.Implementation,
   tokens: (foundry.canvas.placeables.Token | undefined)[],
@@ -1748,29 +1533,8 @@ export function addEffectChange(
   context: Item.Database.UpdateOperation
 ) {
   if (debugEnabled > 0) warn("addEffectChange ", actor, change, tokens, effectToApply)
-  const token = tokens[0];
-  switch (change.key) {
-    case "macro.CE":
-      addConvenientEffectsChange(change.value, actor.uuid, effectToApply.origin, {}, actor.isToken);
-      break;
-    case "macro.StatusEffect":
-    case "StatusEffect":
-      addConditionChange(actor, change, token, effectToApply);
-      break;
-    case "macro.tokenMagic":
-      addTokenMagicChange(actor, change, tokens);
-      break;
-    case "macro.createItem":
-    case "macro.createItemRunMacro":
-      addCreateItemChange(change, actor, effectToApply, context);
-      break;
-    default:
-      if (isMacroChangeKey(change.key)) {
-        if (debugEnabled > 0) warn("action queue add dae macro on ", actionQueue.remaining)
-        actionQueue.add(daeMacro, "on", actor, effectToApply.toObject(false), { item, effectUuid: effectToApply.uuid });
-        break;
-      }
-  }
+  // Queue all changes for this effect through actionQueue for serialization
+  actionQueue.add(processEffectChanges, "on", actor, tokens, effectToApply, item, [change], context);
 }
 
 export function removeEffectChange(
@@ -1781,33 +1545,8 @@ export function removeEffectChange(
   change: ActiveEffect.ChangeData,
   context: Item.Database.UpdateOperation
 ) {
-  let token: foundry.canvas.placeables.Token | undefined = tokens[0];
-  if (!token) {
-    token = getToken(actor);
-    tokens = token ? [token] : [];
-  }
-  switch (change.key) {
-    case "macro.CE":
-      removeConvenientEffectsChange(change.value, actor.uuid, effectToApply.origin, actor.isToken);
-      break;
-    case "macro.tokenMagic":
-      removeTokenMagicChange(actor, change, tokens, context);
-      break;
-    case "macro.createItem":
-    case "macro.createItemRunMacro":
-      removeCreateItemChange(change.value, actor, effectToApply, context);
-      break;
-    case "macro.StatusEffect":
-    case "StatusEffect":
-      removeConditionChange(actor, change, tokens[0], effectToApply, context);
-      break;
-    default:
-      if (isMacroChangeKey(change.key)) {
-        if (debugEnabled > 0) warn("dae add macro off", actionQueue.remaining);
-        actionQueue.add(daeMacro, "off", actor, effectToApply.toObject(false), { item, origin: item.uuid, effectUuid: effectToApply.uuid, "expiry-reason": context["expiry-reason"] });
-      }
-      break;
-  }
+  // Queue all changes for this effect through actionQueue for serialization
+  actionQueue.add(processEffectChanges, "off", actor, tokens, effectToApply, item, [change], context);
 }
 // When an item is created any effects have a source that points to the original item
 export async function deleteItemHook(candidateItem: Item.Implementation, options: Item.Database.DeleteOptions, userId: string) {
@@ -1817,24 +1556,17 @@ export async function deleteItemHook(candidateItem: Item.Implementation, options
   const actor = candidateItem.parent;
   if (!(actor instanceof Actor)) return;
   const token = tokenForActor(actor);
+  // @ts-expect-error Is this okay?
+  options.itemDeleted = true;
   for (let effect of candidateItem.effects) {
     if (!effect.transfer) continue;
     if (effect.disabled || effect.isSuppressed) continue;
-    try {
-      const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
-        && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
-        && effect.origin?.startsWith(actor.uuid);
-      // don't apply macro or macro like effects if active aura and not targeting self
-      if (selfAuraChange) return;
-      // @ts-expect-error v14 effect.system.changes
-      for (let change of effect.system.changes) {
-        // @ts-expect-error Is this okay?
-        options.itemDeleted = true;
-        removeEffectChange(actor, token ? [token] : [], effect, candidateItem, change, options)
-      }
-    } catch (err) {
-      console.warn("dae | error creating delete item hook", err);
-    }
+    const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
+      && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
+      && effect.origin?.startsWith(actor.uuid);
+    if (selfAuraChange) return;
+    // @ts-expect-error v14 effect.system.changes
+    await actionQueue.add(processEffectChanges, "off", actor, token ? [token] : [], effect, candidateItem, effect.system.changes, options);
   }
   return;
 }
@@ -1848,19 +1580,12 @@ export async function createItemHook(item: Item.Implementation, options: Item.Da
   for (let effect of item.effects) {
     if (!effect.transfer) continue;
     if (effect.disabled || effect.isSuppressed) continue;
-    try {
-      const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
-        && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
-        && effect.origin?.startsWith(actor.uuid);
-      // don't apply macro or macro like effects if active aura and not targeting self
-      if (selfAuraChange) return;
-      // @ts-expect-error v14 effect.system.changes
-      for (let change of effect.system.changes) {
-        addEffectChange(actor, [token], effect, item, change, options)
-      }
-    } catch (err) {
-      console.warn("dae | error creating active effect ", err);
-    }
+    const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
+      && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
+      && effect.origin?.startsWith(actor.uuid);
+    if (selfAuraChange) return;
+    // @ts-expect-error v14 effect.system.changes
+    await actionQueue.add(processEffectChanges, "on", actor, [token], effect, item, effect.system.changes, options);
   }
   return;
 }
@@ -1967,7 +1692,7 @@ export function preUpdateActorHook(candidate: Actor.Implementation, updates: Act
       }
     }
   } catch (err) {
-    console.warn("dae | error in onUpdateTarget ", err);
+    console.error("dae | error in onUpdateTarget", err);
   } finally {
     return result;
     // return wrapped(updates, options, user);
@@ -2042,7 +1767,6 @@ Hooks.on("spotlightOmnisearch.indexBuilt", async (index) => {
 export function daeInitActions() {
   atlActive = game.modules.get("ATL")?.active ?? false;
   midiActive = game.modules.get("midi-qol")?.active ?? false;
-  // Default system class is setup, this overrides with system specific class
   const dnd5System = DAESystemDND5E; // force reference so they are installed?
   libWrapper = globalThis.libWrapper;
   daeSystemClass = foundry.utils.getProperty(globalThis.daeSystems, game.system.id ?? "") as typeof DAESystem;
@@ -2050,6 +1774,9 @@ export function daeInitActions() {
 
   daeSystemClass.initActions();
   daeSystemClass.initSystemData();
+
+  // Patch Roll.replaceFormulaData for limited recursion of nested formula references
+  libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
 
   if (game.settings.get("dae", "disableEffects")) {
     ui.notifications?.warn("DAE effects disabled no DAE effect processing")
@@ -2068,46 +1795,47 @@ export function daeInitActions() {
   // process onUpdateTarget flags
   Hooks.on("preUpdateActor", preUpdateActorHook);
 
-  // Hooks for conditional effects
-  Hooks.on("updateActor", processConditionalEffects)
+  // Hooks for conditional effects — route through actionQueue to prevent race conditions
+  // during bulk imports (e.g., DDB-importer) where many hooks fire concurrently
+  Hooks.on("updateActor", scheduleConditionalEffects)
   Hooks.on("updateToken", (tokenDocument, updates) => {
     if (updates.x || updates.y)
-      processConditionalEffects(tokenDocument.actor!, updates);
+      scheduleConditionalEffects(tokenDocument.actor!, updates);
   });
   Hooks.on("updateItem", (item, updates) => {
-    if (item.parent instanceof Actor) processConditionalEffects(item.parent, updates)
+    if (item.parent instanceof Actor) scheduleConditionalEffects(item.parent, updates)
   });
 
   Hooks.on("createActiveEffect", (effect, options, userId) => {
     if (game.user !== game.users?.activeGM) return;
     if (effect.parent instanceof Actor) {
-      processConditionalEffects(effect.parent, {});
+      scheduleConditionalEffects(effect.parent, {});
     } else if (effect.transfer) {
       const item = effect.parent;
       const actor = item?.parent;
-      if (actor) processConditionalEffects(actor, {});
+      if (actor) scheduleConditionalEffects(actor, {});
     }
   });
 
   Hooks.on("updateActiveEffect", (effect, updates) => {
     if (game.user !== game.users?.activeGM) return;
     if (effect.parent instanceof Actor) {
-      processConditionalEffects(effect.parent, updates);
+      scheduleConditionalEffects(effect.parent, updates);
     } else if (effect.transfer) {
       const item = effect.parent;
       const actor = item?.parent;
-      if (actor) processConditionalEffects(actor, updates);
+      if (actor) scheduleConditionalEffects(actor, updates);
     }
   })
 
   Hooks.on("deleteActiveEffect", (effect) => {
     if (game.user !== game.users?.activeGM) return;
     if (effect.parent instanceof Actor) {
-      processConditionalEffects(effect.parent, {});
+      scheduleConditionalEffects(effect.parent, {});
     } else if (effect.transfer) {
       const item = effect.parent;
       const actor = item?.parent;
-      if (actor) processConditionalEffects(actor, {});
+      if (actor) scheduleConditionalEffects(actor, {});
     }
   })
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "MIXED");
@@ -2117,27 +1845,59 @@ export function daeInitActions() {
       console.error(`dae | Effect "${this.name}" uses deprecated flags.dae.showIcon. Edit the effect to migrate to the native showIcon field.`);
     }
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
-    if (result) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
+    if (result !== false) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
     // @ts-expect-error no dnd5e-types
     if (this.active && this.type !== "enchantment" && dependentConditions /* && !this.flags?.dae?.autoCreated */) {
       await daeSystemClass.preCreateActiveEffect(this);
       if (debugEnabled > 0) warn("_preCreateActiveEffect", this, context);
       // Status effect reconciliation now handled via queueStatusReconciliation hook
     }
-    if (result) result = await wrapped(data, context, user);
+    // For source/target expiry events, convert to core turnStart/turnEnd before
+    // calling wrapped so core sees a recognized expiry value. Record the original
+    // expiry and target actor so we can override start.combatant after wrapped.
+    // dnd5e 6.0+ handles source/target turn expiry natively.
+    let coreExpiry: string | undefined;
+    let expiry: string | undefined;
+    if (daeManagesTurnExpiry) {
+      const daeExpiryMap: Record<string, string> = {
+        sourceStart: "turnStart", sourceEnd: "turnEnd",
+        targetStart: "turnStart", targetEnd: "turnEnd",
+      };
+      //@ts-expect-error v14 types
+      expiry = this.duration?.expiry as string | undefined;
+      coreExpiry = expiry ? daeExpiryMap[expiry] : undefined;
+      if (coreExpiry) {
+        this.updateSource({ duration: { expiry: coreExpiry } } as Record<string, unknown>);
+      }
+    }
+
+    if (result !== false) result = await wrapped(data, context, user);
+
+    // After wrapped, override start.combatant for source/target expiry
+    if (coreExpiry && this.parent instanceof Actor && game.combat?.started) {
+      const overrideActor = (expiry === "sourceStart" || expiry === "sourceEnd")
+        ? (this.origin ? actorFromUuid(this.origin) : null) ?? this.parent
+        : this.parent;
+      const combatant = game.combat.getCombatantsByActor(overrideActor)?.[0];
+      if (combatant) {
+        this.updateSource({
+          start: {
+            combatant: combatant.id,
+            combat: game.combat!.id,
+            round: game.combat!.round,
+            turn: game.combat!.turn,
+            initiative: combatant.initiative,
+          }
+        } as Record<string, unknown>);
+      }
+    }
     return result;
   }
-  // The below seems to work, but may just be good luck since the timing is "random"
-  // Hooks.on("createActiveEffect", applyRequiredStatusEffectsHook);
 
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preDelete", _preDeleteActiveEffect, "MIXED");
   async function _preDeleteActiveEffect(this: ActiveEffect.Implementation, wrapped, options: ActiveEffect.Database.PreDeleteOptions, user: User.Implementation) {
     let result = await _preDeleteActiveEffectDecrement.bind(this)(options, user);
-    if (this.active && dependentConditions && result) { // took this out 12.0.22 && !this.flags?.dae?.autoCreated)
-      if (debugEnabled > 0) warn("_preDeleteActiveEffect", this, options);
-      // Status effect reconciliation now handled via queueStatusReconciliation hook
-    }
-    if (result) result = wrapped(options, user);
+    if (result !== false) result = wrapped(options, user);
     return result;
   }
 
@@ -2194,6 +1954,7 @@ export function daeInitActions() {
     return wrapped(...args);
   }
 
+
   Hooks.on("createActiveEffect", createActiveEffectHook);
   Hooks.on("updateItem", (item, data, options, userId) => updateStatusEffects(item, options, userId));
   Hooks.on("deleteItem", (item, options, userId) => updateStatusEffects(item, options, userId));
@@ -2231,60 +1992,48 @@ export function daeInitActions() {
   actionQueue = new foundry.utils.Semaphore();
 }
 
-function updateStatusEffects(doc, options, userId) {
-  if (!dependentConditions) return;
-  if (userId !== game.user?.id) return;
-  let actor = doc;
-  if (doc instanceof Item || doc instanceof ActiveEffect) {
-    actor = doc.parent;
-  }
-  if (actor instanceof Item) {
-    actor = actor.parent;
-  }
-  if (!(actor instanceof Actor)) return;
-
-  if (!reconciliationPending.has(actor.uuid)) {
-    reconciliationPending.add(actor.uuid);
-    actionQueue.add(async () => {
-      try {
-        reconciliationPending.delete(actor.uuid);
-        await reconcileActorStatuses(actor);
-      } catch (err) {
-        console.warn("dae | Error reconciling actor statuses (item change):", err);
-      }
-    });
-  }
+function scheduleReconciliation(actor: Actor.Implementation) {
+  if (!dependentConditions || reconciliationPending.has(actor.uuid)) return;
+  reconciliationPending.add(actor.uuid);
+  actionQueue.add(async () => {
+    try {
+      reconciliationPending.delete(actor.uuid);
+      await reconcileActorStatuses(actor);
+    } catch (err) {
+      console.warn("dae | Error reconciling actor statuses:", err);
+    }
+  });
 }
 
-/**
- * Queue a status reconciliation for an actor after effect changes complete.
- * Uses the actionQueue semaphore to serialize reconciliations and avoid race conditions.
- */
-function queueStatusesReconciliation(effect: ActiveEffect.Implementation, userId: string) {
-  if (!dependentConditions) return;
-  if (userId !== game.user?.id) return;
+function scheduleConditionalEffects(actor: Actor.Implementation, updates: TokenDocument.UpdateData | Actor.UpdateData) {
+  if (conditionalEffectsPending.has(actor.uuid)) return;
+  conditionalEffectsPending.add(actor.uuid);
+  actionQueue.add(async () => {
+    try {
+      conditionalEffectsPending.delete(actor.uuid);
+      await processConditionalEffects(actor, updates);
+    } catch (err) {
+      console.warn("dae | Error processing conditional effects:", err);
+    }
+  });
+}
 
-  // Reconcile if the effect has statuses OR if it has condition immunity changes
-  // (toggling a CI effect needs to create/remove auto-created status documents)
+function updateStatusEffects(doc, options, userId) {
+  if (!dependentConditions || userId !== game.user?.id) return;
+  let actor = doc;
+  if (doc instanceof Item || doc instanceof ActiveEffect) actor = doc.parent;
+  if (actor instanceof Item) actor = actor.parent;
+  if (actor instanceof Actor) scheduleReconciliation(actor);
+}
+
+function queueStatusesReconciliation(effect: ActiveEffect.Implementation, userId: string) {
+  if (!dependentConditions || userId !== game.user?.id) return;
   const hasStatuses = !!effect.statuses?.size;
   // @ts-expect-error v14 effect.system.changes
   const hasCIChanges = effect.system?.changes?.some(c => c.key.startsWith("system.traits.ci"));
   if (!hasStatuses && !hasCIChanges) return;
-
   const actor = effect.parent instanceof Actor ? effect.parent : (effect.parent as Item)?.parent;
-  if (!(actor instanceof Actor)) return;
-
-  if (!reconciliationPending.has(actor.uuid)) {
-    reconciliationPending.add(actor.uuid);
-    actionQueue.add(async () => {
-      try {
-        reconciliationPending.delete(actor.uuid);
-        await reconcileActorStatuses(actor);
-      } catch (err) {
-        console.warn("dae | Error reconciling actor statuses:", err);
-      }
-    });
-  }
+  if (actor instanceof Actor) scheduleReconciliation(actor);
 }
 
 /**
@@ -2364,7 +2113,7 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
     try {
       await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
     } catch (err) {
-      if (!String(err).includes("does not exist")) {
+      if (!String(err).includes("does not exist") && !String(err).includes("already exists")) {
         console.warn("dae | Error adding status effect:", status, err);
       }
     }
@@ -2411,19 +2160,6 @@ Hooks.once("tidy5e-sheet.ready", api => {
       }
     ]
   });
-  /* enable this when available
-  api.registerActivityHeaderControls?.({
-    controls: [
-      {
-        icon: 'fas fa-file-pen',
-        label: "DIME",
-        async onClickAction() {
-          new DIMEditor({ document: this.document }).render({ force: true });
-        }
-      }
-    ]
-  });
-  */
 });
 
 function appendDocumentSheetHeaderControls(app, controls) {
@@ -2555,7 +2291,6 @@ export function daeSetupActions() {
   daeSystemClass.setupActions();
 }
 
-export let maxShortDuration: number;
 export function fetchParams() {
   setDebugLevel(game.settings.get("dae", "ZZDebug"));
   // useAbilitySave = game.settings.get("dae", "useAbilitySave") disabled as of 0.8.74
@@ -2568,55 +2303,40 @@ export function fetchParams() {
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   showInline = game.settings.get("dae", "showInline") ?? false;
   dependentConditions = game.settings.get("dae", "DependentConditions") ?? false;
-  maxShortDuration = game.settings.get("dae", "maxShortDuration") ?? 600;
   specialDurationExpiryAction = game.settings.get("dae", "expiryAction") ?? "default";
   fetchDurationParams();
   Hooks.callAll("dae.settingsChanged")
 }
 
 export function getTokenDocument(tokenRef: Token | TokenDocument | string | Actor): TokenDocument | undefined {
-  if (typeof tokenRef === "string") {
-    const entity = fromUuidSync(tokenRef);
-    if (entity instanceof TokenDocument) return entity;
-    if (entity instanceof foundry.canvas.placeables.Token) return entity.document;
-    if (entity instanceof Actor) {
-      if (entity.isToken) return entity.token ?? undefined;
-      else return entity.getActiveTokens(false, true)[0];
-    }
-    return undefined;
-  }
-  if (tokenRef instanceof TokenDocument) return tokenRef;
-  if (tokenRef instanceof foundry.canvas.placeables.Token) return tokenRef.document;
-  if (tokenRef instanceof Actor) {
-    // actor.token returns a token document
-    if (tokenRef.isToken) return tokenRef.token ?? undefined;
-    else return tokenRef.getActiveTokens(false, true)[0];
-  }
-}
-
-export function getToken(tokenRef: Token | TokenDocument | string | Actor): Token | undefined {
   if (!tokenRef) return undefined;
-  if (tokenRef instanceof foundry.canvas.placeables.Token) return tokenRef;
-  if (tokenRef instanceof TokenDocument) return tokenRef.object ?? undefined;
   let entity: any = tokenRef;
-  if (typeof tokenRef === "string") {
-    entity = fromUuidSync(tokenRef);
+  if (typeof tokenRef === "string") entity = fromUuidSync(tokenRef);
+  if (entity instanceof TokenDocument) return entity;
+  if (entity instanceof foundry.canvas.placeables.Token) return entity.document;
+  if (entity instanceof Actor) {
+    if (entity.isToken) return entity.token ?? undefined;
+    return entity.getActiveTokens(false, true)[0];
   }
-  if (entity instanceof foundry.canvas.placeables.Token) return entity;
-  if (entity instanceof TokenDocument) return entity.object ?? undefined;
-  if (entity instanceof Actor) return tokenForActor(entity);
-  if (entity instanceof Item && entity.parent instanceof Actor) return tokenForActor(entity.parent);
-  if (entity instanceof ActiveEffect && entity.parent instanceof Actor) return tokenForActor(entity.parent);
-  if (entity instanceof ActiveEffect && entity.parent instanceof Item) return tokenForActor(entity.parent?.parent);
+  if (entity instanceof Item && entity.parent instanceof Actor) return getTokenDocument(entity.parent);
+  if (entity instanceof ActiveEffect) {
+    const parent = entity.parent;
+    if (parent instanceof Actor) return getTokenDocument(parent);
+    if (parent instanceof Item && parent.parent instanceof Actor) return getTokenDocument(parent.parent);
+  }
   return undefined;
 }
 
+export function getToken(tokenRef: Token | TokenDocument | string | Actor): Token | undefined {
+  return getTokenDocument(tokenRef)?.object ?? undefined;
+}
+
 export function actorFromUuid(uuid: string): Actor.Implementation | null {
-  let doc = fromUuidSync(uuid);
-  if (doc instanceof CONFIG.Token.documentClass) doc = doc.actor;
-  if (doc instanceof CONFIG.Actor.documentClass) return doc;
-  if (doc instanceof CONFIG.Item.documentClass) return doc.parent;
-  return null;
+  let doc: any = fromUuidSync(uuid);
+  while (doc && !(doc instanceof CONFIG.Actor.documentClass)) {
+    doc = doc.actor ?? doc.parent;
+  }
+  return doc ?? null;
 }
 
 // Allow limited recursion of the formula replace function for things like
@@ -2705,6 +2425,8 @@ export async function toggleActorStatusEffectPossible(actor: Actor, statusId: st
       effect.updateSource({ flags });
     })
     return await actor.toggleStatusEffect(statusId, { active, overlay });
+  } catch (err) {
+    console.error("dae | toggleActorStatusEffect", err);
   } finally {
     if (preCreateActiveEffectHookId) Hooks.off("preCreateActiveEffect", preCreateActiveEffectHookId);
   }
@@ -2745,8 +2467,16 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, { 
   if (overlay) effect.updateSource({ flags: { core: { overlay: true } } });
   flags = foundry.utils.mergeObject(effect.flags ?? {}, flags ?? {}, { inplace: false });
   effect.updateSource({ flags });
-  const returnEffect = await ActiveEffect.implementation.create(effect.toObject(), { parent: actor, keepId: true });
-  return returnEffect ? [returnEffect] : false;
+  try {
+    const returnEffect = await ActiveEffect.implementation.create(effect.toObject(), { parent: actor, keepId: true });
+    return returnEffect ? [returnEffect] : false;
+  } catch (err) {
+    if (String(err).includes("already exists")) {
+      // Race condition: another concurrent call created this status effect first
+      return true;
+    }
+    throw err;
+  }
 }
 
 export async function processConditionalEffects(actor: Actor.Implementation, updates: TokenDocument.UpdateData | Actor.UpdateData) {
@@ -2814,6 +2544,7 @@ export async function processConditionalEffects(actor: Actor.Implementation, upd
   }
 
 
+  const idsToDelete: string[] = [];
   for (let effect of actor.effects) {
     let condition = effect?.flags?.dae?.enableCondition;
     if (condition) {
@@ -2822,12 +2553,14 @@ export async function processConditionalEffects(actor: Actor.Implementation, upd
       rollData.time = game.time;
       rollData.effect = effect.toObject();
       const expression = Roll.replaceFormulaData(condition, rollData);
-      // rollData.origin = fromUuidSync(effect.origin);
       const result = daeSystemClass.safeEval(expression, rollData);
       if (!result) {
-        await actor.deleteEmbeddedDocuments("ActiveEffect", [effect.id!]);
+        idsToDelete.push(effect.id!);
       }
     }
+  }
+  if (idsToDelete.length > 0) {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", idsToDelete);
   }
 
   for (let effect of actor.allApplicableEffects()) {
@@ -2915,7 +2648,7 @@ export function effectBaseName(effect: ActiveEffect.Implementation): string {
   return returnName;
 }
 
-function busyWait(seconds: number) {
+export function busyWait(seconds: number) {
   return new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }
 

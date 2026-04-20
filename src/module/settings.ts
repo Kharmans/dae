@@ -123,46 +123,6 @@ export const registerSettings = async function () {
     requiresReload: true
   })
 
-  game.settings.register("dae", "maxShortDuration", {
-    name: "dae.maxShortDuration.Name",
-    hint: "dae.maxShortDuration.Hint",
-    scope: "world",
-    default: 600,
-    type: Number,
-    config: true,
-    requiresReload: true
-  })
-
-  game.settings.register("dae", "durationManagementEnabled", {
-    name: "dae.durationManagementEnabled.Name",
-    hint: "dae.durationManagementEnabled.Hint",
-    scope: "world",
-    default: true,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
-
-  game.settings.register("dae", "enablePassiveEffects", {
-    name: "dae.enablePassiveEffects.Name",
-    hint: "dae.enablePassiveEffects.Hint",
-    scope: "world",
-    default: true,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
-
-  game.settings.register("dae", "updatePassiveEffects", {
-    name: "dae.updatePassiveEffects.Name",
-    hint: "dae.updatePassiveEffects.Hint",
-    scope: "world",
-    default: true,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
-
   game.settings.register("dae", "expireRoundEffectsOnCombatEnd", {
     name: "dae.expireRoundEffectsOnCombatEnd.Name",
     hint: "dae.expireRoundEffectsOnCombatEnd.Hint",
@@ -203,10 +163,4 @@ export const registerSettings = async function () {
     requiresReload: true
   });
 
-  game.settings.register("dae", "timesUpMigrated", {
-    scope: "world",
-    default: false,
-    type: Boolean,
-    config: false,
-  });
 };

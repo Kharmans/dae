@@ -2,7 +2,7 @@
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, removeEffectChange, timesUpActive } from "../dae.js";
+import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive } from "../dae.js";
 import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
@@ -899,7 +899,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         }
       }
-    } catch (err) { }
+    } catch (err) {
+      console.error("dae | getItemSpecs trait lookup", err);
+    }
   }
 
   /*
@@ -1077,10 +1079,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.bonuses.rwak.damage":
       case "system.bonuses.msak.attack":
       case "system.bonuses.msak.damage":
-      case "system.bonuses.mpak.attack":
-      case "system.bonuses.mpak.damage":
-      case "system.bonuses.rpak.attack":
-      case "system.bonuses.rpak.damage":
       case "system.bonuses.rsak.attack":
       case "system.bonuses.rsak.damage":
       case "system.bonuses.heal.attack":
@@ -1088,10 +1086,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       case "system.bonuses.abilities.save":
       case "system.bonuses.abilities.check":
       case "system.bonuses.abilities.skill":
-      case "system.bonuses.power.forceLightDC":
-      case "system.bonuses.power.forceDarkDC":
-      case "system.bonuses.power.forceUnivDC":
-      case "system.bonuses.power.techDC":
         value = change.value;
         if (current)
           value = (change.value.startsWith("+") || change.value.startsWith("-")) ? value : "+" + value;
@@ -1129,27 +1123,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         };
         return true;
-      case "system.attributes.powerForceLightDC":
-      case "system.attributes.powerForceDarkDC":
-      case "system.attributes.powerForceUnivDC":
-      case "system.attributes.powerTechDC":
-        if (Number.isNumeric(change.value)) {
-          value = parseInt(change.value);
-        } else {
-          try {
-            const roll = new Roll(change.value, actor.getRollData());
-            if (!roll.isDeterministic) {
-              error(`Error evaluating ${change.key} = ${change.value}`, `Roll is not deterministic for ${actor.name} dice terms ignored`)
-            }
-            value = roll.evaluateSync({ strict: false }).total;
-          } catch (err) { };
-        }
-        if (value !== undefined) {
-          foundry.utils.setProperty(actor, change.key, Number(current) + (value as number));
-        } else return;
-
-        return true;
-
       case "flags.dae":
         let list = change.value.split(" ");
         const flagName = list[0];
@@ -1480,37 +1453,23 @@ function preUpdateItemHook(
     const isSuppressed = updatedItem.areEffectsSuppressed;
     if (wasSuppressed === isSuppressed) return true;
     const tokens = actor.getActiveTokens();
+    const action = isSuppressed ? "off" : "on";
     if (candidateItem.isOwned && candidateItem.parent instanceof CONFIG.Actor.documentClass) {
       for (let effect of candidateItem.effects) {
         if (!effectIsTransfer(effect)) continue;
         const actor = candidateItem.parent;
         // @ts-expect-error v14 system.changes
-        for (let change of effect.system.changes) {
-          if (isSuppressed) {
-            removeEffectChange(actor, tokens, effect, candidateItem, change, context);
-          } else {
-            addEffectChange(actor, tokens, effect, candidateItem, change, context);
-          }
-        }
+        actionQueue.add(processEffectChanges, action, actor, tokens, effect, candidateItem, effect.system.changes, context);
       }
     }
     // For non-legacy transferral we need to update the actor effects
     for (let effect of actor.effects) {
       if (!effectIsTransfer(effect) || effect.origin !== candidateItem.uuid) continue;
       // @ts-expect-error v14 system.changes
-      for (let change of effect.system.changes) {
-        if (isSuppressed) removeEffectChange(actor, tokens, effect, candidateItem, change, context);
-        else addEffectChange(actor, tokens, effect, candidateItem, change, context);
-      }
-      /*
-      // Toggle macro.XX effects
-      if (effect.system.changes.some(change => change.key.startsWith("macro.execute") || change.key.startsWith("macro.itemMacro") || change.key.startsWith("macro.actorUpdate")))
-        foundry.utils.setProperty(effect, "flags.dae.itemUuid", candidateItem.uuid);
-      */
-      warn("action queue add suppressed ", actionQueue.remaining)
+      actionQueue.add(processEffectChanges, action, actor, tokens, effect, candidateItem, effect.system.changes, context);
     }
   } catch (err) {
-    console.warn("dae | preItemUpdate ", err)
+    console.error("dae | preItemUpdate", err)
   } finally {
     return true;
   }
@@ -1528,10 +1487,6 @@ async function _onDropActiveEffect(event, data) {
     origin: this.item.uuid
   }, { parent: this.item });
 }
-
-// v14: daeApply removed — v14 has no ActiveEffect.prototype.apply() instance method.
-// The boolean flag fix is handled by the custom effect handler (daeCustomEffect)
-// which runs via the applyActiveEffect hook for custom type changes.
 
 type ItemSpecs = Record<string, {
   allSpecsObj: Record<string, ValidSpec>;

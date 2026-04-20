@@ -1,25 +1,17 @@
 <section class="tab scrollable{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
-    {{formGroup fields.tint value=source.tint rootId=rootId placeholder="#ffffff"}}
-    {{formGroup fields.description value=source.description rootId=rootId}}
-    {{formGroup fields.disabled value=source.disabled rootId=rootId}}
-    
-    {{#if isActorEffect}}
-        {{formGroup fields.origin value=source.origin rootId=rootId disabled=true}}
-    {{/if}}
 
-    {{#unless isEnchantment}}
-        {{#if (and isItemEffect (not isConditionalActivationEffect))}}
-          <div class="transferCheckbox">
-            {{formGroup fields.transfer value=source.transfer rootId=rootId label=(localize "EFFECT.FIELDS.transfer.label") hint=(localize "dae.transfer.Hint")}}
-          </div>
-        {{/if}}
-    {{/unless}}
-    
-    {{formGroup fields.statuses value=source.statuses options=statuses rootId=rootId classes="statuses"}}
-    {{formGroup fields.showIcon value=source.showIcon options=showIconOptions rootId=rootId}}
-
+    {{!-- DAE Details fields --}}
     <fieldset>
-        <legend>DAE</legend>
+        <legend>{{localize "EFFECT.TABS.details"}}</legend>
+
+        {{#unless isEnchantment}}
+            {{#if (and isItemEffect (not isConditionalActivationEffect))}}
+              <div class="transferCheckbox">
+                {{formGroup fields.transfer value=source.transfer rootId=rootId label=(localize "EFFECT.FIELDS.transfer.label") hint=(localize "dae.transfer.Hint")}}
+              </div>
+            {{/if}}
+        {{/unless}}
+
         {{#unless transfer}}
             <div class="form-group stacked">
                 <label>{{ localize "dae.EnableCondition" }}</label>
@@ -54,6 +46,71 @@
             </p>
         </div>
     </fieldset>
+
+    {{!-- DAE Duration fields --}}
+    <fieldset>
+        <legend>{{localize "EFFECT.TABS.duration"}}</legend>
+
+        <div class="form-group">
+            <label>{{localize "dae.expiryMode.Name"}}</label>
+            <div class="form-fields">
+                <select name="flags.dae.expiryMode" data-dtype="String">
+                    {{selectOptions expiryModeOptions selected=source.flags.dae.expiryMode}}
+                </select>
+            </div>
+            <p class="hint">{{localize "dae.expiryMode.Hint"}}</p>
+        </div>
+
+        {{#if isItemEffect}}
+            <div class="form-group">
+                <label>{{ localize "dae.DurationExpression" }}</label>
+                <div class="form-fields">
+                    <input type="text" name="flags.dae.durationExpression" value="{{ source.flags.dae.durationExpression }}"/>
+                </div>
+            </div>
+        {{/if}}
+
+        {{#if macroRepeats}}
+            <div class="form-group">
+                <label>{{localize "dae.macroRepeat"}}</label>
+                <div class="form-fields">
+                    <select name="flags.dae.macroRepeat" data-dtype="String">
+                        {{selectOptions macroRepeats selected=source.flags.dae.macroRepeat}}
+                    </select>
+                </div>
+            </div>
+        {{/if}}
+
+        {{#if showSpecialDurations}}
+            <div class="dae-special-duration-container">
+                <div class="effect-special-duration flexrow">
+                    <div class="dae-special-duration-title">
+                        {{localize "dae.specialDuration"}}
+                    </div>
+                    <div class="effect-controls dae-effect-controls">
+                        <a class="effect-control dae-effect-control" data-action="addSpecialDuration">
+                            <i class="far fa-plus-square"></i>
+                        </a>
+                    </div>
+                </div>
+                <ol class="special-duration-list">
+                    {{#each source.flags.dae.specialDuration}}
+                        <li class="effect-special-duration flexrow" data-index="{{@key}}">
+                            <div class="form-group">
+                                <select name="flags.dae.specialDuration.{{@key}}" data-dtype="string">
+                                    {{selectOptions ../specialDuration selected=this}}
+                                </select>
+                                <a class="effect-controls effect-control"
+                                data-action="deleteSpecialDuration"><i class="fas fa-trash"></i></a>
+                            </div>
+                        </li>
+                    {{/each}}
+                </ol>
+            </div>
+        {{/if}}
+    </fieldset>
+
+    {{!-- Midi-QOL fields --}}
     {{#if midiActive}}
     {{#unless isEnchantment}}
         <fieldset>
@@ -92,4 +149,5 @@
         </fieldset>
     {{/unless}}
     {{/if}}
+
 </section>
