@@ -4,14 +4,6 @@
     <fieldset>
         <legend>{{localize "EFFECT.TABS.details"}}</legend>
 
-        {{#unless isEnchantment}}
-            {{#if (and isItemEffect (not isConditionalActivationEffect))}}
-              <div class="transferCheckbox">
-                {{formGroup fields.transfer value=source.transfer rootId=rootId label=(localize "EFFECT.FIELDS.transfer.label") hint=(localize "dae.transfer.Hint")}}
-              </div>
-            {{/if}}
-        {{/unless}}
-
         {{#unless transfer}}
             <div class="form-group stacked">
                 <label>{{ localize "dae.EnableCondition" }}</label>

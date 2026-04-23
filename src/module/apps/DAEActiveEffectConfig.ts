@@ -292,6 +292,15 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     return context;
   }
 
+  async _preparePartContext(partId, context, options) {
+    const partContext: any = await super._preparePartContext(partId, context, options);
+    if (partId === "details") {
+      if (partContext.isItemEffect && (isEnchantment(this.document) || this.document.parent?.name === i18n("dae.ConditionalEffectsItem")))
+        partContext.isItemEffect = false;
+    }
+    return partContext;
+  }
+
   async _renderChange(context) {
     const { change, index } = context;
     // Strip quotes that confuse DAE's selection process
@@ -302,10 +311,15 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     // Restrict change types if the spec has a forced mode
     const spec = this.validSpecsToUse?.allSpecsObj[change.key];
     if (spec?.forcedMode) {
+      const forcedMode = spec.forcedMode.toLowerCase();
       const restrictedTypes: Record<string, string> = {};
-      restrictedTypes[spec.forcedMode] = context.changeTypes[spec.forcedMode] ?? spec.forcedMode;
+      restrictedTypes[forcedMode] = context.changeTypes[forcedMode] ?? forcedMode;
       context.changeTypes = restrictedTypes;
+      change.type = forcedMode;
     }
+
+    // Normalise change type to lowercase (v14 CHANGE_TYPES keys are lowercase)
+    if (change.type && change.type !== change.type.toLowerCase()) change.type = change.type.toLowerCase();
 
     // Replace value with a select if the spec provides options
     const options = spec?.options ?? this.getOptionsForSpec(change);
@@ -415,12 +429,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       keyInput.addEventListener("click", this.#onKeyInputInteraction.bind(this));
       keyInput.addEventListener("input", this.#onKeyInputInteraction.bind(this));
     }
-    const transferCheckBox = Array.from(this.element.querySelectorAll(".transferCheckbox"));
-    for (const checkbox of transferCheckBox) {
-      checkbox.addEventListener("change", (event) => {
-        this.submit()?.then(() => this.render());
-      });
-    }
+    const transferCheckBox = this.element.querySelector('input[name="transfer"]');
+    transferCheckBox?.addEventListener("change", (event) => {
+      this.submit()?.then(() => this.render());
+    });
     new foundry.applications.ux.DragDrop.implementation({
       // dragSelector: ".dae-change-drag-handle",
       dropSelector: ".value",
