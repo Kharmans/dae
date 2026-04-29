@@ -155,7 +155,7 @@ if (!globalThis.daeSystems) globalThis.daeSystems = {};
 // export let showDeprecation = true;
 export let showInline: boolean = false;
 
-const deprecatedKeyPatterns: { pattern: RegExp; replacement: (id: string) => string }[] = [
+export const deprecatedKeyPatterns: { pattern: RegExp; replacement: (id: string) => string }[] = [
   { pattern: /^data\.abilities\.(\w{3})\.save$/, replacement: id => `system.abilities.${id}.bonuses.save` },
   { pattern: /^data\.abilities\.(\w{3})\.mod$/, replacement: id => `system.abilities.${id}.bonuses.check` },
   { pattern: /^data\.skills\.(\w{3})\.mod$/, replacement: id => `system.skills.${id}.bonuses.check` },
@@ -197,7 +197,7 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
   for (let effect of this.allApplicableEffects()) {
     if (effect.flags?.dae?.showIcon) {
       foundry.utils.logCompatibilityWarning(
-        `dae | Effect "${effect.name}" on actor "${this.name}" uses deprecated flags.dae.showIcon. Edit the effect to migrate to the native showIcon field.`,
+        `dae | Effect "${effect.name}" on actor "${this.name}": flags.dae.showIcon is deprecated, use ActiveEffect.showIcon. Edit the effect or re-create it to auto-migrate.`,
         { once: true, stack: false }
       );
     }
@@ -254,6 +254,14 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
     const overrides = {};
     for (const c of missedChanges) {
       if (!c.key || !c.count) continue;
+      if (c.key.startsWith("token.")) {
+        c.key = c.key.slice(6);
+        // @ts-expect-error v14 tokenActiveEffectChanges
+        this.tokenActiveEffectChanges[phase] ??= [];
+        // @ts-expect-error v14 tokenActiveEffectChanges
+        this.tokenActiveEffectChanges[phase].push(c);
+        continue;
+      }
       // @ts-expect-error v14 static applyChange
       const result = ActiveEffectDoc.applyChange(this, c, { replacementData });
       if (result && typeof result === "object") Object.assign(overrides, result);
@@ -323,9 +331,12 @@ export function daeApplyChange(
   // If the current phase is known and ValidSpec says this key belongs to a different phase,
   // skip it here. The applyActiveEffects WRAPPER collects and applies these "missed" changes
   // in the correct phase.
+  // For token.* keys: core strips the "token." prefix before calling applyChange, so we
+  // must also check the prefixed key against ValidSpec to catch phase mismatches.
   const currentPhase = (actor as any)._daeCurrentPhase;
   if (currentPhase) {
-    const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key];
+    const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key]
+      ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[`token.${change.key}`];
     if (spec && spec.phase !== currentPhase) {
       return {};
     }
@@ -1842,7 +1853,12 @@ export function daeInitActions() {
   async function _preCreateActiveEffect(this: ActiveEffect, wrapped, data, context, user) {
     // Migrate deprecated flags.dae.showIcon to native showIcon field
     if (this.flags?.dae?.showIcon) {
-      console.error(`dae | Effect "${this.name}" uses deprecated flags.dae.showIcon. Edit the effect to migrate to the native showIcon field.`);
+      // @ts-expect-error showIcon not in fvtt-types
+      this.updateSource({ showIcon: 2, "flags.dae.-=showIcon": null });
+      foundry.utils.logCompatibilityWarning(
+        `dae | Effect "${this.name}": flags.dae.showIcon is deprecated, auto-migrated to ActiveEffect.showIcon.`,
+        { once: true, stack: false }
+      );
     }
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
     if (result !== false) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);

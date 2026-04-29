@@ -1333,7 +1333,7 @@ async function _prepareActorArmorClassAttribution(this: Actor.Implementation, wr
   for (let effect of this.appliedEffects) {
     // @ts-expect-error v14 system.changes
     for (let change of effect.system.changes) {
-      if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
+      if (change.key === "system.attributes.ac.value" && !effect.disabled && !effect.isSuppressed) {
         attributions.push({
           label: `${effect.name} (dae)`,
           type: change.type,

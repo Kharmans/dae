@@ -1,4 +1,5 @@
 import { fetchParams } from "./dae.js";
+import { migrateWorld } from "./migration.js";
 export const registerSettings = async function () {
 
   game.settings.register("dae", "DependentConditions", {
@@ -163,4 +164,58 @@ export const registerSettings = async function () {
     requiresReload: true
   });
 
+  game.settings.register("dae", "enableAutoMigration", {
+    name: "dae.EnableAutoMigration.Name",
+    hint: "dae.EnableAutoMigration.Hint",
+    scope: "world",
+    default: false,
+    type: Boolean,
+    config: true,
+  });
+
+  game.settings.register("dae", "migrationVersion", {
+    scope: "world",
+    default: "",
+    type: String,
+    config: false,
+  });
+
 };
+
+async function showMigrationDialog() {
+  const lastVersion = game.settings.get("dae", "migrationVersion") || "Never";
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    window: { title: "DAE Migration" },
+    content: `<p style="color: #d32f2f; font-weight: bold; font-size: 1.1em;">⚠ This migration cannot be undone. Make sure you have backed up your world before running!</p>`
+      + `<p>Migrate all world actors, items, scene tokens, and compendium packs to update deprecated DAE effect data.</p>`
+      + `<p><strong>Last migration:</strong> ${lastVersion}</p>`
+      + `<p>This will update: <code>flags.dae.showIcon</code>, deprecated special durations, old change key paths, and missing <code>.all</code> suffixes on optional bonus keys.</p>`,
+    yes: { label: "Run Migration", icon: "fas fa-exchange-alt" },
+    no: { label: "Cancel" },
+  });
+  if (confirmed) await migrateWorld();
+}
+
+Hooks.on("renderSettingsConfig", (app: any, html: HTMLElement) => {
+  if (!game.user?.isGM) return;
+  const autoMigrationInput = html.querySelector<HTMLElement>(`[name="dae.enableAutoMigration"]`);
+  if (!autoMigrationInput) return;
+  const formGroup = autoMigrationInput.closest(".form-group");
+  if (!formGroup) return;
+
+  const buttonGroup = document.createElement("div");
+  buttonGroup.classList.add("form-group");
+  buttonGroup.innerHTML = `
+    <label>${game.i18n.localize("dae.MigrateNow.Name")}</label>
+    <div class="form-fields">
+      <button type="button" data-action="dae-migrate-now">
+        <i class="fas fa-exchange-alt"></i> ${game.i18n.localize("dae.MigrateNow.Label")}
+      </button>
+    </div>
+    <p class="notes">${game.i18n.localize("dae.MigrateNow.Hint")}</p>`;
+  buttonGroup.querySelector("button")!.addEventListener("click", (e) => {
+    e.preventDefault();
+    showMigrationDialog();
+  });
+  formGroup.after(buttonGroup);
+});

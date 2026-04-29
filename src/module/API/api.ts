@@ -8,6 +8,7 @@ import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActi
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
 import { enumerateBaseValues } from '../dae.js';
 import { expireEffect, isEffectExpired, isTransferEffect, hasDuration, hasExpiry } from '../specialDurations.js';
+import { migrateEffectData, migrateActor, migrateItem, migrateWorld } from '../migration.js';
 import { resolveItemFromEffect, resolveMacro, resolveWorldMacro, resolveItemMacroCommand, resolveActivityMacroCommand, createSyntheticMacro, createFunctionMacro } from '../lib/macroResolution.js';
 import { registerChangeHandler, getChangeHandler, changeHandlerRegistry } from '../lib/changeHandlerRegistry.js';
 
@@ -81,6 +82,10 @@ const API = {
   teleportToken,
   teleportToToken,
   unsetFlag,
+  migrateEffectData,
+  migrateActor,
+  migrateItem,
+  migrateWorld,
 };
 
 export default API;

@@ -4,6 +4,7 @@ import { registerSettings } from './module/settings.js';
 import { preloadTemplates } from './module/preloadTemplates.js';
 import { daeSetupActions, daeInitActions, fetchParams } from "./module/dae.js";
 import { daeReadyActions } from "./module/dae.js";
+import { shouldAutoMigrate, migrateWorld as runMigration } from "./module/migration.js";
 import { setupSocket } from './module/GMAction.js';
 import API from './module/API/api.js';
 import { addAutoFields, BooleanFormulaField } from './module/apps/DAEActiveEffectConfig.js';
@@ -182,6 +183,7 @@ Hooks.once('ready', () => {
 
     daeReadyActions();
     createDAEMacros();
+    if (shouldAutoMigrate()) runMigration();
   } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
     ui.notifications?.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);
   } else {

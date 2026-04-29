@@ -143,6 +143,8 @@ declare module "fvtt-types/configuration" {
     "dae.expireRoundEffectsOnCombatEnd": boolean;
     "dae.expiryAction": string;
     "dae.coreExpiryAction": string;
+    "dae.enableAutoMigration": boolean;
+    "dae.migrationVersion": string;
 
     // Other module settings
     "ATL.presets": {

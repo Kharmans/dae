@@ -2595,5 +2595,10 @@
       "description": ""
     }
   },
-  "EFFECT.TABS.dae": "DAE"
+  "EFFECT.TABS.dae": "DAE",
+  "dae.EnableAutoMigration.Name": "Auto-migrate on update",
+  "dae.EnableAutoMigration.Hint": "Automatically migrate deprecated DAE effect data when DAE is updated. Recommended for large worlds to run manually via the Migrate Now button instead.",
+  "dae.MigrateNow.Name": "Migrate DAE Data",
+  "dae.MigrateNow.Label": "Migrate Now",
+  "dae.MigrateNow.Hint": "Scan all world actors and items for deprecated DAE effect data and update it. Back up your world first."
 }

@@ -254,7 +254,6 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     }
 
     if (!document.flags?.dae?.stackable) {
-      foundry.utils.setProperty(document, "flags.dae.stackable", "multi");
       foundry.utils.setProperty(context, "effect.flags.dae.stackable", "multi");
     }
 
@@ -311,11 +310,14 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     // Restrict change types if the spec has a forced mode
     const spec = this.validSpecsToUse?.allSpecsObj[change.key];
     if (spec?.forcedMode) {
-      const forcedMode = spec.forcedMode.toLowerCase();
-      const restrictedTypes: Record<string, string> = {};
-      restrictedTypes[forcedMode] = context.changeTypes[forcedMode] ?? forcedMode;
-      context.changeTypes = restrictedTypes;
-      change.type = forcedMode;
+      const numericToString: Record<number, string> = { 0: "custom", 1: "multiply", 2: "add", 3: "downgrade", 4: "upgrade", 5: "override" };
+      const forcedMode = (typeof spec.forcedMode === "number" ? numericToString[spec.forcedMode] ?? "" : spec.forcedMode).toLowerCase();
+      if (forcedMode) {
+        const restrictedTypes: Record<string, string> = {};
+        restrictedTypes[forcedMode] = context.changeTypes[forcedMode] ?? forcedMode;
+        context.changeTypes = restrictedTypes;
+        change.type = forcedMode;
+      }
     }
 
     // Normalise change type to lowercase (v14 CHANGE_TYPES keys are lowercase)
@@ -361,7 +363,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
           const option = document.createElement("option");
           option.value = optValue;
           option.textContent = optLabel as string;
-          if (optValue === change.value) option.selected = true;
+          if (optValue === change.value) option.setAttribute("selected", "selected");
           select.appendChild(option);
         }
         existingInput.replaceWith(select);
@@ -626,7 +628,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
     // Migrate deprecated flags.dae.showIcon to native showIcon field
     if (document.flags?.dae?.showIcon) {
-      ui.notifications?.warn(`DAE | Effect "${document.name}": flags.dae.showIcon is deprecated. Migrating to native showIcon field.`);
+      foundry.utils.logCompatibilityWarning(
+        `dae | Effect "${document.name}": flags.dae.showIcon is deprecated, auto-migrated to ActiveEffect.showIcon.`,
+        { once: true, stack: false }
+      );
       updateData["showIcon"] = 2;
       updateData["flags.dae.-=showIcon"] = null;
     }

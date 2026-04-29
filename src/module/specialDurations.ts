@@ -254,7 +254,7 @@ async function expireRoundEffectsOnEnd(actor) {
 // ---- Migrate deprecated special durations to v14 duration.expiry ----
 // When daeManagesTurnExpiry (dnd5e < 6.0), map to DAE's source/target expiry events.
 // Otherwise map to core turnStart/turnEnd (dnd5e 6.0+ handles source/target natively).
-function getDeprecatedSpecialDurMap(): Record<string, string> {
+export function getDeprecatedSpecialDurMap(): Record<string, string> {
   if (daeManagesTurnExpiry) {
     return {
       "turnStart": "targetStart",
