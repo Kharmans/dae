@@ -65,6 +65,8 @@ export let dependentConditions: boolean;
 
 // Track actors with pending status reconciliation to avoid duplicate reconciliations
 const reconciliationPending = new Set<string>();
+// Track actors with pending conditional effects processing to coalesce rapid-fire hook calls
+const conditionalEffectsPending = new Set<string>();
 
 // Track actor UUIDs that have had init macros fired (reset on world load)
 export const daeInitMacroActors = new Set<string>();
@@ -2201,46 +2203,47 @@ export function daeInitActions() {
   // process onUpdateTarget flags
   Hooks.on("preUpdateActor", preUpdateActorHook);
 
-  // Hooks for conditional effects
-  Hooks.on("updateActor", processConditionalEffects)
+  // Hooks for conditional effects — route through actionQueue to prevent race conditions
+  // during bulk imports (e.g., DDB-importer) where many hooks fire concurrently
+  Hooks.on("updateActor", scheduleConditionalEffects)
   Hooks.on("updateToken", (tokenDocument, updates) => {
     if (updates.x || updates.y)
-      processConditionalEffects(tokenDocument.actor!, updates);
+      scheduleConditionalEffects(tokenDocument.actor!, updates);
   });
   Hooks.on("updateItem", (item, updates) => {
-    if (item.parent instanceof Actor) processConditionalEffects(item.parent, updates)
+    if (item.parent instanceof Actor) scheduleConditionalEffects(item.parent, updates)
   });
 
   Hooks.on("createActiveEffect", (effect, options, userId) => {
     if (game.user !== game.users?.activeGM) return;
     if (effect.parent instanceof Actor) {
-      processConditionalEffects(effect.parent, {});
+      scheduleConditionalEffects(effect.parent, {});
     } else if (effect.transfer) {
       const item = effect.parent;
       const actor = item?.parent;
-      if (actor) processConditionalEffects(actor, {});
+      if (actor) scheduleConditionalEffects(actor, {});
     }
   });
 
   Hooks.on("updateActiveEffect", (effect, updates) => {
     if (game.user !== game.users?.activeGM) return;
     if (effect.parent instanceof Actor) {
-      processConditionalEffects(effect.parent, updates);
+      scheduleConditionalEffects(effect.parent, updates);
     } else if (effect.transfer) {
       const item = effect.parent;
       const actor = item?.parent;
-      if (actor) processConditionalEffects(actor, updates);
+      if (actor) scheduleConditionalEffects(actor, updates);
     }
   })
 
   Hooks.on("deleteActiveEffect", (effect) => {
     if (game.user !== game.users?.activeGM) return;
     if (effect.parent instanceof Actor) {
-      processConditionalEffects(effect.parent, {});
+      scheduleConditionalEffects(effect.parent, {});
     } else if (effect.transfer) {
       const item = effect.parent;
       const actor = item?.parent;
-      if (actor) processConditionalEffects(actor, {});
+      if (actor) scheduleConditionalEffects(actor, {});
     }
   })
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preCreate", _preCreateActiveEffect, "MIXED");
@@ -2466,7 +2469,7 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
     try {
       await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
     } catch (err) {
-      if (!String(err).includes("does not exist")) {
+      if (!String(err).includes("does not exist") && !String(err).includes("already exists")) {
         console.warn("dae | Error adding status effect:", status, err);
       }
     }
@@ -2802,8 +2805,29 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, { 
   if (overlay) effect.updateSource({ flags: { core: { overlay: true } } });
   flags = foundry.utils.mergeObject(effect.flags ?? {}, flags ?? {}, { inplace: false });
   effect.updateSource({ flags });
-  const returnEffect = await ActiveEffect.implementation.create(effect.toObject(), { parent: actor, keepId: true });
-  return returnEffect ? [returnEffect] : false;
+  try {
+    const returnEffect = await ActiveEffect.implementation.create(effect.toObject(), { parent: actor, keepId: true });
+    return returnEffect ? [returnEffect] : false;
+  } catch (err) {
+    if (String(err).includes("already exists")) {
+      // Race condition: another concurrent call created this status effect first
+      return true;
+    }
+    throw err;
+  }
+}
+
+function scheduleConditionalEffects(actor: Actor.Implementation, updates: TokenDocument.UpdateData | Actor.UpdateData) {
+  if (conditionalEffectsPending.has(actor.uuid)) return;
+  conditionalEffectsPending.add(actor.uuid);
+  actionQueue.add(async () => {
+    try {
+      conditionalEffectsPending.delete(actor.uuid);
+      await processConditionalEffects(actor, updates);
+    } catch (err) {
+      console.warn("dae | Error processing conditional effects:", err);
+    }
+  });
 }
 
 export async function processConditionalEffects(actor: Actor.Implementation, updates: TokenDocument.UpdateData | Actor.UpdateData) {

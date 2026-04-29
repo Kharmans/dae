@@ -1592,7 +1592,7 @@ async function _prepareActorArmorClassAttribution(this: Actor.Implementation, wr
   const attributions: { label: string, mode: CONST.ACTIVE_EFFECT_MODES, value: string }[] = [];
   for (let effect of this.appliedEffects) {
     for (let change of effect.changes) {
-      if ((change.key === "system.attributes.ac.value" || change.key === "system.attributes.ac.bonus" && !Number.isNumeric(change.value)) && !effect.disabled && !effect.isSuppressed) {
+      if (change.key === "system.attributes.ac.value" && !effect.disabled && !effect.isSuppressed) {
         attributions.push({
           label: `${effect.name} (dae)`,
           mode: change.mode,
