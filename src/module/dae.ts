@@ -5,7 +5,7 @@ import { macroActorUpdate } from "./daeMacros.js";
 import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
 import { DAESystemDND5E } from "./Systems/DAEdnd5e.js";
 import { DIMEditor } from "./apps/DIMEditor.js";
-import { isEnchantment } from "./apps/DAEActiveEffectConfig.js";
+import { isEnchantment, registerFieldEditor } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial, InvalidUuid } from "fvtt-types/utils";
 import { TokenOrDocument } from "../globals.js";
 import { setupSpecialDurationHooks, fetchDurationParams } from "./specialDurations.js";
@@ -2000,6 +2000,23 @@ export function daeInitActions() {
   Hooks.on("renderActorSheetV2", injectDeleteExpiredButton)
 
   setupSpecialDurationHooks();
+
+  // Open DIMEditor as the field editor for macro-command change rows in the active effect sheet.
+  registerFieldEditor({
+    keyMatch: "flags.dae.macro.command",
+    editor: async (currentValue, context) => new Promise<string | null>((resolve) => {
+      new DIMEditor({
+        initialCommand: currentValue,
+        name: context.effect?.name ?? i18n("dae.DIMEditor.Name"),
+        img: context.effect?.img,
+        uniqueIdSuffix: `${context.effect?.uuid ?? foundry.utils.randomID()}-${context.changeIndex}`,
+        onSubmit: (newValue: string) => resolve(newValue),
+        onCancel: () => resolve(null),
+      }).render({ force: true });
+    }),
+    icon: "fas fa-code",
+    tooltip: i18n("dae.DIMEditor.Name"),
+  });
 
   //@ts-expect-error no typings for this (can we maybe ditch in favor of our own tokenization?)
   tokenizer = new DETokenizeThis({

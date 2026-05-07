@@ -70,6 +70,20 @@ export function getFieldEditor(key: string): FieldEditorRegistration | undefined
   return undefined;
 }
 
+// Change keys whose values are always macro source / multi-line code. These render as a
+// textarea regardless of the current value, so a freshly-imported multi-line macro is
+// preserved even before it has a chance to be displayed.
+const MULTILINE_CHANGE_KEYS: ReadonlySet<string> = new Set([
+  "flags.dae.macro.command",
+  "flags.itemacro.macro.command",
+  "flags.itemacro.macro.data.command",
+]);
+
+function isMultilineChangeValue(key: string, value: unknown): boolean {
+  if (MULTILINE_CHANGE_KEYS.has(key)) return true;
+  return typeof value === "string" && value.includes("\n");
+}
+
 const stackableOptions = {
   noneName: "dae.StackableOptions.noneName",
   noneNameOnly: "dae.StackableOptions.noneNameOnly",
@@ -370,7 +384,25 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }
     }
 
-    // Inject editor button next to value
+    // Replace value <input> with a <textarea> for multi-line content. <input type="text">
+    // strips newlines on render and on submit (per HTML spec), permanently corrupting
+    // macro source on any sheet save. Triggered for known multi-line keys, or when the
+    // current value already contains newlines.
+    if (valueDiv && !options && isMultilineChangeValue(change.key, change.value)) {
+      const existingInput = valueDiv.querySelector("input");
+      if (existingInput) {
+        const textarea = document.createElement("textarea");
+        textarea.name = `system.changes.${index}.value`;
+        textarea.dataset.dtype = "String";
+        textarea.classList.add("dae-multiline-value");
+        // Set textContent (not .value) — the rendered HTML is captured via outerHTML,
+        // which serializes the textarea's child text node, not its .value property.
+        textarea.textContent = change.value ?? "";
+        existingInput.replaceWith(textarea);
+      }
+    }
+
+    // Inject editor button next to value for keys that opted into a richer editor.
     if (valueDiv && !options) {
       const fieldEditor = getFieldEditor(change.key);
       if (fieldEditor) {
@@ -487,9 +519,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const registration = getFieldEditor(change.key);
     if (!registration) return;
 
-    // Read current value from the input (may have unsaved edits)
-    const valueInput = this.element.querySelector<HTMLInputElement>(
-      `input[name="system.changes.${index}.value"]`
+    // Read current value from the input (may have unsaved edits). Multi-line keys render
+    // as a <textarea> instead of <input>.
+    const valueInput = this.element.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      `input[name="system.changes.${index}.value"], textarea[name="system.changes.${index}.value"]`
     );
     const currentValue = valueInput?.value ?? change.value ?? "";
 

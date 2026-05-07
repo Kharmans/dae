@@ -15,6 +15,12 @@ const WeirdIntermediate: HandlebarsApplicationMixin.Mix<typeof ApplicationV2> = 
 
 export class DIMEditor extends WeirdIntermediate {
   document: Item.Implementation; // could be an activity too
+  initialCommand?: string;
+  editorName?: string;
+  editorImg?: string;
+  onSubmitCallback?: (command: string) => void;
+  onCancelCallback?: () => void;
+  submitted: boolean = false;
 
   static override DEFAULT_OPTIONS = {
     classes: ["macro-config", "dimeditor"],
@@ -27,7 +33,7 @@ export class DIMEditor extends WeirdIntermediate {
       width: 560,
       height: 480
     },
-    form: { 
+    form: {
       closeOnSubmit: true,
       handler: this.#processSubmitData
     }
@@ -41,11 +47,19 @@ export class DIMEditor extends WeirdIntermediate {
   constructor(options) {
     super(options);
     this.document = options.document;
+    // Callback mode — operate on a value string instead of a document's flags.dae.macro.
+    // When initialCommand is provided, getMacro returns a synthetic Macro and updateMacro
+    // resolves via onSubmitCallback rather than writing to a document.
+    this.initialCommand = options.initialCommand;
+    this.editorName = options.name;
+    this.editorImg = options.img;
+    this.onSubmitCallback = options.onSubmit;
+    this.onCancelCallback = options.onCancel;
   }
 
   override _initializeApplicationOptions(options) {
     options = super._initializeApplicationOptions(options);
-    const suffix = options.document.uuid ?? foundry.utils.randomID();
+    const suffix = options.document?.uuid ?? options.uniqueIdSuffix ?? foundry.utils.randomID();
     options.uniqueId = `${this.constructor.name}-${suffix.replaceAll(".", "-")}`;
     return options;
   }
@@ -75,6 +89,11 @@ export class DIMEditor extends WeirdIntermediate {
   }
 
   async updateMacro(command: string) {
+    if (this.onSubmitCallback) {
+      this.submitted = true;
+      this.onSubmitCallback(command);
+      return;
+    }
     let item = this.document;
     let macro: Macro.Implementation = this.getMacro();
 
@@ -93,10 +112,20 @@ export class DIMEditor extends WeirdIntermediate {
   }
 
   hasMacro() {
+    if (this.initialCommand !== undefined) return !!this.initialCommand;
     return !!getItemMacroCommand(this.document);
   }
 
   getMacro(): Macro.Implementation {
+    if (this.initialCommand !== undefined) {
+      return new Macro.implementation({
+        name: this.editorName ?? "Macro",
+        img: this.editorImg ?? "icons/svg/dice-target.svg",
+        type: "script",
+        scope: "global",
+        command: this.initialCommand,
+      }, {});
+    }
     // @ts-expect-error `macroData` is on the Activity pseudo-document with midi installed
     if (globalThis.MidiQOL?.activityTypes && this.document?.macroData) return this.document.macro;
     let macroData = this.document.flags?.dae?.macro ?? this.document.flags?.itemacro?.macro;
@@ -113,6 +142,13 @@ export class DIMEditor extends WeirdIntermediate {
       await this.document.update({ "macroData.name": macro.name, "macroData.command": macro.command });
     } else if (macro instanceof Macro) {
       await this.document.setFlag?.("dae", "macro", macro.toObject());
+    }
+  }
+
+  override async _preClose(options): Promise<void> {
+    await super._preClose(options);
+    if (this.onCancelCallback && !this.submitted) {
+      this.onCancelCallback();
     }
   }
 
