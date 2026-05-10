@@ -1,8 +1,11 @@
-## 14.0.8
+### 14.0.9
+* Fix for package release fails
+
+### 14.0.8
 * Active effect change rows now preserve newlines and indentation. Previously, opening an effect sheet with a multi-line change value (such as `flags.dae.macro.command`) collapsed the value to a single line and saving the sheet permanently destroyed the source formatting.
 * Macro change rows (`flags.dae.macro.command` and the `flags.itemacro.macro.*` variants) now show an edit button that opens the DIME macro editor on the change value, giving syntax highlighting and a full-size code editor without leaving the effect sheet.
 
-## 14.0.7
+### 14.0.7
 * `flags.dae.showIcon` is now auto-migrated to the native `ActiveEffect.showIcon` field when effects are created. Existing effects show a deprecation warning during actor recalculation and are migrated when opened in the effect editor.
 * Deprecated special durations (`turnStart`, `turnEnd`, `turnStartSource`, `turnEndSource`, `combatEnd`) are auto-migrated to `duration.expiry` on effect creation.
 * New migration system: "Migrate Now" button in DAE settings scans all world actors, items, scene tokens, and compendium packs for deprecated effect data and updates it. Includes an "Auto-migrate on update" setting.
@@ -14,10 +17,10 @@
 * Fix for token effects being applied twice in some cases.
 * Fix for duplicate display of ac attribution.
 
-## 14.0.6
+### 14.0.6
 * Fix for visibility height errors
 
-## 14.0.5
+### 14.0.5
 * Fix `macro.createItem` rejecting items with advancements. Advancements are now stripped from temporary items to prevent orphaned grants on level-up.
 * Export `allMacroEffects` and `macroDestination` on the DAE API for external module use.
 * Remove obsolete `OwnedItem` origin migration and `tobMapper` utility from API.
@@ -48,12 +51,12 @@
   - Since core foundry deals with time based expiry so well there is no duration mapping on combat start/end or when applying effects. The effect/item duration is always used for the duration on the created effect.
   - dae adds an additional expiry event timeElapsed which indicates an effect only requires a duration expiry for the effect to expire.
 
-## 14.0.4
+### 14.0.4
 * Fix TypeError when `customStats` is not iterable in `isSuppressed` for Group actors without `system.traits.ci.custom` (MR !157, thanks @thatlonelybugbear).
 * Correct descriptions for shimmed enchant keys — swap `system.damage.bonus`/`system.damageBonus` descriptions and replace "Should use … instead" with "Equivalent to …" for attack shim keys (MR !159, thanks @Michael Roth).
 * `@activity` is now available in AE change value formulas when effects are applied via an activity (inspired by MR !156, thanks @thatlonelybugbear).
 * Fix for token.xxxx effects not working.
 
-## 14.0.0
+### 14.0.0
 * Added ability to specify source or target combatant in effect duration fields
 * Foundry v14 showIcon replaces dae's show icon on active effects.
