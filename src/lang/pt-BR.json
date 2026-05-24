@@ -236,8 +236,6 @@
   "dae.walk": "Caminhada",
   "dae.diamondSoul": "Alma de Diamante",
   "dae.noGM": "Nenhum MJ conectado",
-  "dae.expireRealTime.Name": "Expirar Efeitos Temporários em Tempo Real",
-  "dae.expireRealTime.Hint": "Se habilitado e os módulos About Time/Times Up não estiverem instalados, os efeitos temporários irão expirar em tempo real.",
   "dae.isAttacked": "Atacado: Expira se o personagem for atacado",
   "dae.isMoved": "Movido: Expira quando o token é movido",
   "dae.isDamaged": "Sofrer Dano: Expira se o personagem sofrer dano",
@@ -277,7 +275,7 @@
   "dae.DisableEffects.Name": "Desativar Processamento de Efeitos",
   "dae.DisableEffects.Hint": "Se habilitado, nenhum efeito ativo será aplicado aos personagens. Útil se você quiser alterar os valores dos personagens que são modificados por efeitos ativos.",
   "dae.HandleEquip.Name": "Lidar com Efeitos de Equipar/Desequipar",
-  "dae.HandleEquip.Hint": "Se habilitado, DAE irá lidar com efeitos ativos de equipar/desequipar, habilitar/desabilitar e alternar entre equipar/desequipar",
+  "dae.HandleEquip.Hint": "Se habilitado, DAE irá lidar com efeitos ativos de equipar/desequipar, habilitar/desabilitar e alternar entre equipar/desequipar.",
   "dae.DAETitleBar.Name": "DAE na Barra de Título",
   "dae.DAETitleBar.Hint": "Exibe o botão do editor de efeitos DAE na barra de título. (Você não precisa mais disso - basta editar na aba de efeitos).",
   "dae.DIMETitleBar.Name": "DIME na Barra de Título",
@@ -288,7 +286,31 @@
   "dae.DAENoTitleText.Hint": "Exibe apenas o ícone de chave inglesa na barra de título. Do contrário, ícone + DAE.",
   "dae.StatusEffect": "Status do Efeito",
   "dae.ShowDeprecation.Name": "Mostrar Erros Descontinuados",
-  "dae.ShowDeprecation.Hint": "Exibe erros de códigos descontinuados no console",
+  "dae.ShowDeprecation.Hint": "Exibe erros de códigos descontinuados no console.",
+  "dae.expireRoundEffectsOnCombatEnd.Name": "Expirar Efeitos de Rodada ao Encerrar Combate",
+  "dae.expireRoundEffectsOnCombatEnd.Hint": "Quando ativado, efeitos com duração de rodadas/turnos expiram quando o combate termina ou quando um combatente é removido.",
+  "dae.expiryEvent.updateWorldTime": "Tempo Decorrido",
+  "dae.expiryEvent.sourceStart": "Início do Turno da Origem",
+  "dae.expiryEvent.sourceEnd": "Fim do Turno da Origem",
+  "dae.expiryEvent.targetStart": "Início do Turno do Alvo",
+  "dae.expiryEvent.targetEnd": "Fim do Turno do Alvo",
+  "dae.deleteExpiredEffects": "Excluir Efeitos Expirados",
+  "dae.expiryAction.Name": "Ação ao Expirar Duração Especial",
+  "dae.expiryAction.Hint": "Controla o que acontece quando durações especiais (1 Acerto, 1 Ação, Dano Causado, etc.) fazem um efeito expirar. 'Padrão' usa a configuração de ação de expiração do núcleo do Foundry. 'Excluir' sempre remove o efeito. 'Marcar como Expirado' sempre suprime o efeito, mas o mantém no ator.",
+  "dae.expiryAction.default": "Padrão (Usar Configuração do Núcleo)",
+  "dae.expiryAction.delete": "Excluir",
+  "dae.expiryAction.update": "Marcar como Expirado (Suprimir)",
+  "dae.coreExpiryAction.Name": "Ação de Expiração do Efeito",
+  "dae.coreExpiryAction.Hint": "Controla o que acontece quando efeitos expiram devido ao tempo ou combate. 'Marcar como Expirado' suprime o efeito, mas o mantém no ator. 'Excluir' remove o efeito completamente.",
+  "dae.coreExpiryAction.update": "Marcar como Expirado (Suprimir)",
+  "dae.coreExpiryAction.delete": "Excluir",
+  "dae.coreExpiryAction.none": "Não Fazer Nada",
+  "dae.expiryMode.Name": "Modo de Expiração",
+  "dae.expiryMode.Hint": "Controla o que acontece quando este efeito expirar. 'Padrão' usa a configuração global.",
+  "dae.expiryMode.default": "Padrão (Usar Configuração Global)",
+  "dae.expiryMode.delete": "Excluir",
+  "dae.expiryMode.suppress": "Suprimir (Marcar como Expirado)",
+  "dae.resetStartTime": "Redefinir Início para Agora",
   "dae.CE": "Convenient Effects",
   "dae.ShowInline.Name": "Exibir Resultados Inline",
   "dae.ShowInline.Hint": "Se habilitado, efeitos com uma rolagem inline exibirão os resultados da rolagem.",
@@ -339,6 +361,13 @@
   "dae.forceToHud.Name": "Forçar Exibição no Token",
   "dae.forceToHud.Hint": "Se marcado, o ícone do efeito será exibido no token, independente da duração",
   "dae.DurationExpression": "Expressão de rolagem em segundos para a duração do efeito",
+  "dae.combatActorOverride": "Expiração do Combatante",
+  "dae.combatActorDefault": "Padrão (Combatente Ativo)",
+  "dae.combatActorSource": "Combatente de Origem",
+  "dae.combatActorTarget": "Combatente Alvo",
+  "dae.durationExpiry": "Expiração",
+  "dae.expiryTurnStart": "Início do Turno",
+  "dae.expiryTurnEnd": "Fim do Turno",
   "dae.not-reflected": "Efeito do Item Salvo. Essas alterações não serão modificadas no efeito original.",
   "dae.not-transferred": "Efeito do Item Salvo. Configurar o efeito de um item em um ator para Transferir não irá transferir o efeito automaticamente.",
   "dae.ATLHint": "Note for translators these are only required for Active Token Lighting",
@@ -379,10 +408,12 @@
   "dae.EnableCondition": "Uma expressão falsa irá remover o efeito do autor",
   "dae.ConditionalEffectsItem": "DAEConditionalEffects",
   "dae.IconTint": "Tonalidade do Ícone",
-  "dae.IconOverlay.Name": "Sobreposição de Ícones",
+  "dae.IconOverlay.Name": "Ícone Sopreposto",
   "dae.IconOverlay.Hint": "Exibe o ícone de status do efeito como uma sobreposição.",
   "dae.DependentConditions.Name": "Condições Dependentes",
   "dae.DependentConditions.Hint": "Os efeitos de status (Envenenado/Paralisado) também adicionarão condições dependentes, como Incapacitado.",
+  "dae.InitMacrosOnLoad.Name": "Macros Init ao Carregar Mundo",
+  "dae.InitMacrosOnLoad.Hint": "Dispare os efeitos de macro.itemMacro/macro.activityMacro com uma ação 'init' ao carregar o mundo para que as macros possam registrar novamente os hooks.",
   "__Comment__": "As strings a seguir são para o sistema DAE. A tradução é opcional",
   "dae.fieldData": {
     "fieldCategories.All": "Todas",
@@ -2099,23 +2130,23 @@
   "dae.Unknown.fieldData": {
     "system.ability": {
       "name": "Atributo Ataque",
-      "description": "NOTA: Deveria usar \"activities[attack].attack.ability\" em vez disso."
+      "description": "Nota: Equivalente a \"activities[attack].attack.ability\"."
     },
     "system.attack.bonus": {
       "name": "Bônus Ataque",
-      "description": "NOTA: Deveria usar \"activities[attack].attack.bonus\" em vez disso."
+      "description": "Nota: Equivalente a \"activities[attack].attack.bonus\"."
     },
     "system.attack.flat": {
       "name": "Fixo para Atingir Ataque",
-      "description": "Verdadeiro (true) ou Falso (false). NOTA: Deveria usar \"activities[attack].attack.flat\" em vez disso."
+      "description": "Verdadeiro (true) ou Falso (false). Nota: Equivalente a \"activities[attack].attack.flat\"."
     },
     "system.damage.bonus": {
       "name": "Bônus Dano",
-      "description": "NOTA: Deveria usar \"system.damageBonus\" em vez disso."
+      "description": "Bônus para todas as atividades que causam dano."
     },
     "system.damageBonus": {
       "name": "Bônus Dano",
-      "description": "Bônus para todas as atividades que causam dano."
+      "description": "Nota: Deveria usar \"system.damageBonus\" em vez disso."
     },
     "system.damage.parts": {
       "name": "Partes Dano",
@@ -2563,5 +2594,11 @@
       "name": "Perfis",
       "description": ""
     }
-  }
+  },
+  "EFFECT.TABS.dae": "DAE",
+  "dae.EnableAutoMigration.Name": "Auto-Migrar ao Atualizar",
+  "dae.EnableAutoMigration.Hint": "Migra automaticamente dados de efeitos obsoletos do DAE quando o DAE for atualizado. Para mundos grandes, é recomendado executar manualmente pelo botão 'Migrar Agora'.",
+  "dae.MigrateNow.Name": "Migrar Dados do DAE",
+  "dae.MigrateNow.Label": "Migrar Agora",
+  "dae.MigrateNow.Hint": "Verifica todos os atores e itens do mundo em busca de dados de efeitos obsoletos do DAE e os atualiza. Faça um backup do seu mundo primeiro."
 }
