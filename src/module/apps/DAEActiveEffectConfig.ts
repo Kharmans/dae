@@ -98,6 +98,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   declare statusEffectList: Record<string, string>;
   declare ATLPresets?: Record<string, string>;
   declare ATLVisionModes?: Record<string, string>;
+  declare visionModeChoices?: Record<string, string>;
   declare validFields: Record<string, {name: string, description?: string}>;
   declare validSpecsToUse: {
     allSpecs: ValidSpec[];
@@ -147,13 +148,16 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
           otherFieldsMap.set(name, { name });
         }
       });
-
-      this.ATLVisionModes = {};
-      Object.values(CONFIG.Canvas.visionModes)
-        .filter(f => f.tokenConfig)
-        .forEach(f => this.ATLVisionModes![f.id!] = i18n(f.label!))
     }
 
+    // visionMode picker — available for both ATL.sight.visionMode and the native token.sight.visionMode
+    // regardless of ATL being installed. The token field is a plain StringField with no choices, so we
+    // sourced the list from CONFIG.Canvas.visionModes (populated by Foundry core + system + modules).
+    this.visionModeChoices = {};
+    Object.values(CONFIG.Canvas.visionModes)
+      .filter(f => f.tokenConfig)
+      .forEach(f => this.visionModeChoices![f.id!] = i18n(f.label!));
+    this.ATLVisionModes = this.visionModeChoices;
   }
 
   static DEFAULT_OPTIONS = {
@@ -204,7 +208,8 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     if (spec.key === "macro.StatusEffect") return this.statusEffectList;
     if (spec.key === "StatusEffect") return this.statusEffectList;
     if (spec.key === "ATL.preset") return this.ATLPresets;
-    if (spec.key === "ATL.sight.visionMode") return this.ATLVisionModes;
+    if (spec.key === "ATL.sight.visionMode") return this.visionModeChoices;
+    if (spec.key === "token.sight.visionMode") return this.visionModeChoices;
     return daeSystemClass.getOptionsForSpec(spec);
   }
 
@@ -339,6 +344,14 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
     // Replace value with a select if the spec provides options
     const options = spec?.options ?? this.getOptionsForSpec(change);
+
+    // Picker-driven values are override-only. v14 defaults change.type to "add", which
+    // concatenates the picked value onto the field's current string. Pin override before
+    // core renders the type select, unless the spec already forces a mode (e.g. ATL custom keys).
+    if (options && !spec?.forcedMode) {
+      change.type = "override";
+      context.changeTypes = { override: context.changeTypes?.override ?? "override" };
+    }
 
     // Get the base HTML from core
     // @ts-expect-error _renderChange not in fvtt-types yet

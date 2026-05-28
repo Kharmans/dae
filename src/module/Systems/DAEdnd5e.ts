@@ -194,11 +194,18 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         } else {
           // TODO come back and see how favorites might be supported.
           if (fieldKey.includes("favorites")) return;
-          // let initial = fields[fieldKey].initial ?? 0;;
-          // if (typeof fields[fieldKey].initial === "function") { initial = fields[fieldKey].initial() ?? ""; }
-          // baseValues[`${key}.${fieldKey}`] = [initial, ""];
-          baseValues[`${key}.${fieldKey}`] = [fields[fieldKey], ""];
-          // console.error(`final field is ${key}.${fieldKey}`, mappingField.model);
+          // Clone the model so each entry has its own DataField instance with a per-entry label.
+          // initialKeys[fieldKey] is either an i18n key string (e.g. CONFIG.DND5E.senses) or a config
+          // object with .label (e.g. CONFIG.DND5E.abilities). Falling back to the model's existing label.
+          const entryConfig = fields[fieldKey];
+          const label = (typeof entryConfig === "string")
+            ? entryConfig
+            : (entryConfig?.label ?? mappingField.model.options?.label);
+          const cloned = new mappingField.model.constructor({
+            ...mappingField.model.options,
+            ...(label ? { label } : {})
+          });
+          baseValues[`${key}.${fieldKey}`] = [cloned, ""];
         }
       }
     }

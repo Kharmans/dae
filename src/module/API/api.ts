@@ -5,6 +5,8 @@ import { ActiveEffects } from '../apps/ActiveEffects.js';
 import { BooleanFormulaField, DAEActiveEffectConfig, addAutoFields, otherFieldsMap, registerFieldEditor } from '../apps/DAEActiveEffectConfig.js';
 import { DIMEditor } from '../apps/DIMEditor.js';
 import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets, localizationMap, getItemMacroCommand, allMacroEffects, macroDestination } from '../dae.js';
+import * as atlMigration from '../atlMigration.js';
+import * as daeModule from '../dae.js';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
 import { enumerateBaseValues } from '../dae.js';
 import { expireEffect, isEffectExpired, isTransferEffect, hasDuration, hasExpiry } from '../specialDurations.js';
@@ -86,6 +88,12 @@ const API = {
   migrateActor,
   migrateItem,
   migrateWorld,
+  // ATL → token.* migration surface (see Changelog 14.0.10).
+  atlMigration,
+  get atlCompatMode() { return daeModule.atlCompatMode; },
+  get atlRewriteAtPreWrite() { return daeModule.atlRewriteAtPreWrite; },
+  get atlRewriteAtRuntime() { return daeModule.atlRewriteAtRuntime; },
+  get atlMigrateWorldData() { return daeModule.atlMigrateWorldData; },
 };
 
 export default API;

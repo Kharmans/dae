@@ -13,6 +13,7 @@ import { resolveItemFromEffect, resolveMacro, createFunctionMacro, getItemMacroC
 import { registerChangeHandler, getChangeHandler, isRegisteredMacroKey, getChangeDestination, getAllMacroEffectKeys, type ChangeHandlerContext } from "./lib/changeHandlerRegistry.js";
 import { filterEffectsForTargeting } from "./lib/effectFiltering.js";
 import { handleExistingEffects, handleStackIncrement } from "./lib/stackingPolicy.js";
+import { rewriteAtlChanges } from "./atlMigration.js";
 
 const { SchemaField } = foundry.data.fields;
 
@@ -22,6 +23,12 @@ export let aboutTimeInstalled: boolean = false;
 export let timesUpActive: boolean = false;
 export let simpleCalendarInstalled: boolean = false;
 export let atlActive: boolean = false;
+/** Cached value of the world setting "dae.atlCompatibility". Updated in fetchParams(). */
+export let atlCompatMode: "legacy" | "runtime" | "migrate" | "full" = "legacy";
+/** Convenience flags derived from atlCompatMode. */
+export let atlRewriteAtPreWrite: boolean = false;  // layer A — enabled by "migrate" and "full"
+export let atlRewriteAtRuntime: boolean = false;   // layer B — enabled by "runtime" and "full"
+export let atlMigrateWorldData: boolean = false;   // layer C — enabled by "migrate" and "full"
 export let midiActive: boolean = false;
 export let ceInterface: {
   findEffects: () => ActiveEffect.Implementation[];
@@ -246,6 +253,67 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
   //   field mappings, dae.eval, @data rewrite, @stackCount, stacks
   wrapped(phase);
 
+  // ATL → token.* runtime rewrite (Layer B — enabled by "runtime" and "full").
+  // Core's actor.applyActiveEffects already split off "token.*" prefixed changes; ATL.* keys
+  // were ignored. Here we walk the active effects, rewrite each ATL.* change to the equivalent
+  // token.* change(s) via the shared transformer, and append them to tokenActiveEffectChanges
+  // so TokenDocument.applyActiveEffects(phase) processes them as if authored natively.
+  if (atlRewriteAtRuntime) {
+    let extras: DAEChangeData[] | null = null;
+    for (const effect of this.appliedEffects) {
+      if (effect.disabled || effect.isSuppressed) continue;
+      // @ts-expect-error v14 effect.system.changes
+      for (const change of (effect.system.changes as DAEChangeData[])) {
+        if (!change?.key || !change.key.startsWith("ATL.")) continue;
+        if (change.phase !== phase) continue;
+        const rewrites = rewriteAtlChanges([change as any]);
+        if (rewrites === undefined || rewrites.length === 0) continue;
+        for (const r of rewrites) {
+          if (!r.key.startsWith("token.")) continue;
+          const c = foundry.utils.deepClone(r) as DAEChangeData;
+          c.key = c.key.slice(6); // strip "token." prefix to match core's expectation
+          c.effect = effect;
+          extras ??= [];
+          extras.push(c);
+        }
+      }
+    }
+    if (extras && extras.length > 0) {
+      // @ts-expect-error v14 tokenActiveEffectChanges
+      this.tokenActiveEffectChanges[phase] ??= [];
+      // @ts-expect-error v14 tokenActiveEffectChanges
+      this.tokenActiveEffectChanges[phase].push(...extras);
+    }
+  }
+
+  {
+    const tac = (this as any).tokenActiveEffectChanges?.[phase] as DAEChangeData[] | undefined;
+    if (Array.isArray(tac) && tac.length > 0) {
+      const extras: DAEChangeData[] = [];
+      for (const change of tac) {
+        if (change.key !== "sight.visionMode") continue;
+        const mode = (CONFIG as any).Canvas?.visionModes?.[change.value as string];
+        const defaults: Record<string, any> | undefined = mode?.vision?.defaults;
+        if (!defaults) continue;
+        for (const [k, v] of Object.entries(defaults)) {
+          if (v === undefined || v === null) continue;
+          const siblingKey = `sight.${k}`;
+          if (tac.some(c => c.key === siblingKey)) continue;
+          if (extras.some(c => c.key === siblingKey)) continue;
+          extras.push({
+            key: siblingKey,
+            value: String(v),
+            type: "override",
+            priority: change.priority,
+            phase: change.phase,
+            effect: change.effect,
+          } as DAEChangeData);
+        }
+      }
+      if (extras.length > 0) tac.push(...extras);
+    }
+  }
+
   // Apply missed changes (ValidSpec says this phase, original phase was different)
   if (missedChanges.length > 0) {
     if (debugEnabled > 0) warn("Applying missed phase-corrected changes", phase, this.name, missedChanges);
@@ -342,7 +410,11 @@ export function daeApplyChange(
     }
   }
 
-  // --- ATL exclusion (ATL module handles these keys directly) ---
+  // --- ATL handling ---
+  // When atlRewriteAtRuntime is on (Layer B), ATL.* changes have already been pre-translated
+  // into token.* synthetic changes in daeApplyActiveEffects (see below) and routed to the
+  // TokenDocument's tokenActiveEffectChanges, so we never reach here with an ATL.* key.
+  // When it's off, defer the key to the ATL module by returning empty (the legacy behavior).
   if (change.key.startsWith("ATL.")) return {};
 
   // --- bonusSelector expansion ---
@@ -477,9 +549,10 @@ export async function removeCreateItemChange(itemId: string, actor: Actor.Implem
   }
   let [uuid, option] = itemId.split(",").map(s => s.trim());
   if (option === "permanent") return; // don't delete permanent items
-  if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
+  const itemsToDelete = (effect.flags?.dae?.itemsToDelete ?? []).slice();
+  if (itemsToDelete.length === 0) return;
   if (!(context.effectDeleted || context.itemDeleted)) await effect.setFlag("dae", "itemsToDelete", []);
-  await socketlibSocket.executeAsGM("removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete, context })
+  await socketlibSocket.executeAsGM("removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: itemsToDelete, context })
 }
 
 export async function addTokenMagicChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, tokens: (TokenOrDocument | null | undefined)[]) {
@@ -1374,7 +1447,7 @@ export async function applyActivityEffects(
         change,
         doRolls
       });
-      evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, { recursive: false });
+      evalArgsOptions.context = { ...rollData, ...(options.context ?? {}) };
       evalArgsOptions.context.activity = activity.getRollData?.() ?? activity;
       evalArgsOptions.item = activity.item;
       if (activity.actor) evalArgsOptions.actor = activity.actor;
@@ -1457,7 +1530,7 @@ export async function applyNonTransferEffects(
         change,
         doRolls
       });
-      evalArgsOptions.context = foundry.utils.mergeObject(rollData, options.context ?? {}, { recursive: false });
+      evalArgsOptions.context = { ...rollData, ...(options.context ?? {}) };
       evalArgsOptions.item = item;
       if (item.actor) evalArgsOptions.actor = item.actor;
       let newChange = await evalArgs(evalArgsOptions)
@@ -1860,6 +1933,18 @@ export function daeInitActions() {
         { once: true, stack: false }
       );
     }
+    // ATL → token.* pre-write normalisation (Layer A — enabled by "migrate" and "full").
+    if (atlRewriteAtPreWrite) {
+      // @ts-expect-error v14 effect.system.changes
+      const changes = this.system?.changes;
+      if (Array.isArray(changes) && changes.length > 0) {
+        const rewritten = rewriteAtlChanges(changes);
+        if (rewritten !== changes) {
+          // @ts-expect-error v14 updateSource accepts system.changes
+          this.updateSource({ "system.changes": rewritten });
+        }
+      }
+    }
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
     if (result !== false) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
     // @ts-expect-error no dnd5e-types
@@ -1920,6 +2005,17 @@ export function daeInitActions() {
   libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype._preUpdate", _preUpdateActiveEffect, "MIXED");
   async function _preUpdateActiveEffect(wrapped, ...args) {
     const [changed, options, userId] = args;
+
+    // ATL → token.* pre-write normalisation (Layer A — enabled by "migrate" and "full").
+    // Only rewrite when the update touches system.changes; otherwise leave as-is so non-change
+    // updates (name, disabled toggle, etc.) don't cause spurious work.
+    if (atlRewriteAtPreWrite && Array.isArray(changed?.system?.changes)) {
+      const rewritten = rewriteAtlChanges(changed.system.changes);
+      if (rewritten !== changed.system.changes) {
+        changed.system.changes = rewritten;
+      }
+    }
+
     if (dependentConditions) {
       let shouldInclude = this.active;
       if (this.parent instanceof Item && !this.transfer) shouldInclude = false;
@@ -2338,6 +2434,13 @@ export function fetchParams() {
   dependentConditions = game.settings.get("dae", "DependentConditions") ?? false;
   specialDurationExpiryAction = game.settings.get("dae", "expiryAction") ?? "default";
   fetchDurationParams();
+
+  // ATL compatibility policy — derive the per-layer flags.
+  atlCompatMode = (game.settings.get("dae", "atlCompatibility") as any) ?? "legacy";
+  atlRewriteAtPreWrite = atlCompatMode === "migrate" || atlCompatMode === "full";
+  atlRewriteAtRuntime  = atlCompatMode === "runtime" || atlCompatMode === "full";
+  atlMigrateWorldData  = atlCompatMode === "migrate" || atlCompatMode === "full";
+
   Hooks.callAll("dae.settingsChanged")
 }
 

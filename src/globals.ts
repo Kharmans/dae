@@ -145,6 +145,7 @@ declare module "fvtt-types/configuration" {
     "dae.coreExpiryAction": string;
     "dae.enableAutoMigration": boolean;
     "dae.migrationVersion": string;
+    "dae.atlCompatibility": "legacy" | "runtime" | "migrate" | "full";
 
     // Other module settings
     "ATL.presets": {

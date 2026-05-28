@@ -1,6 +1,7 @@
 import { MODULE_ID } from "../dae.js";
 import { deprecatedKeyPatterns } from "./dae.js";
 import { getDeprecatedSpecialDurMap } from "./specialDurations.js";
+import { rewriteAtlChanges, coerceOverrideOnlyChangeTypes } from "./atlMigration.js";
 
 interface MigrationResult {
   actorsMigrated: number;
@@ -25,8 +26,14 @@ const fieldMappings: Record<string, string | { key: string; value?: string; type
  * Compute a migration delta for a single effect's data object.
  * Returns null if no migration is needed.
  * This is the core function — usable for testing individual effects.
+ *
+ * @param options.atl  If true, also rewrite ATL.* change keys to native v14 token.*
+ *                     (driven by the "dae.atlCompatibility" setting being "migrate" or "full").
  */
-export function migrateEffectData(effectData: any): Record<string, any> | null {
+export function migrateEffectData(
+  effectData: any,
+  options: { atl?: boolean } = {}
+): Record<string, any> | null {
   const update: Record<string, any> = {};
 
   // 1. flags.dae.showIcon → ActiveEffect.showIcon
@@ -90,10 +97,29 @@ export function migrateEffectData(effectData: any): Record<string, any> | null {
     return change;
   });
 
+  // ATL → token.* rewriting. Done after the existing transformations so it operates on the
+  // already-normalised key list (e.g. won't double-rewrite if an earlier mapping changed the key).
+  let finalChanges = newChanges;
+  if (options.atl) {
+    const rewritten = rewriteAtlChanges(newChanges);
+    if (rewritten !== newChanges) {
+      finalChanges = rewritten;
+      changesModified = true;
+    }
+  }
+
+  // Coerce picker-only keys (e.g. token.sight.visionMode) to type "override". Runs always —
+  // v14's default change type "add" concatenates strings and silently breaks these fields.
+  const coerced = coerceOverrideOnlyChangeTypes(finalChanges);
+  if (coerced !== finalChanges) {
+    finalChanges = coerced;
+    changesModified = true;
+  }
+
   if (changesModified) {
     // v14 effects use system.changes, older use changes
     const changesKey = effectData.system?.changes ? "system.changes" : "changes";
-    update[changesKey] = newChanges;
+    update[changesKey] = finalChanges;
   }
 
   return Object.keys(update).length > 0 ? update : null;
@@ -103,7 +129,10 @@ export function migrateEffectData(effectData: any): Record<string, any> | null {
  * Migrate all effects on a single actor (both direct effects and item-embedded effects).
  * Returns a summary of what was migrated.
  */
-export async function migrateActor(actor: Actor.Implementation): Promise<{ effectsMigrated: number; errors: string[] }> {
+export async function migrateActor(
+  actor: Actor.Implementation,
+  options: { atl?: boolean } = {}
+): Promise<{ effectsMigrated: number; errors: string[] }> {
   let effectsMigrated = 0;
   const errors: string[] = [];
 
@@ -112,7 +141,7 @@ export async function migrateActor(actor: Actor.Implementation): Promise<{ effec
   for (const effect of actor.effects) {
     try {
       const effectData = effect.toObject();
-      const delta = migrateEffectData(effectData);
+      const delta = migrateEffectData(effectData, options);
       if (delta) {
         delta._id = effect.id!;
         effectUpdates.push(delta as EffectMigrationDelta);
@@ -137,7 +166,7 @@ export async function migrateActor(actor: Actor.Implementation): Promise<{ effec
     for (const effect of item.effects) {
       try {
         const effectData = effect.toObject();
-        const delta = migrateEffectData(effectData);
+        const delta = migrateEffectData(effectData, options);
         if (delta) {
           delta._id = effect.id!;
           itemEffectUpdates.push(delta as EffectMigrationDelta);
@@ -163,7 +192,10 @@ export async function migrateActor(actor: Actor.Implementation): Promise<{ effec
 /**
  * Migrate all effects on a single world item.
  */
-export async function migrateItem(item: Item.Implementation): Promise<{ effectsMigrated: number; errors: string[] }> {
+export async function migrateItem(
+  item: Item.Implementation,
+  options: { atl?: boolean } = {}
+): Promise<{ effectsMigrated: number; errors: string[] }> {
   let effectsMigrated = 0;
   const errors: string[] = [];
   const effectUpdates: EffectMigrationDelta[] = [];
@@ -171,7 +203,7 @@ export async function migrateItem(item: Item.Implementation): Promise<{ effectsM
   for (const effect of item.effects) {
     try {
       const effectData = effect.toObject();
-      const delta = migrateEffectData(effectData);
+      const delta = migrateEffectData(effectData, options);
       if (delta) {
         delta._id = effect.id!;
         effectUpdates.push(delta as EffectMigrationDelta);
@@ -207,12 +239,28 @@ function shouldMigrateCompendium(pack: CompendiumCollection<any>): boolean {
 
 /**
  * Run the full world migration — all actors, world items, scene tokens, and compendium packs.
+ *
+ * Reads `dae.atlCompatibility` to decide whether to also rewrite ATL.* keys to native v14
+ * token.* keys ("migrate" or "full" enables the rewrite; "full" additionally unlocks locked
+ * compendiums for migration).
  */
 export async function migrateWorld(): Promise<MigrationResult> {
-  if (!game.user?.isGM) {
-    ui.notifications?.error("DAE | Only a GM can run the migration.");
-    return { actorsMigrated: 0, itemsMigrated: 0, effectsMigrated: 0, errors: ["Not GM"] };
+  // Only the active GM should run the migration. Foundry designates one GM as "active" for
+  // write operations; if two GMs are logged in, isGM returns true on both, but isActiveGM
+  // identifies the single client that should own world-mutating tasks.
+  if (!game.user?.isActiveGM) {
+    if (game.user?.isGM) {
+      console.log(`dae | migration | Skipping on non-active GM "${game.user.name}"; the active GM will run it.`);
+    } else {
+      ui.notifications?.error("DAE | Only a GM can run the migration.");
+    }
+    return { actorsMigrated: 0, itemsMigrated: 0, effectsMigrated: 0, errors: ["Not active GM"] };
   }
+
+  const atlCompat = (game.settings.get(MODULE_ID, "atlCompatibility") as string) ?? "legacy";
+  const atl = atlCompat === "migrate" || atlCompat === "full";
+  const unlockLockedCompendiums = atlCompat === "full";
+  const migrateOptions = { atl };
 
   const result: MigrationResult = { actorsMigrated: 0, itemsMigrated: 0, effectsMigrated: 0, errors: [] };
 
@@ -229,7 +277,7 @@ export async function migrateWorld(): Promise<MigrationResult> {
   // Migrate world actors
   for (const actor of game.actors!) {
     try {
-      const { effectsMigrated, errors } = await migrateActor(actor);
+      const { effectsMigrated, errors } = await migrateActor(actor, migrateOptions);
       if (effectsMigrated > 0) {
         result.actorsMigrated++;
         result.effectsMigrated += effectsMigrated;
@@ -245,7 +293,7 @@ export async function migrateWorld(): Promise<MigrationResult> {
   // Migrate world items
   for (const item of game.items!) {
     try {
-      const { effectsMigrated, errors } = await migrateItem(item);
+      const { effectsMigrated, errors } = await migrateItem(item, migrateOptions);
       if (effectsMigrated > 0) {
         result.itemsMigrated++;
         result.effectsMigrated += effectsMigrated;
@@ -265,7 +313,7 @@ export async function migrateWorld(): Promise<MigrationResult> {
         continue;
       }
       try {
-        const { effectsMigrated, errors } = await migrateActor(token.actor as Actor.Implementation);
+        const { effectsMigrated, errors } = await migrateActor(token.actor as Actor.Implementation, migrateOptions);
         if (effectsMigrated > 0) {
           result.actorsMigrated++;
           result.effectsMigrated += effectsMigrated;
@@ -282,12 +330,29 @@ export async function migrateWorld(): Promise<MigrationResult> {
   // Migrate compendium packs
   for (const pack of packsToMigrate) {
     let packEffectsMigrated = 0;
+    let lockedHere = false;
+    // For "full" mode, auto-unlock locked compendiums so writes succeed; relock when done.
+    if (unlockLockedCompendiums && pack.locked) {
+      try {
+        await pack.configure({ locked: false });
+        lockedHere = true;
+      } catch (err: any) {
+        result.errors.push(`Compendium "${pack.metadata.label}" unlock: ${err.message}`);
+      }
+    } else if (pack.locked) {
+      // "migrate" mode — skip locked compendiums silently (they need user action or "full").
+      console.log(`dae | migration | Compendium "${pack.metadata.label}": skipped (locked; set atlCompatibility="full" to auto-unlock)`);
+      // Advance progress so the bar reflects skipped packs.
+      migrated += pack.index.size;
+      progress?.update({ pct: migrated / totalDocuments });
+      continue;
+    }
     try {
       const docs = await pack.getDocuments() as any[];
       for (const doc of docs) {
         try {
           if (doc instanceof CONFIG.Actor.documentClass) {
-            const { effectsMigrated, errors } = await migrateActor(doc as Actor.Implementation);
+            const { effectsMigrated, errors } = await migrateActor(doc as Actor.Implementation, migrateOptions);
             if (effectsMigrated > 0) {
               result.actorsMigrated++;
               result.effectsMigrated += effectsMigrated;
@@ -295,7 +360,7 @@ export async function migrateWorld(): Promise<MigrationResult> {
             }
             result.errors.push(...errors);
           } else if (doc instanceof CONFIG.Item.documentClass) {
-            const { effectsMigrated, errors } = await migrateItem(doc as Item.Implementation);
+            const { effectsMigrated, errors } = await migrateItem(doc as Item.Implementation, migrateOptions);
             if (effectsMigrated > 0) {
               result.itemsMigrated++;
               result.effectsMigrated += effectsMigrated;
@@ -304,7 +369,7 @@ export async function migrateWorld(): Promise<MigrationResult> {
             result.errors.push(...errors);
           } else if (doc instanceof CONFIG.ActiveEffect.documentClass) {
             const effectData = (doc as ActiveEffect).toObject();
-            const delta = migrateEffectData(effectData);
+            const delta = migrateEffectData(effectData, migrateOptions);
             if (delta) {
               console.log(`dae | migration | Compendium "${pack.metadata.label}" effect "${(doc as ActiveEffect).name}": ${Object.keys(delta).join(", ")}`);
               await (doc as ActiveEffect).update(delta, { render: false });
@@ -320,6 +385,15 @@ export async function migrateWorld(): Promise<MigrationResult> {
       }
     } catch (err: any) {
       result.errors.push(`Compendium "${pack.metadata.label}": ${err.message}`);
+    } finally {
+      // Re-lock if we unlocked it ourselves.
+      if (lockedHere) {
+        try {
+          await pack.configure({ locked: true });
+        } catch (err: any) {
+          result.errors.push(`Compendium "${pack.metadata.label}" relock: ${err.message}`);
+        }
+      }
     }
     if (packEffectsMigrated === 0) {
       console.log(`dae | migration | Compendium "${pack.metadata.label}": no deprecated data found`);
@@ -344,10 +418,11 @@ export async function migrateWorld(): Promise<MigrationResult> {
 }
 
 /**
- * Check whether auto-migration should run on ready.
+ * Check whether auto-migration should run on ready. Only the active GM runs it to avoid
+ * concurrent writes when multiple GMs are logged in.
  */
 export function shouldAutoMigrate(): boolean {
-  if (!game.user?.isGM) return false;
+  if (!game.user?.isActiveGM) return false;
   if (!game.settings.get(MODULE_ID, "enableAutoMigration")) return false;
   const lastVersion = game.settings.get(MODULE_ID, "migrationVersion") as string;
   const currentVersion = game.modules.get(MODULE_ID)!.version;
