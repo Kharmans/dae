@@ -362,9 +362,10 @@ export async function removeCreateItemChange(itemId: string, actor: Actor.Implem
   }
   let [uuid, option] = itemId.split(",").map(s => s.trim());
   if (option === "permanent") return; // don't delete permanent items
-  if ((effect.flags?.dae?.itemsToDelete ?? []).length === 0) return;
+  const itemsToDelete = (effect.flags?.dae?.itemsToDelete ?? []).slice();
+  if (itemsToDelete.length === 0) return;
   if (!(context.effectDeleted || context.itemDeleted)) await effect.setFlag("dae", "itemsToDelete", []);
-  await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: effect.flags?.dae?.itemsToDelete, context })
+  await actionQueue.add(socketlibSocket.executeAsGM.bind(socketlibSocket), "removeActorItem", { uuid: actor.uuid, itemUuid: itemId, itemUuids: itemsToDelete, context })
 }
 
 export async function addTokenMagicChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, tokens: (TokenOrDocument | null | undefined)[]) {

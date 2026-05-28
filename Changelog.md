@@ -1,3 +1,6 @@
+### 13.0.28
+* Fix for macro.createItem not deleting items on unequip etc.
+
 ### 13.0.27
 * Fix for duplicate display of ac attribution
 
