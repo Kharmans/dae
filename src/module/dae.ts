@@ -226,7 +226,8 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
     // @ts-expect-error v14 effect.system.changes
     for (const change of (effect.system.changes as DAEChangeData[])) {
       if (!change.key || change.key.startsWith("ATL.")) continue;
-      const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key];
+      const spec = ValidSpec.actorSpecs?.[this.type]?.allSpecsObj?.[change.key]
+        ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key];
       if (spec && spec.phase === phase && change.phase !== phase) {
         // ValidSpec says this phase, but original phase doesn't match — core will skip it
         const c = foundry.utils.deepClone(change) as DAEChangeData;
@@ -403,7 +404,8 @@ export function daeApplyChange(
   // must also check the prefixed key against ValidSpec to catch phase mismatches.
   const currentPhase = (actor as any)._daeCurrentPhase;
   if (currentPhase) {
-    const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key]
+    const spec = ValidSpec.actorSpecs?.[actor.type]?.allSpecsObj?.[change.key]
+      ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key]
       ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[`token.${change.key}`];
     if (spec && spec.phase !== currentPhase) {
       return {};
