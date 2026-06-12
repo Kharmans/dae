@@ -1,3 +1,7 @@
+### 13.0.29
+* Harden item spec building - spec generation for one item type can no longer break others (fixes effect-editor errors with the latest Chrome update).
+* Enchantment effect configs fall back to union specs and render degraded instead of erroring when specs are missing.
+
 ### 13.0.28
 * Fix for macro.createItem not deleting items on unequip etc.
 

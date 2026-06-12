@@ -252,13 +252,15 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
           if (activity) {
             restrictionType = activity.restrictions.type;
           }
-          this.validSpecsToUse = ValidSpec.itemSpecs[restrictionType || "union"];
+          this.validSpecsToUse = ValidSpec.itemSpecs[restrictionType || "union"] ?? ValidSpec.itemSpecs["union"];
         }
       }
     }
     if (!this.validSpecsToUse) {
       ui.notifications?.error("DAE | No valid specs found");
-      return context;
+      // Continue with an empty spec set so the sheet still renders - returning a half-built
+      // context makes the details template part fail on the missing fields
+      this.validSpecsToUse = { allSpecs: [], allSpecsObj: {}, baseSpecs: [], baseSpecsObj: {}, derivedSpecs: [], derivedSpecsObj: {} };
     }
     this.validFields = { "__": { name: ""} }
     this.validFields = this.validSpecsToUse.allSpecs

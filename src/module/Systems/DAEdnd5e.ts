@@ -96,8 +96,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         unionSpecs = foundry.utils.mergeObject(unionSpecs, itemSpecs[k], { insertValues: true, insertKeys: true, inplace: false, overwrite: false });
       }
       itemSpecs["union"] = unionSpecs;
+    }
+    catch (err) {
+      console.error("Error in getItemSpecs | building union specs", err);
+    }
 
-      for (let k of Object.keys(itemSpecs)) {
+    // union first - it is the universal fallback, so a failure in any single item type must not take it out
+    for (let k of ["union", ...Object.keys(itemSpecs).filter(key => key !== "union")]) {
+      try {
         const theSpecs = foundry.utils.flattenObject(itemSpecs[k]) as BaseValuesInner;
         theSpecs["name"] = [new StringField({ label: "Name" }), -1];
         theSpecs["img"] = [new StringField({ label: "Image" }), -1];
@@ -148,15 +154,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           }
         }
 
-        const derivedSpecsObj = {
-          "name": finalSpecs["name"],
-          "system.magicalBonus": finalSpecs["system.magicalBonus"],
-          "system.formula": finalSpecs["system.formula"],
-          "flags.midi-qol.itemCondition": finalSpecs["flags.midi-qol.itemCondition"],
-          "flags.midi-qol.reactionCondition": finalSpecs["flags.midi-qol.reactionCondition"],
-          "flags.midi-qol.otherCondition": finalSpecs["flags.midi-qol.otherCondition"],
-          "flags.midi-qol.effectCondition": finalSpecs["flags.midi-qol.effectCondition"],
-        };
+        // Only include keys that exist for this item type - undefined entries would otherwise
+        // land in the derivedSpecs sort (where they break on engines that pass them to the
+        // comparator) and in derivedSpecKeys
+        const derivedSpecsObj: Record<string, ValidSpec> = {};
+        for (let k1 of ["name", "system.magicalBonus", "system.formula",
+          "flags.midi-qol.itemCondition", "flags.midi-qol.reactionCondition",
+          "flags.midi-qol.otherCondition", "flags.midi-qol.effectCondition"]) {
+          if (finalSpecs[k1]) derivedSpecsObj[k1] = finalSpecs[k1];
+        }
 
         const baseSpecsObj: Record<string, ValidSpec> = {};
         for (let k1 of Object.keys(finalSpecs)) {
@@ -166,26 +172,26 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           allSpecsObj: finalSpecs,
           baseSpecsObj,
           derivedSpecsObj,
-          allSpecs: Object.keys(finalSpecs).map(k => finalSpecs[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
-          baseSpecs: Object.keys(baseSpecsObj).map(k => baseSpecsObj[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
-          derivedSpecs: Object.keys(derivedSpecsObj).map(k => derivedSpecsObj[k]).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
+          allSpecs: Object.keys(finalSpecs).map(k => finalSpecs[k]).filter(s => s !== undefined).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
+          baseSpecs: Object.keys(baseSpecsObj).map(k => baseSpecsObj[k]).filter(s => s !== undefined).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
+          derivedSpecs: Object.keys(derivedSpecsObj).map(k => derivedSpecsObj[k]).filter(s => s !== undefined).sort((a, b) => { return a._fieldSpec.toLocaleLowerCase() < b._fieldSpec.toLocaleLowerCase() ? -1 : 1 }),
           allSpecKeys: Object.keys(finalSpecs).sort(),
           baseSpecKeys: Object.keys(baseSpecsObj).sort(),
           derivedSpecKeys: Object.keys(derivedSpecsObj).sort()
         }
       }
-      allSpecs["union"].excludeKeys = [
-        "system.currency.cp",
-        "system.currency.sp",
-        "system.currency.ep",
-        "system.currency.gp",
-        "system.currency.pp",
-        "system.currency.weight",
-      ]
+      catch (err) {
+        console.error(`Error in getItemSpecs | building specs for item type ${k}`, err);
+      }
     }
-    catch (err) {
-      console.error("Error in getItemSpecs", err);
-    }
+    if (allSpecs["union"]) allSpecs["union"].excludeKeys = [
+      "system.currency.cp",
+      "system.currency.sp",
+      "system.currency.ep",
+      "system.currency.gp",
+      "system.currency.pp",
+      "system.currency.weight",
+    ]
     return allSpecs;
   }
 
