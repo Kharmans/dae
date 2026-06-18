@@ -234,13 +234,15 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
           if (activity) {
             restrictionType = activity.restrictions.type;
           }
-          this.validSpecsToUse = ValidSpec.itemSpecs[restrictionType || "union"];
+          this.validSpecsToUse = ValidSpec.itemSpecs[restrictionType || "union"] ?? ValidSpec.itemSpecs["union"];
         }
       }
     }
     if (!this.validSpecsToUse) {
       ui.notifications?.error("DAE | No valid specs found");
-      return context;
+      // Continue with an empty spec set so the sheet still renders - returning a half-built
+      // context makes the details template part fail on the missing fields
+      this.validSpecsToUse = { allSpecs: [], allSpecsObj: {} };
     }
     this.validFields = { "__": { name: ""} }
     this.validFields = this.validSpecsToUse.allSpecs
@@ -343,14 +345,24 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     if (change.type && change.type !== change.type.toLowerCase()) change.type = change.type.toLowerCase();
 
     // Replace value with a select if the spec provides options
-    const options = spec?.options ?? this.getOptionsForSpec(change);
+    let options = spec?.options ?? this.getOptionsForSpec(change);
+    const isSet = !!options && !spec?.forcedMode && isSetBackedKey(change.key, this.document);
 
-    // Picker-driven values are override-only. v14 defaults change.type to "add", which
-    // concatenates the picked value onto the field's current string. Pin override before
-    // core renders the type select, unless the spec already forces a mode (e.g. ATL custom keys).
+    // Picker values: pin string fields to override (v14 default "add" would string-concat);
+    // Set fields default to "add" with the type left unrestricted (override would wipe the Set).
     if (options && !spec?.forcedMode) {
-      change.type = "override";
-      context.changeTypes = { override: context.changeTypes?.override ?? "override" };
+      if (isSet) {
+        if (!change.type) change.type = "add";
+      } else {
+        change.type = "override";
+        context.changeTypes = { override: context.changeTypes?.override ?? "override" };
+      }
+    }
+
+    // traitList carries "-value" removal entries; keep them only for custom mode
+    // (doCustomArrayValue). add/subtract use the bare value — core adds/removes natively.
+    if (isSet && options && change.type !== "custom") {
+      options = Object.fromEntries(Object.entries(options).filter(([v]) => !v.startsWith("-")));
     }
 
     // Get the base HTML from core
@@ -449,6 +461,11 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   _onChangeForm(formConfig, event) {
     super._onChangeForm(formConfig, event);
     const target = event.target as HTMLElement;
+    // Re-render when a change's type flips so the value picker re-filters (e.g. "-value" removal
+    // options are only offered in custom mode).
+    if (target instanceof HTMLSelectElement && /^system\.changes\.\d+\.type$/.test(target.name)) {
+      this.submit()?.then(() => this.render());
+    }
   }
 
   async _onRender(context, options) {
@@ -727,6 +744,22 @@ Hooks.once("setup", () => {
 export function isEnchantment(effect: ActiveEffect): boolean {
   //@ts-expect-error no dnd5e-types
   return effect.type === "enchantment";
+}
+
+// True if `key` resolves to a SetField on the real data model. DAE models these as StringField
+// in its spec, so resolve from the actual model (preferring the effect's actor subtype).
+function isSetBackedKey(key: string, doc: ActiveEffect.Implementation): boolean {
+  if (!key.startsWith("system.")) return false;
+  const path = key.slice(7);
+  const SetField = foundry.data.fields.SetField;
+  const fieldFor = (type?: string) => type ? CONFIG.Actor.dataModels[type]?.schema?.getField?.(path) : undefined;
+
+  const parent = doc?.parent;
+  const preferred = parent instanceof CONFIG.Actor.documentClass ? parent.type
+    : parent instanceof CONFIG.Item.documentClass ? parent.actor?.type : undefined;
+  let field = fieldFor(preferred);
+  if (!field) for (const type of Object.keys(CONFIG.Actor.dataModels)) { field = fieldFor(type); if (field) break; }
+  return field instanceof SetField;
 }
 
 interface DAEChange extends ActiveEffect.ChangeData {

@@ -72,6 +72,7 @@
   "dae.failure": "Failure",
   "dae.sr": "Short Rest",
   "dae.lr": "Long Rest",
+  "dae.joinCombat": "Joins Combat",
   "dae.primary": "Primary",
   "dae.secondary": "Secondary",
   "dae.tertiary": "Tertiary",

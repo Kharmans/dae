@@ -96,8 +96,14 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         unionSpecs = foundry.utils.mergeObject(unionSpecs, itemSpecs[k], { insertValues: true, insertKeys: true, inplace: false, overwrite: false });
       }
       itemSpecs["union"] = unionSpecs;
+    }
+    catch (err) {
+      console.error("Error in getItemSpecs | building union specs", err);
+    }
 
-      for (let k of Object.keys(itemSpecs)) {
+    // union first - it is the universal fallback, so a failure in any single item type must not take it out
+    for (let k of ["union", ...Object.keys(itemSpecs).filter(key => key !== "union")]) {
+      try {
         const theSpecs = foundry.utils.flattenObject(itemSpecs[k]) as BaseValuesInner;
         theSpecs["name"] = [new StringField({ label: "Name" }), ""];
         theSpecs["img"] = [new StringField({ label: "Image" }), ""];
@@ -160,12 +166,12 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
         allSpecs[k] = {
           allSpecsObj: finalSpecs,
-          allSpecs: Object.values(finalSpecs).sort((a, b) => a.fieldSpec.toLocaleLowerCase() < b.fieldSpec.toLocaleLowerCase() ? -1 : 1),
+          allSpecs: Object.values(finalSpecs).filter(s => s !== undefined).sort((a, b) => a.fieldSpec.toLocaleLowerCase() < b.fieldSpec.toLocaleLowerCase() ? -1 : 1),
         }
       }
-    }
-    catch (err) {
-      console.error("Error in getItemSpecs", err);
+      catch (err) {
+        console.error(`Error in getItemSpecs | building specs for item type ${k}`, err);
+      }
     }
     return allSpecs;
   }

@@ -101,7 +101,7 @@ Hooks.once('ready', () => {
     daeSpecialDurations = { "None": "" };
     // turnStart, turnEnd, turnStartSource, turnEndSource, combatEnd removed —
     // now handled by v14 core duration.expiry + DAE source/target expiry events
-    daeSpecialDurations["joinCombat"] = i18n("COMBAT.CombatantCreate");
+    daeSpecialDurations["joinCombat"] = i18n("dae.joinCombat");
     daeMacroRepeats = {
       "none": "",
       "startEveryTurn": i18n("dae.startEveryTurn"),

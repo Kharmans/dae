@@ -1,3 +1,9 @@
+### 14.0.12
+* Harden item spec building - spec generation for one item type can no longer break others.
+* Enchantment effect configs fall back to union specs and render degraded instead of erroring when specs are missing.
+* The joinCombat special duration label now uses its own localization key (dae.joinCombat) instead of borrowing a core Foundry string.
+* Set-backed trait fields (e.g. system.traits.dr.value) in the effect editor are no longer forced to override mode. They default to add (which preserves existing entries) with the change type left selectable; use subtract to remove. The "-value" removal options are shown only in custom mode, and the value list now refreshes when you change the mode.
+
 ### 14.0.10
 * Fix for macro.createItem not deleting items on unequip etc.
 * New world setting **"ATL → token.* migration policy"** (`dae.atlCompatibility`) for switching DAE to Foundry v14's native `token.*` active-effect routing. Default `legacy` keeps current behavior (ATL.* keys handled by the ATL module). Other modes:
