@@ -77,6 +77,9 @@ declare module "fvtt-types/configuration" {
         itemMacro?: string;
         itemUuid?: string;
         itemsToDelete?: string[];
+        /** Set when the effect was saved through the DAE editor: every change's `phase` is explicitly
+         *  authored, so `change.phase` is authoritative at apply time (even an explicit "initial"). */
+        phaseStamped?: boolean;
         selfTarget?: boolean;
         selfTargetAlways?: boolean;
         /** @deprecated Use native ActiveEffect showIcon field instead */

@@ -493,6 +493,10 @@ export class DAESystem {
     _delta?: never,
     _changes?: never
   ): any {
+    // Only act on custom-mode changes. The applyActiveEffect hook can also fire for unrecognized
+    // change types on non-schema keys (core routes those through _applyChangeUnguided → _applyChangeCustom),
+    // and this returning false makes the dnd5e subclass's `if (!super.daeCustomEffect(...)) return` bail.
+    if (change.type !== "custom") return false;
     if (typeof change.value === "string" && (change.value?.includes("dae.eval(") || change.value?.includes("dae.roll("))) {
       const context = actor.getRollData() as AnyMutableObject;
       context.actor = actor;

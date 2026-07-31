@@ -1,3 +1,14 @@
+### 14.0.13
+* Effect editor: each change row now has an editable Phase dropdown (defaults to the field's phase, and re-defaults when you change the change's key). Your choice wins at apply time, including forcing initial on a normally-final field.
+* Effect editor: fixed the change row wrapping the delete icon onto the next line.
+* Effect editor: widened the default window and fixed horizontally scrolling the changes list clipping the right-hand columns.
+* Status reconciliation: removing a status effect no longer errors when a concurrent call already deleted it.
+* Set-backed fields (damage types, traits, and any other Set-valued field): the "-value" removal options are now offered in add mode, not just custom.
+* Enchantment/item effects: system.damage.types, system.damage.base.types and the save ability (activities[save].save.ability) now allow all change modes instead of being locked to override.
+* Custom-mode handling now ignores non-custom changes, so an unrecognised change type on a flag/macro key is no longer mis-applied as custom.
+* Special durations: on dnd5e 6.0+, effects expiring out of combat (including at combat end) are now deleted immediately instead of left marked-expired.
+* Deprecated special-duration names (turnStart/turnEnd and their Source variants) now migrate to source/target expiry on dnd5e 6.0+ too, preserving the source/target distinction.
+
 ### 14.0.12
 * Harden item spec building - spec generation for one item type can no longer break others.
 * Enchantment effect configs fall back to union specs and render degraded instead of erroring when specs are missing.

@@ -1,5 +1,5 @@
 import { ceInterface, atlActive, daeSystemClass, getStatusEffectsArray, localizationMap } from "../dae.js";
-import { i18n, daeSpecialDurations, daeMacroRepeats, error, daeManagesTurnExpiry } from "../../dae.js";
+import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
 
@@ -166,7 +166,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     },
     position: {
       height: "auto" as "auto",
-      width: 900
+      // The changes grid measures 968px at its minimum (400 key + 110 mode + 250 value + 96
+      // phase + 60 priority + 16 controls, plus gaps and the header's scrollbar gutter), and the
+      // window adds ~34px of chrome.
+      width: 1010
     },
     classes: ["sheet", "active-effect-config", "window-app", "dae"],
     actions: {
@@ -346,7 +349,10 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
     // Replace value with a select if the spec provides options
     let options = spec?.options ?? this.getOptionsForSpec(change);
-    const isSet = !!options && !spec?.forcedMode && isSetBackedKey(change.key, this.document);
+    // Set-backed if the spec's own field is a SetField (covers actor traits AND item/enchantment damage
+    // types whose fields live on the item/activity schema), falling back to actor-schema resolution.
+    const isSet = !!options && !spec?.forcedMode
+      && ((spec?.fieldType instanceof foundry.data.fields.SetField) || isSetBackedKey(change.key, this.document));
 
     // Picker values: pin string fields to override (v14 default "add" would string-concat);
     // Set fields default to "add" with the type left unrestricted (override would wipe the Set).
@@ -359,9 +365,11 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }
     }
 
-    // traitList carries "-value" removal entries; keep them only for custom mode
-    // (doCustomArrayValue). add/subtract use the bare value — core adds/removes natively.
-    if (isSet && options && change.type !== "custom") {
+    // traitList carries "-value" removal entries. Keep them for custom mode (DAE's doCustomArrayValue)
+    // and for add mode: dnd5e's ActiveEffect.applyChange strips a leading "-" on Set traits and removes
+    // the entry, and DAE delegates non-custom changes straight to it. Subtract (= Set difference) and
+    // override (= replace) use bare values, so drop the "-value" entries there.
+    if (isSet && options && change.type !== "custom" && change.type !== "add") {
       options = Object.fromEntries(Object.entries(options).filter(([v]) => !v.startsWith("-")));
     }
 
@@ -440,6 +448,37 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }
     }
 
+    // Make the phase editable. Core renders it as a hidden input; replace it with a dropdown of the
+    // valid phases (ActiveEffect.CHANGE_PHASES), defaulting to the ValidSpec phase for the key. The
+    // chosen phase is written to change.phase and wins at runtime (see effectivePhase in dae.ts).
+    const phaseInput = li.querySelector(`input[name="system.changes.${index}.phase"]`) as HTMLInputElement | null;
+    if (phaseInput) {
+      // @ts-expect-error CHANGE_PHASES not in fvtt-types yet
+      const phases: Record<string, { label?: string }> = CONFIG.ActiveEffect.documentClass.CHANGE_PHASES ?? {};
+      // Until the effect is phase-stamped, change.phase is just the schema default ("initial"), so
+      // default the dropdown to the ValidSpec phase. Once stamped, honor the authored change.phase.
+      const stamped = !!(this.document as any).flags?.dae?.phaseStamped;
+      const selected = stamped ? (change.phase || spec?.phase || "initial")
+                               : (spec?.phase || change.phase || "initial");
+      const entries: Record<string, { label?: string }> = { ...phases };
+      if (selected && !(selected in entries)) entries[selected] = { label: selected };   // keep round-trippable
+      const select = document.createElement("select");
+      select.name = phaseInput.getAttribute("name")!;
+      select.dataset.dtype = "String";
+      for (const [val, info] of Object.entries(entries)) {
+        const opt = document.createElement("option");
+        opt.value = val;
+        opt.textContent = info?.label ? i18n(info.label) : val;
+        if (val === selected) opt.setAttribute("selected", "selected");
+        select.appendChild(opt);
+      }
+      const phaseDiv = document.createElement("div");
+      phaseDiv.classList.add("phase");
+      phaseDiv.dataset.tooltip = i18n("dae.Phase");
+      phaseDiv.appendChild(select);
+      phaseInput.replaceWith(phaseDiv);
+    }
+
     return li.outerHTML;
   }
 
@@ -486,6 +525,16 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         btn.innerHTML = '<i class="fas fa-clock-rotate-left"></i>';
         timeFields.appendChild(btn);
       }
+    }
+
+    // Add the Phase column header to the changes tab (each row gets a phase <select>; see _renderChange).
+    // Inserted before .priority to match the row DOM order (key, type, value, phase, priority, controls).
+    const changesHeader = this.element.querySelector('.tab[data-tab="changes"] header');
+    if (changesHeader && !changesHeader.querySelector(".phase")) {
+      const phaseHeader = document.createElement("div");
+      phaseHeader.classList.add("phase");
+      phaseHeader.textContent = i18n("dae.PhaseHeader");
+      changesHeader.insertBefore(phaseHeader, changesHeader.querySelector(".priority"));
     }
 
     const keyInputs = Array.from(this.element.querySelectorAll(".dae-key-input"));
@@ -639,15 +688,27 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     submitData.statuses ??= [];
     foundry.utils.setProperty(submitData, "flags.dae.specialDuration", Array.from(Object.values(submitData.flags?.dae?.specialDuration ?? {})))
 
-    // Set the correct phase on each change based on the ValidSpec lookup.
-    // The schema defaults phase to "initial", but specials/derived fields need "final".
+    // Default the phase from the ValidSpec lookup when the change has no phase of its own, or when
+    // the key was changed to a different field (adopt the new field's default phase — e.g. selecting a
+    // derived key like system.abilities.cha.mod → "final"). A phase the author deliberately picked via
+    // the dropdown for an unchanged key is preserved and wins at runtime (see effectivePhase in dae.ts).
     const changes = submitData.system?.changes;
     if (changes && this.validSpecsToUse?.allSpecsObj) {
-      for (const change of Object.values(changes) as any[]) {
+      // @ts-expect-error v14 system.changes
+      const oldChanges = this.document.system?.changes ?? [];
+      // Only trust per-index key comparison when the row count is unchanged; add/delete re-indexes rows.
+      const sameShape = Object.keys(changes).length === oldChanges.length;
+      for (const [index, change] of Object.entries(changes) as [string, any][]) {
         const spec = this.validSpecsToUse.allSpecsObj[change.key];
-        if (spec) change.phase = spec.phase;
+        if (!spec) continue;
+        const oldKey = sameShape ? oldChanges[index]?.key : undefined;
+        const keyChanged = oldKey !== undefined && oldKey !== change.key;
+        if (!change.phase || keyChanged) change.phase = spec.phase;
       }
     }
+    // Mark phases as authored: every change now carries an explicit phase (the phase dropdown), so
+    // change.phase becomes authoritative at apply time — even a deliberate "initial" on a "final" key.
+    foundry.utils.setProperty(submitData, "flags.dae.phaseStamped", true);
     await this.document.update(submitData);
 
   }
@@ -663,18 +724,13 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   }
 
   async #migrateDeprecatedData(document: ActiveEffect) {
-    // Migrate deprecated special durations to v14 duration.expiry
-    const deprecatedSpecialDurMap: Record<string, string> = daeManagesTurnExpiry ? {
+    // Migrate deprecated special durations to v14 duration.expiry. dnd5e 6.0+ understands the same
+    // source/target expiry names DAE uses (< 6.0), so one map serves both versions.
+    const deprecatedSpecialDurMap: Record<string, string> = {
       "turnStart": "targetStart",
       "turnEnd": "targetEnd",
       "turnStartSource": "sourceStart",
       "turnEndSource": "sourceEnd",
-      "combatEnd": "combatEnd"
-    } : {
-      "turnStart": "turnStart",
-      "turnEnd": "turnEnd",
-      "turnStartSource": "turnStart",
-      "turnEndSource": "turnEnd",
       "combatEnd": "combatEnd"
     };
     const specialDurs: string[] = document.flags?.dae?.specialDuration ?? [];

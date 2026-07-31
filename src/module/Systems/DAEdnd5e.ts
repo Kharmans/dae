@@ -5,7 +5,7 @@ import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
 import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive } from "../dae.js";
 import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
-const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField } = foundry.data.fields;
+const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField, SetField } = foundry.data.fields;
 
 export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   static traitList: Record<string, string>;
@@ -62,7 +62,10 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
           name: i18n(`dae.genericSuffixes.${key}.name`),
           description: i18n(`dae.genericSuffixes.${key}.description`)
         };
-        if (overrideSuffixes.some(k => key.endsWith(k))) activitySpecs[`activities[${activityKey}].${key}`][1] = "override";
+        // Force override only for single-value enum fields. Never force it on a SetField (e.g.
+        // activities[save].save.ability is a Set of abilities) — those should allow all modes.
+        if (overrideSuffixes.some(k => key.endsWith(k)) && !(activitySpecs[`activities[${activityKey}].${key}`][0] instanceof SetField))
+          activitySpecs[`activities[${activityKey}].${key}`][1] = "override";
       }
       if (game.modules.get("midi-qol")?.active) {
         activitySpecs[`activities[${activityKey}].useConditionText`] = [new StringField({ label: i18n("midi-qol.FIELDS.useConditionText.hint") }), ""];
@@ -132,7 +135,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
         theSpecs["system.attack.flat"] = [new StringField(), ""];
         theSpecs["system.damage.bonus"] = [new StringField(), ""];
         theSpecs["system.damage.parts"] = [new StringField(), ""];
-        theSpecs["system.damage.types"] = [new StringField(), "override"];
+        // Damage types is a Set of damage types — allow all modes (add/-remove/subtract/override),
+        // like the actor damage-type traits, rather than forcing override.
+        theSpecs["system.damage.types"] = [new SetField(new StringField()), ""];
 
         // Remove some keys that shouldn't be there
         Object.keys(theSpecs).filter(k => k.includes("[consumptiontargetdata]")).forEach(k => delete theSpecs[k]);
