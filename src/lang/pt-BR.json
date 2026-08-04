@@ -222,6 +222,8 @@
   "dae.enabledFilter": "Efeitos Habilitados",
   "dae.temporaryFilter": "Efeitos Temporários",
   "dae.Priority": "Prioridade",
+  "dae.Phase": "Fase — quando esta alteração será aplicada (o padrão é a fase do campo; sua escolha tem prioridade)",
+  "dae.PhaseHeader": "Fase",
   "dae.Stackable": "Acumulável",
   "dae.EffectSheetLabel": "Ficha de Efeito Ativo DAE",
   "dae.confirm": "Diálogo de Confirmação",
