@@ -277,7 +277,7 @@
   "dae.DisableEffects.Name": "Desativar Processamento de Efeitos",
   "dae.DisableEffects.Hint": "Se habilitado, nenhum efeito ativo será aplicado aos personagens. Útil se você quiser alterar os valores dos personagens que são modificados por efeitos ativos.",
   "dae.HandleEquip.Name": "Lidar com Efeitos de Equipar/Desequipar",
-  "dae.HandleEquip.Hint": "Se habilitado, DAE irá lidar com efeitos ativos de equipar/desequipar, habilitar/desabilitar e alternar entre equipar/desequipar",
+  "dae.HandleEquip.Hint": "Se habilitado, DAE irá lidar com efeitos ativos de equipar/desequipar, habilitar/desabilitar e alternar entre equipar/desequipar.",
   "dae.DAETitleBar.Name": "DAE na Barra de Título",
   "dae.DAETitleBar.Hint": "Exibe o botão do editor de efeitos DAE na barra de título. (Você não precisa mais disso - basta editar na aba de efeitos).",
   "dae.DIMETitleBar.Name": "DIME na Barra de Título",
@@ -288,7 +288,9 @@
   "dae.DAENoTitleText.Hint": "Exibe apenas o ícone de chave inglesa na barra de título. Do contrário, ícone + DAE.",
   "dae.StatusEffect": "Status do Efeito",
   "dae.ShowDeprecation.Name": "Mostrar Erros Descontinuados",
-  "dae.ShowDeprecation.Hint": "Exibe erros de códigos descontinuados no console",
+  "dae.ShowDeprecation.Hint": "Exibe erros de códigos descontinuados no console.",
+  "dae.maxShortDuration.Name": "Duração Curta Máxima",
+  "dae.maxShortDuration.Hint": "Duração máxima (em rodadas) para efeitos de curta duração.",
   "dae.CE": "Convenient Effects",
   "dae.ShowInline.Name": "Exibir Resultados Inline",
   "dae.ShowInline.Hint": "Se habilitado, efeitos com uma rolagem inline exibirão os resultados da rolagem.",
@@ -381,10 +383,12 @@
   "dae.EnableCondition": "Uma expressão falsa irá remover o efeito do autor",
   "dae.ConditionalEffectsItem": "DAEConditionalEffects",
   "dae.IconTint": "Tonalidade do Ícone",
-  "dae.IconOverlay.Name": "Sobreposição de Ícones",
+  "dae.IconOverlay.Name": "Ícone Sopreposto",
   "dae.IconOverlay.Hint": "Exibe o ícone de status do efeito como uma sobreposição.",
   "dae.DependentConditions.Name": "Condições Dependentes",
   "dae.DependentConditions.Hint": "Os efeitos de status (Envenenado/Paralisado) também adicionarão condições dependentes, como Incapacitado.",
+  "dae.InitMacrosOnLoad.Name": "Macros Init ao Carregar Mundo",
+  "dae.InitMacrosOnLoad.Hint": "Dispare os efeitos de macro.itemMacro/macro.activityMacro com uma ação 'init' ao carregar o mundo para que as macros possam registrar novamente os hooks.",
   "__Comment__": "As strings a seguir são para o sistema DAE. A tradução é opcional",
   "dae.fieldData": {
     "fieldCategories.All": "Todas",
@@ -2101,23 +2105,23 @@
   "dae.Unknown.fieldData": {
     "system.ability": {
       "name": "Atributo Ataque",
-      "description": "NOTA: Deveria usar \"activities[attack].attack.ability\" em vez disso."
+      "description": "Nota: Equivalente a \"activities[attack].attack.ability\"."
     },
     "system.attack.bonus": {
       "name": "Bônus Ataque",
-      "description": "NOTA: Deveria usar \"activities[attack].attack.bonus\" em vez disso."
+      "description": "Nota: Equivalente a \"activities[attack].attack.bonus\"."
     },
     "system.attack.flat": {
       "name": "Fixo para Atingir Ataque",
-      "description": "Verdadeiro (true) ou Falso (false). NOTA: Deveria usar \"activities[attack].attack.flat\" em vez disso."
+      "description": "Verdadeiro (true) ou Falso (false). Nota: Equivalente a \"activities[attack].attack.flat\"."
     },
     "system.damage.bonus": {
       "name": "Bônus Dano",
-      "description": "NOTA: Deveria usar \"system.damageBonus\" em vez disso."
+      "description": "Bônus para todas as atividades que causam dano."
     },
     "system.damageBonus": {
       "name": "Bônus Dano",
-      "description": "Bônus para todas as atividades que causam dano."
+      "description": "Nota: Deveria usar \"system.damageBonus\" em vez disso."
     },
     "system.damage.parts": {
       "name": "Partes Dano",
