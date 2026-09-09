@@ -613,11 +613,8 @@
   flex: 1;
   min-height: 0;
 
-  // Size both grids to their content. The ol clips horizontally (overflow-x is forced to hidden
-  // by overflow-y: auto), so without this the right-hand columns of each row were cut off once
-  // the grid overflowed -- the header still showed their labels, but scrolling the tab could
-  // never bring the row cells into view; only widening the window did. Vertical scrolling of the
-  // ol is unchanged.
+  // Size both grids to content: overflow-y: auto forces overflow-x: hidden on the ol, which clipped
+  // the right-hand row cells once the grid overflowed.
   header {
     grid-template-columns: 400px 110px 1fr 96px 60px 1rem;
     padding-right: 14px;

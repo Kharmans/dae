@@ -2,7 +2,7 @@
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive } from "../dae.js";
+import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive } from "../dae.js";
 import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField, SetField } = foundry.data.fields;
@@ -544,10 +544,13 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
 
     // WRAPPER on applyActiveEffects — DAE extends core + dnd5e effect application.
     // Core+dnd5e handle: phase validation, change collection, sorting, applyChange, overrides.
-    // DAE adds: phase correction for missed changes (ValidSpec), showIcon deprecation.
+    // DAE adds: ATL runtime rewrite, vision-mode sibling defaults, showIcon deprecation.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", daeApplyActiveEffects, "WRAPPER");
+    // MIXED on shouldApplyChange — collect each change in its ValidSpec phase, so phase-corrected
+    // changes take part in core's priority sort instead of being applied after it.
+    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.shouldApplyChange", daeShouldApplyChange, "MIXED");
     // WRAPPER on ActiveEffect.applyChange — handles per-change DAE transformations:
-    // field mappings, dae.eval, @data rewrite, @stackCount, OverTime suffix, stacks.
+    // field mappings, dae.eval, @data rewrite, OverTime suffix, stacks.
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.applyChange", daeApplyChange, "MIXED");
     // WRAPPER on prepareData for DAE-specific pre/post work
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");

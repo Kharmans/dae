@@ -1,5 +1,5 @@
 import { applyActiveEffects, socketlibSocket } from "./GMAction.js";
-import { warn, error, debug, setDebugLevel, i18n, debugEnabled, daeManagesTurnExpiry } from "../dae.js";
+import { warn, error, debug, setDebugLevel, i18n, debugEnabled } from "../dae.js";
 import { ActiveEffects } from "./apps/ActiveEffects.js";
 import { macroActorUpdate } from "./daeMacros.js";
 import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
@@ -200,16 +200,26 @@ export function effectivePhase(change: { phase?: string, effect?: any }, spec?: 
   return spec?.phase ?? change?.phase ?? "initial";
 }
 
+/** Collect each change in its ValidSpec phase, not its stored one, so it joins core's priority sort. */
+export function daeShouldApplyChange(
+  this: ActiveEffect.Implementation,
+  wrapped: Function,
+  change: DAEChangeData,
+  options: { phase?: string } = {}
+): boolean {
+  if (disableEffects || !change?.key) return wrapped(change, options);
+  // ATL.* is handled separately (rewritten to token.* or deferred to the ATL module).
+  if (change.key.startsWith("ATL.")) return wrapped(change, options);
+  const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key]
+    ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[`token.${change.key}`];
+  return effectivePhase(change, spec, this) === options?.phase;
+}
+
 export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Function, phase: string) {
   if (disableEffects) {
     wrapped(phase);
     return;
   }
-
-  const ActiveEffectDoc = CONFIG.ActiveEffect.documentClass;
-
-  // Store current phase for daeApplyChange WRAPPER to use for phase correction
-  (this as any)._daeCurrentPhase = phase;
 
   debug("daeApplyActiveEffects: phase", phase, this.name);
 
@@ -231,40 +241,13 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
     }
   }
 
-  // Collect "missed" changes: their EFFECTIVE phase is THIS phase (e.g. an unstamped change on a
-  // derived-field key still carrying the default "initial"), but their stored change.phase differs,
-  // so core's phase filter skipped them. Apply them after core+dnd5e finish their normal processing.
-  const missedChanges: DAEChangeData[] = [];
-  for (const effect of this.appliedEffects) {
-    if (effect.disabled || effect.isSuppressed) continue;
-    // @ts-expect-error v14 effect.system.changes
-    for (const change of (effect.system.changes as DAEChangeData[])) {
-      if (!change.key || change.key.startsWith("ATL.")) continue;
-      const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key];
-      if (effectivePhase(change, spec, effect) === phase && change.phase !== phase) {
-        // ValidSpec says this phase, but original phase doesn't match — core will skip it
-        const c = foundry.utils.deepClone(change) as DAEChangeData;
-        c.effect = effect;
-        c.count = effect.flags?.dae?.stacks || 1;
-        if (["system.traits.ci.value", "system.traits.ci.all", "system.traits.ci.custom"].includes(c.key))
-          c.priority = 0;
-        else {
-          // @ts-expect-error v14 CHANGE_TYPES
-          const typeDefaults = ActiveEffectDoc.CHANGE_TYPES ?? {};
-          c.priority = c.priority ?? typeDefaults[c.type]?.defaultPriority ?? (c.mode !== undefined ? c.mode * 10 : 0);
-        }
-        missedChanges.push(c);
-      }
-    }
-  }
-
   // Let core + dnd5e handle normal effect application:
   // - dnd5e: determineSuppression(), prepareEmbeddedData(), super call
   // - core: phase validation/tracking, change collection, sorting, token changes,
   //         status effects, applyChange() for each, overrides merge
   // Our daeApplyChange WRAPPER intercepts each applyChange call to add:
   //   phase correction (skip wrong-phase), ATL exclusion, bonusSelector expansion,
-  //   field mappings, dae.eval, @data rewrite, @stackCount, stacks
+  //   field mappings, dae.eval, @data rewrite, stacks
   wrapped(phase);
 
   // ATL → token.* runtime rewrite (Layer B — enabled by "runtime" and "full").
@@ -328,33 +311,6 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
     }
   }
 
-  // Apply missed changes (ValidSpec says this phase, original phase was different)
-  if (missedChanges.length > 0) {
-    if (debugEnabled > 0) warn("Applying missed phase-corrected changes", phase, this.name, missedChanges);
-    missedChanges.sort((a, b) => (a.priority ?? 50) - (b.priority ?? 50));
-    const replacementData = this.getRollData() as AnyMutableObject;
-    const overrides = {};
-    for (const c of missedChanges) {
-      if (!c.key || !c.count) continue;
-      if (c.key.startsWith("token.")) {
-        c.key = c.key.slice(6);
-        // @ts-expect-error v14 tokenActiveEffectChanges
-        this.tokenActiveEffectChanges[phase] ??= [];
-        // @ts-expect-error v14 tokenActiveEffectChanges
-        this.tokenActiveEffectChanges[phase].push(c);
-        continue;
-      }
-      // @ts-expect-error v14 static applyChange
-      const result = ActiveEffectDoc.applyChange(this, c, { replacementData });
-      if (result && typeof result === "object") Object.assign(overrides, result);
-    }
-    foundry.utils.mergeObject(this.overrides || {}, foundry.utils.expandObject(overrides) || {}, { inplace: true, overwrite: true });
-  }
-
-  // Clean up phase context after final phase
-  if (phase === "final") {
-    delete (this as any)._daeCurrentPhase;
-  }
 }
 
 // Keep the old name as an alias for backward compatibility with any external callers
@@ -371,7 +327,6 @@ export const applyDaeEffects = daeApplyActiveEffects;
  * - OverTime key suffix (randomID to prevent flag collision)
  * - @data. deprecation rewrite
  * - dae.eval() and dae.roll() expression evaluation
- * - @stackCount substitution
  * - Stack count (multi-apply for stacked effects)
  */
 export function daeApplyChange(
@@ -392,12 +347,10 @@ export function daeApplyChange(
       // Prevent Foundry's roll data replacement from treating @UUID/@uuid as data paths
       change.value = change.value.replaceAll("@UUID", "##UUID").replaceAll("@uuid", "##uuid");
     }
-    // Provide actor's rollData so item enchantment effects can reference @abilities.str.mod etc.
-    // Also add @mod for the item's ability modifier.
+    // rollData so item enchantment effects can use @abilities.str.mod / @mod.
     if (item.actor && !options.replacementData) {
-      const rollData = item.actor.getRollData();
-      // @ts-expect-error no dnd5e-types — abilityMod is dnd5e-specific
-      rollData.mod = rollData.abilities?.[(item as any).abilityMod]?.mod ?? 0;
+      const rollData = item.actor.getRollData() as AnyMutableObject;
+      rollData.mod = (rollData.abilities as any)?.[(item as any).abilityMod]?.mod ?? 0;
       options.replacementData = rollData;
     }
     return wrapped(targetDoc, change, options);
@@ -408,21 +361,6 @@ export function daeApplyChange(
   }
 
   const actor = targetDoc as Actor.Implementation;
-
-  // --- Phase correction ---
-  // Skip a change here if its EFFECTIVE phase (the change's own phase when explicitly set, else the
-  // ValidSpec phase for the key) differs from the current phase. The applyActiveEffects WRAPPER
-  // collects and re-applies these "missed" changes in their correct phase.
-  // For token.* keys: core strips the "token." prefix before calling applyChange, so we also
-  // check the prefixed key against ValidSpec.
-  const currentPhase = (actor as any)._daeCurrentPhase;
-  if (currentPhase) {
-    const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key]
-      ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[`token.${change.key}`];
-    if (effectivePhase(change, spec) !== currentPhase) {
-      return {};
-    }
-  }
 
   // --- ATL handling ---
   // When atlRewriteAtRuntime is on (Layer B), ATL.* changes have already been pre-translated
@@ -508,18 +446,35 @@ export function daeApplyChange(
 
   // dae.eval() and dae.roll() expression handling
   const stacks = change.count ?? change.effect?.flags?.dae?.stacks ?? 1;
+  const hadAtRef = typeof change.value === "string" && change.value.includes("@");
+  // FormulaFields keep "@" for roll time, so core never resolves @stackCount in them.
+  if (typeof change.value === "string" && change.value.includes("@stackCount")) {
+    change.value = change.value.replaceAll("@stackCount", String(stacks));
+  }
   if (typeof change.value === "string" && (change.value.includes("dae.eval(") || change.value.includes("dae.roll("))) {
     const conditionData = actor.getRollData();
     foundry.utils.mergeObject(conditionData, { stackCount: stacks, effect: change.effect?.toObject() });
     change.value = daeSystemClass.safeEvalExpression(change.value, conditionData);
   }
 
-  // @stackCount substitution
-  if (typeof change.value === "string") {
-    change.value = change.value.replace("@stackCount", String(stacks));
-  }
-  if (options.replacementData) {
-    options.replacementData.stackCount = stacks;
+  // Core substitutes @refs on non-schema keys but casts with Number(), so arithmetic yields 0.
+  // Evaluate here, as NumberField does for schema keys. Numeric targets only - formula-valued
+  // flags (midi optional bonuses and the like) must keep their string.
+  if (typeof change.value === "string" && hadAtRef && change.key.startsWith("flags.") && !change.value.includes("[[")) {
+    const current = foundry.utils.getProperty(actor, change.key);
+    const fieldType = ValidSpec.actorSpecs?.[actor.type]?.allSpecsObj?.[change.key]?.fieldType;
+    if (typeof current === "number" || fieldType === "number") {
+      const resolved = Roll.replaceFormulaData(change.value, actor.getRollData() as AnyObject, { missing: "0", warn: false });
+      const foreignWord = /\b(?!(?:floor|ceil|round|abs|min|max|pow|sqrt|sign|clamp|clamped)\b)[a-zA-Z_]\w*/;
+      if (!foreignWord.test(resolved)) {
+        try {
+          const total = Roll.create(resolved).evaluateSync({ strict: false }).total;
+          if (Number.isFinite(total)) change.value = String(total);
+        } catch (err) {
+          warn("daeApplyChange | could not evaluate", change.key, resolved, err);
+        }
+      }
+    }
   }
 
   // --- Stack count (multi-apply for stacked effects) ---
@@ -1967,45 +1922,8 @@ export function daeInitActions() {
       if (debugEnabled > 0) warn("_preCreateActiveEffect", this, context);
       // Status effect reconciliation now handled via queueStatusReconciliation hook
     }
-    // For source/target expiry events, convert to core turnStart/turnEnd before
-    // calling wrapped so core sees a recognized expiry value. Record the original
-    // expiry and target actor so we can override start.combatant after wrapped.
-    // dnd5e 6.0+ handles source/target turn expiry natively.
-    let coreExpiry: string | undefined;
-    let expiry: string | undefined;
-    if (daeManagesTurnExpiry) {
-      const daeExpiryMap: Record<string, string> = {
-        sourceStart: "turnStart", sourceEnd: "turnEnd",
-        targetStart: "turnStart", targetEnd: "turnEnd",
-      };
-      //@ts-expect-error v14 types
-      expiry = this.duration?.expiry as string | undefined;
-      coreExpiry = expiry ? daeExpiryMap[expiry] : undefined;
-      if (coreExpiry) {
-        this.updateSource({ duration: { expiry: coreExpiry } } as Record<string, unknown>);
-      }
-    }
-
+    // Source/target expiries are kept verbatim; patching.ts evaluates them (dnd5e 6.0 does so natively).
     if (result !== false) result = await wrapped(data, context, user);
-
-    // After wrapped, override start.combatant for source/target expiry
-    if (coreExpiry && this.parent instanceof Actor && game.combat?.started) {
-      const overrideActor = (expiry === "sourceStart" || expiry === "sourceEnd")
-        ? (this.origin ? actorFromUuid(this.origin) : null) ?? this.parent
-        : this.parent;
-      const combatant = game.combat.getCombatantsByActor(overrideActor)?.[0];
-      if (combatant) {
-        this.updateSource({
-          start: {
-            combatant: combatant.id,
-            combat: game.combat!.id,
-            round: game.combat!.round,
-            turn: game.combat!.turn,
-            initiative: combatant.initiative,
-          }
-        } as Record<string, unknown>);
-      }
-    }
     return result;
   }
 
@@ -2609,7 +2527,7 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, { 
     try {
       await actor.deleteEmbeddedDocuments("ActiveEffect", existing.map(e => e.id!));
     } catch (err) {
-      // Race condition: another concurrent call deleted this status effect first
+      // Race: a concurrent call deleted it first
       if (!String(err).includes("does not exist")) throw err;
     }
     return false;

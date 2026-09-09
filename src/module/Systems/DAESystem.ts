@@ -1,6 +1,6 @@
 import { AnyMutableObject, AnyObject } from "fvtt-types/utils";
 import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
-import { daeApplyActiveEffects, daeApplyChange, daeSystemClass, libWrapper, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner, actionQueue, daeMacro, daeInitMacroActors, pendingInitMacroEffects } from "../dae.js";
+import { daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeSystemClass, libWrapper, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner, actionQueue, daeMacro, daeInitMacroActors, pendingInitMacroEffects } from "../dae.js";
 
 const { ArrayField, BooleanField, NumberField, ObjectField, SchemaField, SetField, StringField } = foundry.data.fields;
 
@@ -529,8 +529,12 @@ export class DAESystem {
 
     // WRAPPER on applyActiveEffects — DAE extends core + system effect application.
     // Core handles: phase validation, change collection, sorting, applyChange, overrides.
-    // DAE adds: phase correction for missed changes (ValidSpec), showIcon deprecation.
+    // DAE adds: ATL runtime rewrite, vision-mode sibling defaults, showIcon deprecation.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", daeApplyActiveEffects, "WRAPPER");
+    // MIXED on shouldApplyChange — collect each change in its ValidSpec phase, so phase-corrected
+    // changes take part in core's priority sort instead of being applied after it.
+    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.shouldApplyChange", daeShouldApplyChange, "MIXED");
+
     // MIXED on ActiveEffect.applyChange — handles per-change DAE transformations:
     // field mappings, dae.eval, @data rewrite, @stackCount, OverTime suffix, stacks.
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.applyChange", daeApplyChange, "MIXED");

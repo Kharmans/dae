@@ -31,6 +31,8 @@ export function i18nFormat(key: string, data) {
 export let gameSystemCompatible = "maybe"; // no, yes, maybe
 export let daeUntestedSystems: boolean;
 export let daeManagesTurnExpiry: boolean = false; // true when dnd5e < 6.0.0 (dnd5e 6.0+ handles source/target turn expiry natively)
+/** Mirrors dnd5e 6.0 ActiveEffect5e.PSEUDO_EXPIRIES. */
+export const PSEUDO_EXPIRIES = new Set(["sourceStart", "sourceEnd", "targetStart", "targetEnd"]);
 export const MODULE_ID = "dae";
 /* ------------------------------------ */
 /* Initialize module					*/

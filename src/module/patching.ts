@@ -1,4 +1,44 @@
-import { MODULE_ID } from "../dae.js";
+import { MODULE_ID, PSEUDO_EXPIRIES, daeManagesTurnExpiry } from "../dae.js";
+import { actorFromUuid } from "./dae.js";
+
+/**
+ * Port of dnd5e 6.0 ActiveEffect5e#isExpiryEvent for the source/target pseudo-expiries.
+ * Used only for dnd5e < 6.0; 6.0+ implements these natively.
+ */
+function pseudoExpiryEvent(this: ActiveEffect, special: string, event: string, context: any): boolean {
+  // Mirrors ActiveEffect#actor, which fvtt-types does not expose
+  const effectActor = !this.isEmbedded ? null
+    : this.parent instanceof Actor ? this.parent
+      : this.parent instanceof Item ? this.parent.parent
+        : null;
+
+  // Out of combat, any time advancement expires the effect
+  if ((event === "updateWorldTime") && !effectActor?.inCombat) return true;
+
+  const isStart = special.endsWith("Start");
+  if (event !== (isStart ? "turnStart" : "turnEnd")) return false;
+
+  // @ts-expect-error v14 start schema not in fvtt-types yet
+  const start = this.start;
+  if (!start?.combat) return true;
+  const combat = context?.combat ?? game.combat;
+  if (combat !== start.combat) return false;
+
+  // Affected actor for "target", originating actor for "source"; re-derived, not stored
+  const origin = special.startsWith("target")
+    ? effectActor
+    : (this.origin ? actorFromUuid(this.origin) : null);
+  const [combatant] = combat.getCombatantsByActor(origin ?? "");
+  if (!combatant) return start.round < context?.round;
+
+  const originTurn = isStart
+    ? (combat.combatant === combatant)
+    : (combat.previous.combatantId === combatant.id);
+  if (!originTurn) return false;
+
+  // Skip the turn the effect was applied on
+  return (start.round !== context?.round) || (start.turn !== context?.turn);
+}
 
 /**
  * Register lib-wrapper patches for ActiveEffect prototype methods.
@@ -8,14 +48,17 @@ export function registerActiveEffectPatches(): void {
   const libWrapper = globalThis.libWrapper;
 
   // Patch isExpiryEvent:
-  // 1. "updateWorldTime" expiry: expire whenever duration runs out, regardless of event
-  // 2. Event-only effects (no duration value): don't let time advance satisfy combat expiry
-  // source/target expiry values are converted to turnStart/turnEnd + start.combatant in
-  // _preCreateActiveEffect, so core handles them natively.
+  // 1. source/target pseudo-expiries: evaluated as dnd5e 6.0 does (pre-6.0 only)
+  // 2. "updateWorldTime" expiry: expire whenever duration runs out, regardless of event
+  // 3. Event-only effects (no duration value): don't let time advance satisfy combat expiry
   libWrapper.register(MODULE_ID, "CONFIG.ActiveEffect.documentClass.prototype.isExpiryEvent",
     function isExpiryEventWrapper(this: ActiveEffect, wrapped: Function, event: string, context: any) {
       // @ts-expect-error v14 duration.expiry not in fvtt-types yet
-      if (this.duration.expiry === "updateWorldTime") return true;
+      const expiry: string | undefined = this.duration.expiry;
+      if (daeManagesTurnExpiry && expiry && PSEUDO_EXPIRIES.has(expiry)) {
+        return pseudoExpiryEvent.call(this, expiry, event, context);
+      }
+      if (expiry === "updateWorldTime") return true;
       // @ts-expect-error v14 _source.duration.value not in fvtt-types yet
       if (event === "updateWorldTime" && !Number.isFinite(this._source.duration.value)) return false;
       return wrapped(event, context);

@@ -371,6 +371,10 @@ export async function applyActiveEffects({
           aeData.duration.value = effectDuration.value;
           // @ts-expect-error v14 duration.units
           aeData.duration.units = mappedUnits;
+          // The stored expiry is null (it was set when the effect had no duration) and core's initial
+          // cannot re-fire, so stamp one - without it the duration only expires on the round tick.
+          // @ts-expect-error v14 duration.expiry
+          if (!aeData.duration.expiry) aeData.duration.expiry = "updateWorldTime";
           debug("inherited duration from activity/item", effectDuration, "→", mappedUnits);
         }
         warn("Apply active effects ", aeData, itemCardUuid);

@@ -166,9 +166,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     },
     position: {
       height: "auto" as "auto",
-      // The changes grid measures 968px at its minimum (400 key + 110 mode + 250 value + 96
-      // phase + 60 priority + 16 controls, plus gaps and the header's scrollbar gutter), and the
-      // window adds ~34px of chrome.
+      // 968px minimum grid + ~34px window chrome.
       width: 1010
     },
     classes: ["sheet", "active-effect-config", "window-app", "dae"],
@@ -334,8 +332,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     // Restrict change types if the spec has a forced mode
     const spec = this.validSpecsToUse?.allSpecsObj[change.key];
     if (spec?.forcedMode) {
-      const numericToString: Record<number, string> = { 0: "custom", 1: "multiply", 2: "add", 3: "downgrade", 4: "upgrade", 5: "override" };
-      const forcedMode = (typeof spec.forcedMode === "number" ? numericToString[spec.forcedMode] ?? "" : spec.forcedMode).toLowerCase();
+      const forcedMode = spec.forcedMode.toLowerCase();
       if (forcedMode) {
         const restrictedTypes: Record<string, string> = {};
         restrictedTypes[forcedMode] = context.changeTypes[forcedMode] ?? forcedMode;
@@ -349,20 +346,19 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
 
     // Replace value with a select if the spec provides options
     let options = spec?.options ?? this.getOptionsForSpec(change);
-    // Set-backed if the spec's own field is a SetField (covers actor traits AND item/enchantment damage
-    // types whose fields live on the item/activity schema), falling back to actor-schema resolution.
     const isSet = !!options && !spec?.forcedMode
       && ((spec?.fieldType instanceof foundry.data.fields.SetField) || isSetBackedKey(change.key, this.document));
 
-    // Picker values: pin string fields to override (v14 default "add" would string-concat);
-    // Set fields default to "add" with the type left unrestricted (override would wipe the Set).
-    if (options && !spec?.forcedMode) {
-      if (isSet) {
-        if (!change.type) change.type = "add";
-      } else {
-        change.type = "override";
-        context.changeTypes = { override: context.changeTypes?.override ?? "override" };
-      }
+    // Picker values get a sensible default type, but every mode stays selectable. v14's SetField
+    // implements union / difference / isSupersetOf / isSubsetOf for add, subtract, upgrade and
+    // downgrade, and override replaces the Set, so all six modes are well defined and there is
+    // nothing to protect the user from. (On v13 only add was implemented and the rest were silent
+    // no-ops, which is why this used to restrict the list.)
+    //
+    // Sets default to "add" - override would silently discard the entries already there. Single
+    // valued pickers default to "override", since the v14 default of "add" would concatenate.
+    if (options && !spec?.forcedMode && !change.type) {
+      change.type = isSet ? "add" : "override";
     }
 
     // traitList carries "-value" removal entries. Keep them for custom mode (DAE's doCustomArrayValue)
@@ -802,19 +798,40 @@ export function isEnchantment(effect: ActiveEffect): boolean {
   return effect.type === "enchantment";
 }
 
-// True if `key` resolves to a SetField on the real data model. DAE models these as StringField
-// in its spec, so resolve from the actual model (preferring the effect's actor subtype).
+/**
+ * Whether a change key is backed by a SetField. DAE models some of these as StringField in its own
+ * spec, so the real data model has to be consulted.
+ *
+ * Item and activity keys must be recognised as well as actor ones. An effect on an actor is matched
+ * against actorSpecs, which holds no entry for keys like system.damage.base.types, so the caller
+ * falls through to here - and resolving the path against actor schemas alone finds nothing for any
+ * actor type, which silently mistyped set-valued item fields. DAE's own itemSpecs table is tried
+ * first since it already resolves activity keys (activities.<id>.damage...), which no schema
+ * getField call will walk into.
+ */
 function isSetBackedKey(key: string, doc: ActiveEffect.Implementation): boolean {
+  const SetField = foundry.data.fields.SetField;
+
+  if (ValidSpec.itemSpecs?.["union"]?.allSpecsObj?.[key]?.fieldType instanceof SetField) return true;
+
   if (!key.startsWith("system.")) return false;
   const path = key.slice(7);
-  const SetField = foundry.data.fields.SetField;
-  const fieldFor = (type?: string) => type ? CONFIG.Actor.dataModels[type]?.schema?.getField?.(path) : undefined;
+  const fieldFor = (models: Record<string, any>, type?: string) =>
+    type ? models[type]?.schema?.getField?.(path) : undefined;
 
-  const parent = doc?.parent;
-  const preferred = parent instanceof CONFIG.Actor.documentClass ? parent.type
-    : parent instanceof CONFIG.Item.documentClass ? parent.actor?.type : undefined;
-  let field = fieldFor(preferred);
-  if (!field) for (const type of Object.keys(CONFIG.Actor.dataModels)) { field = fieldFor(type); if (field) break; }
+  const parent: any = doc?.parent;
+  const isItemParent = parent instanceof CONFIG.Item.documentClass;
+  const preferredActor = parent instanceof CONFIG.Actor.documentClass ? parent.type
+    : isItemParent ? parent.actor?.type : undefined;
+
+  let field = fieldFor(CONFIG.Actor.dataModels, preferredActor)
+    ?? (isItemParent ? fieldFor(CONFIG.Item.dataModels, parent.type) : undefined);
+  if (!field) for (const type of Object.keys(CONFIG.Actor.dataModels)) {
+    field = fieldFor(CONFIG.Actor.dataModels, type); if (field) break;
+  }
+  if (!field) for (const type of Object.keys(CONFIG.Item.dataModels)) {
+    field = fieldFor(CONFIG.Item.dataModels, type); if (field) break;
+  }
   return field instanceof SetField;
 }
 
