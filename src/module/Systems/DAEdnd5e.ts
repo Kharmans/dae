@@ -426,7 +426,19 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     const actorModelSchemaFields = this.getActorDataModelFields(actorType);
     if (actorType === "vehicle") {
       specials["system.attributes.ac.motionless"] = [new NumberField(), ""];
-      specials["system.attributes.ac.flat"] = [new NumberField(), ""];
+      /*
+       * Applied before derived data, unlike every other special.
+       *
+       * dnd5e computes AC *from* ac.flat when the calculation is "flat", and it does that during
+       * prepareDerivedData — so a value delivered afterwards arrives too late and the AC is computed
+       * from nothing. Measured on a character: an effect setting calc=flat and flat=17 produced an
+       * AC of 0, while the same values written straight to the actor produced 17.
+       *
+       * That reached characters at all because the union spec list is flattened across actor types
+       * with the last writer winning, and `daeShouldApplyChange` consults the union whatever the
+       * actor is — so this vehicles-only special governed everybody.
+       */
+      specials["system.attributes.ac.flat"] = [new NumberField(), "", "initial"];
     } else {
       specials["system.attributes.ac.value"] = [new NumberField(), ""];
     }
@@ -603,12 +615,9 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   public static setupActions(): void {
   }
 
-  public static async preCreateActiveEffect(effect: ActiveEffect): Promise<void> {
-    if (effect.parent instanceof Actor) {
-      //@ts-expect-error createRiderConditions is dnd5e-specific
-      await effect.createRiderConditions();
-    }
-  }
+  // No preCreateActiveEffect override: dnd5e creates rider conditions itself on effect creation
+  // (ActiveEffect5e._onCreateOperation), so DAE calling createRiderConditions only duplicated the
+  // work — via an API deprecated in dnd5e 6.0 — and did so without dnd5e's `active` gate.
 
   public static readyActions(): void {
     // checkArmorDisabled();
@@ -632,60 +641,8 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
       addAutoFields(atlFields);
     }
     Hooks.callAll("dae.addSpecialDurations", daeSpecialDurations)
-    if (game.modules.get("midi-qol")?.active) {
-      daeSpecialDurations["1Action"] = i18n("dae.1Action");
-      daeSpecialDurations["Bonus Action"] = i18n("dae.Bonus Action");
-      daeSpecialDurations["Reaction"] = i18n("dae.Reaction");
-      daeSpecialDurations["Turn Action"] = i18n("dae.Turn Action");
-      daeSpecialDurations["1Spell"] = i18n("dae.1Spell");
-      daeSpecialDurations["1Attack"] = i18nFormat("dae.1Attack", { type: `${i18n("dae.spell")}/${i18n("dae.weapon")} ${i18n("dae.attack")}` });
-      daeSpecialDurations["1Hit"] = i18nFormat("dae.1Hit", { type: `${i18n("dae.spell")}/${i18n("dae.weapon")}` });
-      daeSpecialDurations["1Critical"] = i18n("dae.1Critical");
-      daeSpecialDurations["1Fumble"] = i18n("dae.1Fumble");
-      //    daeSpecialDurations["1Hit"] = i18n("dae.1Hit");
-      daeSpecialDurations["1Reaction"] = i18n("dae.1Reaction")
-      let attackTypes = ["mwak", "rwak", "msak", "rsak"];
-      attackTypes.forEach(at => {
-        daeSpecialDurations[`1Attack:${at}`] = `${this.systemConfig.itemActionTypes[at]}: ${i18nFormat("dae.1Attack", { type: this.systemConfig.itemActionTypes[at] })}`;
-        daeSpecialDurations[`1Hit:${at}`] = `${this.systemConfig.itemActionTypes[at]}: ${i18nFormat("dae.1Hit", { type: this.systemConfig.itemActionTypes[at] })}`;
-      })
-      daeSpecialDurations["DamageDealt"] = i18n("dae.DamageDealt");
-      daeSpecialDurations["isAttacked"] = i18n("dae.isAttacked");
-      daeSpecialDurations["isDamaged"] = i18n("dae.isDamaged");
-      daeSpecialDurations["isHealed"] = i18n("dae.isHealed");
-      daeSpecialDurations["zeroHP"] = i18n("dae.ZeroHP");
-      daeSpecialDurations["isHit"] = i18n("dae.isHit");
-      daeSpecialDurations["isHitCritical"] = i18n("dae.isHitCritical");
-      daeSpecialDurations["isSave"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}`;
-      daeSpecialDurations["isSaveSuccess"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
-      daeSpecialDurations["isSaveFailure"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
-      daeSpecialDurations["isConcentrationSave"] = i18n("dae.isConcentrationSave");
-      daeSpecialDurations["isConcentrationSaveFail"] = `${i18n("dae.isConcentrationSave")}: ${i18n("dae.failure")}`;
-      daeSpecialDurations["isConcentrationSaveSuccess"] = `${i18n("dae.isConcentrationSave")}: ${i18n("dae.success")}`;
-      daeSpecialDurations["isCheck"] = `${i18n("dae.isRollBase")} ${i18n("dae.isCheckDetail")}`;
-      daeSpecialDurations["isSkill"] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")}`;
-      daeSpecialDurations["isInitiative"] = `${i18n("dae.isRollBase")} ${i18n("dae.isInitiativeDetail")}`;
-
-      daeSpecialDurations["isMoved"] = i18n("dae.isMoved");
-      daeSpecialDurations["longRest"] = i18n("DND5E.REST.Long.Label");
-      daeSpecialDurations["shortRest"] = i18n("DND5E.REST.Short.Label");
-      daeSpecialDurations["newDay"] = `${i18n("DND5E.REST.NewDay.Label")}`;
-      Object.keys(this.systemConfig.abilities).forEach(abl => {
-        let ablString = this.systemConfig.abilities[abl].label
-        daeSpecialDurations[`isSave.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}`;
-        daeSpecialDurations[`isSaveSuccess.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.success")}`;
-        daeSpecialDurations[`isSaveFailure.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isSaveDetail")}: ${i18n("dae.failure")}`;
-        daeSpecialDurations[`isCheck.${abl}`] = `${i18n("dae.isRollBase")} ${ablString} ${i18n("dae.isCheckDetail")}`;
-      });
-      Object.keys(this.systemConfig.damageTypes).forEach(key => {
-        daeSpecialDurations[`isDamaged.${key}`] = `${i18n("dae.isDamaged")}: ${this.systemConfig.damageTypes[key].label}`;
-      });
-
-      daeSpecialDurations[`isDamaged.healing`] = `${i18n("dae.isDamaged")}: ${this.systemConfig.healingTypes["healing"].label}`;
-      Object.keys(this.systemConfig.skills).forEach(skillId => {
-        daeSpecialDurations[`isSkill.${skillId}`] = `${i18n("dae.isRollBase")} ${i18n("dae.isSkillDetail")} ${this.systemConfig.skills[skillId].label}`;
-      });
-    }
+      // midi-qol registers its own special durations via the dae.addSpecialDurations hook above.
+      // DAE only defines system-agnostic entries; the dnd5e/midi ones belong to whoever implements them.
     // Rely on suppression Hooks.on("updateItem", updateItem); // deal with disabling effects for unequipped items
   }
 
@@ -694,13 +651,29 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     this.spellAttacks = ["msak", "rsak"];
     this.weaponAttacks = ["mwak", "rwak"];
     this.attackTypes = this.weaponAttacks.concat(this.spellAttacks);
+    /*
+     * dnd5e 6.0 moved attack/damage bonuses out of `system.bonuses.<type>.<attack|damage>` and into
+     * `system.rolls.<attack|damage>.<type>.bonus`. Expand straight to the new paths: the old ones
+     * only still work through the system's `_applyChangeShim` deprecation layer, and these selector
+     * keys are DAE's own, so nothing upstream would rewrite them once that layer goes.
+     */
+    const rollBonus = (selector: string) => (at: string) => `system.rolls.${selector}.${at}.bonus`;
     this.bonusSelectors = {
-      "system.bonuses.All-Attacks": { attacks: this.attackTypes, selector: "attack" },
-      "system.bonuses.weapon.attack": { attacks: this.weaponAttacks, selector: "attack" },
-      "system.bonuses.spell.attack": { attacks: this.spellAttacks, selector: "attack" },
-      "system.bonuses.All-Damage": { attacks: this.attackTypes, selector: "damage" },
-      "system.bonuses.weapon.damage": { attacks: this.weaponAttacks, selector: "damage" },
-      "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage" },
+      "system.bonuses.All-Attacks": { attacks: this.attackTypes, selector: "attack", replaceList: ["system.rolls.attack.bonus"], deprecatedFor: "system.rolls.attack.bonus" },
+      "system.bonuses.weapon.attack": { attacks: this.weaponAttacks, selector: "attack", replaceList: this.weaponAttacks.map(rollBonus("attack")), deprecatedFor: "system.rolls.attack.weapon.bonus" },
+      "system.bonuses.spell.attack": { attacks: this.spellAttacks, selector: "attack", replaceList: this.spellAttacks.map(rollBonus("attack")), deprecatedFor: "system.rolls.attack.spell.bonus" },
+      "system.bonuses.All-Damage": { attacks: this.attackTypes, selector: "damage", replaceList: this.attackTypes.map(rollBonus("damage")), deprecatedFor: "system.rolls.damage.all.bonus" },
+      "system.bonuses.weapon.damage": { attacks: this.weaponAttacks, selector: "damage", replaceList: this.weaponAttacks.map(rollBonus("damage")), deprecatedFor: "system.rolls.damage.weapon.bonus" },
+      "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage", replaceList: this.spellAttacks.map(rollBonus("damage")), deprecatedFor: "system.rolls.damage.spell.bonus" },
+      // New-form selectors in the system.rolls namespace. The legacy system.bonuses.* forms above
+      // stay as aliases so existing content keeps working. There is no "all attacks" entry here:
+      // dnd5e combines `rolls.attack` into every attack roll, so that native key already is one.
+      // Damage has no such global, so `rolls.damage.all.bonus` stays a DAE expansion.
+      "system.rolls.attack.weapon.bonus": { attacks: this.weaponAttacks, selector: "attack", replaceList: this.weaponAttacks.map(rollBonus("attack")) },
+      "system.rolls.attack.spell.bonus": { attacks: this.spellAttacks, selector: "attack", replaceList: this.spellAttacks.map(rollBonus("attack")) },
+      "system.rolls.damage.all.bonus": { attacks: this.attackTypes, selector: "damage", replaceList: this.attackTypes.map(rollBonus("damage")) },
+      "system.rolls.damage.weapon.bonus": { attacks: this.weaponAttacks, selector: "damage", replaceList: this.weaponAttacks.map(rollBonus("damage")) },
+      "system.rolls.damage.spell.bonus": { attacks: this.spellAttacks, selector: "damage", replaceList: this.spellAttacks.map(rollBonus("damage")) },
     };
     this.daeActionTypeKeys = Object.keys(this.systemConfig.itemActionTypes);
   }
@@ -1230,8 +1203,8 @@ function prepareData(this: Actor.Implementation, wrapped) {
         // @ts-expect-error v14 system.changes
         const hasMacro = ef.system.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro") || c.key.startsWith("macro.execute"));
         if (ef.disabled || ef.isSuppressed) continue;
-        // @ts-expect-error isAppliedEnchantment
-        if (ef.type === "enchantment" && !ef.isAppliedEnchantment) continue;
+        // @ts-expect-error applicableType
+        if (ef.applicableType !== "Actor") continue;
         if (hasMacro) initEffects.push(ef);
       }
       for (const effect of initEffects) {

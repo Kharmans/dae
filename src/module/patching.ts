@@ -64,19 +64,18 @@ export function registerActiveEffectPatches(): void {
       return wrapped(event, context);
     }, "MIXED");
 
-  // Patch _prepareDuration:
-  // 1. Event-only effects (no duration value): core treats missing value as 0, making them
-  //    expire immediately on time advance. A blank value should mean "no time-based expiry".
-  // 2. "updateWorldTime" + turn-based duration: core's formula counts turns relative to the
-  //    start combatant's position (only turns at or after startTurn in each round), which is
-  //    correct for turnStart/turnEnd expiry but wrong for "time elapsed" where ALL turns
-  //    should count.
+  // Patch _prepareDuration for one case only: "updateWorldTime" + a turn-based duration. Core's
+  // formula counts turns relative to the start combatant's position (only turns at or after
+  // startTurn in each round), which is right for turnStart/turnEnd expiry but wrong for "time
+  // elapsed", where every turn should count.
+  //
+  // The event-only case this used to handle as well (no duration value, expiry set) is now handled
+  // upstream: dnd5e/core prepare such an effect with value, remaining and seconds all Infinity, which
+  // is exactly what the old early-return synthesised — and returning early skipped dnd5e's own
+  // _prepareDuration, losing its expiry labels.
   libWrapper.register(MODULE_ID, "CONFIG.ActiveEffect.documentClass.prototype._prepareDuration",
     function prepareDurationWrapper(this: ActiveEffect, wrapped: Function, duration: any, context: any) {
       duration ??= this.duration;
-      if (!Number.isFinite(duration.value) && duration.value !== Infinity && duration.expiry) {
-        return Object.assign(duration, { remaining: Infinity, seconds: Infinity, label: game.i18n?.localize("COMMON.None") ?? "None" });
-      }
       const result = wrapped(duration, context);
 
       // Fix "updateWorldTime" + turn-based duration: override remaining with total-turns-elapsed

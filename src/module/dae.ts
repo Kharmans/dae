@@ -212,7 +212,14 @@ export function daeShouldApplyChange(
   if (change.key.startsWith("ATL.")) return wrapped(change, options);
   const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key]
     ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[`token.${change.key}`];
-  return effectivePhase(change, spec, this) === options?.phase;
+  if (effectivePhase(change, spec, this) !== options?.phase) return false;
+  /*
+   * Phase is ours to decide; everything else is not. Delegate so the system still runs its own
+   * checks — effect-level condition evaluation, per-change `conditions`, and `change.applied`.
+   * Passing `change.phase` back in satisfies core's own `change.phase === options.phase` test,
+   * which we have already answered above against the ValidSpec phase instead.
+   */
+  return wrapped(change, { ...options, phase: change.phase });
 }
 
 export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Function, phase: string) {
@@ -374,6 +381,12 @@ export function daeApplyChange(
   // (e.g. system.bonuses.mwak.attack, system.bonuses.rwak.attack, etc.)
   if (daeSystemClass.bonusSelectors[change.key]) {
     const selector = daeSystemClass.bonusSelectors[change.key];
+    if (selector.deprecatedFor) {
+      foundry.utils.logCompatibilityWarning(
+        `dae | Actor ${actor?.name} ${change.key} is deprecated, use ${selector.deprecatedFor} instead.`,
+        { once: true, stack: false }
+      );
+    }
     const overrides = {};
     const keys: string[] = selector.replaceList
       ?? selector.attacks.map((at: string) => `system.bonuses.${at}.${selector.selector}`);
@@ -656,7 +669,8 @@ export async function expireEffects(actor: Actor.Implementation, effects: Active
       await actor.deleteEmbeddedDocuments("ActiveEffect", toDelete, context);
     }
     if (toSuppress.length > 0) {
-      const updates = toSuppress.map(id => ({ _id: id, "duration.expired": true }));
+      // Suppress by disabling; see expireEffect for why duration.expired cannot mean "keep".
+      const updates = toSuppress.map(id => ({ _id: id, "disabled": true, "duration.expired": false }));
       await actor.updateEmbeddedDocuments("ActiveEffect", updates, context);
     }
   }
@@ -2552,16 +2566,32 @@ export async function toggleActorStatusEffect(actor: Actor, statusId: string, { 
   }
 }
 
+/** Condition helpers that read a token's animated position: MidiQOL.canSee/canSense/canSenseModes and the findNearby canSee/isSeen options. */
+const VISION_DEPENDENT_CONDITION = /\b(canSee|canSense|canSenseModes|isSeen)\b/;
+
 export async function processConditionalEffects(actor: Actor.Implementation, updates: TokenDocument.UpdateData | Actor.UpdateData) {
   if (!game.users?.activeGM?.isSelf) return;
   if (!actor || !["character", "npc"].includes(actor.type)) return;
   const tokenDocument = tokenForActor(actor)?.document;
   const token = tokenDocument?.object;
-  // while (token?.animationContexts?.get(token.animationName)?.to) await delay(100);
-  // @ts-expect-error missing in fvtt-types currently
-  await token?.movementAnimationPromise;
-  const rollData = actor.getRollData() as AnyMutableObject;
   const effectItem = game.items?.getName(i18n("dae.ConditionalEffectsItem"));
+
+  // Midi's distance and cover helpers measure from _source, so only vision needs the animation to finish.
+  // The findNearby canSee/isSeen options share their names with the helpers, so one test covers both.
+  const conditions: string[] = [];
+  for (const ef of effectItem?.effects ?? []) {
+    if (!ef.disabled && typeof ef.flags?.dae?.enableCondition === "string") conditions.push(ef.flags.dae.enableCondition);
+  }
+  for (const effect of actor.allApplicableEffects()) {
+    const disableCondition = foundry.utils.getProperty(effect, "flags.dae.disableCondition");
+    if (typeof disableCondition === "string") conditions.push(disableCondition);
+  }
+  if (conditions.some(c => VISION_DEPENDENT_CONDITION.test(c))) {
+    // @ts-expect-error missing in fvtt-types currently
+    await token?.movementAnimationPromise;
+  }
+
+  const rollData = actor.getRollData() as AnyMutableObject;
   if (effectItem) {
     for (let conditionalEffect of effectItem.effects) {
       let enableCondition = conditionalEffect.flags?.dae?.enableCondition;
@@ -2759,7 +2789,15 @@ interface ToggleStatusEffectOptions {
   flags?: any;
 }
 
-export type BaseValuesInner = Record<string, [foundry.data.fields.DataField<any>, string]>
+/*
+ * A field, its forced mode, and optionally the phase it must be applied in.
+ *
+ * Specials are otherwise all "final", which is right for keys that overwrite something the system
+ * has just computed. It is wrong for a key the system computes *from* — see `ac.flat`.
+ */
+import type { SpecPhase } from "./Systems/DAESystem.js";
+
+export type BaseValuesInner = Record<string, [foundry.data.fields.DataField<any>, string, SpecPhase?]>
 type BaseValuesReturn = Record<string, BaseValuesInner>;
 
 interface EvalArgsInput {

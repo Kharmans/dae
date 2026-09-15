@@ -308,11 +308,11 @@
     "system.attributes.spellcasting"
   ],
   "SystemBonuses": [
+    "system.bonuses.All-Attacks",
+    "system.bonuses.All-Damage",
     "system.bonuses.abilities.check",
     "system.bonuses.abilities.save",
     "system.bonuses.abilities.skill",
-    "system.bonuses.All-Attacks",
-    "system.bonuses.All-Damage",
     "system.bonuses.check.damage",
     "system.bonuses.heal.damage",
     "system.bonuses.msak.attack",
@@ -329,7 +329,13 @@
     "system.bonuses.spell.damage",
     "system.bonuses.spell.dc",
     "system.bonuses.weapon.attack",
-    "system.bonuses.weapon.damage"
+    "system.bonuses.weapon.damage",
+    "system.rolls.attack.bonus",
+    "system.rolls.attack.spell.bonus",
+    "system.rolls.attack.weapon.bonus",
+    "system.rolls.damage.all.bonus",
+    "system.rolls.damage.spell.bonus",
+    "system.rolls.damage.weapon.bonus"
   ],
   "SystemTraits": [
     "system.traits.armorProf.all",
@@ -428,7 +434,6 @@
     "flags.dae",
     "flags.dae.onUpdateSource",
     "flags.dae.onUpdateTarget",
-    
     "system.favorites",
     "system.attributes.movement.air",
     "system.attributes.movement.land",

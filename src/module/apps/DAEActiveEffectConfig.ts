@@ -1,6 +1,13 @@
-import { ceInterface, atlActive, daeSystemClass, getStatusEffectsArray, localizationMap } from "../dae.js";
+import { ceInterface, atlActive, daeSystemClass, getStatusEffectsArray, localizationMap, effectivePhase } from "../dae.js";
 import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
+
+/*
+ * The schema default for a change's phase. Stored rather than a resolved phase, because a change
+ * carrying the default is the one `effectivePhase` resolves from the key's ValidSpec — which is how
+ * a change stays correct when the phase for its key is revised.
+ */
+const DEFAULT_PHASE = "initial";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
 
 export { BooleanFormulaField } from "./BooleanFormulaField.js";
@@ -444,35 +451,46 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }
     }
 
-    // Make the phase editable. Core renders it as a hidden input; replace it with a dropdown of the
-    // valid phases (ActiveEffect.CHANGE_PHASES), defaulting to the ValidSpec phase for the key. The
-    // chosen phase is written to change.phase and wins at runtime (see effectivePhase in dae.ts).
+    /*
+     * Show the phase, and only show it. Core renders it as a hidden input; that input is kept so the
+     * stored value round-trips untouched, and a read-only label beside it reports the phase the
+     * change will actually be applied in.
+     *
+     * It used to be a dropdown. Offering the choice implied there was one worth making, and the
+     * answer is almost always the key's own ValidSpec phase — a bonus that belongs in `initial`
+     * applied in `final` is not a preference, it is a change that does not work. The one thing the
+     * dropdown bought, a deliberate override, cost more than it was worth: choosing it stamped the
+     * effect, and a stamped effect stops consulting the ValidSpec forever after.
+     *
+     * `effectivePhase` rather than the stored value, because those differ: an unstamped change sits
+     * at the schema default "initial" while its key's spec says "final", and the honest thing to
+     * report is the one that decides.
+     */
     const phaseInput = li.querySelector(`input[name="system.changes.${index}.phase"]`) as HTMLInputElement | null;
     if (phaseInput) {
       // @ts-expect-error CHANGE_PHASES not in fvtt-types yet
       const phases: Record<string, { label?: string }> = CONFIG.ActiveEffect.documentClass.CHANGE_PHASES ?? {};
-      // Until the effect is phase-stamped, change.phase is just the schema default ("initial"), so
-      // default the dropdown to the ValidSpec phase. Once stamped, honor the authored change.phase.
-      const stamped = !!(this.document as any).flags?.dae?.phaseStamped;
-      const selected = stamped ? (change.phase || spec?.phase || "initial")
-                               : (spec?.phase || change.phase || "initial");
-      const entries: Record<string, { label?: string }> = { ...phases };
-      if (selected && !(selected in entries)) entries[selected] = { label: selected };   // keep round-trippable
-      const select = document.createElement("select");
-      select.name = phaseInput.getAttribute("name")!;
-      select.dataset.dtype = "String";
-      for (const [val, info] of Object.entries(entries)) {
-        const opt = document.createElement("option");
-        opt.value = val;
-        opt.textContent = info?.label ? i18n(info.label) : val;
-        if (val === selected) opt.setAttribute("selected", "selected");
-        select.appendChild(opt);
-      }
+      /*
+       * Resolved against the union, because that is what `daeShouldApplyChange` resolves against —
+       * and the per-type list this sheet otherwise uses can disagree with it. `system.attributes.
+       * ac.flat` is declared special for vehicles only, so it is "final" in the union and "initial"
+       * under `character`; runtime consults the union for every actor type, so a label built from
+       * the per-type spec announced a phase the change would not be applied in.
+       */
+      const runtimeSpec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key]
+        ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[`token.${change.key}`]
+        ?? spec;
+      const effective = effectivePhase(change, runtimeSpec, this.document);
       const phaseDiv = document.createElement("div");
       phaseDiv.classList.add("phase");
-      phaseDiv.dataset.tooltip = i18n("dae.Phase");
-      phaseDiv.appendChild(select);
+      phaseDiv.dataset.tooltip = i18n("dae.PhaseReadOnly");
+      const label = document.createElement("span");
+      label.classList.add("phase-value");
+      label.textContent = phases[effective]?.label ? i18n(phases[effective].label!) : effective;
       phaseInput.replaceWith(phaseDiv);
+      phaseDiv.appendChild(label);
+      // The original hidden input, so the stored phase survives a save unchanged.
+      phaseDiv.appendChild(phaseInput);
     }
 
     return li.outerHTML;
@@ -684,10 +702,15 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     submitData.statuses ??= [];
     foundry.utils.setProperty(submitData, "flags.dae.specialDuration", Array.from(Object.values(submitData.flags?.dae?.specialDuration ?? {})))
 
-    // Default the phase from the ValidSpec lookup when the change has no phase of its own, or when
-    // the key was changed to a different field (adopt the new field's default phase — e.g. selecting a
-    // derived key like system.abilities.cha.mod → "final"). A phase the author deliberately picked via
-    // the dropdown for an unchanged key is preserved and wins at runtime (see effectivePhase in dae.ts).
+    /*
+     * A change whose key was just repointed keeps no opinion about its phase: it is reset to the
+     * schema default so the new key's ValidSpec decides, now and after any later revision of what
+     * that key's phase should be. Storing the spec's phase instead would be right today and frozen
+     * tomorrow, which is the trap `phaseStamped` fell into.
+     *
+     * A phase already stored against an unchanged key is left alone — including a legacy explicit
+     * "final" on a key the spec calls "initial", which is still honoured at runtime.
+     */
     const changes = submitData.system?.changes;
     if (changes && this.validSpecsToUse?.allSpecsObj) {
       // @ts-expect-error v14 system.changes
@@ -699,12 +722,18 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         if (!spec) continue;
         const oldKey = sameShape ? oldChanges[index]?.key : undefined;
         const keyChanged = oldKey !== undefined && oldKey !== change.key;
-        if (!change.phase || keyChanged) change.phase = spec.phase;
+        if (!change.phase || keyChanged) change.phase = DEFAULT_PHASE;
       }
     }
-    // Mark phases as authored: every change now carries an explicit phase (the phase dropdown), so
-    // change.phase becomes authoritative at apply time — even a deliberate "initial" on a "final" key.
-    foundry.utils.setProperty(submitData, "flags.dae.phaseStamped", true);
+    /*
+     * Deliberately not stamping. `phaseStamped` means "the author chose these phases", which was
+     * true while the editor offered a dropdown and is not true now that the field is read-only —
+     * and it is not an idle claim: a stamped change stops consulting its ValidSpec, so a phase
+     * frozen today survives a later change to what the phase for that key should be.
+     *
+     * Effects stamped by earlier versions keep their stored phases and go on working; they simply
+     * are not joined by new ones.
+     */
     await this.document.update(submitData);
 
   }

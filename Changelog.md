@@ -4,6 +4,18 @@
 * `@stackCount` now resolves at every occurrence in a change value, not just the first.
 * Arithmetic in a numeric flag's value is now evaluated (`floor(@details.level/2)` no longer becomes 0). Formula-valued flags such as midi optional bonuses keep their string.
 * Special durations: the source/target start/end expiries are evaluated the way dnd5e 6.0 does on earlier dnd5e versions too.
+* Special durations: a source/target end expiry no longer ends on the turn the effect was applied.
+* Special durations: source/target expiries keep their own value instead of being rewritten to `turnStart`/`turnEnd` with a fixed combatant.
+* Rider conditions are left to dnd5e, which creates them itself on effect creation; DAE's duplicate call used an API deprecated in dnd5e 6.0.
+* The macro-init enchantment guard uses `applicableType`, so riders of non-applied enchantments are skipped too.
+* midi's special durations are no longer registered by DAE; midi registers them itself via `dae.addSpecialDurations`. DAE's duplicate list ran after the hook and overwrote midi's, which is how the mis-spelled concentration-failure entry reached the UI. DAE now defines only system-agnostic entries.
+* Re-enabling a transfer effect no longer stamps a start on it, so a duration on a transfer effect never runs. A transfer effect is the definition on the item, and a start makes it expiry-tracked, after which the system deletes it off the item. Legacy items that toggled such an effect on and relied on it expiring must add the effect to the activity's Effects list instead; see the midi-qol changelog.
+* `_prepareDuration` no longer special-cases an effect that has an expiry and no duration value; dnd5e 6.0 already prepares those as infinite, and the special case skipped dnd5e's own duration labels.
+* Per-change `conditions` on an effect change are now honoured, and `change.applied` is set. DAE decided the application phase and returned without letting the system run its own checks, so dnd5e's per-change conditions and effect-level condition suppression were skipped for every keyed change. DAE still chooses the phase, then delegates.
+* Bonus selectors expand to `system.rolls.attack|damage.<type>.bonus`, the dnd5e 6.0 location, instead of the old `system.bonuses.<type>.<attack|damage>` paths that only still resolve through the system's deprecation shim.
+* `system.bonuses.All-Attacks` now sets dnd5e's own `system.rolls.attack.bonus`, which the system combines into every attack roll, rather than writing each attack type separately.
+* New selector keys for the groupings dnd5e has no native equivalent for: `system.rolls.attack.weapon.bonus`, `.spell.bonus`, and `system.rolls.damage.all|weapon|spell.bonus`. The `system.bonuses.*` forms keep working as aliases.
+* Using a legacy `system.bonuses.All-Attacks`-style selector logs a deprecation warning naming its replacement.
 * An effect that inherits its duration from the activity/item now gets an `updateWorldTime` expiry, instead of only expiring on the round tick.
 * Effect editor: set-backed fields on an actor's effects (`system.damage.base.types` and other item/activity Set fields) are no longer locked to override - they default to add with every mode selectable. 14.0.13 fixed this for item and enchantment effects only.
 * Effect editor: change modes are no longer restricted for fields with a value picker; v14 implements all six modes on Set fields, so only the default is set.

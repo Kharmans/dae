@@ -19,16 +19,6 @@ function getExpireTransferEffectUpdate(effect) {
   };
 }
 
-function getUnexpireEffectUpdate(effect) {
-  return {
-    "start.round": game.combat?.round ?? null,
-    "start.turn": game.combat?.turn ?? null,
-    "start.time": game.time?.worldTime,
-    "duration.expired": false,
-    "disabled": false
-  };
-}
-
 // ---- Exported utility functions ----
 
 /**
@@ -64,14 +54,17 @@ export async function expireEffect(effect, options = {}) {
     if (resolveEffectExpiryAction(effect) === "delete") {
       await effect.delete(options);
     } else {
-      // "update" mode marks the effect expired (kept, inactive) rather than deleting it. On dnd5e 6.0+
-      // the system itself deletes an expired effect the moment `duration.expired` is set while the
-      // actor is out of combat (ActiveEffect5e._onUpdate), and reaps in-combat ones on combat exit — so
-      // mark-and-keep only holds during combat. Out of combat (incl. combat-end expiry) delete directly
-      // to match the system and avoid leaving an orphaned marked-expired effect behind.
-      const actor = effect.parent instanceof Actor ? effect.parent : effect.parent?.parent;
-      if (!daeManagesTurnExpiry && !actor?.inCombat) await effect.delete(options);
-      else await effect.update({ "duration.expired": true }, options);
+      /*
+       * "Suppress": keep the effect but stop it applying, by disabling it.
+       *
+       * Not `duration.expired`. dnd5e deletes any effect carrying that flag once the actor has no
+       * combatant (ActiveEffect5e._onUpdate), and it does so regardless of
+       * CONFIG.ActiveEffect.expiryAction — measured under "update", "delete" and null alike. Using
+       * the flag to mean "keep" therefore deletes the very effect the caller asked to keep.
+       * `disabled` says the same thing, is what the transfer-effect path above already uses, and is
+       * a field the system does not act on.
+       */
+      await effect.update({ "disabled": true, "duration.expired": false }, options);
     }
   }
 }
@@ -363,10 +356,16 @@ export function setupSpecialDurationHooks() {
     //@ts-expect-error v14 duration.expired not in fvtt-types yet
     const isExpired = effect.duration?.expired || effect.start?.time == null;
     if (!isExpired) return true;
-    if (update.disabled === false) {
-      if (debugEnabled > 0) warn("resetting duration", effect.uuid, durationToUse, isTransferEffect(effect));
-      foundry.utils.mergeObject(update, getUnexpireEffectUpdate(effect), { inplace: true });
-    } else if (update.disabled ?? effect.disabled === true) {
+    /*
+     * No unexpire branch: re-enabling must not stamp a `start` on a transfer effect.
+     *
+     * A transfer effect lives on the item, so it is the definition rather than an applied copy. Giving
+     * it a start makes it `isExpiryTrackable`, and core then expires it — deleting the definition off
+     * the item (dnd5e's `_onUpdate` resolves `this.parent` to the Item, so its combat guard can never
+     * hold). dnd5e's model is that a durationed effect is applied from an activity as a non-transfer
+     * copy on the actor, which is safe to delete; transfer effects stay passive.
+     */
+    if (update.disabled ?? effect.disabled === true) {
       if (debugEnabled > 0) warn("expiring effect", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
       foundry.utils.mergeObject(update, getExpireTransferEffectUpdate(effect), { inplace: true });
     }

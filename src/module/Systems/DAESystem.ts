@@ -117,8 +117,14 @@ export class ValidSpec {
         vs.phase = "final";
         allSpecsObj[vs.fieldSpec] = vs;
       }
+      /*
+       * Specials default to "final" — they exist to overwrite something the system has computed —
+       * but a special may name its own phase, because some of them are keys the system computes
+       * *from* rather than keys it computes.
+       */
       for (const [key, value] of Object.entries(specials)) {
-        const validSpec = new ValidSpec(key, value[0], value[1], value[0].label, value[0].hint, "final");
+        const validSpec = new ValidSpec(key, value[0], value[1], value[0].label, value[0].hint,
+                                        value[2] ?? "final");
         allSpecsObj[key] = validSpec;
       }
 
@@ -256,6 +262,8 @@ export class DAESystem {
     attacks: string[];
     selector: string;
     replaceList?: string[];
+    /** Set on legacy selector keys: the new key to point the user at. */
+    deprecatedFor?: string;
   }>;
   static daeActionTypeKeys: string[];
   static detectionModeList: Record<string, string>;

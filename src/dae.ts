@@ -150,8 +150,9 @@ Hooks.once('ready', () => {
       for (const { effect, targetAction } of expiryRedirects) {
         const reason: any = { "expiry-reason": expiryReason(event, effect) };
         if (targetAction === "delete") await effect.delete(reason);
+        // Suppress by disabling; see expireEffect for why duration.expired cannot mean "keep".
         // @ts-expect-error v14 duration.expired not in fvtt-types yet
-        else await effect.update({ "duration.expired": true }, reason);
+        else await effect.update({ "disabled": true, "duration.expired": false }, reason);
       }
       expiryRedirects.length = 0;
     };

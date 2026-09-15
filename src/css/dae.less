@@ -660,9 +660,17 @@
   .phase {
     min-width: 96px;
 
-    select {
+    // Read-only, so it reads as text rather than as a control somebody failed to fill in. Dimmed
+    // and centred on the row like the other values; the hidden input beside it carries the value.
+    .phase-value {
+      display: block;
       min-width: 96px;
       width: 100%;
+      padding: 1px 3px;
+      color: var(--color-text-dark-secondary, #4b4a44);
+      font-style: italic;
+      text-align: center;
+      white-space: nowrap;
     }
   }
 
