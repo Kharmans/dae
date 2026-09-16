@@ -28,6 +28,8 @@ This branch drops support for every system other than dnd5e 6.0+ and removes the
 to accommodate them.
 
 * `module.json` declares a dnd5e 6.0.0 minimum.
+* Migrating deprecated special durations no longer discards the ones `duration.expiry` cannot express. `duration.expiry` holds a single value, so only the first can be migrated; the rest stay on `flags.dae.specialDuration` and keep warning instead of being silently dropped. An expiry the author set explicitly is not overwritten — but core initialises `duration.expiry` to `turnStart` for any numeric duration, so only an expiry differing from that default counts as authored.
+* The migration no longer rewrites pre-v10 `data.` change keys or appends the missing `.all` to midi optional keys; both predate every version this branch supports and are still handled at apply time.
 * ATL support removed. Foundry v14 handles `token.*` change keys natively, so `ATL.*` is normalised to `token.*` on write, unconditionally — the `atlCompatibility` setting, its four modes, the runtime translation layer and the `atl` migration option are all gone. An `ATL.*` key that predates this and reaches application is not applied and warns once. Detection-mode fields are offered as `token.detectionModes.<id>.range`.
 * Removed DAE's vision-mode sibling injection; core's `_inflateVisionModeChange` does the same job. DAE now only keeps `sight.visionMode` ahead of its equal-priority siblings, so an explicit `sight.*` value still wins whatever order it was authored in — core applies the defaults after the change, so order would otherwise matter.
 * Removed the game-system compatibility machinery: the `gameSystemCompatible` states, the

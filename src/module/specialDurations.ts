@@ -274,10 +274,19 @@ function migrateDeprecatedSpecialDurations(effectData: any): void {
   if (specialDurs && Array.isArray(specialDurs)) {
     const deprecated = specialDurs.filter(sd => sd in deprecatedSpecialDurMap);
     if (deprecated.length > 0) {
-      const expiry = deprecatedSpecialDurMap[deprecated[0]];
-      update["flags.dae.specialDuration"] = specialDurs.filter(sd => !(sd in deprecatedSpecialDurMap));
-      update["duration.expiry"] = expiry;
-      if (debugEnabled > 0) warn("Migrating deprecated special durations on effect creation", effectData.name, deprecated, "→", expiry);
+      // Only one can become duration.expiry; the rest stay on the flag rather than being dropped.
+      // duration.expiry defaults to "turnStart" for any numeric duration (core schema), so only an
+      // expiry differing from that default counts as authored — see migrateEffectData.
+      const defaultExpiry = typeof effectData.duration?.value === "number" ? "turnStart" : null;
+      const authoredExpiry = !!effectData.duration?.expiry && effectData.duration.expiry !== defaultExpiry;
+      const remaining = [...specialDurs];
+      if (!authoredExpiry) {
+        const first = deprecated[0];
+        update["duration.expiry"] = deprecatedSpecialDurMap[first];
+        remaining.splice(remaining.indexOf(first), 1);
+        if (debugEnabled > 0) warn("Migrating deprecated special duration on effect creation", effectData.name, first, "→", deprecatedSpecialDurMap[first]);
+      }
+      if (remaining.length !== specialDurs.length) update["flags.dae.specialDuration"] = remaining;
     }
   }
 

@@ -1,5 +1,4 @@
 import { MODULE_ID } from "../dae.js";
-import { deprecatedKeyPatterns } from "./dae.js";
 import { getDeprecatedSpecialDurMap } from "./specialDurations.js";
 import { rewriteAtlChanges, coerceOverrideOnlyChangeTypes } from "./atlMigration.js";
 
@@ -40,24 +39,47 @@ export function migrateEffectData(
     update["flags.dae.-=showIcon"] = null;
   }
 
-  // 2. Deprecated special durations → duration.expiry
+  /*
+   * 2. Deprecated special durations → duration.expiry
+   *
+   * duration.expiry holds a single value while flags.dae.specialDuration is a list, so at most one
+   * deprecated entry can be migrated. Anything left over stays on the flag and keeps warning at
+   * runtime; dropping it would silently change what the effect does. An expiry the author set
+   * explicitly is never overwritten.
+   */
   const specialDurs: string[] = effectData.flags?.dae?.specialDuration ?? [];
   const deprecatedSpecialDurMap = getDeprecatedSpecialDurMap();
   const deprecatedDurs = specialDurs.filter(sd => sd in deprecatedSpecialDurMap);
   if (deprecatedDurs.length > 0) {
-    const expiry = deprecatedSpecialDurMap[deprecatedDurs[0]];
-    update["flags.dae.specialDuration"] = specialDurs.filter(sd => !(sd in deprecatedSpecialDurMap));
-    update["duration.expiry"] = expiry;
+    /*
+     * "Already set" cannot mean "non-empty": core's schema initialises duration.expiry to
+     * "turnStart" for any effect with a numeric duration.value, which is exactly the population
+     * being migrated. Only an expiry that differs from that default counts as authored.
+     */
+    const defaultExpiry = typeof effectData.duration?.value === "number" ? "turnStart" : null;
+    const authoredExpiry = !!effectData.duration?.expiry && effectData.duration.expiry !== defaultExpiry;
+    const remaining = [...specialDurs];
+    if (!authoredExpiry) {
+      const first = deprecatedDurs[0];
+      update["duration.expiry"] = deprecatedSpecialDurMap[first];
+      remaining.splice(remaining.indexOf(first), 1);
+    }
+    if (remaining.length !== specialDurs.length) update["flags.dae.specialDuration"] = remaining;
+    const stranded = remaining.filter(sd => sd in deprecatedSpecialDurMap);
+    if (stranded.length > 0) {
+      console.warn(`dae | migration | "${effectData.name}" keeps deprecated special duration(s) `
+        + `${stranded.join(", ")}: duration.expiry holds only one value. Split the effect to migrate them.`);
+    }
   }
 
-  // 3-5. Change key migrations
+  // 3. Change key migrations
   const changes: any[] = effectData.system?.changes ?? effectData.changes ?? [];
   let changesModified = false;
   const newChanges = changes.map((c: any) => {
     const change = foundry.utils.deepClone(c);
     let modified = false;
 
-    // 3. Field mappings
+    // 3. Field mappings (DAE key renames)
     const mapping = fieldMappings[change.key];
     if (mapping) {
       if (typeof mapping === "string") {
@@ -68,27 +90,6 @@ export function migrateEffectData(
         if (mapping.type !== undefined) change.type = mapping.type;
       }
       modified = true;
-    }
-
-    // 4. Old data. prefix patterns
-    if (!modified) {
-      for (const { pattern, replacement } of deprecatedKeyPatterns) {
-        const match = change.key.match(pattern);
-        if (match) {
-          change.key = replacement(match[1]);
-          modified = true;
-          break;
-        }
-      }
-    }
-
-    // 5. midi-qol optional missing .all suffix
-    if (!modified && change.key.startsWith("flags.midi-qol.optional")) {
-      const parts = change.key.split(".");
-      if (parts.length === 5 && ["save", "check", "skill", "damage", "attack"].includes(parts[4])) {
-        change.key = `${change.key}.all`;
-        modified = true;
-      }
     }
 
     if (modified) changesModified = true;
