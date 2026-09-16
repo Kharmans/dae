@@ -392,8 +392,6 @@
   "dae.lightAnimation": "Light Animation",
   "dae.lightAlpha": "Light ALpha",
   "dae.lightAngle": "Light Angle",
-  "dae.DAEUntestedSystems.Name": "Load DAE for untested game systems",
-  "dae.DAEUntestedSystems.Hint": "If checked DAE will load for any system not marked compatible. If unchecked DAE will only load for systems marked compatible. Requires reload",
   "dae.SelfTarget.Name": "Apply to self when item applies target effects",
   "dae.SelfTarget.Hint": "Effect is applied to the user of the item, not the targets if the item is applying effects to targets",
   "dae.SelfTargetAlways.Name": "Apply to self when item is rolled",
@@ -408,8 +406,8 @@
   "dae.DAEAddHalfHealthEffect.Name": "Add Half Health Effect",
   "dae.DAEAddHalfHealthEffect.Hint": "Add a half health status effect to set the actor's max hit points to half its normal max",
   "dae.TabChanges": "Changes",
-  "dae.DisableCondition": "An expression which if true will disable the effect",
-  "dae.EnableCondition": "An expression which if false will remove the effect from the actor",
+  "dae.DisableCondition": "An expression which if true will disable the effect. For a plain field comparison prefer the effect's own Conditions, which the system re-evaluates automatically.",
+  "dae.EnableCondition": "An expression which if false will remove the effect from the actor. To stop an effect applying without deleting it, use the effect's own Conditions instead.",
   "dae.ConditionalEffectsItem": "DAEConditionalEffects",
   "dae.IconTint": "Icon Tint",
   "dae.IconOverlay.Name": "Icon Overlay",
@@ -640,6 +638,10 @@
       "name": "(Midi) Armor Reduction",
       "description": "See \"Challenge Mode\" details in midi-qol readme."
     },
+    "system.attributes.ac.EC": {
+      "name": "(Midi) Evasion Class",
+      "description": "See \"Challenge Mode\" details in midi-qol readme."
+    },
     "system.attributes.ac.armor": {
       "name": "AC (Armor)",
       "description": "Bonus to AC provided by worn armor (usually provided only via equipped armor item - will only have an effect if not wearing armor)."
@@ -655,10 +657,6 @@
     "system.attributes.ac.cover": {
       "name": "AC (Cover)",
       "description": "AC cover bonus (usually provided only via cover status effects)."
-    },
-    "system.attributes.ac.EC": {
-      "name": "(Midi) Evasion Class",
-      "description": "See \"Challenge Mode\" details in midi-qol readme."
     },
     "system.attributes.ac.flat": {
       "name": "AC (Flat)",
@@ -764,6 +762,10 @@
       "name": "Overall Encumbrance Multiplier",
       "description": "Multiplier to each encumbrance threshold, and maximum encumbrance."
     },
+    "system.attributes.hd.max": {
+      "name": "Maximum Hit Dice",
+      "description": "Only available for NPCs"
+    },
     "system.attributes.hp.bonuses.level": {
       "name": "HP Bonus Per Level",
       "description": "Bonus to HP applied for each character level (only works for classed actors)."
@@ -812,57 +814,61 @@
       "name": "(DAE) Movement Speed (All)",
       "description": "A flat number will result in all movement types being set to that number. Otherwise, \"+5\" or \"*2\" for instance would add 5 to or multiply by 2 all existing movement types (ignoring types which the actor has no movement in), respectively."
     },
-    "system.attributes.movement.burrow": {
-      "name": "Movement Speed (Burrow)",
-      "description": ""
-    },
-    "system.attributes.movement.climb": {
-      "name": "Movement Speed (Climb)",
-      "description": ""
-    },
-    "system.attributes.movement.fly": {
-      "name": "Movement Speed (Fly)",
-      "description": ""
-    },
     "system.attributes.movement.hover": {
       "name": "Movement (Hover)",
       "description": "Can hover?"
     },
-    "system.attributes.movement.swim": {
+    "system.attributes.movement.speeds.burrow": {
+      "name": "Movement Speed (Burrow)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.climb": {
+      "name": "Movement Speed (Climb)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.fly": {
+      "name": "Movement Speed (Fly)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.jump": {
+      "name": "Movement Speed (Jump)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.swim": {
       "name": "Movement Speed (Swim)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.walk": {
+      "name": "Movement Speed (Walk)",
       "description": ""
     },
     "system.attributes.movement.units": {
       "name": "Movement Units",
       "description": ""
     },
-    "system.attributes.movement.walk": {
-      "name": "Movement Speed (Walk)",
-      "description": ""
-    },
     "system.attributes.prof": {
       "name": "Proficiency Bonus",
       "description": ""
     },
-    "system.attributes.senses.blindsight": {
+    "system.attributes.senses.ranges.blindsight": {
       "name": "Senses (Blindsight)",
       "description": ""
     },
-    "system.attributes.senses.darkvision": {
+    "system.attributes.senses.ranges.darkvision": {
       "name": "Senses (Darkvision)",
+      "description": ""
+    },
+    "system.attributes.senses.ranges.tremorsense": {
+      "name": "Senses (Tremorsense)",
+      "description": ""
+    },
+    "system.attributes.senses.ranges.truesight": {
+      "name": "Senses (Truesight)",
       "description": ""
     },
     "system.attributes.senses.special": {
       "name": "Senses (Special)",
       "description": "Accepts semicolon-separated values."
-    },
-    "system.attributes.senses.tremorsense": {
-      "name": "Senses (Tremorsense)",
-      "description": ""
-    },
-    "system.attributes.senses.truesight": {
-      "name": "Senses (Truesight)",
-      "description": ""
     },
     "system.attributes.senses.units": {
       "name": "Senses Units",
@@ -871,10 +877,6 @@
     "system.attributes.spellcasting": {
       "name": "Spellcasting Ability",
       "description": ""
-    },
-    "system.attributes.hd.max": {
-      "name": "Maximum Hit Dice",
-      "description": "Only available for NPCs"
     }
   },
   "dae.SystemBonuses.fieldData": {
@@ -2610,5 +2612,8 @@
   "dae.AtlCompatibility.legacy": "Legacy — ATL.* keys passed to the ATL module",
   "dae.AtlCompatibility.runtime": "Runtime only — rewrite at apply time, disk untouched",
   "dae.AtlCompatibility.migrate": "Migrate — one-shot world migration + pre-write normalisation",
-  "dae.AtlCompatibility.full": "Full — Migrate + runtime fallback + auto-unlock compendiums"
+  "dae.AtlCompatibility.full": "Full — Migrate + runtime fallback + auto-unlock compendiums",
+  "dae.phase.Label": "Application Phase",
+  "dae.phase.initial": "Initial",
+  "dae.phase.final": "Final"
 }

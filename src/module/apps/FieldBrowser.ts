@@ -9,6 +9,15 @@ interface FieldData {
   category: string;
 }
 
+/**
+ * What the browser needs from whatever is hosting it. The effect sheet satisfies this; so does the
+ * small adapter used for dnd5e's per-change dialog.
+ */
+export interface FieldBrowserHost {
+  onFieldSelected(): void;
+  updateFieldInfo(): void;
+}
+
 export class DAEFieldBrowser {
   private static knownFieldData: Record<string, { category: string }> = {};
   private static fieldDataInitialized: boolean = false;
@@ -25,7 +34,7 @@ export class DAEFieldBrowser {
   private validFields: Record<string, {name: string, description?: string}>;
   private currentInput: HTMLInputElement | undefined;
   private contentElement: HTMLElement | null = null;
-  private effectConfig: DAEActiveEffectConfig;
+  private effectConfig: FieldBrowserHost;
   public debouncedUpdateBrowser: () => void;
   private memoizedFilterFields: (query: string, tab: string) => FieldData[];
 
@@ -34,7 +43,7 @@ export class DAEFieldBrowser {
    * @param {Record<string, {name: string, description?: string}>} validFields - The valid fields for the browser.
    * @param {DAEActiveEffectConfig} effectConfig - The effect configuration class.
    */
-  constructor(validFields: Record<string, {name: string, description?: string}>, effectConfig: DAEActiveEffectConfig) {
+  constructor(validFields: Record<string, {name: string, description?: string}>, effectConfig: FieldBrowserHost) {
     this.validFields = validFields;
     this.effectConfig = effectConfig;
     log("DaeFieldBrowser | Initializing");

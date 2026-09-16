@@ -156,8 +156,7 @@ for (const key of allMacroEffects) {
   macroDestination[key] = getChangeDestination(key);
 }
 
-export let daeSystemClass: typeof DAESystem | typeof DAESystemDND5E;
-if (!globalThis.daeSystems) globalThis.daeSystems = {};
+export let daeSystemClass: typeof DAESystemDND5E;
 
 // export let showDeprecation = true;
 export let showInline: boolean = false;
@@ -1262,6 +1261,20 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
   return effectData;
 }
 
+/**
+ * Restore deferred references. `##field` is DAE's escape from caster-time substitution: it survives
+ * a `@`-based replacement pass untouched, and is turned back into `@field` afterwards so the field
+ * resolves against the recipient during data preparation.
+ *
+ * Idempotent, so it is safe to call on every path — including as a backstop at effect creation, for
+ * effects applied by the system rather than by DAE (enchantments, chat-card apply, region behaviors),
+ * which never run DAE's own substitution. Must run *after* any replacement pass, or the restored
+ * reference would be consumed by it.
+ */
+export function restoreDeferredRefs(value: string): string {
+  return value.replaceAll("##", "@");
+}
+
 export async function evalArgs({
   effectData,
   item,
@@ -1323,7 +1336,7 @@ export async function evalArgs({
   } else {
     returnChange.value = returnChangeValue;
   }
-  returnChange.value = returnChange.value.replaceAll("##", "@");
+  returnChange.value = restoreDeferredRefs(returnChange.value);
   if (typeof returnChange.value === "string" && !returnChange.value.includes("[[")) {
     switch (change.key) {
       case "macro.itemMacro":
@@ -1834,10 +1847,8 @@ Hooks.on("spotlightOmnisearch.indexBuilt", async (index) => {
 export function daeInitActions() {
   atlActive = game.modules.get("ATL")?.active ?? false;
   midiActive = game.modules.get("midi-qol")?.active ?? false;
-  const dnd5System = DAESystemDND5E; // force reference so they are installed?
   libWrapper = globalThis.libWrapper;
-  daeSystemClass = foundry.utils.getProperty(globalThis.daeSystems, game.system.id ?? "") as typeof DAESystem;
-  daeSystemClass ??= CONFIG.DAE.systemClass;
+  daeSystemClass = DAESystemDND5E;
 
   daeSystemClass.initActions();
   daeSystemClass.initSystemData();
@@ -1928,11 +1939,26 @@ export function daeInitActions() {
         }
       }
     }
+    /*
+     * Deferred-reference backstop. DAE's own apply paths restore `##` before creating the effect;
+     * effects the system applies itself (enchantments, chat-card apply, region behaviors) run
+     * dnd5e's `forApplication` instead and never reach those. Restoring here catches every path and
+     * is necessarily after any replacement pass, since that runs before the create.
+     */
+    {
+      // @ts-expect-error v14 effect.system.changes
+      const changes = this.system?.changes as DAEChangeData[] | undefined;
+      if (Array.isArray(changes) && changes.some(c => typeof c?.value === "string" && c.value.includes("##"))) {
+        const restored = changes.map(c => typeof c?.value === "string" && c.value.includes("##")
+          ? { ...c, value: restoreDeferredRefs(c.value) } : c);
+        // @ts-expect-error v14 updateSource accepts system.changes
+        this.updateSource({ "system.changes": restored });
+      }
+    }
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
     if (result !== false) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
     // @ts-expect-error no dnd5e-types
     if (this.active && this.type !== "enchantment" && dependentConditions /* && !this.flags?.dae?.autoCreated */) {
-      await daeSystemClass.preCreateActiveEffect(this);
       if (debugEnabled > 0) warn("_preCreateActiveEffect", this, context);
       // Status effect reconciliation now handled via queueStatusReconciliation hook
     }

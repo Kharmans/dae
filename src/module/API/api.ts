@@ -26,6 +26,8 @@ const API = {
     return new DAEActiveEffectConfig({ document, ...options });
   },
   get DIMEditor() { return DIMEditor },
+  /** The active system class. Replaces the former `globalThis.daeSystems` registry. */
+  get systemClass() { return daeSystemClass },
   get daeCustomEffect() {
     return daeSystemClass.daeCustomEffect;
   },

@@ -391,8 +391,6 @@
   "dae.lightAnimation": "Animação da Luz",
   "dae.lightAlpha": "Intensidade da Luz",
   "dae.lightAngle": "Ângulo da Luz",
-  "dae.DAEUntestedSystems.Name": "Carregar DAE em Sistemas Não-Testados",
-  "dae.DAEUntestedSystems.Hint": "Se habilitado, DAE irá carregar para qualquer sistema não-marcado como compatível. Se desmarcado, DAE somente será carregado para sistemas marcados como compatível. Requer recarregamento da página.",
   "dae.SelfTarget.Name": "Aplicar Efeito em Si Mesmo",
   "dae.SelfTarget.Hint": "Se o item aplicar efeitos em alvos, o efeito é aplicado ao usuário do item e não aos alvos.",
   "dae.SelfTargetAlways.Name": "Aplicar Efeito em Si Mesmo ao Rolar",

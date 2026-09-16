@@ -1,6 +1,6 @@
 import { ceInterface, atlActive, daeSystemClass, getStatusEffectsArray, localizationMap, effectivePhase } from "../dae.js";
 import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
-import { ValidSpec } from "../Systems/DAESystem.js";
+import { DAEChangeData, ValidSpec } from "../Systems/DAESystem.js";
 
 /*
  * The schema default for a change's phase. Stored rather than a resolved phase, because a change
@@ -100,7 +100,17 @@ const stackableOptions = {
   countDeleteDecrement: "dae.StackableOptions.countDeleteDecrement"
 }
 
-export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEffectConfig {
+/*
+ * The system's own effect sheet is the base, so every tab except the DAE tab is whatever dnd5e
+ * renders — its effect-level and per-change Conditions fields, its header, its changes UI, and
+ * whatever it adds next. Resolved at module scope because `super.PARTS` in the static initialiser
+ * below is evaluated with the class body, so the base has to be known by then; systems load before
+ * modules, so the class is already defined.
+ */
+const SheetBase: typeof foundry.applications.sheets.ActiveEffectConfig =
+  globalThis.dnd5e.applications.activeEffect.ActiveEffectSheet5e;
+
+export class DAEActiveEffectConfig extends SheetBase {
   declare tokenMagicEffects: Record<string, string>;
   declare statusEffectList: Record<string, string>;
   declare ATLPresets?: Record<string, string>;
@@ -224,53 +234,9 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   async _prepareContext(options) {
     const context: DAEActiveEffectConfigRenderContext = await super._prepareContext(options);
     const document = this.document;
-    if (document.parent instanceof CONFIG.Actor.documentClass || document instanceof CONFIG.Actor.documentClass) {
-      this.validSpecsToUse = ValidSpec.actorSpecs[document.parent?.type ?? ""]
-    }
-    if (isEnchantment(document)) {
-      document.transfer = false;
-      // @ts-expect-error no dnd5e-types
-      if (document.isAppliedEnchantment) {
-        this.validSpecsToUse = ValidSpec.itemSpecs[document.parent?.type ?? ""] ?? ValidSpec.itemSpecs["union"];
-      } else {
-        let restrictionType = "union";
-        if (document.parent instanceof CONFIG.Item.documentClass) {
-          // @ts-expect-error no dnd5e-types
-          const activity = document.parent.system.activities.find(
-            a => a.type === "enchant" && a.effects.find(e => e.effect?.uuid === document?.uuid)
-          );
-          if (activity) {
-            restrictionType = activity.restrictions.type;
-          }
-          this.validSpecsToUse = ValidSpec.itemSpecs[restrictionType || "union"] ?? ValidSpec.itemSpecs["union"];
-        }
-      }
-    }
-    if (!this.validSpecsToUse) {
-      ui.notifications?.error("DAE | No valid specs found");
-      // Continue with an empty spec set so the sheet still renders - returning a half-built
-      // context makes the details template part fail on the missing fields
-      this.validSpecsToUse = { allSpecs: [], allSpecsObj: {} };
-    }
-    this.validFields = { "__": { name: ""} }
-    this.validFields = this.validSpecsToUse.allSpecs
-      .filter(e => e.fieldSpec.includes(""))
-      .reduce((mods, em) => {
-        mods[em.fieldSpec] = {
-          name: localizationMap[em.fieldSpec]?.name ?? em.label,
-          description: localizationMap[em.fieldSpec]?.description ?? em.description
-        };
-        return mods;
-      }, this.validFields);
-    if (!isEnchantment(document)) {
-      for (let fieldName of [...otherFieldsMap.keys()].sort((a, b) => a.toLocaleLowerCase() < b.toLocaleLowerCase() ? -1 : 1)) {
-        this.validFields[fieldName] = {
-          name: localizationMap[fieldName]?.name ?? fieldName,
-          description: localizationMap[fieldName]?.description || (localizationMap[fieldName]?.name ?? fieldName)
-
-        };
-      }
-    }
+    const resolved = resolveValidFields(document);
+    this.validSpecsToUse = resolved.validSpecsToUse;
+    this.validFields = resolved.validFields;
     this.daeFieldBrowser = new DAEFieldBrowser(this.validFields, this);
     await this.daeFieldBrowser.init();
     if (document.flags?.dae?.specialDuration === undefined)
@@ -329,172 +295,6 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     return partContext;
   }
 
-  async _renderChange(context) {
-    const { change, index } = context;
-    // Strip quotes that confuse DAE's selection process
-    if (typeof change.value === "string") {
-      change.value = change.value.replace(/^(["'])(.*)\1$/, "$2");
-    }
-
-    // Restrict change types if the spec has a forced mode
-    const spec = this.validSpecsToUse?.allSpecsObj[change.key];
-    if (spec?.forcedMode) {
-      const forcedMode = spec.forcedMode.toLowerCase();
-      if (forcedMode) {
-        const restrictedTypes: Record<string, string> = {};
-        restrictedTypes[forcedMode] = context.changeTypes[forcedMode] ?? forcedMode;
-        context.changeTypes = restrictedTypes;
-        change.type = forcedMode;
-      }
-    }
-
-    // Normalise change type to lowercase (v14 CHANGE_TYPES keys are lowercase)
-    if (change.type && change.type !== change.type.toLowerCase()) change.type = change.type.toLowerCase();
-
-    // Replace value with a select if the spec provides options
-    let options = spec?.options ?? this.getOptionsForSpec(change);
-    const isSet = !!options && !spec?.forcedMode
-      && ((spec?.fieldType instanceof foundry.data.fields.SetField) || isSetBackedKey(change.key, this.document));
-
-    // Picker values get a sensible default type, but every mode stays selectable. v14's SetField
-    // implements union / difference / isSupersetOf / isSubsetOf for add, subtract, upgrade and
-    // downgrade, and override replaces the Set, so all six modes are well defined and there is
-    // nothing to protect the user from. (On v13 only add was implemented and the rest were silent
-    // no-ops, which is why this used to restrict the list.)
-    //
-    // Sets default to "add" - override would silently discard the entries already there. Single
-    // valued pickers default to "override", since the v14 default of "add" would concatenate.
-    if (options && !spec?.forcedMode && !change.type) {
-      change.type = isSet ? "add" : "override";
-    }
-
-    // traitList carries "-value" removal entries. Keep them for custom mode (DAE's doCustomArrayValue)
-    // and for add mode: dnd5e's ActiveEffect.applyChange strips a leading "-" on Set traits and removes
-    // the entry, and DAE delegates non-custom changes straight to it. Subtract (= Set difference) and
-    // override (= replace) use bare values, so drop the "-value" entries there.
-    if (isSet && options && change.type !== "custom" && change.type !== "add") {
-      options = Object.fromEntries(Object.entries(options).filter(([v]) => !v.startsWith("-")));
-    }
-
-    // Get the base HTML from core
-    // @ts-expect-error _renderChange not in fvtt-types yet
-    const html = await super._renderChange(context);
-
-    // Parse and inject DAE elements
-    const template = document.createElement("template");
-    template.innerHTML = html.trim();
-    const li = template.content.firstElementChild as HTMLElement;
-    if (!li) return html;
-
-    // Inject field info under the key input
-    const keyDiv = li.querySelector("div.key");
-    if (keyDiv) {
-      const keyInput = keyDiv.querySelector("input");
-      if (keyInput) keyInput.classList.add("dae-key-input");
-      const fieldInfo = this.daeFieldBrowser?.getFieldInfo(change.key);
-      const fieldName = fieldInfo?.name ?? change.key;
-      const fieldDescription = fieldInfo?.description ?? "";
-      const displayName = (fieldName === change.key && !change.key.startsWith("flags")) ? "<UNKNOWN>" : fieldName;
-      const infoDiv = document.createElement("div");
-      infoDiv.classList.add("dae-field-info");
-      infoDiv.innerHTML = `<div class="dae-field-name">${displayName}</div><div class="dae-field-description">${fieldDescription}</div>`;
-      keyDiv.appendChild(infoDiv);
-    }
-
-    // Replace value input with select if options exist
-    const valueDiv = li.querySelector("div.value");
-    if (valueDiv && options) {
-      const existingInput = valueDiv.querySelector("input");
-      if (existingInput) {
-        const select = document.createElement("select");
-        select.name = `system.changes.${index}.value`;
-        select.dataset.dtype = "String";
-        for (const [optValue, optLabel] of Object.entries(options)) {
-          const option = document.createElement("option");
-          option.value = optValue;
-          option.textContent = optLabel as string;
-          if (optValue === change.value) option.setAttribute("selected", "selected");
-          select.appendChild(option);
-        }
-        existingInput.replaceWith(select);
-      }
-    }
-
-    // Replace value <input> with a <textarea> for multi-line content. <input type="text">
-    // strips newlines on render and on submit (per HTML spec), permanently corrupting
-    // macro source on any sheet save. Triggered for known multi-line keys, or when the
-    // current value already contains newlines.
-    if (valueDiv && !options && isMultilineChangeValue(change.key, change.value)) {
-      const existingInput = valueDiv.querySelector("input");
-      if (existingInput) {
-        const textarea = document.createElement("textarea");
-        textarea.name = `system.changes.${index}.value`;
-        textarea.dataset.dtype = "String";
-        textarea.classList.add("dae-multiline-value");
-        // Set textContent (not .value) — the rendered HTML is captured via outerHTML,
-        // which serializes the textarea's child text node, not its .value property.
-        textarea.textContent = change.value ?? "";
-        existingInput.replaceWith(textarea);
-      }
-    }
-
-    // Inject editor button next to value for keys that opted into a richer editor.
-    if (valueDiv && !options) {
-      const fieldEditor = getFieldEditor(change.key);
-      if (fieldEditor) {
-        const btn = document.createElement("a");
-        btn.classList.add("dae-edit-value");
-        btn.dataset.index = String(index);
-        btn.dataset.tooltip = fieldEditor.tooltip ?? "Edit";
-        btn.innerHTML = `<i class="${fieldEditor.icon ?? "fas fa-edit"}"></i>`;
-        valueDiv.appendChild(btn);
-      }
-    }
-
-    /*
-     * Show the phase, and only show it. Core renders it as a hidden input; that input is kept so the
-     * stored value round-trips untouched, and a read-only label beside it reports the phase the
-     * change will actually be applied in.
-     *
-     * It used to be a dropdown. Offering the choice implied there was one worth making, and the
-     * answer is almost always the key's own ValidSpec phase — a bonus that belongs in `initial`
-     * applied in `final` is not a preference, it is a change that does not work. The one thing the
-     * dropdown bought, a deliberate override, cost more than it was worth: choosing it stamped the
-     * effect, and a stamped effect stops consulting the ValidSpec forever after.
-     *
-     * `effectivePhase` rather than the stored value, because those differ: an unstamped change sits
-     * at the schema default "initial" while its key's spec says "final", and the honest thing to
-     * report is the one that decides.
-     */
-    const phaseInput = li.querySelector(`input[name="system.changes.${index}.phase"]`) as HTMLInputElement | null;
-    if (phaseInput) {
-      // @ts-expect-error CHANGE_PHASES not in fvtt-types yet
-      const phases: Record<string, { label?: string }> = CONFIG.ActiveEffect.documentClass.CHANGE_PHASES ?? {};
-      /*
-       * Resolved against the union, because that is what `daeShouldApplyChange` resolves against —
-       * and the per-type list this sheet otherwise uses can disagree with it. `system.attributes.
-       * ac.flat` is declared special for vehicles only, so it is "final" in the union and "initial"
-       * under `character`; runtime consults the union for every actor type, so a label built from
-       * the per-type spec announced a phase the change would not be applied in.
-       */
-      const runtimeSpec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[change.key]
-        ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[`token.${change.key}`]
-        ?? spec;
-      const effective = effectivePhase(change, runtimeSpec, this.document);
-      const phaseDiv = document.createElement("div");
-      phaseDiv.classList.add("phase");
-      phaseDiv.dataset.tooltip = i18n("dae.PhaseReadOnly");
-      const label = document.createElement("span");
-      label.classList.add("phase-value");
-      label.textContent = phases[effective]?.label ? i18n(phases[effective].label!) : effective;
-      phaseInput.replaceWith(phaseDiv);
-      phaseDiv.appendChild(label);
-      // The original hidden input, so the stored phase survives a save unchanged.
-      phaseDiv.appendChild(phaseInput);
-    }
-
-    return li.outerHTML;
-  }
 
   updateFieldInfo() {
     // @ts-expect-error v14 system.changes
@@ -541,7 +341,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
       }
     }
 
-    // Add the Phase column header to the changes tab (each row gets a phase <select>; see _renderChange).
+    // Add the Phase column header to the changes tab.
     // Inserted before .priority to match the row DOM order (key, type, value, phase, priority, controls).
     const changesHeader = this.element.querySelector('.tab[data-tab="changes"] header');
     if (changesHeader && !changesHeader.querySelector(".phase")) {
@@ -809,6 +609,120 @@ export function geti18nTranslations() {
   return translations ?? {};
 }
 
+/*
+ * dnd5e edits a change in its own EffectChangeConfig dialog rather than inline, so DAE's field
+ * browser is attached there instead of to a row. Decorating the dialog keeps dnd5e's markup
+ * authoritative — nothing is forked or pinned, so anything dnd5e adds to the dialog still appears.
+ */
+Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.ApplicationV2, element: HTMLElement) => {
+  const effect = foundry.utils.getProperty(app, "effect") as ActiveEffect.Implementation | undefined;
+  const keyInput = element.querySelector<HTMLInputElement>('input[name="key"]');
+  if (!effect || !keyInput) return;
+
+  const { validFields, validSpecsToUse } = resolveValidFields(effect);
+  const browser = new DAEFieldBrowser(validFields, {
+    // Re-render so the dialog picks up the key the browser wrote into the input.
+    onFieldSelected: () => { app.render(); },
+    updateFieldInfo: () => { }
+  });
+  await browser.init();
+  browser.setInput(keyInput);
+
+  keyInput.addEventListener("click", () => browser.updateBrowser());
+  keyInput.addEventListener("input", () => browser.debouncedUpdateBrowser());
+
+  const change = foundry.utils.getProperty(app, "change") as DAEChangeData | undefined;
+  const spec = validSpecsToUse.allSpecsObj[keyInput.value];
+
+  /*
+   * Phase: a core change field that dnd5e's dialog does not offer. Injected rather than added to the
+   * changes tab, because that tab is dnd5e's own template and forking it would freeze it.
+   *
+   * Labels come from the system and core rather than from DAE: dnd5e already ships a label and hint
+   * for the field it does not render, and CHANGE_PHASES carries core's per-phase labels plus any a
+   * module registered in CONFIG.ActiveEffect.phases. DAE's own strings remain only as the fallback
+   * for a system that supplies neither.
+   */
+  const phaseSelect = document.createElement("select");
+  phaseSelect.name = "phase";
+  const phases = (CONFIG.ActiveEffect.documentClass as unknown as ActiveEffectStatic).CHANGE_PHASES ?? {};
+  const phaseIds = Object.keys(phases).length
+    ? Object.keys(phases)
+    : (CONST as unknown as { ACTIVE_EFFECT_CHANGE_PHASES: string[] }).ACTIVE_EFFECT_CHANGE_PHASES ?? ["initial", "final"];
+  for (const phase of phaseIds) {
+    const opt = document.createElement("option");
+    opt.value = phase;
+    opt.textContent = localized(phases[phase]?.label) ?? localized(`dae.phase.${phase}`) ?? phase;
+    opt.selected = (change?.phase ?? "initial") === phase;
+    phaseSelect.append(opt);
+  }
+  const phaseField = "DND5E.EFFECT.BASE.FIELDS.changes.element.phase";
+  element.querySelector("fieldset")?.append(daeFormGroup(
+    localized(`${phaseField}.label`) ?? localized("dae.phase.Label") ?? "Phase",
+    phaseSelect,
+    localized(`${phaseField}.hint`)
+  ));
+
+  // A spec with a forced mode allows only that change type.
+  const typeSelect = element.querySelector<HTMLSelectElement>('select[name="type"]');
+  if (spec?.forcedMode && typeSelect) {
+    const forced = String(spec.forcedMode).toLowerCase();
+    for (const opt of Array.from(typeSelect.options)) opt.disabled = opt.value !== forced;
+    typeSelect.value = forced;
+  }
+
+  /*
+   * Where the key has a known value list, offer it instead of free text. The sheet resolves these
+   * (token magic, convenient effects, statuses, ATL presets, vision modes) from its own state, and
+   * the dialog is opened from that sheet, so reuse it; fall back to the system-level list.
+   */
+  const sheet = foundry.utils.getProperty(effect, "sheet") as DAEActiveEffectConfig | undefined;
+  const options: Record<string, string> | undefined =
+    (typeof sheet?.getOptionsForSpec === "function"
+      ? sheet.getOptionsForSpec({ key: keyInput.value } as ActiveEffect.ChangeData)
+      : undefined)
+    ?? daeSystemClass.getOptionsForSpec({ key: keyInput.value } as ActiveEffect.ChangeData);
+  const valueInput = element.querySelector<HTMLInputElement>('[name="value"]');
+  if (options && Object.keys(options).length && valueInput) {
+    const select = document.createElement("select");
+    select.name = "value";
+    for (const [value, label] of Object.entries(options)) {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = String(label);
+      opt.selected = String(change?.value ?? "") === value;
+      select.append(opt);
+    }
+    valueInput.replaceWith(select);
+  }
+});
+
+/** A form group matching the markup the system's dialog already uses. */
+function daeFormGroup(label: string, field: HTMLElement, hint?: string): HTMLElement {
+  const group = document.createElement("div");
+  group.classList.add("form-group");
+  const lbl = document.createElement("label");
+  lbl.textContent = label;
+  const fields = document.createElement("div");
+  fields.classList.add("form-fields");
+  fields.append(field);
+  group.append(lbl, fields);
+  if (hint) {
+    const p = document.createElement("p");
+    p.classList.add("hint");
+    p.textContent = hint;
+    group.append(p);
+  }
+  return group;
+}
+
+/** A localized string, or undefined when the key is absent (game.i18n returns the key unchanged). */
+function localized(key: string | undefined): string | undefined {
+  if (!key) return undefined;
+  const text = i18n(key);
+  return (text && text !== key) ? text : undefined;
+}
+
 Hooks.once("setup", () => {
   foundry.applications.apps.DocumentSheetConfig.registerSheet(
     CONFIG.ActiveEffect.documentClass,
@@ -873,4 +787,64 @@ interface DAEChange extends ActiveEffect.ChangeData {
   hasEditor?: boolean;
   editorIcon?: string;
   editorTooltip?: string;
+}
+
+/**
+ * Resolve the valid change specs and the field list for an effect. Shared by the effect sheet and by
+ * the field browser attached to dnd5e's per-change dialog, so both offer the same keys.
+ */
+export function resolveValidFields(document: ActiveEffect.Implementation): {
+  validSpecsToUse: { allSpecs: ValidSpec[]; allSpecsObj: Record<string, ValidSpec> };
+  validFields: Record<string, { name: string, description?: string }>;
+} {
+  let validSpecsToUse: { allSpecs: ValidSpec[]; allSpecsObj: Record<string, ValidSpec> } | undefined;
+  let validFields: Record<string, { name: string, description?: string }>;
+    if (document.parent instanceof CONFIG.Actor.documentClass || document instanceof CONFIG.Actor.documentClass) {
+      validSpecsToUse = ValidSpec.actorSpecs[document.parent?.type ?? ""]
+    }
+    if (isEnchantment(document)) {
+      document.transfer = false;
+      // @ts-expect-error no dnd5e-types
+      if (document.isAppliedEnchantment) {
+        validSpecsToUse = ValidSpec.itemSpecs[document.parent?.type ?? ""] ?? ValidSpec.itemSpecs["union"];
+      } else {
+        let restrictionType = "union";
+        if (document.parent instanceof CONFIG.Item.documentClass) {
+          // @ts-expect-error no dnd5e-types
+          const activity = document.parent.system.activities.find(
+            a => a.type === "enchant" && a.effects.find(e => e.effect?.uuid === document?.uuid)
+          );
+          if (activity) {
+            restrictionType = activity.restrictions.type;
+          }
+          validSpecsToUse = ValidSpec.itemSpecs[restrictionType || "union"] ?? ValidSpec.itemSpecs["union"];
+        }
+      }
+    }
+    if (!validSpecsToUse) {
+      ui.notifications?.error("DAE | No valid specs found");
+      // Continue with an empty spec set so the sheet still renders - returning a half-built
+      // context makes the details template part fail on the missing fields
+      validSpecsToUse = { allSpecs: [], allSpecsObj: {} };
+    }
+    validFields = { "__": { name: ""} }
+    validFields = validSpecsToUse.allSpecs
+      .filter(e => e.fieldSpec.includes(""))
+      .reduce((mods, em) => {
+        mods[em.fieldSpec] = {
+          name: localizationMap[em.fieldSpec]?.name ?? em.label,
+          description: localizationMap[em.fieldSpec]?.description ?? em.description
+        };
+        return mods;
+      }, validFields);
+    if (!isEnchantment(document)) {
+      for (let fieldName of [...otherFieldsMap.keys()].sort((a, b) => a.toLocaleLowerCase() < b.toLocaleLowerCase() ? -1 : 1)) {
+        validFields[fieldName] = {
+          name: localizationMap[fieldName]?.name ?? fieldName,
+          description: localizationMap[fieldName]?.description || (localizationMap[fieldName]?.name ?? fieldName)
+
+        };
+      }
+    }
+  return { validSpecsToUse, validFields };
 }

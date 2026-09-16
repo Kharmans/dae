@@ -7,7 +7,7 @@ import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESyste
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField, SetField } = foundry.data.fields;
 
-export class DAESystemDND5E extends CONFIG.DAE.systemClass {
+export class DAESystemDND5E extends DAESystem {
   static traitList: Record<string, string>;
   static languageList: Record<string, string>;
   static conditionList: Record<string, string>;
@@ -182,7 +182,6 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
   }
 
   public static modifyBaseValues(actorType: string, baseValues: BaseValuesInner = {}, characterSpec: any): void {
-    super.modifyBaseValues(actorType, baseValues, characterSpec);
     if (debugEnabled > 0) warn("modifyBaseValues", actorType, baseValues, characterSpec);
     //@ts-expect-error no dnd5e-types
     const dataModels: any = game.system.dataModels;
@@ -1469,8 +1468,6 @@ function preUpdateItemHook(
   }
 }
 
-if (!globalThis.daeSystems) globalThis.daeSystems = {};
-foundry.utils.setProperty(globalThis.daeSystems, "dnd5e", DAESystemDND5E);
 
 async function _onDropActiveEffect(event, data) {
   const effect = await ActiveEffect.implementation.fromDropData(data);

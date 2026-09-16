@@ -83,15 +83,6 @@ export const registerSettings = async function () {
     requiresReload: true
   });
 
-  game.settings.register("dae", "DAEUntestedSystems", {
-    name: "dae.DAEUntestedSystems.Name",
-    hint: "dae.DAEUntestedSystems.Hint",
-    scope: "world",
-    default: false,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
 
   game.settings.register("dae", "ZZDebug", {
     name: "dae.Debug.Name",

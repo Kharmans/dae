@@ -2,13 +2,13 @@
 // Import TypeScript modules
 import { registerSettings } from './module/settings.js';
 import { preloadTemplates } from './module/preloadTemplates.js';
+import { registerActiveEffectPatches } from './module/patching.js';
 import { daeSetupActions, daeInitActions, fetchParams } from "./module/dae.js";
 import { daeReadyActions } from "./module/dae.js";
 import { shouldAutoMigrate, migrateWorld as runMigration } from "./module/migration.js";
 import { setupSocket } from './module/GMAction.js';
 import API from './module/API/api.js';
 import { addAutoFields, BooleanFormulaField } from './module/apps/DAEActiveEffectConfig.js';
-import { registerActiveEffectPatches } from './module/patching.js';
 
 export let debugEnabled: number;
 export let setDebugLevel = (debugText: string) => {
@@ -28,11 +28,6 @@ export function i18n(key: string) {
 export function i18nFormat(key: string, data) {
   return game.i18n?.format(key, data) ?? key;
 }
-export let gameSystemCompatible = "maybe"; // no, yes, maybe
-export let daeUntestedSystems: boolean;
-export let daeManagesTurnExpiry: boolean = false; // true when dnd5e < 6.0.0 (dnd5e 6.0+ handles source/target turn expiry natively)
-/** Mirrors dnd5e 6.0 ActiveEffect5e.PSEUDO_EXPIRIES. */
-export const PSEUDO_EXPIRIES = new Set(["sourceStart", "sourceEnd", "targetStart", "targetEnd"]);
 export const MODULE_ID = "dae";
 /* ------------------------------------ */
 /* Initialize module					*/
@@ -45,40 +40,15 @@ Hooks.once('init', () => {
   // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
   CONFIG.ActiveEffect.expiryEvents.updateWorldTime = "dae.expiryEvent.updateWorldTime";
 
-  // source/target turn expiry: dnd5e 6.0+ handles this natively, so only register when < 6.0.0
-  daeManagesTurnExpiry = game.system.id !== "dnd5e" || !foundry.utils.isNewerVersion(game.system.version, "5.99.99");
-  if (daeManagesTurnExpiry) {
-    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
-    CONFIG.ActiveEffect.expiryEvents.sourceStart = "dae.expiryEvent.sourceStart";
-    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
-    CONFIG.ActiveEffect.expiryEvents.sourceEnd = "dae.expiryEvent.sourceEnd";
-    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
-    CONFIG.ActiveEffect.expiryEvents.targetStart = "dae.expiryEvent.targetStart";
-    // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
-    CONFIG.ActiveEffect.expiryEvents.targetEnd = "dae.expiryEvent.targetEnd";
-  }
-
   // Register lib-wrapper patches for isExpiryEvent and _prepareDuration
   registerActiveEffectPatches();
 
-  const systemDaeFlag = game.system.flags?.daeCompatible;
-  if (["dnd5e"].includes(game.system.id) || systemDaeFlag === true) gameSystemCompatible = "yes";
-  else if (["pf2e"].includes(game.system.id) || systemDaeFlag === false) gameSystemCompatible = "no";
+  registerSettings();
+  daeInitActions();
+  fetchParams();
 
-  if (gameSystemCompatible === "no") {
-    console.error(`DAE is not compatible with ${game.system.title} - module disabled`)
-  } else {
-    registerSettings();
-    daeUntestedSystems = game.settings.get("dae", "DAEUntestedSystems") === true;
-    if (gameSystemCompatible === "yes" || daeUntestedSystems) {
-      if (gameSystemCompatible === "maybe") console.warn(`DAE compatibility warning for ${game.system.title}: not tested with DAE`);
-      daeInitActions();
-      fetchParams();
-
-      // Preload Handlebars templates - async but no use awaiting
-      preloadTemplates();
-    }
-  };
+  // Preload Handlebars templates - async but no use awaiting
+  preloadTemplates();
   // Fire during init so modules can register typed auto-fields before initializeDocuments()
   // (which runs between init and setup and prepares actors).
   // addAutoFields only pushes to an array and has no game-state dependencies.
@@ -94,10 +64,7 @@ Hooks.once('init', () => {
 export let daeSpecialDurations: Record<string, string>;
 export let daeMacroRepeats: Record<string, string>;
 Hooks.once('ready', () => {
-  if (gameSystemCompatible !== "no" && (gameSystemCompatible === "yes" || daeUntestedSystems)) {
-    if ("maybe" === gameSystemCompatible) {
-      if (game.user?.isGM) ui.notifications?.warn(`DAE is has not been tested with ${game.system.title}. Disable DAE if there are problems`);
-    }
+  {
     fetchParams();
     debug("ready setup actions")
     daeSpecialDurations = { "None": "" };
@@ -187,10 +154,6 @@ Hooks.once('ready', () => {
     daeReadyActions();
     createDAEMacros();
     if (shouldAutoMigrate()) runMigration();
-  } else if (gameSystemCompatible === "maybe" && !daeUntestedSystems) {
-    ui.notifications?.error(`DAE is not certified compatible with ${game.system.id} - enable Untested Systems in DAE settings to enable`);
-  } else {
-    ui.notifications?.error(`DAE is not compatible with ${game.system.id} - module disabled`);
   }
   Hooks.callAll("dae.ready", API);
 })
@@ -198,9 +161,7 @@ Hooks.once('ready', () => {
 /* Setup module							*/
 /* ------------------------------------ */
 Hooks.once('setup', () => {
-  if (gameSystemCompatible === "no" || (gameSystemCompatible === "maybe" && !daeUntestedSystems)) {
-    ui.notifications?.warn(`DAE disabled for ${game.system.title} - to enable choose Allow Untested Systems from the DAE settings`)
-  } else {
+  {
     // Do anything after initialization but before ready
     debug("setup actions")
     daeSetupActions();

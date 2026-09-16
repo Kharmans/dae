@@ -359,8 +359,6 @@
   "dae.lightAnimation": "Animace světla",
   "dae.lightAlpha": "Průhlednost světla",
   "dae.lightAngle": "Úhel světla",
-  "dae.DAEUntestedSystems.Name": "Načítat DAE i pro netestované systémy?",
-  "dae.DAEUntestedSystems.Hint": "Po zaškrtnutí se načte DAE i pro všechny systémy, který nejsou označeny jako kompatibilní. Pokud není zaškrtnuto, bude se DAE načítat pouze pro systémy označené jako kompatibilní. Vyžaduje znovunačtení.",
   "dae.SelfTarget.Name": "Použít efekt aplikovaný položkou na sebe?",
   "dae.SelfTarget.Hint": "Efekt se aplikuje na uživatele položky, nikoli na cíle, pokud položka aplikuje efekty na cíle.",
   "dae.SelfTargetAlways.Name": "Použít vyvolanou položku na sebe?",

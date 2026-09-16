@@ -111,7 +111,6 @@ export class ValidSpec {
 
       // Specials and derived specs get phase "final" (applied after prepareDerivedData)
       const derivedSpecsList: ValidSpec[] = [];
-      daeSystemClass.modifyDerivedSpecs(specKey, derivedSpecsList, _characterSpec)
       Hooks.callAll("dae.modifyDerivedSpecs", specKey, derivedSpecsList, _characterSpec);
       for (const vs of derivedSpecsList) {
         vs.phase = "final";
@@ -300,13 +299,7 @@ export class DAESystem {
     })
   }
 
-  public static async editConfig() {
-    return;
-  }
 
-  public static modifyBaseValues(actorType: string, baseValues: {}, characterSpec: any): void {
-
-  };
   public static modifySpecials(actorType: string, specials: BaseValuesInner, characterSpec: any): void {
     specials["macro.execute"] = [new StringField(), "custom"];
     specials["macro.execute.local"] = [new StringField(), "custom"];
@@ -318,8 +311,6 @@ export class DAESystem {
     specials["macro.createItem"] = [new StringField(), "custom"];
     specials["macro.createItemRunMacro"] = [new StringField(), "custom"];
   };
-  public static modifyDerivedSpecs(actorType: string, derivedSpecs: ValidSpec[], characterSpec: any): void {
-  }
 
   public static effectDisabled(actor: Actor.Implementation, effect: ActiveEffect.Implementation, itemData = null) {
     return effect.disabled as boolean;
@@ -553,14 +544,8 @@ export class DAESystem {
     Hooks.on("applyActiveEffect", daeSystemClass.daeCustomEffect.bind(daeSystemClass));
   }
 
-  public static readyActions(): void {
-  }
 
-  public static setupActions(): void {
-  }
 
-  public static async preCreateActiveEffect(effect: ActiveEffect): Promise<void> {
-  }
 
 }
 
@@ -602,7 +587,6 @@ function prepareData(this: Actor.Implementation, wrapped) {
   debug("prepare data: after passes", this);
 }
 
-foundry.utils.setProperty(globalThis, "CONFIG.DAE.systemClass", DAESystem);
 
 Hooks.on("dae.modifySpecs", (specKey, allSpecsObj) => {
   if (game.modules.get("ATL")?.active) {

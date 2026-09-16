@@ -41,6 +41,9 @@ declare module "fvtt-types/configuration" {
       }) => void;
       "babel.ready": () => void;
       "dnd5e.getUnknownAttributeLabel": (attr: string, options: { actor?: Actor.Implementation, item?: Item.Implementation, label?: string }) => void;
+      // dnd5e's per-change editor; DAE attaches the field browser to its key input.
+      "renderEffectChangeConfig": (app: foundry.applications.api.ApplicationV2, element: HTMLElement,
+        context?: object, options?: object) => void;
       "macro-autocomplete.ready": (api: {
         tree: Record<string, any>,
         objectToCompletions: (obj: any, maxDepth?: number) => Record<string, any>,
@@ -139,7 +142,6 @@ declare module "fvtt-types/configuration" {
     "dae.DAEColorTitleBar": boolean;
     "dae.DAENoTitleText": boolean;
     "dae.DAEAddHalfHealthEffect": boolean;
-    "dae.DAEUntestedSystems": boolean;
     "dae.ZZDebug": "none" | "warn" | "debug" | "all";
     "dae.disableEffects": boolean;
     "dae.initMacrosOnLoad": boolean;
@@ -168,6 +170,13 @@ declare module "fvtt-types/configuration" {
 }
 
 declare global {
+  // v14 statics not yet in fvtt-types. Reach them with
+  // `ActiveEffect as unknown as ActiveEffectStatic` rather than a suppression.
+  interface ActiveEffectStatic {
+    CHANGE_TYPES: Record<string, { label: string; defaultPriority?: number }>;
+    CHANGE_PHASES: Record<string, { label?: string; hint?: string }>;
+  }
+
   interface CONFIG {
     DAE: {
       systemClass: typeof DAESystem;

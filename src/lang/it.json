@@ -359,8 +359,6 @@
   "dae.lightAnimation": "Light Animation",
   "dae.lightAlpha": "Light ALpha",
   "dae.lightAngle": "Light Angle",
-  "dae.DAEUntestedSystems.Name": "Carica DAE per sistemi di gioco non testati",
-  "dae.DAEUntestedSystems.Hint": "Se selezionato, DAE caricherà per qualsiasi sistema non contrassegnato come compatibile. Se non selezionato, DAE caricherà solo per i sistemi contrassegnati come compatibili. Richiede ricaricamento",
   "dae.SelfTarget.Name": "Apply to self when item applies target effects",
   "dae.SelfTarget.Hint": "Effect is applied to the user of the item, not the targets if the item is applying effects to targets",
   "dae.SelfTargetAlways.Name": "Apply to self when item is rolled",

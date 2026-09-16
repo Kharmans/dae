@@ -16,6 +16,29 @@
 * `system.bonuses.All-Attacks` now sets dnd5e's own `system.rolls.attack.bonus`, which the system combines into every attack roll, rather than writing each attack type separately.
 * New selector keys for the groupings dnd5e has no native equivalent for: `system.rolls.attack.weapon.bonus`, `.spell.bonus`, and `system.rolls.damage.all|weapon|spell.bonus`. The `system.bonuses.*` forms keep working as aliases.
 * Using a legacy `system.bonuses.All-Attacks`-style selector logs a deprecation warning naming its replacement.
+* Movement and senses fields are offered as `system.attributes.movement.speeds.*` and `system.attributes.senses.ranges.*`, their dnd5e 6.0 locations; the old paths still work through the system's shim.
+* The effect sheet extends the system's own effect sheet where there is one, so every tab except the DAE tab is the system's. Under dnd5e 6.0 that restores the effect-level and per-change Conditions fields, its header and its changes UI, which were previously missing because DAE extended the core sheet. Systems without their own effect sheet are unaffected and keep DAE's inline change editor.
+* Under dnd5e, changes are edited in the system's change dialog rather than inline. DAE adds the field browser, the application phase, spec-driven value lists and forced-mode restriction to that dialog.
+* The injected phase control uses dnd5e's own label and hint and core's phase names, so it reads as part of the dialog and picks up any phase a module registers.
+* `##field` deferral: all occurrences in a value are now restored, not just the first, and the restore also runs for effects the system applies itself (enchantments, chat-card apply, region behaviors), which never reached DAE's own substitution.
+
+## dnd6 branch — dnd5e 6.0 only
+
+This branch drops support for every system other than dnd5e 6.0+ and removes the code that existed
+to accommodate them.
+
+* `module.json` declares a dnd5e 6.0.0 minimum.
+* Removed the game-system compatibility machinery: the `gameSystemCompatible` states, the
+  `DAEUntestedSystems` setting and its strings, the pf2e blocklist and the
+  `game.system.flags.daeCompatible` protocol.
+* Removed the dnd5e < 6.0 source/target pseudo-expiry port; 6.0 implements those natively.
+* Removed the system-class dispatch: the `globalThis.daeSystems` registry, lookup by
+  `game.system.id`, the `CONFIG.DAE.systemClass` fallback, and six base methods that existed only as
+  override points. `DAESystemDND5E` now extends `DAESystem` directly.
+* `DAE.systemClass` exposes the active system class, replacing the `globalThis.daeSystems` registry
+  as the supported way to reach it.
+* The effect sheet extends dnd5e's sheet unconditionally, and DAE's 165-line inline change renderer
+  is gone — dnd5e's changes tab renders its own rows, so it produced markup nothing displayed.
 * An effect that inherits its duration from the activity/item now gets an `updateWorldTime` expiry, instead of only expiring on the round tick.
 * Effect editor: set-backed fields on an actor's effects (`system.damage.base.types` and other item/activity Set fields) are no longer locked to override - they default to add with every mode selectable. 14.0.13 fixed this for item and enchantment effects only.
 * Effect editor: change modes are no longer restricted for fields with a value picker; v14 implements all six modes on Set fields, so only the default is set.

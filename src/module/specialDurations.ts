@@ -1,4 +1,4 @@
-import { warn, debug, debugEnabled, error, daeManagesTurnExpiry } from "../dae.js";
+import { warn, debug, debugEnabled, error } from "../dae.js";
 import { expireEffects, getApplicableEffects, daeMacro, actionQueue, resolveSpecialDurationExpiryAction, resolveEffectExpiryAction } from "./dae.js";
 
 export let expireRoundEffectsOnCombatEnd: boolean = false;
@@ -237,9 +237,7 @@ async function expireRoundEffectsOnEnd(actor) {
   const expiringUuids = new Set<string>();
   for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
     const expiry = effect.duration?.expiry;
-    const turnExpiries = daeManagesTurnExpiry
-      ? ["roundStart", "roundEnd", "turnStart", "turnEnd", "sourceStart", "sourceEnd", "targetStart", "targetEnd"]
-      : ["roundStart", "roundEnd", "turnStart", "turnEnd"];
+    const turnExpiries = ["roundStart", "roundEnd", "turnStart", "turnEnd"];
     if (turnExpiries.includes(expiry) && !isTransferEffect(effect)) {
       effectsToExpire.push({ effect, reason: "dae:expired:combat-end-rounds" });
       expiringUuids.add(effect.uuid);

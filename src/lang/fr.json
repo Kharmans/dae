@@ -338,10 +338,8 @@
   "dae.lightAnimation": "Animation de la lumière",
   "dae.lightAlpha": "Lumière ALpha",
   "dae.lightAngle": "Angle d'éclairage",
-  "dae.DAEUntestedSystems.Name": "Chargement de DAE pour les systèmes de jeu non testés",
   "dae.SelfTargetAlways.Hint": "L'effet est appliqué à l'utilisateur de l'objet, et non aux cibles, chaque fois que l'objet effectue un jet",
   "dae.isInitiativeDetail": "Initiative",
-  "dae.DAEUntestedSystems.Hint": "Si cette case est cochée, le DAE se chargera pour tout système non marqué compatible. Si cette case n'est pas cochée, le DAE ne se chargera que pour les systèmes marqués compatibles. Requiert un rechargement",
   "dae.SelfTarget.Name": "S'applique à soi lorsque l'objet applique des effets de cible",
   "dae.SelfTarget.Hint": "L'effet est appliqué à l'utilisateur de l'objet, et non aux cibles si l'objet applique des effets aux cibles",
   "dae.SelfTargetAlways.Name": "S'applique à soi-même lorsque l'objet est lancé"

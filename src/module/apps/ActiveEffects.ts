@@ -56,8 +56,7 @@ export class ActiveEffects extends WeirdIntermediate {
 
   async _prepareContext(options) {
     // v14: build type label map for display in the list view
-    // @ts-expect-error v14 ActiveEffect.CHANGE_TYPES not in fvtt-types yet
-    const changeTypesRaw: Record<string, { label: string }> = ActiveEffect.CHANGE_TYPES ?? {};
+    const changeTypesRaw = (ActiveEffect as unknown as ActiveEffectStatic).CHANGE_TYPES ?? {};
     const typeLabels: Record<string, string> = {};
     for (const [type, config] of Object.entries(changeTypesRaw)) {
       typeLabels[type] = i18n(config.label);

@@ -1,4 +1,4 @@
-import { allMacroEffects, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, getItemMacroCommand } from "./dae.js";
+import { allMacroEffects, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs } from "./dae.js";
 import { resolveMacro } from "./lib/macroResolution.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
@@ -436,7 +436,7 @@ export async function applyActiveEffects({
             if (typeof change.value === "number") {
             } else if (typeof change.value === "string") {
               change.value = Roll.replaceFormulaData(change.value, context, { missing: '0', warn: false });
-              change.value = change.value.replace("##", "@");
+              change.value = restoreDeferredRefs(change.value);
             } else {
               change.value = foundry.utils.duplicate(change.value).map(f => {
                 if (f === "@itemCardUuid") return itemCardUuid;
