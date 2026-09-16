@@ -92,10 +92,6 @@ const API = {
   migrateWorld,
   // ATL → token.* migration surface (see Changelog 14.0.10).
   atlMigration,
-  get atlCompatMode() { return daeModule.atlCompatMode; },
-  get atlRewriteAtPreWrite() { return daeModule.atlRewriteAtPreWrite; },
-  get atlRewriteAtRuntime() { return daeModule.atlRewriteAtRuntime; },
-  get atlMigrateWorldData() { return daeModule.atlMigrateWorldData; },
 };
 
 export default API;

@@ -2601,11 +2601,5 @@
   "dae.EnableAutoMigration.Hint": "Migra automaticamente dados de efeitos obsoletos do DAE quando o DAE for atualizado. Para mundos grandes, é recomendado executar manualmente pelo botão 'Migrar Agora'.",
   "dae.MigrateNow.Name": "Migrar Dados do DAE",
   "dae.MigrateNow.Label": "Migrar Agora",
-  "dae.MigrateNow.Hint": "Verifica todos os atores e itens do mundo em busca de dados de efeitos obsoletos do DAE e os atualiza. Faça um backup do seu mundo primeiro.",
-  "dae.AtlCompatibility.Name": "Política de Migração ATL → token.*",
-  "dae.AtlCompatibility.Hint": "Como lidar com as chaves de efeito ATL.* legadas no Foundry v14. O Foundry v14 oferece suporte nativo a chaves de efeito token.*, deixando ATL.* obsoleto. Escolha 'Legado' para manter o comportamento atual (o módulo ATL gerencia as chaves ATL.*). 'Apenas em Execução' reescreve no momento da aplicação, sem alterar os dados salvos. 'Migrar' reescreve os dados do mundo uma vez e normaliza quaisquer novas edições. 'Completo' adiciona fallback em tempo de execução para conteúdos não migrados e desbloqueia automaticamente compêndios bloqueados durante a migração. Requer reinicialização.",
-  "dae.AtlCompatibility.legacy": "Legado",
-  "dae.AtlCompatibility.runtime": "Apenas em Execução",
-  "dae.AtlCompatibility.migrate": "Migrar",
-  "dae.AtlCompatibility.full": "Completo"
+  "dae.MigrateNow.Hint": "Verifica todos os atores e itens do mundo em busca de dados de efeitos obsoletos do DAE e os atualiza. Faça um backup do seu mundo primeiro."
 }

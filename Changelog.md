@@ -28,6 +28,8 @@ This branch drops support for every system other than dnd5e 6.0+ and removes the
 to accommodate them.
 
 * `module.json` declares a dnd5e 6.0.0 minimum.
+* ATL support removed. Foundry v14 handles `token.*` change keys natively, so `ATL.*` is normalised to `token.*` on write, unconditionally — the `atlCompatibility` setting, its four modes, the runtime translation layer and the `atl` migration option are all gone. An `ATL.*` key that predates this and reaches application is not applied and warns once. Detection-mode fields are offered as `token.detectionModes.<id>.range`.
+* Removed DAE's vision-mode sibling injection; core's `_inflateVisionModeChange` does the same job. DAE now only keeps `sight.visionMode` ahead of its equal-priority siblings, so an explicit `sight.*` value still wins whatever order it was authored in — core applies the defaults after the change, so order would otherwise matter.
 * Removed the game-system compatibility machinery: the `gameSystemCompatible` states, the
   `DAEUntestedSystems` setting and its strings, the pf2e blocklist and the
   `game.system.flags.daeCompatible` protocol.

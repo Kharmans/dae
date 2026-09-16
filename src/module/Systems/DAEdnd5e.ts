@@ -2,7 +2,7 @@
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, atlActive, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive } from "../dae.js";
+import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive } from "../dae.js";
 import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField, SetField } = foundry.data.fields;
@@ -555,7 +555,6 @@ export class DAESystemDND5E extends DAESystem {
 
     // WRAPPER on applyActiveEffects — DAE extends core + dnd5e effect application.
     // Core+dnd5e handle: phase validation, change collection, sorting, applyChange, overrides.
-    // DAE adds: ATL runtime rewrite, vision-mode sibling defaults, showIcon deprecation.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", daeApplyActiveEffects, "WRAPPER");
     // MIXED on shouldApplyChange — collect each change in its ValidSpec phase, so phase-corrected
     // changes take part in core's priority sort instead of being applied after it.
@@ -622,22 +621,23 @@ export class DAESystemDND5E extends DAESystem {
     // checkArmorDisabled();
     // Modify armor attribution for DAE specific cases
     patchPrepareArmorClassAttribution();
-    if (atlActive || game.modules.get("vision-5e")?.active) {
+    // token.detectionModes is id-keyed in v14 and is an active-effect targetable key, so these
+    // are native paths; no ATL translation involved.
+    {
       const detectionModes: Set<string> = new Set();
       Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
         if (CONFIG.Canvas.detectionModes[dm].tokenConfig) {
-          detectionModes.add(`ATL.detectionModes.${dm}.range`);
+          detectionModes.add(`token.detectionModes.${dm}.range`);
         }
       });
       if (game.modules.get("vision-5e")?.active) {
         Object.keys(CONFIG.Canvas.visionModes).forEach(vm => {
           if (CONFIG.Canvas.visionModes[vm].tokenConfig) {
-            detectionModes.add(`ATL.detectionModes.${vm}.range`);
+            detectionModes.add(`token.detectionModes.${vm}.range`);
           }
         });
       }
-      const atlFields = Array.from(detectionModes);
-      addAutoFields(atlFields);
+      addAutoFields(Array.from(detectionModes));
     }
     Hooks.callAll("dae.addSpecialDurations", daeSpecialDurations)
       // midi-qol registers its own special durations via the dae.addSpecialDurations hook above.

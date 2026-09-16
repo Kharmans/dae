@@ -528,7 +528,6 @@ export class DAESystem {
 
     // WRAPPER on applyActiveEffects — DAE extends core + system effect application.
     // Core handles: phase validation, change collection, sorting, applyChange, overrides.
-    // DAE adds: ATL runtime rewrite, vision-mode sibling defaults, showIcon deprecation.
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", daeApplyActiveEffects, "WRAPPER");
     // MIXED on shouldApplyChange — collect each change in its ValidSpec phase, so phase-corrected
     // changes take part in core's priority sort instead of being applied after it.
@@ -588,45 +587,6 @@ function prepareData(this: Actor.Implementation, wrapped) {
 }
 
 
-Hooks.on("dae.modifySpecs", (specKey, allSpecsObj) => {
-  if (game.modules.get("ATL")?.active) {
-    for (let label of ["dimSight", "brightSight"]) {
-      allSpecsObj[`ATL.${label}`] = new ValidSpec(`ATL.${label}`, new NumberField(), "", undefined, undefined, "final");
-    }
-    allSpecsObj["ATL.alpha"] = new ValidSpec("ATL.alpha", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.elevation"] = new ValidSpec("ATL.elevation", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.height"] = new ValidSpec("ATL.height", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.width"] = new ValidSpec("ATL.width", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.hidden"] = new ValidSpec("ATL.hidden", new BooleanField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.rotation"] = new ValidSpec("ATL.rotation", new NumberField(), "", undefined, undefined, "final");
-
-    allSpecsObj["ATL.light.animation"] = new ValidSpec("ATL.light.animation", new StringField(), "", undefined, undefined, "final"); // json string
-    allSpecsObj["ATL.light.alpha"] = new ValidSpec("ATL.light.alpha", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.angle"] = new ValidSpec("ATL.light.angle", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.attenuation"] = new ValidSpec("ATL.light.attenuation", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.bright"] = new ValidSpec("ATL.light.bright", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.color"] = new ValidSpec("ATL.light.color", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.coloration"] = new ValidSpec("ATL.light.coloration", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.contrast"] = new ValidSpec("ATL.light.contrast", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.dim"] = new ValidSpec("ATL.light.dim", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.luminosity"] = new ValidSpec("ATL.light.luminosity", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.saturation"] = new ValidSpec("ATL.light.saturation", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.shadows"] = new ValidSpec("ATL.light.shadows", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.darkness.max"] = new ValidSpec("ATL.light.darkness.max", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.light.darkness.min"] = new ValidSpec("ATL.light.darkness.min", new NumberField(), "", undefined, undefined, "final");
-    // detection modes are set in "ready" hook to allow for detection mode configuration
-    allSpecsObj["ATL.sight.visionMode"] = new ValidSpec("ATL.sight.visionMode", new StringField(), "custom", undefined, undefined, "final"); // selection list
-    allSpecsObj["ATL.preset"] = new ValidSpec("ATL.preset", new StringField(), "custom", undefined, undefined, "final");
-    allSpecsObj["ATL.sight.angle"] = new ValidSpec("ATL.sight.angle", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.sight.attenuation"] = new ValidSpec("ATL.sight.attenuation", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.sight.brightness"] = new ValidSpec("ATL.sight.brightness", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.sight.contrast"] = new ValidSpec("ATL.sight.contrast", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.sight.enabled"] = new ValidSpec("ATL.sight.enabled", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.sight.range"] = new ValidSpec("ATL.sight.range", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.sight.saturation"] = new ValidSpec("ATL.sight.saturation", new NumberField(), "", undefined, undefined, "final");
-    allSpecsObj["ATL.sight.color"] = new ValidSpec("ATL.sight.color", new StringField(), "", undefined, undefined, "final");
-  }
-});
 
 type GetActorType = Actor.Implementation | foundry.canvas.placeables.Token.Implementation | ActiveEffect.Implementation | Item.Implementation;
 export type DAEChangeData = ActiveEffect.ChangeData & {

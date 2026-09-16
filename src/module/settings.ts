@@ -164,30 +164,6 @@ export const registerSettings = async function () {
     config: true,
   });
 
-  // ATL → native v14 token.* migration policy.
-  // - legacy : ATL.* keys passed through to the ATL module (current behavior).
-  // - runtime: Layer B only — rewrite ATL.* keys to token.* at apply time; effects on disk
-  //            are untouched. Cheap, no migration commitment.
-  // - migrate: Layers A + C — bulk-migrate world data once, plus pre-write normalisation for
-  //            anything saved later. No runtime fallback, so unmigrated compendium content
-  //            still needs ATL until edited (or until the user switches to "full").
-  // - full   : Layers A + B + C — bulk migration + pre-write + runtime fallback.
-  game.settings.register("dae", "atlCompatibility", {
-    name: "dae.AtlCompatibility.Name",
-    hint: "dae.AtlCompatibility.Hint",
-    scope: "world",
-    default: "legacy",
-    type: String,
-    config: true,
-    choices: {
-      "legacy":  "dae.AtlCompatibility.legacy",
-      "runtime": "dae.AtlCompatibility.runtime",
-      "migrate": "dae.AtlCompatibility.migrate",
-      "full":    "dae.AtlCompatibility.full",
-    },
-    onChange: fetchParams,
-    requiresReload: true,
-  });
 
   game.settings.register("dae", "migrationVersion", {
     scope: "world",

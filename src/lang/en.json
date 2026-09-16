@@ -2607,12 +2607,6 @@
   "dae.MigrateNow.Name": "Migrate DAE Data",
   "dae.MigrateNow.Label": "Migrate Now",
   "dae.MigrateNow.Hint": "Scan all world actors and items for deprecated DAE effect data and update it. Back up your world first.",
-  "dae.AtlCompatibility.Name": "ATL → token.* migration policy",
-  "dae.AtlCompatibility.Hint": "How to handle legacy ATL.* effect keys on Foundry v14. Foundry v14 natively supports token.* effect keys; ATL.* is deprecated. Pick 'Legacy' to keep current behavior (ATL module handles ATL.* keys). 'Runtime only' rewrites at apply time without touching saved data. 'Migrate' rewrites world data once and normalises any new edits. 'Full' adds runtime fallback for unmigrated content and auto-unlocks locked compendiums during migration. Requires reload.",
-  "dae.AtlCompatibility.legacy": "Legacy — ATL.* keys passed to the ATL module",
-  "dae.AtlCompatibility.runtime": "Runtime only — rewrite at apply time, disk untouched",
-  "dae.AtlCompatibility.migrate": "Migrate — one-shot world migration + pre-write normalisation",
-  "dae.AtlCompatibility.full": "Full — Migrate + runtime fallback + auto-unlock compendiums",
   "dae.phase.Label": "Application Phase",
   "dae.phase.initial": "Initial",
   "dae.phase.final": "Final"

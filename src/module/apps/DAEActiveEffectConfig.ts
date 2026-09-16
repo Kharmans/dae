@@ -1,4 +1,4 @@
-import { ceInterface, atlActive, daeSystemClass, getStatusEffectsArray, localizationMap, effectivePhase } from "../dae.js";
+import { ceInterface, daeSystemClass, getStatusEffectsArray, localizationMap, effectivePhase } from "../dae.js";
 import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
 import { DAEChangeData, ValidSpec } from "../Systems/DAESystem.js";
 
@@ -113,8 +113,6 @@ const SheetBase: typeof foundry.applications.sheets.ActiveEffectConfig =
 export class DAEActiveEffectConfig extends SheetBase {
   declare tokenMagicEffects: Record<string, string>;
   declare statusEffectList: Record<string, string>;
-  declare ATLPresets?: Record<string, string>;
-  declare ATLVisionModes?: Record<string, string>;
   declare visionModeChoices?: Record<string, string>;
   declare validFields: Record<string, {name: string, description?: string}>;
   declare validSpecsToUse: {
@@ -155,26 +153,12 @@ export class DAEActiveEffectConfig extends SheetBase {
       ceInterface.findEffects().forEach(ceEffect => { this.ceEffectList[ceEffect.name] = ceEffect.name; });
     }
 
-    if (atlActive && !isEnchantment(options.document!)) {
-      this.ATLPresets = {};
-      game.settings.get("ATL", "presets").forEach(preset => this.ATLPresets![preset.name] = preset.name);
-
-      Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
-        const name = `ATL.detectionModes.${dm}.range`;
-        if (!otherFieldsMap.has(name)) {
-          otherFieldsMap.set(name, { name });
-        }
-      });
-    }
-
-    // visionMode picker — available for both ATL.sight.visionMode and the native token.sight.visionMode
-    // regardless of ATL being installed. The token field is a plain StringField with no choices, so we
-    // sourced the list from CONFIG.Canvas.visionModes (populated by Foundry core + system + modules).
+    // visionMode picker for token.sight.visionMode, a plain StringField with no choices, so the
+    // list comes from CONFIG.Canvas.visionModes (core + system + modules).
     this.visionModeChoices = {};
     Object.values(CONFIG.Canvas.visionModes)
       .filter(f => f.tokenConfig)
       .forEach(f => this.visionModeChoices![f.id!] = i18n(f.label!));
-    this.ATLVisionModes = this.visionModeChoices;
   }
 
   static DEFAULT_OPTIONS = {
@@ -225,8 +209,7 @@ export class DAEActiveEffectConfig extends SheetBase {
     if (spec.key === "macro.CE") return this.ceEffectList;
     if (spec.key === "macro.StatusEffect") return this.statusEffectList;
     if (spec.key === "StatusEffect") return this.statusEffectList;
-    if (spec.key === "ATL.preset") return this.ATLPresets;
-    if (spec.key === "ATL.sight.visionMode") return this.visionModeChoices;
+    if (spec.key === "token.sight.visionMode") return this.visionModeChoices;
     if (spec.key === "token.sight.visionMode") return this.visionModeChoices;
     return daeSystemClass.getOptionsForSpec(spec);
   }
@@ -673,7 +656,7 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
 
   /*
    * Where the key has a known value list, offer it instead of free text. The sheet resolves these
-   * (token magic, convenient effects, statuses, ATL presets, vision modes) from its own state, and
+   * (token magic, convenient effects, statuses, vision modes) from its own state, and
    * the dialog is opened from that sheet, so reuse it; fall back to the system-level list.
    */
   const sheet = foundry.utils.getProperty(effect, "sheet") as DAEActiveEffectConfig | undefined;

@@ -27,12 +27,10 @@ const fieldMappings: Record<string, string | { key: string; value?: string; type
  * Returns null if no migration is needed.
  * This is the core function — usable for testing individual effects.
  *
- * @param options.atl  If true, also rewrite ATL.* change keys to native v14 token.*
- *                     (driven by the "dae.atlCompatibility" setting being "migrate" or "full").
  */
 export function migrateEffectData(
   effectData: any,
-  options: { atl?: boolean } = {}
+  options: {} = {}
 ): Record<string, any> | null {
   const update: Record<string, any> = {};
 
@@ -100,7 +98,7 @@ export function migrateEffectData(
   // ATL → token.* rewriting. Done after the existing transformations so it operates on the
   // already-normalised key list (e.g. won't double-rewrite if an earlier mapping changed the key).
   let finalChanges = newChanges;
-  if (options.atl) {
+  {
     const rewritten = rewriteAtlChanges(newChanges);
     if (rewritten !== newChanges) {
       finalChanges = rewritten;
@@ -131,7 +129,7 @@ export function migrateEffectData(
  */
 export async function migrateActor(
   actor: Actor.Implementation,
-  options: { atl?: boolean } = {}
+  options: {} = {}
 ): Promise<{ effectsMigrated: number; errors: string[] }> {
   let effectsMigrated = 0;
   const errors: string[] = [];
@@ -194,7 +192,7 @@ export async function migrateActor(
  */
 export async function migrateItem(
   item: Item.Implementation,
-  options: { atl?: boolean } = {}
+  options: {} = {}
 ): Promise<{ effectsMigrated: number; errors: string[] }> {
   let effectsMigrated = 0;
   const errors: string[] = [];
@@ -240,7 +238,7 @@ function shouldMigrateCompendium(pack: CompendiumCollection<any>): boolean {
 /**
  * Run the full world migration — all actors, world items, scene tokens, and compendium packs.
  *
- * Reads `dae.atlCompatibility` to decide whether to also rewrite ATL.* keys to native v14
+ * Rewrites ATL.* keys to native v14 token.* keys
  * token.* keys ("migrate" or "full" enables the rewrite; "full" additionally unlocks locked
  * compendiums for migration).
  */
@@ -257,10 +255,7 @@ export async function migrateWorld(): Promise<MigrationResult> {
     return { actorsMigrated: 0, itemsMigrated: 0, effectsMigrated: 0, errors: ["Not active GM"] };
   }
 
-  const atlCompat = (game.settings.get(MODULE_ID, "atlCompatibility") as string) ?? "legacy";
-  const atl = atlCompat === "migrate" || atlCompat === "full";
-  const unlockLockedCompendiums = atlCompat === "full";
-  const migrateOptions = { atl };
+  const migrateOptions = {};
 
   const result: MigrationResult = { actorsMigrated: 0, itemsMigrated: 0, effectsMigrated: 0, errors: [] };
 
@@ -330,18 +325,10 @@ export async function migrateWorld(): Promise<MigrationResult> {
   // Migrate compendium packs
   for (const pack of packsToMigrate) {
     let packEffectsMigrated = 0;
-    let lockedHere = false;
-    // For "full" mode, auto-unlock locked compendiums so writes succeed; relock when done.
-    if (unlockLockedCompendiums && pack.locked) {
-      try {
-        await pack.configure({ locked: false });
-        lockedHere = true;
-      } catch (err: any) {
-        result.errors.push(`Compendium "${pack.metadata.label}" unlock: ${err.message}`);
-      }
-    } else if (pack.locked) {
-      // "migrate" mode — skip locked compendiums silently (they need user action or "full").
-      console.log(`dae | migration | Compendium "${pack.metadata.label}": skipped (locked; set atlCompatibility="full" to auto-unlock)`);
+    const lockedHere = false;
+    if (pack.locked) {
+      // Locked packs are never written to; unlock manually to migrate one.
+      console.log(`dae | migration | Compendium "${pack.metadata.label}": skipped (locked)`);
       // Advance progress so the bar reflects skipped packs.
       migrated += pack.index.size;
       progress?.update({ pct: migrated / totalDocuments });
