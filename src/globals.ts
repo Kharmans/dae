@@ -1,7 +1,7 @@
 import API from "./module/API/api";
 import { BaseValuesInner } from "./module/dae";
 import { DAESystemDND5E } from "./module/Systems/DAEdnd5e";
-import { DAESystem, ValidSpec } from "./module/Systems/DAESystem";
+import { ValidSpec } from "./module/Systems/DAESystem";
 
 export type TokenOrDocument = foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation;
 
@@ -178,9 +178,6 @@ declare global {
   }
 
   interface CONFIG {
-    DAE: {
-      systemClass: typeof DAESystem;
-    }
     // Temp, until we use dnd5e-types
     DND5E: {
       abilities: Record<string, {
