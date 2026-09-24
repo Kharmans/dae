@@ -13,8 +13,14 @@ import { expireEffect, isEffectExpired, isTransferEffect, hasDuration, hasExpiry
 import { migrateEffectData, migrateActor, migrateItem, migrateWorld } from '../migration.js';
 import { resolveItemFromEffect, resolveMacro, resolveWorldMacro, resolveItemMacroCommand, resolveActivityMacroCommand, createSyntheticMacro, createFunctionMacro } from '../lib/macroResolution.js';
 import { registerChangeHandler, getChangeHandler, changeHandlerRegistry } from '../lib/changeHandlerRegistry.js';
+import { calibratePhases, calibrateActor, misphaseReport, collapsePaths } from '../lib/phaseCalibration.js';
 
 const API = {
+  /** Investigation tool: map dnd5e derived-data steps to the paths they write. Read-only. */
+  calibratePhases,
+  calibrateActor,
+  misphaseReport,
+  collapsePaths,
   ActiveEffects(document: Actor.Implementation | Item.Implementation) {
     return new ActiveEffects({document});
   },

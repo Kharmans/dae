@@ -258,8 +258,9 @@ export class DAESystem {
   static weaponAttacks: string[];
   static attackTypes: string[];
   static bonusSelectors: Record<string, {
-    attacks: string[];
-    selector: string;
+    /** Only needed when `replaceList` is absent and the keys are derived by fan-out. */
+    attacks?: string[];
+    selector?: string;
     replaceList?: string[];
     /** Set on legacy selector keys: the new key to point the user at. */
     deprecatedFor?: string;

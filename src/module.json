@@ -2,7 +2,7 @@
   "id": "dae",
   "title": "Dynamic effects using Active Effects (DAE)",
   "description": "Replacement for dynamic effects",
-  "version": "14.0.14",
+  "version": "14.6.0",
   "authors": [
     {
       "name": "tposney",

@@ -1,5 +1,5 @@
 import { warn, debug, debugEnabled, error } from "../dae.js";
-import { expireEffects, getApplicableEffects, daeMacro, actionQueue, resolveSpecialDurationExpiryAction, resolveEffectExpiryAction } from "./dae.js";
+import { expireEffects, getActorEffects, daeMacro, actionQueue, resolveSpecialDurationExpiryAction, resolveEffectExpiryAction } from "./dae.js";
 
 export let expireRoundEffectsOnCombatEnd: boolean = false;
 
@@ -202,7 +202,7 @@ export function processMacroRepeats(combat, update, options) {
       if (combatantNextTurn < checkTurn) combatantNextTurn += totalTurns;
       let combatantLastTurn = (foundry.utils.getProperty(options, "dae.combat.round") ?? combat.round) * totalTurns + combatantIndex;
 
-      for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
+      for (let effect of getActorEffects(actor, { includeEnchantments: true })) {
         const macroRepeat = getMacroRepeat(effect);
         switch (macroRepeat) {
           case "startEveryTurn":
@@ -235,7 +235,7 @@ async function expireRoundEffectsOnEnd(actor) {
 
   const effectsToExpire: { effect: ActiveEffect, reason: string }[] = [];
   const expiringUuids = new Set<string>();
-  for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
+  for (let effect of getActorEffects(actor, { includeEnchantments: true })) {
     const expiry = effect.duration?.expiry;
     const turnExpiries = ["roundStart", "roundEnd", "turnStart", "turnEnd"];
     if (turnExpiries.includes(expiry) && !isTransferEffect(effect)) {
@@ -299,7 +299,7 @@ export function preDeleteCombatHook(combat: Combat.Implementation, options: Comb
   for (let combatant of combat.combatants) {
     const actor = combatant.actor;
     if (!actor) continue;
-    const effects = getApplicableEffects(actor, { includeEnchantments: true })
+    const effects = getActorEffects(actor, { includeEnchantments: true })
       .filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd"));
     actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "combat-end" });
   }
@@ -309,7 +309,7 @@ export function preDeleteCombatHook(combat: Combat.Implementation, options: Comb
 export function preCreateCombatantHook(combatant: Combatant.Implementation, data: Combatant.CreateData, options: Combatant.Database.PreCreateOptions, user: string) {
   const actor = combatant.actor;
   if (!actor) return;
-  const effects = getApplicableEffects(actor, { includeEnchantments: true })
+  const effects = getActorEffects(actor, { includeEnchantments: true })
     .filter(ef => ef.flags?.dae?.specialDuration?.includes("joinCombat"));
   actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "join-combat" });
 }

@@ -530,7 +530,9 @@ export class DAESystemDND5E extends DAESystem {
     if ((spec.includes("system.skills") || spec.includes("system.attributes.concentration")) && spec.includes("ability")) {
       validSpec.forcedMode = "override";
     }
-    if (spec.includes("system.bonuses.abilities")) {
+    // dnd5e 6.0 renamed system.bonuses.abilities.* to system.rolls.ability.*; ValidSpecs are
+    // generated from the live schema, so only the new spelling can occur here.
+    if (spec.includes("system.rolls.ability")) {
       validSpec.forcedMode = "";
     }
     return validSpec;
@@ -543,6 +545,7 @@ export class DAESystemDND5E extends DAESystem {
     this.fieldMappings["system.traits.di.all"] = { key: "system.traits.di.value", value: "ALL", mode: "add" };
     this.fieldMappings["system.traits.dr.all"] = { key: "system.traits.dr.value", value: "ALL", mode: "add" };
     this.fieldMappings["system.traits.dv.all"] = { key: "system.traits.dv.value", value: "ALL", mode: "add" };
+
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
     warn("system is ", game.system)
     if (game.modules.get("dnd5e-custom-skills")?.active) {
@@ -674,6 +677,13 @@ export class DAESystemDND5E extends DAESystem {
       "system.rolls.damage.weapon.bonus": { attacks: this.weaponAttacks, selector: "damage", replaceList: this.weaponAttacks.map(rollBonus("damage")) },
       "system.rolls.damage.spell.bonus": { attacks: this.spellAttacks, selector: "damage", replaceList: this.spellAttacks.map(rollBonus("damage")) },
     };
+    /*
+     * No entries here for the per-type renames (system.bonuses.<type>.<attack|damage>,
+     * system.bonuses.abilities.<x>, movement/senses/init/death/concentration, system.rarity).
+     * dnd5e's own ActiveEffect5e.SHIM_FIELDS remaps all of them before DAE sees the change -
+     * verified 2026-09-24 by removing candidate entries at runtime and re-applying a legacy key.
+     * Duplicating that table here would diverge the day the system edits its own.
+     */
     this.daeActionTypeKeys = Object.keys(this.systemConfig.itemActionTypes);
   }
 

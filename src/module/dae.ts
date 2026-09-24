@@ -390,7 +390,8 @@ export function daeApplyChange(
     }
     const overrides = {};
     const keys: string[] = selector.replaceList
-      ?? selector.attacks.map((at: string) => `system.bonuses.${at}.${selector.selector}`);
+      ?? selector.attacks?.map((at: string) => `system.bonuses.${at}.${selector.selector}`)
+      ?? [];
     for (const key of keys) {
       const c = foundry.utils.deepClone(change) as DAEChangeData;
       c.key = key;
@@ -1415,7 +1416,29 @@ export async function doActivityEffects(
   activityEffectsUuids: string[],
   options: DoEffectsOptions
 ) {
-  const activityEffects = (activityEffectsUuids.map(aeUuid => fromUuidSync(aeUuid) ?? activity.effects.find(ae => ae.effect.uuid === aeUuid)?.effect) as ActiveEffect.Implementation[]).filter(ef => ef).map(ef => ef.toObject());
+  /*
+   * dnd5e 6.0 (#6800) lets an activity reference an effect by uuid instead of a local _id, so
+   * resolution can need a compendium fetch. Three reasons this is not fromUuidSync any more:
+   *   - fromUuidSync THROWS on a compendium-embedded uuid ("cannot be retrieved synchronously"),
+   *     so the `??` fallback never ran and the whole call aborted;
+   *   - the old fallback read `profile.effect`, deprecated in 6.0 and removed in 6.2 - it warns and
+   *     returns a Promise, so `.uuid` was undefined and the match could never succeed;
+   *   - this function is already async, so there was nothing to gain from resolving synchronously.
+   * Matching on relativeUUID is the 6.0 currency (it is what dnd5e writes to a card's
+   * system.effects); `profile.uuid` is also accepted so callers passing a resolved effect's uuid
+   * keep working. getEffect() returns a document for a local _id and a Promise for a remote uuid.
+   */
+  const profiles = activity.effects ?? [];
+  const resolved = await Promise.all(activityEffectsUuids.map(async (aeUuid) => {
+    const profile = profiles.find(p => (p.relativeUUID === aeUuid) || (p.uuid === aeUuid));
+    try {
+      return profile ? await profile.getEffect() : await fromUuid(aeUuid);
+    } catch (err) {
+      warn("doActivityEffects | could not resolve effect", aeUuid, err);
+      return undefined;
+    }
+  }));
+  const activityEffects = (resolved as ActiveEffect.Implementation[]).filter(ef => ef).map(ef => ef.toObject());
   // TODO dnd5e v4 - a temporary fix to make sure the effects are not disabled when applied
   activityEffects.forEach(ef => ef.disabled = false);
   return await applyActivityEffects(activity, activate, targets, activityEffects, options)
@@ -2518,7 +2541,12 @@ export function safeGetGameSetting(moduleName: any, settingName: any): any | und
   else return undefined;
 }
 
-export function getApplicableEffects(actor, { includeEnchantments, includeExpired = false }) {
+/**
+ * Collect an actor's already-embedded effects, optionally including applied enchantments.
+ * Named for the actor, not the activity: dnd5e 6.0's `Activity#getApplicableEffects()` (#6800) is an
+ * unrelated async API that resolves an activity's effect *profiles*, possibly from a compendium.
+ */
+export function getActorEffects(actor, { includeEnchantments, includeExpired = false }) {
   if (!actor) return [];
   let effects: any[] = [];
   for (let effect of actor.allApplicableEffects()) {
