@@ -1,6 +1,6 @@
 ### 14.6.0
 * Internal `getApplicableEffects(actor, ...)` renamed to `getActorEffects`. It collects an actor's embedded effects and is unrelated to dnd5e 6.0's new async `Activity#getApplicableEffects()`, which resolves an activity's effect profiles and may fetch from a compendium. Internal only - not part of the DAE API.
-* Minimum Foundry raised to 14.365, verified to 14.367.
+* Minimum Foundry raised to 14.365, verified to 14.368.
 * Phase correction now uses Foundry's `ActiveEffect#shouldApplyChange`, so a change applied in its field's phase rather than its stored phase takes part in core's priority sort instead of being applied after it.
 * `@stackCount` now resolves at every occurrence in a change value, not just the first.
 * Arithmetic in a numeric flag's value is now evaluated (`floor(@details.level/2)` no longer becomes 0). Formula-valued flags such as midi optional bonuses keep their string.
