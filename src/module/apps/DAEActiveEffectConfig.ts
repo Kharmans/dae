@@ -54,7 +54,7 @@ export interface FieldEditorRegistration {
   editor: (currentValue: string, context: FieldEditorContext) => Promise<string | null>;
   /** Optional icon class (default: "fas fa-edit") */
   icon?: string;
-  /** Optional tooltip text */
+  /** Optional tooltip: text or a localization key, resolved when the button renders */
   tooltip?: string;
 }
 
@@ -445,7 +445,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         const btn = document.createElement("a");
         btn.classList.add("dae-edit-value");
         btn.dataset.index = String(index);
-        btn.dataset.tooltip = fieldEditor.tooltip ?? "Edit";
+        btn.dataset.tooltip = fieldEditor.tooltip ? i18n(fieldEditor.tooltip) : "Edit";
         btn.innerHTML = `<i class="${fieldEditor.icon ?? "fas fa-edit"}"></i>`;
         valueDiv.appendChild(btn);
       }

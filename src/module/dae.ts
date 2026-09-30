@@ -2057,7 +2057,7 @@ export function daeInitActions() {
       }).render({ force: true });
     }),
     icon: "fas fa-code",
-    tooltip: i18n("dae.DIMEditor.Name"),
+    tooltip: "dae.DIMEditor.Name",
   });
 
   //@ts-expect-error no typings for this (can we maybe ditch in favor of our own tokenization?)

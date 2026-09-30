@@ -1,3 +1,7 @@
+### 14.0.15 (unreleased)
+* Effect editor: the DIME button's tooltip shows "DIME" instead of `dae.DIMEditor.Name`.
+* Deprecated special durations that don't fit core's single expiry (e.g. combatEnd alongside turnStart) are kept rather than dropped, and an explicitly set expiry is not overwritten.
+
 ### 14.0.14
 * Minimum Foundry raised to 14.365, verified to 14.367.
 * Phase correction now uses Foundry's `ActiveEffect#shouldApplyChange`, so a change applied in its field's phase rather than its stored phase takes part in core's priority sort instead of being applied after it.
