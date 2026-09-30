@@ -1,54 +1,105 @@
-### 14.6.0
-* Internal `getApplicableEffects(actor, ...)` renamed to `getActorEffects`. It collects an actor's embedded effects and is unrelated to dnd5e 6.0's new async `Activity#getApplicableEffects()`, which resolves an activity's effect profiles and may fetch from a compendium. Internal only - not part of the DAE API.
+### 14.6.0 (dnd6 branch)
+
+**Requirements**
+* dnd5e 6.0 or later only: `module.json` declares a dnd5e 6.0.0 minimum, and support for every other system has been removed.
 * Minimum Foundry raised to 14.365, verified to 14.368.
-* Phase correction now uses Foundry's `ActiveEffect#shouldApplyChange`, so a change applied in its field's phase rather than its stored phase takes part in core's priority sort instead of being applied after it.
-* `@stackCount` now resolves at every occurrence in a change value, not just the first.
-* Arithmetic in a numeric flag's value is now evaluated (`floor(@details.level/2)` no longer becomes 0). Formula-valued flags such as midi optional bonuses keep their string.
-* Special durations: the source/target start/end expiries are evaluated the way dnd5e 6.0 does on earlier dnd5e versions too.
-* Special durations: a source/target end expiry no longer ends on the turn the effect was applied.
-* Special durations: source/target expiries keep their own value instead of being rewritten to `turnStart`/`turnEnd` with a fixed combatant.
-* Rider conditions are left to dnd5e, which creates them itself on effect creation; DAE's duplicate call used an API deprecated in dnd5e 6.0.
-* The macro-init enchantment guard uses `applicableType`, so riders of non-applied enchantments are skipped too.
-* midi's special durations are no longer registered by DAE; midi registers them itself via `dae.addSpecialDurations`. DAE's duplicate list ran after the hook and overwrote midi's, which is how the mis-spelled concentration-failure entry reached the UI. DAE now defines only system-agnostic entries.
-* Re-enabling a transfer effect no longer stamps a start on it, so a duration on a transfer effect never runs. A transfer effect is the definition on the item, and a start makes it expiry-tracked, after which the system deletes it off the item. Legacy items that toggled such an effect on and relied on it expiring must add the effect to the activity's Effects list instead; see the midi-qol changelog.
-* `_prepareDuration` no longer special-cases an effect that has an expiry and no duration value; dnd5e 6.0 already prepares those as infinite, and the special case skipped dnd5e's own duration labels.
-* Per-change `conditions` on an effect change are now honoured, and `change.applied` is set. DAE decided the application phase and returned without letting the system run its own checks, so dnd5e's per-change conditions and effect-level condition suppression were skipped for every keyed change. DAE still chooses the phase, then delegates.
-* Bonus selectors expand to `system.rolls.attack|damage.<type>.bonus`, the dnd5e 6.0 location, instead of the old `system.bonuses.<type>.<attack|damage>` paths that only still resolve through the system's deprecation shim.
-* `system.bonuses.All-Attacks` now sets dnd5e's own `system.rolls.attack.bonus`, which the system combines into every attack roll, rather than writing each attack type separately.
-* New selector keys for the groupings dnd5e has no native equivalent for: `system.rolls.attack.weapon.bonus`, `.spell.bonus`, and `system.rolls.damage.all|weapon|spell.bonus`. The `system.bonuses.*` forms keep working as aliases.
-* Using a legacy `system.bonuses.All-Attacks`-style selector logs a deprecation warning naming its replacement.
-* Movement and senses fields are offered as `system.attributes.movement.speeds.*` and `system.attributes.senses.ranges.*`, their dnd5e 6.0 locations; the old paths still work through the system's shim.
-* The effect sheet extends the system's own effect sheet where there is one, so every tab except the DAE tab is the system's. Under dnd5e 6.0 that restores the effect-level and per-change Conditions fields, its header and its changes UI, which were previously missing because DAE extended the core sheet. Systems without their own effect sheet are unaffected and keep DAE's inline change editor.
-* Under dnd5e, changes are edited in the system's change dialog rather than inline. DAE adds the field browser, the application phase, spec-driven value lists and forced-mode restriction to that dialog.
-* The injected phase control uses dnd5e's own label and hint and core's phase names, so it reads as part of the dialog and picks up any phase a module registers.
-* `##field` deferral: all occurrences in a value are now restored, not just the first, and the restore also runs for effects the system applies itself (enchantments, chat-card apply, region behaviors), which never reached DAE's own substitution.
 
-## dnd6 branch — dnd5e 6.0 only
+**Breaking changes**
 
-This branch drops support for every system other than dnd5e 6.0+ and removes the code that existed
-to accommodate them.
+*How `@` references are filled when an effect is applied (item and effect authors)*
 
-* `module.json` declares a dnd5e 6.0.0 minimum.
-* Side-effecting changes (`macro.*`, `StatusEffect`, `macro.CE`) are now undone when an effect becomes suppressed — an unequipped item left its macros' work in place. Suppression is derived state with no document event of its own, so the transition is detected during data preparation, where equipment, antimagic and the origin effect's active state are all already resolved, and the work is queued rather than run inline. Fires the new `dae.suppressionChanged` hook.
-* `StatusEffect` now removes its condition when the change is deleted or edited, or the effect is suppressed. The removal had been commented out as "effect will auto remove", which is only true when the parent effect is deleted — dnd5e deletes dependents then, and DAE deleting as well raced it. Guarded on the same context flags `removeCreateItemChange` already used.
-* Migrating deprecated special durations no longer discards the ones `duration.expiry` cannot express. `duration.expiry` holds a single value, so only the first can be migrated; the rest stay on `flags.dae.specialDuration` and keep warning instead of being silently dropped. An expiry the author set explicitly is not overwritten — but core initialises `duration.expiry` to `turnStart` for any numeric duration, so only an expiry differing from that default counts as authored.
-* The migration no longer rewrites pre-v10 `data.` change keys or appends the missing `.all` to midi optional keys; both predate every version this branch supports and are still handled at apply time.
-* ATL support removed. Foundry v14 handles `token.*` change keys natively, so `ATL.*` is normalised to `token.*` on write, unconditionally — the `atlCompatibility` setting, its four modes, the runtime translation layer and the `atl` migration option are all gone. An `ATL.*` key that predates this and reaches application is not applied and warns once. Detection-mode fields are offered as `token.detectionModes.<id>.range`.
-* Removed DAE's vision-mode sibling injection; core's `_inflateVisionModeChange` does the same job. DAE now only keeps `sight.visionMode` ahead of its equal-priority siblings, so an explicit `sight.*` value still wins whatever order it was authored in — core applies the defaults after the change, so order would otherwise matter.
-* Removed the game-system compatibility machinery: the `gameSystemCompatible` states, the
-  `DAEUntestedSystems` setting and its strings, the pf2e blocklist and the
-  `game.system.flags.daeCompatible` protocol.
+dnd5e 6 gives each effect change a **Replacement** setting that says whose data fills its `@` references. DAE now follows it when it applies an effect to a target (midi activity effects, `doEffects`):
+- **Origin** - filled from the caster when the effect is applied.
+- **Target** - filled from each target when the effect is applied.
+- **None** (the default) - not filled when applied: the reference stays in the effect and is worked out on the target whenever the target is prepared, so it follows the target's current values. Application facts - `@item` (the item as cast), `@activity`, `@spellLevel`, `@itemLevel`, `@scaling`, `@damage`, `@critical`, `@fumble`, `@itemCardUuid`, `@actorUuid` - are filled from the application, so they still work.
+
+Previously DAE filled **every** reference from the caster when the effect was applied, whatever the Replacement setting.
+
+**What to do.** An effect whose changes rely on the caster's values with Replacement left at None - for example `saveDC=@attributes.spell.dc` in an OverTime effect, or a bonus built from the caster's `@abilities` or `@scale` - now gets the target's values. Either:
+- set those changes' Replacement to **Origin** (the dnd5e 6 way), or
+- tick **Legacy DAE application** on the effect (DAE tab), or mark a whole item or compendium pack with "DAE: Effect application" on the item sheet or "DAE: Effects use legacy application" on the pack, to keep the old behaviour.
+
+Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ...) are filled from the caster; `##` still defers a reference to the target; transfer (passive) effects are not affected.
+
+*Transfer effects with a duration*
+* A duration on a transfer effect no longer runs: re-enabling one no longer starts it. Legacy items that toggled such an effect on and relied on it expiring must add the effect to the activity's Effects list instead; see the midi-qol changelog.
+
+*ATL keys*
+* `ATL.*` change keys are converted to `token.*` when an effect is saved; the `atlCompatibility` setting and its four modes are gone. Foundry v14 handles `token.*` natively. An `ATL.*` key saved before this is not applied, and warns once. Detection-mode fields are offered as `token.detectionModes.<id>.range`.
+
+#### Changes you will notice
+
+**Applying effects**
+* Effects DAE applies follow dnd5e 6's per-change Replacement setting by default; the per-effect "Legacy DAE application" setting keeps DAE's old behaviour (see Breaking changes).
+* "DAE: Effect application" on item sheets, and "DAE: Effects use legacy/dnd5e application" on Item and Actor compendium packs, set that for every effect in the item or pack.
+* dnd5e's own Apply button recognises effects DAE applied, so applying one again refreshes it rather than adding a copy.
+* `@activity` references in a legacy-application effect (e.g. `saveDC=@activity.save.dc.value` in an OverTime effect) are filled from the activity; they came out as 0.
+* Per-change conditions on an effect change, and effect-level condition suppression, are honoured.
+* Macros, `StatusEffect` and Convenient Effects changes are undone when their effect is suppressed, e.g. by unequipping the item; the work used to stay in place.
+* A `StatusEffect` change removes its condition when the change is deleted or edited, or its effect is suppressed.
+* Combat end no longer throws "does not exist" for effects dnd5e 6 removes itself as the combatant leaves.
+* An effect that inherits its duration from the activity or item also expires with world time, not only on the round tick.
+
+**Effect sheet**
+* The effect sheet is dnd5e's own, with a DAE tab: the effect-level and per-change Conditions fields, its header and its changes UI are back.
+* Changes are edited in dnd5e's change dialog, with DAE's field browser, value lists and mode restriction added to it.
+* Condition builder: a button beside dnd5e's filter button on per-change and effect-level conditions opens a form of nested groups (All of, Any of, None of, Not all of, XOR) with comparison rows, path autocomplete, a common fields menu (statuses, creature, ability scores and modifiers, attributes, health, defences, level, and the item for item effects), value pickers from dnd5e's lists (statuses, creature types, sizes, damage types, spell schools...) and a live pass/fail on the actor. It writes dnd5e's filter JSON and declines conditions it cannot show.
+* Change keys and values autocomplete in Foundry's own menu: keys by category with their name and description; values complete `@` references a segment at a time, and formula functions for number and formula fields. The full-width field browser with category tabs is gone.
+* The change dialog offers the registered value editors (DIME for macros, midi's OverTime and condition editors), and edits macro source in a multi-line box that keeps its line breaks.
+* The change dialog shows the phase a change is applied in, read-only, under dnd5e's label and hint; saving leaves the stored phase as it was.
+* Set-based fields on an actor's effects (`system.damage.base.types` and other item/activity Set fields) are no longer locked to override - they default to add with every mode selectable. 14.0.13 fixed this for item and enchantment effects only.
+* Change modes are no longer restricted for fields with a value picker; v14 implements all six modes on Set fields, so only the default is set.
+
+**Special durations**
+* Source/target start/end expiries are evaluated the way dnd5e 6.0 does.
+* A source/target end expiry no longer ends on the turn the effect was applied.
+* Source/target expiries keep their own value instead of being rewritten to `turnStart`/`turnEnd` with a fixed combatant.
+* Migrating deprecated special durations no longer discards the ones `duration.expiry` cannot express; the rest stay on `flags.dae.specialDuration` and keep warning. An expiry the author set explicitly is not overwritten.
+
+**Values and bonuses**
+* `@stackCount` resolves at every occurrence in a change value, not just the first.
+* Arithmetic in a numeric flag's value is evaluated (`floor(@details.level/2)` no longer becomes 0). Formula-valued flags such as midi optional bonuses keep their string.
+* `##field` deferral restores every occurrence in a value, not just the first, and also works for effects dnd5e applies itself (enchantments, chat-card apply, region behaviours).
+* Bonus selectors write to `system.rolls.attack|damage.<type>.bonus`, the dnd5e 6.0 location, instead of the old `system.bonuses.<type>.<attack|damage>` paths.
+* `system.bonuses.All-Attacks` sets dnd5e's own `system.rolls.attack.bonus`, which the system adds to every attack roll.
+* New selector keys for groupings dnd5e has no native equivalent for: `system.rolls.attack.weapon.bonus`, `.spell.bonus`, and `system.rolls.damage.all|weapon|spell.bonus`. The `system.bonuses.*` forms keep working as aliases.
+* A legacy `system.bonuses.All-Attacks`-style selector logs a deprecation warning naming its replacement.
+* Movement and senses fields are offered as `system.attributes.movement.speeds.*` and `system.attributes.senses.ranges.*`, their dnd5e 6.0 locations; the old paths still work through dnd5e's shim.
+
+#### Implementation details
+
+**Effect application**
+* `flags.dae.legacyApplication` holds the per-effect mode. `DAE.setLegacyApplication(itemOrActorOrEffectOrPack, legacy)` sets it for every effect in the target and returns the count; `DAE.usesLegacyApplication(effectData)` reports it.
+* In dnd5e mode a `target` change is filled per target on the applying client (GM path included) with dnd5e's `forApplication`; application facts are recorded in `flags.dae.applicationData` and supplied at preparation by a `getReplacementData` wrapper, and by `daeApplyChange` for formula fields, which dnd5e evaluates later from the actor's own roll data. The source item is read live, falling back to `flags.dae.itemData`.
+* Applied activity effects record their source as dnd5e 6 does: the source effect in `_stats.duplicateSource`/`compendiumSource`, and the activity, chat message and profile in `system.origin`. DAE's origin goes in as `system.origin.effect`, so the `origin` DAE and midi read is unchanged.
+* DAE still chooses the application phase, then delegates to the system, so `change.applied` is set; previously it returned without letting dnd5e run its checks.
+* Phase correction uses Foundry's `ActiveEffect#shouldApplyChange`, so a change applied in its field's phase rather than its stored phase takes part in core's priority sort instead of being applied after it.
+* Side-effecting changes (`macro.*`, `StatusEffect`, `macro.CE`) are undone on suppression. Suppression is derived state with no document event, so the transition is detected during data preparation, where equipment, antimagic and the origin effect's active state are resolved, and the undo work is queued. New hook: `dae.suppressionChanged`.
+* The `StatusEffect` removal is guarded by the same context flags `removeCreateItemChange` used; it had been commented out as "effect will auto remove", which only held when the parent effect was deleted.
+* Rider conditions are left to dnd5e, which creates them on effect creation; DAE's duplicate call used an API deprecated in dnd5e 6.0. The macro-init enchantment guard uses `applicableType`, so riders of non-applied enchantments are skipped too.
+* Legacy `@activity` is the activity's own entry in its roll data (`activity.getRollData().activity`); it was the whole roll data, so `@activity.<path>` never resolved. In dnd5e mode `@activity` is supplied at preparation from the live activity, falling back to that entry as recorded at application (`flags.dae.applicationData.activity`).
+* The encumbrance bonus and multiplier specs are only supplied where the system declares none, so dnd5e 6's `FormulaField`s are used instead of plain strings.
+* Internal `getApplicableEffects(actor, ...)` renamed to `getActorEffects`; it is unrelated to dnd5e 6.0's async `Activity#getApplicableEffects()`. Not part of the DAE API.
+
+**Effect sheet**
+* `DAE.DAEConditionBuilder` (API) with static `parse(json)` / `serialize(model)`; "not equal" is stored as `NOT` around `exact`, since dnd5e has no such comparison. A `has` with a nested filter has no row form.
+* The field browser drives Foundry's `Autocomplete` and no longer adds page-wide click and keydown listeners per instance, which piled up in the change dialog. The dialog rebuilds the value field, editor button and forced mode when the key changes, since it does not re-render once open.
+
+**Durations**
+* An effect that inherits its duration from the activity or item gets an `updateWorldTime` expiry.
+* Re-enabling a transfer effect no longer stamps a start on it: a start makes it expiry-tracked, after which the system deletes it from the item.
+* `_prepareDuration` no longer special-cases an effect with an expiry and no duration value; dnd5e 6.0 already prepares those as infinite, and the special case skipped dnd5e's own labels.
+* midi's special durations are no longer registered by DAE; midi registers them via `dae.addSpecialDurations`. DAE's list ran after the hook and overwrote midi's, which is how the misspelt concentration-failure entry reached the UI. DAE defines only system-agnostic entries.
+* The special-duration migration writes only the first expiry to `duration.expiry` (it holds one value). Core initialises `duration.expiry` to `turnStart` for any numeric duration, so only a differing value counts as authored.
 * Removed the dnd5e < 6.0 source/target pseudo-expiry port; 6.0 implements those natively.
-* Removed the system-class dispatch: the `globalThis.daeSystems` registry, lookup by
-  `game.system.id`, the `CONFIG.DAE.systemClass` fallback, and six base methods that existed only as
-  override points. `DAESystemDND5E` now extends `DAESystem` directly.
-* `DAE.systemClass` exposes the active system class, replacing the `globalThis.daeSystems` registry
-  as the supported way to reach it.
-* The effect sheet extends dnd5e's sheet unconditionally, and DAE's 165-line inline change renderer
-  is gone — dnd5e's changes tab renders its own rows, so it produced markup nothing displayed.
-* An effect that inherits its duration from the activity/item now gets an `updateWorldTime` expiry, instead of only expiring on the round tick.
-* Effect editor: set-backed fields on an actor's effects (`system.damage.base.types` and other item/activity Set fields) are no longer locked to override - they default to add with every mode selectable. 14.0.13 fixed this for item and enchantment effects only.
-* Effect editor: change modes are no longer restricted for fields with a value picker; v14 implements all six modes on Set fields, so only the default is set.
+
+**Removed**
+* The system-class dispatch: the `globalThis.daeSystems` registry, lookup by `game.system.id`, the `CONFIG.DAE.systemClass` fallback, and six base methods that existed only as override points. `DAESystemDND5E` extends `DAESystem` directly; `DAE.systemClass` exposes the active system class.
+* The game-system compatibility machinery: the `gameSystemCompatible` states, the `DAEUntestedSystems` setting and its strings, the pf2e blocklist and the `game.system.flags.daeCompatible` protocol.
+* The ATL runtime translation layer and the `atl` migration option.
+* DAE's vision-mode sibling injection; core's `_inflateVisionModeChange` does the job. DAE only keeps `sight.visionMode` ahead of its equal-priority siblings, so an explicit `sight.*` value still wins whatever order it was authored in.
+* DAE's 165-line inline change renderer; dnd5e's changes tab renders its own rows. The sheet extends dnd5e's unconditionally.
+* The migration no longer rewrites pre-v10 `data.` change keys or appends the missing `.all` to midi optional keys; both are still handled at apply time.
 
 ### 14.0.13
 * Effect editor: each change row now has an editable Phase dropdown (defaults to the field's phase, and re-defaults when you change the change's key). Your choice wins at apply time, including forcing initial on a normally-final field.

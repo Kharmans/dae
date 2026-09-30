@@ -1,6 +1,8 @@
-import { log, debug, error, i18n } from "../../dae.js";
+import { error, i18n } from "../../dae.js";
 import { daeSystemClass } from "../dae.js";
-import { DAEActiveEffectConfig } from "./DAEActiveEffectConfig.js";
+import { InputAutocomplete, Suggestions } from "./ChangeAutocomplete.js";
+
+const MAX_ENTRIES = 100;
 
 interface FieldData {
   key: string;
@@ -22,40 +24,20 @@ export class DAEFieldBrowser {
   private static knownFieldData: Record<string, { category: string }> = {};
   private static fieldDataInitialized: boolean = false;
 
-  private static isFullBrowser: boolean = false;
-  private static showDescriptions: boolean = true;
-
   public enrichedFields: FieldData[] = [];
-  private filteredFields: FieldData[] = [];
-  private selectedIndex: number = 0;
-  private currentTab: string = 'All';
-  private tabs: string[] = [];
-  public browserElement: HTMLElement | null = null;
   private validFields: Record<string, {name: string, description?: string}>;
   private currentInput: HTMLInputElement | undefined;
-  private contentElement: HTMLElement | null = null;
   private effectConfig: FieldBrowserHost;
+  private completers = new WeakMap<HTMLInputElement, InputAutocomplete>();
   public debouncedUpdateBrowser: () => void;
-  private memoizedFilterFields: (query: string, tab: string) => FieldData[];
 
-  /**
-   * Creates an instance of DAEFieldBrowser.
-   * @param {Record<string, {name: string, description?: string}>} validFields - The valid fields for the browser.
-   * @param {DAEActiveEffectConfig} effectConfig - The effect configuration class.
-   */
   constructor(validFields: Record<string, {name: string, description?: string}>, effectConfig: FieldBrowserHost) {
     this.validFields = validFields;
     this.effectConfig = effectConfig;
-    log("DaeFieldBrowser | Initializing");
-
-    this.debouncedUpdateBrowser = foundry.utils.debounce(() => {
-      this.updateBrowser();
-    }, 50);
-    this.memoizedFilterFields = this.memoize(this.filterFields.bind(this));
+    this.debouncedUpdateBrowser = foundry.utils.debounce(() => this.updateBrowser(), 50);
   }
 
   async init(): Promise<void> {
-    log("DAEFieldBrowser | Fetching field data");
     try {
       if (!DAEFieldBrowser.fieldDataInitialized) {
         // fetch data to save known category-field pairings.
@@ -66,16 +48,9 @@ export class DAEFieldBrowser {
             DAEFieldBrowser.knownFieldData[key] = { category };
           }
         }
-        
         DAEFieldBrowser.fieldDataInitialized = true;
       }
-
-      //TODO cache this to avoid rebuilding if a new browser is opened with the same validFields
       this.enrichedFields = this.enrichValidFields();
-      this.filteredFields = this.enrichedFields;
-
-      this.tabs = ['All', ...new Set(this.enrichedFields.map(field => field.category))];
-
       this.effectConfig.updateFieldInfo();
     } catch (err) {
       error("DAEFieldBrowser | Failed to initialize:", err);
@@ -126,363 +101,43 @@ export class DAEFieldBrowser {
   }
 
   public updateBrowser(): void {
-    if (!this.browserElement) {
-      this.createBrowser();
-    }
-    
-    if (this.browserElement!.style.display === 'none') {
-      this.browserElement!.style.display = 'block';
-    }
-    
-    this.browserElement!.classList.toggle('dae-fb-full-browser', DAEFieldBrowser.isFullBrowser);
-    
-    debug(`DaeFieldBrowser | Updating browser with query: ${this.currentInput?.value}`);
-    
-    this.filteredFields = this.memoizedFilterFields(this.currentInput?.value ?? "", this.currentTab);
-    this.renderFields();
-    this.selectField(0);
-
-    this.positionBrowser();
-    this.currentInput?.focus();
-  }
-
-  private createBrowser(): void {
-    if (this.browserElement) return;
-    debug("DaeFieldBrowser | Creating browser element");
-    
-    const fullBrowserClass = DAEFieldBrowser.isFullBrowser ? 'active' : '';
-    const descriptionsClass = DAEFieldBrowser.showDescriptions ? 'active' : '';
-    const browserClasses = DAEFieldBrowser.isFullBrowser ? ['dae-fb-browser', 'dae-fb-full-browser'] : ['dae-fb-browser'];
-    browserClasses.push('application');
-  
-    this.browserElement = document.createElement('div');
-    this.browserElement.id = 'dae-fb-browser';
-    this.browserElement.classList.add(...browserClasses);
-    this.browserElement.innerHTML = `
-      <div class="dae-fb-tabs"></div>
-      <div class="dae-fb-content"></div>
-      <div class="dae-fb-toggle-container">
-        <button class="dae-fb-toggle-button ${fullBrowserClass}" data-action="toggle-full" title="Switch between compact and full browser views">
-          <i class="fas fa-expand-arrows-alt"></i> Toggle Full Browser
-        </button>
-        <button class="dae-fb-toggle-button ${descriptionsClass}" data-action="toggle-descriptions" title="Toggle field descriptions">
-          <i class="fas fa-align-left"></i> Toggle Descriptions
-        </button>
-      </div>
-    `;
-    this.contentElement = this.browserElement.querySelector('.dae-fb-content');
-    
-    this.createTabButtons();
-    this.setupEventListeners();
-    document.body.appendChild(this.browserElement);
-  }
-
-  private createTabButtons(): void {
-    const tabsContainer = this.browserElement!.querySelector('.dae-fb-tabs');
-    if (tabsContainer) {
-      const fragment = document.createDocumentFragment();
-      this.tabs.forEach(tab => {
-        const button = document.createElement('button');
-        button.className = 'dae-fb-tab-button';
-        button.dataset.action = 'switch-tab';
-        button.dataset.tab = tab;
-        button.textContent = i18n(`dae.fieldData.fieldCategories.${tab}`);
-        fragment.appendChild(button);
-      });
-      tabsContainer.appendChild(fragment);
-    }
-  }
-
-  /**
-   * Renders filtered field elements.
-   */
-  private renderFields(): void {
-    if (!this.contentElement) return;
-    debug("DaeFieldBrowser | Rendering fields");
-
-    const fragment = document.createDocumentFragment();
-    
-    this.filteredFields.forEach((field, index) => {
-      const fieldElement = this.createFieldElement(field, index);
-      fragment.appendChild(fieldElement);
-    });
-
-    this.contentElement.innerHTML = '';
-    this.contentElement.appendChild(fragment);
-  }
-
-  /**
-   * Creates a field element.
-   * @param {FieldData} field - The field data.
-   * @param {number} index - The index of the field.
-   * @returns {HTMLElement} The created field element.
-   */
-  private createFieldElement(field: FieldData, index: number): HTMLElement {
-    const fieldElement = document.createElement('div');
-    fieldElement.className = `dae-fb-field-option${index === this.selectedIndex ? ' selected' : ''}`;
-    fieldElement.dataset.action = 'select-field';
-    fieldElement.dataset.key = field.key;
-  
-    if (DAEFieldBrowser.isFullBrowser) {
-      fieldElement.innerHTML = `<strong>${field.name}</strong> - ${field.key}${
-        DAEFieldBrowser.showDescriptions && field.description 
-          ? `<br><small>${field.description}</small>` 
-          : ''
-      }`;
-    } else {
-      fieldElement.textContent = field.key;
-      if (DAEFieldBrowser.showDescriptions && field.description) {
-        fieldElement.insertAdjacentHTML('beforeend', `<br><small>${field.description}</small>`);
-      }
-    }
-  
-    return fieldElement;
-  }
-
-  /**
- * Positions the browser element based on selected input field and browser settings.
- */
-  private positionBrowser(): void {
-    const rect = this.currentInput?.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-  
-    let maxBrowserWidth = DAEFieldBrowser.isFullBrowser ? 880 : 400;
-    let maxContentHeight = DAEFieldBrowser.isFullBrowser ? 700 : 400;
-
-    // if (!DAEFieldBrowser.isFullBrowser && DAEFieldBrowser.showDescriptions) {
-    //   maxBrowserWidth += 200;
-    //   maxContentHeight += 200;
-    // }
-  
-    const browserWidth = Math.min(maxBrowserWidth, viewportWidth - (rect?.left ?? 0) - 10);
-    const contentHeight = Math.min(maxContentHeight, viewportHeight - (rect?.bottom ?? 0) - 100);
-  
-    const contentElement = this.browserElement!.querySelector('.dae-fb-content') as HTMLElement;
-    if (contentElement) {
-      contentElement.style.maxHeight = `${contentHeight}px`;
-    }
-
-    this.browserElement!.style.width = `${browserWidth}px`;
-    this.browserElement!.style.left = `${rect?.left ?? 0}px`;
-    this.browserElement!.style.top = `${(rect?.bottom ?? 0) + window.scrollY}px`;
-  } 
-
-
-  private setupEventListeners(): void {
-    debug("DaeFieldBrowser | Setting up event listeners");
-
-    document.addEventListener('click', this.handleDocumentClick.bind(this));
-    document.addEventListener('keydown', this.handleKeyDown.bind(this));
-    this.browserElement!.addEventListener('click', this.handleBrowserClick.bind(this));
-  }
-
-  /**
-   * Handles mouse click events for buttons, tab switching and field selection.
-   * @param {MouseEvent} event - The mouse event.
-   */
-  private handleBrowserClick(event: MouseEvent): void {
-    debug("DaeFieldBrowser | Browser clicked");
-    const target = event.target as HTMLElement;
-    const actionElement = target.closest('[data-action]') as HTMLElement | null;
-    const action = actionElement?.dataset.action;
-  
-    switch (action) {
-      case 'toggle-full':
-        DAEFieldBrowser.isFullBrowser = !DAEFieldBrowser.isFullBrowser;
-        this.browserElement!.classList.toggle('dae-fb-full-browser', DAEFieldBrowser.isFullBrowser);
-        actionElement?.classList.toggle('active', DAEFieldBrowser.isFullBrowser);
-        this.switchTab('All');
-        this.positionBrowser();
-        break;
-      case 'toggle-descriptions':
-        DAEFieldBrowser.showDescriptions = !DAEFieldBrowser.showDescriptions;
-        actionElement?.classList.toggle('active', DAEFieldBrowser.showDescriptions);
-        this.updateBrowser();
-        break;
-      case 'select-field':
-        const fieldOption = target.closest('.dae-fb-field-option') as HTMLElement;
-        if (fieldOption) {
-          const index = Array.from(this.contentElement!.children).indexOf(fieldOption);
-          this.selectField(index);
-          this.applySelectedField();
-        }
-        break;
-      case 'switch-tab':
-        const tab = actionElement?.dataset.tab;
-        if (tab) {
-          this.switchTab(tab);
-        }
-        break;
-      default:
-        // Do nothing for unhandled actions
-        break;
-    }
-  
-    this.currentInput?.focus();
-  }
-
-  /**
-   * Handles document click events to close the browser if clicking outside.
-   * @param {MouseEvent} event - The mouse event.
-   */
-  private handleDocumentClick(event: MouseEvent): void {
-    if (this.browserElement && 
-        !this.browserElement.contains(event.target as Node) && 
-        event.target !== this.currentInput &&
-        !(this.currentInput?.classList.contains('key-input') && event.target === this.currentInput)) {
-      this.hideBrowser();
-    }
-  }
-
-  /**
-   * Handles keydown events for navigation.
-   * @param {KeyboardEvent} event - The keyboard event.
-   */
-  private handleKeyDown(event: KeyboardEvent): void {
-    if (!this.browserElement || this.browserElement.style.display === 'none') return;
-    switch (event.key) {
-      case 'ArrowUp':
-        event.preventDefault();
-        this.navigateFields(-1);
-        break;
-      case 'ArrowDown':
-        event.preventDefault();
-        this.navigateFields(1);
-        break;
-      case 'Enter':
-        event.preventDefault();
-        this.applySelectedField();
-        break;
-      case 'Escape':
-        event.preventDefault();
-        this.hideBrowser();
-        break;
-      case 'ArrowLeft':
-      case 'ArrowRight':
-        if (DAEFieldBrowser.isFullBrowser) {
-          event.preventDefault();
-          this.navigateTabs(event.key === 'ArrowLeft' ? -1 : 1);
-        }
-        break;
-      case 'Tab':
-        this.hideBrowser();
-        break;
-    }
+    if (this.currentInput) this.completers.get(this.currentInput)?.refresh();
   }
 
   public hideBrowser(): void {
-    debug("DaeFieldBrowser | Hiding browser");
-    if (this.browserElement) {
-      this.browserElement.style.display = 'none';
-    }
+    if (this.currentInput) this.completers.get(this.currentInput)?.dismiss();
   }
 
-  /**
-   * Switches to the specified tab.
-   * @param {string} tab - The tab to switch to.
-   */
-  private switchTab(tab: string): void {
-    debug(`DaeFieldBrowser | Switching to tab: ${tab}`);
-    this.currentTab = tab;
-    const tabButtons = this.browserElement!.querySelectorAll('.dae-fb-tab-button');
-    tabButtons.forEach(button => button.classList.toggle('active', (button as HTMLElement).dataset.tab === tab));
-    this.updateBrowser();
-  }
-
-  /**
-   * Navigates through fields.
-   * @param {number} direction - The direction to navigate (-1 for up, 1 for down).
-   */
-  private navigateFields(direction: number): void {
-    const newIndex = (this.selectedIndex + direction + this.filteredFields.length) % this.filteredFields.length;
-    this.selectField(newIndex);
-  }
-
-  /**
-   * Navigates through tabs.
-   * @param {number} direction - The direction to navigate (-1 for left, 1 for right).
-   */
-  private navigateTabs(direction: number): void {
-    const currentTabIndex = this.tabs.indexOf(this.currentTab);
-    const newTabIndex = (currentTabIndex + direction + this.tabs.length) % this.tabs.length;
-    this.switchTab(this.tabs[newTabIndex]);
-  }
-
-  private memoize<T extends (...args: any[]) => any>(fn: T, maxSize = 100) {
-    const cache = new Map<string, ReturnType<T>>();
-    return ((...args: Parameters<T>): ReturnType<T> => {
-      const key = `${args.join('|')}|${DAEFieldBrowser.isFullBrowser}|${DAEFieldBrowser.showDescriptions}`;
-      if (cache.has(key)) return cache.get(key)!;
-      const result = fn(...args);
-      if (cache.size >= maxSize) cache.delete(cache.keys().next().value ?? "");
-      return cache.set(key, result).get(key)!;
-    }) as T;
-  }
-
-  /**
- * Filters the fields based on query and tab.
- * @param {string} query - The search query.
- * @param {string} tab - The current tab.
- * @returns {FieldData[]} The filtered fields.
- */
-  private filterFields(query: string, tab: string): FieldData[] {
-    const lowercaseQuery = query.toLowerCase();
-    const isAllTab = tab === 'All';
-    
-    return this.enrichedFields.filter(field => {
-      if (DAEFieldBrowser.isFullBrowser && !isAllTab && field.category !== tab) {
-        return false;
-      }
-      return field.key.toLowerCase().includes(lowercaseQuery) ||
-              field.name.toLowerCase().includes(lowercaseQuery) ||
-              (DAEFieldBrowser.showDescriptions && 
-              field.description && 
-              field.description.toLowerCase().includes(lowercaseQuery));
-    });
-  }
-
-  /**
-   * Selects a field at the specified index.
-   * @param {number} index - The index of the field to select.
-   */
-  private selectField(index: number): void {
-    debug(`DaeFieldBrowser | Selecting field at index: ${index}`);
-    const previousSelected = this.contentElement!.querySelector('.dae-fb-field-option.selected');
-    if (previousSelected) {
-      previousSelected.classList.remove('selected');
-    }
-
-    this.selectedIndex = index;
-    const newSelected = this.contentElement!.children[index] as HTMLElement;
-    if (newSelected) {
-      newSelected.classList.add('selected');
-      newSelected.scrollIntoView({ block: 'nearest' });
-    }
-  }
-
-  /**
- * Applies the selected field to the DAEActiveEffectConfig input.
- */
-  public applySelectedField(): void {
-    debug("DaeFieldBrowser | Applying selected field");
-    const selectedField = this.filteredFields[this.selectedIndex];
-    console.log(selectedField, this.currentInput);
-    if (selectedField && this.currentInput) {
-      this.currentInput.value = selectedField.key;
-      this.currentInput.blur();
-      this.hideBrowser();
-      this.effectConfig.onFieldSelected();
-    }
-  }
-
-  /**
- * Sets the current input element to the selected one. Called by event listeners in DAEActiveEffectConfig.
- * @param {HTMLInputElement} input - The input element to set.
- */
   public setInput(input: HTMLInputElement): void {
-    debug("DAEFieldBrowser | Setting input");
     this.currentInput = input;
+    if (!this.completers.has(input)) {
+      this.completers.set(input, new InputAutocomplete(input, () => this.suggest(input)));
+    }
+  }
+
+  /** Matching keys grouped under their category, each with its name and description beneath it. */
+  private suggest(input: HTMLInputElement): Suggestions {
+    const query = input.value.toLowerCase();
+    const matches = this.enrichedFields.filter(field =>
+      field.key.toLowerCase().includes(query)
+      || field.name.toLowerCase().includes(query)
+      || field.description.toLowerCase().includes(query)
+    ).slice(0, MAX_ENTRIES);
+    const byCategory = Map.groupBy(matches, field => field.category);
+    const entries: AutocompleteEntry[] = [];
+    for (const [category, fields] of byCategory) {
+      if (byCategory.size > 1) {
+        entries.push({ identifier: "", label: i18n(`dae.fieldData.fieldCategories.${category}`), disabled: true });
+      }
+      for (const field of fields) entries.push({ identifier: field.key, label: fieldLabel(field) });
+    }
+    return {
+      entries,
+      apply: key => {
+        input.value = key;
+        this.effectConfig.onFieldSelected();
+      }
+    };
   }
 
   /**
@@ -499,4 +154,16 @@ export class DAEFieldBrowser {
       category: ""
     };
   }
+}
+function fieldLabel(field: FieldData): HTMLElement {
+  const label = document.createElement("span");
+  label.classList.add("dae-ac-field");
+  label.append(field.key);
+  const detail = [field.name !== field.key ? field.name : "", field.description].filter(Boolean).join(" - ");
+  if (detail) {
+    const small = document.createElement("small");
+    small.textContent = detail;
+    label.append(small);
+  }
+  return label;
 }

@@ -728,3 +728,43 @@
   }
 }
 } // @layer modules
+@layer modules {
+  .dae-condition-builder-app {
+    .dae-cb-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .dae-cb-children {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-left: 12px;
+      border-left: 2px solid var(--color-border);
+    }
+    .dae-cb-group-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .dae-cb-group-header select[data-field="group-op"] {
+      flex: 0 0 10rem;
+    }
+    .dae-cb-row {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) 9rem minmax(0, 2fr) auto;
+      align-items: center;
+      gap: 4px;
+    }
+    .dae-cb-group-header button,
+    .dae-cb-row button {
+      flex: none;
+    }
+    .dae-cb-result[data-result="pass"] {
+      color: var(--color-level-success);
+    }
+    .dae-cb-result[data-result="fail"] {
+      color: var(--color-level-error);
+    }
+  }
+}

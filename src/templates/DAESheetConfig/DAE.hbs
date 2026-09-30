@@ -30,6 +30,13 @@
                 </div>
             </div>
         {{/if}}
+        {{#unless transfer}}
+            <div class="form-group">
+                <label>{{ localize "dae.LegacyApplication.Name" }}</label>
+                <input type="checkbox" name="flags.dae.legacyApplication" {{ checked source.flags.dae.legacyApplication }} />
+                <p class="hint">{{ localize "dae.LegacyApplication.Hint" }}</p>
+            </div>
+        {{/unless}}
         <div class="form-group">
             <label>{{ localize "dae.IconOverlay.Name" }}</label>
             <input type="checkbox" name="flags.core.overlay" {{ checked source.flags.core.overlay }} />

@@ -299,8 +299,18 @@ export function preDeleteCombatHook(combat: Combat.Implementation, options: Comb
   for (let combatant of combat.combatants) {
     const actor = combatant.actor;
     if (!actor) continue;
+    /*
+     * dnd5e 6 deletes an effect with a combat pseudo-expiry (targetStart and the like) itself as its
+     * combatant leaves the combat (Combat5e#_onExit). Expiring it here as well raced that and threw
+     * "does not exist" — midi's reaction marker carries both targetStart and combatEnd.
+     */
+    const systemRemoves = (ef: any) => {
+      if (!ef.specialDuration) return false;
+      const start = ef.start?.combat;
+      return !start || start === combat || start === combat.id || start?.id === combat.id;
+    };
     const effects = getActorEffects(actor, { includeEnchantments: true })
-      .filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd"));
+      .filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd") && !systemRemoves(ef));
     actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "combat-end" });
   }
 }

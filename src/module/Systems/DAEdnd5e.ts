@@ -404,14 +404,10 @@ export class DAESystemDND5E extends DAESystem {
       baseValues["system.traits.armorProf.custom"] = [new StringField(), "custom"];
       baseValues["system.attributes.hp.tempmax"] = [new NumberField(), ""];
     }
-    baseValues["system.attributes.encumbrance.bonuses.encumbered"] = [new StringField(), ""];
-    baseValues["system.attributes.encumbrance.bonuses.heavilyEncumbered"] = [new StringField(), ""];
-    baseValues["system.attributes.encumbrance.bonuses.maximum"] = [new StringField(), ""];
-    baseValues["system.attributes.encumbrance.bonuses.overall"] = [new StringField(), ""];
-    baseValues["system.attributes.encumbrance.multipliers.encumbered"] = [new StringField(), ""];
-    baseValues["system.attributes.encumbrance.multipliers.heavilyEncumbered"] = [new StringField(), ""];
-    baseValues["system.attributes.encumbrance.multipliers.maximum"] = [new StringField(), ""];
-    baseValues["system.attributes.encumbrance.multipliers.overall"] = [new StringField(), ""];
+    // dnd5e 6 declares these as FormulaFields; only supply them where the system does not.
+    for (const kind of ["bonuses", "multipliers"]) for (const stage of ["encumbered", "heavilyEncumbered", "maximum", "overall"]) {
+      baseValues[`system.attributes.encumbrance.${kind}.${stage}`] ??= [new StringField(), ""];
+    }
     baseValues["system.traits.size"] = [new StringField(), "override"];
     if (this.systemConfig.languages) {
       baseValues["system.traits.languages.all"] = [new BooleanField(), ""];
@@ -569,6 +565,8 @@ export class DAESystemDND5E extends DAESystem {
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
     // support other things that can suppress an effect, like condition immunity
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isSuppressed", isSuppressed, "WRAPPER");
+    // @item, @spellLevel etc. for effects DAE applied the dnd5e 6 way, resolved when the target is prepared
+    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.getReplacementData", getReplacementData, "WRAPPER");
     // This supplies DAE custom effects - the main game
     // @ts-expect-error our custom stuff in the changes makes types mad
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
@@ -1386,6 +1384,32 @@ export function getActorItemForEffect(effect: ActiveEffect.Implementation): Item
   return item;
 }
 
+
+/**
+ * dnd5e gives an effect on an item `@item` and `@scaling` when it is prepared, but nothing to an effect applied to an
+ * actor, so a reference an effect applied the dnd5e 6 way leaves for its target (`@item.level`,
+ * `@activity.save.dc.value`, `@spellLevel`, ...) would resolve to 0. Supply them from what DAE recorded at application: the source item as cast and its activity
+ * (read live, and only their prepared data - calling getRollData here would re-prepare during preparation), falling
+ * back to the copies stored on the effect when the item can no longer be found.
+ */
+function getReplacementData(this: ActiveEffect.Implementation, wrapped, baseData: AnyObject) {
+  const data = wrapped(baseData);
+  const application = this.flags?.dae?.applicationData;
+  if (!application || !(this.parent instanceof Actor) || this.flags.dae?.legacyApplication) return data;
+  // @ts-expect-error v14 effect.system.changes
+  if (!this.system?.changes?.some(change => typeof change.value === "string" && change.value.includes("@"))) return data;
+  const source = fromUuidSync(this.flags.dae?.itemUuid ?? "", { strict: false });
+  const itemData = source instanceof Item ? source : this.flags.dae?.itemData;
+  const item = itemData
+    // @ts-expect-error no dnd5e-types
+    ? { ...itemData.system, flags: itemData.flags, name: itemData.name, level: application.spellLevel ?? itemData.system?.level }
+    : undefined;
+  // @ts-expect-error no dnd5e-types
+  const scaling = new dnd5e.documents.Scaling(application.scaling ?? 0);
+  // @ts-expect-error no dnd5e-types
+  const liveActivity = source instanceof Item && application.activityId ? source.system.activities?.get(application.activityId) : undefined;
+  return { ...data, ...application, item, activity: liveActivity ?? application.activity, itemLevel: application.spellLevel, scaling };
+}
 
 function isSuppressed(this: ActiveEffect.Implementation, wrapped): boolean {
   let isSuppressed = wrapped();

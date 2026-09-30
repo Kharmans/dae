@@ -9,6 +9,8 @@ import { DAEChangeData, ValidSpec } from "../Systems/DAESystem.js";
  */
 const DEFAULT_PHASE = "initial";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
+import { InputAutocomplete, referenceData, takesFormula, valueSuggestions } from "./ChangeAutocomplete.js";
+import { addConditionBuilderButtons } from "./ConditionBuilder.js";
 
 export { BooleanFormulaField } from "./BooleanFormulaField.js";
 
@@ -40,8 +42,8 @@ export interface FieldEditorContext {
   parent: Actor | Item | null;
   /** Index in the changes array */
   changeIndex: number;
-  /** The DAEActiveEffectConfig app instance */
-  app: DAEActiveEffectConfig;
+  /** The effect sheet, when there is one (dnd5e 6 edits changes in its own dialog) */
+  app?: DAEActiveEffectConfig;
 }
 
 export interface FieldEditorRegistration {
@@ -54,7 +56,7 @@ export interface FieldEditorRegistration {
   editor: (currentValue: string, context: FieldEditorContext) => Promise<string | null>;
   /** Optional icon class (default: "fas fa-edit") */
   icon?: string;
-  /** Optional tooltip text */
+  /** Optional tooltip: text or a localization key, resolved when the button renders */
   tooltip?: string;
 }
 
@@ -350,6 +352,7 @@ export class DAEActiveEffectConfig extends SheetBase {
         drop: this._onDrop.bind(this)
       }
     }).bind(this.element);
+    addConditionBuilderButtons(this.element, this.document);
     // Pluggable editor buttons
     const editButtons = Array.from(this.element.querySelectorAll<HTMLAnchorElement>(".dae-edit-value"));
     for (const btn of editButtons) {
@@ -525,10 +528,7 @@ export class DAEActiveEffectConfig extends SheetBase {
 
   async _preClose(options) {
     await super._preClose(options);
-    if (this.daeFieldBrowser && this.daeFieldBrowser.browserElement) {
-      this.daeFieldBrowser.browserElement.remove();
-      this.daeFieldBrowser.browserElement = null;
-    }
+    this.daeFieldBrowser?.hideBrowser();
   }
 
   async #migrateDeprecatedData(document: ActiveEffect) {
@@ -601,83 +601,145 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
   const effect = foundry.utils.getProperty(app, "effect") as ActiveEffect.Implementation | undefined;
   const keyInput = element.querySelector<HTMLInputElement>('input[name="key"]');
   if (!effect || !keyInput) return;
+  addConditionBuilderButtons(element, effect);
 
   const { validFields, validSpecsToUse } = resolveValidFields(effect);
   const browser = new DAEFieldBrowser(validFields, {
-    // Re-render so the dialog picks up the key the browser wrote into the input.
-    onFieldSelected: () => { app.render(); },
+    // dnd5e's dialog will not re-render once open, so the value controls follow the key themselves.
+    onFieldSelected: () => { keyInput.dispatchEvent(new Event("change", { bubbles: true })); },
     updateFieldInfo: () => { }
   });
   await browser.init();
   browser.setInput(keyInput);
-
   keyInput.addEventListener("click", () => browser.updateBrowser());
-  keyInput.addEventListener("input", () => browser.debouncedUpdateBrowser());
 
   const change = foundry.utils.getProperty(app, "change") as DAEChangeData | undefined;
-  const spec = validSpecsToUse.allSpecsObj[keyInput.value];
 
   /*
-   * Phase: a core change field that dnd5e's dialog does not offer. Injected rather than added to the
-   * changes tab, because that tab is dnd5e's own template and forking it would freeze it.
+   * Phase: a core change field that dnd5e's dialog does not offer. Shown, not edited: choosing it takes
+   * detailed knowledge of how changes are applied, and a change applied in the wrong phase does not work.
+   * No `phase` field is submitted, so dnd5e's save leaves the stored value as it was.
    *
-   * Labels come from the system and core rather than from DAE: dnd5e already ships a label and hint
-   * for the field it does not render, and CHANGE_PHASES carries core's per-phase labels plus any a
-   * module registered in CONFIG.ActiveEffect.phases. DAE's own strings remain only as the fallback
-   * for a system that supplies neither.
+   * The phase shown is `effectivePhase`, the one the change is applied in, resolved against the union
+   * spec as `daeShouldApplyChange` does; it can differ from the stored value. Labels come from core's
+   * CHANGE_PHASES and dnd5e's field label and hint, with DAE's strings as the fallback.
    */
-  const phaseSelect = document.createElement("select");
-  phaseSelect.name = "phase";
   const phases = (CONFIG.ActiveEffect.documentClass as unknown as ActiveEffectStatic).CHANGE_PHASES ?? {};
-  const phaseIds = Object.keys(phases).length
-    ? Object.keys(phases)
-    : (CONST as unknown as { ACTIVE_EFFECT_CHANGE_PHASES: string[] }).ACTIVE_EFFECT_CHANGE_PHASES ?? ["initial", "final"];
-  for (const phase of phaseIds) {
-    const opt = document.createElement("option");
-    opt.value = phase;
-    opt.textContent = localized(phases[phase]?.label) ?? localized(`dae.phase.${phase}`) ?? phase;
-    opt.selected = (change?.phase ?? "initial") === phase;
-    phaseSelect.append(opt);
-  }
+  const phaseValue = document.createElement("span");
+  phaseValue.dataset.tooltip = i18n("dae.PhaseReadOnly");
   const phaseField = "DND5E.EFFECT.BASE.FIELDS.changes.element.phase";
   element.querySelector("fieldset")?.append(daeFormGroup(
     localized(`${phaseField}.label`) ?? localized("dae.phase.Label") ?? "Phase",
-    phaseSelect,
+    phaseValue,
     localized(`${phaseField}.hint`)
   ));
+  const refreshPhase = (key: string) => {
+    const spec = ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[key]
+      ?? ValidSpec.actorSpecs?.["union"]?.allSpecsObj?.[`token.${key}`];
+    const phase = effectivePhase({ phase: change?.phase }, spec, effect);
+    phaseValue.dataset.phase = phase;
+    phaseValue.textContent = localized(phases[phase]?.label) ?? localized(`dae.phase.${phase}`) ?? phase;
+  };
 
-  // A spec with a forced mode allows only that change type.
   const typeSelect = element.querySelector<HTMLSelectElement>('select[name="type"]');
-  if (spec?.forcedMode && typeSelect) {
-    const forced = String(spec.forcedMode).toLowerCase();
-    for (const opt of Array.from(typeSelect.options)) opt.disabled = opt.value !== forced;
-    typeSelect.value = forced;
-  }
-
-  /*
-   * Where the key has a known value list, offer it instead of free text. The sheet resolves these
-   * (token magic, convenient effects, statuses, vision modes) from its own state, and
-   * the dialog is opened from that sheet, so reuse it; fall back to the system-level list.
-   */
   const sheet = foundry.utils.getProperty(effect, "sheet") as DAEActiveEffectConfig | undefined;
-  const options: Record<string, string> | undefined =
-    (typeof sheet?.getOptionsForSpec === "function"
-      ? sheet.getOptionsForSpec({ key: keyInput.value } as ActiveEffect.ChangeData)
-      : undefined)
-    ?? daeSystemClass.getOptionsForSpec({ key: keyInput.value } as ActiveEffect.ChangeData);
-  const valueInput = element.querySelector<HTMLInputElement>('[name="value"]');
-  if (options && Object.keys(options).length && valueInput) {
-    const select = document.createElement("select");
-    select.name = "value";
-    for (const [value, label] of Object.entries(options)) {
-      const opt = document.createElement("option");
-      opt.value = value;
-      opt.textContent = String(label);
-      opt.selected = String(change?.value ?? "") === value;
-      select.append(opt);
+  const plainInput = element.querySelector<HTMLInputElement>('input[name="value"]');
+  if (!plainInput) return;
+
+  // dnd5e renders the value as a single-line input, which drops the line breaks from macro source,
+  // so the first pass takes the stored change rather than that input.
+  let pendingValue: string | undefined = typeof change?.value === "string" ? change.value : undefined;
+  let valueField: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement = plainInput;
+  const completers = new WeakMap<HTMLElement, InputAutocomplete>();
+  const data = referenceData(effect);
+  const completionMode = (): "none" | "references" | "formula" => {
+    const key = keyInput.value;
+    if (getFieldEditor(key) || MULTILINE_CHANGE_KEYS.has(key)) return "none";
+    return takesFormula(validSpecsToUse.allSpecsObj[key]) ? "formula" : "references";
+  };
+
+  const refreshForKey = () => {
+    const key = keyInput.value;
+    const spec = validSpecsToUse.allSpecsObj[key];
+    refreshPhase(key);
+
+    // A spec with a forced mode allows only that change type.
+    if (typeSelect) {
+      const forced = spec?.forcedMode ? String(spec.forcedMode).toLowerCase() : undefined;
+      for (const opt of Array.from(typeSelect.options)) opt.disabled = !!forced && opt.value !== forced;
+      if (forced) typeSelect.value = forced;
     }
-    valueInput.replaceWith(select);
-  }
+
+    /*
+     * Where the key has a known value list, offer it instead of free text. The sheet resolves these
+     * (token magic, convenient effects, statuses, vision modes) from its own state, and
+     * the dialog is opened from that sheet, so reuse it; fall back to the system-level list.
+     */
+    const value = pendingValue ?? valueField.value;
+    pendingValue = undefined;
+    const options: Record<string, string> | undefined =
+      (typeof sheet?.getOptionsForSpec === "function"
+        ? sheet.getOptionsForSpec({ key } as ActiveEffect.ChangeData)
+        : undefined)
+      ?? daeSystemClass.getOptionsForSpec({ key } as ActiveEffect.ChangeData);
+
+    let next: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+    if (options && Object.keys(options).length) {
+      next = document.createElement("select");
+      next.name = "value";
+      for (const [optionValue, label] of Object.entries(options)) {
+        const opt = document.createElement("option");
+        opt.value = optionValue;
+        opt.textContent = String(label);
+        next.append(opt);
+      }
+    } else if (isMultilineChangeValue(key, value)) {
+      if (valueField instanceof HTMLTextAreaElement) next = valueField;
+      else {
+        next = document.createElement("textarea");
+        next.name = "value";
+        next.classList.add("dae-multiline-value");
+      }
+    } else next = plainInput;
+    next.value = value;
+    if (next !== valueField) {
+      valueField.replaceWith(next);
+      valueField = next;
+    }
+
+    if (!(next instanceof HTMLSelectElement) && !completers.has(next)) {
+      const field = next;
+      const completer: InputAutocomplete = new InputAutocomplete(field,
+        valueSuggestions(() => completer, data, completionMode));
+      completers.set(field, completer);
+    }
+
+    element.querySelector(".dae-edit-value")?.remove();
+    const registration = getFieldEditor(key);
+    if (!registration || next instanceof HTMLSelectElement) return;
+    const field = next;
+    const btn = document.createElement("a");
+    btn.classList.add("dae-edit-value");
+    btn.dataset.tooltip = registration.tooltip ? i18n(registration.tooltip) : "Edit";
+    btn.innerHTML = `<i class="${registration.icon ?? "fas fa-edit"}"></i>`;
+    btn.addEventListener("click", async () => {
+      const changeIndex = effect._source.system.changes.findIndex(c => c._id === change?._id);
+      const result = await registration.editor(field.value, {
+        key,
+        effect,
+        parent: effect.parent as Actor | Item | null,
+        changeIndex,
+        app: sheet,
+      });
+      if (result === null || result === undefined) return;
+      field.value = result;
+      field.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    field.after(btn);
+  };
+
+  refreshForKey();
+  keyInput.addEventListener("change", refreshForKey);
 });
 
 /** A form group matching the markup the system's dialog already uses. */

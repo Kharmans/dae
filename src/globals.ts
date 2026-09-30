@@ -73,6 +73,8 @@ declare module "fvtt-types/configuration" {
       dae?: {
         activity?: string;
         activityMacro?: string;
+        /** Values of the moment a dnd5e-mode effect was applied, supplied to its references when its target is prepared */
+        applicationData?: { spellLevel?: number; scaling?: number; damage?: number; critical?: boolean; fumble?: boolean; itemCardUuid?: string | null; actorUuid?: string | null; activityId?: string; activity?: object };
         autoCreated?: boolean;
         disableIncapacitated?: boolean;
         dontApply?: boolean;
@@ -83,6 +85,8 @@ declare module "fvtt-types/configuration" {
         itemMacro?: string;
         itemUuid?: string;
         itemsToDelete?: string[];
+        /** Fill every `@` reference from the caster when the effect is applied - DAE's behaviour before dnd5e 6 */
+        legacyApplication?: boolean;
         /** Set when the effect was saved through the DAE editor: every change's `phase` is explicitly
          *  authored, so `change.phase` is authoritative at apply time (even an explicit "initial"). */
         phaseStamped?: boolean;
@@ -177,6 +181,22 @@ declare global {
   interface ActiveEffectStatic {
     CHANGE_TYPES: Record<string, { label: string; defaultPriority?: number }>;
     CHANGE_PHASES: Record<string, { label?: string; hint?: string }>;
+  }
+
+  // v14's foundry.applications.ux.Autocomplete, not yet in fvtt-types. Reach it with
+  // `foundry.applications.ux as unknown as { Autocomplete: AutocompleteStatic }`.
+  interface AutocompleteEntry { identifier: string; label: string | Node; disabled?: boolean }
+  interface AutocompleteMenu {
+    readonly element: HTMLMenuElement | null;
+    activate(target: HTMLElement, entries: AutocompleteEntry[],
+      options?: { prefix?: string; position?: { top?: number; left?: number } }): void;
+    select(increment?: number): void;
+    commit(): void;
+    dismiss(): void;
+  }
+  interface AutocompleteStatic {
+    implementation: new (options: { onSelect?: (identifier: string, label: string,
+      options: { prefix?: string }) => void }) => AutocompleteMenu;
   }
 
   interface CONFIG {

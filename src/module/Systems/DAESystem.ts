@@ -596,4 +596,6 @@ export type DAEChangeData = ActiveEffect.ChangeData & {
   // v14 properties
   phase?: string;
   type?: string;
+  // dnd5e 6 identifies each change
+  _id?: string;
 }

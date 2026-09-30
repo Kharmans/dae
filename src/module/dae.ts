@@ -1,5 +1,5 @@
 import { applyActiveEffects, socketlibSocket } from "./GMAction.js";
-import { warn, error, debug, setDebugLevel, i18n, debugEnabled } from "../dae.js";
+import { warn, error, debug, setDebugLevel, i18n, i18nFormat, debugEnabled } from "../dae.js";
 import { ActiveEffects } from "./apps/ActiveEffects.js";
 import { macroActorUpdate } from "./daeMacros.js";
 import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
@@ -333,6 +333,20 @@ export const applyDaeEffects = daeApplyActiveEffects;
  * - dae.eval() and dae.roll() expression evaluation
  * - Stack count (multi-apply for stacked effects)
  */
+/** The references an effect applied the dnd5e 6 way resolves from its application rather than from its target. */
+export const APPLICATION_REF_NAMES = ["itemCardUuid", "itemLevel", "item", "activity", "spellLevel", "scaling", "damage", "critical", "fumble", "actorUuid"];
+const APPLICATION_REFS = new RegExp(`@(${APPLICATION_REF_NAMES.join("|")})\\b((?:\\.[\\w-]+)*)`, "g");
+
+/** Replace application-time references in `value` from `data` (see getReplacementData in DAEdnd5e), leaving the rest. */
+export function fillApplicationRefs(value: string, data: AnyObject): string {
+  return value.replace(APPLICATION_REFS, (match, root: string, path: string) => {
+    const found = foundry.utils.getProperty(data, root + path);
+    // An object only has a formula value if it says so (dnd5e's Scaling does); leave `@item` itself alone.
+    const plainObject = typeof found === "object" && found?.toString === Object.prototype.toString;
+    return (found == null || plainObject) ? match : String(found);
+  });
+}
+
 export function daeApplyChange(
   this: any,
   wrapped: Function,
@@ -375,6 +389,13 @@ export function daeApplyChange(
       { once: true, stack: false }
     );
     return {};
+  }
+
+  // --- dnd5e-mode applied effects: application-time references ---
+  // Filled here rather than left to replacement data, so formula fields - which dnd5e evaluates later from the
+  // actor's own roll data, where @item and @spellLevel don't exist - get them too. Target data is left for dnd5e.
+  if (typeof change.value === "string" && change.effect?.flags?.dae?.applicationData && options.replacementData) {
+    change.value = fillApplicationRefs(change.value, options.replacementData);
   }
 
   // --- bonusSelector expansion ---
@@ -1438,10 +1459,131 @@ export async function doActivityEffects(
       return undefined;
     }
   }));
-  const activityEffects = (resolved as ActiveEffect.Implementation[]).filter(ef => ef).map(ef => ef.toObject());
-  // TODO dnd5e v4 - a temporary fix to make sure the effects are not disabled when applied
-  activityEffects.forEach(ef => ef.disabled = false);
+  const activityEffects = (resolved as ActiveEffect.Implementation[]).filter(ef => ef).map(ef => {
+    const data = ef.toObject();
+    // TODO dnd5e v4 - a temporary fix to make sure the effects are not disabled when applied
+    data.disabled = false;
+    recordApplicationSource(data, ef, activity, options);
+    return data;
+  });
   return await applyActivityEffects(activity, activate, targets, activityEffects, options)
+}
+
+/**
+ * How DAE fills an applied effect's `@` references. By default as dnd5e 6 does: a change's `replacement` takes
+ * the caster's values (`origin`) or each target's (`target`) when the effect is applied, and a change with none
+ * keeps its references for the target's data preparation. An effect flagged `flags.dae.legacyApplication` takes
+ * every reference from the caster when it is applied, as DAE always did. Without dnd5e 6 (no `forApplication`)
+ * there is only the legacy behaviour. `##` defers a reference to the target in both.
+ */
+export function usesLegacyApplication(effectData: { flags?: AnyObject } | undefined): boolean {
+  // @ts-expect-error no dnd5e-types
+  return effectData?.flags?.dae?.legacyApplication === true || typeof CONFIG.ActiveEffect.documentClass.forApplication !== "function";
+}
+
+/** Whether DAE fills a change from the caster when applying its effect. Macro arguments always are. */
+function evaluatedAtApplication(change: { key: string, replacement?: string }, legacy: boolean): boolean {
+  return legacy || isRegisteredMacroKey(change.key) || change.key.startsWith("macro.")
+    || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)
+    || change.replacement === "origin";
+}
+
+/**
+ * What a dnd5e-mode applied effect needs when its target is prepared (see DAEdnd5e's getReplacementData): the source
+ * item, a copy of it for when it can no longer be found, and the values of the moment of application. The spell level
+ * and scaling also go where dnd5e's own application puts them.
+ */
+function recordApplicationData(data: ActiveEffect.Source, item: Item.Implementation, options: DoEffectsOptions, activity?: any) {
+  const message = fromUuidSync(options.itemCardUuid ?? "", { strict: false });
+  // @ts-expect-error no dnd5e-types
+  const baseLevel: number | undefined = item.system.level;
+  // @ts-expect-error no dnd5e-types
+  const spellLevel: number | undefined = options.spellLevel || message?.system?.level || baseLevel;
+  // @ts-expect-error no dnd5e-types
+  const scaling: number = message?.system?.scaling ?? Math.max(0, (spellLevel ?? 0) - (baseLevel ?? spellLevel ?? 0));
+  foundry.utils.setProperty(data, "flags.dae.itemUuid", item.uuid);
+  foundry.utils.setProperty(data, "flags.dae.itemData", item.toObject(false));
+  foundry.utils.setProperty(data, "flags.dnd5e.spellLevel", spellLevel);
+  foundry.utils.setProperty(data, "flags.dnd5e.scaling", scaling);
+  foundry.utils.setProperty(data, "flags.dae.applicationData", {
+    spellLevel, scaling,
+    damage: options.damageTotal ?? 0,
+    critical: !!options.critical,
+    fumble: !!options.fumble,
+    itemCardUuid: options.itemCardUuid ?? null,
+    actorUuid: item.actor?.uuid ?? null,
+    // The activity as its own roll data holds it (prepared values such as save.dc.value), for when it can't be found live.
+    ...(activity ? { activityId: activity.id, activity: JSON.parse(JSON.stringify(activity.getRollData?.()?.activity ?? {})) } : {})
+  });
+}
+
+/**
+ * Mark every effect on an item, an actor and its items, or every document in a compendium pack as using legacy DAE
+ * application (or, with `legacy` false, dnd5e 6 application). Returns how many effects changed.
+ */
+export async function setLegacyApplication(
+  target: Item.Implementation | Actor.Implementation | ActiveEffect.Implementation | foundry.documents.collections.CompendiumCollection.Any,
+  legacy = true
+): Promise<number> {
+  const needsChange = (effect: ActiveEffect.Implementation) => (effect.flags?.dae?.legacyApplication === true) !== legacy;
+  const flags = { dae: { legacyApplication: legacy } };
+  const updateEffectsOf = async (parent: Item.Implementation | Actor.Implementation) => {
+    const updates: { _id: string, flags: typeof flags }[] = [];
+    for (const effect of parent.effects) if (needsChange(effect)) updates.push({ _id: effect.id!, flags });
+    if (!updates.length) return 0;
+    if (parent instanceof Actor) await parent.updateEmbeddedDocuments("ActiveEffect", updates);
+    else await parent.updateEmbeddedDocuments("ActiveEffect", updates);
+    return updates.length;
+  };
+  const updateDocument = async (doc: Item.Implementation | Actor.Implementation) => {
+    let count = await updateEffectsOf(doc);
+    if (doc instanceof Actor) for (const item of doc.items) count += await updateEffectsOf(item);
+    return count;
+  };
+  if (target instanceof ActiveEffect) {
+    if (!needsChange(target)) return 0;
+    await target.update({ flags });
+    return 1;
+  }
+  if (target instanceof foundry.documents.collections.CompendiumCollection) {
+    if (!["Item", "Actor"].includes(target.documentName)) return 0;
+    if (target.locked) throw new Error(`dae | setLegacyApplication: ${target.collection} is locked`);
+    let count = 0;
+    for (const doc of await target.getDocuments()) count += await updateDocument(doc as Item.Implementation | Actor.Implementation);
+    return count;
+  }
+  return updateDocument(target);
+}
+
+/**
+ * dnd5e 6 prepares an effect's `origin` from `system.origin` (effect, then behavior, activity, item, actor), so
+ * recording the activity there would change the `origin` DAE and midi read. DAE's origin goes in first as
+ * `system.origin.effect`; if it is not an effect uuid, the activity is dropped instead.
+ */
+function keepOriginPrecedence(data: ActiveEffect.Source) {
+  // @ts-expect-error no dnd5e-types
+  const systemOrigin = data.system?.origin;
+  if (!systemOrigin || !data.origin) return;
+  if (foundry.utils.parseUuid(data.origin)?.type === "ActiveEffect") systemOrigin.effect = data.origin;
+  else delete systemOrigin.activity;
+}
+
+/**
+ * Record where an applied effect came from, as dnd5e 6 does when it applies one (a mirror of
+ * `EffectApplicationElement#_prepareEffectData`): the source effect in `_stats`, which dnd5e's own
+ * Apply button uses to find an effect it already applied, and the activity, chat message and profile
+ * in `system.origin`. `system.origin.effect` is filled in by applyActivityEffects once DAE's origin
+ * is known.
+ */
+function recordApplicationSource(data: ActiveEffect.Source, effect: ActiveEffect.Implementation, activity, options: DoEffectsOptions) {
+  const sourceKey = effect.inCompendium ? "compendiumSource" : "duplicateSource";
+  data._stats = { ...data._stats, [sourceKey]: effect.uuid, [effect.inCompendium ? "duplicateSource" : "compendiumSource"]: null };
+  // @ts-expect-error no dnd5e-types
+  if (!data.system?.origin) return;
+  const profile = activity.effects?.find(p => (p.uuid === effect.uuid) || (p._id === effect.id))?._id;
+  const message = foundry.utils.parseUuid(options.itemCardUuid ?? "")?.type === "ChatMessage" ? options.itemCardUuid : undefined;
+  // @ts-expect-error no dnd5e-types
+  data.system.origin = { ...data.system.origin, activity: activity.uuid, message, profile };
 }
 
 export async function applyActivityEffects(
@@ -1474,6 +1616,7 @@ export async function applyActivityEffects(
 
   let macroLocation = "mixed";
   for (let [aeIndex, activeEffectData] of activityEffects.entries()) {
+    const legacy = usesLegacyApplication(activeEffectData);
     // @ts-expect-error v14 system.changes on toObject() data
     for (let [changeIndex, change] of activeEffectData.system.changes.entries()) {
       const doRolls = isRegisteredMacroKey(change.key);
@@ -1482,6 +1625,7 @@ export async function applyActivityEffects(
         if (dest === "local" && macroLocation !== "GM") macroLocation = "local";
         else if (dest === "GM") macroLocation = "GM";
       }
+      if (!evaluatedAtApplication(change, legacy)) continue;
       // eval args before calling GMAction so macro arguments are evaled in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       rollData.stackCount = activeEffectData.flags?.dae?.stacks ?? 1;
@@ -1491,7 +1635,8 @@ export async function applyActivityEffects(
         doRolls
       });
       evalArgsOptions.context = { ...rollData, ...(options.context ?? {}) };
-      evalArgsOptions.context.activity = activity.getRollData?.() ?? activity;
+      // The activity's own entry in its roll data (prepared values such as save.dc.value), as dnd5e resolves @activity.
+      evalArgsOptions.context.activity = activity.getRollData?.()?.activity ?? activity;
       evalArgsOptions.item = activity.item;
       if (activity.actor) evalArgsOptions.actor = activity.actor;
       let newChange = await evalArgs(evalArgsOptions)
@@ -1500,6 +1645,8 @@ export async function applyActivityEffects(
     };
     // @ts-expect-error Thinks `uuid` shouldn't exist
     activeEffectData.origin = options.origin ?? activityEffects[aeIndex].uuid;
+    keepOriginPrecedence(activeEffectData);
+    if (!legacy) recordApplicationData(activeEffectData, activity.item, options, activity);
     daeSystemClass.addDAEMetaData(activeEffectData, activity.item, options)
     activityEffects[aeIndex] = activeEffectData;
   }
@@ -1557,6 +1704,7 @@ export async function applyNonTransferEffects(
   // options.toggleEffect = item.flags?.midiProperties?.toggleEffect === true;
 
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
+    const legacy = usesLegacyApplication(activeEffectData);
     // @ts-expect-error v14 system.changes on toObject() data
     for (let [changeIndex, change] of activeEffectData.system.changes.entries()) {
       const doRolls = isRegisteredMacroKey(change.key);
@@ -1565,6 +1713,7 @@ export async function applyNonTransferEffects(
         if (dest === "local" && macroLocation !== "GM") macroLocation = "local";
         else if (dest === "GM") macroLocation = "GM";
       }
+      if (!evaluatedAtApplication(change, legacy)) continue;
       // eval args before calling GMAction so macro arguments are evaluated in the casting context.
       // Any @fields for macros are looked up in actor context and left unchanged otherwise
       rollData.stackCount = activeEffectData.flags?.dae?.stacks ?? 1;
@@ -1582,6 +1731,7 @@ export async function applyNonTransferEffects(
     };
 
     activeEffectData.origin = options.origin ?? item.uuid;
+    if (!legacy) recordApplicationData(activeEffectData, item, options);
     daeSystemClass.addDAEMetaData(activeEffectData, item, options)
     appliedEffects[aeIndex] = activeEffectData;
   }
@@ -2107,6 +2257,7 @@ export function daeInitActions() {
 
   // Add the active effects title bar actions
   Hooks.on("getHeaderControlsItemSheet5e", appendDocumentSheetHeaderControls)
+  Hooks.on("getCompendiumContextOptions", appendCompendiumApplicationOptions)
   Hooks.on("getHeaderControlsActorSheetV2", appendDocumentSheetHeaderControls)
   Hooks.on("renderItemSheetV2", colorSheetHeaderButtons) // tidy5e item sheets
   Hooks.on("renderItemSheet5e", colorSheetHeaderButtons) // dnd5e item sheets
@@ -2129,7 +2280,7 @@ export function daeInitActions() {
       }).render({ force: true });
     }),
     icon: "fas fa-code",
-    tooltip: i18n("dae.DIMEditor.Name"),
+    tooltip: "dae.DIMEditor.Name",
   });
 
   //@ts-expect-error no typings for this (can we maybe ditch in favor of our own tokenization?)
@@ -2309,7 +2460,55 @@ Hooks.once("tidy5e-sheet.ready", api => {
   });
 });
 
+/** Whether dnd5e 6's per-change replacement exists, so an effect can be applied either way. */
+const hasDnd5eApplication = () => usesLegacyApplication({}) === false;
+
+/** Ask which way this item's effects should be applied, and mark them all. */
+async function chooseItemApplication(item: Item.Implementation) {
+  const choice = await foundry.applications.api.DialogV2.wait({
+    window: { title: i18nFormat("dae.LegacyApplication.DialogTitle", { name: item.name }) },
+    content: `<p>${i18n("dae.LegacyApplication.DialogContent")}</p>`,
+    buttons: [
+      { action: "dnd5e", label: i18n("dae.LegacyApplication.UseDnd5e"), default: true },
+      { action: "legacy", label: i18n("dae.LegacyApplication.UseLegacy") }
+    ],
+    rejectClose: false
+  });
+  if (choice !== "dnd5e" && choice !== "legacy") return;
+  const count = await setLegacyApplication(item, choice === "legacy");
+  ui.notifications?.info(i18nFormat("dae.LegacyApplication.Updated", { count, name: item.name }));
+}
+
+/** Compendium context menu: mark every effect in an Item or Actor pack. */
+function appendCompendiumApplicationOptions(app, options) {
+  if (!hasDnd5eApplication()) return;
+  const packOf = (li: HTMLElement) => game.packs?.get(li.dataset.pack ?? "");
+  const visible = (li: HTMLElement) => !!game.user?.isGM && ["Item", "Actor"].includes(packOf(li)?.documentName ?? "");
+  for (const legacy of [true, false]) {
+    options.push({
+      label: legacy ? "dae.LegacyApplication.PackLegacy" : "dae.LegacyApplication.PackDnd5e",
+      icon: "fa-solid fa-wand-magic-sparkles",
+      visible,
+      onClick: async (event, li: HTMLElement) => {
+        const pack = packOf(li);
+        if (!pack) return;
+        if (pack.locked) return void ui.notifications?.warn(i18nFormat("dae.LegacyApplication.Locked", { name: pack.title }));
+        const count = await setLegacyApplication(pack, legacy);
+        ui.notifications?.info(i18nFormat("dae.LegacyApplication.Updated", { count, name: pack.title }));
+      }
+    });
+  }
+}
+
 function appendDocumentSheetHeaderControls(app, controls) {
+  if (hasDnd5eApplication() && app.document instanceof Item && app.document.isOwner) {
+    controls.push({
+      label: i18n("dae.LegacyApplication.ItemControl"),
+      icon: "fa-solid fa-wand-magic-sparkles",
+      action: "dae-application",
+      onClick: () => chooseItemApplication(app.document)
+    });
+  }
   const daeTitle = i18n("dae.ActiveEffectName");
   const DIMETitle = i18n("dae.DIMEditor.Name");
   if (daeTitleBar) {

@@ -1,4 +1,4 @@
-import { allMacroEffects, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs } from "./dae.js";
+import { allMacroEffects, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs, usesLegacyApplication } from "./dae.js";
 import { resolveMacro } from "./lib/macroResolution.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
@@ -451,6 +451,11 @@ export async function applyActiveEffects({
               for (let key of Object.keys(targetContext)) {
                 change.value = change.value.replace(`@${key}`, targetContext[key])
               }
+            }
+            // dnd5e 6 application: a `target` change takes this target's values, as dnd5e's forApplication does.
+            if (change.replacement === "target" && !usesLegacyApplication(aeData)) {
+              // @ts-expect-error no dnd5e-types
+              [change] = await CONFIG.ActiveEffect.documentClass.forApplication([change], null, targetActor);
             }
           }
           newChanges.push(change as ActiveEffect.ChangeData);
