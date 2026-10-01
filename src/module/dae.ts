@@ -304,6 +304,70 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
       tac.sort((a, b) => ((a.priority ?? 0) - (b.priority ?? 0)) || (rank(a) - rank(b)));
     }
   }
+
+  if (phase === "final") detectSuppressionChanges(this);
+}
+
+/**
+ * Side-effecting change keys (macro.*, StatusEffect, macro.CE, ...) need an "off" when an effect
+ * stops applying. Deleting, disabling and editing an effect are all document events, so the
+ * document hooks see them. Suppression is not: `isSuppressed` is a getter, recomputed every
+ * preparation from equipment, antimagic and the origin effect's active state, and nothing is ever
+ * written. Nothing fired, so an unequipped item left its macros' work in place.
+ *
+ * Data preparation is the one place where all of that is already resolved, so the transition is
+ * detected here — after `wrapped(phase)`, so suppression reflects this preparation — and the work
+ * is pushed onto the action queue rather than done inline. Detection only: no writes, no awaits.
+ *
+ * The previous value lives on the effect document, which survives preparation. First sight seeds it
+ * without firing, so an effect appearing already-suppressed is not mistaken for a transition. After
+ * a reload everything reseeds, which means a transition that happened while the client was away is
+ * not recovered — inherent to edge detection.
+ */
+function detectSuppressionChanges(actor: Actor.Implementation): void {
+  // Clones and sheet previews prepare too, and their effects are fresh objects; only reconcile
+  // actors that are really in the world.
+  if (!actor.id || (!actor.isToken && !game.actors?.has(actor.id))) return;
+  // Every client prepares every actor; all of them track the state, one acts on it.
+  const acts = actsForActor(actor);
+  for (const effect of actor.allApplicableEffects()) {
+    const suppressed = !!effect.isSuppressed;
+    const previous = (effect as any)._daeSuppressed;
+    (effect as any)._daeSuppressed = suppressed;
+    if (previous === undefined || previous === suppressed || !acts) continue;
+    scheduleSuppressionChange(actor, effect, suppressed);
+  }
+}
+
+/** The client that does an actor's work no single user triggered: the active GM, else the first active owner. */
+function actsForActor(actor: Actor.Implementation): boolean {
+  const gm = game.users?.activeGM;
+  if (gm) return gm.isSelf;
+  const owner = game.users?.filter(u => u.active && actor.testUserPermission(u, "OWNER")).sort((a, b) => a.id!.localeCompare(b.id!))[0];
+  return !!owner?.isSelf;
+}
+
+function scheduleSuppressionChange(
+  actor: Actor.Implementation,
+  effect: ActiveEffect.Implementation,
+  suppressed: boolean
+): void {
+  actionQueue.add(async () => {
+    try {
+      // Re-read: the queue may have lagged behind further changes.
+      if (!!effect.isSuppressed !== suppressed) return;
+      Hooks.callAll("dae.suppressionChanged", effect, suppressed);
+      // @ts-expect-error v14 effect.system.changes
+      const changes = (effect.system?.changes ?? []) as ActiveEffect.ChangeData[];
+      const sideEffecting = changes.filter(c => c.key && getChangeHandler(c.key));
+      if (sideEffecting.length === 0) return;
+      const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
+      await processEffectChanges(suppressed ? "off" : "on", actor, tokens as any, effect, undefined,
+        sideEffecting, { "expiry-reason": suppressed ? "effect-suppressed" : "effect-unsuppressed" });
+    } catch (err) {
+      console.warn("dae | suppression change processing failed", effect?.name, err);
+    }
+  });
 }
 
 // Keep the old name as an alias for backward compatibility with any external callers
@@ -601,9 +665,31 @@ export async function removeConditionChange(actor: Actor.Implementation, change:
     const effectId = change.value.replace("zce-", "ce-");
     return await ceInterface?.removeEffect({ effectId, uuid: actor.uuid, origin: effect.uuid });
   }
-  const condition = actor.effects.find(ef => ef.origin === effect.uuid && ef.statuses.has(change.value));
-  // Effect will auto remove
-  // if (condition) await (actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", [condition.id]));
+  /*
+   * Remove the condition document this change created.
+   *
+   * Skipped when the parent is being deleted: addConditionChange links the condition with
+   * flags.dnd5e.dependentOn, and dnd5e deletes dependents itself in _onDeleteOperation, so deleting
+   * here as well races it and throws "does not exist". That is the case the old
+   * "Effect will auto remove" comment described — it just was not true for the other three ways an
+   * effect stops applying (change removed, disabled, suppressed), which is why those leaked.
+   * removeCreateItemChange already guards on the same two context flags.
+   */
+  if (context.effectDeleted || context.itemDeleted) return;
+  /*
+   * Re-resolve at execution time rather than capturing an id. Condition documents use a static id
+   * derived from the status (dnd5eprone000000), so an id captured now can name a *different*
+   * document by the time a queued task runs — deleting a condition some other effect has since
+   * applied. Matching on origin identifies the one this change actually created.
+   */
+  const find = () => actor.effects.find(ef => ef.origin === effect.uuid && ef.statuses.has(change.value));
+  if (!find()) return;
+  try {
+    const current = find();
+    if (current?.id) await actor.deleteEmbeddedDocuments("ActiveEffect", [current.id]);
+  } catch (err) {
+    console.warn("dae | removeConditionChange | could not delete condition", change.value, err);
+  }
 }
 
 export async function addStatusEffectChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, tokens: foundry.canvas.placeables.Token.Implementation[], sourceEffect: ActiveEffect.Implementation, context: any = {}): Promise<ActiveEffect[] | boolean> {

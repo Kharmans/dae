@@ -22,6 +22,9 @@ declare module "fvtt-types/configuration" {
         StringField: typeof foundry.data.fields.StringField;
       }) => void;
       "dae.ready": (api: typeof API) => void;
+      /** An effect started or stopped being suppressed. Suppression is derived state with no
+       *  document event of its own, so DAE detects the transition during data preparation. */
+      "dae.suppressionChanged": (effect: ActiveEffect.Implementation, suppressed: boolean) => void;
       "dae.addFieldMappings": (fieldMappings: Record<string, string | { key: string, value?: string, mode?: number | string }>) => void;
       "dae.addSpecialDurations": (specialDurations: unknown) => void;
       "dae.modifyBaseValues": (specKey: string, baseValues: BaseValuesInner, charSpec: unknown) => void;
