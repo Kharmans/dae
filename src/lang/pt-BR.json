@@ -315,8 +315,6 @@
   "dae.expiryMode.suppress": "Suprimir (Marcar como Expirado)",
   "dae.resetStartTime": "Redefinir Início para Agora",
   "dae.CE": "Convenient Effects",
-  "dae.ShowInline.Name": "Exibir Resultados Inline",
-  "dae.ShowInline.Hint": "Se habilitado, efeitos com uma rolagem inline exibirão os resultados da rolagem.",
   "dae.StackableOptions": {
     "noneName": "Efeitos não se acumulam por nome e/ou origem",
     "noneNameOnly": "Efeitos não se acumulam por nome",

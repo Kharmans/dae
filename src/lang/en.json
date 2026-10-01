@@ -316,8 +316,6 @@
   "dae.expiryMode.suppress": "Suppress (Mark Expired)",
   "dae.resetStartTime": "Reset Start to Now",
   "dae.CE": "Convenient Effects",
-  "dae.ShowInline.Name": "Display results of inline rolls",
-  "dae.ShowInline.Hint": "Effects with an inline roll will display the roll results if set",
   "dae.StackableOptions": {
     "noneName": "Effects do not stack by effect name and effect origin",
     "noneNameOnly": "Effects do not stack by effect name",

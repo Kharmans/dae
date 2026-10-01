@@ -1,4 +1,10 @@
 ### 14.0.15 (unreleased)
+* Breaking: the **Display results of inline rolls** setting is removed. `[[expr]]` in a change value always posts its roll to chat; `[[[expr]]]` rolls without a chat message. Effects using `[[expr]]` that relied on the setting being off (the default) should switch to `[[[expr]]]`.
+* `dae.roll(expr)` is deprecated: it becomes a silent inline roll, `[[[expr]]]`, when the effect is created or edited on an actor or an owned item. A `dae.roll` still reached when an actor is prepared counts as 0, as before.
+* Inline rolls in a transfer effect are rolled when the item lands on an actor (created, dragged from another actor, duplicated) and when the formula is edited. The formula stays in the effect and the totals are stored in `flags.dae.inlineRolls`, so dragging the item to another actor rolls again; previously the roll waited for the effect to be edited and then replaced its formula.
+* `@UUID[...]` links in an effect applied to an actor are kept; they came out as `0[...]`.
+* An explicit `token.sight.*` change (e.g. saturation) wins over the vision mode's defaults whatever order it is written in; written before `token.sight.visionMode` it was overwritten. DAE no longer adds the defaults itself; core does.
+* `##` deferred references are restored on effects that reach an actor without DAE's apply path (dnd5e's chat-card apply, enchantments, a dragged effect); they were left as `##` and the change skipped.
 * Effect editor: the DIME button's tooltip shows "DIME" instead of `dae.DIMEditor.Name`.
 * Deprecated special durations that don't fit core's single expiry (e.g. combatEnd alongside turnStart) are kept rather than dropped, and an explicitly set expiry is not overwritten.
 

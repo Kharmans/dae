@@ -22,15 +22,6 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "showInline", {
-    scope: "client",
-    name: "dae.ShowInline.Name",
-    hint: "dae.ShowInline.Hint",
-    default: false,
-    config: true,
-    type: Boolean,
-    onChange: fetchParams
-  });
   
   game.settings.register("dae", "DAETitleBar", {
     name: "dae.DAETitleBar.Name",

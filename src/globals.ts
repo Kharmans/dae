@@ -80,6 +80,8 @@ declare module "fvtt-types/configuration" {
         /** Set when the effect was saved through the DAE editor: every change's `phase` is explicitly
          *  authored, so `change.phase` is authoritative at apply time (even an explicit "initial"). */
         phaseStamped?: boolean;
+        /** A transfer effect's inline roll totals, rolled when it reached its actor (see lib/inlineRolls.ts) */
+        inlineRolls?: { key: string, value: string, totals: number[] }[];
         selfTarget?: boolean;
         selfTargetAlways?: boolean;
         /** @deprecated Use native ActiveEffect showIcon field instead */
@@ -133,7 +135,6 @@ declare module "fvtt-types/configuration" {
   interface SettingConfig {
     "dae.DependentConditions": boolean;
     "dae.noDupDamageMacro": boolean;
-    "dae.showInline": boolean;
     "dae.DAETitleBar": boolean;
     "dae.DIMETitleBar": boolean;
     "dae.DAEColorTitleBar": boolean;

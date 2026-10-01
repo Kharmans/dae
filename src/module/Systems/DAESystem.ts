@@ -475,7 +475,7 @@ export class DAESystem {
           stack.push(`${this.safeEval(this.safeEvalExpression(temp, context, depth + 1), context)}`);
         else if (funcName === "dae.roll") {
           try {
-            error(`%c dae.roll in ${input} is not supported and has been discarded`, "color: red", context.name, context.actorUuid)
+            error(`%c dae.roll is deprecated and only rolled when an effect is created: use [[...]]. dae.roll in ${input} counts as 0`, "color: red", context.name, context.actorUuid)
             stack.push(this.safeEval("0", context)); // Foundry does not support synchronous dice rolling
           } catch (err) {
             console.warn(`dae | dae.roll bad dice expression ${temp}`, err)

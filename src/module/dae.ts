@@ -14,6 +14,7 @@ import { registerChangeHandler, getChangeHandler, isRegisteredMacroKey, getChang
 import { filterEffectsForTargeting } from "./lib/effectFiltering.js";
 import { handleExistingEffects, handleStackIncrement } from "./lib/stackingPolicy.js";
 import { rewriteAtlChanges } from "./atlMigration.js";
+import { convertDaeRoll, hasInlineRoll, resolveInlineRolls, rollEffectSource, rollInline, rollItemSource, type InlineRollRecord } from "./lib/inlineRolls.js";
 
 const { SchemaField } = foundry.data.fields;
 
@@ -160,7 +161,6 @@ export let daeSystemClass: typeof DAESystem | typeof DAESystemDND5E;
 if (!globalThis.daeSystems) globalThis.daeSystems = {};
 
 // export let showDeprecation = true;
-export let showInline: boolean = false;
 
 export const deprecatedKeyPatterns: { pattern: RegExp; replacement: (id: string) => string }[] = [
   { pattern: /^data\.abilities\.(\w{3})\.save$/, replacement: id => `system.abilities.${id}.bonuses.save` },
@@ -290,34 +290,20 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
     }
   }
 
+  /*
+   * Core inflates a vision mode's defaults (TokenDocument#_inflateVisionModeChange) immediately
+   * after applying the sight.visionMode change, assigning over sight.*. An explicit sibling change
+   * therefore only survives if it is applied later. Keep visionMode first among equal-priority
+   * sight.* changes so an explicit value wins whatever order it was authored in. Sort is stable, so
+   * nothing else moves.
+   */
   {
     const tac = (this as any).tokenActiveEffectChanges?.[phase] as DAEChangeData[] | undefined;
-    if (Array.isArray(tac) && tac.length > 0) {
-      const extras: DAEChangeData[] = [];
-      for (const change of tac) {
-        if (change.key !== "sight.visionMode") continue;
-        const mode = (CONFIG as any).Canvas?.visionModes?.[change.value as string];
-        const defaults: Record<string, any> | undefined = mode?.vision?.defaults;
-        if (!defaults) continue;
-        for (const [k, v] of Object.entries(defaults)) {
-          if (v === undefined || v === null) continue;
-          const siblingKey = `sight.${k}`;
-          if (tac.some(c => c.key === siblingKey)) continue;
-          if (extras.some(c => c.key === siblingKey)) continue;
-          extras.push({
-            key: siblingKey,
-            value: String(v),
-            type: "override",
-            priority: change.priority,
-            phase: change.phase,
-            effect: change.effect,
-          } as DAEChangeData);
-        }
-      }
-      if (extras.length > 0) tac.push(...extras);
+    if (Array.isArray(tac) && tac.some(c => c.key === "sight.visionMode")) {
+      const rank = (c: DAEChangeData) => (c.key === "sight.visionMode" ? 0 : 1);
+      tac.sort((a, b) => ((a.priority ?? 0) - (b.priority ?? 0)) || (rank(a) - rank(b)));
     }
   }
-
 }
 
 // Keep the old name as an alias for backward compatibility with any external callers
@@ -368,6 +354,9 @@ export function daeApplyChange(
   }
 
   const actor = targetDoc as Actor.Implementation;
+
+  // A transfer effect's inline rolls were rolled when it reached the actor; their totals are stored on the effect.
+  if (hasInlineRoll(change.value)) change.value = resolveInlineRolls(change);
 
   // --- ATL handling ---
   // When atlRewriteAtRuntime is on (Layer B), ATL.* changes have already been pre-translated
@@ -783,6 +772,11 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
       let newChanges: any = [];
       debug("dae _preCreate changes input:", JSON.stringify(this.system.changes.map(c => ({key: c.key, value: c.value}))));
       for (let change of this.system.changes) {
+        const converted = convertDaeRoll(change.value, `${this.name} (${this.uuid})`);
+        if (converted !== change.value) {
+          change.value = converted;
+          changesChanged = true;
+        }
         if (typeof change.value === "string") {
           const token = getSelfTarget(parent);
           const tokenUuid = token instanceof TokenDocument ? token.uuid : token.document.uuid;
@@ -803,22 +797,15 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
             }
           }
         }
-        const inline = typeof change.value === "string" && change.value.includes("[[");
+        const inline = hasInlineRoll(change.value);
         if (change.key === "StatusEffect") {
           console.warn("ActiveEffect | StatusEffect change key is deprecated, use macro.StatusEffect instead");
           continue;
         }
         else if (inline) {
-          const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
-          const silentInline = change.value.includes("[[[");
           const newChange: any = foundry.utils.duplicate(change);
           changesChanged = true;
-          for (let match of change.value.matchAll(rgx)) {
-            if (!match[1]) {
-              const newValue = await evalInline(match[2], parent, this, silentInline);
-              newChange.value = newChange.value.replace(match[0], `${newValue}`);
-            }
-          }
+          newChange.value = await rollInline(change.value, parent, this.name);
           newChanges.push(newChange);
         } else if (change.key.startsWith("macro.itemMacro")) {
           const item = fromUuidSync(this.origin);
@@ -847,21 +834,6 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
     return result;
   }
 }
-async function evalInline(expression: string, actor: Actor, effect: ActiveEffect.Implementation, silent: boolean) {
-  try {
-    warn("Doing inline eval", expression)
-    expression = expression.replaceAll("@data.", "@");
-    const roll = await (new Roll(expression, actor?.getRollData() as AnyObject)).evaluate();
-    if (showInline && !silent) {
-      roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effect.name} ${expression}` })
-    }
-    return `${roll.total}`;
-  } catch (err) {
-    console.warn(`dae | evaluate args error: rolling ${expression} failed`, err);
-    return "0";
-  }
-}
-
 function recordDisabledSuppressedHook(effect: ActiveEffect.Implementation, updates: ActiveEffect.UpdateData, options: ActiveEffect.Database.PreUpdateOptions, userId: string) {
   // @ts-expect-error v14 effect.system.changes
   foundry.utils.setProperty(options, "dae.active", { wasDisabled: effect.disabled, wasSuppressed: effect.isSuppressed, oldChanges: foundry.utils.duplicate(effect.system.changes) });
@@ -1317,6 +1289,8 @@ export async function evalArgs({
   }
   returnChange.value = returnChange.value.replace("@item.level", "@itemLevel")
   returnChange.value = returnChange.value.replace(/@data./g, "@");
+  // A document link is not a data path; deferred like ##, so it is restored below rather than replaced with 0.
+  returnChange.value = returnChange.value.replaceAll("@UUID", "##UUID").replaceAll("@uuid", "##uuid");
   const returnChangeValue = Roll.replaceFormulaData(returnChange.value, contextToUse, { missing: "0", warn: false });
   if (typeof returnChange.value === "object") {
     console.error("object returned from replaceFormula Data", returnChange.value);
@@ -1928,6 +1902,29 @@ export function daeInitActions() {
         }
       }
     }
+    /*
+     * Deferred-reference backstop. DAE's own apply path restores `##` before creating the effect;
+     * effects that reach an actor another way (dnd5e's chat-card apply, enchantments, a dragged
+     * effect) never pass through it.
+     */
+    {
+      // @ts-expect-error v14 effect.system.changes
+      const changes = this.system?.changes as DAEChangeData[] | undefined;
+      if (Array.isArray(changes) && changes.some(c => typeof c?.value === "string" && c.value.includes("##"))) {
+        const restored = changes.map(c => typeof c?.value === "string" && c.value.includes("##")
+          ? { ...c, value: c.value.replaceAll("##", "@") } : c);
+        // @ts-expect-error v14 updateSource accepts system.changes
+        this.updateSource({ "system.changes": restored });
+      }
+    }
+    // A transfer effect added to an item an actor owns rolls its inline rolls for that actor.
+    if (this.parent instanceof CONFIG.Item.documentClass && this.parent.parent instanceof CONFIG.Actor.documentClass && effectIsTransfer(this)) {
+      const source = this.toObject() as AnyMutableObject;
+      if (await rollEffectSource(source, this.parent.parent, false)) {
+        // @ts-expect-error v14 updateSource accepts system.changes
+        this.updateSource({ "system.changes": source.system.changes, "flags.dae.inlineRolls": source.flags.dae.inlineRolls });
+      }
+    }
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
     if (result !== false) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
     // @ts-expect-error no dnd5e-types
@@ -1938,6 +1935,32 @@ export function daeInitActions() {
     }
     // Source/target expiries are kept verbatim; patching.ts evaluates them (dnd5e 6.0 does so natively).
     if (result !== false) result = await wrapped(data, context, user);
+    return result;
+  }
+
+  // An item landing on an actor (created, dragged, duplicated) rolls its transfer effects' inline rolls afresh.
+  libWrapper.register("dae", "CONFIG.Item.documentClass.prototype._preCreate", _preCreateItemInlineRolls, "WRAPPER");
+  async function _preCreateItemInlineRolls(this: Item.Implementation, wrapped, data, options, user) {
+    const result = await wrapped(data, options, user);
+    if (result === false || !(this.parent instanceof CONFIG.Actor.documentClass)) return result;
+    const effects = await rollItemSource(this, this.parent, false);
+    if (effects) this.updateSource({ effects } as Item.UpdateData);
+    return result;
+  }
+
+  // An actor created with items (imported, duplicated) rolls only the ones never rolled.
+  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._preCreate", _preCreateActorInlineRolls, "WRAPPER");
+  async function _preCreateActorInlineRolls(this: Actor.Implementation, wrapped, data, options, user) {
+    const result = await wrapped(data, options, user);
+    if (result === false) return result;
+    let changed = false;
+    const items: AnyMutableObject[] = [];
+    for (const item of this.items) {
+      const effects = await rollItemSource(item, this, true);
+      if (effects) changed = true;
+      items.push({ ...item.toObject(), ...(effects ? { effects } : {}) });
+    }
+    if (changed) this.updateSource({ items } as Actor.UpdateData);
     return result;
   }
 
@@ -1974,39 +1997,33 @@ export function daeInitActions() {
       }
     }
 
-    // Evaluate [[formula]] inline expressions in change values.
-    // Merge pre-update changes with the update diff to get the post-update changes,
-    // then resolve inline rolls before Foundry applies the update.
+    // Inline rolls: an effect on an actor gets the totals written in; a transfer effect on an owned item keeps its
+    // formulas and rolls again only the changes whose formula changed.
     const parent = this.parent;
-    let actor: Actor.Implementation | null | undefined;
-    if (parent instanceof CONFIG.Actor.documentClass) actor = parent;
-    else if (parent instanceof CONFIG.Item.documentClass && effectIsTransfer(this)) actor = parent.parent;
-    if (actor) {
-      try {
-        const effectiveChanges: ActiveEffect.ChangeData[] = foundry.utils.deepClone(changed.system?.changes ?? this.system?.changes ?? []);
+    try {
+      if (parent instanceof CONFIG.Actor.documentClass) {
+        const effectiveChanges: AnyMutableObject[] = foundry.utils.deepClone(changed.system?.changes ?? this.system?.changes ?? []);
         let anyResolved = false;
         for (const change of effectiveChanges) {
-          const silentInline = typeof change.value === "string" && change.value.includes("[[[");
-          const inline = typeof change.value === "string" && change.value.includes("[[");
-          if (inline || silentInline) {
-            const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
-            let newChangeValue = foundry.utils.duplicate(change.value);
-            for (const match of change.value.matchAll(rgx)) {
-              if (!match[1]) {
-                const newValue = await evalInline(match[2], actor, this, silentInline);
-                newChangeValue = newChangeValue.replace(match[0], `${newValue}`);
-              }
-            }
-            change.value = newChangeValue;
-            anyResolved = true;
-          }
+          const value = convertDaeRoll(change.value, `${this.name} (${this.uuid})`);
+          if (hasInlineRoll(value)) change.value = await rollInline(value, parent, this.name);
+          else if (value === change.value) continue;
+          else change.value = value;
+          anyResolved = true;
         }
-        if (anyResolved) {
-          foundry.utils.setProperty(changed, "system.changes", effectiveChanges);
+        if (anyResolved) foundry.utils.setProperty(changed, "system.changes", effectiveChanges);
+      } else if (parent instanceof CONFIG.Item.documentClass && parent.parent instanceof CONFIG.Actor.documentClass
+        && effectIsTransfer(this) && Array.isArray(changed.system?.changes)) {
+        const source: { name: string, system: { changes: AnyMutableObject[] }, flags: { dae: { inlineRolls: InlineRollRecord[] } } } = {
+          name: changed.name ?? this.name, system: { changes: foundry.utils.deepClone(changed.system.changes) },
+          flags: { dae: { inlineRolls: this.flags.dae?.inlineRolls ?? [] } } };
+        if (await rollEffectSource(source, parent.parent, true)) {
+          changed.system.changes = source.system.changes;
+          foundry.utils.setProperty(changed, "flags.dae.inlineRolls", source.flags.dae.inlineRolls);
         }
-      } catch (err) {
-        console.warn(`dae | _preUpdateActiveEffect inline eval error: Actor ${actor.name}, Effect ${this.name}`, changed, err);
       }
+    } catch (err) {
+      console.warn(`dae | _preUpdateActiveEffect inline roll error: Effect ${this.name}`, changed, err);
     }
 
     return wrapped(...args);
@@ -2376,7 +2393,6 @@ export function fetchParams() {
   daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
   daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
-  showInline = game.settings.get("dae", "showInline") ?? false;
   dependentConditions = game.settings.get("dae", "DependentConditions") ?? false;
   specialDurationExpiryAction = game.settings.get("dae", "expiryAction") ?? "default";
   fetchDurationParams();
