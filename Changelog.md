@@ -42,6 +42,7 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
 * `@activity` references in a legacy-application effect (e.g. `saveDC=@activity.save.dc.value` in an OverTime effect) are filled from the activity; they came out as 0.
 * Per-change conditions on an effect change, and effect-level condition suppression, are honoured.
 * Macros, `StatusEffect` and Convenient Effects changes are undone when their effect is suppressed, e.g. by unequipping the item; the work used to stay in place.
+* Undoing (and redoing) a suppressed effect's side effects runs on one client - the active GM, or the actor's first active owner when no GM is connected - instead of on every connected client.
 * A `StatusEffect` change removes its condition when the change is deleted or edited, or its effect is suppressed.
 * Combat end no longer throws "does not exist" for effects dnd5e 6 removes itself as the combatant leaves.
 * An effect that inherits its duration from the activity or item also expires with world time, not only on the round tick.

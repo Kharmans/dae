@@ -286,13 +286,23 @@ function detectSuppressionChanges(actor: Actor.Implementation): void {
   // Clones and sheet previews prepare too, and their effects are fresh objects; only reconcile
   // actors that are really in the world.
   if (!actor.id || (!actor.isToken && !game.actors?.has(actor.id))) return;
+  // Every client prepares every actor; all of them track the state, one acts on it.
+  const acts = actsForActor(actor);
   for (const effect of actor.allApplicableEffects()) {
     const suppressed = !!effect.isSuppressed;
     const previous = (effect as any)._daeSuppressed;
     (effect as any)._daeSuppressed = suppressed;
-    if (previous === undefined || previous === suppressed) continue;
+    if (previous === undefined || previous === suppressed || !acts) continue;
     scheduleSuppressionChange(actor, effect, suppressed);
   }
+}
+
+/** The client that does an actor's work no single user triggered: the active GM, else the first active owner. */
+function actsForActor(actor: Actor.Implementation): boolean {
+  const gm = game.users?.activeGM;
+  if (gm) return gm.isSelf;
+  const owner = game.users?.filter(u => u.active && actor.testUserPermission(u, "OWNER")).sort((a, b) => a.id!.localeCompare(b.id!))[0];
+  return !!owner?.isSelf;
 }
 
 function scheduleSuppressionChange(
