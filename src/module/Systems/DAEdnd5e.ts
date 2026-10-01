@@ -2,7 +2,7 @@
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
 import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive } from "../dae.js";
+import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive, usesLegacyApplication } from "../dae.js";
 import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField, SetField } = foundry.data.fields;
@@ -567,6 +567,8 @@ export class DAESystemDND5E extends DAESystem {
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.isSuppressed", isSuppressed, "WRAPPER");
     // @item, @spellLevel etc. for effects DAE applied the dnd5e 6 way, resolved when the target is prepared
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.getReplacementData", getReplacementData, "WRAPPER");
+    // Old bonus paths dnd5e 6 moved but does not alias (see movedBonusAliases)
+    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareBaseData", prepareBaseDataBonusAliases, "WRAPPER");
     // This supplies DAE custom effects - the main game
     // @ts-expect-error our custom stuff in the changes makes types mad
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
@@ -1392,10 +1394,58 @@ export function getActorItemForEffect(effect: ActiveEffect.Implementation): Item
  * (read live, and only their prepared data - calling getRollData here would re-prepare during preparation), falling
  * back to the copies stored on the effect when the item can no longer be found.
  */
+/**
+ * Stop-gap for a gap in dnd5e 6's compatibility layer. dnd5e keeps the bonus paths it moved readable, with a
+ * deprecation warning, by defining a getter on each old path's parent object (CommonTemplate#shimBonusData). It skips
+ * a path whose parent no longer exists, and `bonuses.mwak/rwak/msak/rsak` and `bonuses.abilities` were removed, so
+ * `@bonuses.mwak.damage` and the like resolve to nothing. Supply those, as dnd5e does, until dnd5e does itself.
+ */
+const MOVED_BONUS_PATHS: [string, string][] = [
+  ["bonuses.mwak.attack", "rolls.attack.mwak.bonus"],
+  ["bonuses.mwak.damage", "rolls.damage.mwak.bonus"],
+  ["bonuses.rwak.attack", "rolls.attack.rwak.bonus"],
+  ["bonuses.rwak.damage", "rolls.damage.rwak.bonus"],
+  ["bonuses.msak.attack", "rolls.attack.msak.bonus"],
+  ["bonuses.msak.damage", "rolls.damage.msak.bonus"],
+  ["bonuses.rsak.attack", "rolls.attack.rsak.bonus"],
+  ["bonuses.rsak.damage", "rolls.damage.rsak.bonus"],
+  ["bonuses.abilities.check", "rolls.ability.check.bonus"],
+  ["bonuses.abilities.save", "rolls.ability.save.bonus"],
+  ["bonuses.abilities.skill", "rolls.ability.skill.bonus"]
+];
+
+function movedBonusAliases(system: AnyObject) {
+  if (!system?.bonuses || typeof system.bonuses !== "object" || !system.rolls) return;
+  for (const [original, updated] of MOVED_BONUS_PATHS) {
+    const [, group, key] = original.split(".");
+    // Hidden, as dnd5e's own aliases are, so listing roll data does not show them.
+    if (!Object.prototype.hasOwnProperty.call(system.bonuses, group)) {
+      Object.defineProperty(system.bonuses, group, { value: {}, enumerable: false, configurable: true, writable: true });
+    }
+    const container = system.bonuses[group];
+    if (Object.prototype.hasOwnProperty.call(container, key)) continue;
+    Object.defineProperty(container, key, {
+      configurable: true,
+      get: () => {
+        foundry.utils.logCompatibilityWarning(`${original} has moved to "${updated}".`, {
+          since: "DnD5e 6.0", until: "DnD5e 7.0", once: true
+        });
+        return foundry.utils.getProperty(system, updated) ?? "";
+      }
+    });
+  }
+}
+
+function prepareBaseDataBonusAliases(this: Actor.Implementation, wrapped: Function, ...args: unknown[]) {
+  const result = wrapped(...args);
+  movedBonusAliases(this.system as AnyObject);
+  return result;
+}
+
 function getReplacementData(this: ActiveEffect.Implementation, wrapped, baseData: AnyObject) {
   const data = wrapped(baseData);
   const application = this.flags?.dae?.applicationData;
-  if (!application || !(this.parent instanceof Actor) || this.flags.dae?.legacyApplication) return data;
+  if (!application || !(this.parent instanceof Actor) || usesLegacyApplication(this)) return data;
   // @ts-expect-error v14 effect.system.changes
   if (!this.system?.changes?.some(change => typeof change.value === "string" && change.value.includes("@"))) return data;
   const source = fromUuidSync(this.flags.dae?.itemUuid ?? "", { strict: false });

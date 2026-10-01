@@ -14,6 +14,7 @@ import { registerChangeHandler, getChangeHandler, isRegisteredMacroKey, getChang
 import { filterEffectsForTargeting } from "./lib/effectFiltering.js";
 import { handleExistingEffects, handleStackIncrement } from "./lib/stackingPolicy.js";
 import { rewriteAtlChanges } from "./atlMigration.js";
+import { convertDaeRoll, hasInlineRoll, resolveInlineRolls, rollEffectSource, rollInline, rollItemSource, type InlineRollRecord } from "./lib/inlineRolls.js";
 
 const { SchemaField } = foundry.data.fields;
 
@@ -65,6 +66,7 @@ export let actionQueue: foundry.utils.Semaphore;
 export let DAEReadyComplete: boolean;
 export let dependentConditions: boolean;
 export let specialDurationExpiryAction: string = "default";
+export let defaultApplicationMode: ApplicationMode = "dnd5e";
 
 /**
  * Resolve the effective expiry action for special durations.
@@ -152,7 +154,6 @@ for (const key of allMacroEffects) {
 export let daeSystemClass: typeof DAESystemDND5E;
 
 // export let showDeprecation = true;
-export let showInline: boolean = false;
 
 export const deprecatedKeyPatterns: { pattern: RegExp; replacement: (id: string) => string }[] = [
   { pattern: /^data\.abilities\.(\w{3})\.save$/, replacement: id => `system.abilities.${id}.bonuses.save` },
@@ -380,6 +381,9 @@ export function daeApplyChange(
 
   const actor = targetDoc as Actor.Implementation;
 
+  // A transfer effect's inline rolls were rolled when it reached the actor; their totals are stored on the effect.
+  if (hasInlineRoll(change.value)) change.value = resolveInlineRolls(change);
+
   // --- ATL handling ---
   // ATL.* is normalised to token.* on write, so a key only reaches here if it predates that and
   // was never re-saved. Core handles token.* natively; nothing here should.
@@ -488,8 +492,8 @@ export function daeApplyChange(
     change.value = change.value.replaceAll("@stackCount", String(stacks));
   }
   if (typeof change.value === "string" && (change.value.includes("dae.eval(") || change.value.includes("dae.roll("))) {
-    const conditionData = actor.getRollData();
-    foundry.utils.mergeObject(conditionData, { stackCount: stacks, effect: change.effect?.toObject() });
+    // The data core resolves this change with (an item effect's @item among it), copied: core shares it across effects.
+    const conditionData = { ...(options.replacementData ?? actor.getRollData()), stackCount: stacks, effect: change.effect?.toObject() };
     change.value = daeSystemClass.safeEvalExpression(change.value, conditionData);
   }
 
@@ -500,7 +504,7 @@ export function daeApplyChange(
     const current = foundry.utils.getProperty(actor, change.key);
     const fieldType = ValidSpec.actorSpecs?.[actor.type]?.allSpecsObj?.[change.key]?.fieldType;
     if (typeof current === "number" || fieldType === "number") {
-      const resolved = Roll.replaceFormulaData(change.value, actor.getRollData() as AnyObject, { missing: "0", warn: false });
+      const resolved = Roll.replaceFormulaData(change.value, (options.replacementData ?? actor.getRollData()) as AnyObject, { missing: "0", warn: false });
       const foreignWord = /\b(?!(?:floor|ceil|round|abs|min|max|pow|sqrt|sign|clamp|clamped)\b)[a-zA-Z_]\w*/;
       if (!foreignWord.test(resolved)) {
         try {
@@ -828,6 +832,11 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
       let newChanges: any = [];
       debug("dae _preCreate changes input:", JSON.stringify(this.system.changes.map(c => ({key: c.key, value: c.value}))));
       for (let change of this.system.changes) {
+        const converted = convertDaeRoll(change.value, `${this.name} (${this.uuid})`);
+        if (converted !== change.value) {
+          change.value = converted;
+          changesChanged = true;
+        }
         if (typeof change.value === "string") {
           const token = getSelfTarget(parent);
           const tokenUuid = token instanceof TokenDocument ? token.uuid : token.document.uuid;
@@ -848,22 +857,15 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
             }
           }
         }
-        const inline = typeof change.value === "string" && change.value.includes("[[");
+        const inline = hasInlineRoll(change.value);
         if (change.key === "StatusEffect") {
           console.warn("ActiveEffect | StatusEffect change key is deprecated, use macro.StatusEffect instead");
           continue;
         }
         else if (inline) {
-          const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
-          const silentInline = change.value.includes("[[[");
           const newChange: any = foundry.utils.duplicate(change);
           changesChanged = true;
-          for (let match of change.value.matchAll(rgx)) {
-            if (!match[1]) {
-              const newValue = await evalInline(match[2], parent, this, silentInline);
-              newChange.value = newChange.value.replace(match[0], `${newValue}`);
-            }
-          }
+          newChange.value = await rollInline(change.value, parent, this.name);
           newChanges.push(newChange);
         } else if (change.key.startsWith("macro.itemMacro")) {
           const item = fromUuidSync(this.origin);
@@ -892,21 +894,6 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
     return result;
   }
 }
-async function evalInline(expression: string, actor: Actor, effect: ActiveEffect.Implementation, silent: boolean) {
-  try {
-    warn("Doing inline eval", expression)
-    expression = expression.replaceAll("@data.", "@");
-    const roll = await (new Roll(expression, actor?.getRollData() as AnyObject)).evaluate();
-    if (showInline && !silent) {
-      roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effect.name} ${expression}` })
-    }
-    return `${roll.total}`;
-  } catch (err) {
-    console.warn(`dae | evaluate args error: rolling ${expression} failed`, err);
-    return "0";
-  }
-}
-
 function recordDisabledSuppressedHook(effect: ActiveEffect.Implementation, updates: ActiveEffect.UpdateData, options: ActiveEffect.Database.PreUpdateOptions, userId: string) {
   // @ts-expect-error v14 effect.system.changes
   foundry.utils.setProperty(options, "dae.active", { wasDisabled: effect.disabled, wasSuppressed: effect.isSuppressed, oldChanges: foundry.utils.duplicate(effect.system.changes) });
@@ -1376,6 +1363,8 @@ export async function evalArgs({
   }
   returnChange.value = returnChange.value.replace("@item.level", "@itemLevel")
   returnChange.value = returnChange.value.replace(/@data./g, "@");
+  // A document link is not a data path; deferred like ##, so it is restored below rather than replaced with 0.
+  returnChange.value = returnChange.value.replaceAll("@UUID", "##UUID").replaceAll("@uuid", "##uuid");
   const returnChangeValue = Roll.replaceFormulaData(returnChange.value, contextToUse, { missing: "0", warn: false });
   if (typeof returnChange.value === "object") {
     console.error("object returned from replaceFormula Data", returnChange.value);
@@ -1469,16 +1458,26 @@ export async function doActivityEffects(
   return await applyActivityEffects(activity, activate, targets, activityEffects, options)
 }
 
+export type ApplicationMode = "dnd5e" | "legacy";
+
 /**
- * How DAE fills an applied effect's `@` references. By default as dnd5e 6 does: a change's `replacement` takes
+ * How DAE fills an applied effect's `@` references. "dnd5e", as dnd5e 6 does: a change's `replacement` takes
  * the caster's values (`origin`) or each target's (`target`) when the effect is applied, and a change with none
- * keeps its references for the target's data preparation. An effect flagged `flags.dae.legacyApplication` takes
- * every reference from the caster when it is applied, as DAE always did. Without dnd5e 6 (no `forApplication`)
- * there is only the legacy behaviour. `##` defers a reference to the target in both.
+ * keeps its references for the target's data preparation. "legacy" takes every reference from the caster when
+ * the effect is applied, as DAE always did. `##` defers a reference to the target in both.
+ *
+ * An effect's `flags.dae.applicationMode` chooses; unset or "default" follows the world setting. Without dnd5e 6
+ * (no `forApplication`) there is only legacy.
  */
-export function usesLegacyApplication(effectData: { flags?: AnyObject } | undefined): boolean {
+export function applicationModeOf(effectData: { flags?: { dae?: { applicationMode?: string } } } | undefined): ApplicationMode {
   // @ts-expect-error no dnd5e-types
-  return effectData?.flags?.dae?.legacyApplication === true || typeof CONFIG.ActiveEffect.documentClass.forApplication !== "function";
+  if (typeof CONFIG.ActiveEffect.documentClass.forApplication !== "function") return "legacy";
+  const mode = effectData?.flags?.dae?.applicationMode;
+  return mode === "dnd5e" || mode === "legacy" ? mode : defaultApplicationMode;
+}
+
+export function usesLegacyApplication(effectData: Parameters<typeof applicationModeOf>[0]): boolean {
+  return applicationModeOf(effectData) === "legacy";
 }
 
 /** Whether DAE fills a change from the caster when applying its effect. Macro arguments always are. */
@@ -1517,16 +1516,15 @@ function recordApplicationData(data: ActiveEffect.Source, item: Item.Implementat
   });
 }
 
+type ApplicationTarget = Item.Implementation | Actor.Implementation | ActiveEffect.Implementation | foundry.documents.collections.CompendiumCollection.Any;
+
 /**
- * Mark every effect on an item, an actor and its items, or every document in a compendium pack as using legacy DAE
- * application (or, with `legacy` false, dnd5e 6 application). Returns how many effects changed.
+ * Set the application mode of every effect on an item, an actor and its items, or every document in a compendium
+ * pack. "default" clears it, so the effects follow the world setting. Returns how many effects changed.
  */
-export async function setLegacyApplication(
-  target: Item.Implementation | Actor.Implementation | ActiveEffect.Implementation | foundry.documents.collections.CompendiumCollection.Any,
-  legacy = true
-): Promise<number> {
-  const needsChange = (effect: ActiveEffect.Implementation) => (effect.flags?.dae?.legacyApplication === true) !== legacy;
-  const flags = { dae: { legacyApplication: legacy } };
+export async function setApplicationMode(target: ApplicationTarget, mode: ApplicationMode | "default"): Promise<number> {
+  const needsChange = (effect: ActiveEffect.Implementation) => (effect.flags?.dae?.applicationMode ?? "default") !== mode;
+  const flags = { dae: mode === "default" ? { "-=applicationMode": null } : { applicationMode: mode } };
   const updateEffectsOf = async (parent: Item.Implementation | Actor.Implementation) => {
     const updates: { _id: string, flags: typeof flags }[] = [];
     for (const effect of parent.effects) if (needsChange(effect)) updates.push({ _id: effect.id!, flags });
@@ -1547,7 +1545,7 @@ export async function setLegacyApplication(
   }
   if (target instanceof foundry.documents.collections.CompendiumCollection) {
     if (!["Item", "Actor"].includes(target.documentName)) return 0;
-    if (target.locked) throw new Error(`dae | setLegacyApplication: ${target.collection} is locked`);
+    if (target.locked) throw new Error(`dae | setApplicationMode: ${target.collection} is locked`);
     let count = 0;
     for (const doc of await target.getDocuments()) count += await updateDocument(doc as Item.Implementation | Actor.Implementation);
     return count;
@@ -1617,6 +1615,8 @@ export async function applyActivityEffects(
   let macroLocation = "mixed";
   for (let [aeIndex, activeEffectData] of activityEffects.entries()) {
     const legacy = usesLegacyApplication(activeEffectData);
+    // The applied copy keeps the mode it was applied with, whatever the world setting later becomes.
+    foundry.utils.setProperty(activeEffectData, "flags.dae.applicationMode", legacy ? "legacy" : "dnd5e");
     // @ts-expect-error v14 system.changes on toObject() data
     for (let [changeIndex, change] of activeEffectData.system.changes.entries()) {
       const doRolls = isRegisteredMacroKey(change.key);
@@ -1705,6 +1705,8 @@ export async function applyNonTransferEffects(
 
   for (let [aeIndex, activeEffectData] of appliedEffects.entries()) {
     const legacy = usesLegacyApplication(activeEffectData);
+    // The applied copy keeps the mode it was applied with, whatever the world setting later becomes.
+    foundry.utils.setProperty(activeEffectData, "flags.dae.applicationMode", legacy ? "legacy" : "dnd5e");
     // @ts-expect-error v14 system.changes on toObject() data
     for (let [changeIndex, change] of activeEffectData.system.changes.entries()) {
       const doRolls = isRegisteredMacroKey(change.key);
@@ -2049,7 +2051,8 @@ export function daeInitActions() {
   daeSystemClass.initActions();
   daeSystemClass.initSystemData();
 
-  // Patch Roll.replaceFormulaData for limited recursion of nested formula references
+  // Nested formula references resolve for every caller (see replaceFormulaData). MIXED: a non-string is returned
+  // without calling core, which would throw on it.
   libWrapper.register("dae", "Roll.replaceFormulaData", replaceFormulaData, "MIXED");
 
   if (game.settings.get("dae", "disableEffects")) {
@@ -2152,6 +2155,14 @@ export function daeInitActions() {
         this.updateSource({ "system.changes": restored });
       }
     }
+    // A transfer effect added to an item an actor owns rolls its inline rolls for that actor.
+    if (this.parent instanceof CONFIG.Item.documentClass && this.parent.parent instanceof CONFIG.Actor.documentClass && effectIsTransfer(this)) {
+      const source = this.toObject() as AnyMutableObject;
+      if (await rollEffectSource(source, this.parent.parent, false)) {
+        // @ts-expect-error v14 updateSource accepts system.changes
+        this.updateSource({ "system.changes": source.system.changes, "flags.dae.inlineRolls": source.flags.dae.inlineRolls });
+      }
+    }
     let result = await _preCreateActiveEffectRemoveExisting.bind(this)(data, context, user);
     if (result !== false) result = await _preCreateActiveEffectIncrement.bind(this)(data, context, user);
     // @ts-expect-error no dnd5e-types
@@ -2161,6 +2172,32 @@ export function daeInitActions() {
     }
     // Source/target expiries are kept verbatim; patching.ts evaluates them (dnd5e 6.0 does so natively).
     if (result !== false) result = await wrapped(data, context, user);
+    return result;
+  }
+
+  // An item landing on an actor (created, dragged, duplicated) rolls its transfer effects' inline rolls afresh.
+  libWrapper.register("dae", "CONFIG.Item.documentClass.prototype._preCreate", _preCreateItemInlineRolls, "WRAPPER");
+  async function _preCreateItemInlineRolls(this: Item.Implementation, wrapped, data, options, user) {
+    const result = await wrapped(data, options, user);
+    if (result === false || !(this.parent instanceof CONFIG.Actor.documentClass)) return result;
+    const effects = await rollItemSource(this, this.parent, false);
+    if (effects) this.updateSource({ effects } as Item.UpdateData);
+    return result;
+  }
+
+  // An actor created with items (imported, duplicated) rolls only the ones never rolled.
+  libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype._preCreate", _preCreateActorInlineRolls, "WRAPPER");
+  async function _preCreateActorInlineRolls(this: Actor.Implementation, wrapped, data, options, user) {
+    const result = await wrapped(data, options, user);
+    if (result === false) return result;
+    let changed = false;
+    const items: AnyMutableObject[] = [];
+    for (const item of this.items) {
+      const effects = await rollItemSource(item, this, true);
+      if (effects) changed = true;
+      items.push({ ...item.toObject(), ...(effects ? { effects } : {}) });
+    }
+    if (changed) this.updateSource({ items } as Actor.UpdateData);
     return result;
   }
 
@@ -2196,39 +2233,33 @@ export function daeInitActions() {
       }
     }
 
-    // Evaluate [[formula]] inline expressions in change values.
-    // Merge pre-update changes with the update diff to get the post-update changes,
-    // then resolve inline rolls before Foundry applies the update.
+    // Inline rolls: an effect on an actor gets the totals written in; a transfer effect on an owned item keeps its
+    // formulas and rolls again only the changes whose formula changed.
     const parent = this.parent;
-    let actor: Actor.Implementation | null | undefined;
-    if (parent instanceof CONFIG.Actor.documentClass) actor = parent;
-    else if (parent instanceof CONFIG.Item.documentClass && effectIsTransfer(this)) actor = parent.parent;
-    if (actor) {
-      try {
-        const effectiveChanges: ActiveEffect.ChangeData[] = foundry.utils.deepClone(changed.system?.changes ?? this.system?.changes ?? []);
+    try {
+      if (parent instanceof CONFIG.Actor.documentClass) {
+        const effectiveChanges: AnyMutableObject[] = foundry.utils.deepClone(changed.system?.changes ?? this.system?.changes ?? []);
         let anyResolved = false;
         for (const change of effectiveChanges) {
-          const silentInline = typeof change.value === "string" && change.value.includes("[[[");
-          const inline = typeof change.value === "string" && change.value.includes("[[");
-          if (inline || silentInline) {
-            const rgx = /[\[]{2,3}(\/[a-zA-Z]+\s)?(.*?)([\]]{2,3})(?:{([^}]+)})?/gi;
-            let newChangeValue = foundry.utils.duplicate(change.value);
-            for (const match of change.value.matchAll(rgx)) {
-              if (!match[1]) {
-                const newValue = await evalInline(match[2], actor, this, silentInline);
-                newChangeValue = newChangeValue.replace(match[0], `${newValue}`);
-              }
-            }
-            change.value = newChangeValue;
-            anyResolved = true;
-          }
+          const value = convertDaeRoll(change.value, `${this.name} (${this.uuid})`);
+          if (hasInlineRoll(value)) change.value = await rollInline(value, parent, this.name);
+          else if (value === change.value) continue;
+          else change.value = value;
+          anyResolved = true;
         }
-        if (anyResolved) {
-          foundry.utils.setProperty(changed, "system.changes", effectiveChanges);
+        if (anyResolved) foundry.utils.setProperty(changed, "system.changes", effectiveChanges);
+      } else if (parent instanceof CONFIG.Item.documentClass && parent.parent instanceof CONFIG.Actor.documentClass
+        && effectIsTransfer(this) && Array.isArray(changed.system?.changes)) {
+        const source: { name: string, system: { changes: AnyMutableObject[] }, flags: { dae: { inlineRolls: InlineRollRecord[] } } } = {
+          name: changed.name ?? this.name, system: { changes: foundry.utils.deepClone(changed.system.changes) },
+          flags: { dae: { inlineRolls: this.flags.dae?.inlineRolls ?? [] } } };
+        if (await rollEffectSource(source, parent.parent, true)) {
+          changed.system.changes = source.system.changes;
+          foundry.utils.setProperty(changed, "flags.dae.inlineRolls", source.flags.dae.inlineRolls);
         }
-      } catch (err) {
-        console.warn(`dae | _preUpdateActiveEffect inline eval error: Actor ${actor.name}, Effect ${this.name}`, changed, err);
       }
+    } catch (err) {
+      console.warn(`dae | _preUpdateActiveEffect inline roll error: Effect ${this.name}`, changed, err);
     }
 
     return wrapped(...args);
@@ -2469,13 +2500,14 @@ async function chooseItemApplication(item: Item.Implementation) {
     window: { title: i18nFormat("dae.LegacyApplication.DialogTitle", { name: item.name }) },
     content: `<p>${i18n("dae.LegacyApplication.DialogContent")}</p>`,
     buttons: [
-      { action: "dnd5e", label: i18n("dae.LegacyApplication.UseDnd5e"), default: true },
+      { action: "default", label: i18n("dae.LegacyApplication.UseDefault"), default: true },
+      { action: "dnd5e", label: i18n("dae.LegacyApplication.UseDnd5e") },
       { action: "legacy", label: i18n("dae.LegacyApplication.UseLegacy") }
     ],
     rejectClose: false
   });
-  if (choice !== "dnd5e" && choice !== "legacy") return;
-  const count = await setLegacyApplication(item, choice === "legacy");
+  if (choice !== "default" && choice !== "dnd5e" && choice !== "legacy") return;
+  const count = await setApplicationMode(item, choice);
   ui.notifications?.info(i18nFormat("dae.LegacyApplication.Updated", { count, name: item.name }));
 }
 
@@ -2484,16 +2516,17 @@ function appendCompendiumApplicationOptions(app, options) {
   if (!hasDnd5eApplication()) return;
   const packOf = (li: HTMLElement) => game.packs?.get(li.dataset.pack ?? "");
   const visible = (li: HTMLElement) => !!game.user?.isGM && ["Item", "Actor"].includes(packOf(li)?.documentName ?? "");
-  for (const legacy of [true, false]) {
+  const labels = { legacy: "dae.LegacyApplication.PackLegacy", dnd5e: "dae.LegacyApplication.PackDnd5e", default: "dae.LegacyApplication.PackDefault" };
+  for (const [mode, label] of Object.entries(labels) as [ApplicationMode | "default", string][]) {
     options.push({
-      label: legacy ? "dae.LegacyApplication.PackLegacy" : "dae.LegacyApplication.PackDnd5e",
+      label,
       icon: "fa-solid fa-wand-magic-sparkles",
       visible,
       onClick: async (event, li: HTMLElement) => {
         const pack = packOf(li);
         if (!pack) return;
         if (pack.locked) return void ui.notifications?.warn(i18nFormat("dae.LegacyApplication.Locked", { name: pack.title }));
-        const count = await setLegacyApplication(pack, legacy);
+        const count = await setApplicationMode(pack, mode);
         ui.notifications?.info(i18nFormat("dae.LegacyApplication.Updated", { count, name: pack.title }));
       }
     });
@@ -2647,9 +2680,9 @@ export function fetchParams() {
   daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
   daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
-  showInline = game.settings.get("dae", "showInline") ?? false;
   dependentConditions = game.settings.get("dae", "DependentConditions") ?? false;
   specialDurationExpiryAction = game.settings.get("dae", "expiryAction") ?? "default";
+  defaultApplicationMode = game.settings.get("dae", "defaultApplicationMode") ?? "dnd5e";
   fetchDurationParams();
 
   Hooks.callAll("dae.settingsChanged")
@@ -2686,22 +2719,23 @@ export function actorFromUuid(uuid: string): Actor.Implementation | null {
   return doc ?? null;
 }
 
-// Allow limited recursion of the formula replace function for things like
-// bonuses.heal.damage in spell formulas.
-export function replaceFormulaData(wrapped, formula, data: any = {}, { missing, warn = false } = { missing: undefined, warn: false }) {
-  let result = formula;
-  const maxIterations = 3;
-  data.Embed = "@Embed"; // Never replace these
+// Stands in for "@Embed[" while core replaces data references: an enricher, not data.
+const EMBED_MARK = "\u0000Embed[";
+
+/**
+ * Nested references resolve for every caller, as dnd5e asks for its own rolls: rolls built with core's Roll and
+ * dnd5e's origin/target replacement (ActiveEffect#forApplication) rely on it. Core does the recursion; this only
+ * turns it on unless the caller says otherwise. `@Embed[...]` is kept even where missing references become "0".
+ */
+export function replaceFormulaData(wrapped, formula, data: any = {}, options: AnyObject = {}, _r = 0) {
   if (typeof formula !== "string") return formula;
-  for (let i = 0; i < maxIterations; i++) {
-    if (!result.includes("@")) break;
-    try {
-      result = wrapped(result, data, { missing, warn });
-    } catch (err) {
-      error(err, formula, data, missing, warn);
-    }
+  try {
+    return wrapped(formula.replaceAll("@Embed[", EMBED_MARK), data, { ...options, recursive: options.recursive ?? true }, _r)
+      .replaceAll(EMBED_MARK, "@Embed[");
+  } catch (err) {
+    error(err, formula, data, options);
+    return formula;
   }
-  return result;
 }
 
 

@@ -33,7 +33,9 @@
         {{#unless transfer}}
             <div class="form-group">
                 <label>{{ localize "dae.LegacyApplication.Name" }}</label>
-                <input type="checkbox" name="flags.dae.legacyApplication" {{ checked source.flags.dae.legacyApplication }} />
+                <select name="flags.dae.applicationMode">
+                    {{selectOptions applicationModeOptions selected=applicationMode}}
+                </select>
                 <p class="hint">{{ localize "dae.LegacyApplication.Hint" }}</p>
             </div>
         {{/unless}}

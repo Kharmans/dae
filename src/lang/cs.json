@@ -290,8 +290,6 @@
   "dae.ShowDeprecation.Name": "Zobrazení chyb zastaralosti",
   "dae.ShowDeprecation.Hint": "Bude v konzoli zobrazovat chyby zastaralosti.",
   "dae.CE": "Convenient Effects",
-  "dae.ShowInline.Name": "Zobrazovat výsledky vnořených hodů?",
-  "dae.ShowInline.Hint": "Po zaškrtnutí budou efekty s vnořeným hodem zobrazovat výsledky hodu.",
   "dae.StackableOptions": {
     "noneName": "Efekty se nesčítají podle názvu efektu a původu efektu",
     "noneNameOnly": "Efekty se nesčítají podle názvu efektu",

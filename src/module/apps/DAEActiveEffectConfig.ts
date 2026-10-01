@@ -1,5 +1,5 @@
-import { ceInterface, daeSystemClass, getStatusEffectsArray, localizationMap, effectivePhase } from "../dae.js";
-import { i18n, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
+import { ceInterface, daeSystemClass, getStatusEffectsArray, localizationMap, effectivePhase, defaultApplicationMode } from "../dae.js";
+import { i18n, i18nFormat, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
 import { DAEChangeData, ValidSpec } from "../Systems/DAESystem.js";
 
 /*
@@ -255,6 +255,13 @@ export class DAEActiveEffectConfig extends SheetBase {
       context.isActorEffect = document.parent instanceof CONFIG.Actor.documentClass;
     }
     context.submitText = "EFFECT.Submit";
+    const worldMode = i18n(`dae.ApplicationMode.${defaultApplicationMode}`);
+    context.applicationModeOptions = {
+      "default": i18nFormat("dae.ApplicationMode.default", { mode: worldMode }),
+      "dnd5e": i18n("dae.ApplicationMode.dnd5e"),
+      "legacy": i18n("dae.ApplicationMode.legacy")
+    };
+    context.applicationMode = document.flags?.dae?.applicationMode ?? "default";
 
     foundry.utils.setProperty(context.document, "flags.dae.durationExpression", document.flags?.dae?.durationExpression);
     if (!context.document.flags?.dae?.specialDuration)
@@ -576,6 +583,8 @@ interface DAEActiveEffectConfigRenderContext extends foundry.applications.sheets
   stackableOptions?: Record<string, string>;
   showCombatActorOverride?: boolean;
   expiryModeOptions?: Record<string, string>;
+  applicationModeOptions?: Record<string, string>;
+  applicationMode?: string;
   isItemEffect?: boolean;
   isActorEffect?: boolean;
   submitText?: string;

@@ -17,7 +17,7 @@ Previously DAE filled **every** reference from the caster when the effect was ap
 
 **What to do.** An effect whose changes rely on the caster's values with Replacement left at None - for example `saveDC=@attributes.spell.dc` in an OverTime effect, or a bonus built from the caster's `@abilities` or `@scale` - now gets the target's values. Either:
 - set those changes' Replacement to **Origin** (the dnd5e 6 way), or
-- tick **Legacy DAE application** on the effect (DAE tab), or mark a whole item or compendium pack with "DAE: Effect application" on the item sheet or "DAE: Effects use legacy application" on the pack, to keep the old behaviour.
+- set the **Default effect application** world setting to Legacy DAE, set **Effect application** on the effect (DAE tab), or mark a whole item or compendium pack with "DAE: Effect application" on the item sheet or "DAE: Effects use legacy application" on the pack, to keep the old behaviour.
 
 Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ...) are filled from the caster; `##` still defers a reference to the target; transfer (passive) effects are not affected.
 
@@ -27,12 +27,18 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
 *ATL keys*
 * `ATL.*` change keys are converted to `token.*` when an effect is saved; the `atlCompatibility` setting and its four modes are gone. Foundry v14 handles `token.*` natively. An `ATL.*` key saved before this is not applied, and warns once. Detection-mode fields are offered as `token.detectionModes.<id>.range`.
 
+*Inline rolls and `dae.roll`*
+* The **Display results of inline rolls** setting is removed. `[[expr]]` in a change value now always posts its roll to chat; use `[[[expr]]]` to roll without a chat message. Effects using `[[expr]]` that relied on the setting being off (the default) should switch to `[[[expr]]]`.
+* `dae.roll(expr)` is deprecated: it becomes a silent inline roll, `[[[expr]]]`, when the effect is created or edited on an actor or an owned item. A `dae.roll` still reached when an actor is prepared counts as 0, as before.
+
 #### Changes you will notice
 
 **Applying effects**
-* Effects DAE applies follow dnd5e 6's per-change Replacement setting by default; the per-effect "Legacy DAE application" setting keeps DAE's old behaviour (see Breaking changes).
-* "DAE: Effect application" on item sheets, and "DAE: Effects use legacy/dnd5e application" on Item and Actor compendium packs, set that for every effect in the item or pack.
+* Inline rolls (`[[expr]]`) in a transfer effect are rolled when the item lands on an actor - created, dragged from another actor, or duplicated - and when the formula is edited. The formula stays in the effect, so dragging the item to another actor rolls again; previously a transfer effect's inline roll was not rolled until the effect was edited, and then replaced its formula.
+* Effects DAE applies follow dnd5e 6's per-change Replacement setting by default. The "Default effect application" world setting chooses dnd5e or Legacy DAE; an effect's "Effect application" (World default, dnd5e, Legacy DAE) overrides it (see Breaking changes).
+* "DAE: Effect application" on item sheets, and "DAE: Effects use legacy/dnd5e/world default application" on Item and Actor compendium packs, set that for every effect in the item or pack.
 * dnd5e's own Apply button recognises effects DAE applied, so applying one again refreshes it rather than adding a copy.
+* `@UUID[...]` links in a legacy-application effect applied to an actor are kept; they came out as `0[...]`.
 * `@activity` references in a legacy-application effect (e.g. `saveDC=@activity.save.dc.value` in an OverTime effect) are filled from the activity; they came out as 0.
 * Per-change conditions on an effect change, and effect-level condition suppression, are honoured.
 * Macros, `StatusEffect` and Convenient Effects changes are undone when their effect is suppressed, e.g. by unequipping the item; the work used to stay in place.
@@ -57,6 +63,8 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
 * Migrating deprecated special durations no longer discards the ones `duration.expiry` cannot express; the rest stay on `flags.dae.specialDuration` and keep warning. An expiry the author set explicitly is not overwritten.
 
 **Values and bonuses**
+* The attack, damage and ability bonus paths dnd5e 6 moved to `system.rolls` (`bonuses.mwak.damage`, `bonuses.abilities.save` and the like) read through again, in formulas, roll data and on the actor, with dnd5e's deprecation warning. dnd5e 6 skips these aliases because their parent objects were removed; DAE supplies them until dnd5e does.
+* A numeric flag or `dae.eval(...)` on an item's effect can use `@item` and `@scaling`; they resolved to 0.
 * `@stackCount` resolves at every occurrence in a change value, not just the first.
 * Arithmetic in a numeric flag's value is evaluated (`floor(@details.level/2)` no longer becomes 0). Formula-valued flags such as midi optional bonuses keep their string.
 * `##field` deferral restores every occurrence in a value, not just the first, and also works for effects dnd5e applies itself (enchantments, chat-card apply, region behaviours).
@@ -69,7 +77,10 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
 #### Implementation details
 
 **Effect application**
-* `flags.dae.legacyApplication` holds the per-effect mode. `DAE.setLegacyApplication(itemOrActorOrEffectOrPack, legacy)` sets it for every effect in the target and returns the count; `DAE.usesLegacyApplication(effectData)` reports it.
+* DAE's `Roll.replaceFormulaData` patch only turns on core's `recursive` option (unless the caller passes one) and keeps `@Embed[...]`; its own three-pass loop is gone, it passes the caller's options on, and it no longer writes an `Embed` key into the caller's data. Nested references still resolve for core `Roll`s and dnd5e's origin/target replacement.
+* The numeric-flag and `dae.eval` paths in `daeApplyChange` resolve with the replacement data core passes, not a fresh `actor.getRollData()`.
+* A transfer effect's inline roll totals are stored in `flags.dae.inlineRolls` (`{key, value, totals}` per change) and substituted when the actor is prepared; a change with no stored totals uses 0. Items rolled on creation by wrapping `Item#_preCreate` (rerolls everything) and `Actor#_preCreate` (rolls only what was never rolled).
+* `flags.dae.applicationMode` (`default`/`dnd5e`/`legacy`) holds the per-effect mode; unset or `default` follows the `defaultApplicationMode` world setting. The applied copy records the mode it was applied with. `DAE.setApplicationMode(itemOrActorOrEffectOrPack, mode)` sets it for every effect in the target and returns the count; `DAE.applicationModeOf(effectData)` and `DAE.usesLegacyApplication(effectData)` report it.
 * In dnd5e mode a `target` change is filled per target on the applying client (GM path included) with dnd5e's `forApplication`; application facts are recorded in `flags.dae.applicationData` and supplied at preparation by a `getReplacementData` wrapper, and by `daeApplyChange` for formula fields, which dnd5e evaluates later from the actor's own roll data. The source item is read live, falling back to `flags.dae.itemData`.
 * Applied activity effects record their source as dnd5e 6 does: the source effect in `_stats.duplicateSource`/`compendiumSource`, and the activity, chat message and profile in `system.origin`. DAE's origin goes in as `system.origin.effect`, so the `origin` DAE and midi read is unchanged.
 * DAE still chooses the application phase, then delegates to the system, so `change.applied` is set; previously it returned without letting dnd5e run its checks.

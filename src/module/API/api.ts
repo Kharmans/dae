@@ -5,7 +5,7 @@ import { ActiveEffects } from '../apps/ActiveEffects.js';
 import { BooleanFormulaField, DAEActiveEffectConfig, addAutoFields, otherFieldsMap, registerFieldEditor } from '../apps/DAEActiveEffectConfig.js';
 import { DIMEditor } from '../apps/DIMEditor.js';
 import { DAEConditionBuilder } from '../apps/ConditionBuilder.js';
-import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets, localizationMap, getItemMacroCommand, allMacroEffects, macroDestination, setLegacyApplication, usesLegacyApplication } from '../dae.js';
+import { daeMacro, doEffects, daeSystemClass, actionQueue, actorFromUuid, doActivityEffects, DoEffectsOptions, DoEffectsTargets, localizationMap, getItemMacroCommand, allMacroEffects, macroDestination, usesLegacyApplication, setApplicationMode, applicationModeOf } from '../dae.js';
 import * as atlMigration from '../atlMigration.js';
 import * as daeModule from '../dae.js';
 import { ValidSpec, wildcardEffects } from '../Systems/DAESystem.js';
@@ -88,7 +88,8 @@ const API = {
   resolveWorldMacro,
   restoreVision,
   setFlag,
-  setLegacyApplication,
+  setApplicationMode,
+  applicationModeOf,
   setTileVisibility,
   setTokenFlag,
   setTokenVisibility,

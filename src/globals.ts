@@ -85,8 +85,10 @@ declare module "fvtt-types/configuration" {
         itemMacro?: string;
         itemUuid?: string;
         itemsToDelete?: string[];
-        /** Fill every `@` reference from the caster when the effect is applied - DAE's behaviour before dnd5e 6 */
-        legacyApplication?: boolean;
+        /** How DAE fills `@` references when applying the effect; unset or "default" follows the world setting */
+        applicationMode?: "default" | "dnd5e" | "legacy";
+        /** A transfer effect's inline roll totals, rolled when it reached its actor (see lib/inlineRolls.ts) */
+        inlineRolls?: { key: string, value: string, totals: number[] }[];
         /** Set when the effect was saved through the DAE editor: every change's `phase` is explicitly
          *  authored, so `change.phase` is authoritative at apply time (even an explicit "initial"). */
         phaseStamped?: boolean;
@@ -143,7 +145,6 @@ declare module "fvtt-types/configuration" {
   interface SettingConfig {
     "dae.DependentConditions": boolean;
     "dae.noDupDamageMacro": boolean;
-    "dae.showInline": boolean;
     "dae.DAETitleBar": boolean;
     "dae.DIMETitleBar": boolean;
     "dae.DAEColorTitleBar": boolean;
@@ -154,6 +155,7 @@ declare module "fvtt-types/configuration" {
     "dae.initMacrosOnLoad": boolean;
     "dae.expireRoundEffectsOnCombatEnd": boolean;
     "dae.expiryAction": string;
+    "dae.defaultApplicationMode": "dnd5e" | "legacy";
     "dae.coreExpiryAction": string;
     "dae.enableAutoMigration": boolean;
     "dae.migrationVersion": string;
