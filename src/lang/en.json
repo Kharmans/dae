@@ -398,6 +398,8 @@
   "dae.ShowIcon.Hint": "Display the effect Icon on the token and combat display",
   "dae.DontApply.Name": "Don't apply the effect",
   "dae.DontApply.Hint": "When Dae (and midi) applies active effects, skip this one",
+  "dae.DiceValue.Converted": "Dice changed to a silent inline roll ([[[...]]]): a number field cannot roll dice each time the actor is prepared, so it is rolled once - when the effect is applied, or for a passive effect when its item reaches an actor.",
+  "dae.DiceValue.Unfixable": "A number field cannot roll dice when the actor is prepared, so this change will be skipped. Put the dice in an inline roll, [[...]], to roll it once.",
   "dae.LegacyApplication.Name": "Effect application",
   "dae.LegacyApplication.Hint": "Legacy DAE fills every @ reference from the caster when the effect is applied, as DAE did before dnd5e 6. dnd5e follows each change's Replacement setting: Origin from the caster, Target from the target, and none left to be worked out on the target. ## defers a reference to the target either way.",
   "dae.LegacyApplication.UseDefault": "World default",

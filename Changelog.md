@@ -48,6 +48,8 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
 * An effect that inherits its duration from the activity or item also expires with world time, not only on the round tick.
 
 **Effect sheet**
+* An effect on an item (other than an enchantment) gets the actor field list again; the sheet reported "No valid specs found" and offered no keys.
+* In the change dialog, bare dice in a number field (e.g. `+1d8` on an ability score) are changed to a silent inline roll, `+[[[1d8]]]`, with a note saying so: core skips dice in a number field, so they are rolled once instead - when the effect is applied, or for a passive effect when its item reaches an actor. Only the dice term is wrapped, so references stay live. Dice the dialog cannot wrap, such as `(@details.level)d6`, are kept with a warning that the change will be skipped. Formula fields are untouched.
 * The effect sheet is dnd5e's own, with a DAE tab: the effect-level and per-change Conditions fields, its header and its changes UI are back.
 * Changes are edited in dnd5e's change dialog, with DAE's field browser, value lists and mode restriction added to it.
 * Condition builder: a button beside dnd5e's filter button on per-change and effect-level conditions opens a form of nested groups (All of, Any of, None of, Not all of, XOR) with comparison rows, path autocomplete, a common fields menu (statuses, creature, ability scores and modifiers, attributes, health, defences, level, and the item for item effects), value pickers from dnd5e's lists (statuses, creature types, sizes, damage types, spell schools...) and a live pass/fail on the actor. It writes dnd5e's filter JSON and declines conditions it cannot show.

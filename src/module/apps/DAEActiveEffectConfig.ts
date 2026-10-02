@@ -11,6 +11,7 @@ const DEFAULT_PHASE = "initial";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
 import { InputAutocomplete, referenceData, takesFormula, valueSuggestions } from "./ChangeAutocomplete.js";
 import { addConditionBuilderButtons } from "./ConditionBuilder.js";
+import { wrapBareDice } from "../lib/diceValues.js";
 
 export { BooleanFormulaField } from "./BooleanFormulaField.js";
 
@@ -747,8 +748,31 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
     field.after(btn);
   };
 
+  /*
+   * A number field cannot roll dice when the actor is prepared, so bare dice become a silent inline roll, rolled
+   * once (when applied, or when a passive effect's item reaches an actor). Formula fields keep their dice.
+   */
+  const checkDice = () => {
+    element.querySelector(".dae-dice-notice")?.remove();
+    const fieldType = validSpecsToUse.allSpecsObj[keyInput.value]?.fieldType;
+    const isNumber = fieldType instanceof foundry.data.fields.NumberField || typeof fieldType === "number";
+    if (!isNumber || typeSelect?.value === "custom" || valueField instanceof HTMLSelectElement) return;
+    const { value, state } = wrapBareDice(valueField.value);
+    if (!state) return;
+    valueField.value = value;
+    const notice = document.createElement("p");
+    notice.classList.add("hint", "dae-dice-notice");
+    notice.dataset.state = state;
+    notice.textContent = i18n(state === "converted" ? "dae.DiceValue.Converted" : "dae.DiceValue.Unfixable");
+    valueField.closest(".form-group")?.append(notice);
+  };
+
   refreshForKey();
-  keyInput.addEventListener("change", refreshForKey);
+  checkDice();
+  keyInput.addEventListener("change", () => { refreshForKey(); checkDice(); });
+  element.addEventListener("change", event => {
+    if ((event.target as HTMLElement | null)?.getAttribute("name") === "value") checkDice();
+  });
 });
 
 /** A form group matching the markup the system's dialog already uses. */
@@ -851,7 +875,8 @@ export function resolveValidFields(document: ActiveEffect.Implementation): {
   validSpecsToUse: { allSpecs: ValidSpec[]; allSpecsObj: Record<string, ValidSpec> };
   validFields: Record<string, { name: string, description?: string }>;
 } {
-  let validSpecsToUse: { allSpecs: ValidSpec[]; allSpecsObj: Record<string, ValidSpec> } | undefined;
+  // Item effects (transfer or applied) change an actor; actors and enchantments narrow this below.
+  let validSpecsToUse: { allSpecs: ValidSpec[]; allSpecsObj: Record<string, ValidSpec> } | undefined = ValidSpec.actorSpecs?.["union"];
   let validFields: Record<string, { name: string, description?: string }>;
     if (document.parent instanceof CONFIG.Actor.documentClass || document instanceof CONFIG.Actor.documentClass) {
       validSpecsToUse = ValidSpec.actorSpecs[document.parent?.type ?? ""]
