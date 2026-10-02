@@ -1,4 +1,4 @@
-import { allMacroEffects, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs, usesLegacyApplication } from "./dae.js";
+import { allMacroEffects, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs, usesLegacyApplication, syncDependents } from "./dae.js";
 import { resolveMacro } from "./lib/macroResolution.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
@@ -37,6 +37,7 @@ export let setupSocket = () => {
   socketlibSocket.register("deleteEffects", _deleteEffects);
   socketlibSocket.register("deleteUuid", _deleteUuid);
   socketlibSocket.register("suspendActiveEffect", _suspendActiveEffect);
+  socketlibSocket.register("syncDependents", _syncDependents);
   socketlibSocket.register("executeMacro", _executeMacro);
   socketlibSocket.register("createActorItem", _createActorItem);
   socketlibSocket.register("removeActorItem", _removeActorItem);
@@ -163,6 +164,14 @@ async function _suspendActiveEffect(data: { uuid: string }) {
   if (effect instanceof CONFIG.ActiveEffect.documentClass) {
     return effect.update({ disabled: true });
   }
+}
+
+/** For a user who owns the parent effect, bring its dependents into line with it. */
+async function _syncDependents(this: { socketdata?: { userId?: string } }, data: { uuid: string }) {
+  const user = game.users?.get(this?.socketdata?.userId ?? "");
+  const effect = fromUuidSync(data.uuid as MustBeValidUuid<string>);
+  if (!user || !(effect instanceof ActiveEffect) || !effect.testUserPermission(user, "OWNER")) return;
+  return syncDependents(effect);
 }
 
 async function _deleteUuid(data: { uuid: string }) {

@@ -106,6 +106,7 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
 * midi's special durations are no longer registered by DAE; midi registers them via `dae.addSpecialDurations`. DAE's list ran after the hook and overwrote midi's, which is how the misspelt concentration-failure entry reached the UI. DAE defines only system-agnostic entries.
 * The special-duration migration writes only the first expiry to `duration.expiry` (it holds one value). Core initialises `duration.expiry` to `turnStart` for any numeric duration, so only a differing value counts as authored.
 * Removed the dnd5e < 6.0 source/target pseudo-expiry port; 6.0 implements those natively.
+* Dependent effects (e.g. of concentration) follow their parent being disabled or suppressed when the parent's actor has no token on the scene, and when a player toggles their own effect whose dependents they cannot update (the GM updates those).
 
 **Removed**
 * The system-class dispatch: the `globalThis.daeSystems` registry, lookup by `game.system.id`, the `CONFIG.DAE.systemClass` fallback, and six base methods that existed only as override points. `DAESystemDND5E` extends `DAESystem` directly; `DAE.systemClass` exposes the active system class.
