@@ -926,6 +926,22 @@ function recordDisabledSuppressedHook(effect: ActiveEffect.Implementation, updat
   return true;
 }
 
+/**
+ * Dependent effects (e.g. of concentration) are disabled while their parent is disabled or suppressed.
+ * Those this user cannot update, such as a player's concentration dependents on enemies, are left to the GM.
+ */
+export async function syncDependents(effect: ActiveEffect.Implementation): Promise<void> {
+  const disabled = effect.disabled || effect.isSuppressed;
+  let forGM = false;
+  // @ts-expect-error no dnd5e-types
+  for (const dependent of effect.getDependents()) {
+    if (dependent.disabled === undefined || dependent.disabled === disabled) continue;
+    if (dependent.canUserModify(game.user, "update")) await dependent.update({ disabled });
+    else forGM = true;
+  }
+  if (forGM && !game.user?.isGM) await socketlibSocket.executeAsGM("syncDependents", { uuid: effect.uuid });
+}
+
 export function updateActiveEffectHook(
   effect: ActiveEffect.Implementation,
   updates: ActiveEffect.UpdateData,
@@ -976,6 +992,7 @@ export function updateActiveEffectHook(
   if (parent instanceof Actor) actor = parent;
   // if (effect.disabled === context.dae?.active?.disabled && effect.isSuppressed === context.dae?.active?.isSuppressed) return true;
   if (!actor) return true;
+  syncDependents(effect).catch(err => console.warn("dae | syncing dependents error", err));
   actionQueue.add(async () => {
     if (!actor) return;
     const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
@@ -1039,12 +1056,6 @@ export function updateActiveEffectHook(
       }
       if (changesToEnable.length > 0) {
         await processEffectChanges("on", actor, tokens, effect, undefined, changesToEnable, options);
-      }
-    }
-    // @ts-expect-error no dnd5e-types
-    for (let dependent of effect.getDependents()) {
-      if (dependent.disabled !== undefined && (dependent.disabled !== effect.disabled || dependent.isSuppressed !== effect.isSuppressed)) {
-        await dependent.update({ "disabled": effect.disabled || effect.isSuppressed });
       }
     }
   }).catch(err => {
