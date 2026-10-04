@@ -85,6 +85,10 @@ declare module "fvtt-types/configuration" {
         phaseStamped?: boolean;
         /** A transfer effect's inline roll totals, rolled when it reached its actor (see lib/inlineRolls.ts) */
         inlineRolls?: { key: string, value: string, totals: number[] }[];
+        /** Ids of max HP changes that also raise current HP when applied (see lib/currentHp.ts) */
+        raiseCurrentHp?: string[];
+        /** Disabled because its enableCondition is false (expiry mode "suppress"); enabled again when it holds */
+        disabledByCondition?: boolean;
         selfTarget?: boolean;
         selfTargetAlways?: boolean;
         /** @deprecated Use native ActiveEffect showIcon field instead */
@@ -101,6 +105,8 @@ declare module "fvtt-types/configuration" {
     }
     Actor: {
       dae?: {
+        /** Current HP raised by max HP changes, by effect and change id (see lib/currentHp.ts) */
+        hpGranted?: Record<string, number>;
         onUpdateTarget?: {
           flagName: string;
           macroName: string;

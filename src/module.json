@@ -96,8 +96,8 @@
     "css/field-browser.css"
   ],
   "compatibility": {
-    "minimum": "14.365",
-    "verified": "14.367",
+    "minimum": "14.368",
+    "verified": "14.368",
     "maximum": "14.999"
   },
   "url": "https://gitlab.com/tposney/dae",

@@ -1,4 +1,10 @@
 ### 14.0.15 (unreleased)
+* Requires Foundry 14.368 (verified 14.368).
+* Bare dice in a field worked out without dice when the actor is prepared - a number field, or a deterministic formula field such as `system.attributes.ac.bonus` or `system.attributes.hp.bonuses.overall` - become a silent inline roll (`+2d8` becomes `+[[[2d8]]]`) when an effect is created or edited on an actor or owned item, so they are rolled once instead of counting as 0. Roll-time formula fields keep their dice.
+* `system.attributes.hp.bonuses.overall` and `.level` are dnd5e's formula fields again; DAE had replaced them with a text field.
+* A max HP change whose id is listed in the effect's `flags.dae.raiseCurrentHp` also raises current HP by the same amount, once per effect, when it starts applying (effect created on a token's actor, item gained, or an unlinked NPC token placed with its hit points rolled). When it stops, current HP above the new maximum is lost; it never lowers current HP.
+* An effect whose `flags.dae.enableCondition` becomes false ends as an expired effect does: deleted, or under the *suppress* expiry mode disabled and enabled again when the condition holds.
+* Readme: a *Maximum hit points* section - which key to use for Aid-style bonuses, a character's calculated max, an NPC's rolled hit points, or a fixed max.
 * A `StatusEffect` change removes its condition when the change is deleted or edited, or its effect is disabled; the condition was left on the actor.
 * Macros, `StatusEffect` and Convenient Effects changes are undone when their effect is suppressed (e.g. unequipping the item) and redone when it is unsuppressed; the work stayed in place. Macros see `expiry-reason` `effect-suppressed` / `effect-unsuppressed`. This runs on one client: the active GM, or the actor's first active owner when no GM is connected. New hook `dae.suppressionChanged(effect, suppressed)`.
 * Breaking: the **Display results of inline rolls** setting is removed. `[[expr]]` in a change value always posts its roll to chat; `[[[expr]]]` rolls without a chat message. Effects using `[[expr]]` that relied on the setting being off (the default) should switch to `[[[expr]]]`.
