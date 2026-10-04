@@ -11,6 +11,17 @@ const UNWRAPPABLE = /\)\s*d\s*\d|\bd\s*[@(]/;
 
 export type DiceValueState = "converted" | "unfixable";
 
+/**
+ * Whether a change to this field type is worked out once, without dice, when the actor is prepared: number fields,
+ * and dnd5e formula fields marked deterministic (AC bonus, HP bonuses, spell DC). Roll-time formula fields keep
+ * their dice for the roll.
+ */
+export function cannotRollDice(fieldType: unknown): boolean {
+  if (fieldType instanceof foundry.data.fields.NumberField || typeof fieldType === "number") return true;
+  const FormulaField = globalThis.dnd5e?.dataModels?.fields?.FormulaField;
+  return !!FormulaField && fieldType instanceof FormulaField && !!(fieldType as { options?: { deterministic?: boolean } }).options?.deterministic;
+}
+
 export function wrapBareDice(value: string): { value: string, state?: DiceValueState } {
   if (!value || value.includes("dae.eval(") || value.includes("dae.roll(")) return { value };
   let converted = false, unfixable = false;

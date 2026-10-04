@@ -96,7 +96,7 @@
     "css/field-browser.css"
   ],
   "compatibility": {
-    "minimum": "14.365",
+    "minimum": "14.368",
     "verified": "14.368",
     "maximum": "14.999"
   },
@@ -127,7 +127,9 @@
         "id": "dnd5e",
         "type": "system",
         "compatibility": {
-          "minimum": "6.0.0"
+          "minimum": "6.0.0",
+          "verified": "6.0.5",
+          "maximum": "6.999"
         }
       }
     ]

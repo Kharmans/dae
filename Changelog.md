@@ -1,8 +1,8 @@
 ### 14.6.0 (dnd6 branch)
 
 **Requirements**
-* dnd5e 6.0 or later only: `module.json` declares a dnd5e 6.0.0 minimum, and support for every other system has been removed.
-* Minimum Foundry raised to 14.365, verified to 14.368.
+* dnd5e 6.x only: `module.json` declares dnd5e 6.0.0 to 6.999 (verified 6.0.5), and support for every other system has been removed.
+* Requires Foundry 14.368 (verified 14.368).
 
 **Breaking changes**
 
@@ -49,9 +49,13 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
 
 **Effect sheet**
 * An effect on an item (other than an enchantment) gets the actor field list again; the sheet reported "No valid specs found" and offered no keys.
-* In the change dialog, bare dice in a number field (e.g. `+1d8` on an ability score) are changed to a silent inline roll, `+[[[1d8]]]`, with a note saying so: core skips dice in a number field, so they are rolled once instead - when the effect is applied, or for a passive effect when its item reaches an actor. Only the dice term is wrapped, so references stay live. Dice the dialog cannot wrap, such as `(@details.level)d6`, are kept with a warning that the change will be skipped. Formula fields are untouched.
+* Bare dice in a field that is worked out without dice when the actor is prepared - a number field, or a deterministic formula field such as `system.attributes.ac.bonus` or `system.attributes.hp.bonuses.overall` - are changed to a silent inline roll (`+1d8` becomes `+[[[1d8]]]`), so they are rolled once: when an applied effect is created, or for a passive effect when its item reaches an actor. This happens in the change dialog (with a note saying so) and when an effect is created or edited on an actor or owned item, so stored values such as `+2d8` on max HP work too; previously they counted as 0. Only the dice term is wrapped, so references stay live. Dice that cannot be wrapped, such as `(@details.level)d6`, are kept with a warning. Roll-time formula fields (attack, damage, check and save bonuses) keep their dice.
+* New per-change option "Also raise current HP" for `system.attributes.hp.tempmax` and `system.attributes.hp.max` add changes (change dialog): when the change starts applying - the effect is created on a token's actor, or its item is gained - current HP rises by the same amount (an inline roll's rolled total), once per effect, so re-enabling or re-equipping does not heal again. When it stops applying, current HP above the new maximum is lost; damage taken meanwhile stands. It never lowers current HP. An unlinked NPC token placed with its hit points rolled (dnd5e's *Roll NPC hit points*) starts at the roll plus its marked bonuses.
+* Readme: a *Maximum hit points* section - `hp.tempmax` for any creature, `hp.bonuses.overall` for a character's calculated max, `hp.formula` for an NPC's rolled hit points, `hp.max` OVERRIDE for a fixed max; `hp.max` ADD replaces a calculated max.
+* `system.attributes.hp.bonuses.overall` and `.level` are dnd5e's formula fields again; DAE had replaced them with a text field. The change dialog notes on `system.attributes.hp.max` that a change there replaces a character's calculated max, and points to `hp.tempmax` (any creature, as dnd5e's Aid does), `hp.bonuses.overall` (a character's calculated max) and `hp.formula` (extra rolled hit points when an NPC token is placed).
 * The effect sheet is dnd5e's own, with a DAE tab: the effect-level and per-change Conditions fields, its header and its changes UI are back.
 * Changes are edited in dnd5e's change dialog, with DAE's field browser, value lists and mode restriction added to it.
+* The change value field offers `@` references when you click into it empty or press Ctrl+Space (with formula functions in a number or formula field), and notes under the field a reference no actor's data has (e.g. `@abilites.str.mod`) or, for a number or formula field, a value that is not a formula. Saving is not blocked; references that depend on the item, activity, classes, flags or the roll (`@item`, `@scale`, `@mod`, ...) and enricher links are not checked.
 * Condition builder: a button beside dnd5e's filter button on per-change and effect-level conditions opens a form of nested groups (All of, Any of, None of, Not all of, XOR) with comparison rows, path autocomplete, a common fields menu (statuses, creature, ability scores and modifiers, attributes, health, defences, level, and the item for item effects), value pickers from dnd5e's lists (statuses, creature types, sizes, damage types, spell schools...) and a live pass/fail on the actor. It writes dnd5e's filter JSON and declines conditions it cannot show.
 * Change keys and values autocomplete in Foundry's own menu: keys by category with their name and description; values complete `@` references a segment at a time, and formula functions for number and formula fields. The full-width field browser with category tabs is gone.
 * The change dialog offers the registered value editors (DIME for macros, midi's OverTime and condition editors), and edits macro source in a multi-line box that keeps its line breaks.
@@ -60,6 +64,7 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
 * Change modes are no longer restricted for fields with a value picker; v14 implements all six modes on Set fields, so only the default is set.
 
 **Special durations**
+* An effect whose `flags.dae.enableCondition` becomes false ends as an expired effect does: deleted, or under the *suppress* expiry mode (world setting, or the effect's own) disabled, and enabled again when the condition holds. An effect disabled by hand is not re-enabled.
 * Source/target start/end expiries are evaluated the way dnd5e 6.0 does.
 * A source/target end expiry no longer ends on the turn the effect was applied.
 * Source/target expiries keep their own value instead of being rewritten to `turnStart`/`turnEnd` with a fixed combatant.

@@ -9,9 +9,10 @@ import { DAEChangeData, ValidSpec } from "../Systems/DAESystem.js";
  */
 const DEFAULT_PHASE = "initial";
 import { DAEFieldBrowser } from "./FieldBrowser.js";
-import { InputAutocomplete, referenceData, takesFormula, valueSuggestions } from "./ChangeAutocomplete.js";
+import { InputAutocomplete, checkChangeValue, referenceData, takesFormula, valueSuggestions } from "./ChangeAutocomplete.js";
 import { addConditionBuilderButtons } from "./ConditionBuilder.js";
-import { wrapBareDice } from "../lib/diceValues.js";
+import { cannotRollDice, wrapBareDice } from "../lib/diceValues.js";
+import { isMaxHpKey } from "../lib/currentHp.js";
 
 export { BooleanFormulaField } from "./BooleanFormulaField.js";
 
@@ -720,8 +721,27 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
     if (!(next instanceof HTMLSelectElement) && !completers.has(next)) {
       const field = next;
       const completer: InputAutocomplete = new InputAutocomplete(field,
-        valueSuggestions(() => completer, data, completionMode));
+        valueSuggestions(() => completer, data, completionMode), { openOnFocus: true });
       completers.set(field, completer);
+    }
+
+    element.querySelector(".dae-raise-hp")?.closest(".form-group")?.remove();
+    if (isMaxHpKey(key) && change?._id) {
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.name = "daeRaiseCurrentHp";
+      box.classList.add("dae-raise-hp");
+      const ids = foundry.utils.getProperty(effect, "flags.dae.raiseCurrentHp");
+      box.checked = Array.isArray(ids) && ids.includes(change._id);
+      element.querySelector("fieldset")?.append(daeFormGroup(i18n("dae.RaiseCurrentHp.Label"), box, i18n("dae.RaiseCurrentHp.Hint")));
+    }
+
+    element.querySelector(".dae-key-note")?.remove();
+    if (key === "system.attributes.hp.max") {
+      const note = document.createElement("p");
+      note.classList.add("hint", "dae-key-note");
+      note.textContent = i18n("dae.HpMaxNote");
+      keyInput.closest(".form-group")?.append(note);
     }
 
     element.querySelector(".dae-edit-value")?.remove();
@@ -749,14 +769,14 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
   };
 
   /*
-   * A number field cannot roll dice when the actor is prepared, so bare dice become a silent inline roll, rolled
-   * once (when applied, or when a passive effect's item reaches an actor). Formula fields keep their dice.
+   * A field worked out without dice when the actor is prepared (cannotRollDice) has its bare dice made a silent
+   * inline roll, rolled once (when applied, or when a passive effect's item reaches an actor). Roll-time formula
+   * fields keep their dice.
    */
   const checkDice = () => {
     element.querySelector(".dae-dice-notice")?.remove();
-    const fieldType = validSpecsToUse.allSpecsObj[keyInput.value]?.fieldType;
-    const isNumber = fieldType instanceof foundry.data.fields.NumberField || typeof fieldType === "number";
-    if (!isNumber || typeSelect?.value === "custom" || valueField instanceof HTMLSelectElement) return;
+    if (!cannotRollDice(validSpecsToUse.allSpecsObj[keyInput.value]?.fieldType)
+      || typeSelect?.value === "custom" || valueField instanceof HTMLSelectElement) return;
     const { value, state } = wrapBareDice(valueField.value);
     if (!state) return;
     valueField.value = value;
@@ -767,11 +787,45 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
     valueField.closest(".form-group")?.append(notice);
   };
 
+  /** Unknown references and broken formulas, shown under the field; saving is not blocked. */
+  const checkValue = () => {
+    element.querySelector(".dae-value-check")?.remove();
+    if (valueField instanceof HTMLSelectElement) return;
+    // An unknown key is offered formula completions, but is only held to a formula when its field is known to take one.
+    const mode = completionMode();
+    const knownField = validSpecsToUse.allSpecsObj[keyInput.value]?.fieldType !== undefined;
+    const problem = checkChangeValue(valueField.value, data, mode === "formula" && !knownField ? "references" : mode);
+    if (!problem) return;
+    const notice = document.createElement("p");
+    notice.classList.add("hint", "dae-value-check");
+    notice.dataset.state = problem.state;
+    const parts: string[] = [];
+    if (problem.unknown.length) parts.push(i18nFormat("dae.ValueCheck.UnknownReference", { refs: problem.unknown.join(", ") }));
+    if (problem.invalidFormula) parts.push(i18n("dae.ValueCheck.InvalidFormula"));
+    notice.textContent = parts.join(" ");
+    valueField.closest(".form-group")?.append(notice);
+  };
+
+  // "Raise current HP" is not a change field: it is kept on the effect, by change id.
+  element.addEventListener("submit", () => {
+    const id = change?._id;
+    if (!id) return;
+    const ids = new Set<string>((foundry.utils.getProperty(effect, "flags.dae.raiseCurrentHp") as string[] | undefined) ?? []);
+    const wanted = isMaxHpKey(keyInput.value) && !!element.querySelector<HTMLInputElement>('input[name="daeRaiseCurrentHp"]')?.checked;
+    if (wanted === ids.has(id)) return;
+    if (wanted) ids.add(id);
+    else ids.delete(id);
+    effect.setFlag("dae", "raiseCurrentHp", [...ids]).catch(err => error("dae | saving raise current HP", err));
+  }, { capture: true });
+
   refreshForKey();
   checkDice();
-  keyInput.addEventListener("change", () => { refreshForKey(); checkDice(); });
+  checkValue();
+  keyInput.addEventListener("change", () => { refreshForKey(); checkDice(); checkValue(); });
   element.addEventListener("change", event => {
-    if ((event.target as HTMLElement | null)?.getAttribute("name") === "value") checkDice();
+    if ((event.target as HTMLElement | null)?.getAttribute("name") !== "value") return;
+    checkDice();
+    checkValue();
   });
 });
 

@@ -1,4 +1,6 @@
 import type { AnyMutableObject, AnyObject } from "fvtt-types/utils";
+import { ValidSpec } from "../Systems/DAESystem.js";
+import { cannotRollDice, wrapBareDice } from "./diceValues.js";
 
 /**
  * Inline rolls in change values: `[[expr]]` is rolled once and posted to chat, `[[[expr]]]` is rolled without
@@ -14,6 +16,16 @@ export interface InlineRollRecord { key: string; value: string; totals: number[]
 
 export function hasInlineRoll(value: unknown): value is string {
   return typeof value === "string" && value.includes("[[") && [...value.matchAll(INLINE_RE)].some(m => !m[1]);
+}
+
+/**
+ * A change value made ready to roll when its effect reaches an actor: `dae.roll(expr)`, and bare dice in a field
+ * worked out without dice when the actor is prepared (see cannotRollDice), become silent inline rolls.
+ */
+export function convertChangeValue(change: { key?: string, type?: string, value?: unknown }, where: string): unknown {
+  const value = convertDaeRoll(change.value, where);
+  if (typeof value !== "string" || change.type === "custom" || !change.key) return value;
+  return cannotRollDice(ValidSpec.actorSpecs?.union?.allSpecsObj?.[change.key]?.fieldType) ? wrapBareDice(value).value : value;
 }
 
 /** Deprecated `dae.roll(expr)` becomes a silent inline roll, `[[[expr]]]`. */
@@ -74,7 +86,7 @@ export async function rollEffectSource(effect: AnyMutableObject, actor: Actor.Im
   const changes: AnyMutableObject[] = (effect.system as AnyMutableObject)?.changes as AnyMutableObject[] ?? [];
   let changed = false;
   for (const change of changes) {
-    const value = convertDaeRoll(change.value, `${effect.name}`);
+    const value = convertChangeValue(change, `${effect.name}`);
     if (value !== change.value) { change.value = value; changed = true; }
   }
   const previous: InlineRollRecord[] = foundry.utils.getProperty(effect, "flags.dae.inlineRolls") as InlineRollRecord[] ?? [];

@@ -6,7 +6,10 @@ export interface Suggestions {
   apply(identifier: string): void;
 }
 
-/** Drives Foundry's autocomplete menu from a text field. */
+/**
+ * Drives Foundry's autocomplete menu from a text field. `forced` is true when the user asked for suggestions
+ * (Ctrl+Space, or focusing an empty field with `openOnFocus`) rather than typed a trigger.
+ */
 export class InputAutocomplete {
   #menu: AutocompleteMenu;
   #apply?: (identifier: string) => void;
@@ -14,7 +17,8 @@ export class InputAutocomplete {
 
   constructor(
     readonly field: HTMLInputElement | HTMLTextAreaElement,
-    private suggest: (field: HTMLInputElement | HTMLTextAreaElement) => Suggestions | undefined
+    private suggest: (field: HTMLInputElement | HTMLTextAreaElement, forced: boolean) => Suggestions | undefined,
+    { openOnFocus = false }: { openOnFocus?: boolean } = {}
   ) {
     const { Autocomplete } = foundry.applications.ux as unknown as { Autocomplete: AutocompleteStatic };
     this.#menu = new Autocomplete.implementation({
@@ -25,10 +29,16 @@ export class InputAutocomplete {
     });
     field.addEventListener("input", () => this.refresh());
     field.addEventListener("blur", () => this.dismiss());
+    field.addEventListener("keydown", event => {
+      if (!(event instanceof KeyboardEvent) || !event.ctrlKey || event.code !== "Space") return;
+      event.preventDefault();
+      this.refresh(true);
+    });
+    if (openOnFocus) field.addEventListener("focus", () => { if (!field.value) this.refresh(true); });
   }
 
-  refresh(): void {
-    const suggestions = this.suggest(this.field);
+  refresh(forced = false): void {
+    const suggestions = this.suggest(this.field, forced);
     if (!suggestions?.entries.some(e => !e.disabled)) return this.dismiss();
     this.#apply = suggestions.apply;
     this.#menu.activate(this.field, suggestions.entries);
@@ -145,11 +155,15 @@ export function pathSuggestions(
   };
 }
 
-/** Suggestions for the text before the cursor in a change value: `@`/`##` paths, then formula functions. `mode` is read per keystroke, since the key can change while the field stays. */
+/**
+ * Suggestions for the text before the cursor in a change value: `@`/`##` paths, then formula functions. When asked
+ * for (`forced`) the `@` roots are offered too, with the functions in a formula field. `mode` is read per keystroke,
+ * since the key can change while the field stays.
+ */
 export function valueSuggestions(
   completer: () => InputAutocomplete, data: Record<string, unknown>, mode: () => "none" | "references" | "formula"
-): (field: HTMLInputElement | HTMLTextAreaElement) => Suggestions | undefined {
-  return field => {
+): (field: HTMLInputElement | HTMLTextAreaElement, forced: boolean) => Suggestions | undefined {
+  return (field, forced) => {
     const current = mode();
     if (current === "none") return undefined;
     const cursor = field.selectionStart ?? field.value.length;
@@ -158,13 +172,66 @@ export function valueSuggestions(
     const reference = before.match(REFERENCE);
     if (reference) return completePath(field, cursor, reference[2], data, completer);
 
-    if (current !== "formula") return undefined;
-    const word = before.match(WORD)?.[1];
-    if (!word) return undefined;
-    const names = MATH_FUNCTIONS.filter(name => name.startsWith(word) && name !== word);
+    const word = before.match(WORD)?.[1] ?? "";
+    if (!forced && (current !== "formula" || !word)) return undefined;
+    const roots = forced
+      ? Object.keys(data).filter(name => name.startsWith(word)).sort().slice(0, MAX_ENTRIES)
+      : [];
+    const functions = current === "formula"
+      ? MATH_FUNCTIONS.filter(name => name.startsWith(word) && name !== word)
+      : [];
     return {
-      entries: names.map(name => ({ identifier: name, label: `${name}()` })),
-      apply: name => insert(field, cursor - word.length, cursor, `${name}(`)
+      entries: [
+        ...roots.map(name => ({ identifier: `@${name}`, label: isBranch(data[name]) ? `@${name}.` : `@${name}` })),
+        ...functions.map(name => ({ identifier: name, label: `${name}()` }))
+      ],
+      apply: identifier => {
+        if (!identifier.startsWith("@")) return insert(field, cursor - word.length, cursor, `${identifier}(`);
+        const more = isBranch(data[identifier.slice(1)]);
+        insert(field, cursor - word.length, cursor, more ? `${identifier}.` : identifier);
+        if (more) completer().refreshAfterCommit();
+      }
     };
   };
+}
+
+let sampleNpc: object | undefined;
+
+/** Roll data from an unsaved NPC, so NPC-only references (`@details.cr`) are known on any effect. */
+function sampleNpcData(): object {
+  // @ts-expect-error no dnd5e-types
+  sampleNpc ??= new CONFIG.Actor.documentClass({ name: "DAE sample", type: "npc" }).getRollData();
+  return sampleNpc;
+}
+
+/**
+ * Roots whose contents depend on the item, activity, classes or flags in play, or (`mod`) exist only while dnd5e
+ * makes the roll, so an absent path proves nothing.
+ */
+const UNCHECKED_ROOTS = new Set(["item", "activity", "scale", "classes", "flags", "mod"]);
+const ANY_REFERENCE = /(?:@|##)([\w-]+(?:\.[\w-]+)*)/g;
+const INLINE_ROLL = /\[\[\[?[\s\S]*?\]?\]\]/g;
+
+/**
+ * Problems with a change value worth telling the author about: `@`/`##` references that no actor's data has, and,
+ * in a number or formula field, a value that is not a formula. Checked against `data` (the effect's own actor or
+ * item) and a sample character and NPC, since the value may be filled from another creature.
+ */
+export function checkChangeValue(
+  value: string, data: Record<string, unknown>, mode: "none" | "references" | "formula"
+): { state: "error", unknown: string[], invalidFormula: boolean } | undefined {
+  if (mode === "none" || !value.trim()) return undefined;
+  const sources = [data, sampleActorData(), sampleNpcData()];
+  const unknown = [...value.matchAll(ANY_REFERENCE)]
+    // `@UUID[...]`, `@Embed[...]` and other enrichers are links, not references.
+    .filter(match => value[match.index + match[0].length] !== "[")
+    .filter(([, path]) => !UNCHECKED_ROOTS.has(path.split(".")[0])
+      && !sources.some(source => foundry.utils.getProperty(source, path) !== undefined))
+    .map(([reference]) => reference);
+  let invalidFormula = false;
+  if (mode === "formula" && !value.includes("dae.")) {
+    const formula = value.replace(INLINE_ROLL, "1").replace(ANY_REFERENCE, "1");
+    invalidFormula = !!formula.trim() && !Roll.validate(formula);
+  }
+  return unknown.length || invalidFormula ? { state: "error", unknown, invalidFormula } : undefined;
 }

@@ -4,6 +4,7 @@ import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn
 import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
 import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive, usesLegacyApplication } from "../dae.js";
 import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
+import { grantOnRolledPlacement } from "../lib/currentHp.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField, SetField } = foundry.data.fields;
 
@@ -313,8 +314,6 @@ export class DAESystemDND5E extends DAESystem {
       // Only through midi can check activities deal damage
       if (midiActive) baseValues["system.bonuses.check.damage"] = [new StringField(), ""];
     }
-    baseValues["system.attributes.hp.bonuses.overall"] = [new StringField(), ""];
-    baseValues["system.attributes.hp.bonuses.level"] = [new StringField(), ""];
     // Don't do anything with system.attributes.hp.max - it will be set by parsing the actor schema
     if (!baseValues["system.attributes.hd.max"] && actorType === "npc") baseValues["system.attributes.hd.max"] = [new NumberField(), ""];
     const actorModelSchemaFields = this.getActorDataModelFields(actorType);
@@ -574,6 +573,7 @@ export class DAESystemDND5E extends DAESystem {
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
     // done here as it references some .system data
     Hooks.on("preUpdateItem", preUpdateItemHook);
+    Hooks.on("preCreateToken", (token: TokenDocument.Implementation, _data: unknown, options: AnyObject) => grantOnRolledPlacement(token, options));
     this.configureLists();
     const hookName = game.modules.get("babel")?.active ? "babel.ready" : "ready";
     Hooks.once(hookName, () => { this.configureLists(); });

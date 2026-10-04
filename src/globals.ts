@@ -89,6 +89,10 @@ declare module "fvtt-types/configuration" {
         applicationMode?: "default" | "dnd5e" | "legacy";
         /** A transfer effect's inline roll totals, rolled when it reached its actor (see lib/inlineRolls.ts) */
         inlineRolls?: { key: string, value: string, totals: number[] }[];
+        /** Ids of max HP changes that also raise current HP when applied (see lib/currentHp.ts) */
+        raiseCurrentHp?: string[];
+        /** Disabled because its enableCondition is false (expiry mode "suppress"); enabled again when it holds */
+        disabledByCondition?: boolean;
         /** Set when the effect was saved through the DAE editor: every change's `phase` is explicitly
          *  authored, so `change.phase` is authoritative at apply time (even an explicit "initial"). */
         phaseStamped?: boolean;
@@ -108,6 +112,8 @@ declare module "fvtt-types/configuration" {
     }
     Actor: {
       dae?: {
+        /** Current HP raised by max HP changes, by effect and change id (see lib/currentHp.ts) */
+        hpGranted?: Record<string, number>;
         onUpdateTarget?: {
           flagName: string;
           macroName: string;

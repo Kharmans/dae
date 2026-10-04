@@ -14,7 +14,8 @@ import { registerChangeHandler, getChangeHandler, isRegisteredMacroKey, getChang
 import { filterEffectsForTargeting } from "./lib/effectFiltering.js";
 import { handleExistingEffects, handleStackIncrement } from "./lib/stackingPolicy.js";
 import { rewriteAtlChanges } from "./atlMigration.js";
-import { convertDaeRoll, hasInlineRoll, resolveInlineRolls, rollEffectSource, rollInline, rollItemSource, type InlineRollRecord } from "./lib/inlineRolls.js";
+import { applyCurrentHp, raisesCurrentHp } from "./lib/currentHp.js";
+import { convertChangeValue, hasInlineRoll, resolveInlineRolls, rollEffectSource, rollInline, rollItemSource, type InlineRollRecord } from "./lib/inlineRolls.js";
 
 const { SchemaField } = foundry.data.fields;
 
@@ -317,7 +318,7 @@ function scheduleSuppressionChange(
       Hooks.callAll("dae.suppressionChanged", effect, suppressed);
       // @ts-expect-error v14 effect.system.changes
       const changes = (effect.system?.changes ?? []) as ActiveEffect.ChangeData[];
-      const sideEffecting = changes.filter(c => c.key && getChangeHandler(c.key));
+      const sideEffecting = changes.filter(c => c.key && (getChangeHandler(c.key) || raisesCurrentHp(effect, c)));
       if (sideEffecting.length === 0) return;
       const tokens = actor.isToken ? [actor.token?.object] : actor.getActiveTokens();
       await processEffectChanges(suppressed ? "off" : "on", actor, tokens as any, effect, undefined,
@@ -842,7 +843,7 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
       let newChanges: any = [];
       debug("dae _preCreate changes input:", JSON.stringify(this.system.changes.map(c => ({key: c.key, value: c.value}))));
       for (let change of this.system.changes) {
-        const converted = convertDaeRoll(change.value, `${this.name} (${this.uuid})`);
+        const converted = convertChangeValue(change, `${this.name} (${this.uuid})`);
         if (converted !== change.value) {
           change.value = converted;
           changesChanged = true;
@@ -1811,6 +1812,7 @@ export async function processEffectChanges(
       await handler[action](handlerCtx);
     }
   }
+  await applyCurrentHp(action, actor, effect, changes, context);
   // Batch macro change keys through daeMacro
   if (changes.some(c => isRegisteredMacroKey(c.key))) {
     if (debugEnabled > 0) warn(`processEffectChanges daeMacro ${action}`, actionQueue.remaining);
@@ -2262,7 +2264,7 @@ export function daeInitActions() {
         const effectiveChanges: AnyMutableObject[] = foundry.utils.deepClone(changed.system?.changes ?? this.system?.changes ?? []);
         let anyResolved = false;
         for (const change of effectiveChanges) {
-          const value = convertDaeRoll(change.value, `${this.name} (${this.uuid})`);
+          const value = convertChangeValue(change, `${this.name} (${this.uuid})`);
           if (hasInlineRoll(value)) change.value = await rollInline(value, parent, this.name);
           else if (value === change.value) continue;
           else change.value = value;
@@ -2972,23 +2974,35 @@ export async function processConditionalEffects(actor: Actor.Implementation, upd
   }
 
 
+  /*
+   * An effect whose enableCondition is false ends as an expired effect does (resolveEffectExpiryAction): deleted, or
+   * disabled under "suppress". One disabled that way is enabled again when its condition holds; one disabled by hand
+   * is left alone.
+   */
   const idsToDelete: string[] = [];
+  const effectUpdates: ActiveEffect.UpdateData[] = [];
   for (let effect of actor.effects) {
     let condition = effect?.flags?.dae?.enableCondition;
-    if (condition) {
-      // add other things to rollData
-      rollData.combat = game.combat;
-      rollData.time = game.time;
-      rollData.effect = effect.toObject();
-      const expression = Roll.replaceFormulaData(condition, rollData);
-      const result = daeSystemClass.safeEval(expression, rollData);
-      if (!result) {
-        idsToDelete.push(effect.id!);
-      }
+    if (!condition) continue;
+    // add other things to rollData
+    rollData.combat = game.combat;
+    rollData.time = game.time;
+    rollData.effect = effect.toObject();
+    const expression = Roll.replaceFormulaData(condition, rollData);
+    const result = daeSystemClass.safeEval(expression, rollData);
+    const disabledByCondition = !!effect.flags?.dae?.disabledByCondition;
+    if (!result) {
+      if (resolveEffectExpiryAction(effect) === "delete") idsToDelete.push(effect.id!);
+      else if (!effect.disabled) effectUpdates.push({ _id: effect.id!, disabled: true, flags: { dae: { disabledByCondition: true } } });
+    } else if (effect.disabled && disabledByCondition) {
+      effectUpdates.push({ _id: effect.id!, disabled: false, flags: { dae: { disabledByCondition: false } } });
     }
   }
   if (idsToDelete.length > 0) {
     await actor.deleteEmbeddedDocuments("ActiveEffect", idsToDelete);
+  }
+  if (effectUpdates.length > 0) {
+    await actor.updateEmbeddedDocuments("ActiveEffect", effectUpdates);
   }
 
   for (let effect of actor.allApplicableEffects()) {

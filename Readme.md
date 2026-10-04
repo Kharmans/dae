@@ -158,16 +158,16 @@ Additionally, there is a priority that can be given to each change within an eff
   * `UPGRADE:   40`
   * `OVERRIDE:  50`
 So if an actor has the following changes,
-`system.attributes.hp.max ADD 10`
-`system.attributes.hp.max OVERRIDE 20`
-then with default priorities hp.max will be 20, since overrides comes after ADD. If priorities are assigned `system.attributes.hp.max  ADD 10        Priority:100`
-`system.attributes.hp.max  OVERRIDE 20   Priority:10`
-hp.max will become 30.
+`system.abilities.str.value ADD 2`
+`system.abilities.str.value OVERRIDE 19`
+then with default priorities strength will be 19, since overrides comes after ADD. If priorities are assigned `system.abilities.str.value  ADD 2        Priority:100`
+`system.abilities.str.value  OVERRIDE 19   Priority:10`
+strength will become 21.
 
 DAE allows you to use expressions as well as fixed values. So for example you could have the following
-`system.attributes.hp.max ADD "@classes.paladin.levels * @abilities.con.mod"   Priority:100`
-`system.attributes.hp.max OVERRIDE "10 + 5 + 6 + 10"   Priority:10`
-hp.max will be set to `31 + con.mod * paladin levels`
+`system.abilities.str.value ADD "@classes.barbarian.levels"   Priority:100`
+`system.abilities.str.value OVERRIDE "15"   Priority:10`
+strength will be set to `15 + barbarian levels`
 
 **Roll once expressions**
 
@@ -181,6 +181,23 @@ When the effect is applied to the actor the expression inside `[[]]` will be eva
 * Recognizing what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
 
 DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated.
+
+### Maximum hit points
+
+dnd5e calculates a character's maximum hit points (class hit dice, Constitution, `system.attributes.hp.bonuses`) unless the character has a fixed maximum. NPCs and vehicles store their maximum. Which key to use:
+
+| To | Use |
+|---|---|
+| Raise max HP on any creature, e.g. Aid | `system.attributes.hp.tempmax` ADD |
+| Raise a character's calculated max HP, e.g. Tough | `system.attributes.hp.bonuses.overall` ADD (or `hp.bonuses.level`, per level) |
+| Give an NPC extra hit points when its token is placed | `system.attributes.hp.formula` ADD, e.g. `+ 2d8`, rolled into max and current HP by dnd5e's *Roll NPC hit points* setting (unlinked tokens) |
+| Set a fixed maximum | `system.attributes.hp.max` OVERRIDE |
+
+`system.attributes.hp.max` ADD is not a bonus: on a character whose maximum is calculated it replaces the calculated value (12 + 5 becomes 5). Use the keys above instead.
+
+**Also raise current HP.** A change of `hp.tempmax` (or `hp.max`) ADD can also raise current HP by the same amount; tick *Also raise current HP* in the change dialog. Current HP rises once, when the change starts applying: the effect is created on an actor with a token on the scene, its item is gained, or an unlinked NPC token is placed with its hit points rolled (current HP is then the roll plus the bonus). Disabling and re-enabling the effect, or unequipping and re-equipping its item, does not raise it again. When the change stops applying, current HP above the new maximum is lost; damage taken meanwhile stands. Current HP is never lowered by the grant.
+
+Dice in these fields (e.g. `+2d8` on `hp.tempmax`) are rolled once: when an applied effect is created, or when a passive effect's item reaches an actor. Every token of a sidebar NPC shares that roll; for a bonus rolled per token, use `hp.formula`.
 
 ### Argument Evaluation
 
@@ -226,10 +243,13 @@ Fields that have a mode specified below means that ONLY that mode is supported f
 | `system.attributes.encumbrance.max`          	|            	| 	|
 | `system.attributes.exhaustion`          	|            	| 	|
 | `system.attributes.hd` 	| 	| Hit dice modifier	|
-| `system.attributes.hp.max`              	|            	| 	|
+| `system.attributes.hp.max`              	|            	| Not a bonus: replaces a calculated max (see Maximum hit points)	|
 | `system.attributes.hp.min`              	|            	| 	|
 | `system.attributes.hp.temp`          	|            	| 	|
-| `system.attributes.hp.tempmax`          	|            	| 	|
+| `system.attributes.hp.bonuses.level`          	|            	| Per-level bonus to a character's calculated max	|
+| `system.attributes.hp.bonuses.overall`          	|            	| Bonus to a character's calculated max	|
+| `system.attributes.hp.formula`          	|            	| NPC hit point roll formula (rolled when an unlinked token is placed)	|
+| `system.attributes.hp.tempmax`          	|            	| Raises max HP on any creature; can also raise current HP	|
 | `system.attributes.hp.value`          	|            	| 	|
 | `system.attributes.init.bonus`          	|            	| 	|
 | `system.attributes.init.mod`          	|            	| 	|
