@@ -1,4 +1,4 @@
-### 14.0.15 (unreleased)
+### 14.0.15
 * Requires Foundry 14.368 (verified 14.368).
 * Bare dice in a field worked out without dice when the actor is prepared - a number field, or a deterministic formula field such as `system.attributes.ac.bonus` or `system.attributes.hp.bonuses.overall` - become a silent inline roll (`+2d8` becomes `+[[[2d8]]]`) when an effect is created or edited on an actor or owned item, so they are rolled once instead of counting as 0. Roll-time formula fields keep their dice.
 * `system.attributes.hp.bonuses.overall` and `.level` are dnd5e's formula fields again; DAE had replaced them with a text field.
