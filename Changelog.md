@@ -1,3 +1,8 @@
+### 13.0.30
+* A `StatusEffect` change removes its condition when its effect is disabled or its item unequipped; the condition stayed on the actor until the effect or item was deleted.
+* Re-enabling or re-equipping an item's transfer effect restores its token magic, status effect and Convenient Effects changes; they came off and never went back on.
+* Verified with dnd5e 5.3.3.
+
 ### 13.0.29
 * Harden item spec building - spec generation for one item type can no longer break others (fixes effect-editor errors with the latest Chrome update).
 * Enchantment effect configs fall back to union specs and render degraded instead of erroring when specs are missing.

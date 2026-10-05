@@ -454,9 +454,31 @@ export async function removeConditionChange(actor: Actor.Implementation, change:
     const effectId = change.value.replace("zce-", "ce-");
     return await ceInterface?.removeEffect({ effectId, uuid: actor.uuid, origin: effect.uuid });
   }
-  const condition = actor.effects.find(ef => ef.origin === effect.uuid && ef.statuses.has(change.value));
-  // Effect will auto remove
-  // if (condition) await (actionQueue.add(actor.deleteEmbeddedDocuments.bind(actor), "ActiveEffect", [condition.id]));
+  /*
+   * Remove the condition document this change created.
+   *
+   * Skipped when the parent is being deleted: addConditionChange links the condition with
+   * flags.dnd5e.dependentOn, and dnd5e deletes dependents itself in _onDeleteOperation, so deleting
+   * here as well races it and throws "does not exist". That is the case the old
+   * "Effect will auto remove" comment described — it just was not true for the other ways an
+   * effect stops applying (change removed, disabled, suppressed), which is why those leaked.
+   * removeCreateItemChange already guards on the same two context flags.
+   */
+  if (context.effectDeleted || context.itemDeleted) return;
+  /*
+   * Re-resolve at execution time rather than capturing an id. Condition documents use a static id
+   * derived from the status (dnd5eprone000000), so an id captured now can name a *different*
+   * document by the time a queued task runs — deleting a condition some other effect has since
+   * applied. Matching on origin identifies the one this change actually created.
+   */
+  const find = () => actor.effects.find(ef => ef.origin === effect.uuid && ef.statuses.has(change.value));
+  if (!find()) return;
+  try {
+    const current = find();
+    if (current?.id) await actor.deleteEmbeddedDocuments("ActiveEffect", [current.id]);
+  } catch (err) {
+    console.warn("dae | removeConditionChange | could not delete condition", change.value, err);
+  }
 }
 
 export async function addStatusEffectChange(actor: Actor.Implementation, change: ActiveEffect.ChangeData, tokens: foundry.canvas.placeables.Token.Implementation[], sourceEffect: ActiveEffect.Implementation, context: any = {}): Promise<ActiveEffect[] | boolean> {
@@ -1747,7 +1769,15 @@ export function addEffectChange(
   context: Item.Database.UpdateOperation
 ) {
   if (debugEnabled > 0) warn("addEffectChange ", actor, change, tokens, effectToApply)
-  const token = tokens[0];
+  // Mirror removeEffectChange: callers can pass an empty token list (the item-parented transfer
+  // effect branch of updateActiveEffectHook does), and without this every token-targeted change -
+  // macro.tokenMagic, StatusEffect, macro.CE - silently does nothing on re-enable while removal
+  // still works, so the effect comes off and never goes back on.
+  let token: foundry.canvas.placeables.Token | undefined = tokens[0];
+  if (!token) {
+    token = getToken(actor);
+    tokens = token ? [token] : [];
+  }
   switch (change.key) {
     case "macro.CE":
       addConvenientEffectsChange(change.value, actor.uuid, effectToApply.origin, {}, actor.isToken);
