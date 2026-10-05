@@ -1,3 +1,6 @@
+### 14.0.16
+* Fixed: `system.bonuses.All-Attacks`, `All-Damage` and the `weapon`/`spell` attack and damage bonus keys had no effect in 14.0.15. They were written to dnd5e 6's `system.rolls.*` paths, which dnd5e 5.x does not read; they add to `system.bonuses.<mwak|rwak|msak|rsak>.<attack|damage>` again. The `system.rolls.*` keys are no longer offered.
+
 ### 14.0.15
 * Requires Foundry 14.368 (verified 14.368).
 * Bare dice in a field worked out without dice when the actor is prepared - a number field, or a deterministic formula field such as `system.attributes.ac.bonus` or `system.attributes.hp.bonuses.overall` - become a silent inline roll (`+2d8` becomes `+[[[2d8]]]`) when an effect is created or edited on an actor or owned item, so they are rolled once instead of counting as 0. Roll-time formula fields keep their dice.

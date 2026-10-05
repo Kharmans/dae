@@ -651,29 +651,15 @@ export class DAESystemDND5E extends CONFIG.DAE.systemClass {
     this.spellAttacks = ["msak", "rsak"];
     this.weaponAttacks = ["mwak", "rwak"];
     this.attackTypes = this.weaponAttacks.concat(this.spellAttacks);
-    /*
-     * dnd5e 6.0 moved attack/damage bonuses out of `system.bonuses.<type>.<attack|damage>` and into
-     * `system.rolls.<attack|damage>.<type>.bonus`. Expand straight to the new paths: the old ones
-     * only still work through the system's `_applyChangeShim` deprecation layer, and these selector
-     * keys are DAE's own, so nothing upstream would rewrite them once that layer goes.
-     */
-    const rollBonus = (selector: string) => (at: string) => `system.rolls.${selector}.${at}.bonus`;
+    // dnd5e 5.x reads attack/damage bonuses from system.bonuses.<type>.<attack|damage>; the
+    // system.rolls.* paths are dnd5e 6 only.
     this.bonusSelectors = {
-      "system.bonuses.All-Attacks": { attacks: this.attackTypes, selector: "attack", replaceList: ["system.rolls.attack.bonus"], deprecatedFor: "system.rolls.attack.bonus" },
-      "system.bonuses.weapon.attack": { attacks: this.weaponAttacks, selector: "attack", replaceList: this.weaponAttacks.map(rollBonus("attack")), deprecatedFor: "system.rolls.attack.weapon.bonus" },
-      "system.bonuses.spell.attack": { attacks: this.spellAttacks, selector: "attack", replaceList: this.spellAttacks.map(rollBonus("attack")), deprecatedFor: "system.rolls.attack.spell.bonus" },
-      "system.bonuses.All-Damage": { attacks: this.attackTypes, selector: "damage", replaceList: this.attackTypes.map(rollBonus("damage")), deprecatedFor: "system.rolls.damage.all.bonus" },
-      "system.bonuses.weapon.damage": { attacks: this.weaponAttacks, selector: "damage", replaceList: this.weaponAttacks.map(rollBonus("damage")), deprecatedFor: "system.rolls.damage.weapon.bonus" },
-      "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage", replaceList: this.spellAttacks.map(rollBonus("damage")), deprecatedFor: "system.rolls.damage.spell.bonus" },
-      // New-form selectors in the system.rolls namespace. The legacy system.bonuses.* forms above
-      // stay as aliases so existing content keeps working. There is no "all attacks" entry here:
-      // dnd5e combines `rolls.attack` into every attack roll, so that native key already is one.
-      // Damage has no such global, so `rolls.damage.all.bonus` stays a DAE expansion.
-      "system.rolls.attack.weapon.bonus": { attacks: this.weaponAttacks, selector: "attack", replaceList: this.weaponAttacks.map(rollBonus("attack")) },
-      "system.rolls.attack.spell.bonus": { attacks: this.spellAttacks, selector: "attack", replaceList: this.spellAttacks.map(rollBonus("attack")) },
-      "system.rolls.damage.all.bonus": { attacks: this.attackTypes, selector: "damage", replaceList: this.attackTypes.map(rollBonus("damage")) },
-      "system.rolls.damage.weapon.bonus": { attacks: this.weaponAttacks, selector: "damage", replaceList: this.weaponAttacks.map(rollBonus("damage")) },
-      "system.rolls.damage.spell.bonus": { attacks: this.spellAttacks, selector: "damage", replaceList: this.spellAttacks.map(rollBonus("damage")) },
+      "system.bonuses.All-Attacks": { attacks: this.attackTypes, selector: "attack" },
+      "system.bonuses.weapon.attack": { attacks: this.weaponAttacks, selector: "attack" },
+      "system.bonuses.spell.attack": { attacks: this.spellAttacks, selector: "attack" },
+      "system.bonuses.All-Damage": { attacks: this.attackTypes, selector: "damage" },
+      "system.bonuses.weapon.damage": { attacks: this.weaponAttacks, selector: "damage" },
+      "system.bonuses.spell.damage": { attacks: this.spellAttacks, selector: "damage" },
     };
     this.daeActionTypeKeys = Object.keys(this.systemConfig.itemActionTypes);
   }

@@ -329,13 +329,7 @@
     "system.bonuses.spell.damage",
     "system.bonuses.spell.dc",
     "system.bonuses.weapon.attack",
-    "system.bonuses.weapon.damage",
-    "system.rolls.attack.bonus",
-    "system.rolls.attack.spell.bonus",
-    "system.rolls.attack.weapon.bonus",
-    "system.rolls.damage.all.bonus",
-    "system.rolls.damage.spell.bonus",
-    "system.rolls.damage.weapon.bonus"
+    "system.bonuses.weapon.damage"
   ],
   "SystemTraits": [
     "system.traits.armorProf.all",
