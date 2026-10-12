@@ -1,6 +1,5 @@
 import API from "./module/API/api";
 import { BaseValuesInner } from "./module/dae";
-import { DAESystemDND5E } from "./module/Systems/DAEdnd5e";
 import { ValidSpec } from "./module/Systems/DAESystem";
 
 export type TokenOrDocument = foundry.canvas.placeables.Token.Implementation | TokenDocument.Implementation;
@@ -154,7 +153,6 @@ declare module "fvtt-types/configuration" {
     "dae.DAETitleBar": boolean;
     "dae.DIMETitleBar": boolean;
     "dae.DAEColorTitleBar": boolean;
-    "dae.DAENoTitleText": boolean;
     "dae.DAEAddHalfHealthEffect": boolean;
     "dae.ZZDebug": "none" | "warn" | "debug" | "all";
     "dae.disableEffects": boolean;
@@ -184,6 +182,14 @@ declare module "fvtt-types/configuration" {
 }
 
 declare global {
+  // v14 data field operators, not yet in fvtt-types. `{ key: new ForcedDeletion() }` replaces the
+  // `{ "-=key": null }` deletion syntax that v14 deprecates.
+  namespace foundry.data.operators {
+    class ForcedDeletion {
+      constructor(value?: unknown);
+    }
+  }
+
   // v14 statics not yet in fvtt-types. Reach them with
   // `ActiveEffect as unknown as ActiveEffectStatic` rather than a suppression.
   interface ActiveEffectStatic {

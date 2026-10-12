@@ -273,20 +273,8 @@ export class DAEActiveEffectConfig extends SheetBase {
     context.isEnchantment = isEnchantment(document);
     context.isConditionalActivationEffect = document.parent?.name === i18n("dae.ConditionalEffectsItem");
     context.transfer = document.transfer;
-    if (context.isConditionalActivationEffect) {
-      context.transfer = false;
-      context.document.transfer = false;
-    }
+    if (context.isConditionalActivationEffect) context.transfer = false;
     return context;
-  }
-
-  async _preparePartContext(partId, context, options) {
-    const partContext: any = await super._preparePartContext(partId, context, options);
-    if (partId === "details") {
-      if (partContext.isItemEffect && (isEnchantment(this.document) || this.document.parent?.name === i18n("dae.ConditionalEffectsItem")))
-        partContext.isItemEffect = false;
-    }
-    return partContext;
   }
 
 
@@ -316,6 +304,10 @@ export class DAEActiveEffectConfig extends SheetBase {
   }
 
   async _onRender(context, options) {
+    // The base sheet disables the form for read-only viewers; dnd5e's hides duration fields an expiry has no use for.
+    await super._onRender(context, options);
+    if (this.document.parent?.name === i18n("dae.ConditionalEffectsItem"))
+      this.element.querySelector('.form-group:has([name="transfer"])')?.remove();
     // @ts-expect-error wait 'til types de-stubs, then type this properly
     const currTabId: string | undefined = Object.values(context.tabs)?.find(i => i.active)?.id;
     if (currTabId !== "changes") this.position.height = this.element.offsetHeight ?? "auto";
@@ -433,7 +425,6 @@ export class DAEActiveEffectConfig extends SheetBase {
   async _onDrop(ev: DragEvent) {
     ev.preventDefault();
     const data: any = foundry.applications.ux.TextEditor.getDragEventData(ev);
-    const item = await fromUuid(data.uuid);
     const targetValue = (ev.target as HTMLInputElement)?.value?.split(",")[1];
     if (data.uuid && ev.target) {
       (ev.target as HTMLInputElement).value = data.uuid + (targetValue ? `, ${targetValue}` : "");
@@ -488,12 +479,9 @@ export class DAEActiveEffectConfig extends SheetBase {
     const document = this.document;
 
     if (!submitData.tint || submitData.tint === "") submitData.tint = null;
-    // fixed for very old items
-    if (document.origin?.includes("OwnedItem.")) submitData.origin = document.origin.replace("OwnedItem.", "Item.");
     if (submitData.flags?.dae?.enableCondition?.length > 0) submitData.transfer = false;
     if (submitData.transfer && !isEnchantment(document)) submitData.origin = document.parent?.uuid;
     else delete submitData.origin;
-    if (isEnchantment(document)) submitData.transfer = false;
     submitData.statuses ??= [];
     foundry.utils.setProperty(submitData, "flags.dae.specialDuration", Array.from(Object.values(submitData.flags?.dae?.specialDuration ?? {})))
 
@@ -569,7 +557,7 @@ export class DAEActiveEffectConfig extends SheetBase {
         { once: true, stack: false }
       );
       updateData["showIcon"] = 2;
-      updateData["flags.dae.-=showIcon"] = null;
+      updateData["flags.dae.showIcon"] = new foundry.data.operators.ForcedDeletion();
     }
 
     if (Object.keys(updateData).length > 0) {
@@ -676,7 +664,7 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
 
     // A spec with a forced mode allows only that change type.
     if (typeSelect) {
-      const forced = spec?.forcedMode ? String(spec.forcedMode).toLowerCase() : undefined;
+      const forced = ValidSpec.modeName(spec?.forcedMode) || undefined;
       for (const opt of Array.from(typeSelect.options)) opt.disabled = !!forced && opt.value !== forced;
       if (forced) typeSelect.value = forced;
     }
@@ -874,54 +862,6 @@ export function isEnchantment(effect: ActiveEffect): boolean {
 }
 
 /**
- * Whether a change key is backed by a SetField. DAE models some of these as StringField in its own
- * spec, so the real data model has to be consulted.
- *
- * Item and activity keys must be recognised as well as actor ones. An effect on an actor is matched
- * against actorSpecs, which holds no entry for keys like system.damage.base.types, so the caller
- * falls through to here - and resolving the path against actor schemas alone finds nothing for any
- * actor type, which silently mistyped set-valued item fields. DAE's own itemSpecs table is tried
- * first since it already resolves activity keys (activities.<id>.damage...), which no schema
- * getField call will walk into.
- */
-function isSetBackedKey(key: string, doc: ActiveEffect.Implementation): boolean {
-  const SetField = foundry.data.fields.SetField;
-
-  if (ValidSpec.itemSpecs?.["union"]?.allSpecsObj?.[key]?.fieldType instanceof SetField) return true;
-
-  if (!key.startsWith("system.")) return false;
-  const path = key.slice(7);
-  const fieldFor = (models: Record<string, any>, type?: string) =>
-    type ? models[type]?.schema?.getField?.(path) : undefined;
-
-  const parent: any = doc?.parent;
-  const isItemParent = parent instanceof CONFIG.Item.documentClass;
-  const preferredActor = parent instanceof CONFIG.Actor.documentClass ? parent.type
-    : isItemParent ? parent.actor?.type : undefined;
-
-  let field = fieldFor(CONFIG.Actor.dataModels, preferredActor)
-    ?? (isItemParent ? fieldFor(CONFIG.Item.dataModels, parent.type) : undefined);
-  if (!field) for (const type of Object.keys(CONFIG.Actor.dataModels)) {
-    field = fieldFor(CONFIG.Actor.dataModels, type); if (field) break;
-  }
-  if (!field) for (const type of Object.keys(CONFIG.Item.dataModels)) {
-    field = fieldFor(CONFIG.Item.dataModels, type); if (field) break;
-  }
-  return field instanceof SetField;
-}
-
-interface DAEChange extends ActiveEffect.ChangeData {
-  type?: string; // v14: string change type (replaces numeric mode)
-  types?: Record<string, string>;
-  options?: Record<string, string>;
-  fieldName?: string;
-  fieldDescription?: string;
-  hasEditor?: boolean;
-  editorIcon?: string;
-  editorTooltip?: string;
-}
-
-/**
  * Resolve the valid change specs and the field list for an effect. Shared by the effect sheet and by
  * the field browser attached to dnd5e's per-change dialog, so both offer the same keys.
  */
@@ -936,7 +876,6 @@ export function resolveValidFields(document: ActiveEffect.Implementation): {
       validSpecsToUse = ValidSpec.actorSpecs[document.parent?.type ?? ""]
     }
     if (isEnchantment(document)) {
-      document.transfer = false;
       // @ts-expect-error no dnd5e-types
       if (document.isAppliedEnchantment) {
         validSpecsToUse = ValidSpec.itemSpecs[document.parent?.type ?? ""] ?? ValidSpec.itemSpecs["union"];

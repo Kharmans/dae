@@ -284,8 +284,6 @@
   "dae.DIMETitleBar.Hint": "Mostra DAE Item Macro Editor nella Barra Titolo",
   "dae.DAEColorTitleBar.Name": "Barra Titolo DAE Colorful",
   "dae.DAEColorTitleBar.Hint": "Applica un colore al pulsante dell'editor degli effetti DAE/pulsante DIME, se nel documento sono presenti macro di effetti/elementi (è necessaria la barra del titolo DAE selezionata).",
-  "dae.DAENoTitleText.Name": " Solo Icona",
-  "dae.DAENoTitleText.Hint": " Visualizza solo l'icona della chiave inglese nella barra del titolo altrimenti icona + DAE",
   "dae.StatusEffect": "Effetto di Stato",
   "dae.ShowDeprecation.Name": "Mostra Deprecation Errors",
   "dae.ShowDeprecation.Hint": "Mostra Deprecation Errors in console",

@@ -2,7 +2,7 @@
   "id": "dae",
   "title": "Dynamic effects using Active Effects (DAE)",
   "description": "Replacement for dynamic effects",
-  "version": "14.6.0",
+  "version": "14.6.1",
   "authors": [
     {
       "name": "tposney",
@@ -96,13 +96,13 @@
     "css/field-browser.css"
   ],
   "compatibility": {
-    "minimum": "14.368",
-    "verified": "14.368",
+    "minimum": "14.369",
+    "verified": "14.369",
     "maximum": "14.999"
   },
   "url": "https://gitlab.com/tposney/dae",
   "manifest": "https://gitlab.com/tposney/dae/raw/dnd6/package/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/dnd6/package/dae-v14.6.0.zip",
+  "download": "https://gitlab.com/tposney/dae/raw/dnd6/package/dae-v14.6.1.zip",
   "readme": "https://gitlab.com/tposney/dae/-/blob/dnd6/Readme.md",
   "changelog": "https://gitlab.com/tposney/dae/-/blob/dnd6/Changelog.md",
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
@@ -127,8 +127,8 @@
         "id": "dnd5e",
         "type": "system",
         "compatibility": {
-          "minimum": "6.0.0",
-          "verified": "6.0.5",
+          "minimum": "6.0.6",
+          "verified": "6.0.6",
           "maximum": "6.999"
         }
       }

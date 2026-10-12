@@ -53,16 +53,6 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "DAENoTitleText", {
-    name: "dae.DAENoTitleText.Name",
-    hint: "dae.DAENoTitleText.Hint",
-    scope: "world",
-    default: false,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
-
   game.settings.register("dae", "DAEAddHalfHealthEffect", {
     name: "dae.DAEAddHalfHealthEffect.Name",
     hint: "dae.DAEAddHalfHealthEffect.Hint",
@@ -186,7 +176,7 @@ async function showMigrationDialog() {
     content: `<p style="color: #d32f2f; font-weight: bold; font-size: 1.1em;">⚠ This migration cannot be undone. Make sure you have backed up your world before running!</p>`
       + `<p>Migrate all world actors, items, scene tokens, and compendium packs to update deprecated DAE effect data.</p>`
       + `<p><strong>Last migration:</strong> ${lastVersion}</p>`
-      + `<p>This will update: <code>flags.dae.showIcon</code>, deprecated special durations, old change key paths, and missing <code>.all</code> suffixes on optional bonus keys.</p>`,
+      + `<p>This will update: <code>flags.dae.showIcon</code>, deprecated special durations, renamed change keys and ATL keys.</p>`,
     yes: { label: "Run Migration", icon: "fas fa-exchange-alt" },
     no: { label: "Cancel" },
   });

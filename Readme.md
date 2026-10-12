@@ -518,6 +518,8 @@ macro.ItemMacro args
 ```
 This will call the macro "macro_name" (or the ItemMacro for the item with the effect) with `args[0] = "on"` and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with `args[0] = "off"` when the active effect is deleted from the target actor.
 
+Arguments are split at spaces and also at `+ * / % , ( ) ^ !` and comparisons, so `+5` arrives as two arguments, `+` and `5`. Quote a value to keep it whole: `"+5"`.
+
 In addition to the standard `@values` the following are supported (only as macro arguments):
 
 `@target` will pass the token id of the targeted token.  Active Effects only.

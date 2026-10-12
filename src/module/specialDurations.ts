@@ -1,5 +1,5 @@
 import { warn, debug, debugEnabled, error } from "../dae.js";
-import { expireEffects, getActorEffects, daeMacro, actionQueue, resolveSpecialDurationExpiryAction, resolveEffectExpiryAction } from "./dae.js";
+import { expireEffects, getActorEffects, daeMacro, actionQueue, resolveEffectExpiryAction } from "./dae.js";
 
 export let expireRoundEffectsOnCombatEnd: boolean = false;
 
@@ -177,12 +177,6 @@ export function hasExpiry(effect) {
 }
 
 // ---- Macro Repeat helpers ----
-export function hasMacroRepeat(effectData): boolean {
-  return ["startEveryTurn", "endEveryTurn", "startEndEveryTurn",
-    "startEveryTurnAny", "endEveryTurnAny", "startEndEveryTurnAny"]
-    .includes(effectData.flags?.dae?.macroRepeat);
-}
-
 export function getMacroRepeat(effectData): string {
   return effectData.flags?.dae?.macroRepeat;
 }
@@ -238,7 +232,12 @@ async function expireRoundEffectsOnEnd(actor) {
   for (let effect of getActorEffects(actor, { includeEnchantments: true })) {
     const expiry = effect.duration?.expiry;
     const turnExpiries = ["roundStart", "roundEnd", "turnStart", "turnEnd"];
-    if (turnExpiries.includes(expiry) && !isTransferEffect(effect)) {
+    // A duration in time units outlasts the combat (dnd5e gives these Turn Start in combat). Read the source:
+    // with no combat, core prepares round and turn durations as seconds.
+    const { units, value } = effect._source.duration ?? {};
+    // @ts-expect-error v14 CONST.ACTIVE_EFFECT_TIME_DURATION_UNITS not in fvtt-types yet
+    const timed = CONST.ACTIVE_EFFECT_TIME_DURATION_UNITS.includes(units) && Number.isFinite(value);
+    if (turnExpiries.includes(expiry) && !timed && !isTransferEffect(effect)) {
       effectsToExpire.push({ effect, reason: "dae:expired:combat-end-rounds" });
       expiringUuids.add(effect.uuid);
     }

@@ -21,7 +21,6 @@ export let debug = (...args: any[]) => { if (debugEnabled > 1) console.log("DEBU
 export let log = (...args: any[]) => console.log("dae | ", ...args);
 export let warn = (...args: any[]) => { if (debugEnabled > 0) console.warn("dae | ", ...args) };
 export let error = (...args: any[]) => console.error("dae | ", ...args)
-export let timelog = (...args: any[]) => warn("dae | ", Date.now(), ...args);
 export function i18n(key: string) {
   return game.i18n?.localize(key) ?? key;
 };
@@ -35,12 +34,6 @@ export const MODULE_ID = "dae";
 Hooks.once('init', () => {
   debug('Init setup actions');
 
-  // Register custom expiry events:
-  // - "updateWorldTime" (Time Elapsed): expire purely on duration, not combat events
-  // @ts-expect-error v14 CONFIG.ActiveEffect.expiryEvents not in fvtt-types yet
-  CONFIG.ActiveEffect.expiryEvents.updateWorldTime = "dae.expiryEvent.updateWorldTime";
-
-  // Register lib-wrapper patches for isExpiryEvent and _prepareDuration
   registerActiveEffectPatches();
 
   registerSettings();

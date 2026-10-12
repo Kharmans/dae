@@ -1,20 +1,8 @@
-import { allMacroEffects, tokenForActor, delay, actorFromUuid, getTokenDocument, getToken, ceInterface, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs, usesLegacyApplication, syncDependents } from "./dae.js";
+import { allMacroEffects, tokenForActor, actorFromUuid, getTokenDocument, getToken, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs, usesLegacyApplication, syncDependents } from "./dae.js";
 import { resolveMacro } from "./lib/macroResolution.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
 
-export class GMActionMessage {
-  action: string;
-  sender: string;
-  targetGM: string; // gm id
-  data: {};
-  constructor(action: string, sender: string, targetGM: string, data: {}) {
-    this.action = action;
-    this.sender = sender;
-    this.targetGM = targetGM;
-    this.data = data;
-  }
-}
 export let socketlibSocket: any = undefined;
 export let setupSocket = () => {
   socketlibSocket = globalThis.socketlib.registerModule("dae");
@@ -146,8 +134,9 @@ async function _executeMacro(data: {
   item: Item.Implementation
 }) {
   const macro = await resolveMacro(data.macroData.change.key, data.macroData.name, data.item, data.macroData.effectData);
+  if (!macro?.command) return;
   let v11args: any = {};
-  v11args[0] = "on";
+  v11args[0] = data.action;
   v11args[1] = data.lastArg;
   v11args.length = 2;
   v11args.lastArg = data.lastArg;
@@ -360,16 +349,6 @@ export async function applyActiveEffects({
           }
           foundry.utils.setProperty(aeData, "flags.dae.itemMacro", macroCommand)
         }
-        // @ts-expect-error v14 system.changes
-        if (aeData.system.changes.some(change => change.key === "macro.ActivityMacro")) { // populate the ActivityMacro data.
-          const activity = fromUuidSync(activityUuid);
-          if (activity) {
-            // @ts-expect-error no dnd5e-types
-            const macroCommand = activity.macro?.command;
-            foundry.utils.setProperty(aeData, "flags.dae.ActivityMacro", macroCommand)
-          }
-        }
-
         // If effect has no duration, inherit from activity/item duration
         // @ts-expect-error v14 duration.value
         const aeValue = aeData.duration.value;
@@ -380,10 +359,6 @@ export async function applyActiveEffects({
           aeData.duration.value = effectDuration.value;
           // @ts-expect-error v14 duration.units
           aeData.duration.units = mappedUnits;
-          // The stored expiry is null (it was set when the effect had no duration) and core's initial
-          // cannot re-fire, so stamp one - without it the duration only expires on the round tick.
-          // @ts-expect-error v14 duration.expiry
-          if (!aeData.duration.expiry) aeData.duration.expiry = "updateWorldTime";
           debug("inherited duration from activity/item", effectDuration, "→", mappedUnits);
         }
         warn("Apply active effects ", aeData, itemCardUuid);
@@ -411,10 +386,8 @@ export async function applyActiveEffects({
           if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
             let originEntity = fromUuidSync(aeData.origin) as AnyObject | undefined;
             if (!originEntity) continue;
-            let originItem: Item.Implementation;
             let sourceActor: Actor.Implementation | null | undefined;
             if (originEntity instanceof Item) {
-              originItem = originEntity;
               sourceActor = originEntity.actor;
             } else if (originEntity instanceof Actor) sourceActor = originEntity;
             else if (originEntity instanceof ActiveEffect && originEntity.transfer) sourceActor = (originEntity?.parent as Item.Implementation)?.parent;
@@ -434,7 +407,7 @@ export async function applyActiveEffects({
               newEffectData.system.changes = [foundry.utils.duplicate(change)];
               // @ts-expect-error v14 system.changes
               newEffectData.system.changes[0].key = "flags.dae.onUpdateTarget";
-              if (game.system.id === "dnd5e" && aeData.origin) {
+              if (dependsOnOrigin(aeData.origin)) {
                 foundry.utils.setProperty(newEffectData, "flags.dnd5e.dependentOn", aeData.origin)
               }
               // @ts-expect-error TODO (Michael) What's up with this metaData
@@ -471,7 +444,7 @@ export async function applyActiveEffects({
         }
         // @ts-expect-error v14 system.changes
         aeData.system.changes = newChanges
-        if (game.system.id === "dnd5e" && aeData.origin) {
+        if (dependsOnOrigin(aeData.origin)) {
           foundry.utils.setProperty(aeData, "flags.dnd5e.dependentOn", aeData.origin)
         }
       }
@@ -483,6 +456,16 @@ export async function applyActiveEffects({
       }
     }
   };
+}
+
+/**
+ * dnd5e 6 leaves a dependent effect's removal to its dependents registry (no rest, combat exit or out of combat
+ * expiry), so an applied effect only depends on an origin that ends: an effect on an actor, such as concentration.
+ */
+function dependsOnOrigin(origin: string | null | undefined): boolean {
+  if (!origin) return false;
+  const doc = fromUuidSync(origin);
+  return doc instanceof ActiveEffect && doc.parent instanceof Actor;
 }
 
 // Map dnd5e singular duration units to Foundry v14 plural units

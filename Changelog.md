@@ -1,3 +1,55 @@
+### 14.6.1
+* Requires Foundry 14.369 and dnd5e 6.0.6.
+
+**Breaking**
+* Breaking: midi-qol optional bonus keys without a roll type suffix (`flags.midi-qol.optional.NAME.save`) are no longer changed to `.save.all`; edit such effects to use `.all`.
+* Breaking: `@data.` in effect values and inline rolls is no longer read as `@` (deprecated since Foundry 0.8); use `@abilities…` etc.
+
+**Effect keys and macros**
+* Fixed: a `macro.itemMacro`, `macro.activityMacro` or `StatusEffect` change was dropped when another change in the same effect had an inline roll or `@actorUuid`/`@tokenUuid` replaced.
+* Fixed: `macro.actorUpdate` ignored a value of 0 or false; did not restore the original value on removal unless an undo argument was given; `each` lost the original value and ignored the current one; and dice in the value were not rolled.
+* Fixed: `macro.createItemRunMacro` called the created item's macro with `on` instead of `onCreate`.
+* Fixed: `system.attributes.movement.hover` with the text `false` turned hover on.
+* Fixed: `system.tools.all` added entries for tool categories, which stopped the actor preparing.
+* Fixed: a `DamageBonusMacro` of `ActivityMacro` used the item's macro instead of the effect's activity.
+* Removed: copies of the activity macro into effect flags that nothing read.
+* Fixed: `token.*` keys (light, sight, texture, disposition, ring…) were missing from DAE's change key list on Foundry 14; detection modes other modules register also get `.enabled` as well as `.range`.
+* Fixed: a `bonuses.abilities.check has moved` warning on every actor update.
+* Fixed: custom `system.abilities.<id>.bonuses.save/check` changes threw and did not apply; custom `system.tools.*` changes stopped the actor preparing.
+* Condition builder presets use dnd5e 6's `movement.speeds.walk` and `senses.ranges.darkvision`.
+
+**Applied and item effects**
+* Fixed: applied effects were marked dependent on their source item's effect, so dnd5e 6 did not remove them on a rest or when their actor left combat. They are now dependent only on an effect on an actor (such as concentration), and are no longer removed when the source item is deleted.
+* Fixed: an effect applied with an activity as its origin lost `system.origin.activity`, which dnd5e uses to find what an activity applied.
+* Fixed: adding or removing an item with an Active Auras aura set to ignore its source stopped DAE processing that item's remaining effects.
+
+**Enchantments**
+* Removed: the times-up check before setting an applied enchantment's start time (times-up does not run on Foundry 14).
+* Fixed: saving an applied enchantment in DAE's effect editor turned *Apply Enchantment to Item* off, removing it from the item.
+* Fixed: an applied enchantment whose special duration expired (e.g. *Join Combat*, *Combat End*) was disabled instead of deleted.
+* Fixed: with dnd5e 6, an applied enchantment's macro and status changes acted on its item's owner; as on dnd5e 5.x, it now changes only its item.
+* Fixed: an enchantment's change whose key DAE applies to actors in the final phase (e.g. `flags.midi-qol.onUseMacroName`) was skipped on the item unless the change's phase was set to final.
+
+**Expiry and durations**
+* Fixed: DAE warned that an effect's `combatEnd` special duration was deprecated even when the effect's expiry was already set to another event, which leaves `combatEnd` nowhere else to go (midi's reaction and bonus action markers).
+* Changed: outside combat, time passing now ends an effect whose expiry event has no duration (e.g. *Turn Start*, or dnd5e's *Target Turn End*), as Foundry does; only *Combat Start* waits for a combat.
+* Changed: the *Elapsed Time* expiry is retired. Applied effects that take the activity's duration get no expiry event, so dnd5e 6 gives them *Turn Start* in combat; an effect that stores Elapsed Time is treated as having no expiry event.
+* Fixed: a *Turn Start* or *Turn End* effect never expired once the combatant whose turn it waited for had left the combat.
+* *Expire Round Effects on Combat End* no longer ends effects whose duration is in time units (minutes, hours...).
+* Changed: *Source/Target Turn* expiries keep a duration, which dnd5e 6 drops: "3 rounds, *Target Turn Start*" ends at the target's turn once 3 rounds have passed, as on dnd5e 5.x. With no duration it is still the next such turn. The effect list and tooltip show the rounds left ("2 Rounds, then Start of Your Next Turn").
+
+**Effect editor**
+* Fixed: DAE's effect editor would not open for a change whose key has a numeric forced mode (such as midi's ActivityOverTime, registered with -1).
+* Fixed: DAE's effect editor skipped its base sheet's render step, so read-only viewers got an editable-looking form and dnd5e's sheet handling (such as hiding duration fields an expiry cannot use) did not run.
+
+**Foundry 14 compatibility**
+* Deletions use Foundry 14's `ForcedDeletion` instead of the `-=` key syntax, which Foundry 14.369 warns about.
+
+**Removed**
+* Removed: warnings for pre-v10 `data.` change keys, and the fix for pre-v10 `OwnedItem.` effect origins.
+* Removed code that could not run on Foundry 14 / dnd5e 6 (no behaviour change).
+* Removed the unused *Just Icon* setting.
+
 ### 14.6.0 (dnd6 branch)
 
 **Requirements**

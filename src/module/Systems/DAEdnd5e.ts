@@ -1,9 +1,9 @@
 
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
-import { addAutoFields, isEnchantment } from "../apps/DAEActiveEffectConfig.js";
-import { BaseValuesInner, actionQueue, actorFromUuid, addEffectChange, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, removeEffectChange, timesUpActive, usesLegacyApplication } from "../dae.js";
-import { DAEChangeData, DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
+import { addAutoFields } from "../apps/DAEActiveEffectConfig.js";
+import { BaseValuesInner, actionQueue, actorFromUuid, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, usesLegacyApplication } from "../dae.js";
+import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 import { grantOnRolledPlacement } from "../lib/currentHp.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField, SetField } = foundry.data.fields;
@@ -558,7 +558,7 @@ export class DAESystemDND5E extends DAESystem {
     // changes take part in core's priority sort instead of being applied after it.
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.shouldApplyChange", daeShouldApplyChange, "MIXED");
     // WRAPPER on ActiveEffect.applyChange — handles per-change DAE transformations:
-    // field mappings, dae.eval, @data rewrite, OverTime suffix, stacks.
+    // field mappings, dae.eval, OverTime suffix, stacks.
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.applyChange", daeApplyChange, "MIXED");
     // WRAPPER on prepareData for DAE-specific pre/post work
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
@@ -591,9 +591,7 @@ export class DAESystemDND5E extends DAESystem {
     }
 
     // enchantments don't seem to get their world time set when applied to an item
-    // times-up handles this if active, so skip to avoid duplicate processing
     Hooks.on("preCreateActiveEffect", (candidate: ActiveEffect, data: any, options: any, user: string) => {
-      if (timesUpActive) return true;
       //@ts-expect-error no dnd5e types
       if (candidate.isAppliedEnchantment && candidate.duration.value != null && candidate.duration.units && candidate.duration.units !== "none") {
         // @ts-expect-error v14 effect.start and duration.units
@@ -625,18 +623,20 @@ export class DAESystemDND5E extends DAESystem {
     // Modify armor attribution for DAE specific cases
     patchPrepareArmorClassAttribution();
     // token.detectionModes is id-keyed in v14 and is an active-effect targetable key, so these
-    // are native paths; no ATL translation involved.
+    // are native paths; no ATL translation involved. Tops up modes registered after the specs were built.
     {
       const detectionModes: Set<string> = new Set();
       Object.keys(CONFIG.Canvas.detectionModes).forEach(dm => {
         if (CONFIG.Canvas.detectionModes[dm].tokenConfig) {
           detectionModes.add(`token.detectionModes.${dm}.range`);
+          detectionModes.add(`token.detectionModes.${dm}.enabled`);
         }
       });
       if (game.modules.get("vision-5e")?.active) {
         Object.keys(CONFIG.Canvas.visionModes).forEach(vm => {
           if (CONFIG.Canvas.visionModes[vm].tokenConfig) {
             detectionModes.add(`token.detectionModes.${vm}.range`);
+            detectionModes.add(`token.detectionModes.${vm}.enabled`);
           }
         });
       }
@@ -685,11 +685,6 @@ export class DAESystemDND5E extends DAESystem {
      * Duplicating that table here would diverge the day the system edits its own.
      */
     this.daeActionTypeKeys = Object.keys(this.systemConfig.itemActionTypes);
-  }
-
-  public static effectDisabled(actor, effect, itemData = null) {
-    const disabled = effect.disabled || effect.isSuppressed;
-    return disabled;
   }
 
   public static enumerateLanguages(systemLanguages: Record<string, { label?: string, children?: Record<string, Record<string, unknown>> }>): any {
@@ -886,7 +881,7 @@ export class DAESystemDND5E extends DAESystem {
       ];
       for (let { type, list } of profs) {
         if (type === "tool") {
-          for (const [key, { ability, id }] of Object.entries(this.systemConfig[`${type}s`] as Record<string, { ability: string, id: string }>)) {
+          for (const [key, { id }] of Object.entries(this.systemConfig[`${type}s`] as Record<string, { ability: string, id: string }>)) {
             //@ts-expect-error no dnd5e-types
             const item = game.system.documents.Trait.getBaseItem(id, { indexOnly: true })
             list[key] = item.name;
@@ -927,12 +922,11 @@ export class DAESystemDND5E extends DAESystem {
     if (change.key === damageBonusMacroFlag) {
       let macroRef = change.value;
       const macroItem = getActorItemForEffect(change.effect);
+      const activityUuid = change.effect.flags?.dae?.activity as string | undefined;
       if (change.value === "ItemMacro") { // rewrite the ItemMacro if there is an origin
         macroRef = `ItemMacro.${macroItem?.uuid}`;
-        // @ts-expect-error no dnd5e-types
-      } else if (change.value === "ActivityMacro" && change.effect.activity?.includes("Activity.")) {
-        // @ts-expect-error no dnd5e-types
-        macroRef = `ActivityMacro.${change.effect.activity}`;
+      } else if (change.value === "ActivityMacro" && activityUuid?.includes("Activity.")) {
+        macroRef = `ActivityMacro.${activityUuid}`;
       } else if (change.value === "ActivityMacro") {
         macroRef = `ActivityMacro.${macroItem?.uuid}`;
       }
@@ -969,24 +963,28 @@ export class DAESystemDND5E extends DAESystem {
     }
 
     if (change.key.startsWith("system.abilities") && (change.key.endsWith("bonuses.save") || change.key.endsWith("bonuses.check"))) {
+      // dnd5e 6 keeps these bonuses at abilities.<id>.<save|check>.roll.bonus; the old path is a read-only alias.
+      const key = change.key.replace(/bonuses\.(save|check)$/, "$1.roll.bonus");
+      const existing = foundry.utils.getProperty(actor, key);
       value = change.value;
-      if (!current) return foundry.utils.setProperty(actor, change.key, value)
-      value = current + ((change.value.startsWith("+") || change.value.startsWith("-")) ? change.value : "+" + change.value);
-      return foundry.utils.setProperty(actor, change.key, value)
+      if (existing) value = existing + ((change.value.startsWith("+") || change.value.startsWith("-")) ? change.value : "+" + change.value);
+      return foundry.utils.setProperty(actor, key, value)
     }
 
     if (change.key.startsWith("system.tools")) {
       // @ts-expect-error no dnd5e-types
       current = actor.system.tools;
+      // @ts-expect-error no dnd5e-types
+      const newTool = () => ({ ...actor.system.schema.fields.tools.element.getInitialValue({}), value: 1 });
       if (change.key === "system.tools.all") {
-        for (let prof in this.toolProfList) {
+        for (let prof in this.systemConfig.tools) {
           if (current[prof]) continue;
-          current[prof] = { value: 1, ability: "int", bonuses: { check: "" } }
+          current[prof] = newTool();
         }
         return true;
       }
       const [_1, _2, tool, key] = change.key.split(".");
-      current[tool] = foundry.utils.mergeObject({ value: 1, ability: "int", bonuses: { check: "" } }, current[tool] ?? {})
+      current[tool] = foundry.utils.mergeObject(newTool(), current[tool] ?? {})
       if (key === "prof") {
         value = Number(change.value);
         current[tool].value = value;
@@ -995,14 +993,15 @@ export class DAESystemDND5E extends DAESystem {
         current[tool].ability = change.value;
       }
       if (key === "bonus") {
-        foundry.utils.setProperty(current[tool], "bonuses.check", change.value);
+        foundry.utils.setProperty(current[tool], "roll.bonus", change.value);
       }
       return true;
     }
 
     switch (change.key) {
       case "system.attributes.movement.hover":
-        foundry.utils.setProperty(actor, change.key, change.value ? true : false);
+        foundry.utils.setProperty(actor, change.key, typeof change.value === "string"
+          ? !["", "false", "0"].includes(change.value.trim().toLowerCase()) : !!change.value);
         return true;
       case "system.traits.di.all": case "system.traits.dr.all": case "system.traits.da.all":
       case "system.traits.dv.all": case "system.traits.sdi.all": case "system.traits.sdr.all":
@@ -1185,14 +1184,6 @@ function prepareData(this: Actor.Implementation, wrapped) {
 
     // Allow for changes made by effects
     preparePassiveSkills.bind(this)();
-    // @ts-expect-error no dnd5e-types
-    const globalBonuses = this.system.bonuses?.abilities ?? {};
-    const rollData = this.getRollData();
-    const checkBonus = simplifyBonus(globalBonuses?.check, rollData);
-    // @ts-expect-error no dnd5e-types
-    if (this._prepareInitiative && this.system?.attributes)
-      // @ts-expect-error no dnd5e-types
-      this._prepareInitiative(rollData, checkBonus);
 
     if (debugEnabled > 1) debug("prepare data: after passes", this);
 
@@ -1286,18 +1277,6 @@ async function preparePassiveSkills(this: Actor.Implementation) {
 }
 
 
-function simplifyBonus(bonus: string, data: AnyObject = {}) {
-  if (!bonus) return 0;
-  if (Number.isNumeric(bonus)) return Number(bonus);
-  try {
-    const roll = new Roll(bonus, data);
-    return roll.isDeterministic ? Roll.safeEval(roll.formula) : 0;
-  } catch (error) {
-    console.error(error);
-    return 0;
-  }
-}
-
 function procAdvantageSkill(actor: Actor.Implementation, abilityId: string, skillId: string): number {
   const midiFlags = actor.flags["midi-qol"] ?? {};
   const advantage = midiFlags.advantage ?? {};
@@ -1372,7 +1351,6 @@ export function getActorItemForEffect(effect: ActiveEffect.Implementation): Item
   }
   // Case 2: effect is a synthetic actor on the scene - only if the token ids match
   else if (parentType === "Scene") {
-    const itemUuid = effect.origin.replace(/\.ActiveEffect\..*$/, "");
     // e.g. `Scene.Ja8H26CItQOgMwAe.Token.XrkeZ1McpGkudBjA.Actor.o5nHP4ijq6K2OLJB.Item.fI8m07LnyCCdsSpn`
     const [_scene, _sceneId, _token, tokenId, _actor, _actorId, syntheticItem, syntheticItemId] = parts;
     if ((tokenId === (effect.parent as Actor.Implementation)?.token?.id) && (syntheticItem === "Item"))
@@ -1552,16 +1530,6 @@ function preUpdateItemHook(
   }
 }
 
-
-async function _onDropActiveEffect(event, data) {
-  const effect = await ActiveEffect.implementation.fromDropData(data);
-  if (!this.item.isOwner || !effect) return false;
-  if ((this.item.uuid === effect.parent?.uuid) || (this.item.uuid === effect.origin)) return false;
-  return CONFIG.ActiveEffect.documentClass.create({
-    ...effect.toObject(),
-    origin: this.item.uuid
-  }, { parent: this.item });
-}
 
 type ItemSpecs = Record<string, {
   allSpecsObj: Record<string, ValidSpec>;

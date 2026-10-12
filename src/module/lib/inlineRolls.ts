@@ -50,7 +50,6 @@ export function convertDaeRoll(value: unknown, where: string): unknown {
 
 async function rollOne(expression: string, actor: Actor.Implementation, effectName: string, silent: boolean): Promise<number> {
   try {
-    expression = expression.replaceAll("@data.", "@");
     const roll = await new Roll(expression, actor?.getRollData() as AnyObject).evaluate();
     if (!silent) await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: `${effectName} ${expression}` });
     return roll.total ?? 0;
@@ -107,7 +106,7 @@ export async function rollItemSource(item: Item.Implementation, actor: Actor.Imp
   const effects = foundry.utils.deepClone((item._source as AnyMutableObject).effects as AnyMutableObject[] ?? []);
   let changed = false;
   for (const effect of effects) {
-    if (effect.transfer && await rollEffectSource(effect, actor, keep)) changed = true;
+    if (effect.transfer && effect.type !== "enchantment" && await rollEffectSource(effect, actor, keep)) changed = true;
   }
   return changed ? effects : undefined;
 }

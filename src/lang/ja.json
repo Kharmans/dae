@@ -268,8 +268,6 @@
     "dae.DIMETitleBar.Hint": "タイトルバーにアイテムマクロを編集するためのDIMEボタンを表示します（DAE Item Macro Eitor）。",
     "dae.DAEColorTitleBar.Name": "拡張効果/DIMEボタンを色分けする",
     "dae.DAEColorTitleBar.Hint": "アイテムに拡張効果またはアイテムマクロがある場合、拡張効果/DIMEボタンに色が付くようになります(各ボタン表示を有効にする必要があります)。",
-    "dae.DAENoTitleText.Name": "タイトルバーはアイコン表示のみ",
-    "dae.DAENoTitleText.Hint": "拡張効果およびDIMEボタンの表示をアイコンのみにします。",
     "dae.StatusEffect": "状態効果",
     "dae.ShowDeprecation.Name": "非推奨エラーを表示する",
     "dae.ShowDeprecation.Hint": "非推奨のフィールドについてのエラーメッセージをコンソールに出力します。",

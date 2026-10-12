@@ -2,7 +2,7 @@
  * Effect stacking policy — determines how duplicate effects are handled on creation.
  * Extracted from _preCreateActiveEffectRemoveExisting and _preCreateActiveEffectIncrement.
  */
-import { warn, error, debug, debugEnabled } from "../../dae.js";
+import { warn, debugEnabled } from "../../dae.js";
 import { getStatusEffectsArray, busyWait, effectBaseName } from "../dae.js";
 
 export type StackableMode = "" | "noneName" | "none" | "noneNameOnly" | "count" | "countDeleteDecrement";

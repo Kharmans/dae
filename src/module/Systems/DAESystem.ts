@@ -1,8 +1,12 @@
 import { AnyMutableObject, AnyObject } from "fvtt-types/utils";
-import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
-import { daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeSystemClass, libWrapper, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner, actionQueue, daeMacro, daeInitMacroActors, pendingInitMacroEffects } from "../dae.js";
+import { debugEnabled, error, i18n, warn } from "../../dae.js";
+import { daeSystemClass, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner } from "../dae.js";
 
-const { ArrayField, BooleanField, NumberField, ObjectField, SchemaField, SetField, StringField } = foundry.data.fields;
+/** Core's TokenDocument#ACTIVE_EFFECT_TARGETABLE_KEYS (private in Foundry 14): the token fields `token.*` changes reach. */
+const TOKEN_TARGETABLE_KEYS: readonly string[] = ["name", "width", "height", "depth", "shape", "texture", "alpha",
+  "disposition", "light", "sight", "detectionModes", "ring", "turnMarker", "movementAction", "flags"];
+
+const { BooleanField, NumberField, SchemaField, StringField } = foundry.data.fields;
 
 export let wildcardEffects: RegExp[] = [];
 // TODO (Michael): Can this be removed entirely?
@@ -22,6 +26,13 @@ export class ValidSpec {
   static actorSpecs: Record<string, Specs>;
   static itemSpecs: Record<string, Specs>;
 
+  // Older modules pass a numeric CONST.ACTIVE_EFFECT_MODES value (or -1 for none); store the change
+  // type name, "" when there is no forced mode.
+  static modeName(mode: string | number | undefined | null): string {
+    if (typeof mode === "number") return ({ 0: "custom", 1: "multiply", 2: "add", 3: "downgrade", 4: "upgrade", 5: "override" } as Record<number, string>)[mode] ?? "";
+    return (mode ?? "").toLowerCase();
+  }
+
   fieldSpec: string;
   fieldType: FieldType;
   label: string;
@@ -30,12 +41,12 @@ export class ValidSpec {
   options: Record<string, string> | undefined;
   phase: SpecPhase;
 
-  constructor(fs: string, sv: FieldType, forcedMode = "", label?: string, description?: string, phase: SpecPhase = "initial", options?: Record<string, string>) {
+  constructor(fs: string, sv: FieldType, forcedMode: string | number = "", label?: string, description?: string, phase: SpecPhase = "initial", options?: Record<string, string>) {
     this.fieldSpec = fs;
     this.fieldType = sv;
     this.label = label ?? fs;
     this.description = description ?? "";
-    this.forcedMode = forcedMode;
+    this.forcedMode = ValidSpec.modeName(forcedMode);
     this.options = options;
     this.phase = phase;
   }
@@ -128,8 +139,7 @@ export class ValidSpec {
       }
 
       // Add token.* specs from TokenDocument schema for v14 token effect targeting
-      const tokenTargetableKeys: readonly string[] =
-        (CONFIG.Token.documentClass as any)._ACTIVE_EFFECT_TARGETABLE_KEYS ?? [];
+      const tokenTargetableKeys = TOKEN_TARGETABLE_KEYS;
       if (tokenTargetableKeys.length > 0) {
         const tokenSchema = CONFIG.Token.documentClass.schema;
         function walkTokenSchema(prefix: string, schemaField: foundry.data.fields.SchemaField<any>) {
@@ -166,15 +176,6 @@ export class ValidSpec {
 
       // Fire new unified hook
       Hooks.callAll("dae.modifySpecs", specKey, allSpecsObj);
-
-      // Special case for armor/hp which can depend on derived attributes
-      if (["dnd5e"].includes(game.system.id ?? "")) {
-        for (const m of Object.values(allSpecsObj)) {
-          if (["attributes.hp", "attributes.ac"].includes(m.fieldSpec)) {
-            m.fieldType = 0;
-          }
-        }
-      }
 
       const allSpecs = Object.values(allSpecsObj);
       allSpecs.sort((a, b) => a.fieldSpec.toLocaleLowerCase() < b.fieldSpec.toLocaleLowerCase() ? -1 : 1);
@@ -266,7 +267,6 @@ export class DAESystem {
     deprecatedFor?: string;
   }>;
   static daeActionTypeKeys: string[];
-  static detectionModeList: Record<string, string>;
   public static fieldMappings: Record<string, string | { key: string, value?: string, mode?: number | string }> = {};
 
   public static get systemConfig() {
@@ -286,18 +286,7 @@ export class DAESystem {
    * e.g. {common: "Common"}
    * */
   public static getOptionsForSpec(specification?: ActiveEffect.ChangeData): Record<string, string> | undefined {
-    if (!specification?.key) return undefined;
-    if (specification?.key === "ATE.detectionMode") {
-      return this.detectionModeList;
-    }
     return undefined;
-  }
-  // Configure any lookup lists that might be required by getOptionsForSpec.
-  public static configureLists() {
-    this.detectionModeList = {};
-    Object.values(CONFIG.Canvas.detectionModes).forEach(dm => {
-      this.detectionModeList[dm.id as string] = i18n(`${dm.label}`);
-    })
   }
 
 
@@ -312,10 +301,6 @@ export class DAESystem {
     specials["macro.createItem"] = [new StringField(), "custom"];
     specials["macro.createItemRunMacro"] = [new StringField(), "custom"];
   };
-
-  public static effectDisabled(actor: Actor.Implementation, effect: ActiveEffect.Implementation, itemData = null) {
-    return effect.disabled as boolean;
-  }
 
   public static modifyValidSpec(spec: string, validSpec: ValidSpec): ValidSpec {
     return validSpec;
@@ -523,71 +508,7 @@ export class DAESystem {
     }
     return true;
   }
-
-  public static initActions() {
-    Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
-
-    // WRAPPER on applyActiveEffects — DAE extends core + system effect application.
-    // Core handles: phase validation, change collection, sorting, applyChange, overrides.
-    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.applyActiveEffects", daeApplyActiveEffects, "WRAPPER");
-    // MIXED on shouldApplyChange — collect each change in its ValidSpec phase, so phase-corrected
-    // changes take part in core's priority sort instead of being applied after it.
-    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.shouldApplyChange", daeShouldApplyChange, "MIXED");
-
-    // MIXED on ActiveEffect.applyChange — handles per-change DAE transformations:
-    // field mappings, dae.eval, @data rewrite, @stackCount, OverTime suffix, stacks.
-    libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.applyChange", daeApplyChange, "MIXED");
-    // WRAPPER on prepareData for DAE-specific pre/post work
-    libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareData", prepareData, "WRAPPER");
-    // This supplies DAE custom effects via the applyActiveEffect hook
-    // @ts-expect-error our custom stuff in the change data makes types angry
-    Hooks.on("applyActiveEffect", daeSystemClass.daeCustomEffect.bind(daeSystemClass));
-  }
-
-
-
-
 }
-
-/*
-* WRAPPER on prepareData for DAE-specific pre/post work.
-* Ensures ValidSpec is initialized, resets onUpdateTarget flags,
-* and fires "init" macros on first preparation after world load.
-*/
-function prepareData(this: Actor.Implementation, wrapped) {
-  const initMacrosOnLoad = game.settings.get("dae", "initMacrosOnLoad");
-  if (!ValidSpec.actorSpecs) {
-    ValidSpec.createValidMods();
-  }
-
-  foundry.utils.setProperty(this, "flags.dae.onUpdateTarget", foundry.utils.getProperty(this._source, "flags.dae.onUpdateTarget"));
-  debug("prepare data: before passes", this.name, this._source);
-
-  wrapped();
-
-  // On first prepareData for each actor, fire "init" for
-  // macro.itemMacro/macro.activityMacro/macro.execute so macros that register hooks can re-initialize after world load
-  if (initMacrosOnLoad && !daeInitMacroActors.has(this.uuid)) {
-    daeInitMacroActors.add(this.uuid);
-    const initEffects: ActiveEffect.Implementation[] = [];
-    for (const ef of this.allApplicableEffects()) {
-      if (ef.disabled || ef.isSuppressed) continue;
-      // @ts-expect-error v14 system.changes
-      if (ef.system.changes.some(c => c.key.startsWith("macro.itemMacro") || c.key.startsWith("macro.activityMacro") || c.key.startsWith("macro.execute"))) {
-        initEffects.push(ef);
-      }
-    }
-    for (const effect of initEffects) {
-      if (game.ready)
-        actionQueue.add(daeMacro, "init", this, effect, { effectUuid: effect.uuid });
-      else
-        pendingInitMacroEffects.push({ effectUuid: effect.uuid, actorUuid: this.uuid });
-    }
-  }
-  debug("prepare data: after passes", this);
-}
-
-
 
 type GetActorType = Actor.Implementation | foundry.canvas.placeables.Token.Implementation | ActiveEffect.Implementation | Item.Implementation;
 export type DAEChangeData = ActiveEffect.ChangeData & {

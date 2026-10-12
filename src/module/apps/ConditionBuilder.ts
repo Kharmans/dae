@@ -51,12 +51,12 @@ const COMMON_FIELDS: Record<string, Record<string, Omit<CommonField, "label">>> 
   },
   attributes: {
     ac: { key: "attributes.ac.value", op: "gte" },
-    speed: { key: "attributes.movement.walk", op: "gte" },
+    speed: { key: "attributes.movement.speeds.walk", op: "gte" },
     proficiency: { key: "attributes.prof", op: "gte" },
     spellDC: { key: "attributes.spell.dc", op: "gte" },
     initiative: { key: "attributes.init.total", op: "gte" },
     exhaustion: { key: "attributes.exhaustion", op: "gte" },
-    darkvision: { key: "attributes.senses.darkvision", op: "gt" },
+    darkvision: { key: "attributes.senses.ranges.darkvision", op: "gt" },
   },
   defences: {
     resistances: { key: "traits.dr.value", op: "has" },
