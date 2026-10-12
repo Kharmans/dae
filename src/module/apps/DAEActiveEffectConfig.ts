@@ -339,7 +339,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     // Restrict change types if the spec has a forced mode
     const spec = this.validSpecsToUse?.allSpecsObj[change.key];
     if (spec?.forcedMode) {
-      const forcedMode = spec.forcedMode.toLowerCase();
+      const forcedMode = ValidSpec.modeName(spec.forcedMode);
       if (forcedMode) {
         const restrictedTypes: Record<string, string> = {};
         restrictedTypes[forcedMode] = context.changeTypes[forcedMode] ?? forcedMode;
@@ -522,6 +522,8 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
   }
 
   async _onRender(context, options) {
+    // The base sheet disables the form for read-only viewers; dnd5e's hides duration fields an expiry has no use for.
+    await super._onRender(context, options);
     // @ts-expect-error wait 'til types de-stubs, then type this properly
     const currTabId: string | undefined = Object.values(context.tabs)?.find(i => i.active)?.id;
     if (currTabId !== "changes") this.position.height = this.element.offsetHeight ?? "auto";
@@ -777,7 +779,7 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
         { once: true, stack: false }
       );
       updateData["showIcon"] = 2;
-      updateData["flags.dae.-=showIcon"] = null;
+      updateData["flags.dae.showIcon"] = new foundry.data.operators.ForcedDeletion();
     }
 
     if (Object.keys(updateData).length > 0) {

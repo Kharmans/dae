@@ -70,7 +70,7 @@ export async function applyCurrentHp(
       updates[`flags.dae.hpGranted.${id}`] = amount;
     } else if (granted[id] !== undefined) {
       value = Math.min(value, maximum);
-      if (deleted) updates[`flags.dae.hpGranted.-=${id}`] = null;
+      if (deleted) updates[`flags.dae.hpGranted.${id}`] = new foundry.data.operators.ForcedDeletion();
     }
   }
   if (value !== stored) updates["system.attributes.hp.value"] = value;

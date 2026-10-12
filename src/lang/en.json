@@ -286,8 +286,6 @@
   "dae.DIMETitleBar.Hint": "Display DAE Item Macro Editor in Title Bar",
   "dae.DAEColorTitleBar.Name": "DAE Colorful Title Bar",
   "dae.DAEColorTitleBar.Hint": "Apply a color to the DAE effect editor button/DIME button, if any effects/item macros are present in the document (Needs DAE Title Bar checked).",
-  "dae.DAENoTitleText.Name": " Just Icon",
-  "dae.DAENoTitleText.Hint": " Only display the wrench icon in the Title Bar otherwise icon + DAE",
   "dae.StatusEffect": "Status Effect",
   "dae.ShowDeprecation.Name": "Show Deprecation Errors",
   "dae.ShowDeprecation.Hint": "Show Deprecation Errors in console",

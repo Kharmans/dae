@@ -1,4 +1,4 @@
-import { warn, debug, debugEnabled, error, daeManagesTurnExpiry } from "../dae.js";
+import { warn, debug, debugEnabled, error, daeManagesTurnExpiry, PSEUDO_EXPIRIES } from "../dae.js";
 import { expireEffects, getApplicableEffects, daeMacro, actionQueue, resolveSpecialDurationExpiryAction, resolveEffectExpiryAction } from "./dae.js";
 
 export let expireRoundEffectsOnCombatEnd: boolean = false;
@@ -237,10 +237,14 @@ async function expireRoundEffectsOnEnd(actor) {
   const expiringUuids = new Set<string>();
   for (let effect of getApplicableEffects(actor, { includeEnchantments: true })) {
     const expiry = effect.duration?.expiry;
-    const turnExpiries = daeManagesTurnExpiry
-      ? ["roundStart", "roundEnd", "turnStart", "turnEnd", "sourceStart", "sourceEnd", "targetStart", "targetEnd"]
-      : ["roundStart", "roundEnd", "turnStart", "turnEnd"];
-    if (turnExpiries.includes(expiry) && !isTransferEffect(effect)) {
+    // Source/target expiries are removed as their combatant leaves the combat (removeCombatOnlyEffects, or dnd5e 6).
+    const turnExpiries = ["roundStart", "roundEnd", "turnStart", "turnEnd"];
+    // A duration in time units outlasts the combat. Read the source: with no combat, core prepares round and
+    // turn durations as seconds.
+    const { units, value } = effect._source.duration ?? {};
+    // @ts-expect-error v14 CONST.ACTIVE_EFFECT_TIME_DURATION_UNITS not in fvtt-types yet
+    const timed = CONST.ACTIVE_EFFECT_TIME_DURATION_UNITS.includes(units) && Number.isFinite(value);
+    if (turnExpiries.includes(expiry) && !timed && !isTransferEffect(effect)) {
       effectsToExpire.push({ effect, reason: "dae:expired:combat-end-rounds" });
       expiringUuids.add(effect.uuid);
     }
@@ -301,8 +305,10 @@ export function preDeleteCombatHook(combat: Combat.Implementation, options: Comb
   for (let combatant of combat.combatants) {
     const actor = combatant.actor;
     if (!actor) continue;
+    // Source/target expiries from this combat are removed as their combatant leaves it; expiring them here too
+    // raced that and threw "does not exist" (midi's reaction marker carries both targetStart and combatEnd).
     const effects = getApplicableEffects(actor, { includeEnchantments: true })
-      .filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd"));
+      .filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd") && !isCombatOnlyEffect(ef, combat));
     actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "combat-end" });
   }
 }
@@ -316,12 +322,68 @@ export function preCreateCombatantHook(combatant: Combatant.Implementation, data
   actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "join-combat" });
 }
 
+// ---- dnd5e 6 behaviour on dnd5e 5.x ----
+
+/** A source/target expiry belonging to `combat` (or to none), which ends when its combatant leaves it. */
+function isCombatOnlyEffect(effect, combat: Combat.Implementation): boolean {
+  if (!PSEUDO_EXPIRIES.has(effect.duration?.expiry)) return false;
+  const start = effect.start?.combat;
+  return !start || start === combat || start === combat.id || start?.id === combat.id;
+}
+
+/**
+ * As dnd5e 6's Combat5e#_onExit: a combatant leaving the combat (or the combat ending) loses its expired effects
+ * and its source/target expiry effects from that combat. Dependents go with their parent; item effects only if
+ * applied enchantments.
+ */
+export async function removeCombatOnlyEffects(combat: Combat.Implementation, combatant: Combatant.Implementation) {
+  const actor = combatant.actor;
+  if (!actor) return;
+  const remove = ef => !ef.getFlag("dnd5e", "dependentOn") && (ef.duration?.expired || isCombatOnlyEffect(ef, combat));
+  const idsOf = effects => effects.map(ef => ef.id).filter((id): id is string => !!id);
+  const ids = idsOf(actor.effects.filter(remove));
+  if (ids.length) await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+  for (const item of actor.items) {
+    const itemIds = idsOf(item.effects.filter(ef => remove(ef) && isAppliedEnchantment(ef)));
+    if (itemIds.length) await item.deleteEmbeddedDocuments("ActiveEffect", itemIds);
+  }
+}
+
+/**
+ * As dnd5e 6's ActiveEffect5e#_onUpdate: an effect marked expired (Mark Expired) is deleted at once unless its
+ * actor is in the combat it expired in; removeCombatOnlyEffects deletes the rest as the combatant leaves.
+ * Unlike dnd5e, an item's own (non-enchantment) effect is never deleted.
+ */
+function deleteExpiredOutOfCombat(effect, changed) {
+  // @ts-expect-error v14 game.users.activeGM not in fvtt-types yet
+  if (!game.users.activeGM?.isSelf || !foundry.utils.getProperty(changed, "duration.expired")) return;
+  if (effect.getFlag("dnd5e", "dependentOn")) return;
+  const enchantment = isAppliedEnchantment(effect);
+  if (effect.parent instanceof Item && !enchantment) return;
+  const actor = enchantment ? effect.parent?.parent : effect.parent;
+  const combat = effect.start?.combat ?? game.combat;
+  if (!combat?.getCombatantsByActor(actor).length) effect.delete();
+}
+
+/**
+ * As dnd5e 6's ActiveEffect5e#_preCreate: an effect created in a running combat with a duration in rounds or
+ * time units and no expiry event ends at a turn start (of whoever is acting), not as the round turns over.
+ */
+export function defaultInCombatExpiry(effect) {
+  const { expiry, units, value } = effect._source.duration ?? {};
+  if (expiry || !Number.isFinite(value) || units === "turns") return;
+  const actor = effect.isAppliedEnchantment ? effect.parent?.parent : effect.parent;
+  if (!(actor instanceof Actor) || !effect.start?.combat?.started) return;
+  effect.updateSource({ "duration.expiry": "turnStart" });
+}
+
 // ---- Hook registration ----
 
 // @ts-expect-error v14 game.users.activeGM not in fvtt-types yet
 function isResponsibleGM(): boolean { return game.users.activeGM?.isSelf; }
 
 export function setupSpecialDurationHooks() {
+  if (daeManagesTurnExpiry) Hooks.on("updateActiveEffect", deleteExpiredOutOfCombat);
   Hooks.on("preDeleteCombat", preDeleteCombatHook);
   Hooks.on("preCreateCombatant", preCreateCombatantHook);
 

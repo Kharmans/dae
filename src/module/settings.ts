@@ -53,15 +53,6 @@ export const registerSettings = async function () {
     onChange: fetchParams
   });
 
-  game.settings.register("dae", "DAENoTitleText", {
-    name: "dae.DAENoTitleText.Name",
-    hint: "dae.DAENoTitleText.Hint",
-    scope: "world",
-    default: false,
-    type: Boolean,
-    config: true,
-    onChange: fetchParams
-  });
 
   game.settings.register("dae", "DAEAddHalfHealthEffect", {
     name: "dae.DAEAddHalfHealthEffect.Name",

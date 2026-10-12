@@ -2,6 +2,10 @@ import { AnyMutableObject, AnyObject } from "fvtt-types/utils";
 import { MODULE_ID, debug, debugEnabled, error, i18n, warn } from "../../dae.js";
 import { daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeSystemClass, libWrapper, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner, actionQueue, daeMacro, daeInitMacroActors, pendingInitMacroEffects } from "../dae.js";
 
+/** Core's TokenDocument#ACTIVE_EFFECT_TARGETABLE_KEYS (private in Foundry 14): the token fields `token.*` changes reach. */
+const TOKEN_TARGETABLE_KEYS: readonly string[] = ["name", "width", "height", "depth", "shape", "texture", "alpha",
+  "disposition", "light", "sight", "detectionModes", "ring", "turnMarker", "movementAction", "flags"];
+
 const { ArrayField, BooleanField, NumberField, ObjectField, SchemaField, SetField, StringField } = foundry.data.fields;
 
 export let wildcardEffects: RegExp[] = [];
@@ -22,6 +26,13 @@ export class ValidSpec {
   static actorSpecs: Record<string, Specs>;
   static itemSpecs: Record<string, Specs>;
 
+  // Older modules pass a numeric CONST.ACTIVE_EFFECT_MODES value (or -1 for none); store the change
+  // type name, "" when there is no forced mode.
+  static modeName(mode: string | number | undefined | null): string {
+    if (typeof mode === "number") return ({ 0: "custom", 1: "multiply", 2: "add", 3: "downgrade", 4: "upgrade", 5: "override" } as Record<number, string>)[mode] ?? "";
+    return (mode ?? "").toLowerCase();
+  }
+
   fieldSpec: string;
   fieldType: FieldType;
   label: string;
@@ -30,12 +41,12 @@ export class ValidSpec {
   options: Record<string, string> | undefined;
   phase: SpecPhase;
 
-  constructor(fs: string, sv: FieldType, forcedMode = "", label?: string, description?: string, phase: SpecPhase = "initial", options?: Record<string, string>) {
+  constructor(fs: string, sv: FieldType, forcedMode: string | number = "", label?: string, description?: string, phase: SpecPhase = "initial", options?: Record<string, string>) {
     this.fieldSpec = fs;
     this.fieldType = sv;
     this.label = label ?? fs;
     this.description = description ?? "";
-    this.forcedMode = forcedMode;
+    this.forcedMode = ValidSpec.modeName(forcedMode);
     this.options = options;
     this.phase = phase;
   }
@@ -129,8 +140,7 @@ export class ValidSpec {
       }
 
       // Add token.* specs from TokenDocument schema for v14 token effect targeting
-      const tokenTargetableKeys: readonly string[] =
-        (CONFIG.Token.documentClass as any)._ACTIVE_EFFECT_TARGETABLE_KEYS ?? [];
+      const tokenTargetableKeys = TOKEN_TARGETABLE_KEYS;
       if (tokenTargetableKeys.length > 0) {
         const tokenSchema = CONFIG.Token.documentClass.schema;
         function walkTokenSchema(prefix: string, schemaField: foundry.data.fields.SchemaField<any>) {

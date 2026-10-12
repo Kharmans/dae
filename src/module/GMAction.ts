@@ -146,8 +146,9 @@ async function _executeMacro(data: {
   item: Item.Implementation
 }) {
   const macro = await resolveMacro(data.macroData.change.key, data.macroData.name, data.item, data.macroData.effectData);
+  if (!macro?.command) return;
   let v11args: any = {};
-  v11args[0] = "on";
+  v11args[0] = data.action;
   v11args[1] = data.lastArg;
   v11args.length = 2;
   v11args.lastArg = data.lastArg;
@@ -360,16 +361,6 @@ export async function applyActiveEffects({
           }
           foundry.utils.setProperty(aeData, "flags.dae.itemMacro", macroCommand)
         }
-        // @ts-expect-error v14 system.changes
-        if (aeData.system.changes.some(change => change.key === "macro.ActivityMacro")) { // populate the ActivityMacro data.
-          const activity = fromUuidSync(activityUuid);
-          if (activity) {
-            // @ts-expect-error no dnd5e-types
-            const macroCommand = activity.macro?.command;
-            foundry.utils.setProperty(aeData, "flags.dae.ActivityMacro", macroCommand)
-          }
-        }
-
         // If effect has no duration, inherit from activity/item duration
         // @ts-expect-error v14 duration.value
         const aeValue = aeData.duration.value;
@@ -380,10 +371,6 @@ export async function applyActiveEffects({
           aeData.duration.value = effectDuration.value;
           // @ts-expect-error v14 duration.units
           aeData.duration.units = mappedUnits;
-          // The stored expiry is null (it was set when the effect had no duration) and core's initial
-          // cannot re-fire, so stamp one - without it the duration only expires on the round tick.
-          // @ts-expect-error v14 duration.expiry
-          if (!aeData.duration.expiry) aeData.duration.expiry = "updateWorldTime";
           debug("inherited duration from activity/item", effectDuration, "→", mappedUnits);
         }
         warn("Apply active effects ", aeData, itemCardUuid);

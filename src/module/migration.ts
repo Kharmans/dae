@@ -39,7 +39,7 @@ export function migrateEffectData(
   // 1. flags.dae.showIcon → ActiveEffect.showIcon
   if (effectData.flags?.dae?.showIcon) {
     update["showIcon"] = 2;
-    update["flags.dae.-=showIcon"] = null;
+    update["flags.dae.showIcon"] = new foundry.data.operators.ForcedDeletion();
   }
 
   /*

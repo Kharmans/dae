@@ -284,8 +284,6 @@
   "dae.DIMETitleBar.Hint": "Zobrazí editor makra položek DAE v titulkové liště.",
   "dae.DAEColorTitleBar.Name": "Barvit ikonku DAE na liště?",
   "dae.DAEColorTitleBar.Hint": "Aplikuje barvu na ikonky editorů efektů DAE/DIME, pokud jsou v dokumentu přítomny efekty/makra položek (vyžaduje zaškrtnutí ´Ikonky DAE v titulkové liště´).",
-  "dae.DAENoTitleText.Name": "Zobrazovat pouze ikonku?",
-  "dae.DAENoTitleText.Hint": "Zobrazí v titulkové liště pouze hlavní ikonu, jinak ikonku + DAE.",
   "dae.StatusEffect": "Stavový efekt",
   "dae.ShowDeprecation.Name": "Zobrazení chyb zastaralosti",
   "dae.ShowDeprecation.Hint": "Bude v konzoli zobrazovat chyby zastaralosti.",

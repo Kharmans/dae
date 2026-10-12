@@ -215,9 +215,11 @@ export async function unsetFlag(tactor: Actor.Implementation | foundry.canvas.pl
 }
 
 export async function macroActorUpdate(...args) {
-  let [action, actorUuid, type, value, targetField, undo] = args as [string, string, string, string | boolean | number, string, string | boolean];
+  let [action, actorUuid, type, value, targetField, undo] = args as [string, string, string, string | boolean | number, string, string | boolean | undefined];
   const lastArg = args[args.length - 1];
-  if (!(actorUuid && type && value && targetField)) {
+  // Without an undo argument, lastArg lands in its place.
+  if (undo === lastArg) undo = undefined;
+  if (!actorUuid || !type || value === undefined || value === null || value === "" || !targetField) {
     console.warn("dae | macro.actorUpdate: missing arguments (actorUuid, type, expression, targetField, [undo])", ...args);
     return;
   }
@@ -227,10 +229,7 @@ export async function macroActorUpdate(...args) {
   if (!actor) { console.warn("dae | macro.actorUpdate: actor not found", actorUuid); return; }
 
   const fieldDef = `flags.dae.actorUpdate.${lastArg.effectId}.${targetField}`;
-  let actorValue = foundry.utils.getProperty(actor, targetField);
-  if (action === "each") {
-    actorValue = (foundry.utils.getProperty(actor, fieldDef) as { actorValue: unknown })?.actorValue;
-  }
+  const actorValue = foundry.utils.getProperty(actor, targetField);
   const rollContext = actor.getRollData() as AnyMutableObject;
   rollContext.stackCount = lastArg.efData.flags?.dae?.stacks ?? 1;
 
@@ -245,11 +244,13 @@ export async function macroActorUpdate(...args) {
       let op = ' ';
       if (typeof value === "string") { value = value.trim(); op = value[0]; }
       value = `${value}`.replace(/(\*\*(.+?)\*\*)/g, "@$2");
-      value = (['+', '-', '*', '/'].includes(op) && Number.isNumeric(actorValue))
-        ? new Roll(`${actorValue}${value}`, rollContext).evaluateSync({ strict: false }).total
-        : new Roll(value as string, rollContext).evaluateSync({ strict: false }).total;
+      const formula = (['+', '-', '*', '/'].includes(op) && Number.isNumeric(actorValue)) ? `${actorValue}${value}` : value as string;
+      value = (await new Roll(formula, rollContext).evaluate()).total;
     }
-    return doUpdate({ [fieldDef]: { oldValue: actorValue, updateValue: value }, [targetField]: value });
+    // "each" keeps the value saved by "on", so "off" restores the original.
+    const stored = foundry.utils.getProperty(actor, fieldDef) as { oldValue?: unknown } | undefined;
+    const oldValue = action === "each" && stored ? stored.oldValue : actorValue;
+    return doUpdate({ [fieldDef]: { oldValue, updateValue: value }, [targetField]: value });
   }
 
   if (action === "off") {
@@ -268,11 +269,11 @@ export async function macroActorUpdate(...args) {
       restoreValue = (await new Roll(`${actorValue}${undo}`, rollContext).roll()).total;
     else if (typeof undo === "string" && type === "number") {
       if (undo.includes("actorValue")) undo = undo.replace("actorValue", `${actorValue}`);
-      restoreValue = new Roll(`${undo}`, rollContext).evaluateSync({ strict: false }).total;
+      restoreValue = (await new Roll(`${undo}`, rollContext).evaluate()).total;
     } else if (typeof undo === "string") restoreValue = JSON.parse(undo);
 
     const update = { [targetField]: restoreValue };
-    foundry.utils.setProperty(update, `flags.dae.actorUpdate.-=${lastArg.effectId}`, null);
+    foundry.utils.setProperty(update, `flags.dae.actorUpdate.${lastArg.effectId}`, new foundry.data.operators.ForcedDeletion());
     return doUpdate(update);
   }
 }

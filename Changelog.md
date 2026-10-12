@@ -1,3 +1,40 @@
+### 14.0.17
+
+**Effect keys and macros**
+* Fixed: a `macro.itemMacro`, `macro.activityMacro` or `StatusEffect` change was dropped when another change in the same effect had an inline roll or `@actorUuid`/`@tokenUuid` replaced.
+* Fixed: `macro.actorUpdate` ignored a value of 0 or false; did not restore the original value on removal unless an undo argument was given; `each` lost the original value and ignored the current one; and dice in the value were not rolled.
+* Fixed: `macro.createItemRunMacro` called the created item's macro with `on` instead of `onCreate`.
+* Fixed: `system.attributes.movement.hover` with the text `false` turned hover on.
+* Fixed: `system.tools.all` added entries for tool categories, which stopped the actor preparing.
+* Fixed: a `DamageBonusMacro` of `ActivityMacro` used the item's macro instead of the effect's activity.
+* Removed: copies of the activity macro into effect flags that nothing read.
+* Fixed: `token.*` keys (light, sight, texture, disposition, ring…) were missing from DAE's change key list on Foundry 14; detection modes other modules register also get `.enabled` as well as `.range`.
+
+**Applied and item effects**
+* Fixed: adding or removing an item with an Active Auras aura set to ignore its source stopped DAE processing that item's remaining effects.
+
+**Enchantments**
+* Removed: the times-up check before setting an applied enchantment's start time (times-up does not run on Foundry 14).
+
+**Expiry and durations**
+* Fixed: DAE warned that an effect's `combatEnd` special duration was deprecated even when the effect's expiry was already set to another event, which leaves `combatEnd` nowhere else to go (midi's reaction and bonus action markers).
+* Changed: outside combat, time passing now ends an effect whose expiry event has no duration (e.g. *Turn Start*), as Foundry does; only *Combat Start* waits for a combat.
+* Changed: as in dnd5e 6, an effect created in combat with a duration in rounds or time units and no expiry event gets *Turn Start*, so it lasts until that turn rather than ending as the round turns over. Applied effects that take the activity's duration no longer get *Elapsed Time*.
+* Changed: as in dnd5e 6, a combatant leaving the combat, or the combat ending, removes its *Source/Target Turn* expiry effects from that combat.
+* Fixed: a *Turn Start* or *Turn End* effect never expired once the combatant whose turn it waited for had left the combat.
+* *Expire Round Effects on Combat End* no longer ends effects whose duration is in time units (minutes, hours...).
+* Changed: as in dnd5e 6, an effect marked expired (*Mark Expired*) is kept only while its actor is in the combat it expired in; it is deleted when the actor leaves that combat or the combat ends, and at once if it expires outside combat.
+
+**Effect editor**
+* Fixed: DAE's effect editor would not open for a change whose key has a numeric forced mode (such as midi's ActivityOverTime, registered with -1).
+* Fixed: DAE's effect editor skipped its base sheet's render step, so read-only viewers got an editable-looking form.
+
+**Foundry 14 compatibility**
+* Deletions use Foundry 14's `ForcedDeletion` instead of the `-=` key syntax, which Foundry 14.369 warns about.
+
+**Removed**
+* Removed the unused *Just Icon* setting.
+
 ### 14.0.16
 * Fixed: `system.bonuses.All-Attacks`, `All-Damage` and the `weapon`/`spell` attack and damage bonus keys had no effect in 14.0.15. They were written to dnd5e 6's `system.rolls.*` paths, which dnd5e 5.x does not read; they add to `system.bonuses.<mwak|rwak|msak|rsak>.<attack|damage>` again. The `system.rolls.*` keys are no longer offered.
 

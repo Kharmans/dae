@@ -265,8 +265,6 @@
   "dae.HandleEquip.Hint": "Si activé, DAE gérera l'activation/désactivation des effets actifs si un équipement est équipé ou non",
   "dae.DAETitleBar.Name": "Barre de titre DAE",
   "dae.DAETitleBar.Hint": "Afficher le bouton de l'éditeur d'effets DAE dans la barre de titre",
-  "dae.DAENoTitleText.Name": " Juste l'icône",
-  "dae.DAENoTitleText.Hint": " Afficher uniquement l'icône de la clé à molette dans la barre de titre sinon icône + DAE",
   "dae.StatusEffect": "Effet de statut",
   "dae.ShowDeprecation.Name": "Afficher les erreurs de dépréciation",
   "dae.ShowDeprecation.Hint": "Afficher les erreurs de dépréciation dans la console",

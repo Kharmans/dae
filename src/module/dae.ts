@@ -1,5 +1,5 @@
 import { applyActiveEffects, socketlibSocket } from "./GMAction.js";
-import { warn, error, debug, setDebugLevel, i18n, debugEnabled } from "../dae.js";
+import { warn, error, debug, setDebugLevel, i18n, debugEnabled, daeManagesTurnExpiry } from "../dae.js";
 import { ActiveEffects } from "./apps/ActiveEffects.js";
 import { macroActorUpdate } from "./daeMacros.js";
 import { DAEChangeData, DAESystem, ValidSpec } from "./Systems/DAESystem.js";
@@ -8,7 +8,7 @@ import { DIMEditor } from "./apps/DIMEditor.js";
 import { isEnchantment, registerFieldEditor } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial, InvalidUuid } from "fvtt-types/utils";
 import { TokenOrDocument } from "../globals.js";
-import { setupSpecialDurationHooks, fetchDurationParams } from "./specialDurations.js";
+import { setupSpecialDurationHooks, fetchDurationParams, defaultInCombatExpiry } from "./specialDurations.js";
 import { resolveItemFromEffect, resolveMacro, createFunctionMacro, getItemMacroCommand as _getItemMacroCommand } from "./lib/macroResolution.js";
 import { registerChangeHandler, getChangeHandler, isRegisteredMacroKey, getChangeDestination, getAllMacroEffectKeys, type ChangeHandlerContext } from "./lib/changeHandlerRegistry.js";
 import { filterEffectsForTargeting } from "./lib/effectFiltering.js";
@@ -22,7 +22,6 @@ const { SchemaField } = foundry.data.fields;
 let templates = {};
 
 export let aboutTimeInstalled: boolean = false;
-export let timesUpActive: boolean = false;
 export let simpleCalendarInstalled: boolean = false;
 export let atlActive: boolean = false;
 /** Cached value of the world setting "dae.atlCompatibility". Updated in fetchParams(). */
@@ -66,7 +65,6 @@ export let disableEffects: boolean;
 export let daeTitleBar: boolean;
 export let DIMETitleBar: boolean;
 export let daeColorTitleBar: boolean;
-export let daeNoTitleText: boolean;
 export let libWrapper: any;
 export let actionQueue: foundry.utils.Semaphore;
 // export let linkedTokens;
@@ -240,10 +238,15 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
         { once: true, stack: false }
       );
     }
-    const specialDurs = effect.flags?.dae?.specialDuration;
-    if (specialDurs?.some(sd => deprecatedSpecialDurs.includes(sd))) {
+    // combatEnd has to stay a special duration while another event holds the effect's one expiry slot.
+    // @ts-expect-error v14 duration.expiry not in fvtt-types yet
+    const expiry = effect._source.duration?.expiry;
+    // @ts-expect-error v14 duration.expiry not in fvtt-types yet
+    const slotTaken = !!expiry && expiry !== "combatEnd" && !(expiry === "turnStart" && typeof effect._source.duration?.value === "number");
+    const deprecated = (effect.flags?.dae?.specialDuration ?? []).filter(sd => deprecatedSpecialDurs.includes(sd) && !(sd === "combatEnd" && slotTaken));
+    if (deprecated.length) {
       foundry.utils.logCompatibilityWarning(
-        `dae | Effect "${effect.name}" on actor "${this.name}" uses deprecated dae special duration (${specialDurs.filter(sd => deprecatedSpecialDurs.includes(sd)).join(", ")}). Edit the effect to migrate to native duration.expiry.`,
+        `dae | Effect "${effect.name}" on actor "${this.name}" uses deprecated dae special duration (${deprecated.join(", ")}). Edit the effect to migrate to native duration.expiry.`,
         { once: true, stack: false }
       );
     }
@@ -781,11 +784,8 @@ function createActiveEffectHook(effect: ActiveEffect.Implementation, options: Ac
   const token: foundry.canvas.placeables.Token.Implementation = tokens[0];
   // @ts-expect-error v14 effect.system.changes
   if (effect.system?.changes?.length && effect.active) {
-    const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
-      && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
-      && effect.origin?.startsWith(actor.uuid);
     // don't apply macro or macro like effects if active aura and not targeting self
-    if (!selfAuraChange) {
+    if (!isSelfAuraChange(effect, actor)) {
       // @ts-expect-error v14 effect.system.changes
       actionQueue.add(processEffectChanges, "on", actor, tokens, effect, undefined, effect.system.changes, options)
         .catch(err => {
@@ -884,29 +884,18 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
             }
           }
         }
-        const inline = hasInlineRoll(change.value);
-        if (change.key === "StatusEffect") {
-          console.warn("ActiveEffect | StatusEffect change key is deprecated, use macro.StatusEffect instead");
-          continue;
+        const isStatusEffect = change.key === "StatusEffect";
+        if (isStatusEffect) console.warn("ActiveEffect | StatusEffect change key is deprecated, use macro.StatusEffect instead");
+        else if (change.key.startsWith("macro.itemMacro")) {
+          const item = fromUuidSync(this.origin);
+          if (item instanceof Item) foundry.utils.setProperty(updates, `flags.dae.itemMacro`, getItemMacroCommand(item));
         }
-        else if (inline) {
+        if (!isStatusEffect && hasInlineRoll(change.value)) {
           const newChange: any = foundry.utils.duplicate(change);
           changesChanged = true;
           newChange.value = await rollInline(change.value, parent, this.name);
           newChanges.push(newChange);
-        } else if (change.key.startsWith("macro.itemMacro")) {
-          const item = fromUuidSync(this.origin);
-          if (item instanceof Item) {
-            let macroCommand = getItemMacroCommand(item);
-            foundry.utils.setProperty(updates, `flags.dae.itemMacro`, macroCommand);
-          }
-        } else if (change.key.startsWith("macro.activityMacro") && this.activity) {
-          const activity = fromUuidSync(this.activity);
-          // @ts-expect-error no dnd5e-types _AND_ no midi typing (which is what adds `macro`)
-          foundry.utils.setProperty(updates, "flags.dae.activityMacro", activity?.macro?.command)
-        }
-        else
-          newChanges.push(change);
+        } else newChanges.push(change);
       }
       if (changesChanged)
         updates["system.changes"] = newChanges;
@@ -1701,10 +1690,7 @@ export async function deleteItemHook(candidateItem: Item.Implementation, options
   for (let effect of candidateItem.effects) {
     if (!effect.transfer) continue;
     if (effect.disabled || effect.isSuppressed) continue;
-    const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
-      && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
-      && effect.origin?.startsWith(actor.uuid);
-    if (selfAuraChange) return;
+    if (isSelfAuraChange(effect, actor)) continue;
     // @ts-expect-error v14 effect.system.changes
     await actionQueue.add(processEffectChanges, "off", actor, token ? [token] : [], effect, candidateItem, effect.system.changes, options);
   }
@@ -1720,10 +1706,7 @@ export async function createItemHook(item: Item.Implementation, options: Item.Da
   for (let effect of item.effects) {
     if (!effect.transfer) continue;
     if (effect.disabled || effect.isSuppressed) continue;
-    const selfAuraChange = foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
-      && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
-      && effect.origin?.startsWith(actor.uuid);
-    if (selfAuraChange) return;
+    if (isSelfAuraChange(effect, actor)) continue;
     // @ts-expect-error v14 effect.system.changes
     await actionQueue.add(processEffectChanges, "on", actor, [token], effect, item, effect.system.changes, options);
   }
@@ -1867,7 +1850,6 @@ export function daeReadyActions() {
 
   aboutTimeInstalled = game.modules.get("about-time")?.active ?? false;
   simpleCalendarInstalled = game.modules.get("foundryvtt-simple-calendar")?.active ?? false;
-  timesUpActive = game.modules.get("times-up")?.active ?? false;
 
   // Provide human-readable labels for module flags (midi-qol, etc.) to dnd5e's
   // effect change display (PR #6820). Falls back to DAE's localizationMap which
@@ -1983,7 +1965,7 @@ export function daeInitActions() {
     // Migrate deprecated flags.dae.showIcon to native showIcon field
     if (this.flags?.dae?.showIcon) {
       // @ts-expect-error showIcon not in fvtt-types
-      this.updateSource({ showIcon: 2, "flags.dae.-=showIcon": null });
+      this.updateSource({ showIcon: 2, "flags.dae.showIcon": new foundry.data.operators.ForcedDeletion() });
       foundry.utils.logCompatibilityWarning(
         `dae | Effect "${this.name}": flags.dae.showIcon is deprecated, auto-migrated to ActiveEffect.showIcon.`,
         { once: true, stack: false }
@@ -2034,6 +2016,8 @@ export function daeInitActions() {
     }
     // Source/target expiries are kept verbatim; patching.ts evaluates them (dnd5e 6.0 does so natively).
     if (result !== false) result = await wrapped(data, context, user);
+    // dnd5e 6 does this in its own _preCreate
+    if (result !== false && daeManagesTurnExpiry) defaultInCombatExpiry(this);
     return result;
   }
 
@@ -2490,7 +2474,6 @@ export function fetchParams() {
   daeTitleBar = game.settings.get("dae", "DAETitleBar");
   DIMETitleBar = game.settings.get("dae", "DIMETitleBar");
   daeColorTitleBar = game.settings.get("dae", "DAEColorTitleBar");
-  daeNoTitleText = game.settings.get("dae", "DAENoTitleText");
   // showDeprecation = game.settings.get("dae", "showDeprecation") ?? true;
   dependentConditions = game.settings.get("dae", "DependentConditions") ?? false;
   specialDurationExpiryAction = game.settings.get("dae", "expiryAction") ?? "default";
@@ -2941,4 +2924,10 @@ interface EvalArgsInput {
   whisper?: boolean;
   itemCardUuid?: string | null;
   tokenUuid?: string | null;
+}
+
+function isSelfAuraChange(effect: ActiveEffect.Implementation, actor: Actor.Implementation): boolean {
+  return foundry.utils.getProperty(effect, "flags.ActiveAuras.isAura") === true
+    && foundry.utils.getProperty(effect, "flags.ActiveAuras.ignoreSelf") === true
+    && !!effect.origin?.startsWith(actor.uuid);
 }

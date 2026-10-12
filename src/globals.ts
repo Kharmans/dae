@@ -147,7 +147,6 @@ declare module "fvtt-types/configuration" {
     "dae.DAETitleBar": boolean;
     "dae.DIMETitleBar": boolean;
     "dae.DAEColorTitleBar": boolean;
-    "dae.DAENoTitleText": boolean;
     "dae.DAEAddHalfHealthEffect": boolean;
     "dae.DAEUntestedSystems": boolean;
     "dae.ZZDebug": "none" | "warn" | "debug" | "all";
@@ -178,6 +177,14 @@ declare module "fvtt-types/configuration" {
 }
 
 declare global {
+  // v14 data field operators, not yet in fvtt-types. `{ key: new ForcedDeletion() }` replaces the
+  // `{ "-=key": null }` deletion syntax that v14 deprecates.
+  namespace foundry.data.operators {
+    class ForcedDeletion {
+      constructor(value?: unknown);
+    }
+  }
+
   interface CONFIG {
     DAE: {
       systemClass: typeof DAESystem;
