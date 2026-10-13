@@ -8,6 +8,10 @@ import { getStatusEffectsArray, busyWait, effectBaseName } from "../dae.js";
 export type StackableMode = "" | "noneName" | "none" | "noneNameOnly" | "count" | "countDeleteDecrement";
 export type StackAction = "create" | "increment" | "skip";
 
+function sourceEffectOf(effect: ActiveEffect.Implementation): string | null | undefined {
+  return effect._stats?.duplicateSource ?? effect._stats?.compendiumSource;
+}
+
 /**
  * Check for existing effects that conflict with the new one and handle removal/toggling.
  * Returns true if the new effect should proceed with creation, false to abort.
@@ -38,8 +42,12 @@ export async function handleExistingEffects(
         break;
       case "noneNameOnly":
         return ef.name === effect.name;
-      case "none":
+      case "none": {
+        // The item effect it was copied from, as dnd5e's own re-application matches; else the origin.
+        const source = sourceEffectOf(effect);
+        if (source) return sourceEffectOf(ef) === source;
         return !!(effect.origin && efOrigin === effect.origin);
+      }
     }
     return false;
   });

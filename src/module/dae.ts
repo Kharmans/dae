@@ -15,6 +15,7 @@ import { filterEffectsForTargeting } from "./lib/effectFiltering.js";
 import { handleExistingEffects, handleStackIncrement } from "./lib/stackingPolicy.js";
 import { rewriteAtlChanges } from "./atlMigration.js";
 import { applyCurrentHp, raisesCurrentHp } from "./lib/currentHp.js";
+import { cardsNeedingSnapshot, getEffectItem, getEffectSource, getLegacyOrigin, originSlotFor, systemOriginOf, type SystemOrigin } from "./lib/effectSource.js";
 import { convertChangeValue, hasInlineRoll, resolveInlineRolls, rollEffectSource, rollInline, rollItemSource, type InlineRollRecord } from "./lib/inlineRolls.js";
 
 const { SchemaField } = foundry.data.fields;
@@ -767,8 +768,8 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
       if (this.flags?.dae?.durationExpression && parent instanceof Actor) {
         let sourceActor = parent;
         if (!data.transfer) { // for non-transfer effects we might be pointing to a different actor
-          const thing = fromUuidSync(this.origin) as Item.Implementation;
-          if (thing?.actor) sourceActor = thing.actor;
+          const caster = fromUuidSync(getEffectSource(this).actorUuid ?? "", { strict: false });
+          if (caster instanceof Actor) sourceActor = caster;
         }
         let theDurationRoll = new Roll(`${this.flags.dae.durationExpression}`, sourceActor?.getRollData() as AnyObject);
         let theDuration = await theDurationRoll.evaluate();
@@ -806,8 +807,8 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
         const isStatusEffect = change.key === "StatusEffect";
         if (isStatusEffect) console.warn("ActiveEffect | StatusEffect change key is deprecated, use macro.StatusEffect instead");
         else if (change.key.startsWith("macro.itemMacro")) {
-          const item = fromUuidSync(this.origin);
-          if (item instanceof Item) foundry.utils.setProperty(updates, `flags.dae.itemMacro`, getItemMacroCommand(item));
+          const item = fromUuidSync(getEffectSource(this).itemUuid ?? "", { strict: false });
+          if (item instanceof Item && !this.flags?.dae?.itemMacro) foundry.utils.setProperty(updates, `flags.dae.itemMacro`, getItemMacroCommand(item));
         }
         if (!isStatusEffect && hasInlineRoll(change.value)) {
           const newChange: any = foundry.utils.duplicate(change);
@@ -1048,7 +1049,13 @@ export function deleteActiveEffectHook(effect: ActiveEffect.Implementation, opti
           if (change.key === "flags.dae.suspendActiveEffect" && change.value) {
             await socketlibSocket.executeAsGM("suspendActiveEffect", { uuid: change.value });
           }
-          if (change.key === "flags.dae.deleteOrigin") entityToDelete = effect.origin;
+          if (change.key === "flags.dae.deleteOrigin") {
+            // An item deleting itself when its own effect ends; an applied effect never deletes its source.
+            if (effect.transfer && effect.parent instanceof Item) entityToDelete = effect.parent.uuid;
+            else foundry.utils.logCompatibilityWarning(
+              `dae | Effect "${effect.name}": flags.dae.deleteOrigin now applies only to transfer effects; its source was not deleted.`,
+              { since: "DAE 14.6.2", until: "DAE 14.8", once: true, stack: false });
+          }
           if (entityToDelete) await socketlibSocket.executeAsGM("deleteUuid", { uuid: entityToDelete });
         } catch (err) {
           console.warn("dae | error deleting active effect ", effect, err);
@@ -1077,6 +1084,33 @@ export function getSelfTarget(actor: Actor.Implementation | null): Token | Token
   return new CONFIG.Token.documentClass(tokenData);
 }
 
+/**
+ * Give a macro's lastArg the effect's source: `systemOrigin` (dnd5e's `system.origin`, as recorded), `source` (DAE's
+ * resolved uuids, see getEffectSource) and the deprecated `origin`, which keeps the value DAE gave it before 14.6.2.
+ * `origin` is an enumerable getter, so copies and JSON carry its value.
+ */
+export function addEffectSource(lastArg: AnyMutableObject, effect: ActiveEffect.Implementation | ActiveEffect.Source | undefined, origin?: string | null) {
+  if (!effect && origin === undefined) return lastArg;
+  if (effect) {
+    lastArg.systemOrigin = { ...systemOriginOf(effect) };
+    lastArg.source = getEffectSource(effect);
+  }
+  let value = origin !== undefined ? origin : (effect ? getLegacyOrigin(effect) : undefined);
+  const name = (effect as { name?: string } | undefined)?.name ?? "";
+  Object.defineProperty(lastArg, "origin", {
+    enumerable: true,
+    configurable: true,
+    get() {
+      foundry.utils.logCompatibilityWarning(
+        `dae | Effect "${name}": lastArg.origin is deprecated: use lastArg.source (itemUuid, activityUuid, controllingEffectUuid, sourceEffectUuid) or lastArg.systemOrigin.`,
+        { since: "DAE 14.6.2", until: "DAE 14.8", once: true, stack: false });
+      return value;
+    },
+    set(newValue) { value = newValue; }
+  });
+  return lastArg;
+}
+
 export async function daeMacro(action: string, actor: Actor.Implementation, effectData: ActiveEffect.Implementation | ActiveEffect.Source, lastArgOptions: any = {}) {
   let selfTarget: TokenOrDocument | null;
   let macro: Macro.Implementation | undefined;
@@ -1087,6 +1121,8 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
   warn("Dae macro ", action, actor, effectData, lastArgOptions)
   // @ts-expect-error v14 system.changes on toObject() data
   if (!effectData.system?.changes) return effectData;
+  const liveEffect = effectData instanceof ActiveEffect ? effectData : fromUuidSync(lastArgOptions.effectUuid ?? "", { strict: false });
+  const effectForSource = liveEffect instanceof ActiveEffect ? liveEffect : effectData;
   if (effectData instanceof ActiveEffect) {
     if (effectData.transfer && effectData.parent instanceof Item) theItem = effectData.parent;
     effectData = effectData.toObject(false);
@@ -1169,10 +1205,9 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
           error("actor vanished", actor.name, actor.uuid);
           return;
         }
-        const activityUuid = effectData.flags?.dae?.activity;
+        const activityUuid = getEffectSource(effectForSource).activityUuid;
         let lastArg = foundry.utils.mergeObject(lastArgOptions, {
           effectId: effectData._id,
-          origin: effectData.origin,
           activity: activityUuid,
           efData: effectData,
           actorId: actor.id,
@@ -1181,6 +1216,7 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
           effectUuid: lastArgOptions.effectUuid,
           tokenUuid,
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
+        addEffectSource(lastArg, effectForSource, "origin" in lastArgOptions ? lastArgOptions.origin : undefined);
         if (theChange.key.includes("macro.execute"))
           args = args.slice(1);
         let macroArgs: any[] = [action];
@@ -1213,13 +1249,13 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
       } else if (theChange.key === "macro.actorUpdate") {
         let lastArg = foundry.utils.mergeObject(lastArgOptions, {
           effectId: effectData._id,
-          origin: effectData.origin,
           efData: effectData,
           actorId: actor.id,
           actorUuid: actor.uuid,
           tokenId: selfTarget?.id,
           tokenUuid,
         }, { overwrite: false, insertKeys: true, insertValues: true, inplace: false });
+        addEffectSource(lastArg, effectForSource, "origin" in lastArgOptions ? lastArgOptions.origin : undefined);
 
         // try and make sure the actor has not vanished
         if (!fromUuidSync(actor.uuid)) {
@@ -1298,7 +1334,6 @@ export async function evalArgs({
   //contextToUse["item"] = "@item";
   if (item) {
     foundry.utils.setProperty(effectData, "flags.dae.itemUuid", item.uuid);
-    foundry.utils.setProperty(effectData, "flags.dae.itemData", item.toObject(false));
     contextToUse["itemData"] = "@itemData";
     contextToUse["item"] = item.getRollData()?.item;
   } else {
@@ -1398,7 +1433,7 @@ export async function doActivityEffects(
     const data = ef.toObject();
     // TODO dnd5e v4 - a temporary fix to make sure the effects are not disabled when applied
     data.disabled = false;
-    recordApplicationSource(data, ef, activity, options);
+    recordSourceEffect(data, ef.uuid, ef.inCompendium);
     return data;
   });
   return await applyActivityEffects(activity, activate, targets, activityEffects, options)
@@ -1441,10 +1476,10 @@ function evaluatedAtApplication(change: { key: string, replacement?: string }, l
 
 /**
  * What a dnd5e-mode applied effect needs when its target is prepared (see DAEdnd5e's getReplacementData): the source
- * item, a copy of it for when it can no longer be found, and the values of the moment of application. The spell level
- * and scaling also go where dnd5e's own application puts them.
+ * item and the workflow values of the moment of application. The spell level and scaling go where dnd5e's own
+ * application puts them; the item's data comes from the live item or its card (lib/effectSource.ts).
  */
-function recordApplicationData(data: ActiveEffect.Source, item: Item.Implementation, options: DoEffectsOptions, activity?: any) {
+function recordApplicationData(data: ActiveEffect.Source, item: Item.Implementation, options: DoEffectsOptions) {
   const message = fromUuidSync(options.itemCardUuid ?? "", { strict: false });
   // @ts-expect-error no dnd5e-types
   const baseLevel: number | undefined = item.system.level;
@@ -1453,18 +1488,12 @@ function recordApplicationData(data: ActiveEffect.Source, item: Item.Implementat
   // @ts-expect-error no dnd5e-types
   const scaling: number = message?.system?.scaling ?? Math.max(0, (spellLevel ?? 0) - (baseLevel ?? spellLevel ?? 0));
   foundry.utils.setProperty(data, "flags.dae.itemUuid", item.uuid);
-  foundry.utils.setProperty(data, "flags.dae.itemData", item.toObject(false));
   foundry.utils.setProperty(data, "flags.dnd5e.spellLevel", spellLevel);
   foundry.utils.setProperty(data, "flags.dnd5e.scaling", scaling);
   foundry.utils.setProperty(data, "flags.dae.applicationData", {
-    spellLevel, scaling,
     damage: options.damageTotal ?? 0,
     critical: !!options.critical,
-    fumble: !!options.fumble,
-    itemCardUuid: options.itemCardUuid ?? null,
-    actorUuid: item.actor?.uuid ?? null,
-    // The activity as its own roll data holds it (prepared values such as save.dc.value), for when it can't be found live.
-    ...(activity ? { activityId: activity.id, activity: JSON.parse(JSON.stringify(activity.getRollData?.()?.activity ?? {})) } : {})
+    fumble: !!options.fumble
   });
 }
 
@@ -1506,34 +1535,50 @@ export async function setApplicationMode(target: ApplicationTarget, mode: Applic
 }
 
 /**
- * dnd5e 6 prepares an effect's `origin` from `system.origin` (effect, then behavior, activity, item, actor), so
- * recording the activity there would change the `origin` DAE and midi read. DAE's origin goes in first as
- * `system.origin.effect`; an item or actor origin drops the activity instead, and an activity origin is already there.
+ * Record the effect an applied effect was copied from, as dnd5e 6 does (`EffectApplicationElement#_prepareEffectData`):
+ * its own Apply button finds an effect it already applied this way, and DAE's stacking matches on it.
  */
-function keepOriginPrecedence(data: ActiveEffect.Source) {
-  // @ts-expect-error no dnd5e-types
-  const systemOrigin = data.system?.origin;
-  if (!systemOrigin || !data.origin) return;
-  if (foundry.utils.parseUuid(data.origin)?.type === "ActiveEffect") systemOrigin.effect = data.origin;
-  else if (data.origin !== systemOrigin.activity) delete systemOrigin.activity;
+function recordSourceEffect(data: ActiveEffect.Source, effectUuid: string, inCompendium: boolean) {
+  const sourceKey = inCompendium ? "compendiumSource" : "duplicateSource";
+  data._stats = { ...data._stats, [sourceKey]: effectUuid, [inCompendium ? "duplicateSource" : "compendiumSource"]: null };
 }
 
 /**
- * Record where an applied effect came from, as dnd5e 6 does when it applies one (a mirror of
- * `EffectApplicationElement#_prepareEffectData`): the source effect in `_stats`, which dnd5e's own
- * Apply button uses to find an effect it already applied, and the activity, chat message and profile
- * in `system.origin`. `system.origin.effect` is filled in by applyActivityEffects once DAE's origin
- * is known.
+ * Record where an applied effect came from in `system.origin`, as dnd5e 6 does: the activity (or the item when there
+ * is none), the caster's concentration effect, the chat card and the activity's effect profile. A caller's `origin`
+ * goes in the slot for its type. dnd5e derives `origin` from these: the concentration effect, else the activity.
  */
-function recordApplicationSource(data: ActiveEffect.Source, effect: ActiveEffect.Implementation, activity, options: DoEffectsOptions) {
-  const sourceKey = effect.inCompendium ? "compendiumSource" : "duplicateSource";
-  data._stats = { ...data._stats, [sourceKey]: effect.uuid, [effect.inCompendium ? "duplicateSource" : "compendiumSource"]: null };
+function recordOrigin(data: ActiveEffect.Source, item: Item.Implementation, options: DoEffectsOptions, activity?: { uuid: string, effects?: { _id: string, uuid?: string }[] }, sourceEffectId?: string | null) {
+  const message = foundry.utils.parseUuid(options.itemCardUuid ?? "")?.type === "ChatMessage" ? options.itemCardUuid : null;
+  const origin: SystemOrigin = {
+    activity: activity?.uuid ?? null,
+    item: activity ? null : item.uuid,
+    effect: options.concentrationUuid ?? null,
+    behavior: null,
+    actor: null,
+    message,
+    profile: activity?.effects?.find(p => p._id === sourceEffectId)?._id ?? null
+  };
+  const slot = options.origin ? originSlotFor(options.origin) : undefined;
+  if (slot) origin[slot] = options.origin;
+  data.origin = origin.effect ?? origin.behavior ?? origin.activity ?? origin.item ?? origin.actor ?? options.origin ?? null;
   // @ts-expect-error no dnd5e-types
-  if (!data.system?.origin) return;
-  const profile = activity.effects?.find(p => (p.uuid === effect.uuid) || (p._id === effect.id))?._id;
-  const message = foundry.utils.parseUuid(options.itemCardUuid ?? "")?.type === "ChatMessage" ? options.itemCardUuid : undefined;
+  if (data.system?.origin) data.system.origin = origin;
+}
+
+/**
+ * The application references (`@item`, `@itemLevel`) of an effect with no chat card, filled in when it is applied:
+ * without a card its item's data can't be found once the item is deleted.
+ */
+function fillItemRefsWithoutCard(data: ActiveEffect.Source, item: Item.Implementation, options: DoEffectsOptions) {
+  if (foundry.utils.parseUuid(options.itemCardUuid ?? "")?.type === "ChatMessage") return;
   // @ts-expect-error no dnd5e-types
-  data.system.origin = { ...data.system.origin, activity: activity.uuid, message, profile };
+  const level = data.flags?.dnd5e?.spellLevel ?? item.system.level;
+  const refs = { item: { ...item.system, flags: item.flags, name: item.name, level }, itemLevel: level };
+  // @ts-expect-error v14 system.changes on toObject() data
+  for (const change of data.system?.changes ?? []) {
+    if (typeof change.value === "string" && /@item(Level)?\b/.test(change.value)) change.value = fillApplicationRefs(change.value, refs);
+  }
 }
 
 export async function applyActivityEffects(
@@ -1548,7 +1593,6 @@ export async function applyActivityEffects(
     effectsToApply: [],
     fumble: false,
     itemCardUuid: null,
-    origin: activity.item.uuid,
     removeMatchLabel: false,
     selfEffects: "none",
     spellLevel: 0,
@@ -1595,10 +1639,13 @@ export async function applyActivityEffects(
       // @ts-expect-error v14 system.changes on toObject() data
       activeEffectData.system.changes[changeIndex] = newChange;
     };
-    // @ts-expect-error Thinks `uuid` shouldn't exist
-    activeEffectData.origin = options.origin ?? activityEffects[aeIndex].uuid;
-    keepOriginPrecedence(activeEffectData);
-    if (!legacy) recordApplicationData(activeEffectData, activity.item, options, activity);
+    // The item effect's id, as recordSourceEffect recorded it.
+    const sourceEffectId = (activeEffectData._stats?.duplicateSource ?? activeEffectData._stats?.compendiumSource)?.split(".").pop();
+    recordOrigin(activeEffectData, activity.item, options, activity, sourceEffectId);
+    if (!legacy) {
+      recordApplicationData(activeEffectData, activity.item, options);
+      fillItemRefsWithoutCard(activeEffectData, activity.item, options);
+    }
     daeSystemClass.addDAEMetaData(activeEffectData, activity.item, options)
     activityEffects[aeIndex] = activeEffectData;
   }
@@ -1684,8 +1731,12 @@ export async function applyNonTransferEffects(
       activeEffectData.system.changes[changeIndex] = newChange;
     };
 
-    activeEffectData.origin = options.origin ?? item.uuid;
-    if (!legacy) recordApplicationData(activeEffectData, item, options);
+    if (activeEffectData._id) recordSourceEffect(activeEffectData, `${item.uuid}.ActiveEffect.${activeEffectData._id}`, !!item.inCompendium);
+    recordOrigin(activeEffectData, item, options);
+    if (!legacy) {
+      recordApplicationData(activeEffectData, item, options);
+      fillItemRefsWithoutCard(activeEffectData, item, options);
+    }
     daeSystemClass.addDAEMetaData(activeEffectData, item, options)
     appliedEffects[aeIndex] = activeEffectData;
   }
@@ -1816,6 +1867,20 @@ export async function createItemHook(item: Item.Implementation, options: Item.Da
   return;
 }
 
+/** Items being deleted keep their data on the cards of effects they applied, for those effects' item lookups. */
+function snapshotDeletedItems(items: Iterable<Item.Implementation>, userId: string) {
+  if (game.user?.id !== userId) return;
+  try {
+    const byItem = new Map([...items].map(item => [item.uuid, item]));
+    for (const [itemUuid, messageUuids] of cardsNeedingSnapshot(byItem.values())) {
+      socketlibSocket.executeAsGM("storeItemSnapshots", { itemData: byItem.get(itemUuid)!.toObject(), messageUuids })
+        .catch(err => console.warn("dae | storeItemSnapshots", err));
+    }
+  } catch (err) {
+    console.warn("dae | snapshotDeletedItems", err);
+  }
+}
+
 // Process onUpdateTarget flags
 export function preUpdateActorHook(candidate: Actor.Implementation, updates: Actor.UpdateData, options: Actor.Database.UpdateOptions, userId: string) {
   let result = true;
@@ -1836,19 +1901,14 @@ export function preUpdateActorHook(candidate: Actor.Implementation, updates: Act
       const sourceToken = sourceTokenDocument?.object;
       const targetActor = targetTokenDocument?.actor;
       const targetToken = targetTokenDocument?.object;
+      const theEffect = targetActor?.appliedEffects.find(ef => ef.origin === onUpdate.origin || getLegacyOrigin(ef) === onUpdate.origin);
       let originItem: Item.Implementation | undefined = (originObject instanceof Item) ? originObject : undefined;
-      if (!originItem && originObject instanceof ActiveEffect) originItem = originObject.parent as Item.Implementation;
-      if (!originItem) {
-        const theEffect = targetActor?.appliedEffects.find(ef => ef.origin === onUpdate.origin);
-        if (theEffect?.flags?.dae?.itemUuid) {
-          originItem = fromUuidSync(theEffect.flags.dae.itemUuid) as Item.Implementation;
-        }
-      }
+      if (!originItem && originObject instanceof ActiveEffect && originObject.parent instanceof Item) originItem = originObject.parent as Item.Implementation;
+      if (!originItem && theEffect) originItem = getEffectItem(theEffect);
 
       let lastArg = {
         tag: "onUpdateTarget",
         effectId: null,
-        origin: onUpdate.origin,
         efData: null,
         actorId: targetActor?.id,
         actorUuid: targetActor?.uuid,
@@ -1866,6 +1926,7 @@ export function preUpdateActorHook(candidate: Actor.Implementation, updates: Act
         originItem,
         macroItem: originItem
       };
+      addEffectSource(lastArg, theEffect, onUpdate.origin);
       let macroText: string | undefined | null;
       if (onUpdate.macroName.startsWith("ItemMacro")) { // TODO Come back and make sure this is tagged to the effect
         if (onUpdate.macroName === "ItemMacro") {
@@ -2229,6 +2290,8 @@ export function daeInitActions() {
   Hooks.on("deleteItem", (item, options, userId) => updateStatusEffects(item, options, userId));
   Hooks.on("createItem", (item, options, userId) => updateStatusEffects(item, options, userId));
 
+  Hooks.on("preDeleteItem", (item: Item.Implementation, options: object, userId: string) => snapshotDeletedItems([item], userId));
+  Hooks.on("preDeleteActor", (actor: Actor.Implementation, options: object, userId: string) => snapshotDeletedItems(actor.items, userId));
   Hooks.on("deleteActiveEffect", deleteActiveEffectHook);
   //  Hooks.on("preDeleteActiveEffect", preDeleteActiveEffectHook); - moved wrapper to avoid race conditions
   Hooks.on("preUpdateActiveEffect", recordDisabledSuppressedHook);
@@ -3031,7 +3094,10 @@ export interface DoEffectsOptions extends InexactPartial<{
   fumble: boolean;
   itemCardUuid: string | null;
   metaData: AnyObject;
+  /** Recorded in the `system.origin` slot for its type; use concentrationUuid for the caster's concentration. */
   origin: string;
+  /** The caster's concentration effect: the applied effects depend on it. */
+  concentrationUuid: string;
   removeMatchLabel: boolean;
   selfEffects: "selfEffectsAlways" | "selfEffectsAll" | "none";
   spellLevel: number;

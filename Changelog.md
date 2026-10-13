@@ -3,8 +3,30 @@
 **Applied and item effects**
 * Fixed: a consumable used up by its last use (e.g. a potion) applied none of its effects on dnd5e 6.
 * Fixed: effects with the pre-release `flags.dae.legacyApplication` (midi's sample items in 14.6.0–14.6.2) were applied in dnd5e mode; they are now applied in legacy mode, with a deprecation warning. Use `flags.dae.applicationMode`.
-* Fixed: `DAE.deleteActiveEffect` with an item's uuid missed the effects that item applied, whose origin is the item's effect (Slayer's Prey left the old target marked).
 * Fixed: a boolean `flags.dae.stackable` (DAE's original checkbox) was treated as stacking; `false` now means *none* and `true` *multi*, with a deprecation warning.
+
+**Effect source**
+* Changed: applied effects record their source in `system.origin` as dnd5e 6 does (the activity, or the item without one; the caster's concentration; the card; the effect profile), so their `origin` is the concentration effect, else the activity. Pass concentration as `concentrationUuid`; an `origin` passed to `doActivityEffects`/`doEffects` goes in the slot for its type.
+* Changed: applied effects no longer carry a copy of their item (`flags.dae.itemData`); its data comes from the live item, else from the card: dnd5e's copy of an item the use consumed, or one DAE adds when an item that applied effects is deleted later. `flags.dae.applicationData` keeps only damage, critical and fumble.
+* Added:
+  * `DAE.getEffectSource(effect)` → `{ actorUuid, itemUuid, activityUuid, controllingEffectUuid, sourceEffectUuid, messageUuid }`
+  * `DAE.getEffectItem(effect)` → the effect's Item: the live item, else one built from its data (a few ms the first time, then cached). Use it for the item's prepared values or methods.
+  * `DAE.getEffectItemData(effect)` → the item's stored data (a copy while the item exists). Never builds a document: use it when stored values are enough, and always during data preparation, where building an item re-enters preparation and prepared values aren't final.
+  * `DAE.getMessageItemData(message)` → a card's item data (`message` a ChatMessage or its uuid)
+  * `DAE.effectMatchesSource(effect, uuid)` → whether the effect came from that item, activity, item effect or concentration effect
+* Added: macro `lastArg.source` and `lastArg.systemOrigin`. Deprecated: `lastArg.origin`, which keeps its old value.
+* Changed: `deleteActiveEffect` and `deleteItemActiveEffects` match an effect's item, activity, source effect or concentration effect (Slayer's Prey left the old target marked).
+* Changed: *Unique by origin* stacking matches the item effect an effect was copied from.
+* Changed: `flags.dae.deleteOrigin` applies only to transfer effects.
+* Changed: an effect applied without a chat card has its `@item` references filled in when applied.
+
+Cost per call (µs, dnd6, Bless applied):
+
+| | Item exists | Item deleted |
+|---|---|---|
+| `getEffectSource` | 0.3 | the same (reads only uuids) |
+| `getEffectItem` | 2.4 (the live item) | 3,600 the first time (builds the Item), then 1.75 (cached) |
+| `getEffectItemData` | 32 (copies the data) | 2.1 (the card's copy) |
 
 ### 14.6.1
 * Requires Foundry 14.369 and dnd5e 6.0.6.

@@ -130,6 +130,12 @@ declare module "fvtt-types/configuration" {
         disadvantage?: MidiAdvantageFlag
       }
     }
+    ChatMessage: {
+      dae?: {
+        /** The card's item, stored when it was deleted while effects it applied remain (see lib/effectSource.ts) */
+        itemSnapshot?: Item.Source;
+      }
+    }
     Item: {
       dae?: {
         macro?: Macro.CreateData;

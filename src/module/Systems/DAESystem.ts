@@ -1,6 +1,7 @@
 import { AnyMutableObject, AnyObject } from "fvtt-types/utils";
 import { debugEnabled, error, i18n, warn } from "../../dae.js";
 import { daeSystemClass, getToken, DAEReadyComplete, DoEffectsOptions, ceInterface, BaseValuesInner } from "../dae.js";
+import { getMessageItemData } from "../lib/effectSource.js";
 
 /** Core's TokenDocument#ACTIVE_EFFECT_TARGETABLE_KEYS (private in Foundry 14): the token fields `token.*` changes reach. */
 const TOKEN_TARGETABLE_KEYS: readonly string[] = ["name", "width", "height", "depth", "shape", "texture", "alpha",
@@ -348,7 +349,8 @@ export class DAESystem {
     this.daeActionTypeKeys = [];
   }
   public static addDAEMetaData(activeEffectData: ActiveEffect.Source, item: Item.Implementation, options: DoEffectsOptions) {
-    if (!fromUuidSync(item.uuid))
+    // An item that can't be found (a temporary one) and that its card holds no snapshot of: the effect keeps a copy.
+    if (!fromUuidSync(item.uuid) && !getMessageItemData(options.itemCardUuid))
       foundry.utils.setProperty(activeEffectData, "flags.dae.itemData", item.toObject(false));
     foundry.utils.setProperty(activeEffectData, "flags.dae.transfer", false);
     if (options.metaData) foundry.utils.mergeObject(activeEffectData, options.metaData);

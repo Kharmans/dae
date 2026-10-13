@@ -1,5 +1,6 @@
 import { allMacroEffects, tokenForActor, actorFromUuid, getTokenDocument, getToken, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs, usesLegacyApplication, syncDependents } from "./dae.js";
 import { resolveMacro } from "./lib/macroResolution.js";
+import { effectMatchesSource, getEffectItem, getLegacyOrigin } from "./lib/effectSource.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
 
@@ -31,6 +32,16 @@ export let setupSocket = () => {
   socketlibSocket.register("removeActorItem", _removeActorItem);
   socketlibSocket.register("_updateActor", _updateActor)
   socketlibSocket.register("itemReplaceEffects", _itemReplaceEffects);
+  socketlibSocket.register("storeItemSnapshots", _storeItemSnapshots);
+}
+
+/** Keep a deleted item's data on the cards of effects it applied (see cardsNeedingSnapshot). */
+async function _storeItemSnapshots(data: { itemData: Item.Source, messageUuids: string[] }) {
+  for (const uuid of data.messageUuids) {
+    const message = fromUuidSync(uuid as MustBeValidUuid<string>);
+    if (!(message instanceof ChatMessage) || message.flags?.dae?.itemSnapshot) continue;
+    await message.setFlag("dae", "itemSnapshot", data.itemData);
+  }
 }
 
 async function _itemReplaceEffects(data: { itemUuid: string, effects: ActiveEffect.Source[] }) {
@@ -265,17 +276,6 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
-/**
- * Whether an effect came from `origin`. An item's uuid also matches effects whose origin is one of its effects or
- * activities, or that DAE recorded as applied from it (`flags.dae.itemUuid`); any other uuid must match exactly.
- */
-function fromOrigin(effect: ActiveEffect.Implementation, origin: string): boolean {
-  if (!origin) return false;
-  if (effect.origin === origin) return true;
-  if (foundry.utils.parseUuid(origin)?.type !== "Item") return false;
-  return !!effect.origin?.startsWith(`${origin}.`) || effect.flags?.dae?.itemUuid === origin;
-}
-
 async function _deleteEffects(data: { targets: { uuid: string }[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options?: ActiveEffect.Database.DeleteOperation }) {
   if (data.options === undefined) data.options = {};
   for (let idData of data.targets) {
@@ -284,7 +284,7 @@ async function _deleteEffects(data: { targets: { uuid: string }[], origin: strin
       error("could not find actor for ", idData);
       continue;
     }
-    let effectsToDelete = actor.effects.filter(ef => fromOrigin(ef, data.origin) && !data.ignore?.includes(ef.uuid));
+    let effectsToDelete = actor.effects.filter(ef => effectMatchesSource(ef, data.origin) && !data.ignore?.includes(ef.uuid));
     if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete.filter(ae => ae.id && data.deleteEffects.includes(ae.id))
     if (effectsToDelete.length > 0) {
       try {
@@ -335,29 +335,8 @@ export async function applyActiveEffects({
         foundry.utils.setProperty(aeData, "flags.dae.actor", targetActor.uuid);
         // @ts-expect-error v14 system.changes
         if (aeData.system.changes.some(change => change.key === "macro.itemMacro")) { // populate the itemMacro data.
-          let origin = fromUuidSync(aeData.origin);
-          let item: Item.Implementation;
-          let macroCommand: string | undefined | null;
-          let count: number;
-          for (count = 0; count < 10 && origin instanceof CONFIG.ActiveEffect.documentClass && !(origin.parent instanceof Item); count++) {
-            if (origin.parent instanceof CONFIG.Item.documentClass) origin = origin.parent;
-            else {
-              origin = await fromUuid(origin.origin);
-            }
-          }
-          if (count === 10) {
-            console.warn("dae | applyActiveEffects: too many levels of active effects", aeData);
-          } else if (origin instanceof Item) {
-            item = origin;
-            macroCommand = getItemMacroCommand(item);
-          } else if (origin?.parent instanceof Item) {
-            item = origin.parent;
-            macroCommand = getItemMacroCommand(item);
-          }
-
-          if (!macroCommand && aeData.flags?.dae?.itemData) {
-            macroCommand = getItemMacroCommand(aeData.flags.dae.itemData);
-          }
+          // Captured now, so the effect's later calls run the macro it was applied with.
+          const macroCommand = getItemMacroCommand(getEffectItem(aeData)) ?? getItemMacroCommand(aeData.flags?.dae?.itemData);
           foundry.utils.setProperty(aeData, "flags.dae.itemMacro", macroCommand)
         }
         // If effect has no duration, inherit from activity/item duration
@@ -410,9 +389,9 @@ export async function applyActiveEffects({
             if (!sourceActor) continue;
             if (change.key === "flags.dae.onUpdateTarget") {
               // for onUpdateTarget effects, put the source actor, the target uuid, the origin and the original change.value
-              change.value = `${aeData.origin}, ${targetTokenDoc?.uuid}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${sourceActor.uuid}, ${change.value}`;
+              change.value = `${getLegacyOrigin(aeData)}, ${targetTokenDoc?.uuid}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${sourceActor.uuid}, ${change.value}`;
             } else if (change.key === "flags.dae.onUpdateSource") {
-              change.value = `${aeData.origin}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${targetTokenDoc?.uuid}, ${sourceActor.uuid}, ${change.value}`;
+              change.value = `${getLegacyOrigin(aeData)}, ${tokenForActor(sourceActor)?.document.uuid ?? ""}, ${targetTokenDoc?.uuid}, ${sourceActor.uuid}, ${change.value}`;
               const newEffectData = foundry.utils.duplicate(aeData);
               // @ts-expect-error v14 system.changes
               newEffectData.system.changes = [foundry.utils.duplicate(change)];

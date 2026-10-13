@@ -165,7 +165,7 @@ Related:
 Active effects have a stackable property to define what happens when a new copy of an effect is applied to an actor.
 The options for stacking effects are:
   - multi: No existing effects will be removed when this effect is created.
-  - none: only one effect with the same origin can be created. So if an item can apply different effects only the most recently applied will be present.
+  - none: only one copy of an item effect can be on an actor: applying it again (from any activity of the item) replaces the earlier copy, as dnd5e's own re-application does. Different effects of the same item or activity don't replace each other. An effect not copied from an item effect matches on its origin.
   - noneName: Only one effect with a given name for an origin (item/actor) can exist on an actor. If an existing effect has no origin it **will not** be removed by this option.
   - noneNameOnly: Only one effect with the given name can exist on actor independent of where it came from. This option **will** remove effects with no origin if the name matches.
   - count: dae keeps and displays a count of how many times an effect has been applied, but there is only one effect on the item.
@@ -471,7 +471,7 @@ Macros are called when the effect is transferred to the character (with `args[0]
 <details><summary>Special flags.dae...</summary>
 <ul>
 <li>
-flags.dae.deleteOrigin, which if present as a change in an active effect, will when the effect is deleted from the actor, attempt to delete the item pointed to by the effect's origin. The change value does not matter. Only owned items of an actor (any actor) will be deleted, and wont delete World Items or Compendium Items, can be useful for one shot items that you want to remain until the effect they created expires.
+flags.dae.deleteOrigin, on a transfer effect: when the effect is deleted (e.g. it expires), its item is deleted too. The change value does not matter. Only owned items are deleted. Useful for items that should go when their effect ends. It does nothing on an applied effect (since 14.6.2): an applied effect never deletes the item it came from. A consumable used up by its last use keeps its data on the chat card, so its applied effects keep working.
 </li>
 <li>
 When an active effecr with a change flags.dae.deleteUuid is deleted, and whose change.value is an owned uuid, token uuid or ActiveEffect uuid, the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems/ActiveEffects are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.
@@ -596,8 +596,17 @@ In addition to the standard `@values` the following are supported (only as macro
 In some circumstances (when macros are called with args[0] === "off or args[0] === "each") the standard actor and token variables will **not** be initailised. So inside the macro you can't do actor.anything. To access the actor/token in a way that will always work there is an additional argument (in addition to those specified in the `macro.execute` definition) **lastArg**, which includes a lot of information for executing the macro. You ccan access lastArg via
 ```let lastArg = args[args.length-1]```. lastArg will always include, at least,
 * effectId - the id of the effect being triggered
-*  origin:
-    the origin of the effect being triggered (use this with ```fromUuidSync(lastArg.origin)``` - usually an item.
+* source - where the effect came from, as uuids (dnd5e 6):
+  * `itemUuid` - the item that applied it
+  * `activityUuid` - the activity that applied it
+  * `controllingEffectUuid` - the caster's concentration effect, when concentrating
+  * `sourceEffectUuid` - the item effect it was copied from
+  * `messageUuid` - the chat card of the use
+  * `actorUuid` - the caster
+
+  Each may be missing. To get the item use ```fromUuidSync(lastArg.source.itemUuid)```, or ```DAE.getEffectItem(effect)```, which also works once the item has been deleted.
+* systemOrigin - dnd5e's own record, a copy of `effect.system.origin` (`activity`, `item`, `effect`, `message`, `profile`, …).
+* origin - **deprecated**, use `source`. The value DAE gave it before 14.6.2: the concentration effect, else the item effect the effect was copied from. An applied effect's own `effect.origin` is now what dnd5e makes it: the concentration effect, else the activity (not an Item, and an activity's `.parent` is its item's system data, so use `.item`).
 * efData - the effect data of the effect being triggered.
 * actorId - the id of the actor on whom the effect exists.
 * actorUuid - the uuid of the actor fetch it with
@@ -713,6 +722,16 @@ The macro functions in dynamicitems have been replaced in DAE with the following
   This will transfer the non-transfer effects from the item to the targets.
   `activate` (boolean) enables/disables the actor effects.
   `targets` is an array of target tokens or token ids.
+  Pass the caster's concentration effect as `concentrationUuid`: the applied effects depend on it. An `origin` option is recorded in the `system.origin` slot for its type.
+
+### Where an effect came from (dnd5e 6)
+Effects DAE applies record their source in `system.origin`, as dnd5e 6's own effects do. Applied effects no longer carry a copy of their item: its data comes from the live item, else from the chat card (dnd5e keeps a copy when a use consumes the item; DAE adds one when an item that applied effects is deleted later). The helpers:
+* `DAE.getEffectSource(effect)` - `{ actorUuid, itemUuid, activityUuid, controllingEffectUuid, sourceEffectUuid, messageUuid }` (what macros get as `lastArg.source`).
+* `DAE.getEffectItem(effect)` - the effect's item: the live item, else one built from its data (a few ms the first time after the item is deleted, then cached). Use it when you need the item's prepared values (e.g. a computed save DC) or its methods.
+* `DAE.getEffectItemData(effect)` / `DAE.getMessageItemData(message)` - the item's stored data, from the live item (a copy) or the card; for older effects, the copy they carry. These never build a document: use them when stored values (name, img, flags, `system` fields as entered) are enough, and always during data preparation.
+* `DAE.effectMatchesSource(effect, uuid)` - whether the effect came from that item, activity, item effect or concentration effect; `DAE.deleteActiveEffect(targetUuid, uuid)` and `DAE.deleteItemActiveEffects` match the same way.
+
+An item deleted while its effects remain loses its data only if their card has gone too (or they had none), so macros should allow for a missing item.
 
 ## Useful bits
 

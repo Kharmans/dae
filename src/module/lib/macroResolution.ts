@@ -1,4 +1,5 @@
 import { warn } from "../../dae.js";
+import { getEffectItem, getEffectSource } from "./effectSource.js";
 
 /** Resolve macro command text from an item or raw item data, checking dae and legacy itemacro flag paths. */
 export function getItemMacroCommand(source: unknown): string | undefined {
@@ -10,7 +11,8 @@ export function getItemMacroCommand(source: unknown): string | undefined {
 
 /**
  * Walk an effect's origin chain to find the originating Item.
- * Falls back to flags.dae.itemUuid, then flags.dae.itemData (constructing a temporary Item).
+ * Falls back to the effect's recorded source (lib/effectSource.ts): the live item, else one built from its card's
+ * snapshot or the item copy older effects carry.
  */
 export async function resolveItemFromEffect(
   effectData: ActiveEffect.Source,
@@ -30,14 +32,9 @@ export async function resolveItemFromEffect(
   else if (source?.parent instanceof Item) return source.parent as Item.Implementation;
   else if (source?.item instanceof Item) return source.item as Item.Implementation;
 
-  // Fallback: flags.dae.itemUuid
-  const itemUuid = effectData.flags?.dae?.itemUuid as string | undefined;
-  if (itemUuid) {
-    const item = fromUuidSync(itemUuid);
-    if (item instanceof Item) return item as Item.Implementation;
-  }
-
-  // Fallback: flags.dae.itemData (construct temporary Item)
+  const item = getEffectItem(effectData);
+  if (item) return item;
+  // An old effect's item copy, when its source names no actor.
   const itemData = effectData.flags?.dae?.itemData as Item.CreateData | undefined;
   if (itemData && actor) {
     return new CONFIG.Item.documentClass(itemData, { parent: actor }) as Item.Implementation;
@@ -129,7 +126,7 @@ export async function resolveItemMacroCommand(
       item = itemOrEffect as Item.Implementation;
     }
     if (!item) {
-      const activityUuid = effectData?.flags?.dae?.activity as string | undefined;
+      const activityUuid = getEffectSource(effectData).activityUuid;
       if (activityUuid) {
         const activity = fromUuidSync(activityUuid);
         // @ts-expect-error no dnd5e-types for activity.item
@@ -148,7 +145,7 @@ export async function resolveItemMacroCommand(
  * Resolve an ActivityMacro's command text from the activity UUID stored in effect flags.
  */
 export async function resolveActivityMacroCommand(effectData?: ActiveEffect.Source): Promise<string | undefined> {
-  const activityUuid = effectData?.flags?.dae?.activity as string | undefined;
+  const activityUuid = getEffectSource(effectData).activityUuid;
   if (!activityUuid) return undefined;
   const activity: any = await fromUuid(activityUuid);
   return activity?.macro?.command as string | undefined;

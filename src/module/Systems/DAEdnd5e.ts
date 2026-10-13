@@ -5,6 +5,7 @@ import { addAutoFields } from "../apps/DAEActiveEffectConfig.js";
 import { BaseValuesInner, actionQueue, actorFromUuid, daeApplyActiveEffects, daeApplyChange, daeShouldApplyChange, daeMacro, daeInitMacroActors, effectIsTransfer, enumerateBaseValues, getSelfTarget, getStaticID, libWrapper, localizationMap, midiActive, noDupDamageMacro, pendingInitMacroEffects, processEffectChanges, usesLegacyApplication } from "../dae.js";
 import { DAESystem, ValidSpec, wildcardEffects } from "./DAESystem.js";
 import { grantOnRolledPlacement } from "../lib/currentHp.js";
+import { getEffectItemData, getEffectSource } from "../lib/effectSource.js";
 
 const { SchemaField, ArrayField, ObjectField, BooleanField, NumberField, StringField, SetField } = foundry.data.fields;
 
@@ -922,7 +923,7 @@ export class DAESystemDND5E extends DAESystem {
     if (change.key === damageBonusMacroFlag) {
       let macroRef = change.value;
       const macroItem = getActorItemForEffect(change.effect);
-      const activityUuid = change.effect.flags?.dae?.activity as string | undefined;
+      const activityUuid = getEffectSource(change.effect).activityUuid;
       if (change.value === "ItemMacro") { // rewrite the ItemMacro if there is an origin
         macroRef = `ItemMacro.${macroItem?.uuid}`;
       } else if (change.value === "ActivityMacro" && activityUuid?.includes("Activity.")) {
@@ -1420,23 +1421,40 @@ function prepareBaseDataBonusAliases(this: Actor.Implementation, wrapped: Functi
   return result;
 }
 
+/**
+ * A dnd5e-mode applied effect's application references, for its target's preparation: the item and activity (live,
+ * else from the card's snapshot or an older effect's copy), the spell level and scaling (flags.dnd5e), the card, the
+ * caster and the workflow values. Reads data only: preparation must not prepare another document.
+ */
 function getReplacementData(this: ActiveEffect.Implementation, wrapped, baseData: AnyObject) {
   const data = wrapped(baseData);
   const application = this.flags?.dae?.applicationData;
   if (!application || !(this.parent instanceof Actor) || usesLegacyApplication(this)) return data;
   // @ts-expect-error v14 effect.system.changes
   if (!this.system?.changes?.some(change => typeof change.value === "string" && change.value.includes("@"))) return data;
-  const source = fromUuidSync(this.flags.dae?.itemUuid ?? "", { strict: false });
-  const itemData = source instanceof Item ? source : this.flags.dae?.itemData;
+  const effectSource = getEffectSource(this);
+  const live = fromUuidSync(effectSource.itemUuid ?? "", { strict: false });
+  const itemData = live instanceof Item ? live : getEffectItemData(this);
+  // @ts-expect-error no dnd5e-types
+  const spellLevel: number | undefined = this.flags.dnd5e?.spellLevel ?? application.spellLevel;
+  // @ts-expect-error no dnd5e-types
+  const scalingValue: number = this.flags.dnd5e?.scaling ?? application.scaling ?? 0;
   const item = itemData
     // @ts-expect-error no dnd5e-types
-    ? { ...itemData.system, flags: itemData.flags, name: itemData.name, level: application.spellLevel ?? itemData.system?.level }
+    ? { ...itemData.system, flags: itemData.flags, name: itemData.name, level: spellLevel ?? itemData.system?.level }
     : undefined;
   // @ts-expect-error no dnd5e-types
-  const scaling = new dnd5e.documents.Scaling(application.scaling ?? 0);
+  const scaling = new dnd5e.documents.Scaling(scalingValue);
+  const activityId = effectSource.activityUuid?.split(".").pop() ?? application.activityId;
   // @ts-expect-error no dnd5e-types
-  const liveActivity = source instanceof Item && application.activityId ? source.system.activities?.get(application.activityId) : undefined;
-  return { ...data, ...application, item, activity: liveActivity ?? application.activity, itemLevel: application.spellLevel, scaling };
+  const activity = (live instanceof Item ? live.system.activities?.get(activityId) : undefined)
+    // @ts-expect-error no dnd5e-types
+    ?? application.activity ?? (activityId ? itemData?.system?.activities?.[activityId] : undefined);
+  return {
+    ...data, ...application, item, activity, spellLevel, itemLevel: spellLevel, scaling,
+    itemCardUuid: effectSource.messageUuid ?? application.itemCardUuid ?? null,
+    actorUuid: effectSource.actorUuid ?? application.actorUuid ?? null
+  };
 }
 
 function isSuppressed(this: ActiveEffect.Implementation, wrapped): boolean {

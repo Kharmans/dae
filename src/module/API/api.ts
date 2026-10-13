@@ -13,6 +13,7 @@ import { expireEffect, isEffectExpired, isTransferEffect, hasDuration, hasExpiry
 import { migrateEffectData, migrateActor, migrateItem, migrateWorld } from '../migration.js';
 import { resolveItemFromEffect, resolveMacro, resolveWorldMacro, resolveItemMacroCommand, resolveActivityMacroCommand, createSyntheticMacro, createFunctionMacro } from '../lib/macroResolution.js';
 import { registerChangeHandler, getChangeHandler, changeHandlerRegistry } from '../lib/changeHandlerRegistry.js';
+import { effectMatchesSource, getEffectItem, getEffectItemData, getEffectSource, getMessageItemData } from '../lib/effectSource.js';
 import { calibratePhases, calibrateActor, misphaseReport, collapsePaths } from '../lib/phaseCalibration.js';
 
 const API = {
@@ -64,11 +65,16 @@ const API = {
   deleteItemActiveEffects,
   doActivityEffects,
   doEffects,
+  effectMatchesSource,
   enumerateBaseValues,
   expireEffect,
   getChangeHandler,
+  getEffectItem,
+  getEffectItemData,
+  getEffectSource,
   getFlag,
   getItemMacroCommand,
+  getMessageItemData,
   getTokenFlag,
   hasDuration,
   hasExpiry,
