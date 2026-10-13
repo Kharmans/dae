@@ -277,6 +277,17 @@ async function _removeTokenMagic(data: { tokenUuid: string, effectId: string }) 
   if (token) return await tokenMagic.deleteFilters(token, data.effectId);
 }
 
+/**
+ * Whether an effect came from `origin`. An item's uuid also matches effects whose origin is one of its effects or
+ * activities, or that DAE recorded as applied from it (`flags.dae.itemUuid`); any other uuid must match exactly.
+ */
+function fromOrigin(effect: ActiveEffect.Implementation, origin: string): boolean {
+  if (!origin) return false;
+  if (effect.origin === origin) return true;
+  if (foundry.utils.parseUuid(origin)?.type !== "Item") return false;
+  return !!effect.origin?.startsWith(`${origin}.`) || effect.flags?.dae?.itemUuid === origin;
+}
+
 async function _deleteEffects(data: { targets: { uuid: string }[], origin: string, ignore: string[], deleteEffects: string[], removeSequencer: boolean, options?: ActiveEffect.Database.DeleteOperation }) {
   if (data.options === undefined) data.options = {};
   for (let idData of data.targets) {
@@ -285,7 +296,7 @@ async function _deleteEffects(data: { targets: { uuid: string }[], origin: strin
       error("could not find actor for ", idData);
       continue;
     }
-    let effectsToDelete = actor.effects.filter(ef => ef.origin === data.origin && !data.ignore?.includes(ef.uuid));
+    let effectsToDelete = actor.effects.filter(ef => fromOrigin(ef, data.origin) && !data.ignore?.includes(ef.uuid));
     if (data.deleteEffects?.length > 0) effectsToDelete = effectsToDelete.filter(ae => ae.id && data.deleteEffects.includes(ae.id))
     if (effectsToDelete.length > 0) {
       try {

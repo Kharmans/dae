@@ -1,3 +1,9 @@
+### 14.0.18 (unreleased)
+
+**Applied and item effects**
+* Fixed: `DAE.deleteActiveEffect` with an item's uuid missed the effects that item applied, whose origin is the item's effect (Slayer's Prey left the old target marked).
+* Fixed: a boolean `flags.dae.stackable` (DAE's original checkbox) was treated as stacking; `false` now means *none* and `true` *multi*, with a deprecation warning.
+
 ### 14.0.17
 
 **Effect keys and macros**

@@ -1971,6 +1971,15 @@ export function daeInitActions() {
         { once: true, stack: false }
       );
     }
+    // A boolean stackable is DAE's original checkbox: false did not stack by origin ("none"), true stacked ("multi").
+    const stackable: unknown = this.flags?.dae?.stackable;
+    if (typeof stackable === "boolean") {
+      this.updateSource({ flags: { dae: { stackable: stackable ? "multi" : "none" } } });
+      foundry.utils.logCompatibilityWarning(
+        `dae | Effect "${this.name}": flags.dae.stackable ${stackable} is deprecated, migrated to "${stackable ? "multi" : "none"}".`,
+        { once: true, stack: false }
+      );
+    }
     // ATL → token.* pre-write normalisation (Layer A — enabled by "migrate" and "full").
     if (atlRewriteAtPreWrite) {
       // @ts-expect-error v14 effect.system.changes
