@@ -63,7 +63,7 @@ DAE does add some features to core active effects, so if the following features 
 - [Create items tied to an ActiveEffect](##Creating-items-with-DAE), so when the ActiveEffect is deleted, the item disappears as well. Useful for transformations or conjured weapons.
 
 # Index
-[Active Effect Expiry](##Active-Effect-Expiry)
+[Effect expiry](##Effect-expiry)
 [Stackable effects](##Stackable-effects)
 [Editing Active Effects](##Editing-Active-Effects)
 [Macros](##Macros)
@@ -75,36 +75,90 @@ DAE does add some features to core active effects, so if the following features 
 [Module Integrations](##Module-Integrations)
 [Issues](##issues)
 
-## Active Effect Expiry
+## Effect expiry
 
-Expiry of effects requires additional [modules](#Module Integrations) to be installed. All of the modules play nicely together. If times-up is installed it takes over the expiry of timed effects.
-* about-time provides time based expiry (i.e. duration in seconds/minutes and rounds converted to seconds).
-* times-up supports time based expiry plus knows about rounds/turns and links to the combat tracker.
-* Midi-QOL supports a handful of special expiries (see below) that are otherwise tricky to support.
+DAE adds to the effect expiry built into Foundry and dnd5e. No other module is needed.
 
-When entering the start time on the DAE duration tab the value is interpreted as an offset from the current game time. So 0 means now, +60 means in 1 minutes time, -30 means 30 seconds ago
+### Duration and expiry event
 
-If you use the special durations listed below be aware that any temporary effect must have a time duration as well. If you don't specify one (in the item or the effect) it will be assumed to be 6 seconds, which means it will expire at the start of the next round. If you want to make sure the special duration will work (i.e. start of the actors next turn) put in a dummy duration that is certain to be long enough, i.e. 2 rounds.
+An effect's **duration** tab has:
+- a **duration**: a number and its units (seconds to years, or rounds and turns);
+- an **Expiry** event: when the expiry is checked.
 
- $`\textcolor{#e67300}{\textsf{\small{Requires Midi-QOL 0.3.35+}}}`$ and does *not* depend on about-time/times-up
-Effects support additional expiry options (available on the DAE effect duration screen) that can be chosen:
-  * 1Attack: active effects last for one attack - requires workflow automation
-  * 1Action: active effects last for one action - requires workflow automation
-  * 1Hit: active effects last until the next successful hit - requires workflow automation
-  * isAttacked: the effect lasts until the next attack against the target. Requires workflow automation.
-  * isDamaged: the effect lasts until the target takes damage. Requires workflow automation.
-  * 1Save: the effect lasts until the target makes a save roll. Requires workflow automation.
-  All of these effects automatically expire at the end of the combat.
-  * Long Rest/Short Rest/New Day
-  * There are lots of variations on the above to support different damage types/saves
+When the effect is created on an actor, its start is recorded: the world time and, if a combat is running, the combat, round and turn, and the combatant whose turn it is.
 
-Requires times-up installed and active:
-  * turnStart: effects last until the start of self/target's next turn (check combat tracker)
-  * turnEnd: effects last until the end of self/target's next turn (checks combat tracker)
-  * If you want an effect on a target that expires at the start of the caster's next turn set the duration to 1 round
-  * If you want an effect on a target that expires at the end of the caster's next turn set the duration to 1 round + 1 turn.
+How durations count down:
+- Time units (seconds and up) count down as world time advances.
+- Rounds and turns count down in combat.
+- Outside combat a round counts as 6 seconds of world time. A duration in turns has no time equivalent outside combat, so it ends as soon as world time advances.
 
-See also Midi-qol and OverTime effects which support some conditional expiry options if the actor is in combat.
+An effect expires when **its duration has run out and its expiry event happens**:
+
+| Expiry | The effect expires |
+|---|---|
+| none | as soon as the duration runs out |
+| Turn Start / Turn End | at the start or end of the turn of whoever was acting when the effect was created (usually the caster), once the duration has run out. An effect created outside combat, or before the combat started, uses the affected actor's own turn |
+| Round Start / Round End | at that point in the round, once the duration has run out. Foundry counts the new round before Round End fires, so *1 round, Round End* ends at the end of the round it was created in |
+| Combat Start / Combat End | when combat starts or ends, once the duration has run out. Use Combat Start without a duration: with one, the combat has already started before the duration runs out, so the effect never expires |
+| Source Turn Start / End (dnd5e) | at the start or end of the turn of the actor that applied the effect |
+| Target Turn Start / End (dnd5e) | at the start or end of the affected actor's turn |
+
+Details:
+- An effect created in combat with a duration and no expiry event is given *Turn Start* by dnd5e, so a 1-round effect lasts until that turn in the next round rather than ending as the round turns over.
+- An expiry event **without a duration** ends the effect at the first such event. Example: "until the start of your next turn" on a target is no duration, *Source Turn Start*.
+- *Source/Target Turn* expiries keep a duration (dnd5e drops it; DAE keeps it as dnd5e 5.x did): *3 rounds, Target Turn Start* ends at the target's turn once 3 rounds have passed. The effect list and tooltip show the rounds left, e.g. "2 Rounds, then Start of Your Next Turn". Without a duration it is the next such turn. The Source and Target events skip the turn the effect was applied in.
+- Outside combat, time passing counts as every expiry event except Combat Start: the effect ends once its duration has run out, or as soon as time passes if it has no duration.
+- Expiry is checked by the GM's client, when world time advances and at each combat event.
+- DAE's former *Elapsed Time* expiry is retired; an effect that stores it is treated as having no expiry event.
+
+Which effects have durations:
+- **Applied effects** with no duration of their own take the activity's or item's duration, with no expiry event (so *Turn Start* in combat).
+- **Transfer effects** stay passive: a duration on a transfer effect does not count down. Put durations on applied effects.
+- An applied effect whose source is an effect on the caster's actor, such as concentration, depends on it (dnd5e's `dependentOn`) and ends when it ends.
+
+### Special durations
+
+A special duration ends an effect when something happens, as well as (or instead of) its duration; whichever comes first. Choose them on the DAE tab.
+
+DAE provides *Joins Combat*: the effect ends when the actor joins a combat.
+
+midi-qol adds the rest:
+- **Actions**: 1Action, Bonus Action, Reaction, Turn Action, 1Spell, 1Reaction.
+- **Attacks by the actor**: 1Attack, 1Hit, 1Miss (also per attack type), 1Critical, 1Fumble.
+- **Things done to the actor**: isAttacked, isHit, isHitCritical, isMissed, isDamaged (also per damage type), isHealed, zeroHP.
+- **Damage dealt**: DamageDealt.
+- **Rolls**: isSave, isSaveSuccess, isSaveFailure, isCheck (also per ability), isSkill (also per skill), isInitiative, isConcentrationSave, isConcentrationSaveSuccess, isConcentrationSaveFailure.
+- **Other**: isMoved, Long Rest, Short Rest, New Day.
+
+Without midi-qol only *Joins Combat* is available.
+
+**Older effects.** Effects made with the old special durations turnStart, turnEnd, turnStartSource, turnEndSource or combatEnd are converted when they are created:
+- The first one becomes the expiry event: *Target Turn Start*, *Target Turn End*, *Source Turn Start*, *Source Turn End* or *Combat End*. This is skipped if the effect already sets an expiry event.
+- Only one fits the expiry slot. A leftover combatEnd is still honoured.
+
+### What happens on expiry
+
+Three settings control what happens to an effect when it expires:
+
+| Setting | Options | Applies to |
+|---|---|---|
+| *Effect Expiry Action* (world) | **Mark Expired** (default), Delete, Do Nothing | durations and expiry events |
+| *Special Duration Expiry Action* (world) | **Default** (same as above), Delete, Mark Expired | special durations |
+| *Expiry mode* (each effect, DAE tab) | Default, Delete, Suppress | this effect; overrides both |
+
+What the options mean:
+- **Delete** removes the effect.
+- **Mark Expired** and **Suppress** both keep the effect on the actor but stop it applying:
+  - *Mark Expired* on a duration that runs out flags the effect as expired (Foundry's own expiry). dnd5e keeps it while its actor is in the combat it expired in, and deletes it when the actor leaves that combat or the combat ends; an effect that expires outside combat is deleted at once. The **Delete Expired Effects** button on the actor's effects tab clears expired effects by hand.
+  - Otherwise the effect is disabled, so it can be enabled again: an effect whose own *Expiry mode* is *Suppress*, or one ended by a special duration or enable condition.
+- Transfer effects that DAE expires are disabled, never deleted. Applied enchantments are the exception: they are deleted.
+
+Related:
+- When a combatant leaves the combat, or the combat ends, dnd5e removes its *Source/Target Turn* expiry effects from that combat.
+- A *Turn Start/End* effect whose combatant has left the combat ends at the first turn edge once its duration has run out.
+- *Expire Round Effects on Combat End* (world setting): when combat ends, or a combatant is removed, applied effects with a round or turn expiry event end too, unless their duration is in time units (minutes, hours...).
+- When an effect expires its macros are called with `"off"`, and `lastArg["expiry-reason"]` says why, e.g. `duration-expired:turnStart`, `combat-end`, `join-combat`.
+- *Macro repeat* (DAE tab) calls an effect's macros with `"each"` at the start and/or end of each turn, for damage over time.
 
 ## Stackable effects
 
@@ -724,7 +778,7 @@ Changes to initiative are challenging due to the way it is calculated and rolled
 
 ## Sample Items/Macros
 
-  There is a compendium of items that have been setup to work with DAE. All active effects work best if both Midi-QOL and about-time/times-up are installed and active, but will still function without them.
+  There is a compendium of items that have been setup to work with DAE. They work best with Midi-QOL installed and active, but still function without it.
 
 ## Module Integrations
 
@@ -740,19 +794,9 @@ Midi-QOL uses the Foundry targeting system to decide who to apply effects to. If
 
 If you have a feat "sneak attack" then rolling the feat will apply the non-transfer active effects to the token (i.e. weapon attacks do extra damage). For items with a saving throw active effects are applied if the save fails. Other items apply their effects when applying damage/casting a spell (if no saving throw) or consuming an item (e.g. potion).
 
-### [about-time](https://gitlab.com/tposney/about-time)
+### about-time and times-up
 
-If the underlying spell, weapon, feat, consumable etc has a duration then the active effects for that item will be applied to the targeted tokens (or self if the item is specified as self) and after the duration specified in the item the effects will be removed. So a bless spell with a duration of 1 minute will apply the active effect bonuses for 1 minute of gametime. A potion of giant strength will apply the new strength for the duration specified in the potion consumable. There are a few sample items in the premade compendium to get you started.
-
-Times-up is the preferred module for effect expriy.
-
-### [times-up](https://gitlab.com/tposney/times-up)
-
-Times-up is the preferred way to expire effects, since as well as time based expiration it support duration in rounds/turns.
-
-In addition times-up provides some special expirations for effects, turn start and turn end which will cause the effect to expire at the start/end of the character's turn.
-
-Times-up also provides 2 macro repeat settings (turn start/turn end). If set for an effect that has a `macro.execute`/`macro.itemMacro` setting, the macro will be called at the start/end of the characters turn, with `args[0] === "each"`. You can use this setting for damage over time effects.
+Not needed: effect expiry, including rounds and turns, special durations and *Macro repeat*, is built into DAE. See [Effect expiry](##Effect-expiry).
 
 ### [GM-Notes](https://github.com/syl3r86/gm-notes)
 

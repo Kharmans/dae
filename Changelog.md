@@ -1,3 +1,11 @@
+### 14.6.2 (unreleased)
+
+**Applied and item effects**
+* Fixed: a consumable used up by its last use (e.g. a potion) applied none of its effects on dnd5e 6.
+* Fixed: effects with the pre-release `flags.dae.legacyApplication` (midi's sample items in 14.6.0–14.6.2) were applied in dnd5e mode; they are now applied in legacy mode, with a deprecation warning. Use `flags.dae.applicationMode`.
+* Fixed: `DAE.deleteActiveEffect` with an item's uuid missed the effects that item applied, whose origin is the item's effect (Slayer's Prey left the old target marked).
+* Fixed: a boolean `flags.dae.stackable` (DAE's original checkbox) was treated as stacking; `false` now means *none* and `true` *multi*, with a deprecation warning.
+
 ### 14.6.1
 * Requires Foundry 14.369 and dnd5e 6.0.6.
 

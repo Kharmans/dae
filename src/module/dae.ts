@@ -1383,7 +1383,10 @@ export async function doActivityEffects(
    */
   const profiles = activity.effects ?? [];
   const resolved = await Promise.all(activityEffectsUuids.map(async (aeUuid) => {
-    const profile = profiles.find(p => (p.relativeUUID === aeUuid) || (p.uuid === aeUuid));
+    // An effect on the activity's own item may be given by its absolute uuid; resolve it through the activity, which still
+    // holds it when the item has just been deleted (a consumable used up).
+    const profile = profiles.find(p => (p.relativeUUID === aeUuid) || (p.uuid === aeUuid)
+      || (!p.uuid && !!p._id && aeUuid.endsWith(`.ActiveEffect.${p._id}`)));
     try {
       return profile ? await profile.getEffect() : await fromUuid(aeUuid);
     } catch (err) {
@@ -1409,11 +1412,20 @@ export type ApplicationMode = "dnd5e" | "legacy";
  * keeps its references for the target's data preparation. "legacy" takes every reference from the caster when
  * the effect is applied, as DAE always did. `##` defers a reference to the target in both.
  *
- * An effect's `flags.dae.applicationMode` chooses; unset or "default" follows the world setting.
+ * An effect's `flags.dae.applicationMode` chooses; unset or "default" follows the world setting. The pre-release
+ * `flags.dae.legacyApplication: true` still means "legacy", with a deprecation warning.
  */
-export function applicationModeOf(effectData: { flags?: { dae?: { applicationMode?: string } } } | undefined): ApplicationMode {
+export function applicationModeOf(effectData: { name?: string, flags?: { dae?: { applicationMode?: string, legacyApplication?: boolean } } } | undefined): ApplicationMode {
   const mode = effectData?.flags?.dae?.applicationMode;
-  return mode === "dnd5e" || mode === "legacy" ? mode : defaultApplicationMode;
+  if (mode === "dnd5e" || mode === "legacy") return mode;
+  // The flag this setting replaced before 14.6.0's release; midi's sample items carried it in 14.6.0-14.6.2.
+  if (effectData?.flags?.dae?.legacyApplication === true) {
+    foundry.utils.logCompatibilityWarning(
+      `dae | Effect "${effectData.name ?? ""}" uses flags.dae.legacyApplication; set flags.dae.applicationMode to "legacy" instead.`,
+      { since: "DAE 14.6.2", until: "DAE 14.8", once: true, stack: false });
+    return "legacy";
+  }
+  return defaultApplicationMode;
 }
 
 export function usesLegacyApplication(effectData: Parameters<typeof applicationModeOf>[0]): boolean {
@@ -2060,6 +2072,15 @@ export function daeInitActions() {
       this.updateSource({ showIcon: 2, "flags.dae.showIcon": new foundry.data.operators.ForcedDeletion() });
       foundry.utils.logCompatibilityWarning(
         `dae | Effect "${this.name}": flags.dae.showIcon is deprecated, auto-migrated to ActiveEffect.showIcon.`,
+        { once: true, stack: false }
+      );
+    }
+    // A boolean stackable is DAE's original checkbox: false did not stack by origin ("none"), true stacked ("multi").
+    const stackable: unknown = this.flags?.dae?.stackable;
+    if (typeof stackable === "boolean") {
+      this.updateSource({ flags: { dae: { stackable: stackable ? "multi" : "none" } } });
+      foundry.utils.logCompatibilityWarning(
+        `dae | Effect "${this.name}": flags.dae.stackable ${stackable} is deprecated, migrated to "${stackable ? "multi" : "none"}".`,
         { once: true, stack: false }
       );
     }

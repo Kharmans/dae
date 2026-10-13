@@ -235,7 +235,11 @@ export class DAEActiveEffectConfig extends SheetBase {
       await this.#migrateDeprecatedData(document);
     }
 
-    if (!document.flags?.dae?.stackable) {
+    // A boolean is DAE's original checkbox: false did not stack by origin.
+    const stackable: unknown = document.flags?.dae?.stackable;
+    if (typeof stackable === "boolean") {
+      foundry.utils.setProperty(context, "effect.flags.dae.stackable", stackable ? "multi" : "none");
+    } else if (!stackable) {
       foundry.utils.setProperty(context, "effect.flags.dae.stackable", "multi");
     }
 
