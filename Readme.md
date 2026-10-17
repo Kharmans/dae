@@ -1,96 +1,323 @@
-![](https://img.shields.io/badge/Foundry-v10-informational)
-![](https://img.shields.io/badge/Foundry-v11-informational)
-![](https://img.shields.io/badge/Foundry-v12-informational)
+![](https://img.shields.io/badge/Foundry-v14-informational)
+![](https://img.shields.io/badge/dnd5e-6-informational)
 ![Forge Installs](https://img.shields.io/badge/dynamic/json?label=Forge%20Installs&query=package.installs&suffix=%25&url=https%3A%2F%2Fforge-vtt.com%2Fapi%2Fbazaar%2Fpackage%2Fdae&colorB=4aa94a)
 
 Discord <a href="https://discord.gg/Xd4NEvw5d7"><img src="https://img.shields.io/discord/915186263609454632?logo=discord" alt="chat on Discord"></a>
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/tposney)
+
 # Dynamic effects using Active Effects (DAE)
 
+This is the readme for the **dnd6** release of DAE (the `dnd6` branch), written only for dnd5e 6. The Foundry v14 release for dnd5e 5.x (the `v14` branch) has its own readme.
 
+If you have a problem, please read the [Issues](#issues) section before reporting a bug. There is a discord server for my modules where you can get lots of help: https://discord.gg/Xd4NEvw5d7
 
-Replacement for dynamic effects
+## Contents
+- [Installation](#installation)
+- [What does DAE do?](#what-does-dae-do)
+- [Active effect basics](#active-effect-basics)
+- [Editing effects](#editing-effects)
+- [How changes are applied](#how-changes-are-applied)
+- [Applied effects: caster and target values](#applied-effects-caster-and-target-values)
+- [Maximum hit points](#maximum-hit-points)
+- [Stacking](#stacking)
+- [Effect expiry](#effect-expiry)
+- [Conditions](#conditions)
+- [Macros](#macros)
+- [Special DAE keys](#special-dae-keys)
+- [dnd5e key notes](#dnd5e-key-notes)
+- [Settings](#settings)
+- [API and hooks](#api-and-hooks)
+- [Module integrations](#module-integrations)
+- [Issues](#issues)
 
-If you have a problem please read the [Issues section](#issues) before reporting a bug.
-There is a dedicated discord server for my modules where you can get lots of help: https://discord.gg/BCAYr2D7wE
 ## Installation
 
-It's always easiest to install modules from the in game add-on browser.
+Install DAE from the in-game add-on browser. To install it by hand, paste this manifest URL into *Install Module*:
 
-To install this module manually:
-1.  Inside the Foundry "Configuration and Setup" screen, click "Add-on Modules"
-2.  Click "Install Module"
-3.  In the "Manifest URL" field, paste the following url:
+`https://gitlab.com/tposney/dae/raw/dnd6/package/module.json`
 
-`https://gitlab.com/tposney/dae/-/raw/dndv4/src/module.json`
+Requirements:
+- Foundry **14.369** or later (v14).
+- dnd5e **6.0.6** or later (6.x).
+- The **libWrapper** and **socketlib** modules. Foundry offers to install them with DAE.
 
-4.  Click 'Install' and wait for installation to complete
-5.  Don't forget to enable the module in game using the "Manage Module" button
+For dnd5e 5.x use the v14 release: `https://gitlab.com/tposney/dae/raw/v14/package/module.json`.
 
-### libWrapper
-
-This module uses the [libWrapper](https://github.com/ruipin/fvtt-lib-wrapper) library for wrapping core methods. It is a hard dependency and it is recommended for the best experience and compatibility with other modules.
-
-### socketLib
-
-This module uses the [socketLib](https://github.com/manuelVo/foundryvtt-socketlib) library for wrapping core methods. It is a hard dependency and it is recommended for the best experience and compatibility with other modules.
+This release is written only for dnd5e 6. Other systems are not supported.
 
 ## What does DAE do?
 
-First off you probably don't need DAE. The core Foundry system has active effects that do at least 80+% of what you might want. I encourage you to try using just the core active effects and consider DAE *only* if you run into a roadblock on what you want to do.
+Foundry's own active effects do most of what many games need, and dnd5e 6 adds more (per-change conditions, replacement of `@` references when an effect is applied). Try them first: you may not need DAE at all. DAE builds on them. Every core effect is also a DAE effect, and DAE adds:
 
-Foundry core active effects attach to an item and are designated as transfer or non-transfer.
-Transfer Effects are transferred to the actor that owns the item when the item is added to the actor's inventory and removed when the item is removed. This is a core foundry function and the implementation of this is done by core foundry.
-Non-transfer Effects are not moved from the item to any actor without additional functions, which DAE and Midi-QOL provide.
+- **Calculated values.** A change can use `@` references to the actor's data, arithmetic and dice, e.g. `@abilities.wis.mod` or `ceil(@classes.rogue.levels/2)`.
+- **Help with keys.** Autocomplete for change keys and values, which also sets the right change type and the right moment to apply each one, and checks values as you type.
+- **Effects applied to targets.** With midi-qol, using an item or activity applies its effects to the targets, with values taken from the caster or the target.
+- **Macros.** Run a macro when an effect starts or ends, or at the start or end of each turn.
+- **Special durations** such as "until the next attack" or "until damaged" (most need midi-qol).
+- **Stacking rules**, so a second application can replace, count or add to the first.
+- **Conditions** that disable or end an effect when an expression changes, and a builder for dnd5e's own conditions.
+- **Temporary items** that exist only while an effect lasts, and **actor links** that react when one linked actor changes.
 
-You can also create active effects directly on an actor and bypass the whole transfer/non-transfer question.
+## Active effect basics
 
-This module modifies how active effects behave over and above what is supported in core. An active effect allows you to modify values on an actor (e.g. Strength). You can create effects directly on an actor or create them on an item and have them transfer to the actor when the item is added to the actor.
+If you already know Foundry's active effects, skip to [Editing effects](#editing-effects). For more detail:
+- [Active Effects](https://foundryvtt.com/article/active-effects/): Foundry's knowledge base article;
+- [Active Effects](https://github.com/foundryvtt/dnd5e/wiki/Active-Effects): the dnd5e system wiki, how dnd5e uses effects;
+- [Active Effect Guide](https://github.com/foundryvtt/dnd5e/wiki/Active-Effect-Guide): the dnd5e wiki's list of keys and the values they take;
+- [Active Effects Primer](https://foundryvtt.wiki/en/development/guides/active-effects): the community wiki, aimed at macro and module authors.
 
-DAE does add some features to core active effects, so if the following features might be useful go ahead and use DAE. DAE builds on the core active effects so any core active effect is also a DAE active effect. Any place you edit a core active effect you can use the expanded active effects features.
+**An effect** is a set of **changes** applied to an actor. Each change has:
+- a **key**: the data it changes, e.g. `system.abilities.str.value`;
+- a **type**: how it changes it, e.g. *add* or *override*;
+- a **value**: e.g. `2`, or `@abilities.dex.mod`;
+- a **priority**: the order changes are applied in.
 
-- Editing of owned item effects is fully supported.
-- The ability to reference actor data in active effects data fields like `@abilities.str.value` where core restricts you to numbers and strings. If an active effect modifies a field that will be used in a roll like `system.bonuses.mwak.attack` (and soon to be .bonus fields - dnd1.5), a string field like `@abilities.dex.mod` will get looked up when the roll is made.
-- The ability to update derived fields, such as `abilities.dex.mod`. (Work in progress some of these do not do what you might expect, good example initiative mod/bonus).
-    * Most/Some of these will be redundant after dnd1.5.
-- The ability to perform arithmetic in field data definitions, like `ceil(@classes.rogue.levels/2)`
-- Support for an API that allows non-transfer effects to be applied to a target token. In combination with Midi-QOL it allows you to have spells/weapons/features apply non-transfer effects to other tokens.
-- An extended active effect editor that provides `CUSTOM` fields, a list of valid fields, a drop down list of options, drop down lists for restricted field values, and the ability to set the priority of an effect.
-- The ability to call macros when active effects are applied to an actor.
-- Several short hand CUSTOM effects to simplify giving all damage immunities and so on.
-- DAE makes the actor flags available in actor.getRollData(), so you can dereference @flags. in expressions
-- [Create items tied to an ActiveEffect](##Creating-items-with-DAE), so when the ActiveEffect is deleted, the item disappears as well. Useful for transformations or conjured weapons.
+On dnd5e 6 a change can also have **conditions** (see [Conditions](#conditions)) and a **Replacement** setting (see [Applied effects](#applied-effects-caster-and-target-values)).
 
-# Index
-[Effect expiry](##Effect-expiry)
-[Stackable effects](##Stackable-effects)
-[Editing Active Effects](##Editing-Active-Effects)
-[Macros](##Macros)
-[Macros and transfer effect](##Macros-and-transfer-effect)
-[Creating items with DAE](##Creating-items-with-DAE)
-[Macro Functions](##Macro-Functions)
-[Useful bits](##Useful-bits)
-[Sample Items/Macros](##Sample-Items/Macros)
-[Module Integrations](##Module-Integrations)
-[Issues](##issues)
+The change `system.abilities.str.value` *add* `2` raises Strength by 2 while the effect is active. The actor's stored data is not altered, so removing the effect restores the original value.
+
+**Where effects live.**
+- An effect on an **actor** applies to that actor.
+- An effect on an **item** is either:
+  - a **transfer** (passive) effect, which applies to the actor that owns the item. A Ring of Protection's +1 to AC is a transfer effect.
+  - an **applied** (non-transfer) effect, which does nothing until something applies it to a target. Bless is an applied effect: casting it copies the effect onto each target. midi-qol does this when you use an item or activity.
+
+**Origin.** Each effect records where it came from. An applied effect records it as dnd5e 6 does, in `system.origin`; its `origin` is the caster's concentration effect, else the activity that applied it. See [Where an applied effect came from](#where-an-applied-effect-came-from). DAE uses this to find the caster for applied effects, for stacking, and for macros.
+
+## Editing effects
+
+### The effect sheet
+
+DAE's effect sheet is dnd5e's own, with a **DAE** tab added. The DAE tab has:
+
+- **Enable condition** (applied effects) and **Disable condition**. See [Conditions](#conditions).
+- **Stackable** (item effects): what happens when the effect is applied again. See [Stacking](#stacking).
+- **Effect application** (applied effects): whose data fills the effect's `@` references. See [Applied effects](#applied-effects-caster-and-target-values).
+- **Icon Overlay**: show the effect's icon as a large overlay on the token.
+- **Expiry Mode**: delete or suppress this effect when it expires. *Default* follows the world setting. See [Effect expiry](#effect-expiry).
+- **Duration expression** (item effects): a roll expression, in seconds, rolled for the effect's duration when it is created.
+- **Macro Repeat**: run the effect's macros at the start and/or end of each turn. See [Macros](#macros).
+- **Special Duration**: end the effect on an event, e.g. the next attack. See [Effect expiry](#effect-expiry).
+- With midi-qol active:
+  - *Effect disabled if actor incapacitated*;
+  - *Apply to self when item applies target effects*;
+  - *Apply to self when item is rolled*;
+  - *Don't apply the effect*.
+
+DAE adds a **Condition builder** button beside the filter button of dnd5e's effect-level **Conditions** field. See [Conditions](#conditions).
+
+On the **duration** tab, *Reset Start to Now* restarts the effect's duration from the current time.
+
+### The change dialog
+
+Changes are edited in dnd5e's change dialog. DAE adds:
+- **Key autocomplete**: keys grouped by category, with their name and description. Picking a key sets its default change type.
+- **Value help**: a list of values for keys that take fixed values, and `@` references when you click into an empty value or press Ctrl+Space (with formula functions in a number or formula field).
+- **Value checks**: a note under the value for a reference no actor's data has (e.g. `@abilites.str.mod`), a value that is not a formula in a number or formula field, and a bare `? :`. Saving is not blocked. References that depend on the item, activity, classes, flags or the roll (`@item`, `@scale`, `@mod`, ...) and enricher links are not checked.
+- **Dice**: bare dice in a field that can't roll dice when the actor is prepared become a silent inline roll, with a note. See [Values](#values).
+- **Value editors**: an edit button for keys with their own editor, e.g. DIME for macros, and midi-qol's OverTime and condition editors.
+- The **phase** the change is applied in, read-only; see [How changes are applied](#how-changes-are-applied). The changes tab shows it too.
+- On `system.attributes.hp.max`, a note pointing to the right key, and on `hp.max` and `hp.tempmax` *add* changes the *Also raise current HP* option. See [Maximum hit points](#maximum-hit-points).
+- A **Condition builder** button beside dnd5e's filter button on the change's conditions.
+
+### Header controls
+
+Actor and item sheets get entries in their header menu:
+- **DAE** (actors and items): a list of all effects on the actor or item, including transfer effects from its items, with whether each is active and its remaining duration.
+- **DIME** (items): the editor for the item's macro, used by `macro.itemMacro`.
+- **DAE: Effect application** (items): set the effect application for every effect on the item. See [Applied effects](#applied-effects-caster-and-target-values).
+
+Related settings:
+- *DAE Title Bar* and *DIME Title Bar* show or hide the entries.
+- *DAE Colorful Title Bar* turns them green when the document has effects or a macro.
+- tidy5e item sheets get the same controls.
+
+The actor's effects tab also gets a **Delete Expired Effects** button (a trash icon on its suppressed-effects section), which deletes the effects marked expired.
+
+## How changes are applied
+
+### Change types and priority
+
+Foundry v14's change types, with their default priority:
+
+| Type | Default priority | What it does |
+|---|---|---|
+| custom | 0 | handled by the system or a module; DAE handles many custom keys |
+| multiply | 10 | multiplies a number |
+| add | 20 | adds to a number; appends to a string or set |
+| subtract | 20 | subtracts from a number |
+| downgrade | 30 | keeps the lower of the current value and the change |
+| upgrade | 40 | keeps the higher of the current value and the change |
+| override | 50 | replaces the value |
+
+Within each phase (see below), the changes on an actor are sorted by priority, lowest first, and applied in that order. For example, with Strength 15:
+- `system.abilities.str.value` *add* `2` and *override* `19`, default priorities: the add (20) runs first, then the override (50). Strength is **19**.
+- Give the add priority 100 and the override priority 10: the override runs first, then the add. Strength is **21**.
+
+### Phases: before and after derived data
+
+dnd5e calculates many values from others: ability modifiers from scores, skill totals, AC, spell DCs. Foundry v14 applies changes in two **phases** around that calculation:
+- **initial**: before the calculation, on the actor's stored data (ability scores, bonuses, `ac.flat`, ...). A change here feeds into everything calculated from it, but it cannot use calculated values.
+- **final**: after the calculation, for keys that need calculated values or are not stored data, such as DAE's own keys (e.g. `system.traits.di.all`, `system.attributes.movement.all`) and `system.spells.pact.level`. A change here can use calculated values, but nothing is recalculated from it.
+
+You don't choose the phase: DAE knows which one each key needs and applies the change then. The changes tab and the change dialog show it. A few old final-phase keys, such as `system.abilities.<abl>.mod` and `system.attributes.ac.value`, are deprecated: use the bonus keys described in [dnd5e key notes](#dnd5e-key-notes).
+
+### Values
+
+A change value can be more than a plain number:
+
+- **`@` references and arithmetic** are evaluated against the actor:
+  - `system.abilities.str.value` *add* `@classes.barbarian.levels`
+  - `system.rolls.damage.mwak.bonus` *add* `(ceil(@classes.rogue.levels/2))d6`
+- **Number fields** are evaluated when the actor's data is prepared.
+- **Dice in a number field** are rolled **once**, when the effect is created or edited. This also applies to formula fields dnd5e works out without dice (AC bonus, HP bonuses, spell DC, movement). DAE turns `+2d8` into `+[[[2d8]]]`, an inline roll, so the total is fixed rather than rolled every time the actor is prepared. Dice that can't be wrapped, such as `(@details.level)d6`, are kept with a warning.
+- **Roll-time formula fields** keep their formula. Dice and `@` references are evaluated when the roll is made, against the rolling actor. Example: `system.rolls.damage.mwak.bonus` *add* `1d4` adds a fresh 1d4 to each melee weapon damage roll.
+- **Inline rolls** are rolled once:
+  - `[[1d4+2]]` posts the roll to chat;
+  - `[[[1d4+2]]]` rolls silently.
+  
+  In a transfer effect the formula stays in the effect and the total is stored for each actor, so every actor the item reaches rolls its own.
+- **Expressions a roll formula can't handle**, such as `a ? b : c`: use `dae.eval(expression)`. (`dae.roll(expr)` is deprecated and becomes `[[[expr]]]`.)
+  In a number field `dae.eval` is evaluated when the change is applied, so it can use stored values only (`@abilities.str.value`, not `@abilities.str.mod`). In a formula field (an HP, attack or save bonus) it is evaluated when dnd5e evaluates the field, so calculated values work: `dae.eval(@abilities.dex.mod > 2 ? 2 : 0)`. The change dialog marks a bare `? :` in a number or formula field.
+  To choose between fixed values, a change's conditions are the dnd5e way: one change for each value, each with its own conditions. See [Conditions](#conditions).
+- **Numeric flags**: in a `flags.*` value that holds a number, `@` references and arithmetic are evaluated too.
+- **`@tokenUuid` and `@actorUuid`** are replaced with the uuid of the actor's token and of the actor.
+
+### Custom changes
+
+A *custom* change on a key DAE does not handle goes to Foundry's `applyActiveEffect` hook, so you can add your own behaviour. For example, to put the average of the Strength and Dexterity scores into a flag:
+```js
+Hooks.on("applyActiveEffect", (targetDoc, change, current, delta, changes) => {
+  if (change.key !== "flags.world.averageStrDex") return;
+  const { str, dex } = targetDoc.system.abilities;
+  foundry.utils.setProperty(targetDoc, change.key, Math.ceil((str.value + dex.value) / 2));
+});
+```
+- `targetDoc` can be an actor, an item or a token document.
+- A key like this is applied in the initial phase, before dnd5e calculates ability modifiers, so the example uses the scores (`.value`), not `.mod`.
+
+## Applied effects: caster and target values
+
+When an applied effect is copied onto a target, by midi-qol when an item is used or by `DAE.doEffects` / `DAE.doActivityEffects`, its `@` references can be filled from the actor **applying** it (the caster) or from the target. dnd5e 6 gives each change a **Replacement** setting for this. DAE applies an effect in one of two ways:
+
+| Effect application | `@field` in a change |
+|---|---|
+| **dnd5e (per Replacement setting)** (the default) | follows the change's Replacement: **Origin** is filled from the caster when the effect is applied; **Target** from each target when the effect is applied; **No Change** is not filled: it stays in the effect and is worked out on the target whenever the target is prepared, so it follows the target's current values |
+| **Legacy DAE (from the caster)** | every reference is filled from the caster when the effect is applied, as DAE did before dnd5e 6 |
+
+In both:
+- `##field` is not evaluated. It becomes `@field` on the target, so it refers to the target's own data.
+- Facts about the use are filled from it: `@item` (the item as used), `@activity`, `@spellLevel`, `@itemLevel`, `@scaling`, `@damage`, `@critical`, `@fumble`, `@itemCardUuid`, `@actorUuid`.
+- `@stackCount` (or `##stackCount`) is the effect's stack count; see [Stacking](#stacking).
+- Macro arguments are filled from the caster; see [Argument substitutions](#argument-substitutions).
+- Transfer effects are not affected.
+
+For example, a curse applying `system.attributes.ac.bonus` *add* `-@abilities.cha.mod` with Replacement **Origin** lowers the target's AC by the **caster's** Charisma modifier, whatever the target's. With Replacement **No Change**, or written `-##abilities.cha.mod`, it uses the target's own. Under Legacy DAE, `@abilities.cha.mod` is always the caster's.
+
+An effect whose changes rely on the caster's values with Replacement left at No Change, e.g. `saveDC=@attributes.spell.dc` in an OverTime effect, gets the target's values. Set those changes' Replacement to Origin, or apply the effect with Legacy DAE.
+
+**Choosing the way.**
+- *Default effect application* (world setting): dnd5e or Legacy DAE.
+- *Effect application* (applied effect, DAE tab): World default, dnd5e or Legacy DAE; overrides the setting.
+- *DAE: Effect application* (item header menu) sets it for every effect on the item.
+- *DAE: Effects use legacy application*, *DAE: Effects use dnd5e application* and *DAE: Effects follow the world default application* (Item and Actor compendium context menu, GM only) set it for every effect in the pack. Unlock the pack first.
+
+An effect already applied keeps the way it was applied.
+
+An applied effect with no duration of its own takes the duration of the activity or item that applied it; see [Effect expiry](#effect-expiry).
+
+### Where an applied effect came from
+
+Effects DAE applies record their source in `system.origin`, as dnd5e 6's own effects do:
+- `activity`: the activity that applied it (`item` when there is no activity);
+- `effect`: the caster's concentration effect, when concentrating;
+- `message`: the chat card of the use;
+- `profile`: the effect profile.
+
+The item effect it was copied from is in `_stats.duplicateSource` (or `_stats.compendiumSource`). Its `origin` is the concentration effect, else the activity; an activity is not an Item, and its `.parent` is its item's system data, so use `.item`.
+
+Applied effects don't carry a copy of their item. Its data comes from the live item, else from the chat card: dnd5e keeps a copy when a use consumes the item, and DAE adds one when an item that applied effects is deleted later. An item deleted while its effects remain loses its data only if their card has gone too (or they had none), so macros should allow for a missing item.
+
+To read the source, use the helpers in [API and hooks](#api-and-hooks), or a macro's `lastArg.source`.
+
+## Maximum hit points
+
+dnd5e works out a character's maximum hit points from class hit dice, Constitution and `system.attributes.hp.bonuses`, unless the character has a fixed maximum. NPCs and vehicles store their maximum. Which key to use:
+
+| To | Use |
+|---|---|
+| Raise max HP on any creature, e.g. Aid | `system.attributes.hp.tempmax` *add* |
+| Raise a character's calculated max HP, e.g. Tough | `system.attributes.hp.bonuses.overall` *add*, or `hp.bonuses.level` for a bonus per level |
+| Give an NPC extra hit points when its token is placed | `system.attributes.hp.formula` *add*, e.g. `+ 2d8` |
+| Set a fixed maximum | `system.attributes.hp.max` *override* |
+
+Notes:
+- `hp.formula` is rolled into max and current HP when an unlinked token is placed, if dnd5e's NPC *Hit Points* setting rolls them.
+- `system.attributes.hp.max` *add* is **not** a bonus. On a character whose maximum is calculated it replaces the calculated value: a character with 12 max HP and `+5` ends up with **5**. Use the keys above instead. The change dialog says so on this key.
+- Dice in these fields (e.g. `+2d8` on `hp.tempmax`) are rolled once: when an applied effect is created, or when a transfer effect's item reaches an actor. All tokens of the same sidebar NPC share that roll; for a bonus rolled for each token, use `hp.formula`.
+
+### Also raising current HP
+
+Normally an effect that raises maximum HP leaves current HP where it is: a character at 20/20 who gets +5 maximum HP is at 20/25. Spells like Aid raise both, so the character ends up at 25/25.
+
+To get that, tick *Also raise current HP* in the change dialog. It is offered on *add* changes to `system.attributes.hp.tempmax` or `system.attributes.hp.max`, and stored on the effect in `flags.dae.raiseCurrentHp` (a list of change ids). The midi-qol Aid sample item is set up this way.
+
+What happens, using Aid (+5) on a character with 20 maximum HP:
+
+| Situation | HP |
+|---|---|
+| Aid is applied at 20/20 | 25/25 |
+| Aid is applied at 12/20 | 17/25 |
+| Aid ends at 25/25 | 20/20: the extra hit points are lost |
+| Aid ends at 14/25 | 14/20: damage already taken stays taken |
+
+- Current HP rises when the change starts applying: the effect is created on an actor with a token on the scene, or its item is gained.
+- The extra current HP is given **once** per effect. Turning the effect off and on again, or unequipping and re-equipping the item that carries it, does not give it again; otherwise you could heal by toggling it.
+- Applying the effect never lowers current HP.
+- For an unlinked NPC whose hit points are rolled when its token is placed, the extra hit points are added on top of the roll.
+
+## Stacking
+
+"Stacking" is what happens when an effect lands on an actor that already has a copy of it. Foundry itself doesn't check: cast Bless on the same target twice and it gets two Bless effects, so its attack rolls get +2d4 instead of +1d4. Usually you want the second casting to replace the first. For some effects, such as poison that gets worse with each dose, you want a single effect that counts how many times it has been applied.
+
+DAE's **Stackable** setting, on the effect's DAE tab, says which of these you want:
+
+| Setting | What happens when the effect is applied again |
+|---|---|
+| multi | Another copy is added; nothing is replaced. This is also what happens when no setting is chosen. |
+| noneName | The new effect replaces an existing effect with the same name **and the same origin** (the same activity, or the same concentration effect). Bless from two different clerics gives two effects. |
+| noneNameOnly | The new effect replaces any existing effect with the same name, wherever it came from. Bless from two different clerics gives one effect. |
+| none | The new effect replaces an earlier copy of the **same item effect**, applied by any activity of the item, as dnd5e's own re-application does. Different effects of the same item or activity don't replace each other. An effect not copied from an item effect matches on its origin. |
+| count | No second effect is created. The existing one (same name and origin) gets a stack count, shown in its name (e.g. `Poisoned (3)`), and its changes apply once per stack. Deleting it removes all the stacks. |
+| countDeleteDecrement | As *count*, but deleting the effect removes one stack at a time; the effect goes when the last stack is removed. |
+
+`noneName` and `none` only match effects that record where they came from, so an effect added by hand (with no origin) is never replaced by them. `noneNameOnly` does replace it.
+
+`@stackCount` in a change's value is the number of stacks, so a bonus can grow with them, e.g. `system.rolls.damage.mwak.bonus` *add* `@stackCount`.
+
+**Only the arriving effect's setting counts.** When an effect is applied, DAE looks at *its* Stackable setting to decide whether to replace what is already there. The settings of the effects already on the actor are ignored. So if the actor already has a *noneNameOnly* effect called Bless and a *multi* Bless arrives, the actor ends up with both: the new effect's *multi* says "keep the old one". Give every copy of an effect the same setting and this never comes up.
+
+**Effects created together are all kept.** The check runs against effects already on the actor. If several matching effects are created in one go (for example by one macro call), none of them replaces the others.
+
+**Older effects.** A `flags.dae.stackable` of `true` or `false` (DAE's original checkbox) is read as *multi* and *none*, with a deprecation warning.
 
 ## Effect expiry
 
-DAE adds to the effect expiry built into Foundry and dnd5e. No other module is needed.
+DAE adds to the effect expiry built into Foundry and dnd5e 6. No other module is needed.
 
 ### Duration and expiry event
 
 An effect's **duration** tab has:
 - a **duration**: a number and its units (seconds to years, or rounds and turns);
-- an **Expiry** event: when the expiry is checked.
+- an **Expiry Event**: when the expiry is checked.
 
 When the effect is created on an actor, its start is recorded: the world time and, if a combat is running, the combat, round and turn, and the combatant whose turn it is.
 
 How durations count down:
 - Time units (seconds and up) count down as world time advances.
 - Rounds and turns count down in combat.
-- Outside combat a round counts as 6 seconds of world time. A duration in turns has no time equivalent outside combat, so it ends as soon as world time advances.
+- Outside combat a round counts as 6 seconds of world time (dnd5e). A duration in turns has no time equivalent outside combat, so it ends as soon as world time advances.
 
 An effect expires when **its duration has run out and its expiry event happens**:
 
@@ -100,16 +327,19 @@ An effect expires when **its duration has run out and its expiry event happens**
 | Turn Start / Turn End | at the start or end of the turn of whoever was acting when the effect was created (usually the caster), once the duration has run out. An effect created outside combat, or before the combat started, uses the affected actor's own turn |
 | Round Start / Round End | at that point in the round, once the duration has run out. Foundry counts the new round before Round End fires, so *1 round, Round End* ends at the end of the round it was created in |
 | Combat Start / Combat End | when combat starts or ends, once the duration has run out. Use Combat Start without a duration: with one, the combat has already started before the duration runs out, so the effect never expires |
-| Source Turn Start / End (dnd5e) | at the start or end of the turn of the actor that applied the effect |
-| Target Turn Start / End (dnd5e) | at the start or end of the affected actor's turn |
+| End of Short Rest / End of Long Rest (dnd5e) | when the actor finishes that rest. A long rest also ends *End of Short Rest* effects |
+| Start / End of Source's Next Turn (dnd5e) | at the start or end of the turn of the actor that applied the effect |
+| Start / End of Target's Next Turn (dnd5e) | at the start or end of the affected actor's turn |
 
 Details:
-- An effect created in combat with a duration and no expiry event is given *Turn Start* by dnd5e, so a 1-round effect lasts until that turn in the next round rather than ending as the round turns over.
-- An expiry event **without a duration** ends the effect at the first such event. Example: "until the start of your next turn" on a target is no duration, *Source Turn Start*.
-- *Source/Target Turn* expiries keep a duration (dnd5e drops it; DAE keeps it as dnd5e 5.x did): *3 rounds, Target Turn Start* ends at the target's turn once 3 rounds have passed. The effect list and tooltip show the rounds left, e.g. "2 Rounds, then Start of Your Next Turn". Without a duration it is the next such turn. The Source and Target events skip the turn the effect was applied in.
+- When a duration is set, the expiry defaults to *Turn Start*. For the affected actor's own turn, use *Start of Target's Next Turn*.
+- An effect created in combat with a duration in rounds or time units and no expiry event is given *Turn Start* by dnd5e, so a 1-round effect lasts until that turn in the next round rather than ending as the round turns over.
+- An expiry event **without a duration** ends the effect at the first such event. Example: "until the start of your next turn" on a target is no duration, *Start of Source's Next Turn*.
+- The Source and Target events keep a duration (dnd5e 6 drops it; DAE keeps it, as on dnd5e 5.x): *3 rounds, Start of Target's Next Turn* ends at the target's turn once 3 rounds have passed. The effect list and tooltip show the rounds left, e.g. "2 Rounds, then Start of Your Next Turn". Without a duration it is the next such turn.
+- The Source and Target events skip the turn the effect was applied in.
 - Outside combat, time passing counts as every expiry event except Combat Start: the effect ends once its duration has run out, or as soon as time passes if it has no duration.
 - Expiry is checked by the GM's client, when world time advances and at each combat event.
-- DAE's former *Elapsed Time* expiry is retired; an effect that stores it is treated as having no expiry event.
+- DAE's former *Elapsed Time* expiry is retired. An effect that stores it is treated as having no expiry event.
 
 Which effects have durations:
 - **Applied effects** with no duration of their own take the activity's or item's duration, with no expiry event (so *Turn Start* in combat).
@@ -133,7 +363,7 @@ midi-qol adds the rest:
 Without midi-qol only *Joins Combat* is available.
 
 **Older effects.** Effects made with the old special durations turnStart, turnEnd, turnStartSource, turnEndSource or combatEnd are converted when they are created:
-- The first one becomes the expiry event: *Target Turn Start*, *Target Turn End*, *Source Turn Start*, *Source Turn End* or *Combat End*. This is skipped if the effect already sets an expiry event.
+- The first one becomes the expiry event: *Start of Target's Next Turn*, *End of Target's Next Turn*, *Start of Source's Next Turn*, *End of Source's Next Turn* or *Combat End*. This is skipped if the effect already sets an expiry event.
 - Only one fits the expiry slot. A leftover combatEnd is still honoured.
 
 ### What happens on expiry
@@ -144,810 +374,361 @@ Three settings control what happens to an effect when it expires:
 |---|---|---|
 | *Effect Expiry Action* (world) | **Mark Expired** (default), Delete, Do Nothing | durations and expiry events |
 | *Special Duration Expiry Action* (world) | **Default** (same as above), Delete, Mark Expired | special durations |
-| *Expiry mode* (each effect, DAE tab) | Default, Delete, Suppress | this effect; overrides both |
+| *Expiry Mode* (each effect, DAE tab) | Default, Delete, Suppress | this effect; overrides both |
 
 What the options mean:
 - **Delete** removes the effect.
 - **Mark Expired** and **Suppress** both keep the effect on the actor but stop it applying:
-  - *Mark Expired* on a duration that runs out flags the effect as expired (Foundry's own expiry). dnd5e keeps it while its actor is in the combat it expired in, and deletes it when the actor leaves that combat or the combat ends; an effect that expires outside combat is deleted at once. The **Delete Expired Effects** button on the actor's effects tab clears expired effects by hand.
-  - Otherwise the effect is disabled, so it can be enabled again: an effect whose own *Expiry mode* is *Suppress*, or one ended by a special duration or enable condition.
-- Transfer effects that DAE expires are disabled, never deleted. Applied enchantments are the exception: they are deleted.
+  - *Mark Expired* on a duration that runs out flags the effect as expired (Foundry's own expiry). dnd5e keeps it while its actor is in the combat it expired in, and deletes it when the actor leaves that combat or the combat ends. An effect that expires outside combat is deleted at once. The **Delete Expired Effects** button on the actor's effects tab clears expired effects by hand.
+  - Otherwise the effect is disabled, so it can be enabled again: an effect whose own *Expiry Mode* is *Suppress*, or one ended by a special duration or enable condition.
+- Transfer effects that DAE expires are disabled, never deleted (applied enchantments are the exception).
 
 Related:
-- When a combatant leaves the combat, or the combat ends, dnd5e removes its *Source/Target Turn* expiry effects from that combat.
+- When a combatant leaves the combat, or the combat ends, dnd5e removes its Source/Target expiry effects from that combat.
 - A *Turn Start/End* effect whose combatant has left the combat ends at the first turn edge once its duration has run out.
 - *Expire Round Effects on Combat End* (world setting): when combat ends, or a combatant is removed, applied effects with a round or turn expiry event end too, unless their duration is in time units (minutes, hours...).
 - When an effect expires its macros are called with `"off"`, and `lastArg["expiry-reason"]` says why, e.g. `duration-expired:turnStart`, `combat-end`, `join-combat`.
-- *Macro repeat* (DAE tab) calls an effect's macros with `"each"` at the start and/or end of each turn, for damage over time.
 
-## Stackable effects
+## Conditions
 
-Active effects have a stackable property to define what happens when a new copy of an effect is applied to an actor.
-The options for stacking effects are:
-  - multi: No existing effects will be removed when this effect is created.
-  - none: only one copy of an item effect can be on an actor: applying it again (from any activity of the item) replaces the earlier copy, as dnd5e's own re-application does. Different effects of the same item or activity don't replace each other. An effect not copied from an item effect matches on its origin.
-  - noneName: Only one effect with a given name for an origin (item/actor) can exist on an actor. If an existing effect has no origin it **will not** be removed by this option.
-  - noneNameOnly: Only one effect with the given name can exist on actor independent of where it came from. This option **will** remove effects with no origin if the name matches.
-  - count: dae keeps and displays a count of how many times an effect has been applied, but there is only one effect on the item.
-  - DAE applies the rule for the newly created effect, but **does not** re-examine existing effects for their rules. For example:
-    - If you have an existing effect with noneNameOnly and apply an effect with noneName the effect creation will go through and both effects will be present. 
-    - If you have an existing effect with none and apply an effect with multi, both effects will be present.
-  - The check for existing effects (and their removal) is performed **before** the new effects are created, and will only removes effects already on the actor. If you create 2 effects in the same create effects call they will both be created, even if the stackable options would not allow them if created one after the other.
-  - If no stacking setting exists on an effect when it is created DAE will set the stackable option
-    - Effects whose origin is an actor are set to "multi".
-    - Effects whose origin is an item will be set to "noneName".
+### dnd5e conditions
 
-You can refer to ##/@stackCount for stackable effects which can be used in active effect evaluation. Since you almost always want to refer to the stackCount on the target, for non-passive effects remember to use ##stackCount so it will evaluate on the target not the caster/attacker and for passive effects @stackCount.
+dnd5e 6 effects have **Conditions**, checked against the actor's data when the effect is prepared:
+- on the effect (details tab): while they fail, the whole effect is suppressed;
+- on each change: the change applies only while they pass.
 
-## Editing Active Effects
+DAE honours both. Prefer them for a plain comparison of the actor's data: the system re-evaluates them whenever the actor is prepared. To choose between fixed values, give each value its own change and conditions.
 
-A preliminary edit function is supplied, which may change in the future.
-Active effects for Actors and Items can be edited.
+The **Condition builder** button, beside dnd5e's filter button, opens a form for them:
+- nested groups: All of, Any of, None of, Not all of, XOR;
+- comparison rows, with path autocomplete and a menu of common fields (statuses, creature, ability scores and modifiers, attributes, health, defences, level, and the item for item effects);
+- value pickers from dnd5e's lists (statuses, creature types, sizes, damage types, spell schools...);
+- a live pass/fail on the actor.
 
-### Actor Active Effects
+It writes dnd5e's condition data, and declines conditions it can't show (such as a nested filter inside "has"); edit those with the filter button.
 
-On the title bar of the character sheet is a button for "DAE" that will display a form showing all of the active effects on the actor (transfer and non-transfer). You can change the actor effects to your heart's content - HOWEVER changing the effects on the owned item will overwrite the corresponding active effects on the actor. You are free to create active effects on the actor that are not linked to any item.
+### Enable and disable conditions
 
-Active effects that are transfer effects are displayed with a down arrow. Non-transfer effects are displayed with a right arrow.
+Two DAE expressions on the DAE tab turn an effect on and off as the actor changes:
 
-If the effect has a duration, the remaining duration is displayed in rounds/turns or seconds.
+- **Disable condition**: while the expression is true the effect is disabled, and it comes back when the expression is false. Example: `@attributes.hp.value < @attributes.hp.max / 2` disables a "fresh" bonus once the actor is below half health.
+- **Enable condition** (applied effects): when the expression becomes false the effect ends, as an expired effect does. Under *Mark Expired*/*Suppress* (the default) it is disabled, and enabled again when the expression is true; under *Delete* it is deleted. An effect disabled by hand is not re-enabled.
 
-### Calculations
-
-Core system active effects are calculated before the game system specific calculation of "derived" fields (prepareDerivedData). For dnd5e prepareDerivedData calculates all the ability modifiers, skill totals, and spell slots available. DAE adds an additional effect application pass that occurs after the system specific prepareDerivedData() completes.
-
-Active Effects define the following calculations:
-* `CUSTOM`: system/module specific calculation. DAE specifies lots of CUSTOM effects.
-* `ADD`: Add a value to the field (if it is numeric) or concatenate if the field is a string.
-* `MULTIPLY`: for numeric fields only, multiply the field by a value.
-* `OVERRIDE`: replace the field with the supplied value.
-* `UPGRADE`: for numeric fields replace the field with the supplied value if it is larger than the field.
-* `DOWNGRADE`: for numeric fields replace the field with the supplied value if it is smaller than the field.
-
-Additionally, there is a priority that can be given to each change within an effect. The priority determines the order in which changes will be applied during the applyEffects stage. All changes across all effects are collected and sorted by priority before application (low to high). The default priority for changes are
-  * `CUSTOM:     0`
-  * `MULTIPLY:  10`
-  * `ADD:       20`
-  * `DOWNGRADE: 30`
-  * `UPGRADE:   40`
-  * `OVERRIDE:  50`
-So if an actor has the following changes,
-`system.abilities.str.value ADD 2`
-`system.abilities.str.value OVERRIDE 19`
-then with default priorities strength will be 19, since overrides comes after ADD. If priorities are assigned `system.abilities.str.value  ADD 2        Priority:100`
-`system.abilities.str.value  OVERRIDE 19   Priority:10`
-strength will become 21.
-
-DAE allows you to use expressions as well as fixed values. So for example you could have the following
-`system.abilities.str.value ADD "@classes.barbarian.levels"   Priority:100`
-`system.abilities.str.value OVERRIDE "15"   Priority:10`
-strength will be set to `15 + barbarian levels`
-
-**Roll once expressions**
-
-```
-  system.attributes.ac.value UPGRADE [[1d20+@abilities.dex.mod+5]]
-```
-When the effect is applied to the actor the expression inside `[[]]` will be evaluated as a roll and the resulting value will replace the change value, all the normal substituions will be appliied (and the @ and ## fields are supported).
-
-**Number** fields are fully evaluated during the applyEffects pass.
-**String** fields are not evaluated at all. So setting `system.bonuses.mwak.attack ADD "@abilities.str.mod * 2"` will be evaluated when the attack is rolled, NOT during the prepare data phase, since `system.bonuses.mwak` is a string field.
-* Recognizing what are base and derived values is important, since during the first applyEffects phase ONLY base data values are available. If the target field is a string field it does not matter which pass it is in, since evaluation only occurs when the field is used to do a roll.
-
-DAE defines a game system specific set of "derived" values, which are calculated after the system specific prepareDerivedData is called. For DND this means after all modifiers etc are calculated.
-
-### Maximum hit points
-
-dnd5e calculates a character's maximum hit points (class hit dice, Constitution, `system.attributes.hp.bonuses`) unless the character has a fixed maximum. NPCs and vehicles store their maximum. Which key to use:
-
-| To | Use |
-|---|---|
-| Raise max HP on any creature, e.g. Aid | `system.attributes.hp.tempmax` ADD |
-| Raise a character's calculated max HP, e.g. Tough | `system.attributes.hp.bonuses.overall` ADD (or `hp.bonuses.level`, per level) |
-| Give an NPC extra hit points when its token is placed | `system.attributes.hp.formula` ADD, e.g. `+ 2d8`, rolled into max and current HP by dnd5e's *Roll NPC hit points* setting (unlinked tokens) |
-| Set a fixed maximum | `system.attributes.hp.max` OVERRIDE |
-
-`system.attributes.hp.max` ADD is not a bonus: on a character whose maximum is calculated it replaces the calculated value (12 + 5 becomes 5). Use the keys above instead.
-
-**Also raise current HP.** A change of `hp.tempmax` (or `hp.max`) ADD can also raise current HP by the same amount; tick *Also raise current HP* in the change dialog. Current HP rises once, when the change starts applying: the effect is created on an actor with a token on the scene, its item is gained, or an unlinked NPC token is placed with its hit points rolled (current HP is then the roll plus the bonus). Disabling and re-enabling the effect, or unequipping and re-equipping its item, does not raise it again. When the change stops applying, current HP above the new maximum is lost; damage taken meanwhile stands. Current HP is never lowered by the grant.
-
-Dice in these fields (e.g. `+2d8` on `hp.tempmax`) are rolled once: when an applied effect is created, or when a passive effect's item reaches an actor. Every token of a sidebar NPC shares that roll; for a bonus rolled per token, use `hp.formula`.
-
-### Argument Evaluation
-
-When an effect is applied to an actor (passive or non-transfer) dae will make some changes to the change.value string.
-
-If the effect is applied as a passive/transfer effect few alterations are made.
-* If the key is StatusEffect the contents of the referred effect is looked up and added to the effect (this means the number of changes will increase), the name of the effect is changed to the status effect and the icon is changed to the status effect icon.
-* If the change has an inline roll specified, the roll is evaluated and the return value replaces the inline roll in change.value
-* If the change has @tokenUuid (or @targetUuid) or @actorUuid it is replaced with the uuid of the actor or actor's token (if there is one). This can be useful in some condition evaluation where you can access the actor/token.
-
-The rest of the @fields are left untouched to be looked up when the effect is evaluated in actor.prepareData().
-
-If the effect is a non-transfer effect (i..e applied when you use an item) it is a little more complicated. You may want to refer to values on the actor/token using the item or on the target of the item use. DAE uses the following rule:
-@fields are looked up in the actor/token using the item and the @field is replaced with the value from the actor using the item
-##fields are not evaluated and the ##field string is replaced with an @field in the change value created on the target actor - where they will follow the evaluation rules for passive effects.
-
-Here's a little example, assume a strength 18 actor which attacks with an item against a strength 10 target which applies an active effect:
-@abiltiies.str.mod will evaluate to 18
-##abilities.str.mod will evaluate to @abilities.str.mod (and evaluate to 10 when prepareData is called).
-
-For macro.XXXX changes there are a lot of other fields available which will be converted when the effect is applied to the target actor. Look at the macros section.
-
-#### Supported fields for dnd5e
-
-**Pretty much @system.abilities.anything is supported.**
-
-<details><summary>The current list of derived fields for dnd5e - click to expand</summary>
-<br>
-
-
-Fields that have a mode specified below means that ONLY that mode is supported for the effect (and the editor will set the mode when the change is saved)
-<br><br>
-<details><summary>system.attributes</summary>
-
-| Attribute Key	| Change Mode	| Details 	|
-|-----	|:-----------:	|-----	|
-| `system.attributes.ac.bonus`            	|            	| This is applied before prepared data so CANNOT include derived fields.	|
-| `system.attributes.ac.value`	|            	| This is applied after prepare data so can include derived fields like dex.mod and so on.	|
-| `system.attributes.ac.calc`	|	| Accepts any of the predefined calculation types or custom 	|
-| `system.attributes.ac.formula`	|	|  if the calc type is custom let's you specifiy your own AC calc formula 	|
-| `system.attributes.death.failure`          	|            	| 	|
-| `system.attributes.death.success`          	|            	| 	|
-| `system.attributes.encumbrance.max`          	|            	| 	|
-| `system.attributes.exhaustion`          	|            	| 	|
-| `system.attributes.hd` 	| 	| Hit dice modifier	|
-| `system.attributes.hp.max`              	|            	| Not a bonus: replaces a calculated max (see Maximum hit points)	|
-| `system.attributes.hp.min`              	|            	| 	|
-| `system.attributes.hp.temp`          	|            	| 	|
-| `system.attributes.hp.bonuses.level`          	|            	| Per-level bonus to a character's calculated max	|
-| `system.attributes.hp.bonuses.overall`          	|            	| Bonus to a character's calculated max	|
-| `system.attributes.hp.formula`          	|            	| NPC hit point roll formula (rolled when an unlinked token is placed)	|
-| `system.attributes.hp.tempmax`          	|            	| Raises max HP on any creature; can also raise current HP	|
-| `system.attributes.hp.value`          	|            	| 	|
-| `system.attributes.init.bonus`          	|            	| 	|
-| `system.attributes.init.mod`          	|            	| 	|
-| `system.attributes.init.total`          	|            	| 	|
-| `system.attributes.inspiration`          	|            	| 	|
-| `system.attributes.movement.all`          	|    CUSTOM   	| 	|
-| `system.attributes.movement.TYPE`          	|            	| TYPE: burrow/climb/fly/hover/swim/walk	|
-| `system.attributes.movement.units`          	|            	| 	|
-| `system.attributes.prof`                	|    CUSTOM   	| Allows addition of a numeric value to `system.abilities.prof`. You can use a negative value to reduce proficiency.<br>When updated, skills, spelldc and saves are updated accordingly (this calculation should be considered beta and if you find something missing let me know).	|
-| `system.attributes.senses.TYPE`          	|            	| TYPE: blindsight/darkvision/special/tremorsense/truesight	|
-| `system.attributes.senses.units`          	|            	| 	|
-| `system.attributes.spellcasting`          	|            	| 	|
-| `system.attributes.ac.base`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-| `system.attributes.ac.cover`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-| `system.attributes.ac.flat`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-| `system.attributes.ac.min`	|	| [- Deprecated as of dnd5e 1.4.x -]	|
-
-</details>
-<details><summary>system.details</summary>
-
-| Attribute Key	| Change Mode	| Details 	|
-|-----	|:-----------:	|-----	|
-| `system.details.alignment`          	|            	| 	|
-| `system.details.appearance`          	|            	| 	|
-| `system.details.background`          	|            	| 	|
-| `system.details.biography.public`          	|            	| 	|
-| `system.details.biography.value`          	|            	| 	|
-| `system.details.TYPE`          	|            	| TYPE: bond/flaw/ideal	|
-| `system.details.level`          	|            	| 	|
-| `system.details.originalClass`          	|            	| 	|
-| `system.details.race`          	|            	| 	|
-| `system.details.trait`          	|            	| 	|
-| `system.details.xp.max`          	|            	| 	|
-| `system.details.xp.min`          	|            	| 	|
-| `system.details.xp.value`          	|            	| 	|
-
-</details>
-<details><summary>system.traits</summary>
-
-| Attribute Key	| Change Mode	| Details	|
-|---------------------------------------	|:----------:	|-------- 	|
-| `system.traits.languages.all`	|    CUSTOM	| The actor will be given all languages specified in `CONFIG.DND5E.languages` 	|
-| `system.traits.languages.value`	|    CUSTOM	| The value will be added the known languages 	|
-| `system.traits.languages.custom`	|    CUSTOM	| The specified string will be appended to the custom language field 	|
-| `system.traits.size`	|   OVERRIDE	| Overrides the size setting on the character sheet 	|
-| `system.traits.di.all`	|    CUSTOM	| 	|
-| `system.traits.dr.all`	|    CUSTOM	| 	|
-| `system.traits.dv.all`	|    CUSTOM	| The actor will be given immunity/resistance/vulnerability to all damage types specified in `CONFIG.DND5E.damageResistanceTypes` 	|
-| `system.traits.di.custom`	|    CUSTOM	| 	|
-| `system.traits.dr.custom`	|    CUSTOM	| 	|
-| `system.traits.dv.custom`	|    CUSTOM	| The actor will have the specified string appended to the list of custom immunities/resistances/vulnerabilities. 	|
-| `system.traits.di.value`	|    CUSTOM	| 	|
-| `system.traits.dr.value`	|    CUSTOM	| 	|
-| `system.traits.dv.value`	|    CUSTOM	| The actor will be given immunity/resistance/vulnerability to the specified damage type 	|
-| `system.traits.ci.all`	|    CUSTOM	| 	|
-| `system.traits.ci.custom`	|    CUSTOM	| 	|
-| `system.traits.ci.value`	|    CUSTOM	| Same as above but for `CONFIG.DND5E.conditionTypes` 	|
-| `system.traits.armorProf.all`	|    CUSTOM	| 	|
-| `system.traits.armorProf.custom`	|    CUSTOM	| 	|
-| `system.traits.armorProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.armorProficiencies` 	|
-| `system.traits.toolProf.all`	|    CUSTOM	| 	|
-| `system.traits.toolProf.custom`	|    CUSTOM	| 	|
-| `system.traits.toolProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.toolProficiencies` 	|
-| `system.traits.weaponProf.all`	|    CUSTOM	| 	|
-| `system.traits.weaponProf.custom`	|    CUSTOM	| 	|
-| `system.traits.weaponProf.value`	|    CUSTOM	| Same as above but `CONFIG.DND5E.weaponProficiencies` 	|
-</details>
-<details><summary>system.resources</summary>
-
-| Attribute Key	| Change Mode	| Details	|
-|---------------------------------	|:-----------:	|----------------	|
-| `system.resources.legact.max`	|	| Legendary Actions	|
-| `system.resources.legres.max`	|	| Legendary Resistance	|
-| `system.resources.RES.label`	|   OVERRIDE	|	|
-| `system.resources.RES.max`	|	|	|
-| `system.resources.RES.lr`	|	| lr/sr = long/short rest	|
-| `system.resources.RES.sr`	|	| RES: primary/secondary/tertiary	|
-
-
-</details>
-<details><summary>Attributes and Skills</summary>
-
-| Attribute Key	| Change Mode	| Details	|
-|---------------------------------	|:-----------:	|----------------	|
-| `system.attributes.ABILITY.dc`	|    CUSTOM	| Adds the value (must be numeric) to the field and recomputes items saving throw dcs.	|
-| `system.attributes.ABILITY.min`	|    CUSTOM	| 	|
-| `system.attributes.ABILITY.mod`	|   A/M/D/U/O	| Allows modification of the ability modifier.	|
-| `system.attributes.ABILITY.proficient`	|     ADD	| Multiplies character proficiency by this amount and adds it to the current value for the ability.	|
-| `system.attributes.ABILITY.save`	|   	| Provides a bonus to ability saves. This is only active if the "Use ability save field when rolling saving throws" module setting is enabled. <br>This will use the save plus rather than the ability modifier when rolling saving throws.	|
-| `system.attributes.ABILITY.value`	|   	| ABILITY: cha/con/dex/int/str/wis	|
-| `system.bonuses.abilities.check`          	|            	| 	|
-| `system.bonuses.abilities.save`          	|            	| 	|
-| `system.bonuses.abilities.skill`          	|            	| 	|
-| `system.skills.SKILL.ability`	|   OVERRIDE	| Dropdown: Strength/Dexterity/Constitution/Intelligence/Wisdom/Charisma	|
-| `system.skills.SKILL.mod`	|	| SKILL: acr/ani/arc/ath/dec/his/ins/inv/itm/med/nat/per/prc/prf/rel/slt/ste/sur	|
-| `system.skills.SKILL.passive`	|	| This affects the specified skill adjusting modifier or passive value for the skill. <br>Changes to modifier are only reflected when rolling the skill, not on the character sheet.	|
-| `system.skills.SKILL.value`	|	| Dropdown: Not Proficient/Proficient/Expertise/Half Proficiency	|
-
-</details>
-<details><summary>Spells and Attacks</summary>
-
-| Attribute Key	| Change Mode	| Details	|
-|---------------------------------------	|:----------:	|-------- 	|
-| `system.bonuses.All-Attacks`	|    CUSTOM	| The specified string field will be appended to `bonuses.mwak.attack`, `bonuses.rwak.attack`, `bonuses.msak.attack`, `bonuses.rsak.attack`	|
-| `system.bonuses.All-Damage`	|    CUSTOM	| The specified string field will be appended to each of rwak/mwak/rsak/msak	|
-| `system.bonuses.TYPE.attack`          	|   CUSTOM  	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon	|
-| `system.bonuses.TYPE.damage`          	|   CUSTOM  	| TYPE: heal/msak/mwak/rsak/rwak/spell/weapon 	|
-| `system.bonuses.save.damage`          	|            	| The specified string will appended to the damage roll for action type saving throw	|
-| `system.bonuses.spell.dc` 	|     ANY 	| Always numeric, so any dice expression will be evaluated once when prepareData is called and **NOT** on each spell cast.<br>You cannot do lookups of derived fields for spell.dc calculations. 	|
-| `system.spells.pact.level`	|	|	|
-| `system.spells.pact.override`	|	| `spellslots.value` is not able to be modified with DAE.	|
-| `system.spells.spell[1-9].override`	|	| e.g. `system.spells.spell3.override`	|
-| `system.spells.spell[1-9].max`	|	| e.g. `system.spells.spell3.max`	|
-
-</details>
-<details><summary>Special Traits Flags</summary>
-<br>
-These fields accept 0 off, or 1 on.
-
-| Attribute Key                    	| Change Mode 	|
-|-----	|:-----------:	|
-| `flags.dnd5e.diamondSoul`      	|   OVERRIDE 	|
-| `flags.dnd5e.elvenAccuracy` 	|   OVERRIDE 	|
-| `flags.dnd5e.halflingLucky`      	|   OVERRIDE 	|
-| `flags.dnd5e.initiativeAlert`    	|   OVERRIDE 	|
-| `flags.dnd5e.initiativeHalfProf` 	|   OVERRIDE 	|
-| `flags.dnd5e.jackOfAllTrades`    	|   OVERRIDE 	|
-| `flags.dnd5e.observantFeat`      	|   OVERRIDE 	|
-| `flags.dnd5e.powerfulBuild`      	|   OVERRIDE 	|
-| `flags.dnd5e.reliableTalent`     	|   OVERRIDE 	|
-| `flags.dnd5e.remarkableAthlete`  	|   OVERRIDE 	|
-
-</details>
-<details><summary>Misc Fields</summary>
-
-| Attribute Key	| Change Mode	| Details	|
-|---------------------------------------	|:----------:	|-------- 	|
-| `system.currency.TYPE`          	|            	| TYPE: cp/ep/sp/gp/pp	|
-| `flags.dnd5e.meleeCriticalDamageDice` 	| 	| How many dice to roll on melee critical hits.      	|
-| `flags.dnd5e.spellCriticalThreshold` 	| 	| Sets the threshold range for spell critical hits.       	|
-| `flags.dnd5e.weaponCriticalThreshold` 	| 	| Sets the threshold range for weapon critical hits.       	|
-| `flags.dnd5e.initiativeAdv`	| 	| Gives advantage on initiative rolls.	|
-| `flags.dnd5e.initiativeDisadv`	| 	| Gives disadvantage on initiative rolls.	|
-| `flags.dae`	|   CUSTOM	| 	|
-| `flags.dae.onUpdateTarget` | CUSTOM |  See below (special flags.dae) |
-| `flags.dae.onUpdateSource` | CUSTOM | See below (special flags.dae) |
-| `flags.dnd5e.DamageBonusMacro`	| 	| 	|
-| `StatusEffect` | CUSTOM | Applies/removes default/CE/CUB status effects/conditions. **Strongly Preferred** |
-| `macro.CE`	|    CUSTOM	| Applies/removes CE Coditions - not really a macro.	|
-| `macro.CUB`	|    CUSTOM	| Applies/removes CUB Conditions	- not really a macro. |
-| `flags.core.statusId` |   CUSTOM | Display effect icon on token hud when active |
-
-</details>
-<details><summary>Macro Fields</summary>
-<br>
-Macros are called when the effect is transferred to the character (with `args[0] === "on"`) and called again when the active effect is removed (with `args="off"`).
-
-| Attribute Key	| Change Mode	| Details	|
-|---------------------------------	|:-----------:	|----------------	|
-| `macro.execute`	|    CUSTOM	|	|
-| `macro.itemMacro`	|    CUSTOM	| 	|
-| `macro.tokenMagic`	|    CUSTOM	| Applies/removes the Token Magic affects.	|
-
-</details>
-<details><summary>Special flags.dae...</summary>
-<ul>
-<li>
-flags.dae.deleteOrigin, on a transfer effect: when the effect is deleted (e.g. it expires), its item is deleted too. The change value does not matter. Only owned items are deleted. Useful for items that should go when their effect ends. It does nothing on an applied effect (since 14.6.2): an applied effect never deletes the item it came from. A consumable used up by its last use keeps its data on the chat card, so its applied effects keep working.
-</li>
-<li>
-When an active effecr with a change flags.dae.deleteUuid is deleted, and whose change.value is an owned uuid, token uuid or ActiveEffect uuid, the entity pointed to by the change.value's uuid will be removed. Only tokens/ownedItems/ActiveEffects are supported. This is useful for summoning and gives an easy way to remove the summoned token when the effect/spell expires, or for spells/features that create temporary items on the actor which need to be removed on effect expiry.
-</li>
-<li>
- "flags.dae.onUpdateTarget" and "flags.dae.onUpdateSource" with the change value being "Label, macroReferece, updateFilter, arguments". macroReference, updateFilter and arguments are all optional. This effect does 2 things:
- <ul>
- <li>
-  Creates a flag on the target actor (onUpdateTarget) or the sourceActor (onUpdateSource) that recordds the origin item, the targetToken and the initiating actor's token (sourceToken) and actor (sourceActor) on the target (flags.dae.onUpdateTarget) or the source actor (flags.dae.onUpdateSource). Note that onUpdateSource is different to other active effects in that it is ALWAYS created on the actor using the item/creating the effect and NOT on the target.
-  </li>
-  <li>allows you specify a macro that will be called whenever the target token/actor filter field is updated. The filter field does not need to reference a single value, system.abilities will call the macro when any ability is update.
-  </li>
-  <li>
-  For example ``flags.dae.onUpdateTarget CUSTOM Arcane Link, ItemMacro,system.attributes.hp.value, 1,2,3 `` will add an entry to actor.system.flags.dae.onUpdateTarget (an array of such entries) on the target actor with:
-  <ul>
-  <li>args: []<br>
-  </li><li>
-  filter: 'system.attributes.hp.value', this is used to check that the update contains an update to the specified filter fields, you could use system.attributes.hp for any hp update.
-  </li><li>
-  flagName: 'Warding Bond'
-  </li><li>
-  macroName: 'ItemMacro'
-  </li><li>
-  origin: 'Actor.DMTSWfQs8whM5FtE.Item.fR2J4Ulo0GftObGd'
-  </li><li>
-  sourceActorUuid: 'Actor.DMTSWfQs8whM5FtE'
-  </li><li>
-  sourceTokenUuid: 'Scene.XRSav5mOrp1iEC7S.Token.n3mchcs4aaeokawb'
-  </li><li>
-  targetTokenUuid: 'Scene.XRSav5mOrp1iEC7S.Token.jg2mxFc21dO1q7Qi'
-  </li><li>
-  Essentailly this allows you to 'link' two actors and if you specifiy a macro to call,react to changes on either/both to manage shared state.
-  </li>
-  </ul>
-  </li>
-  </li>
-  <li>
-  To react to changes on both you need two changes in the effect <br>
-    ``flags.dae.onUpdateTarget CUSTOM Actor Link, ItemMacro`` and <br>
-    ``flags.dae.onUpdateSource CUSTOM Actor Link, ItemMacro``<br>
-    which will create one effect on the target actor and one on the source actor. ItemMacro refers to the item that caused the effect to be created.
-  </li>
-  <li>
-  If no macro is specified just the linkage between source and target will recorded on the target (source) actor. This allows you to examine the linkage in other macros, e.g. hunter's mark or similar in a damage bonus macro.
-  </li>
-  <li>
-  If a macro is specified then whenver the target actor is udpated the maccro will be called with lastArg set appropriately. <br>
-
-| Attribute | Value	| Details	|
-|----------------------	|:-----------:	|--------------------------------------------	|
-| effectId: | null | |
-| origin | onUpdate.origin | the uuid of the origin (item or actor) |
-| efData | null | |
-| actorId | targetActor.id | the id of the target actor in the onUpdate data |
-| actorUuid | targetActor.uuid | the uuid of the target actor in the onUpdate data |
-| tokenId | null | |
-| tokenUuid | null | |
-| actor | this | the actor referenced in the actor.update that triggered the macro |
-| updates | | the updates to the actor (you can change these to change the update applied to the actor) |
-| options | | options passed to the update |
-| user | |  the user that triggered the update |
-| sourceActor | | the actor referenced in sourceActorUuid |
-| sourceToken | | the token referenced in sourceTokenUuid |
-| targetActor | | the actor referenced in targetTokenUuid |
-| targetToken | | the token referenced in targetTokenUuid |
-| originItem | | the item that caused the flags.dae.onUpdateTarget/Source to be created. |
-
-  </li>
-  <li>
-  This makes effects like hunters mark simpler, since you just link the actors and have a bonus damage macro that checks the onUpdate effects for the actor. There is a new sample Hunter's Mark (in the midi sample items compendium) that uses these features to implement hunter's mark.
-  </li>
-  <li>
-  Midi-qol sample items contains an implementation of warding bond, that does damage to the caster when the target takes damage. It does not check range to target.
-  </li>
-  <li>
-  You can now implement things like sharing damage betwen two actors, by having the macro (which runs on the preUpdateActor call) modify the damage being applied and apply damame. See the sample item (in the Midi Sample Items compendium) Simple Warding Bond/Warding Bond.
-  </li>
-  <li>
-  Simple Warding Bond creates effects on both the target and the Simple Warding Bond actor and an item macro that shares damage taken between the two actors. Note that your macro must do something to stop the "ping pong" updates of each actor being updated and triggering another call to the macro. You can do this by specifiying actor.update(updates, {onUpdateCalled: true}), which will halt the call chain.
-  </li>
-  </ul>
-</li>
-</ul>
-</details>
-</details>
+Conditions are evaluated by the GM's client against the actor's data, when the actor, its token, its items or its effects change (character and NPC actors).
 
 ## Macros
 
-When you have a **non-transfer effect** that includes a macro, the macro is transferred to the target actor and runs when created on the actor. Deletion of the active effect from the target actor calls the macro again with `args[0] = "off"`.
-Since the macro attaches to the target actor the macro can schedule itself to be activated on other events, such as combat updates to support damage over time effects.
+A macro change runs a script when its effect starts and again when it ends. Use it for things changes alone can't do: summoning, visual effects, damage over time, or updates that must not be locked by an effect.
 
-Dae does not use furnace/advanced macros any longer.
-Macro arguments are evaluated when the effect is applied to the target actor, i.e. when the item is rolled. @fields refer to the actor using the item - e.g. @abilities.str.mod is the item user's strength mod.
+### Macro keys
 
-```js
-macro.execute "macro_name" args
-macro.ItemMacro args
-```
-This will call the macro "macro_name" (or the ItemMacro for the item with the effect) with `args[0] = "on"` and the rest of ...args passed through to the macro when the effects are applied to a target token. It will be called with `args[0] = "off"` when the active effect is deleted from the target actor.
+All macro keys use the *custom* change type.
+
+| Key | Value | What it does |
+|---|---|---|
+| `macro.execute` | `"Macro name" args` | runs a world macro, by name or uuid (a Macro or Item uuid also works) |
+| `macro.itemMacro` | `args` | runs the macro stored on the effect's item (edit it with DIME) |
+| `macro.activityMacro` | `args` | runs the macro stored on the activity that applied the effect |
+| `macro.actorUpdate` | see [below](#macroactorupdate) | updates an actor field, optionally undone when the effect ends |
+| `macro.createItem` | `uuid` | creates the item on the actor; it is removed when the effect ends (add `, permanent` to keep it) |
+| `macro.createItemRunMacro` | `uuid` | as *createItem*, then runs the created item's macro with `"onCreate"` |
+| `macro.tokenMagic` | `filterName` | applies a Token Magic FX filter to the actor's tokens |
+| `macro.CE` | effect name | applies a Convenient Effects effect |
+| `macro.StatusEffect` | status id | applies a status condition (e.g. `prone`) while the effect applies. `StatusEffect` is a deprecated alias |
+
+More options:
+- A value of `function.path.to.fn` calls a global function instead of a macro.
+- `macro.execute` and `macro.itemMacro` run on the client of the user applying the effect if they own the target, otherwise on the GM's. Add `.local` or `.GM` to the key (e.g. `macro.execute.GM`) to choose.
+- DAE stores item macros in the item's `flags.dae.macro`, so the Item Macro module is not needed. Macros saved by Item Macro are still read.
+- Macros, `macro.StatusEffect` and `macro.CE` changes are undone while their effect is suppressed (e.g. its item unequipped), and redone when it applies again. This runs on one client: the active GM, or the actor's first active owner when no GM is connected.
+
+### When macros run
+
+The macro is called with `args[0]` set to:
+- `"on"`: the effect starts applying (created, enabled, or its item equipped);
+- `"off"`: it stops applying (deleted, expired, disabled, or its item unequipped);
+- `"each"`: at the start and/or end of each turn, when *Macro Repeat* is set. `lastArg.turn` is `"startTurn"` or `"endTurn"`;
+- `"init"`: when the world loads, if the *Init Macros on World Load* setting is on;
+- `"onCreate"`: for `macro.createItemRunMacro`, after the item is created;
+- `"onUpdateActor"`: for `flags.dae.onUpdateTarget` / `onUpdateSource` macros.
+
+### What the macro receives
+
+- **`args`**: `args[0]` is the action above. The values from the change follow.
+- **`lastArg`** (`args[args.length - 1]`) describes the call:
+  - `effectId`, `effectUuid`, `efData`: the effect;
+  - `source`: where the effect came from, as uuids (each may be missing):
+    - `itemUuid`, `activityUuid`: the item and activity that applied it;
+    - `controllingEffectUuid`: the caster's concentration effect, when concentrating;
+    - `sourceEffectUuid`: the item effect it was copied from;
+    - `messageUuid`: the chat card of the use;
+    - `actorUuid`: the caster;
+  - `systemOrigin`: a copy of dnd5e's `effect.system.origin` (`activity`, `item`, `effect`, `message`, `profile`, ...);
+  - `origin`: **deprecated**, use `source`. It keeps the value DAE gave it before 14.6.2: the concentration effect, else the item effect the effect was copied from;
+  - `actorId`, `actorUuid`, `tokenId`, `tokenUuid`: the actor and token the effect is on;
+  - `activity`: the uuid of the activity that applied it;
+  - `expiry-reason` (on `"off"`): why it ended, e.g. `effect-deleted`, `effect-disabled`, `effect-suppressed`, `duration-expired:turnStart`.
+  
+  Prefer the uuids, e.g. `fromUuidSync(lastArg.actorUuid)`: they always work, including for unlinked tokens. For the item use `fromUuidSync(lastArg.source.itemUuid)`, or `DAE.getEffectItem(effect)`, which also works once the item has been deleted.
+- **Variables** available in the macro: `actor`, `token`, `item`, `effect`, `macroItem`, `macroActivity`.
+- An argument written `name=value` becomes a variable `name` in the macro.
+
+### Argument substitutions
+
+In an applied effect, macro arguments are worked out when the effect is applied, from the caster whatever the effect application:
+
+| Argument | Becomes |
+|---|---|
+| `@target`, `@targetUuid`, `@targetActorUuid` | the target token's id or uuid, the target actor's uuid |
+| `@token`, `@tokenUuid` | the token using the item: id, uuid |
+| `@actor`, `@actorUuid` | the actor using the item: id (not its data), uuid |
+| `@itemData` | the item used, as plain data (use `@itemUuid` or the `macroItem` variable for the item itself) |
+| `@itemId`, `@itemUuid`, `@itemCardUuid` | the item's id, uuid, and its chat card's uuid |
+| `@spellLevel`, `@itemLevel` | the level the spell was cast at (midi-qol) |
+| `@damage`, `@critical`, `@fumble` | the damage total; whether the attack was a critical or a fumble (midi-qol) |
+| `@scene`, `@unique`, `@whisper` | the scene id; a random id; the whisper setting |
+| `@stackCount` | the effect's stack count |
+| `@field` | any value from the actor using the item, e.g. `@abilities.str.mod` |
+| `##field` | worked out against the target, once, when the effect is applied to it |
+
+Example: the change `macro.execute` *custom* `"My macro" 5 @abilities.str.mod`
+- when applied, runs *My macro* with `args = ["on", 5, <the caster's Strength modifier>, lastArg]`;
+- when the effect ends, runs it again with `args = ["off", 5, <the same value>, lastArg]`.
 
 Arguments are split at spaces and also at `+ * / % , ( ) ^ !` and comparisons, so `+5` arrives as two arguments, `+` and `5`. Quote a value to keep it whole: `"+5"`.
 
-In addition to the standard `@values` the following are supported (only as macro arguments):
+### macro.actorUpdate
 
-`@target` will pass the token id of the targeted token.  Active Effects only.
-`@targetUuid` will pass the Uuid of the targeted token.  Active E
-`@scene` will pass the scene id of the scene on which the user who activated the effect is located.
-`@item` will pass the item data of the item that was used in the activation.
-`@spellLevel` if using Midi-QOL this will be the spell level the spell was cast at. This is the preferred field to use
-`@item.level` if using Midi-QOL this will be the spell level the spell was cast at.
-`@damage` The total damage rolled for the attack.
-`@token` The id of the token that used the item.
-`@tokenUuid` The uuid of the token that used the item.
-`@actor` The actor.data for the actor that used the item.
-`@actorUuid` the uuid of the actor that used the item
-`@FIELD` The value of the FIELD within the actor that used the item, e.g. `@abilities.str.mod`.
-`@unique` A randomly generated unique id.
-`##field` The `##` means the argument will not be evaluated using caster values, but will be replaced with `@field` when it is applied to the target; and will be evaluated when the macro is called using values from the actor with the effect applied.
+A normal change locks its field: it can't be updated while the effect applies, and is restored when the effect ends. `macro.actorUpdate` instead **updates** the field, like a macro would, and can undo the update when the effect ends. Use it for values like temporary hit points.
 
-### lastArg
+```
+macro.actorUpdate custom <actorUuid> <type> <expression> <targetField> [undo]
+```
+- **actorUuid**: whose field, e.g. `@actorUuid` (the caster) or `@targetUuid` (the target).
+- **type**: `number`, `boolean` or `string`, matching the field.
+- **expression**: in quotes, e.g. `"@abilities.dex.mod * 2 + 10"`. Starting it with `+`, `-`, `*` or `/` applies it to the current value.
+- **targetField**: e.g. `system.attributes.hp.temp`.
+- **undo** (optional), when the effect ends:
+  - missing, `true` or `restore`: restore the original value;
+  - `remove`: subtract this change only, keeping changes from other sources;
+  - `+value` (or `-`, `*`, `/`): apply that to the current value;
+  - `value`: set the field to it;
+  - `undefined`: unset the field;
+  - `false`: don't undo.
 
-In some circumstances (when macros are called with args[0] === "off or args[0] === "each") the standard actor and token variables will **not** be initailised. So inside the macro you can't do actor.anything. To access the actor/token in a way that will always work there is an additional argument (in addition to those specified in the `macro.execute` definition) **lastArg**, which includes a lot of information for executing the macro. You ccan access lastArg via
-```let lastArg = args[args.length-1]```. lastArg will always include, at least,
-* effectId - the id of the effect being triggered
-* source - where the effect came from, as uuids (dnd5e 6):
-  * `itemUuid` - the item that applied it
-  * `activityUuid` - the activity that applied it
-  * `controllingEffectUuid` - the caster's concentration effect, when concentrating
-  * `sourceEffectUuid` - the item effect it was copied from
-  * `messageUuid` - the chat card of the use
-  * `actorUuid` - the caster
+An `@field` in the expression is worked out against the caster when the effect is applied; write `**field**` to use the updated actor's own value.
 
-  Each may be missing. To get the item use ```fromUuidSync(lastArg.source.itemUuid)```, or ```DAE.getEffectItem(effect)```, which also works once the item has been deleted.
-* systemOrigin - dnd5e's own record, a copy of `effect.system.origin` (`activity`, `item`, `effect`, `message`, `profile`, …).
-* origin - **deprecated**, use `source`. The value DAE gave it before 14.6.2: the concentration effect, else the item effect the effect was copied from. An applied effect's own `effect.origin` is now what dnd5e makes it: the concentration effect, else the activity (not an Item, and an activity's `.parent` is its item's system data, so use `.item`).
-* efData - the effect data of the effect being triggered.
-* actorId - the id of the actor on whom the effect exists.
-* actorUuid - the uuid of the actor fetch it with
+Example: give the target 5 temporary hit points, and take them away again when the effect ends:
+```
+macro.actorUpdate custom @targetUuid number "+5" system.attributes.hp.temp remove
+```
+
+## Special DAE keys
+
+| Key | What it does |
+|---|---|
+| `flags.dae.deleteOrigin` | on a transfer effect: when this effect is deleted, delete its item (owned items only). It does nothing on an applied effect |
+| `flags.dae.deleteUuid` | value: a token, owned item, effect or template uuid, deleted when this effect is deleted (e.g. a summoned creature) |
+| `flags.dae.suspendActiveEffect` | value: an effect uuid, suspended when this effect is deleted |
+| `flags.dae.onUpdateTarget` / `onUpdateSource` | links the target and the caster; see below |
+| `flags.dnd5e.DamageBonusMacro` | a damage bonus macro (midi-qol); use bare `ItemMacro` or `ActivityMacro` |
+
+An applied effect never deletes the item it came from. A consumable used up by its last use keeps its data on the chat card, so its applied effects keep working.
+
+### Removing summoned creatures
+
+**With midi-qol and a dnd5e summon activity**, turn on midi-qol's *Auto remove summoned creatures on item expiry/concentration removal* setting:
+- If the activity needs **concentration**, each summoned token is made dependent on the concentration effect, so ending concentration (or failing a concentration save) removes the creatures.
+- Otherwise midi-qol adds an effect, lasting the activity's duration, and the creatures are removed when that effect is deleted.
+
+**From your own macro**, create an effect with `flags.dae.deleteUuid` set to the summoned token. When the effect is deleted, the token is deleted too:
 ```js
-  let tokenOrActor = fromUuidSync(lastArg.actorUuid);
-  let actor = tokenOrActor.actor ? tokenOrActor.actor : tokenOrActor
+const [token] = await canvas.scene.createEmbeddedDocuments("Token", [tokenData]);
+// The caster's concentration on this item, if there is one
+const concentration = [...(caster.concentration?.effects ?? [])].find(e => e.getFlag("dnd5e", "item")?.id === item.id);
+await caster.createEmbeddedDocuments("ActiveEffect", [{
+  name: "Flaming Sphere Summon",
+  img: "icons/magic/fire/orb-vortex.webp",
+  origin: item.uuid,
+  duration: { value: 1, units: "minutes" },
+  flags: { dnd5e: { dependentOn: concentration?.uuid } },
+  system: { changes: [{ key: "flags.dae.deleteUuid", type: "custom", value: token.uuid }] }
+}]);
 ```
-* tokenId - the id of the token on whom the effect exists, fetch via ```js canvas.scene.tokens.get(lastArg).tokenId) ```
-* tokenUuid - the uuid of the token on whom the effect exists, feth via ```js fromUuidSync(lastArg.tokenuuid)  ```
+Setting `flags.dnd5e.dependentOn` to the concentration effect makes this effect dependent on it: when concentration ends, dnd5e deletes the effect, and DAE then deletes the token.
 
-Generally prefer to use the uuids when fetching an actor/token since it will alway work and avoid problems.
+`deleteUuid` acts when its effect is **deleted**. With the default *Effect Expiry Action* (Mark Expired) an effect that expires in combat is kept, not deleted, until its actor leaves the combat, so the token stays until then. Set the effect's *Expiry Mode* to Delete if the duration running out should remove the creature at once.
 
-For example, if the `macro.execute` definition is `macro.execute CUSTOM "My macro" 5 @abilities.str.mod` then, when the effect is transferred to the target token the macro will be called with `args = ["on", <strength mod of the actor that used the item> lastArg]`
-When the effect is deleted from the target actor (either by expiry or explicit deletion) the macro will be called again with `args = ["off", <strength mod of the actor that used the item>, lastArg]`
+### Linking actors: onUpdateTarget and onUpdateSource
 
-## Macros and transfer effect
+These keys link the target and the caster, so one can react when the other changes. midi-qol's Warding Bond and Arcane Ward sample items use them.
 
-The above discussion applies to non-transfer effects. Transfer effects are applied when the item is equipped by a character.
+**The value** is `Label, macroReference, filter, args...`; everything after the label is optional.
 
-**macro.itemMacro "macro_name" args**
-The same as `macro.execute`, but the item is inspected to find the item macro stored there. You can create item macros with the [Item Macro](https://github.com/Kekilla0/Item-Macro) module.
+**What it records.**
+- `flags.dae.onUpdateTarget` records the link on the **target**.
+- `flags.dae.onUpdateSource` records it on the **caster**. It is always created on the caster, never on the target.
+- Either way the link holds the origin item, the target token, and the caster's token and actor.
+- To link both ways, use one change of each.
 
-If you are using `macro.itemMacro` please make sure you disable the Item Macro module config settings:
-* "character sheet hook" else when you use the item the macro will get called bypassing Midi-QOL/DAE completely and none of the arguments will get populated.
-* "override default macro execution"  If this is enabled the hotbar hooks will directly call the item macro and won't work as expected for DAE/Midi-QOL.
+**With a macro**, it is called with `"onUpdateActor"` whenever the linked actor is updated in a field matching *filter* (default `system`), before the update is applied.
+- `lastArg` then also has:
+  - `updates`: the update, which the macro may change (only changes made before the macro's first `await` take effect);
+  - `options` and `user`;
+  - `sourceActor`, `sourceToken`, `targetActor`, `targetToken`, `originItem`.
+- A macro that updates the other linked actor should pass `{onUpdateCalled: true}` in the update, so the two don't keep triggering each other.
 
-The setting is per player so each player needs to change the setting to disabled.
+**Without a macro** the link is just recorded, for other macros to read (e.g. a damage bonus that only applies against the linked target).
 
-**macro.actorUpdate args**
-There are quite a lot of cases where you want to update some value on an actor's (like temphp) and maybe undo the change when the effect expires. Normally active effects can't effectively handle things like updates to hp, temphp etc since an active effect on the field "locks it", which means you'd have to write macros for those effects to do an actor.update(). This is just a shorthand way to avoid writing a macro.
+## dnd5e key notes
 
-macro.actorUpdate allows you to update a field on the actor and (optionally) have the update undone when the effect expires, however it does not lock the field value, rather it does an actor.update with the change. This let's you write a variety of effects without having to create macros for them.
-  Syntax:
-  ```
-  macro.updateActor CUSTOM actorUuid type expression targetField undo
-  ```
+The key autocomplete lists every key DAE offers, with its description, and the dnd5e wiki's [Active Effect Guide](https://github.com/foundryvtt/dnd5e/wiki/Active-Effect-Guide) describes the system's keys. dnd5e 6 moved many keys; the old paths still work, because dnd5e redirects them to the new ones. These notes cover the keys that are easy to get wrong.
 
-* **actorUuid**: string, e.g. @actorUuid (the casters uuid) or @targetUuid (the target's uuid)
-* **type**: number, boolean, string (it's important to match these to the type of the target field)
-* **expression**: a roll expression, string, or boolean e.g. "@attributes.dex.mod * 2 + 10" (**must** be in "" marks), the expression can start with one of +-*/ and will treated as a (actor current value + value) etc.
-* **targetField**: "string", e.g. system.attrbutes.hp.temp
-* **optional undo action** values:
-  - missing/true/restore -> restore original value of target field on expiry
-  - remove -> subtract the change made to the current value of the field on expiry, i.e. undo the change allowing for changes from other sources.
-  - **+-*/value** add/subtract etc value to the current value of the target field
-  - **value** set the target field to the value on expiry.
-  - The "value" can be a roll expression, which should be enclosed in quotes. The string "undefined" will set the target field to undefined on expiry, useful for some traits etc.
+**Attack and damage bonuses**
+- `system.rolls.attack.<mwak|rwak|msak|rsak>.bonus` and `system.rolls.damage.<mwak|rwak|msak|rsak>.bonus` are evaluated at roll time. The old `system.bonuses.<type>.<attack|damage>` keys are redirected to them.
+- `system.rolls.attack.bonus`: every attack roll (dnd5e's own key).
+- DAE shortcuts:
+  - `system.rolls.attack.weapon.bonus` / `.spell.bonus`: mwak and rwak, or msak and rsak;
+  - `system.rolls.damage.all.bonus`, `.weapon.bonus`, `.spell.bonus`: all four, weapon or spell damage.
+- The older shortcuts `system.bonuses.All-Attacks` / `All-Damage`, `system.bonuses.weapon.attack|damage` and `system.bonuses.spell.attack|damage` still work, with a deprecation warning naming the replacement.
 
-**macro.tokenMagic "filterName"**
-Will apply the specified Token Magic filter to each targeted actor when the active effect is applied to the actor and removed when the effect is deleted.
+**Abilities**
+- Ability scores: `system.abilities.<abl>.value`.
+- Check and save bonuses: `system.abilities.<abl>.check.roll.bonus` and `.save.roll.bonus`; for all abilities, `system.rolls.ability.check|save|skill.bonus`.
+- `system.abilities.<abl>.mod` is deprecated: it changes the final value but does not flow into saves and skills. Use the bonuses instead.
 
-## Creating items with DAE
+**Skills and tools**
+- `system.skills.<skill>.value` (*custom*: adds a proficiency level), `.ability`, `.roll.bonus`, `.bonuses.passive`.
+- `system.tools.<tool>.prof|ability|roll.bonus`.
 
-**macro.createItem CUSTOM uuid**
-Will create the item referenced by the Uuid on the target actor. On expiry/removal of the effect the item will be removed, which provides a way of providing a tempoary item/feature to an actor for the duration of the feature. You can quickly get an item's uuid by opening the item and right-clicking the book in the title. You can also drag and drop the item into the effect value.
+**Traits** (damage immunity/resistance/vulnerability, conditions, languages, weapon and armor proficiencies) take:
+- `.value`: add one, e.g. `system.traits.dr.value` *custom* `fire`;
+- `.custom`: append text;
+- `.all`: all of them, e.g. `system.traits.di.all`.
 
-**macro.createItemRunMacro CUSTOM uuid**
-This behaves the same as macro.createItem, but in addition when the item is created on the actor DAE will run the item's Item Macro with args[0] set to "onCreate" allowing you to save the uuid of the created item (passed in lastArg) somewhere for future reference.
+**Armor class**
+- `ac.calcs` *add*: use one of dnd5e's calculations as well, e.g. `natural`. `ac.calc` *override* still works, with `ac.formula` for a custom calculation.
+- `ac.override`: a fixed AC, ignoring cover, shield and bonuses.
+- `ac.flat` (used when the calculation is flat).
+- `ac.bonus`: a formula dnd5e evaluates with the actor's data, so `@abilities.wis.mod` works.
+- `ac.min`, `ac.cover`.
 
-**Programmatically create items with active effects**
-``` js
-const EFFECT_MODES = CONST.ACTIVE_EFFECT_MODES;
-const EXAMPLE_TRANSFERRED_EFFECT = {
-    label: "Ring of Protection",
-    icon: "icons/svg/mystery-man.svg",
-    changes: [
-      {key: "system.bonuses.abilities.save", value: "+1", mode: EFFECT_MODES.ADD},
-      {key: "system.attributes.ac.bonus", value: "+1", mode: EFFECT_MODES.ADD},
-    ],
-    transfer: true,
-  };
-  const item = await Item.create({
-    name: "Ring of Protection",
-    type: "consumable",
-  })
-  await item.createEmbeddedDocuments("ActiveEffect", [EXAMPLE_TRANSFERRED_EFFECT]);
+**Other**
+- **Initiative**: `system.attributes.init.roll.bonus` accepts formulas like `@abilities.wis.mod`.
+- **Concentration**: `system.attributes.concentration.roll.bonus`.
+- **Proficiency**: `system.attributes.prof` *add* raises the proficiency bonus, and skills, saves and DCs follow.
+- **Movement**: `system.attributes.movement.speeds.<type>`, `movement.all` (*custom*: every type), `movement.hover`.
+- **Senses**: `system.attributes.senses.ranges.<type>`.
+- **Spell slots**: `system.spells.spell<N>.override` (before derived data) or `.max` (after); `system.spells.pact.override`, `pact.level`.
+- **Special traits**: `flags.dnd5e.<trait>`, e.g. `elvenAccuracy`, `halflingLucky`, `jackOfAllTrades`, `reliableTalent`, `remarkableAthlete`, `powerfulBuild`, `diamondSoul`, `observantFeat`, `enhancedDualWielding`, `tavernBrawlerFeat`.
+- **Criticals**: `flags.dnd5e.weaponCriticalThreshold`, `spellCriticalThreshold`, `meleeCriticalDamageDice`.
+- **Tokens**: `token.*` keys change the actor's tokens (Foundry v14). `ATL.*` keys are converted to `token.*` when an effect is saved; `ATL.width`, `height`, `depth` and `shape` become `token.*` size changes, which dnd5e 6 applies. `ATL.elevation`, `hidden` and `rotation` have no `token.*` equivalent: they are kept as they are, with a console warning, and do nothing without a Foundry v14 version of ATL.
+- **midi-qol** adds its own keys (`flags.midi-qol.*`, `system.traits.dm`, ...), offered in the key autocomplete when it is active.
 
-  let myActor = game.actors.getName("My Actor")
-  await myActor.createEmbeddedDocuments("Item", [item])to [item].
+## Settings
 
-  ```
-Or just drag the supplied Ring of Protection from the sample items compendium to the actor of you choice.
+All are world settings.
 
-### flags.dae.deleteUuid
+| Setting | Default | What it does |
+|---|---|---|
+| Effect Expiry Action | Mark Expired | what happens to expired effects: mark expired, delete, or nothing (reload) |
+| Special Duration Expiry Action | Default | the same for special durations; *Default* follows the setting above |
+| Expire Round Effects on Combat End | off | end applied effects with round/turn expiry when combat ends |
+| Default effect application | dnd5e | how DAE fills the `@` references of an effect it applies: per the change's Replacement setting, or all from the caster |
+| Init Macros on World Load | on | run effect macros with `"init"` when the world loads (reload) |
+| Dependent Conditions | on | statuses add their dependent conditions, e.g. paralysed adds incapacitated |
+| No Duplicate Damage macros | off | ignore a DamageBonusMacro that is already present |
+| Add Half Health Effect | off | add a status effect that halves max HP (reload) |
+| DAE Title Bar / DIME Title Bar | on | show the DAE and DIME header menu entries |
+| DAE Colorful Title Bar | on | green icons when the document has effects or a macro |
+| Auto-migrate on update | off | migrate effects when DAE is updated (there is also a *Migrate Now* button) |
+| Disable all active effect processing | off | turn DAE's effect processing off, e.g. for troubleshooting (reload) |
+| Amount of debug to show | none | console logging level |
 
-Here's an example, which summons a token, via warpgate and creates an effect to delete it on spell expiry/loss of concentration.
+## API and hooks
+
+The API is `DAE`, also available as `game.modules.get("dae").api`.
+
+**Applying effects**
+- `DAE.doEffects(item, activate, targets, options)`: apply an item's applied effects to target tokens (or remove them, with `activate` false).
+- `DAE.doActivityEffects(activity, activate, targets, effectUuids, options)`: the same for an activity.
+- Pass the caster's concentration effect as `options.concentrationUuid`: the applied effects depend on it. An `options.origin` is recorded in the `system.origin` slot for its type.
+- `DAE.setApplicationMode(document, mode)`: set the effect application (`"default"`, `"dnd5e"` or `"legacy"`) for every effect in an item, actor, effect or pack; returns the count. `DAE.applicationModeOf(effectData)` and `DAE.usesLegacyApplication(effectData)` report it.
+
+**Effect source**
+- `DAE.getEffectSource(effect)`: `{ actorUuid, itemUuid, activityUuid, controllingEffectUuid, sourceEffectUuid, messageUuid }` (what macros get as `lastArg.source`).
+- `DAE.getEffectItem(effect)`: the effect's item: the live item, else one built from its data (a few ms the first time after the item is deleted, then cached). Use it when you need the item's prepared values (e.g. a computed save DC) or its methods.
+- `DAE.getEffectItemData(effect)` / `DAE.getMessageItemData(message)`: the item's stored data, from the live item (a copy) or the card; for older effects, the copy they carry. These never build a document: use them when stored values (name, img, flags, `system` fields as entered) are enough, and always during data preparation.
+- `DAE.getActorItemData(actor, uuid)`: the same, found from the effects an item applied to an actor, given the item's uuid or one of its activities' or effects' (e.g. from an `ItemMacro.<uuid>` whose item has been deleted).
+- `DAE.effectMatchesSource(effect, uuid)`: whether the effect came from that item, activity, item effect or concentration effect. `DAE.deleteActiveEffect(targetUuid, uuid)` and `DAE.deleteItemActiveEffects` match the same way.
+
+**Effects and durations**
+- `DAE.ActiveEffects(document).render({force: true})`: open the effects list for an actor or item.
+- `DAE.expireEffect`, `isEffectExpired`, `isTransferEffect`, `hasDuration`, `hasExpiry`: duration helpers.
+
+**Extending DAE**
+- `DAE.registerChangeHandler(key, {on, off, destination})`: handle a custom key with your own on/off functions; `destination` is `"local"`, `"GM"` or `"mixed"`.
+- `DAE.DAEConditionBuilder`: the condition builder, with static `parse(json)` / `serialize(model)`.
+
+**Migration**
+- `DAE.migrateWorld()`, `migrateActor`, `migrateItem`.
+
+**Token and flag helpers**
+- `blindToken`, `restoreVision`, `setTokenVisibility`, `moveToken`, `teleportToken`, `renameToken`, `createToken`.
+- `setFlag` / `unsetFlag`, `deleteActiveEffect`, `deleteItemActiveEffects`.
+
+**Hooks**
+- `dae.setupComplete` (during Foundry's `setup`) and `dae.ready` (during `ready`): DAE has set up; both receive the API.
+- `dae.addSpecialDurations(specialDurations)`: add special durations (midi-qol uses this).
+- `dae.modifySpecials(specKey, specials, characterSpec)`, `dae.modifySpecs`, `dae.modifyBaseValues`, `dae.modifyDerivedSpecs`, `dae.addFieldMappings`, `dae.addAutoFields`: add or change keys offered in the effect editor.
+- `dae.suppressionChanged(effect, suppressed)`: an effect was suppressed or unsuppressed.
+- `dae.settingsChanged`: DAE's settings changed.
+
+Example: adding a key to the key list:
 ```js
-    const summoned = await warpgate.spawn("Flaming Sphere", {embedded: updates}, {}, {});
-    if (summoned.length !== 1) return;
-    const summonedUuid = `Scene.${canvas.scene.id}.Token.${summoned[0]}`;
-    await caster.createEmbeddedDocuments("ActiveEffect", [{
-        "changes":  [{"key":"flags.dae.deleteUuid","mode":5,"value": summonedUuid,"priority":"30"}],
-        "label": "Flaming Sphere Summon",
-        "duration": {seconds: 60, rounds: 10},
-        "origin": args[0].itemUuid,
-        "icon": "icons/magic/fire/orb-vortex.webp",
-    }]);
+Hooks.on("dae.modifySpecials", (specKey, specials) => {
+  if (!["character", "npc"].includes(specKey)) return;
+  specials["system.attributes.myField"] = [new foundry.data.fields.NumberField({ label: "My Field" }), "add"];
+});
 ```
-
-## Macro Functions
-
-Because dropping an item onto a character transfers the active effects to the actor many of the activation functions have been scrapped.
-
-The macro functions in dynamicitems have been replaced in DAE with the following (and you will need to modify any macros you have created):
-* Show all the active effects on an actor, marked as active/inactive.
-  ```
-  new DAE.ActiveEffects(actor, {}).render(true)
-  ```
-* Apply/remove item transfer effects to a set of targets
-  ```
-  DAE.doEffects(item, activate, targets, {whisper = false, spellLevel = 0, damageTotal = null})
-  ```
-  This will transfer the non-transfer effects from the item to the targets.
-  `activate` (boolean) enables/disables the actor effects.
-  `targets` is an array of target tokens or token ids.
-  Pass the caster's concentration effect as `concentrationUuid`: the applied effects depend on it. An `origin` option is recorded in the `system.origin` slot for its type.
-
-### Where an effect came from (dnd5e 6)
-Effects DAE applies record their source in `system.origin`, as dnd5e 6's own effects do. Applied effects no longer carry a copy of their item: its data comes from the live item, else from the chat card (dnd5e keeps a copy when a use consumes the item; DAE adds one when an item that applied effects is deleted later). The helpers:
-* `DAE.getEffectSource(effect)` - `{ actorUuid, itemUuid, activityUuid, controllingEffectUuid, sourceEffectUuid, messageUuid }` (what macros get as `lastArg.source`).
-* `DAE.getEffectItem(effect)` - the effect's item: the live item, else one built from its data (a few ms the first time after the item is deleted, then cached). Use it when you need the item's prepared values (e.g. a computed save DC) or its methods.
-* `DAE.getEffectItemData(effect)` / `DAE.getMessageItemData(message)` - the item's stored data, from the live item (a copy) or the card; for older effects, the copy they carry. These never build a document: use them when stored values (name, img, flags, `system` fields as entered) are enough, and always during data preparation.
-* `DAE.effectMatchesSource(effect, uuid)` - whether the effect came from that item, activity, item effect or concentration effect; `DAE.deleteActiveEffect(targetUuid, uuid)` and `DAE.deleteItemActiveEffects` match the same way.
-
-An item deleted while its effects remain loses its data only if their card has gone too (or they had none), so macros should allow for a missing item.
-
-## Useful bits
-
- * One of the most common things to do with dynamic effects is to create a damage bonus as a number of dice based on level. For DAE this requires a specific syntax in the damage bonus field.
-     ```
-     (ceil(@classes.rogue.levels/2))d6
-     ```
-* Changing actor spellDC. The way that works is to use Bonuses Spell DC. Anything else won't do what you want.
-* Ability Saving Throw bonuses. The supplied DND5E system does not use the ability save field that you see on the character sheet when rolling saves. Changing that value (which you can do in DAE) will not affect rolls. If you want to be able to change individual ability saving throws you must enable the module setting "Use ability save field when rolling ability saves".
-* Some fields are designated as CUSTOM, either they are "special" DAE fields (All-Attacks for example) or the core Active Effect rules don't work for them (damage immunities/languages etc). Generally DAE Custom fields (see list below) add the specified value to the existing system.
-* Spell slots. The only way to modify the number of spell slots (that works correctly) is to use the spell slots override field. This is calculated BEFORE any derived values are calculated, so you cannot use ability modifiers or spell slot max in the calculation.
-* Conditional expressions (a ? b : c) used to work, but a change in the foundry roll parser means they no longer work.
-
-### Really cool Core functionality that you can use....
-
-You can add your own custom effects without needing any DAE module changes. Say you want to add the average of str.mod and dex.mod to AC (and DAE does not support it) and the expressions don't work...
-
-Core active effects has the idea of CUSTOM effects. If one is encountered when processing the active effects on an actor the system calls Hooks.call("applyActiveEffect")
-
-Write a function that does
-``` js
-  Hooks.on("applyActiveEffect", myCustomEffect)
-
-  function myCustomEffect(actor, change) {
-    // actor is the actor being processed and change a key/value pair
-    if (change.key !=== "system.attributes.ac.value") return;
-    // If your active effect spec was
-    // system.actor.attributes.ac.value (change.key) CUSTOM value (the value is not relevant here, but it gets passed as change.value)
-    const actorData = actor.system.data;
-    actorsystem.attributes.ac.value += Math.ceil((actorsystem.abilities.str.mod + actorsystem.abilities.dex.mod) / 2);
-    // Although you can change fields other than the change.key field you should not as the core active effects tracks all changes made.
-  }
-```
-
-Your custom effects can create new fields on the actor as well (DAE does this for flags.dnd5e.conditions for example). Just reference the field in the active effect spec and it will be created on the actor when the custom effect updates the value. There is no support for "arbitrary" field specification in the DAE UI (yet) so you would have to create the effect on the actor yourself.
-
-#### Defining fields to appear in the effect editor.
-You can also define fields that will be displayed in the DAE effect editor, with auto complete, labels that appear in the field list drop down, sample value (type of values in the field), valid modes and drop down list for the value field. Fields defined this way will auto complete in the field name auto complete
-
-```js
-  Hooks.on("dae.modifySpecials", {specKey, specials, charaterSpec} => {
-    if (["npc", "character".includes(specKey)]) {
-      specials["system.attributes.my.test.field = [ // the actor key that will be set
-       "", // A sample value to know the type of the field, typically "", 0, false
-       0, // valid modes for the field 0 = custom, -1 = all
-       "My Test Field", // the label to display in the dae editor drop down field list
-       {a: "Option A", "b", "Option B"}] // the aisgned values and labels to be used in the value drop down list
-    }
-  })
-```  
-specKey is one of the actor types, character, npc, vehicle or "union" which are all effect across all actor types.  
-You can specify fields that are processed in the baseValues (before prepareDerivedData) or specialValues pass (after prepareDerivedData) of DAE.
-
-### Initiative
-
-Changes to initiative are challenging due to the way it is calculated and rolled in the dnd5e system. Here is a quick guide to what you can do.
-  * `init.bonus` is set after prepareDerivedData so will not show up on the character sheet but CAN reference fields like dex.mod
-  * `init.total` can be updated and will show up on the character sheet but will NOT be included in rolls.
-  So if you want to add @abilities.wis.mod to initiative AND have it show up on the character sheet, you need two changes:
-  ```abilities.init.bonus ADD @abilities.wis.mod```
-  AND
-  ```abilities.init.total ADD @abilities.wis.mod```
-
-## Sample Items/Macros
-
-  There is a compendium of items that have been setup to work with DAE. They work best with Midi-QOL installed and active, but still function without it.
-
-## Module Integrations
-
-### Dependencies
-
-DAE **requires** libwrapper and socketlib to be istalled.
-
-### [Midi-QOL](https://gitlab.com/tposney/midi-qol)
-
-When rolling an item (weapon, spell, feature, tool, consumable) using Midi-QOL, non-transfer active effects are applied to the targeted tokens. If the definition of the item indicates that it is self then effects are applied to self. So, a bless spell when cast will apply the active effects to the targeted tokens.
-
-Midi-QOL uses the Foundry targeting system to decide who to apply effects to. If a spell is marked as target self then the effects are applied to the casting/using actor.
-
-If you have a feat "sneak attack" then rolling the feat will apply the non-transfer active effects to the token (i.e. weapon attacks do extra damage). For items with a saving throw active effects are applied if the save fails. Other items apply their effects when applying damage/casting a spell (if no saving throw) or consuming an item (e.g. potion).
-
-### about-time and times-up
-
-Not needed: effect expiry, including rounds and turns, special durations and *Macro repeat*, is built into DAE. See [Effect expiry](##Effect-expiry).
-
-### [GM-Notes](https://github.com/syl3r86/gm-notes)
-
-If the module is installed and active effects can update the actors gm-notes field. A useful place to track info that can't be applied to the character sheet.
-
-### [Combat Utility Belt](https://github.com/death-save/combat-utility-belt)
-
-CUB conditions are applied in 3 ways:
-* StatusEffect, this will lookup the CUB conditon at the time of apllication and copy the system. This is the **strongly** preferred way to apply conditions.
-* You create an active effect that takes it's changes from CUB via the drop down list in the DAE Active Effects Screen. "new" is pre-selected but you choose various items from that list, including CUB conditions.
-If you select condition (CUB) from the drop down list DAE will copy the active effect from CUB into the actor/item. From then on it won't change, any changes you make in condition lab will NOT be reflected in actors who have the condition applied via DAE/Midi-QOL.
-* Using macro.CUB to apply a condition that is looked up from CUB when applied. This should be considered deprecated.
-
-Combat Utility Belt has it's own effects editor that does not support the DAE extras. However, it can create most effects you can create in the DAE editor, but not special durations/expiry options.
-
-### [Convenient Effects](https://github.com/DFreds/dfreds-convenient-effects)
-
-Same application options as for CUB.
-
-# Build fast note
-
-### Prepare a release
-
-In the 99% of the case for prepare a release you must:
-
-- Launch `npm run build` this will generate all the code under the `dist` folder.
-- Launch `npm package` for zip all the contents on the `dist` folder, and build the zip file with the correct name under the  `package` folder.
-
-### Developing a release
-
-- Use `npm run build:watch` and `npm run build:link` and check some tutorial online
-
-# Build
-
-## Install all packages
-
-```bash
-npm install
-```
-## npm build scripts
-
-### build
-
-will build the code and copy all necessary assets into the dist folder and make a symlink to install the result into your foundry data; create a
-`foundryconfig.json` file with your Foundry Data path.
-
-```json
-{
-  "dataPath": "~/.local/share/FoundryVTT/"
-}
-```
-
-`build` will build and set up a symlink between `dist` and your `dataPath`.
-
-```bash
-npm run build
-```
-
-### NOTE:
-
-You don't need to build the `foundryconfig.json` file you can just copy the content of the `dist` folder on the module folder under `modules` of Foundry
-
-### build:watch
-
-`build:watch` will build and watch for changes, rebuilding automatically.
-
-```bash
-npm run build:watch
-```
-
-### clean
-
-`clean` will remove all contents in the dist folder (but keeps the link from build:install).
-
-```bash
-npm run clean
-```
-
-### prettier-format
-
-`prettier-format` launch the prettier plugin based on the configuration [here](./.prettierrc)
-
-```bash
-npm run prettier-format
-```
-
-### package
-
-`package` generates a zip file containing the contents of the dist folder generated previously with the `build` command. Useful for those who want to manually load the module or want to create their own release
-
-```bash
-npm run package
-```
-
-## [Changelog](./Changelog.md)
+- `specKey` is the actor type.
+- Each entry is `[DataField, changeType, phase?]`; the phase defaults to final.
+
+## Module integrations
+
+- **midi-qol**:
+  - applies item and activity effects to targets;
+  - provides most special durations;
+  - adds `flags.midi-qol.*` keys and `DamageBonusMacro`;
+  - adds the self-target options on the DAE tab, and the OverTime and condition value editors.
+- **Convenient Effects**: `macro.CE`.
+- **Token Magic FX**: `macro.tokenMagic`.
+- **GM Notes**: `flags.gm-notes.notes`.
+- **Sequencer**: Sequencer effects tied to a DAE effect end with it.
+- **tidy5e**: the header controls.
+
+No longer needed: about-time, times-up, Item Macro, Combat Utility Belt, ATL (Active Token Effects): Foundry v14's own `token.*` keys replace `ATL.*`, apart from elevation, hidden and rotation.
 
 ## Issues
 
-### My DAE does X and I think it should do Y. Or it stopped doing X when I updated.
+Please read the [Changelog](./Changelog.md) first: it often explains a change in behaviour.
 
-Did you read the [Changelog](./Changelog.md)? It often has information that might be relevant to problems.
-When filing an issue **PLEASE PLEASE PLEASE** include at least the following:
-* Foundry Version
-* DAE version (latest version does not mean anything to me)
-* Other modules you are using and their version, especially things like, Midi-QOL and Better Rolls. And if you routinely use more than 10 modules, please make sure you can reproduce the problem with only a few modules loaded. The problem might be a module interaction. I don't have time to investigate the combination of a 100 modules and their interactions with DAE so it has to be narrowed down.
-* If you are using **midi-qol** please export your midi-qol settings from the misc tab and include the json file as an attachment to the bug report.
-* Try and give a more complete description than X stopped working.
+When filing an issue, include:
+- your Foundry, dnd5e and DAE version numbers ("latest" doesn't tell me which);
+- other modules and their versions, especially midi-qol. Please try to reproduce the problem with as few modules as possible;
+- with midi-qol, your midi-qol settings, exported from its misc tab;
+- what you did, what you expected, and what happened.
 
-### I get lots of OwnedItem is deprecated when I open a character sheet.
-This is not a problem of the character sheet, but probably a change in item Uuids in 0.8.x.
-DAE/Midi-QOL store a reference to the item that created an active effect in the active effect and the created effect will have Actor.id.OwnedItem.id instead of the required Actor.id.Item.id.
+Report issues at https://gitlab.com/tposney/dae/-/issues, or ask on discord.
 
-There is a script `DAE.cleanEffectOrigins()` which will fix up item origins which include OwnedItem on all actors and tokens in the game. It can be run multiple times either from the console or as a macro.
+## Building
 
-Needs to be run as a GM.
-
-
-Any issues, bugs, or feature requests are always welcome to be reported directly to the [Issue Tracker](https://github.com/p4535992/foundryvtt-item-link-tree/issues), or using the [Bug Reporter Module](https://foundryvtt.com/packages/bug-reporter/).
-
-If you have any suggestions or feedback, please contact me on discord @tposney
+```bash
+npm install
+npm run build     # type check and build into dist/
+npm run package   # zip dist/ into package/
+```
 
 ## License
 
 This package is under an [MIT license](LICENSE) and the [Foundry Virtual Tabletop Limited License Agreement for module development](https://foundryvtt.com/article/license/).
-
-
-## Acknowledgements
-
-Bootstrapped with League of Extraordinary FoundryVTT Developers  [foundry-vtt-types](https://github.com/League-of-Foundry-Developers/foundry-vtt-types).
-
-Bootstrapped with League of Extraordinary FoundryVTT Developers  [foundry-vtt-dnd5e-types](https://github.com/League-of-Foundry-Developers/foundry-vtt-dnd5e-types).
-
-Mad props to the 'League of Extraordinary FoundryVTT Developers' community which helped me figure out a lot.
-
-

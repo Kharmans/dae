@@ -327,6 +327,20 @@ function scheduleSuppressionChange(
 export const APPLICATION_REF_NAMES = ["itemCardUuid", "itemLevel", "item", "activity", "spellLevel", "scaling", "damage", "critical", "fumble", "actorUuid"];
 const APPLICATION_REFS = new RegExp(`@(${APPLICATION_REF_NAMES.join("|")})\\b((?:\\.[\\w-]+)*)`, "g");
 
+const reportedFieldMappings = new Set<string>();
+
+/** The change a deprecated key maps to (its key, and the value and type the mapping sets), or undefined if it isn't mapped. */
+export function mappedChange(key: string): { key: string, value?: string, type?: string } | undefined {
+  const mapping = daeSystemClass.fieldMappings[key];
+  if (!mapping) return undefined;
+  if (typeof mapping === "string") return { key: mapping };
+  // Legacy mappings give a numeric mode
+  const modeToType: Record<number, string> = { 0: "custom", 1: "multiply", 2: "add", 3: "downgrade", 4: "upgrade", 5: "override" };
+  const type = mapping.type ?? (mapping.mode === undefined ? undefined
+    : typeof mapping.mode === "number" ? modeToType[mapping.mode] ?? "custom" : mapping.mode);
+  return { key: mapping.key, value: mapping.value, type };
+}
+
 /** Replace application-time references in `value` from `data` (see getReplacementData in DAEdnd5e), leaving the rest. */
 export function fillApplicationRefs(value: string, data: AnyObject): string {
   return value.replace(APPLICATION_REFS, (match, root: string, path: string) => {
@@ -422,18 +436,18 @@ export function daeApplyChange(
   if (daeSystemClass.fieldMappings[change.key]) {
     const mapping = daeSystemClass.fieldMappings[change.key];
     const displayMapping = typeof mapping === "string" ? mapping : `${mapping.key}${mapping.value !== undefined ? ` ${mapping.value}` : ""}`;
-    foundry.utils.logCompatibilityWarning(
-      `dae | Actor ${actor.name} ${change.key} deprecated use ${displayMapping} instead.`, { once: true, stack: false }
-    );
+    // Core's "once" is keyed by the call stack, which differs between preparations; report each key once.
+    if (!reportedFieldMappings.has(change.key)) {
+      reportedFieldMappings.add(change.key);
+      foundry.utils.logCompatibilityWarning(
+        `dae | Actor ${actor.name} ${change.key} deprecated use ${displayMapping} instead.`, { stack: false }
+      );
+    }
     if (typeof mapping !== "string") {
-      change.key = mapping.key;
-      if (mapping.value !== undefined) change.value = mapping.value;
-      if ((mapping as any).type !== undefined) change.type = (mapping as any).type;
-      else if (mapping.mode !== undefined) {
-        // Legacy field mapping with numeric mode — convert to v14 string type
-        const modeToType: Record<number, string> = { 0: "custom", 1: "multiply", 2: "add", 3: "downgrade", 4: "upgrade", 5: "override" };
-        change.type = modeToType[mapping.mode as number] ?? "custom";
-      }
+      const mapped = mappedChange(change.key)!;
+      change.key = mapped.key;
+      if (mapped.value !== undefined) change.value = mapped.value;
+      if (mapped.type !== undefined) change.type = mapped.type;
     } else if (mapping.startsWith("system.traits.da") && mapping.endsWith(".value")) {
       const damageType = change.key.split(".").slice(-1)[0];
       change.key = mapping;
@@ -459,7 +473,11 @@ export function daeApplyChange(
   if (typeof change.value === "string" && change.value.includes("@stackCount")) {
     change.value = change.value.replaceAll("@stackCount", String(stacks));
   }
-  if (typeof change.value === "string" && (change.value.includes("dae.eval(") || change.value.includes("dae.roll("))) {
+  // A dnd5e formula field keeps its dae.eval for dnd5e to evaluate late, with complete roll data (replaceFormulaData).
+  const FormulaField = globalThis.dnd5e?.dataModels?.fields?.FormulaField;
+  const formulaTarget = !!FormulaField && ValidSpec.actorSpecs?.[actor.type]?.allSpecsObj?.[change.key]?.fieldType instanceof FormulaField;
+  if (typeof change.value === "string" && !(formulaTarget && !change.value.includes("dae.roll("))
+    && (change.value.includes("dae.eval(") || change.value.includes("dae.roll("))) {
     // The data core resolves this change with (an item effect's @item among it), copied: core shares it across effects.
     const conditionData = { ...(options.replacementData ?? actor.getRollData()), stackCount: stacks, effect: change.effect?.toObject() };
     change.value = daeSystemClass.safeEvalExpression(change.value, conditionData);
@@ -1418,10 +1436,10 @@ export async function doActivityEffects(
    */
   const profiles = activity.effects ?? [];
   const resolved = await Promise.all(activityEffectsUuids.map(async (aeUuid) => {
-    // An effect on the activity's own item may be given by its absolute uuid; resolve it through the activity, which still
-    // holds it when the item has just been deleted (a consumable used up).
-    const profile = profiles.find(p => (p.relativeUUID === aeUuid) || (p.uuid === aeUuid)
-      || (!p.uuid && !!p._id && aeUuid.endsWith(`.ActiveEffect.${p._id}`)));
+    // An effect on the activity's own item may be given by its absolute uuid (a local profile's relativeUUID is its
+    // `.ActiveEffect.<id>` tail); resolve it through the activity, which holds it when the item is not on the actor
+    // (a consumable used up, a cloned or temporary item).
+    const profile = profiles.find(p => (p.relativeUUID === aeUuid) || (p.uuid === aeUuid) || aeUuid.endsWith(p.relativeUUID));
     try {
       return profile ? await profile.getEffect() : await fromUuid(aeUuid);
     } catch (err) {
@@ -2750,6 +2768,7 @@ const EMBED_MARK = "\u0000Embed[";
 export function replaceFormulaData(wrapped, formula, data: any = {}, options: AnyObject = {}, _r = 0) {
   if (typeof formula !== "string") return formula;
   try {
+    if (formula.includes(DAE_EVAL)) formula = evaluateDaeEvals(formula, data);
     return wrapped(formula.replaceAll("@Embed[", EMBED_MARK), data, { ...options, recursive: options.recursive ?? true }, _r)
       .replaceAll(EMBED_MARK, "@Embed[");
   } catch (err) {
@@ -2758,6 +2777,43 @@ export function replaceFormulaData(wrapped, formula, data: any = {}, options: An
   }
 }
 
+
+const DAE_EVAL = "dae.eval(";
+
+/**
+ * A formula's dae.eval(...) terms replaced by their values, evaluated with `data`: how a dnd5e formula field evaluated
+ * late (simplifyBonus and the like) gets an expression with derived values, such as a ternary on an ability modifier.
+ * A term whose references `data` cannot fill (e.g. dnd5e checking the field's value without data) counts as 0.
+ */
+function evaluateDaeEvals(formula: string, data: AnyObject): string {
+  let out = "";
+  let from = 0;
+  for (let start = formula.indexOf(DAE_EVAL); start >= 0; start = formula.indexOf(DAE_EVAL, from)) {
+    let depth = 1;
+    let end = start + DAE_EVAL.length;
+    for (; end < formula.length && depth; end++) {
+      if (formula[end] === "(") depth++;
+      else if (formula[end] === ")") depth--;
+    }
+    if (depth) break;
+    const inner = formula.slice(start + DAE_EVAL.length, end - 1);
+    const value = daeEvalValue(inner, data);
+    // Bracketed only when negative, which a formula needs: a bare number stays a number (a flag's value).
+    out += `${formula.slice(from, start)}${value < 0 ? `(${value})` : value}`;
+    from = end;
+  }
+  return out + formula.slice(from);
+}
+
+function daeEvalValue(expression: string, data: AnyObject): number {
+  const resolved = Roll.replaceFormulaData(expression, data);
+  if (resolved.includes("@")) return 0;
+  let result = daeSystemClass.safeEval(resolved, { ...data });
+  // dae.eval("2 + 3"): a quoted expression evaluates to its text, which is then evaluated.
+  if (typeof result === "string") result = daeSystemClass.safeEval(result, { ...data });
+  const value = Number(result);
+  return Number.isFinite(value) ? value : 0;
+}
 
 export function tokensForActor(actorRef: Actor | string | undefined | null): Token[] | undefined {
   let actor: Actor.Implementation;
@@ -2915,20 +2971,11 @@ export async function processConditionalEffects(actor: Actor.Implementation, upd
 
       // @ts-expect-error v14 system.changes on toObject() data
       for (let change of ceData.system.changes) {
-        if (daeSystemClass.fieldMappings[change.key]) {
-          const mapping = daeSystemClass.fieldMappings[change.key];
-          if (typeof mapping === "string") {
-            change.key = mapping;
-          } else {
-            change.key = mapping.key;
-            if (mapping.value !== undefined) change.value = mapping.value;
-            if ((mapping as any).type !== undefined) change.type = (mapping as any).type;
-            else if (mapping.mode !== undefined) {
-              // Legacy field mapping with numeric mode -- convert to v14 string type
-              const modeToType: Record<number, string> = { 0: "custom", 1: "multiply", 2: "add", 3: "downgrade", 4: "upgrade", 5: "override" };
-              change.type = modeToType[mapping.mode as number] ?? "custom";
-            }
-          }
+        const mapped = mappedChange(change.key);
+        if (mapped) {
+          change.key = mapped.key;
+          if (mapped.value !== undefined) change.value = mapped.value;
+          if (mapped.type !== undefined) change.type = mapped.type;
         }
 
       }

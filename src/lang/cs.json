@@ -647,7 +647,7 @@
       "name": "Vlastnost soustředění",
       "description": "Která vlastnost se použije při záchranách udržení soustředění."
     },
-    "system.attributes.concentration.bonuses.save": {
+    "system.attributes.concentration.roll.bonus": {
       "name": "Bonus k záchraně soustředění",
       "description": ""
     },

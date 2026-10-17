@@ -12,9 +12,9 @@
  *   - "migrate" : Layers A + C (one-shot world migration + pre-write normalisation)
  *   - "full"    : Layers A + B + C (everything — adds runtime fallback)
  *
- * Not migrated (target keys absent from TokenDocument._ACTIVE_EFFECT_TARGETABLE_KEYS, or
- * routed through TokenDocument._onOverrideSize which is unimplemented in core/dnd5e v14):
- *   ATL.elevation, ATL.hidden, ATL.rotation, ATL.width, ATL.height, ATL.depth, ATL.shape
+ * Not migrated, and left as they are (target keys absent from TokenDocument's targetable keys):
+ *   ATL.elevation, ATL.hidden, ATL.rotation
+ * Size keys map to token.width/height/depth/shape, which dnd5e 6 applies through TokenDocument#_onOverrideSize.
  */
 
 /** Loose change shape — accepts both v14 DAEChangeData and other change-like objects. */
@@ -33,6 +33,11 @@ export type AnyChange = {
 /** ATL → token 1:1 key mappings. Value transformations live in the per-case handlers. */
 const ATL_TO_TOKEN_DIRECT: Record<string, string> = {
   "ATL.alpha":                     "token.alpha",
+  // size (dnd5e 6 implements TokenDocument#_onOverrideSize)
+  "ATL.width":                     "token.width",
+  "ATL.height":                    "token.height",
+  "ATL.depth":                     "token.depth",
+  "ATL.shape":                     "token.shape",
   // light
   "ATL.light.angle":               "token.light.angle",
   "ATL.light.attenuation":         "token.light.attenuation",
@@ -62,10 +67,6 @@ export const ATL_UNSUPPORTED_KEYS = new Set([
   "ATL.elevation",
   "ATL.hidden",
   "ATL.rotation",
-  "ATL.width",
-  "ATL.height",
-  "ATL.depth",
-  "ATL.shape",
 ]);
 
 const _warnedUnsupported = new Set<string>();
@@ -73,7 +74,7 @@ const _warnedUnsupported = new Set<string>();
 /**
  * Transform a single ATL change into zero or more token.* changes.
  *
- *  - returns []          when the key is unsupported (see ATL_UNSUPPORTED_KEYS)
+ *  - returns null        when the key is unsupported (see ATL_UNSUPPORTED_KEYS): the change is kept as it is
  *  - returns [{...}]     for direct 1:1 mappings
  *  - returns [..., ...]  for 1:N expansions (visionMode defaults, animation JSON, detectionModes, preset)
  *  - returns null        if the change is not ATL.* (caller should leave it alone)
@@ -87,16 +88,13 @@ export function atlChangeToTokenChanges(
 ): AnyChange[] | null {
   if (!change?.key || !change.key.startsWith("ATL.")) return null;
 
-  // Unsupported — log once per key, drop.
+  // Unsupported — log once per key, keep the change.
   if (ATL_UNSUPPORTED_KEYS.has(change.key)) {
     if (options.warnUnsupported !== false && !_warnedUnsupported.has(change.key)) {
       _warnedUnsupported.add(change.key);
-      console.warn(
-        `dae | ATL key "${change.key}" cannot be migrated to native v14 token.* — `
-        + `either keep ATL installed or wait for core/dnd5e to implement TokenDocument._onOverrideSize.`
-      );
+      console.warn(`dae | ATL key "${change.key}" has no Foundry v14 token.* equivalent; it is kept as it is but has no effect without a v14 version of ATL.`);
     }
-    return [];
+    return null;
   }
 
   // Legacy ATL.dimSight / ATL.brightSight (kept for back-compat — ATL itself migrates these to sight.range/brightness).

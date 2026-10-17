@@ -1,9 +1,16 @@
 ### 14.6.2 (unreleased)
 
 **Applied and item effects**
-* Fixed: a consumable used up by its last use (e.g. a potion) applied none of its effects on dnd5e 6.
+* Fixed: `ATL.width`, `height`, `depth` and `shape` were deleted from effects; they become `token.*` size changes, which dnd5e 6 applies. `ATL.elevation`, `hidden` and `rotation`, which Foundry v14 can't apply, are kept instead of deleted.
+* Added: `dae.eval(…)` in a dnd5e formula field (HP bonuses, roll bonuses and the like) is evaluated when dnd5e evaluates the field, with its full roll data, so it can use derived values such as `@abilities.dex.mod` (e.g. `dae.eval(@abilities.dex.mod > 2 ? 2 : 0)` in an attack bonus). In number fields and flags it is still evaluated when the change is applied. `dae.eval` works in any formula (midi-qol #1565).
+* Added: the effect editor flags a conditional (`? :`) in a number or formula field, pointing to the change's conditions or `dae.eval(…)`; on Foundry 14 a bare conditional is not a valid formula (midi-qol #1565).
+* Fixed: the effect editor offered dnd5e 5's `system.attributes.concentration.bonuses.save` for the concentration save bonus; it offers `system.attributes.concentration.roll.bonus`.
+* Fixed: an activity whose item is not on the actor applied none of its effects on dnd5e 6: a consumable used up by its last use (e.g. a potion), and cloned or temporary items (contested grapple, metamagic casts).
 * Fixed: effects with the pre-release `flags.dae.legacyApplication` (midi's sample items in 14.6.0–14.6.2) were applied in dnd5e mode; they are now applied in legacy mode, with a deprecation warning. Use `flags.dae.applicationMode`.
 * Fixed: a boolean `flags.dae.stackable` (DAE's original checkbox) was treated as stacking; `false` now means *none* and `true` *multi*, with a deprecation warning.
+* Fixed: a deprecated (mapped) change key was reported every time an actor was prepared; it is reported once per key.
+* Added: the change dialog marks a deprecated key with the key to use and a Convert link.
+* Removed: the custom handling of `system.traits.sdi/sdr/sdv.all` (dnd5e has no such traits) and of `system.traits.da.all`, which midi now maps to `system.traits.da.value` ALL. `system.traits.di/dr/dv.all` remain deprecated keys that add ALL to `….value` whatever their change type, and are no longer offered in the field browser.
 
 **Effect source**
 * Changed: applied effects record their source in `system.origin` as dnd5e 6 does (the activity, or the item without one; the caster's concentration; the card; the effect profile), so their `origin` is the concentration effect, else the activity. Pass concentration as `concentrationUuid`; an `origin` passed to `doActivityEffects`/`doEffects` goes in the slot for its type.
@@ -13,6 +20,7 @@
   * `DAE.getEffectItem(effect)` → the effect's Item: the live item, else one built from its data (a few ms the first time, then cached). Use it for the item's prepared values or methods.
   * `DAE.getEffectItemData(effect)` → the item's stored data (a copy while the item exists). Never builds a document: use it when stored values are enough, and always during data preparation, where building an item re-enters preparation and prepared values aren't final.
   * `DAE.getMessageItemData(message)` → a card's item data (`message` a ChatMessage or its uuid)
+  * `DAE.getActorItemData(actor, uuid)` → the data of an item (by its uuid or one of its activities' or effects') from the effects it applied to the actor
   * `DAE.effectMatchesSource(effect, uuid)` → whether the effect came from that item, activity, item effect or concentration effect
 * Added: macro `lastArg.source` and `lastArg.systemOrigin`. Deprecated: `lastArg.origin`, which keeps its old value.
 * Changed: `deleteActiveEffect` and `deleteItemActiveEffects` match an effect's item, activity, source effect or concentration effect (Slayer's Prey left the old target marked).

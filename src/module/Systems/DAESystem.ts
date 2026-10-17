@@ -268,7 +268,7 @@ export class DAESystem {
     deprecatedFor?: string;
   }>;
   static daeActionTypeKeys: string[];
-  public static fieldMappings: Record<string, string | { key: string, value?: string, mode?: number | string }> = {};
+  public static fieldMappings: Record<string, string | { key: string, value?: string, type?: string, mode?: number | string }> = {};
 
   public static get systemConfig() {
     //@ts-expect-error no dnd5e-types

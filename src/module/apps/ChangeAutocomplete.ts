@@ -211,15 +211,17 @@ function sampleNpcData(): object {
 const UNCHECKED_ROOTS = new Set(["item", "activity", "scale", "classes", "flags", "mod"]);
 const ANY_REFERENCE = /(?:@|##)([\w-]+(?:\.[\w-]+)*)/g;
 const INLINE_ROLL = /\[\[\[?[\s\S]*?\]?\]\]/g;
+const TERNARY = /\?[^:]*:/;
 
 /**
  * Problems with a change value worth telling the author about: `@`/`##` references that no actor's data has, and,
- * in a number or formula field, a value that is not a formula. Checked against `data` (the effect's own actor or
+ * in a number or formula field, a value that is not a formula, singling out a conditional (`? :`), which dnd5e
+ * expresses with the change's conditions. Checked against `data` (the effect's own actor or
  * item) and a sample character and NPC, since the value may be filled from another creature.
  */
 export function checkChangeValue(
   value: string, data: Record<string, unknown>, mode: "none" | "references" | "formula"
-): { state: "error", unknown: string[], invalidFormula: boolean } | undefined {
+): { state: "error", unknown: string[], invalidFormula: boolean, ternary: boolean } | undefined {
   if (mode === "none" || !value.trim()) return undefined;
   const sources = [data, sampleActorData(), sampleNpcData()];
   const unknown = [...value.matchAll(ANY_REFERENCE)]
@@ -229,9 +231,11 @@ export function checkChangeValue(
       && !sources.some(source => foundry.utils.getProperty(source, path) !== undefined))
     .map(([reference]) => reference);
   let invalidFormula = false;
+  let ternary = false;
   if (mode === "formula" && !value.includes("dae.")) {
     const formula = value.replace(INLINE_ROLL, "1").replace(ANY_REFERENCE, "1");
-    invalidFormula = !!formula.trim() && !Roll.validate(formula);
+    ternary = TERNARY.test(formula);
+    invalidFormula = !ternary && !!formula.trim() && !Roll.validate(formula);
   }
-  return unknown.length || invalidFormula ? { state: "error", unknown, invalidFormula } : undefined;
+  return unknown.length || invalidFormula || ternary ? { state: "error", unknown, invalidFormula, ternary } : undefined;
 }

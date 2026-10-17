@@ -1,4 +1,4 @@
-import { ceInterface, daeSystemClass, getStatusEffectsArray, localizationMap, effectivePhase, defaultApplicationMode } from "../dae.js";
+import { ceInterface, daeSystemClass, getStatusEffectsArray, localizationMap, effectivePhase, defaultApplicationMode, mappedChange } from "../dae.js";
 import { i18n, i18nFormat, daeSpecialDurations, daeMacroRepeats, error } from "../../dae.js";
 import { DAEChangeData, ValidSpec } from "../Systems/DAESystem.js";
 
@@ -729,10 +729,25 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
     }
 
     element.querySelector(".dae-key-note")?.remove();
+    const mapped = mappedChange(key);
     if (key === "system.attributes.hp.max") {
       const note = document.createElement("p");
       note.classList.add("hint", "dae-key-note");
       note.textContent = i18n("dae.HpMaxNote");
+      keyInput.closest(".form-group")?.append(note);
+    } else if (mapped) {
+      const note = document.createElement("p");
+      note.classList.add("hint", "dae-key-note");
+      note.textContent = `${i18nFormat("dae.DeprecatedKey.Note", { key: mapped.key })} `;
+      const convert = document.createElement("a");
+      convert.textContent = i18n("dae.DeprecatedKey.Convert");
+      convert.addEventListener("click", () => {
+        if (mapped.value !== undefined) pendingValue = mapped.value;
+        if (mapped.type !== undefined && typeSelect) typeSelect.value = mapped.type;
+        keyInput.value = mapped.key;
+        keyInput.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      note.append(convert);
       keyInput.closest(".form-group")?.append(note);
     }
 
@@ -794,6 +809,7 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
     const parts: string[] = [];
     if (problem.unknown.length) parts.push(i18nFormat("dae.ValueCheck.UnknownReference", { refs: problem.unknown.join(", ") }));
     if (problem.invalidFormula) parts.push(i18n("dae.ValueCheck.InvalidFormula"));
+    if (problem.ternary) parts.push(i18n("dae.ValueCheck.Ternary"));
     notice.textContent = parts.join(" ");
     valueField.closest(".form-group")?.append(notice);
   };

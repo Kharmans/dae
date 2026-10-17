@@ -438,15 +438,12 @@ export class DAESystemDND5E extends DAESystem {
       specials["system.attributes.ac.value"] = [new NumberField(), ""];
     }
     specials["macro.activityMacro"] = [new StringField(), "custom"];
-    specials["system.traits.di.all"] = [new BooleanField(), "custom"];
     specials["system.traits.di.value"] = [new StringField(), ""];
     specials["system.traits.di.custom"] = [new StringField(), "custom"];
     specials["system.traits.di.bypasses"] = [new StringField(), "custom"];
-    specials["system.traits.dr.all"] = [new BooleanField(), "custom"];
     specials["system.traits.dr.value"] = [new StringField(), ""];
     specials["system.traits.dr.custom"] = [new StringField(), "custom"];
     specials["system.traits.dr.bypasses"] = [new StringField(), "custom"];
-    specials["system.traits.dv.all"] = [new BooleanField(), "custom"];
     specials["system.traits.dv.value"] = [new StringField(), ""];
     specials["system.traits.dv.custom"] = [new StringField(), "custom"];
     specials["system.traits.dv.bypasses"] = [new StringField(), "custom"];
@@ -538,9 +535,9 @@ export class DAESystemDND5E extends DAESystem {
   public static initActions() {
     this.getRollDataWrapper = getRollData;
     this.fieldMappings["StatusEffect"] = "macro.StatusEffect";
-    this.fieldMappings["system.traits.di.all"] = { key: "system.traits.di.value", value: "ALL", mode: "add" };
-    this.fieldMappings["system.traits.dr.all"] = { key: "system.traits.dr.value", value: "ALL", mode: "add" };
-    this.fieldMappings["system.traits.dv.all"] = { key: "system.traits.dv.value", value: "ALL", mode: "add" };
+    this.fieldMappings["system.traits.di.all"] = { key: "system.traits.di.value", value: "ALL", type: "add" };
+    this.fieldMappings["system.traits.dr.all"] = { key: "system.traits.dr.value", value: "ALL", type: "add" };
+    this.fieldMappings["system.traits.dv.all"] = { key: "system.traits.dv.value", value: "ALL", type: "add" };
 
     Hooks.callAll("dae.addFieldMappings", this.fieldMappings);
     warn("system is ", game.system)
@@ -1003,11 +1000,6 @@ export class DAESystemDND5E extends DAESystem {
       case "system.attributes.movement.hover":
         foundry.utils.setProperty(actor, change.key, typeof change.value === "string"
           ? !["", "false", "0"].includes(change.value.trim().toLowerCase()) : !!change.value);
-        return true;
-      case "system.traits.di.all": case "system.traits.dr.all": case "system.traits.da.all":
-      case "system.traits.dv.all": case "system.traits.sdi.all": case "system.traits.sdr.all":
-      case "system.traits.sdv.all":
-        foundry.utils.setProperty(actor, change.key.replace(".all", ".value"), new Set(["ALL"]));
         return true;
       case "system.traits.di.value": case "system.traits.dr.value": case "system.traits.dv.value":
       case "system.traits.da.value": case "system.traits.sdi.value": case "system.traits.sdr.value":

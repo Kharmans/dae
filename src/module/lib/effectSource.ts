@@ -170,6 +170,18 @@ export function getEffectItemData(effect: EffectInput | null | undefined): ItemD
   return getMessageItemData(source.messageUuid) ?? effect.flags?.dae?.itemData as ItemData | undefined;
 }
 
+/**
+ * An item's data from the effects it applied to an actor, given the uuid of the item or of one of its activities or
+ * effects (an `ItemMacro.<uuid>` whose item is gone).
+ */
+export function getActorItemData(actor: Actor.Implementation, uuid: string | null | undefined): ItemData | undefined {
+  const itemId = itemUuidOf(uuid)?.split(".").pop();
+  if (!itemId) return undefined;
+  const effect = actor.effects.find(e => getEffectSource(e).itemUuid?.split(".").pop() === itemId
+    || (e.flags?.dae?.itemData as ItemData | undefined)?._id === itemId);
+  return getEffectItemData(effect);
+}
+
 const builtItems = new Map<string, Item.Implementation>();
 
 /** An effect's item: the live item, else one built once from getEffectItemData (by card, else by effect). */

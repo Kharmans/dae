@@ -259,7 +259,7 @@
     "system.attributes.ac.value",
     "system.attributes.attunement.max",
     "system.attributes.concentration.ability",
-    "system.attributes.concentration.bonuses.save",
+    "system.attributes.concentration.roll.bonus",
     "system.attributes.concentration.limit",
     "system.attributes.concentration.roll.max",
     "system.attributes.concentration.roll.min",

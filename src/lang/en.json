@@ -401,7 +401,10 @@
   "dae.DiceValue.Unfixable": "This field cannot roll dice when the actor is prepared, so this change will be skipped. Put the dice in an inline roll, [[...]], to roll it once.",
   "dae.ValueCheck.UnknownReference": "Not in any actor's data, so it will not resolve: {refs}.",
   "dae.ValueCheck.InvalidFormula": "Not a valid formula.",
+  "dae.ValueCheck.Ternary": "A condition (? :) is not a formula. Use the change's conditions, or wrap the value in dae.eval(…).",
   "dae.HpMaxNote": "A change to max HP sets a stored value, replacing a character's calculated max. To raise max HP on any creature use system.attributes.hp.tempmax (as dnd5e's Aid does); for a character's calculated max, system.attributes.hp.bonuses.overall; to give an NPC extra rolled hit points when its token is placed, add to system.attributes.hp.formula (needs dnd5e's Roll NPC hit points setting).",
+  "dae.DeprecatedKey.Note": "Deprecated: use {key}; DAE applies this change to it.",
+  "dae.DeprecatedKey.Convert": "Convert",
   "dae.RaiseCurrentHp.Label": "Also raise current HP",
   "dae.RaiseCurrentHp.Hint": "When this change starts applying (the effect is created, or its item gained), current HP rises by the same amount, once. When it stops, current HP above the new maximum is lost; damage taken meanwhile stands.",
   "dae.LegacyApplication.Name": "Effect application",
@@ -708,7 +711,7 @@
       "name": "Concentration Ability",
       "description": "Which ability to use for Concentration saves."
     },
-    "system.attributes.concentration.bonuses.save": {
+    "system.attributes.concentration.roll.bonus": {
       "name": "Concentration Save Bonus",
       "description": ""
     },
