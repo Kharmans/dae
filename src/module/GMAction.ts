@@ -1,6 +1,6 @@
 import { allMacroEffects, tokenForActor, actorFromUuid, getTokenDocument, getToken, getStatusEffectsArray, getItemMacroCommand, restoreDeferredRefs, usesLegacyApplication, syncDependents } from "./dae.js";
 import { resolveMacro } from "./lib/macroResolution.js";
-import { effectMatchesSource, getEffectItem, getLegacyOrigin } from "./lib/effectSource.js";
+import { effectMatchesSource, getEffectItem, getEffectSource, getLegacyOrigin } from "./lib/effectSource.js";
 import { warn, debug, error, debugEnabled, i18nFormat, i18n } from "../dae.js";
 import { AnyMutableObject, AnyObject, MustBeValidUuid } from "fvtt-types/utils";
 
@@ -374,10 +374,13 @@ export async function applyActiveEffects({
         // @ts-expect-error v14 system.changes
         for (let change of aeData.system.changes) {
           if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
-            let originEntity = fromUuidSync(aeData.origin) as AnyObject | undefined;
-            if (!originEntity) continue;
+            let originEntity = fromUuidSync(aeData.origin, { strict: false }) as AnyObject | undefined;
             let sourceActor: Actor.Implementation | null | undefined;
-            if (originEntity instanceof Item) {
+            if (!originEntity) {
+              // A temporary item (a synthetic roll, a used-up consumable) cannot be resolved; its actor still can.
+              const actor = fromUuidSync(getEffectSource(aeData).actorUuid ?? "", { strict: false });
+              if (actor instanceof Actor) sourceActor = actor;
+            } else if (originEntity instanceof Item) {
               sourceActor = originEntity.actor;
             } else if (originEntity instanceof Actor) sourceActor = originEntity;
             else if (originEntity instanceof ActiveEffect && originEntity.transfer) sourceActor = (originEntity?.parent as Item.Implementation)?.parent;

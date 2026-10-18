@@ -1,3 +1,8 @@
+### 14.6.3 (unreleased)
+
+**Applied and item effects**
+* Fixed: an effect applied from a temporary item (a CAT/CPR synthetic roll, a used-up consumable) lost its macro changes (`macro.actorUpdate`, `macro.itemMacro`, …).
+
 ### 14.6.2
 
 **Breaking for macro and item authors** (details and examples: README, [Upgrading to 14.6.2](https://gitlab.com/tposney/dae/-/blob/dnd6/Readme.md#upgrading-to-1462))
