@@ -184,7 +184,24 @@ export function getActorItemData(actor: Actor.Implementation, uuid: string | nul
 
 const builtItems = new Map<string, Item.Implementation>();
 
-/** An effect's item: the live item, else one built once from getEffectItemData (by card, else by effect). */
+let preparationDepth = 0;
+let warnedDuringPreparation = false;
+
+/** Run an actor's data preparation, so getEffectItem knows not to build an item during it (synchronous, so a counter suffices) */
+export function duringPreparation<T>(prepare: () => T): T {
+  preparationDepth++;
+  try {
+    return prepare();
+  } finally {
+    preparationDepth--;
+  }
+}
+
+/**
+ * An effect's item: the live item, else one built once from getEffectItemData (by card, else by effect). Not during
+ * data preparation, where building an item re-enters it: there a deleted item that has not been built yet gives
+ * undefined (use getEffectItemData).
+ */
 export function getEffectItem(effect: EffectInput | null | undefined): Item.Implementation | undefined {
   if (!effect) return undefined;
   if (effect instanceof ActiveEffect && effect.parent instanceof Item) return effect.parent;
@@ -194,6 +211,13 @@ export function getEffectItem(effect: EffectInput | null | undefined): Item.Impl
   const key = source.messageUuid ?? (effect instanceof ActiveEffect ? effect.uuid : undefined) ?? source.itemUuid;
   const cached = key ? builtItems.get(key) : undefined;
   if (cached) return cached;
+  if (preparationDepth > 0) {
+    if (!warnedDuringPreparation) {
+      warnedDuringPreparation = true;
+      console.warn("dae | getEffectItem cannot build a deleted item during data preparation; use DAE.getEffectItemData there.");
+    }
+    return undefined;
+  }
   const data = getEffectItemData(effect);
   if (!data) return undefined;
   const actor = resolve(source.actorUuid);

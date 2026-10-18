@@ -1,3 +1,4 @@
+import { duringPreparation } from "../lib/effectSource.js";
 
 import { AnyObject } from "fvtt-types/utils";
 import { daeSpecialDurations, debug, debugEnabled, error, i18n, i18nFormat, warn } from "../../dae.js";
@@ -1169,7 +1170,7 @@ function prepareData(this: Actor.Implementation, wrapped) {
     //   - prepareEmbeddedDocuments → applyActiveEffects("initial") [DAE override]
     //   - prepareDerivedData
     //   - applyActiveEffects("final") [DAE override]
-    wrapped();
+    duringPreparation(wrapped);
 
     // @ts-expect-error no dnd5e-types
     const hasHeavy = this.items.some(i => i.system.equipped && i.system.properties.has("stealthDisadvantage"));

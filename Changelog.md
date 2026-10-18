@@ -17,7 +17,7 @@
 * Changed: applied effects no longer carry a copy of their item (`flags.dae.itemData`); its data comes from the live item, else from the card: dnd5e's copy of an item the use consumed, or one DAE adds when an item that applied effects is deleted later. `flags.dae.applicationData` keeps only damage, critical and fumble.
 * Added:
   * `DAE.getEffectSource(effect)` → `{ actorUuid, itemUuid, activityUuid, controllingEffectUuid, sourceEffectUuid, messageUuid }`
-  * `DAE.getEffectItem(effect)` → the effect's Item: the live item, else one built from its data (a few ms the first time, then cached). Use it for the item's prepared values or methods.
+  * `DAE.getEffectItem(effect)` → the effect's Item: the live item, else one built from its data (a few ms the first time, then cached). Use it for the item's prepared values or methods. Not during data preparation: building an item there re-enters it, so a deleted item not yet built gives `undefined` (with a console warning); use `getEffectItemData`.
   * `DAE.getEffectItemData(effect)` → the item's stored data (a copy while the item exists). Never builds a document: use it when stored values are enough, and always during data preparation, where building an item re-enters preparation and prepared values aren't final.
   * `DAE.getMessageItemData(message)` → a card's item data (`message` a ChatMessage or its uuid)
   * `DAE.getActorItemData(actor, uuid)` → the data of an item (by its uuid or one of its activities' or effects') from the effects it applied to the actor
