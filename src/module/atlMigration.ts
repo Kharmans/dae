@@ -12,8 +12,8 @@
  *   - "migrate" : Layers A + C (one-shot world migration + pre-write normalisation)
  *   - "full"    : Layers A + B + C (everything — adds runtime fallback)
  *
- * Not migrated (target keys absent from TokenDocument._ACTIVE_EFFECT_TARGETABLE_KEYS, or
- * routed through TokenDocument._onOverrideSize which is unimplemented in core/dnd5e v14):
+ * Not migrated, and left as they are (target keys absent from TokenDocument's targetable keys, or
+ * routed through TokenDocument#_onOverrideSize, which dnd5e 5.x does not implement):
  *   ATL.elevation, ATL.hidden, ATL.rotation, ATL.width, ATL.height, ATL.depth, ATL.shape
  */
 
@@ -73,7 +73,7 @@ const _warnedUnsupported = new Set<string>();
 /**
  * Transform a single ATL change into zero or more token.* changes.
  *
- *  - returns []          when the key is unsupported (see ATL_UNSUPPORTED_KEYS)
+ *  - returns null        when the key is unsupported (see ATL_UNSUPPORTED_KEYS): the change is kept as it is
  *  - returns [{...}]     for direct 1:1 mappings
  *  - returns [..., ...]  for 1:N expansions (visionMode defaults, animation JSON, detectionModes, preset)
  *  - returns null        if the change is not ATL.* (caller should leave it alone)
@@ -87,16 +87,13 @@ export function atlChangeToTokenChanges(
 ): AnyChange[] | null {
   if (!change?.key || !change.key.startsWith("ATL.")) return null;
 
-  // Unsupported — log once per key, drop.
+  // Unsupported — log once per key, keep the change.
   if (ATL_UNSUPPORTED_KEYS.has(change.key)) {
     if (options.warnUnsupported !== false && !_warnedUnsupported.has(change.key)) {
       _warnedUnsupported.add(change.key);
-      console.warn(
-        `dae | ATL key "${change.key}" cannot be migrated to native v14 token.* — `
-        + `either keep ATL installed or wait for core/dnd5e to implement TokenDocument._onOverrideSize.`
-      );
+      console.warn(`dae | ATL key "${change.key}" has no Foundry v14 token.* equivalent on dnd5e 5.x; it is kept as it is for the ATL module.`);
     }
-    return [];
+    return null;
   }
 
   // Legacy ATL.dimSight / ATL.brightSight (kept for back-compat — ATL itself migrates these to sight.range/brightness).

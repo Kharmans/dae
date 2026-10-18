@@ -1,6 +1,9 @@
 ### 14.0.18 (unreleased)
 
 **Applied and item effects**
+* Fixed: with *ATL compatibility* set to migrate or full, `ATL.*` keys with no `token.*` equivalent (width, height, depth, shape, elevation, hidden, rotation) were deleted from effects; they are kept for the ATL module.
+* Added: `dae.eval(…)` in a dnd5e formula field (HP bonuses, attack and save bonuses and the like) is evaluated when dnd5e evaluates the field, with its full roll data, so it can use derived values such as `@abilities.dex.mod` (e.g. `dae.eval(@abilities.dex.mod > 2 ? 2 : 0)` in an attack bonus). In number fields and flags it is still evaluated when the change is applied. `dae.eval` works in any formula (midi-qol #1565).
+* Added: the effect editor flags a conditional (`? :`) in a number or formula field; on Foundry 14 a bare conditional is not a valid formula, wrap it in `dae.eval(…)` (midi-qol #1565).
 * Fixed: `DAE.deleteActiveEffect` with an item's uuid missed the effects that item applied, whose origin is the item's effect (Slayer's Prey left the old target marked).
 * Fixed: a boolean `flags.dae.stackable` (DAE's original checkbox) was treated as stacking; `false` now means *none* and `true` *multi*, with a deprecation warning.
 

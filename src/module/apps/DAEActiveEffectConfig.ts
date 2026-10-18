@@ -532,6 +532,23 @@ export class DAEActiveEffectConfig extends foundry.applications.sheets.ActiveEff
     const currTabId: string | undefined = Object.values(context.tabs)?.find(i => i.active)?.id;
     if (currTabId !== "changes") this.position.height = this.element.offsetHeight ?? "auto";
 
+    // A conditional (? :) in a number or formula field is not a valid formula on Foundry 14: say so on the input.
+    const checkValues = () => this.element.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+      'input[name^="system.changes."][name$=".value"], textarea[name^="system.changes."][name$=".value"]'
+    ).forEach(input => {
+      const index = input.name.split(".")[2];
+      const key = this.element.querySelector<HTMLInputElement>(`[name="system.changes.${index}.key"]`)?.value ?? "";
+      const fieldType = this.validSpecsToUse?.allSpecsObj?.[key]?.fieldType;
+      const FormulaField = globalThis.dnd5e?.dataModels?.fields?.FormulaField;
+      const takesFormula = fieldType instanceof foundry.data.fields.NumberField || (!!FormulaField && fieldType instanceof FormulaField);
+      const flagged = takesFormula && !input.value.includes("dae.") && /\?[^:]*:/.test(input.value);
+      input.classList.toggle("dae-value-warning", flagged);
+      if (flagged) input.dataset.tooltip = i18n("dae.ValueCheck.Ternary");
+      else if (input.dataset.tooltip === i18n("dae.ValueCheck.Ternary")) delete input.dataset.tooltip;
+    });
+    checkValues();
+    this.element.querySelector(".changes-list, .tab[data-tab=\"changes\"]")?.addEventListener("change", checkValues);
+
     // Inject reset start time button into the core duration tab's start fieldset
     const startFieldset = this.element.querySelector('.tab[data-tab="duration"] fieldset.start-data');
     if (startFieldset) {

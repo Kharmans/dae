@@ -1,4 +1,5 @@
 {
+  "dae.ValueCheck.Ternary": "A condition (? :) is not a formula. Wrap the value in dae.eval(…).",
   "dae.str": "Strength",
   "dae.dex": "Dexterity",
   "dae.con": "Constitution",

@@ -165,6 +165,7 @@ A change value can be more than a plain number:
   
   In a transfer effect the formula stays in the effect and the total is stored for each actor, so every actor the item reaches rolls its own.
 - **Expressions a roll formula can't handle**, such as `a ? b : c`: use `dae.eval(expression)`. (`dae.roll(expr)` is deprecated and becomes `[[[expr]]]`.)
+  In a number field `dae.eval` is evaluated when the change is applied, so it can use stored values only (`@abilities.str.value`, not `@abilities.str.mod`). In a formula field (an HP, attack or save bonus) it is evaluated when dnd5e evaluates the field, so calculated values work: `dae.eval(@abilities.dex.mod > 2 ? 2 : 0)`. The effect sheet marks a bare `? :` in a number or formula field.
 - **Numeric flags**: in a `flags.*` value that holds a number, `@` references and arithmetic are evaluated too.
 - **`@tokenUuid` and `@actorUuid`** are replaced with the uuid of the actor's token and of the actor.
 

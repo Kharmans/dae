@@ -521,7 +521,11 @@ export function daeApplyChange(
   if (typeof change.value === "string" && change.value.includes("@stackCount")) {
     change.value = change.value.replaceAll("@stackCount", String(stacks));
   }
-  if (typeof change.value === "string" && (change.value.includes("dae.eval(") || change.value.includes("dae.roll("))) {
+  // A dnd5e formula field keeps its dae.eval for dnd5e to evaluate late, with complete roll data (replaceFormulaData).
+  const FormulaField = globalThis.dnd5e?.dataModels?.fields?.FormulaField;
+  const formulaTarget = !!FormulaField && ValidSpec.actorSpecs?.[actor.type]?.allSpecsObj?.[change.key]?.fieldType instanceof FormulaField;
+  if (typeof change.value === "string" && !(formulaTarget && !change.value.includes("dae.roll("))
+    && (change.value.includes("dae.eval(") || change.value.includes("dae.roll("))) {
     const conditionData = actor.getRollData();
     foundry.utils.mergeObject(conditionData, { stackCount: stacks, effect: change.effect?.toObject() });
     change.value = daeSystemClass.safeEvalExpression(change.value, conditionData);
@@ -2535,6 +2539,7 @@ export function replaceFormulaData(wrapped, formula, data: any = {}, { missing, 
   const maxIterations = 3;
   data.Embed = "@Embed"; // Never replace these
   if (typeof formula !== "string") return formula;
+  if (formula.includes(DAE_EVAL)) result = formula = evaluateDaeEvals(formula, data);
   for (let i = 0; i < maxIterations; i++) {
     if (!result.includes("@")) break;
     try {
@@ -2546,6 +2551,42 @@ export function replaceFormulaData(wrapped, formula, data: any = {}, { missing, 
   return result;
 }
 
+
+const DAE_EVAL = "dae.eval(";
+
+/**
+ * A formula's dae.eval(...) terms replaced by their values, evaluated with `data`: how a dnd5e formula field evaluated
+ * late (simplifyBonus and the like) gets an expression with derived values, such as a ternary on an ability modifier.
+ * A term whose references `data` cannot fill (e.g. dnd5e checking the field's value without data) counts as 0.
+ */
+function evaluateDaeEvals(formula: string, data: AnyObject): string {
+  let out = "";
+  let from = 0;
+  for (let start = formula.indexOf(DAE_EVAL); start >= 0; start = formula.indexOf(DAE_EVAL, from)) {
+    let depth = 1;
+    let end = start + DAE_EVAL.length;
+    for (; end < formula.length && depth; end++) {
+      if (formula[end] === "(") depth++;
+      else if (formula[end] === ")") depth--;
+    }
+    if (depth) break;
+    const value = daeEvalValue(formula.slice(start + DAE_EVAL.length, end - 1), data);
+    // Bracketed only when negative, which a formula needs: a bare number stays a number (a flag's value).
+    out += `${formula.slice(from, start)}${value < 0 ? `(${value})` : value}`;
+    from = end;
+  }
+  return out + formula.slice(from);
+}
+
+function daeEvalValue(expression: string, data: AnyObject): number {
+  const resolved = Roll.replaceFormulaData(expression, data);
+  if (resolved.includes("@")) return 0;
+  let result = daeSystemClass.safeEval(resolved, { ...data });
+  // dae.eval("2 + 3"): a quoted expression evaluates to its text, which is then evaluated.
+  if (typeof result === "string") result = daeSystemClass.safeEval(result, { ...data });
+  const value = Number(result);
+  return Number.isFinite(value) ? value : 0;
+}
 
 export function tokensForActor(actorRef: Actor | string | undefined | null): Token[] | undefined {
   let actor: Actor.Implementation;
