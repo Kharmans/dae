@@ -407,11 +407,15 @@ export async function applyActiveEffects({
         // @ts-expect-error v14 system.changes
         for (let change of aeData.system.changes) {
           if (allMacroEffects.includes(change.key) || ["flags.dae.onUpdateTarget", "flags.dae.onUpdateSource"].includes(change.key)) {
-            let originEntity = fromUuidSync(aeData.origin) as AnyObject | undefined;
-            if (!originEntity) continue;
+            let originEntity = fromUuidSync(aeData.origin, { strict: false }) as AnyObject | undefined;
             let originItem: Item.Implementation;
             let sourceActor: Actor.Implementation | null | undefined;
-            if (originEntity instanceof Item) {
+            if (!originEntity) {
+              // A temporary item (a synthetic roll, a used-up consumable) cannot be resolved; its actor still can.
+              const sourceUuid = aeData.origin ?? aeData.flags?.dae?.itemUuid;
+              const actor = fromUuidSync(sourceUuid?.split(".Item.")[0] ?? "", { strict: false });
+              if (actor instanceof Actor) sourceActor = actor;
+            } else if (originEntity instanceof Item) {
               originItem = originEntity;
               sourceActor = originEntity.actor;
             } else if (originEntity instanceof Actor) sourceActor = originEntity;

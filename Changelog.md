@@ -1,3 +1,8 @@
+### 14.0.19 (unreleased)
+
+**Applied and item effects**
+* Fixed: an effect applied from a temporary item (a CAT/CPR synthetic roll, a used-up consumable) lost its macro changes (`macro.actorUpdate`, `macro.itemMacro`, …).
+
 ### 14.0.18
 
 **Applied and item effects**
