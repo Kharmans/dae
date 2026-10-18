@@ -1,4 +1,4 @@
-### 14.0.18 (unreleased)
+### 14.0.18
 
 **Applied and item effects**
 * Fixed: with *ATL compatibility* set to migrate or full, `ATL.*` keys with no `token.*` equivalent (width, height, depth, shape, elevation, hidden, rotation) were deleted from effects; they are kept for the ATL module.
