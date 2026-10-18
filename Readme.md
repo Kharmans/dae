@@ -14,6 +14,7 @@ If you have a problem, please read the [Issues](#issues) section before reportin
 
 ## Contents
 - [Installation](#installation)
+- [Upgrading to 14.6.2](#upgrading-to-1462)
 - [What does DAE do?](#what-does-dae-do)
 - [Active effect basics](#active-effect-basics)
 - [Editing effects](#editing-effects)
@@ -45,6 +46,78 @@ Requirements:
 For dnd5e 5.x use the v14 release: `https://gitlab.com/tposney/dae/raw/v14/package/module.json`.
 
 This release is written only for dnd5e 6. Other systems are not supported.
+
+## Upgrading to 14.6.2
+
+DAE 14.6.2 records where an applied effect came from the way dnd5e 6 does, in `effect.system.origin`, and stops copying the item onto the effect. Macros and items that read an effect's `origin` or its item copy need updating. See [Where an applied effect came from](#where-an-applied-effect-came-from) and [API and hooks](#api-and-hooks) for the full API.
+
+### An applied effect's `origin` is not the item
+
+`effect.origin` is now the caster's concentration effect, else the activity that applied the effect. An activity is not an Item, and its `.parent` is its item's system data.
+
+```js
+// Before: the item, or its uuid parsed from origin
+const item = fromUuidSync(effect.origin);
+const itemId = effect.origin.split(".").pop();
+
+// Now
+const item = DAE.getEffectItem(effect);              // the live item, else one built from its data
+const { itemUuid, activityUuid, controllingEffectUuid, messageUuid } = DAE.getEffectSource(effect);
+if (DAE.effectMatchesSource(effect, someItem.uuid)) { /* the effect came from someItem */ }
+```
+
+`DAE.effectMatchesSource` also matches an activity, the item effect the effect was copied from, or a concentration effect.
+
+### The item copy on applied effects is gone
+
+Applied effects no longer have `flags.dae.itemData`. The item's data comes from the live item, else from the chat card (dnd5e's copy when the use consumed the item, or DAE's when an item that applied effects is deleted later). Effects applied before 14.6.2 keep their copy, and the helpers still read it.
+
+```js
+// Before
+const itemData = effect.flags.dae.itemData;          // or lastArg.efData.flags.dae.itemData
+
+// Now
+const itemData = DAE.getEffectItemData(effect);      // source data, never builds a document
+```
+
+`flags.dae.applicationData` keeps only `damage`, `critical` and `fumble`.
+
+Use `getEffectItemData` when stored values are enough (name, img, flags, `system` fields as entered), and `getEffectItem` when you need prepared values or the item's methods. Either may come back empty once the item and its card are both gone, so allow for it.
+
+### During data preparation
+
+Code that runs while an actor is being prepared (effect conditions, `getReplacementData`, `prepareData` wrappers or hooks) must use `DAE.getEffectItemData`. Building an item there prepares it, which prepares the actor again. `DAE.getEffectItem` refuses to: for a deleted item it hasn't built yet it returns `undefined` and warns once in the console.
+
+### Macros: `lastArg.source`
+
+`lastArg.origin` keeps its old value (the concentration effect, else the item effect the effect was copied from) but is deprecated. Use `lastArg.source`, which has the same fields as `DAE.getEffectSource`:
+
+```js
+// Before
+const item = fromUuidSync(lastArg.origin)?.parent;
+
+// Now
+const item = fromUuidSync(lastArg.source.itemUuid) ?? DAE.getEffectItem(effect);
+```
+
+`lastArg.systemOrigin` is a copy of dnd5e's `effect.system.origin`.
+
+### Applying and deleting effects
+
+- `DAE.doActivityEffects` and `DAE.doEffects`: pass the caster's concentration effect as `options.concentrationUuid`; the applied effects depend on it. An `options.origin` you pass is recorded in the `system.origin` slot for its type (activity, item, effect, message), not used as the effect's `origin`.
+- `DAE.deleteActiveEffect(targetUuid, uuid)` and `DAE.deleteItemActiveEffects` match an effect's item, activity, source item effect or concentration effect, so they find effects the old origin check missed. Check that a call doesn't now remove more than you intend.
+- *Unique by origin* stacking matches the item effect an effect was copied from, so two different effects from one activity no longer replace each other.
+- `flags.dae.deleteOrigin` deletes the item of a transfer effect only; an applied effect no longer deletes its source item.
+- An effect applied without a chat card has its `@item` references filled in when it is applied.
+
+### Deprecated keys and flags
+
+These still work, with a deprecation warning, and the change dialog offers a Convert link for the keys:
+- `flags.dae.stackable` as a boolean: `false` is now *none* and `true` *multi* (`false` used to be treated as stacking).
+- `flags.dae.legacyApplication`: use `flags.dae.applicationMode`.
+- `system.traits.di.all`, `dr.all`, `dv.all`: they add `ALL` to `….value`; use that directly. `system.traits.sdi/sdr/sdv.all` are no longer handled (dnd5e has no such traits).
+
+Foundry 14 rejects a bare conditional (`? :`) in a formula; DAE's editor flags it. Use the change's conditions, or `dae.eval(…)`, which in a dnd5e formula field is now evaluated when dnd5e uses the formula, with its derived values.
 
 ## What does DAE do?
 

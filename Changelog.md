@@ -1,4 +1,12 @@
-### 14.6.2 (unreleased)
+### 14.6.2
+
+**Breaking for macro and item authors** (details and examples: README, [Upgrading to 14.6.2](https://gitlab.com/tposney/dae/-/blob/dnd6/Readme.md#upgrading-to-1462))
+* An applied effect's `origin` is the caster's concentration effect, else the activity, not the item. Use `DAE.getEffectSource(effect)`, `DAE.getEffectItem(effect)` or `DAE.effectMatchesSource(effect, uuid)`.
+* Applied effects no longer carry `flags.dae.itemData`; use `DAE.getEffectItemData(effect)`. `flags.dae.applicationData` keeps only damage, critical and fumble.
+* During data preparation use `DAE.getEffectItemData`; `DAE.getEffectItem` returns `undefined` there for a deleted item.
+* `lastArg.origin` is deprecated: use `lastArg.source`.
+* `DAE.doActivityEffects`/`doEffects`: pass concentration as `concentrationUuid`; an `origin` goes in the `system.origin` slot for its type.
+* `flags.dae.deleteOrigin` applies only to transfer effects; `deleteActiveEffect`, `deleteItemActiveEffects` and *Unique by origin* match by the effect's source.
 
 **Applied and item effects**
 * Fixed: `ATL.width`, `height`, `depth` and `shape` were deleted from effects; they become `token.*` size changes, which dnd5e 6 applies. `ATL.elevation`, `hidden` and `rotation`, which Foundry v14 can't apply, are kept instead of deleted.
