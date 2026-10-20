@@ -1,3 +1,7 @@
+### 13.0.31 (unreleased)
+* Macro changes (`macro.itemMacro`, `macro.execute`, ...) on an effect applied from a temporary item, such as a potion used up by drinking it, are kept; they were dropped, so the effect's on/off macro never ran (backport of 14.0.19).
+* `macro.itemMacro` and `macro.activityMacro` changes are no longer lost when another change on the effect is evaluated as it is created.
+
 ### 13.0.30
 * A `StatusEffect` change removes its condition when its effect is disabled or its item unequipped; the condition stayed on the actor until the effect or item was deleted.
 * Re-enabling or re-equipping an item's transfer effect restores its token magic, status effect and Convenient Effects changes; they came off and never went back on.

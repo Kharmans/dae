@@ -777,10 +777,13 @@ async function _preCreateActiveEffectIncrement(data: ActiveEffect.CreateData, op
             let macroCommand = foundry.utils.getProperty(item, "flags.dae.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.command") ?? foundry.utils.getProperty(item, "flags.itemacro.macro.data.command");
             foundry.utils.setProperty(updates, `flags.dae.itemMacro`, macroCommand);
           }
+          // kept: when another change is rewritten the list replaces the effect's changes
+          newChanges.push(change);
         } else if (change.key.startsWith("macro.activityMacro") && this.activity) {
           const activity = fromUuidSync(this.activity);
           // @ts-expect-error no dnd5e-types _AND_ no midi typing (which is what adds `macro`)
           foundry.utils.setProperty(updates, "flags.dae.activityMacro", activity?.macro?.command)
+          newChanges.push(change);
         }
         else
           newChanges.push(change);
