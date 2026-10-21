@@ -32,7 +32,7 @@
   "dae.nat": "Natureza",
   "dae.per": "Persuasão",
   "dae.prc": "Percepção",
-  "dae.prf": "Atuação",
+  "dae.prf": "Performance",
   "dae.rel": "Religião",
   "dae.slt": "Prestidigitação",
   "dae.ste": "Furtividade",
@@ -45,13 +45,13 @@
   "dae.Dexterity_Attacks": "Ataques com Destreza",
   "dae.Spell_Attacks": "Ataques de Magia",
   "dae.All_Skills": "Bônus de Teste de Perícia (Numérico)",
-  "dae.All_Saves": "Testes de Atributo (Numérico)",
+  "dae.All_Saves": "Salvaguardas (Numérico)",
   "dae.Initiative_Advantage": "Vantagem na Iniciativa",
   "dae.Initiative_Alert": "Alerta de Iniciativa",
   "dae.InitiativeHalfProf": "Meia Prof. na Iniciativa",
   "dae.Powerful_Build": "Forma Poderosa",
   "dae.Savage_Attacks": "Ataques Selvagens",
-  "dae.Spell_DC Bonus": "Bonus CD de Magia (Numérico)",
+  "dae.Spell_DC Bonus": "Bônus CD de Magia (Numérico)",
   "dae.Critical_Hit Threshold": "Margem de Acerto Crítico",
   "dae.mwak": "Armado Corpo a Corpo",
   "dae.rwak": "Armado à Distância",
@@ -66,7 +66,7 @@
   "dae.value": "Valor",
   "dae.max": "Máx.",
   "dae.proficient": "Proficiência",
-  "dae.ability": "Atributo",
+  "dae.ability": "Atributos",
   "dae.bonus": "Bônus",
   "dae.success": "Sucesso",
   "dae.failure": "Falha",
@@ -137,7 +137,7 @@
   "dae.noSelection": "Nenhum Token/Ator selecionado",
   "dae.category": "Categoria",
   "dae.abilities": "Atributo",
-  "dae.attributes": "Características",
+  "dae.attributes": "Estatísticas",
   "dae.bonuses": "Bônus",
   "dae.resources": "Recursos",
   "dae.currency": "Moeda",
@@ -158,12 +158,12 @@
   "dae.initiativeHalfProf": "Meia Prof. na Inic.",
   "dae.check_all": "Todos Testes de Atributo",
   "dae.spelldc": "CD de Magia",
-  "dae.spelllevel": "Círculo de Magia",
+  "dae.spelllevel": "Nível de Magia",
   "dae.death": "Salvaguarda Contra Morte",
   "dae.advantage": "Vantagem",
   "dae.exhaustion": "Exaustão",
   "dae.temp": "PV Temp.",
-  "dae.tempmax": "PV Temp. Máx.",
+  "dae.tempmax": "PV Máx. Temp.",
   "dae.inspiration": "Inspiração",
   "dae.special": "Especial",
   "dae.speed": "Deslocamento",
@@ -192,7 +192,7 @@
   "dae.macroRepeat": "Repetir Macro",
   "dae.specialDuration": "Duração Especial",
   "dae.execute": "Executar",
-  "dae.GM": "MJ",
+  "dae.GM": "Mestre",
   "dae.local": "Local",
   "dae.actorUpdate": "Atualização de Ator",
   "dae.itemMacro": "Macro de Item",
@@ -201,21 +201,21 @@
   "dae.attackAdvantage": "Vantagem no Ataque",
   "dae.conditions": "Condição",
   "dae.calculateArmor.Name": "Calcular Classe de Armadura",
-  "dae.calculateArmor.Hint": "Se ativado, DAE irá calcular automaticamente a CA de armaduras/escudos no inventário. Outros itens ainda podem modificar a CA",
+  "dae.calculateArmor.Hint": "Se ativado, DAE irá calcular automaticamente a CA de armaduras/escudos no inventário. Outros itens ainda podem modificar a CA.",
   "dae.applyBaseAC.Name": "Calcular CA Base",
-  "dae.applyBaseAC.Hint": "Se ativado, personagens (não PnJs) terão sua CA base definida para 10 + modificador de Destreza",
+  "dae.applyBaseAC.Hint": "Se ativado, personagens (não PnJs) terão sua CA base definida para 10 + modificador de Destreza.",
   "dae.applyingEffects": "Aplicando efeitos",
   "dae.removingEffects": "Removendo efeitos",
   "dae.tokenMagic": "TokenMagic",
   "dae.transfer.Name": "Transferir para o ator ao equipar item",
-  "dae.transfer.Hint": "Habilitar significa que o efeito é aplicado ao dono do item quando ele for equipado. Desabilite se você quiser que o efeito seja aplicado ao alvo quando o item for usado",
+  "dae.transfer.Hint": "Habilitar significa que o efeito é aplicado ao dono do item quando ele for equipado. Desabilite se você quiser que o efeito seja aplicado ao alvo quando o item for usado.",
   "dae.effectName": "Nome do Efeito",
   "dae.readOnly": "EFEITO SOMENTE LEITURA",
   "dae.legact": "Ações Lendárias",
   "dae.legres": "Resistência Lendária",
   "dae.encumbrance": "Sobrecarga",
   "dae.useAbilitySave.Name": "Usar o campo salvaguarda ao rolar salvaguardas",
-  "dae.useAbilitySave.Hint": "O padrão do D&D5e usa apenas o modificador de atributo. Habilitar esta opção significa que as rolagens usarão o campo salvaguarda e podem ser modificados via DAE",
+  "dae.useAbilitySave.Hint": "O padrão do D&D5e usa apenas o modificador de atributo. Habilitar esta opção significa que as rolagens usarão o campo salvaguarda e podem ser modificadas via DAE.",
   "dae.Debug.Name": "Quantidade de Depuração Exibida",
   "dae.Debug.Hint": "Exibe mais depuração para o console de acordo com a configuração: Nenhum < Aviso < Depuração < Todos.",
   "dae.summaryFilter": "Lista de Efeitos",
@@ -223,6 +223,7 @@
   "dae.temporaryFilter": "Efeitos Temporários",
   "dae.Priority": "Prioridade",
   "dae.Phase": "Fase — quando esta alteração será aplicada (o padrão é a fase do campo; sua escolha tem prioridade)",
+  "dae.PhaseReadOnly": "Quando esta alteração é aplicada. Definido pelo campo e não pode ser editado: uma alteração aplicada na fase errada não funciona.",
   "dae.PhaseHeader": "Fase",
   "dae.Stackable": "Acumulável",
   "dae.EffectSheetLabel": "Ficha de Efeito Ativo DAE",
@@ -235,10 +236,10 @@
   "dae.hover": "Planar",
   "dae.fly": "Voo",
   "dae.swim": "Natação",
-  "dae.units": "Unidade",
+  "dae.units": "Unidades",
   "dae.walk": "Caminhada",
   "dae.diamondSoul": "Alma de Diamante",
-  "dae.noGM": "Nenhum MJ conectado",
+  "dae.noGM": "Nenhum Mestre conectado",
   "dae.isAttacked": "Atacado: Expira se o personagem for atacado",
   "dae.isMoved": "Movido: Expira quando o token é movido",
   "dae.isDamaged": "Sofrer Dano: Expira se o personagem sofrer dano",
@@ -259,38 +260,39 @@
   "dae.1Attack": "1 Ataque: Expira no próximo {type} do personagem",
   "dae.1Spell": "1 Magia: Expira na próxima magia conjurada (QUALQUER magia) pelo personagem",
   "dae.1Reaction": "1 Reação: Expira após o ataque que desencadeou a reação ser concluído",
-  "dae.1Hit": "1 Acerto: Expira no próximo {type} acerto do personagem",
+  "dae.1Hit": "1 Acerto: Expira no próximo acerto {type} do personagem",
   "dae.1Critical": "1 Acerto Crítico: Expira no próximo acerto crítico do personagem",
   "dae.1Fumble": "1 Falha Crítica: Expira na próxima falha crítica do personagem",
   "dae.DamageDealt": "Causar Dano: Expira quando o personagem causar dano",
   "dae.turnStart": "Início do Turno: Expira no início do próximo turno do alvo (em combate)",
-  "dae.turnStartSource": "Início do Turno: Expira no início do próximo turno do personagem (em combate)",
+  "dae.turnStartSource": "Início do Turno da Origem: Expira no início do próximo turno do ator de origem (em combate)",
   "dae.turnEnd": "Fim do Turno: Expira no final do próximo turno do alvo (em combate)",
-  "dae.turnEndSource": "Fim do Turno: Expira no fim do próximo turno do personagem (em combate)",
-  "dae.startEveryTurn": "Início de Cada Turno: Executa macros de efeito no início do turno dos personagens",
-  "dae.startEndEveryTurn": "Início e Fim de Cada Turno: Executa macros de efeito no início e fim do turno dos personagens",
-  "dae.startEveryTurnAny": "Início de Cada Turno: Executa macros de efeito no início do turno dos personagens, mesmo que o efeito esteja desabilitado",
-  "dae.startEndEveryTurnAny": "Início e Fim de Cada Turno: Executa macros de efeito no início e fim do turno dos personagens, mesmo que o efeito esteja desabilitado",
-  "dae.endEveryTurn": "Fim de Cada Turno: Executa macros de efeito no final do turno dos personagens",
-  "dae.endEveryTurnAny": "Fim de Cada Turno: Executa macros de efeito no final do turno dos personagens, mesmo que o efeito esteja desabilitado",
+  "dae.turnEndSource": "Fim do Turno da Origem: Expira no fim do próximo turno do ator de origem (em combate)",
+  "dae.startEveryTurn": "Início de Cada Turno: Executa macros de efeito no início do turno do personagem",
+  "dae.startEndEveryTurn": "Início e Fim de Cada Turno: Executa macros de efeito no início e fim do turno do personagem",
+  "dae.startEveryTurnAny": "Início de Cada Turno: Executa macros de efeito no início do turno do personagem, mesmo que o efeito esteja desabilitado",
+  "dae.startEndEveryTurnAny": "Início e Fim de Cada Turno: Executa macros de efeito no início e fim do turno do personagem, mesmo que o efeito esteja desabilitado",
+  "dae.endEveryTurn": "Fim de Cada Turno: Executa macros de efeito no final do turno do personagem",
+  "dae.endEveryTurnAny": "Fim de Cada Turno: Executa macros de efeito no final do turno do personagem, mesmo que o efeito esteja desabilitado",
   "dae.noDupDamageMacro.Name": "Sem Macros de Dano Duplicadas",
   "dae.noDupDamageMacro.Hint": "Se habilitado, macros de dano duplicadas serão ignoradas.",
   "dae.DisableEffects.Name": "Desativar Processamento de Efeitos",
   "dae.DisableEffects.Hint": "Se habilitado, nenhum efeito ativo será aplicado aos personagens. Útil se você quiser alterar os valores dos personagens que são modificados por efeitos ativos.",
   "dae.HandleEquip.Name": "Lidar com Efeitos de Equipar/Desequipar",
-  "dae.HandleEquip.Hint": "Se habilitado, DAE irá lidar com efeitos ativos de equipar/desequipar, habilitar/desabilitar e alternar entre equipar/desequipar.",
+  "dae.HandleEquip.Hint": "Se habilitado, o DAE controlará como equipar ou desequipar um item habilita ou desabilita seus efeitos ativos. Alternar o estado ativo também alternará o estado de equipado do item.",
   "dae.DAETitleBar.Name": "DAE na Barra de Título",
-  "dae.DAETitleBar.Hint": "Exibe o botão do editor de efeitos DAE na barra de título. (Você não precisa mais disso - basta editar na aba de efeitos).",
+  "dae.DAETitleBar.Hint": "Exibe o botão do editor de efeitos do DAE na barra de título.",
   "dae.DIMETitleBar.Name": "DIME na Barra de Título",
-  "dae.DIMETitleBar.Hint": "Exibe o editor de macro DAE na barra de título.",
+  "dae.DIMETitleBar.Hint": "Exibe o editor de macros de itens (DIME) na barra de título.",
   "dae.DAEColorTitleBar.Name": "Barra de Título Colorida",
   "dae.DAEColorTitleBar.Hint": "Aplica uma cor ao botão do editor DAE/DIME, se qualquer efeito/macros estiverem presentes no documento (Requer a opção 'DAE na Barra de Título').",
-  "dae.StatusEffect": "Status do Efeito",
-  "dae.ShowDeprecation.Name": "Mostrar Erros Descontinuados",
+  "dae.StatusEffect": "Condição de Status",
+  "dae.ShowDeprecation.Name": "Mostrar Erros de Obsolescência",
   "dae.ShowDeprecation.Hint": "Exibe erros de códigos descontinuados no console.",
   "dae.expireRoundEffectsOnCombatEnd.Name": "Expirar Efeitos de Rodada ao Encerrar Combate",
   "dae.expireRoundEffectsOnCombatEnd.Hint": "Quando ativado, efeitos com duração de rodadas/turnos expiram quando o combate termina ou quando um combatente é removido.",
   "dae.expiryEvent.updateWorldTime": "Tempo Decorrido",
+  "dae.expiryThen": "{duration}, depois {event}",
   "dae.expiryEvent.sourceStart": "Início do Turno da Origem",
   "dae.expiryEvent.sourceEnd": "Fim do Turno da Origem",
   "dae.expiryEvent.targetStart": "Início do Turno do Alvo",
@@ -314,12 +316,12 @@
   "dae.resetStartTime": "Redefinir Início para Agora",
   "dae.CE": "Convenient Effects",
   "dae.StackableOptions": {
-    "noneName": "Efeitos não se acumulam por nome e/ou origem",
+    "noneName": "Efeitos não se acumulam por nome e origem",
     "noneNameOnly": "Efeitos não se acumulam por nome",
     "none": "Efeitos não se acumulam por origem",
     "multi": "Efeitos cumulativos se aplicam várias vezes",
     "count": "Cada efeito aumenta o acúmulo em 1",
-    "countDeleteDecrement": "Aplicar aumenta o acúmulo em 1, detelar diminui o acúmulo em 1, removendo com 0 acúmulos"
+    "countDeleteDecrement": "Aplicar aumenta o acúmulo em 1, excluir diminui o acúmulo em 1, removendo com 0 acúmulos"
   },
   "dae.SW5EHint": "Note For Translators - The following strings are ONLY required for the SW5E system",
   "dae.SW5E": "sw5e",
@@ -360,14 +362,14 @@
   "dae.forceToHud.Name": "Forçar Exibição no Token",
   "dae.forceToHud.Hint": "Se marcado, o ícone do efeito será exibido no token, independente da duração",
   "dae.DurationExpression": "Expressão de rolagem em segundos para a duração do efeito",
-  "dae.combatActorOverride": "Expiração do Combatante",
+  "dae.combatActorOverride": "Combatente de Referência para Expiração",
   "dae.combatActorDefault": "Padrão (Combatente Ativo)",
   "dae.combatActorSource": "Combatente de Origem",
   "dae.combatActorTarget": "Combatente Alvo",
   "dae.durationExpiry": "Expiração",
   "dae.expiryTurnStart": "Início do Turno",
   "dae.expiryTurnEnd": "Fim do Turno",
-  "dae.not-reflected": "Efeito do Item Salvo. Essas alterações não serão modificadas no efeito original.",
+  "dae.not-reflected": "Efeito do Item Salvo. Essas alterações não serão refletidas no efeito transferido originalmente.",
   "dae.not-transferred": "Efeito do Item Salvo. Configurar o efeito de um item em um ator para Transferir não irá transferir o efeito automaticamente.",
   "dae.ATLHint": "Note for translators these are only required for Active Token Lighting",
   "dae.ATL": "ATL",
@@ -378,14 +380,14 @@
   "dae.dim": "Penumbra",
   "dae.color": "Cor da Luz",
   "dae.animation": "Animação",
-  "dae.alpha": "Intensidade",
+  "dae.alpha": "Opacidade",
   "dae.angle": "Ângulo",
   "dae.dimSight": "Visão Penumbra",
   "dae.brightSight": "Visão Plena",
   "dae.sightAngle": "Ângulo de Visão",
   "dae.lightColor": "Cor da Luz",
   "dae.lightAnimation": "Animação da Luz",
-  "dae.lightAlpha": "Intensidade da Luz",
+  "dae.lightAlpha": "Opacidade da Luz",
   "dae.lightAngle": "Ângulo da Luz",
   "dae.SelfTarget.Name": "Aplicar Efeito em Si Mesmo",
   "dae.SelfTarget.Hint": "Se o item aplicar efeitos em alvos, o efeito é aplicado ao usuário do item e não aos alvos.",
@@ -395,17 +397,45 @@
   "dae.ShowIcon.Hint": "Exibe o ícone do efeito no token e na tela de combate.",
   "dae.DontApply.Name": "Não Aplicar o Efeito",
   "dae.DontApply.Hint": "Quando DAE (e Midi QOL) aplicar efeitos ativos, pule este.",
+  "dae.DiceValue.Converted": "Os dados foram convertidos em uma rolagem inline silenciosa ([[[...]]]): este campo não pode rolar dados toda vez que o ator é preparado, portanto a rolagem é realizada apenas uma vez - quando o efeito é aplicado ou, no caso de um efeito passivo, quando seu item é adicionado a um ator.",
+  "dae.DiceValue.Unfixable": "Este campo não pode rolar dados durante a preparação do ator, portanto esta alteração será ignorada. Coloque os dados em uma rolagem inline, [[...]], para rolá-los uma única vez.",
+  "dae.ValueCheck.UnknownReference": "Não foi encontrada nos dados de nenhum ator, portanto esta referência não será resolvida: {refs}.",
+  "dae.ValueCheck.InvalidFormula": "Fórmula inválida.",
+  "dae.ValueCheck.Ternary": "Uma condição (? :) não é uma fórmula. Use as condições da alteração ou envolva o valor em dae.eval(…).",
+  "dae.HpMaxNote": "Uma alteração no PV máximo define um valor armazenado, substituindo o máximo calculado de um personagem. Para aumentar o PV máximo de qualquer criatura, use system.attributes.hp.tempmax (como faz a magia Ajuda do D&D5e). Para aumentar o máximo calculado de um personagem, use system.attributes.hp.bonuses.overall. Para conceder PV adicional rolado a um PNJ quando seu token for posicionado, adicione à propriedade system.attributes.hp.formula (requer a configuração Rolar Pontos de Vida dos PNJs do D&D5e).",
+  "dae.DeprecatedKey.Note": "Obsoleto: use {key}. O DAE aplica esta alteração a essa chave.",
+  "dae.DeprecatedKey.Convert": "Converter",
+  "dae.RaiseCurrentHp.Label": "Também Aumentar o PV Atual",
+  "dae.RaiseCurrentHp.Hint": "Quando esta alteração começar a ser aplicada (ao criar o efeito ou adquirir seu item), o PV atual aumentará na mesma quantidade, uma única vez. Quando a alteração deixar de ser aplicada, os PVs atuais que excederem o novo máximo serão perdidos, porém o dano sofrido nesse intervalo permanecerá.",
+  "dae.LegacyApplication.Name": "Aplicação de Efeitos",
+  "dae.LegacyApplication.Hint": "O DAE Legado preenche todas as referências @ com os dados do conjurador quando o efeito é aplicado, como o DAE fazia antes do D&D5e v6. O D&D5e segue a configuração Substituição de cada alteração: Origem utiliza os dados do conjurador, Alvo utiliza os dados do alvo e Nenhuma deixa a referência para ser resolvida no alvo. ## adia a resolução de uma referência para o alvo em ambos os modos.",
+  "dae.LegacyApplication.UseDefault": "Padrão do Mundo",
+  "dae.LegacyApplication.PackDefault": "DAE: Os efeitos seguem o modo de aplicação padrão do mundo",
+  "dae.DefaultApplicationMode.Name": "Aplicação Padrão de Efeitos",
+  "dae.DefaultApplicationMode.Hint": "Define como o DAE preenche as referências @ de um efeito que aplica, a menos que o próprio efeito determine o contrário. O DAE Legado preenche todas as referências com os dados do conjurador, como fazia antes do D&D5e v6. O dnd5e segue a configuração Substituição de cada alteração. Um efeito já aplicado mantém o modo de aplicação utilizado originalmente.",
+  "dae.ApplicationMode.default": "Padrão do Mundo ({mode})",
+  "dae.ApplicationMode.dnd5e": "D&D5e (conforme a configuração Substituição)",
+  "dae.ApplicationMode.legacy": "DAE Legado (do conjurador)",
+  "dae.LegacyApplication.ItemControl": "DAE: Aplicação de Efeitos",
+  "dae.LegacyApplication.PackLegacy": "DAE: Os efeitos utilizam a aplicação legada",
+  "dae.LegacyApplication.PackDnd5e": "DAE: Os efeitos utilizam a aplicação do D&D5e",
+  "dae.LegacyApplication.DialogTitle": "Aplicação de Efeitos de {name}",
+  "dae.LegacyApplication.DialogContent": "Como o DAE deve preencher as referências @ dos efeitos deste item ao aplicá-los?",
+  "dae.LegacyApplication.UseLegacy": "DAE Legado (do conjurador)",
+  "dae.LegacyApplication.UseDnd5e": "D&D5e (conforme a configuração Substituição)",
+  "dae.LegacyApplication.Updated": "DAE: {count} efeitos atualizados em {name}",
+  "dae.LegacyApplication.Locked": "DAE: {name} está bloqueado - desbloqueie-o primeiro",
   "dae.DIMEditor.Name": "DIME",
   "dae.IncapacitatedDisabled": "Desativar efeito se o ator estiver Incapacitado",
   "dae.halfHealthEffectLabel": "Metade da Vida",
   "dae.DAEAddHalfHealthEffect.Name": "Adicionar Efeito de Metade da Vida",
   "dae.DAEAddHalfHealthEffect.Hint": "Adiciona um efeito de status de metade da vida para definir os pontos de vida máximos do ator para metade do máximo normal.",
   "dae.TabChanges": "Mudanças",
-  "dae.DisableCondition": "Uma expressão verdadeira irá desabilitar o efeito",
-  "dae.EnableCondition": "Uma expressão falsa irá remover o efeito do autor",
+  "dae.DisableCondition": "Uma expressão que, se for verdadeira, desativará o efeito. Para uma comparação simples entre campos, prefira utilizar as Condições do próprio efeito, que são reavaliadas automaticamente pelo sistema.",
+  "dae.EnableCondition": "Uma expressão que, se for falsa, removerá o efeito do ator. Para impedir que um efeito seja aplicado sem excluí-lo, utilize as Condições do próprio efeito.",
   "dae.ConditionalEffectsItem": "DAEConditionalEffects",
   "dae.IconTint": "Tonalidade do Ícone",
-  "dae.IconOverlay.Name": "Ícone Sopreposto",
+  "dae.IconOverlay.Name": "Ícone Sobreposto",
   "dae.IconOverlay.Hint": "Exibe o ícone de status do efeito como uma sobreposição.",
   "dae.DependentConditions.Name": "Condições Dependentes",
   "dae.DependentConditions.Hint": "Os efeitos de status (Envenenado/Paralisado) também adicionarão condições dependentes, como Incapacitado.",
@@ -419,7 +449,7 @@
     "fieldCategories.MidiQOL": "Midi QOL",
     "fieldCategories.SystemAbilities": "Sistema: Atributos",
     "fieldCategories.SystemSkills": "Sistema: Perícias",
-    "fieldCategories.SystemAttributes": "Sistema: Características",
+    "fieldCategories.SystemAttributes": "Sistema: Estatísticas",
     "fieldCategories.SystemBonuses": "Sistema: Bônus",
     "fieldCategories.SystemTraits": "Sistema: Traços",
     "fieldCategories.Other": "Outros",
@@ -478,7 +508,7 @@
       "description": "Veja \"Traços Especiais\" para detalhes." 
     },
     "flags.dnd5e.remarkableAthlete": {
-      "name": "Atleta Extraordináro",
+      "name": "Atleta Extraordinário",
       "description": "Veja \"Traços Especiais\" para detalhes." 
     },
     "flags.dnd5e.spellCriticalThreshold": {
@@ -500,48 +530,48 @@
   },
 "dae.Macros.fieldData": {
     "macro.actorUpdate": {
-      "name": "",
-      "description": "" 
+      "name": "Atualizar Campo do Ator",
+      "description": "Consulte o README do DAE para mais detalhes." 
     },
     "macro.CE": {
-      "name": "",
+      "name": "Aplicar Convenient Effect",
       "description": "" 
     },
     "macro.createItem": {
-      "name": "",
-      "description": "" 
+      "name": "Criar Item",
+      "description": "Cria um item no ator. O valor deve ser o UUID do item." 
     },
     "macro.createItemRunMacro": {
-      "name": "",
-      "description": "" 
+      "name": "Criar Item e Executar Macro",
+      "description": "Cria um item no ator e executa seu DIME com a ação \"onCreate\". O valor deve ser o UUID do item." 
     },
     "macro.execute": {
-      "name": "",
-      "description": "" 
+      "name": "Macro a Executar",
+      "description": "Macro executada ao aplicar ou remover o efeito, identificada pelo nome. Também é possível fornecer argumentos adicionais para a macro. Se o usuário não for proprietário do ator alvo, a execução será encaminhada ao Mestre" 
     },
     "macro.execute.GM": {
-      "name": "",
-      "description": "" 
+      "name": "Macro a Ser Executada pelo Mestre",
+      "description": "Igual a \"macro.execute\", mas a execução da macro é sempre encaminhada ao Mestre." 
     },
     "macro.execute.local": {
-      "name": "",
-      "description": "" 
+      "name": "Macro a Executar Localmente",
+      "description": "Igual a \"macro.execute\", mas a execução da macro é sempre local." 
     },
     "macro.itemMacro": {
-      "name": "",
-      "description": "" 
+      "name": "Executar ItemMacro/DIME",
+      "description": "Ao aplicar ou remover o efeito, executa o ItemMacro/DIME armazenado no item ao qual o efeito pertence. Também é possível fornecer argumentos adicionais para a macro. Se o usuário não for proprietário do ator alvo, a execução será encaminhada ao Mestre" 
     },
     "macro.itemMacro.GM": {
-      "name": "",
-      "description": "" 
+      "name": "Executar ItemMacro/DIME como Mestre",
+      "description": "Igual a \"macro.itemMacro\", mas a execução da macro é sempre encaminhada ao Mestre." 
     },
     "macro.itemMacro.local": {
-      "name": "",
-      "description": "" 
+      "name": "Executar ItemMacro/DIME Localmente",
+      "description": "Igual a \"macro.itemMacro\", mas a execução da macro é sempre local." 
     },
     "macro.StatusEffect": {
-      "name": "",
-      "description": "" 
+      "name": "Aplicar Condição de Status",
+      "description": "Tem efeito equivalente a selecionar uma condição na aba de detalhes, mas cria a condição por meio de código e não força a exibição de um efeito passivo." 
     }
   },
   "dae.SystemAbilities.fieldData": {
@@ -563,7 +593,7 @@
     },
     "check.roll.mode": {
       "name": "Modo de Rolagem do Teste ({ability})",
-      "description": "NOTA: Não funcional antes de v5.1.0. Define o modo de rolagem para testes de {ability}. \"ADICIONAR\" adiciona Vantagem (1) ou Desvantagem (-1) à origem. \"SUBSTITUIR\" força a Vantagem (1), Desvantagem (-1) ou rolagem direta (0)."
+      "description": "NOTA: Não funcional antes de v5.1.0. Define o modo de rolagem para testes de {ability}. \"Adicionar\" adiciona Vantagem (1) ou Desvantagem (-1) à origem. \"Sobrepor\" força a Vantagem (1), Desvantagem (-1) ou rolagem direta (0)."
     },
     "max": {
       "name": "Valor Máximo ({ability})",
@@ -587,7 +617,7 @@
     },
     "save.roll.mode": {
       "name": "Modo de Rolagem da Salvaguarda ({ability})",
-      "description": "NOTA: Não funcional antes de v5.1.0. Define o modo de rolagem para salvaguardas de {ability}. \"ADICIONAR\" adiciona Vantagem (1) ou Desvantagem (-1) à origem. \"SUBSTITUIR\" força a Vantagem (1), Desvantagem (-1) ou rolagem direta (0)."
+      "description": "NOTA: Não funcional antes de v5.1.0. Define o modo de rolagem para salvaguardas de {ability}. \"Adicionar\" adiciona Vantagem (1) ou Desvantagem (-1) à origem. \"Sobrepor\" força a Vantagem (1), Desvantagem (-1) ou rolagem direta (0)."
     },
     "save": {
       "name": "Modificador Salvaguarda ({ability})",
@@ -621,7 +651,7 @@
     },
     "roll.mode": {
       "name": "Modo de Rolagem ({skill})",
-      "description": "Define o modo de rolagem para testes de {skill}. \"ADICIONAR\" adiciona Vantagem (1) ou Desvantagem (-1) à origem. \"SUBSTITUIR\" força a Vantagem (1), Desvantagem (-1) ou rolagem direta (0)."
+      "description": "Define o modo de rolagem para testes de {skill}. \"Adicionar\" adiciona Vantagem (1) ou Desvantagem (-1) à origem. \"Sobrepor\" força a Vantagem (1), Desvantagem (-1) ou rolagem direta (0)."
     },
     "value": {
       "name": "Proficiência ({skill})",
@@ -630,12 +660,12 @@
   },
   "dae.SystemAttributes.fieldData": {
     "system.attributes.ac.AR": {
-      "name": "",
-      "description": "" 
+      "name": "(Midi) Redução de Armadura",
+      "description": "Consulte os detalhes de \"Challenge Mode\" no README do Midi-QOL." 
     },
     "system.attributes.ac.armor": {
       "name": "Bônus CA (Armadura)",
-      "description": "Bônus de CA de armaduras. Geralmente fornecido apenas por Armadura equipada."
+      "description": "Bônus de CA fornecido pela armadura vestida, normalmente calculado a partir do item equipado. Alterar diretamente este campo só terá efeito se o ator não estiver usando armadura."
     },
     "system.attributes.ac.bonus": {
       "name": "Bônus CA",
@@ -650,12 +680,12 @@
       "description": "Bônus de CA de cobertura. Geralmente aplicado apenas via status de efeitos de Cobertura"
     },
     "system.attributes.ac.EC": {
-      "name": "",
-      "description": ""
+      "name": "(Midi) Classe de Evasão",
+      "description": "Consulte os detalhes de \"Challenge Mode\" no README do Midi-QOL."
     },
     "system.attributes.ac.flat": {
       "name": "CA Fixa",
-      "description": "Define a CA para uma numeração fixa. Requer que system.attributes.ac.calc seja definido para \"Fixo\""
+      "description": "Requer system.attributes.ac.calc definido como Fixo (CA igual a este valor) ou Armadura Natural (CA igual a este valor mais o bônus de escudo)."
     },
     "system.attributes.ac.formula": {
       "name": "Fórmula CA",
@@ -671,95 +701,95 @@
     },
     "system.attributes.ac.value": {
       "name": "Valor de CA",
-      "description": "Usar system.attributes.ac.calc como \"Fixo\" e system.attributes.ac.flat como seu valor desejado, ao invés deste, se sobescrever ac.bonus for adicionar." 
+      "description": "Evite alterar este campo diretamente. Para substituir a CA, defina system.attributes.ac.calc como Fixo ou Armadura Natural e system.attributes.ac.flat com o valor desejado. Para acrescentar um bônus, use system.attributes.ac.bonus." 
     },
     "system.attributes.attunement.max": {
-      "name": "",
+      "name": "Máximo de Itens Sintonizados",
       "description": "" 
     },
     "system.attributes.concentration.ability": {
-      "name": "",
-      "description": "" 
+      "name": "Atributo de Concentração",
+      "description": "Atributo usado nas salvaguardas de Concentração." 
     },
     "system.attributes.concentration.roll.bonus": {
-      "name": "",
+      "name": "Bônus Salvaguarda Concentração",
       "description": "" 
     },
     "system.attributes.concentration.limit": {
-      "name": "",
-      "description": "" 
+      "name": "Limite de Concentração",
+      "description": "Quantidade máxima de magias em que é possível manter Concentração ao mesmo tempo." 
     },
     "system.attributes.concentration.roll.max": {
-      "name": "",
-      "description": "" 
+      "name": "Máximo da Jogada de Concentração",
+      "description": "Resultado máximo possível no d20 em salvaguardas de Concentração." 
     },
     "system.attributes.concentration.roll.min": {
-      "name": "",
-      "description": "" 
+      "name": "Mínimo da Jogada de Concentração",
+      "description": "Resultado mínimo possível no d20 em salvaguardas de Concentração." 
     },
     "system.attributes.concentration.roll.mode": {
-      "name": "",
-      "description": "" 
+      "name": "Modo de Jogada de Concentração",
+      "description": "Modo de jogada das salvaguardas de Concentração. \"Adicionar\" acrescenta uma fonte de Vantagem (1) ou Desvantagem (-1). \"Sobrepor\" força Vantagem (1), Desvantagem (-1) ou uma jogada normal (0)." 
     },
     "system.attributes.death.bonuses.save": {
       "name": "Bônus Salvaguarda Contra Morte",
       "description": "" 
     },
     "system.attributes.death.failure": {
-      "name": "",
-      "description": "" 
+      "name": "Falhas em Salvaguardas Contra Morte",
+      "description": "Número de falhas em Salvaguardas Contra Morte. Não é particularmente útil modificá-lo por meio de um efeito ativo." 
     },
     "system.attributes.death.roll.max": {
-      "name": "",
-      "description": "" 
+      "name": "Máximo da Salvaguarda Contra Morte",
+      "description": "Resultado máximo possível no d20 em Salvaguardas Contra Morte." 
     },
     "system.attributes.death.roll.min": {
-      "name": "",
-      "description": "" 
+      "name": "Mínimo da Salvaguarda Contra Morte",
+      "description": "Resultado mínimo possível no d20 em salvaguardas contra morte." 
     },
     "system.attributes.death.roll.mode": {
-      "name": "",
-      "description": "" 
+      "name": "Modo de Jogada de Salvaguarda Contra Morte",
+      "description": "Modo de jogada das Salvaguardas Contra Morte. \"Adicionar\" acrescenta uma fonte de Vantagem (1) ou Desvantagem (-1). \"Sobrepor\" força Vantagem (1), Desvantagem (-1) ou uma jogada normal (0)." 
     },
     "system.attributes.death.success": {
-      "name": "",
-      "description": "" 
+      "name": "Sucessos em Salvaguardas Contra Morte",
+      "description": "Número de sucessos em Salvaguardas Contra Morte. Não é particularmente útil modificá-lo por meio de um efeito ativo." 
     },
     "system.attributes.encumbrance.bonuses.encumbered": {
-      "name": "",
-      "description": "" 
+      "name": "Bônus do Limite de Sobrecarregado",
+      "description": "Bônus ao limite de carga que causa \"Sobrecarregado\"." 
     },
     "system.attributes.encumbrance.bonuses.heavilyEncumbered": {
-      "name": "",
-      "description": "" 
+      "name": "Bônus do Limite de Muito Sobrecarregado",
+      "description": "Bônus ao limite de carga que causa \"Muito Sobrecarregado\"." 
     },
     "system.attributes.encumbrance.bonuses.maximum": {
-      "name": "",
-      "description": "" 
+      "name": "Bônus à Capacidade Máxima de Carga",
+      "description": "Bônus à capacidade máxima de carga." 
     },
     "system.attributes.encumbrance.bonuses.overall": {
-      "name": "",
-      "description": "" 
+      "name": "Bônus Geral de Carga",
+      "description": "Bônus a cada limite de sobrecarga e à capacidade máxima de carga." 
     },
     "system.attributes.encumbrance.multipliers.encumbered": {
-      "name": "",
-      "description": "" 
+      "name": "Multiplicador do Limite de Sobrecarregado",
+      "description": "Multiplicador do limite de carga que causa \"Sobrecarregado\"." 
     },
     "system.attributes.encumbrance.multipliers.heavilyEncumbered": {
-      "name": "",
-      "description": "" 
+      "name": "Multiplicador do Limite de Muito Sobrecarregado",
+      "description": "Multiplicador do limite de carga que causa \"Muito Sobrecarregado\"." 
     },
     "system.attributes.encumbrance.multipliers.maximum": {
-      "name": "",
-      "description": "" 
+      "name": "Multiplicador da Capacidade Máxima de Carga",
+      "description": "Multiplicador da capacidade máxima de carga." 
     },
     "system.attributes.encumbrance.multipliers.overall": {
-      "name": "",
-      "description": "" 
+      "name": "Multiplicador Geral de Carga",
+      "description": "Multiplicador de cada limite de sobrecarga e da capacidade máxima de carga." 
     },
     "system.attributes.hd.max": {
-      "name": "",
-      "description": "" 
+      "name": "Dados de Vida Máximos",
+      "description": "Disponível somente para PNJs." 
     },
     "system.attributes.hp.bonuses.level": {
       "name": "Bônus PV por Nível",
@@ -775,98 +805,102 @@
     },
     "system.attributes.hp.temp": {
       "name": "PV Temporário",
-      "description": "Isso nunca deveria ser modificado em um efeito ativo. Ao invés disso, aplique o tipo de dano Cura Temporária." 
+      "description": "Este valor não deve ser alterado por meio de um efeito ativo. Use uma atividade de \"Cura\" configurada para conceder Pontos de Vida Temporários." 
     },
     "system.attributes.hp.tempmax": {
-      "name": "PV Temporário Máximo",
+      "name": "PV Máximo Temporário",
       "description": "Ajuste temporário ao PV Máximo" 
     },
     "system.attributes.hp.value": {
       "name": "PV Atual",
-      "description": "Isso nunca deveria ser modificado em um efeito ativo. Ao invés disso, aplique qualquer tipo de dano." 
+      "description": "Este valor não deve ser alterado por meio de um efeito ativo. Aplique dano por meio de uma atividade." 
     },
     "system.attributes.init.ability": {
-      "name": "",
-      "description": "" 
+      "name": "Atributo de Iniciativa",
+      "description": "Atributo usado nas jogadas de Iniciativa." 
     },
     "system.attributes.init.bonus": {
-      "name": "",
+      "name": "Bônus de Iniciativa",
       "description": "" 
     },
     "system.attributes.init.roll.max": {
-      "name": "",
-      "description": "" 
+      "name": "Máximo da Jogada de Iniciativa",
+      "description": "Resultado máximo possível no d20 em uma jogada de Iniciativa." 
     },
     "system.attributes.init.roll.min": {
-      "name": "",
-      "description": "" 
+      "name": "Mínimo da Jogada de Iniciativa",
+      "description": "Resultado mínimo possível no d20 em uma jogada de Iniciativa." 
     },
     "system.attributes.init.roll.mode": {
-      "name": "",
-      "description": "" 
+      "name": "Modo de Jogada de Iniciativa",
+      "description": "Modo de jogada de Iniciativa. \"Adicionar\" acrescenta uma fonte de Vantagem (1) ou Desvantagem (-1). \"Sobrepor\" força Vantagem (1), Desvantagem (-1) ou uma jogada normal (0)." 
     },
     "system.attributes.movement.all": {
-      "name": "",
-      "description": "" 
-    },
-    "system.attributes.movement.burrow": {
-      "name": "",
-      "description": "" 
-    },
-    "system.attributes.movement.climb": {
-      "name": "",
-      "description": "" 
-    },
-    "system.attributes.movement.fly": {
-      "name": "",
-      "description": "" 
+      "name": "(DAE) Deslocamento (Todos)",
+      "description": "Um número simples define todos os tipos de deslocamento com esse valor. Já, \"+5\" ou \"*2\" por exemplo, adicionam 5 ou multiplicam por 2, respectivamente, os deslocamentos existentes, ignorando os tipos nos quais o ator não possui deslocamento." 
     },
     "system.attributes.movement.hover": {
-      "name": "",
-      "description": "" 
+      "name": "Deslocamento (Planar)",
+      "description": "Pode planar?" 
     },
-    "system.attributes.movement.swim": {
-      "name": "",
-      "description": "" 
+    "system.attributes.movement.speeds.burrow": {
+      "name": "Deslocamento (Escavação)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.climb": {
+      "name": "Deslocamento (Escalada)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.fly": {
+      "name": "Deslocamento (Voo)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.jump": {
+      "name": "Deslocamento (Salto)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.swim": {
+      "name": "Deslocamento (Natação)",
+      "description": ""
+    },
+    "system.attributes.movement.speeds.walk": {
+      "name": "Deslocamento (Caminhada)",
+      "description": ""
     },
     "system.attributes.movement.units": {
-      "name": "",
-      "description": "" 
-    },
-    "system.attributes.movement.walk": {
-      "name": "",
+      "name": "Unidades de Deslocamento",
       "description": "" 
     },
     "system.attributes.prof": {
-      "name": "",
+      "name": "Bônus de Proficiência",
       "description": "" 
     },
-    "system.attributes.senses.blindsight": {
-      "name": "",
-      "description": "" 
+    "system.attributes.senses.ranges.blindsight": {
+      "name": "Sentidos (Percepção às Cegas)",
+      "description": ""
     },
-    "system.attributes.senses.darkvision": {
-      "name": "",
-      "description": "" 
+    "system.attributes.senses.ranges.darkvision": {
+      "name": "Sentidos (Visão no Escuro)",
+      "description": ""
+    },
+    "system.attributes.senses.ranges.tremorsense": {
+      "name": "Sentidos (Sentido Sísmico)",
+      "description": ""
+    },
+    "system.attributes.senses.ranges.truesight": {
+      "name": "Sentidos (Visão Verdadeira)",
+      "description": ""
     },
     "system.attributes.senses.special": {
-      "name": "",
-      "description": "" 
-    },
-    "system.attributes.senses.tremorsense": {
-      "name": "",
-      "description": "" 
-    },
-    "system.attributes.senses.truesight": {
-      "name": "",
-      "description": "" 
+      "name": "Sentidos Especiais",
+      "description": "Aceita valores separados por ponto e vírgula (;)." 
     },
     "system.attributes.senses.units": {
-      "name": "",
+      "name": "Unidades dos Sentidos",
       "description": "" 
     },
     "system.attributes.spellcasting": {
-      "name": "",
+      "name": "Atributo de Conjuração",
       "description": "" 
     }
   },
@@ -889,7 +923,7 @@
     },
     "system.bonuses.All-Damage": {
       "name": "Bônus Dano",
-      "description": "Bônus para todas as jogadas de dano."
+      "description": "Bônus a todas as jogadas de dano de atividades de Ataque."
     },
     "system.bonuses.check.damage": {
       "name": "Bônus Dano (Teste)",
@@ -937,7 +971,7 @@
     },
     "system.bonuses.spell.all.damage": {
       "name": "Bônus Dano (Mágico)",
-      "description": "Bônus para todas as jogadas de danos mágicos."
+      "description": "Bônus a todas as jogadas de dano de magias."
     },
     "system.bonuses.spell.attack": {
       "name": "Bônus Ataque (Mágico)",
@@ -957,21 +991,21 @@
     },
     "system.bonuses.weapon.damage": {
       "name": "Bônus Dano (Arma)",
-      "description": "Bônus para todas as jogadas de dano de armas."
+      "description": "Bônus a todas as jogadas de dano com arma de atividades de Ataque."
     }
   },
   "dae.SystemTraits.fieldData": {
     "system.traits.armorProf.all": {
       "name": "Proficiência Armadura (Todas)",
-      "description": "" 
+      "description": "A simples presença desta chave concede proficiência com todas as armaduras." 
     },
     "system.traits.armorProf.custom": {
       "name": "Proficiência Armadura (Personalizado)",
-      "description": "" 
+      "description": "Aceita valores separados por ponto e vírgula (;)." 
     },
     "system.traits.armorProf.value": {
       "name": "Proficiência Armadura (Escolher)",
-      "description": "" 
+      "description": "Use o modo Adicionar e escolha a Armadura para adicionar. -Armadura para remover." 
     },
     "system.traits.ci.all": {
       "name": "Imunidade Condição (Todas)",
@@ -979,19 +1013,19 @@
     },
     "system.traits.ci.custom": {
       "name": "Imunidade Condição (Personalizado)",
-      "description": "Imunidade à condição descrita."
+      "description": "Aceita valores separados por ponto e vírgula (;)."
     },
     "system.traits.ci.value": {
       "name": "Imunidade Condição",
-      "description": "Imunidade à condição selecionada. Use o modo Adicionar e escolha a Imunidade para adicionar. -Condição para remover."
+      "description": "Use o modo Adicionar e escolha a Imunidade para adicionar. -Condição para remover."
     },
     "system.traits.da.all": {
-      "name": "",
-      "description": "" 
+      "name": "(Midi) Absorção de Todos os Danos",
+      "description": "Atua como um multiplicador de todo o dano sofrido. Por exemplo, um valor de -1 resultaria na cura de todo o dano pela quantidade, em vez de causar dano por ela" 
     },
     "system.traits.da.custom": {
-      "name": "",
-      "description": "" 
+      "name": "(Midi) Absorção de Dano Personalizada",
+      "description": "Aceita valores separados por ponto e vírgula (;)." 
     },
     "da": {
       "name": "(Midi) Absorção Dano ({damage})",
@@ -1042,8 +1076,8 @@
       "description": "Absorção de Dano para Danos Físicos Não-Prateados. Atua como um multiplicador de todo o dano sofrido. Por exemplo, um valor de -1 resultaria na cura de todo o dano pela quantidade, em vez de causar dano por ela."
     },
     "system.traits.da.midi.non-spell": {
-      "name": "(Midi) Absorção Dano (Não-Mágico)",
-      "description": "Absorção de Dano para Danos Não-Mágicos. Atua como um multiplicador de todo o dano sofrido. Por exemplo, um valor de -1 resultaria na cura de todo o dano pela quantidade, em vez de causar dano por ela."
+      "name": "(Midi) Absorção Dano (Exceto Magias)",
+      "description": "Absorção de Dano para Danos que não sejam de Magias. Atua como um multiplicador de todo o dano sofrido. Por exemplo, um valor de -1 resultaria na cura de todo o dano pela quantidade, em vez de causar dano por ela."
     },
     "system.traits.da.midi.physical": {
       "name": "(Midi) Absorção Dano (Físico)",
@@ -1071,11 +1105,11 @@
     },
     "system.traits.di.custom": {
       "name": "Imunidade Dano (Personalizado)",
-      "description": "Imunidade ao dano descrita."
+      "description": "Aceita valores separados por ponto e vírgula (;)."
     },
     "system.traits.di.value": {
       "name": "Imunidade Dano",
-      "description": "Imunidade ao tipo de dano selecionada. Use o modo Adicionar e escolha a Imunidade para adicionar. -Dano para remover."
+      "description": "Use o modo Adicionar e escolha a Imunidade para adicionar. -Dano para remover."
     },
     "dm.amount": {
       "name": "Modificação Dano ({damage})",
@@ -1094,8 +1128,8 @@
       "description": "Modificação de Cura para Atividades. Números positivos aumentam a Cura recebida, enquanto negativos diminuem."
     },
     "system.traits.dm.midi.magical": {
-      "name": "(Midi) Modificação Dano (Mágco)",
-      "description": "Modificação de Cura para Dano Mágico. Números positivos aumentam a Cura recebida, enquanto negativos diminuem."
+      "name": "(Midi) Modificação Dano (Mágico)",
+      "description": "Modificação de Dano para Dano Mágico. Números positivos aumentam o Dano sofrido, enquanto negativos diminuem."
     },
     "system.traits.dm.midi.msak": {
       "name": "(Midi) Modificação Dano (Mágico Corpo a Corpo)",
@@ -1126,8 +1160,8 @@
       "description": "Modificação de dano para Danos Físicos Não-Prateados. Números positivos aumentam o dano sofrido, enquanto negativos diminuem."
     },
     "system.traits.dm.midi.non-spell": {
-      "name": "(Midi) Modificação Dano (Não-Mágico)",
-      "description": "Modificação de dano para Danos Não-Mágicos. Números positivos aumentam o dano sofrido, enquanto negativos diminuem."
+      "name": "(Midi) Modificação Dano (Exceto Magias)",
+      "description": "Modificação de dano para Danos que não sejam de Magias. Números positivos aumentam o dano sofrido, enquanto negativos diminuem."
     },
     "system.traits.dm.midi.physical": {
       "name": "(Midi) Modificação Dano (Físico)",
@@ -1155,11 +1189,11 @@
     },
     "system.traits.dr.custom": {
       "name": "Resistência Dano (Personalizado)",
-      "description": "Resistência ao dano descrito."
+      "description": "Aceita valores separados por ponto e vírgula (;)."
     },
     "system.traits.dr.value": {
       "name": "Resistência Dano",
-      "description": "Resistência ao tipo de dano selecionada. Use o modo Adicionar e escolha a Resistência para adicionar. -Dano para remover."
+      "description": "Use o modo Adicionar e escolha a Resistência para adicionar. -Dano para remover."
     },
     "system.traits.dv.all": {
       "name": "Vulnerabilidade Dano (Todos)",
@@ -1171,11 +1205,11 @@
     },
     "system.traits.dv.custom": {
       "name": "Vulnerabilidade Dano (Personalizado)",
-      "description": "Vulnerabilidade ao dano descrito."
+      "description": "Aceita valores separados por ponto e vírgula (;)."
     },
     "system.traits.dv.value": {
       "name": "Vulnerabilidade Dano",
-      "description": "Vulnerabilidade ao tipo de dano selecionada. Use o modo Adicionar e escolha a Vulnerabilidade para adicionar. -Dano para remover."
+      "description": "Use o modo Adicionar e escolha a Vulnerabilidade para adicionar. -Dano para remover."
     },
     "system.traits.languages.all": {
       "name": "Proficiência Idioma (Todos)",
@@ -1183,7 +1217,7 @@
     },
     "system.traits.languages.custom": {
       "name": "Proficiência Idioma (Personalizado)",
-      "description": "Adiciona proficiência com o Idioma descrito."
+      "description": "Aceita valores separados por ponto e vírgula (;)."
     },
     "system.traits.languages.value": {
       "name": "Proficiência Idioma",
@@ -1199,11 +1233,11 @@
     },
     "system.traits.weaponProf.custom": {
       "name": "Proficiência Arma (Personalizado)",
-      "description": "Adiciona proficiência com a Arma descrita."
+      "description": "Aceita valores separados por ponto e vírgula (;)."
     },
     "system.traits.weaponProf.value": {
       "name": "Proficiência Arma",
-      "description": "Adiciona proficiência com a Arma selecionada."
+      "description": "Use o modo Adicionar e escolha a Arma para adicionar. -Arma para remover."
     }
   },
   "dae.Other.fieldData": {
@@ -1336,23 +1370,23 @@
       "description": "" 
     },
     "system.attributes.actions.stations": {
-      "name": "Action Stations",
+      "name": "Postos de Ação",
       "description": "" 
     },
     "system.attributes.actions.thresholds.0": {
-      "name": "Actions Threshold 0",
+      "name": "Limite de Ações 0",
       "description": "" 
     },
     "system.attributes.actions.thresholds.1": {
-      "name": "Actions Threshold 1",
+      "name": "Limite de Ações 1",
       "description": "" 
     },
     "system.attributes.actions.thresholds.2": {
-      "name": "Actions Threshold 2",
+      "name": "Limite de Ações 2",
       "description": "" 
     },
     "system.attributes.actions.value": {
-      "name": "Actions Value",
+      "name": "Valor de Ações",
       "description": "" 
     },
     "system.attributes.capacity.cargo": {
@@ -1360,7 +1394,7 @@
       "description": "" 
     },
     "system.attributes.capacity.creature": {
-      "name": "Capacidade da Criatura",
+      "name": "Capacidade de Criaturas",
       "description": "" 
     },
     "system.attributes.hp.dt": {
@@ -1424,11 +1458,11 @@
       "description": "" 
     },
     "system.details.biography.public": {
-      "name": "Biografia (Público)",
+      "name": "Biografia (Pública)",
       "description": "" 
     },
     "system.details.biography.value": {
-      "name": "Biografia (Completo)",
+      "name": "Biografia (Completa)",
       "description": "" 
     },
     "system.details.bond": {
@@ -1496,7 +1530,7 @@
       "description": "" 
     },
     "system.resources.legres.max": {
-      "name": "Resistências Mágicas Máximas",
+      "name": "Resistências Lendárias Máximas",
       "description": "" 
     },
     "system.resources.primary.label": {
@@ -1532,7 +1566,7 @@
       "description": "NOTA: Os recursos estão obsoletos há muito tempo." 
     },
     "system.resources.secondary.sr": {
-      "name": "Recurso Secondário (Descanso Curto)",
+      "name": "Recurso Secundário (Descanso Curto)",
       "description": "NOTA: Os recursos estão obsoletos há muito tempo. Recupera em um Descanso Curto (1/0)" 
     },
     "system.resources.secondary.value": {
@@ -1645,7 +1679,7 @@
     },
     "system.tools.alchemist.ability": {
       "name": "Atributo Suprimentos de Alquimista",
-      "description": "Qual atributo usar para testes com Suprimentos de Alqmista." 
+      "description": "Qual atributo usar para testes com Suprimentos de Alquimista." 
     },
     "system.tools.alchemist.bonuses.check": {
       "name": "Bônus Teste Suprimentos de Alquimista",
@@ -2143,7 +2177,7 @@
     },
     "system.damageBonus": {
       "name": "Bônus Dano",
-      "description": "Nota: Deveria usar \"system.damageBonus\" em vez disso."
+      "description": "Nota: Use \"system.damageBonus\" em vez deste campo."
     },
     "system.damage.parts": {
       "name": "Partes Dano",
@@ -2194,7 +2228,7 @@
       "description": "Defina também \"activities[cast].spell.challenge.override\" como \"true\"."
     },
     "activities[cast].spell.challenge.override": {
-      "name": "Subrepor Ataque/Salvaguarda Magia",
+      "name": "Sobrepor Ataque/Salvaguarda Magia",
       "description": ""
     },
     "activities[cast].spell.level": {
@@ -2278,7 +2312,7 @@
       "description": ""
     },
     "activities[heal].healing.custom.formula": {
-      "name": "Cura: Formúla Personalizada",
+      "name": "Cura: Fórmula Personalizada",
       "description": "Defina também \"activities[heal].healing.custom.enabled\" como \"true\"."
     },
     "activities[heal].healing.scaling.mode": {
@@ -2287,11 +2321,11 @@
     },
     "activities[heal].healing.scaling.number": {
       "name": "Cura: Número de Escala",
-      "description": "Additional dice rolled per scaling level."
+      "description": "Dados adicionais rolados a cada nível de escala."
     },
     "activities[heal].healing.scaling.formula": {
       "name": "Cura: Fórmula de Escala",
-      "description": "Additional formula added per scaling level."
+      "description": "Fórmula adicional acrescentada a cada nível de escala."
     },
     "activities[save].damage.onSave": {
       "name": "Dano em Sucesso",
@@ -2307,7 +2341,7 @@
     },
     "activities[save].save.dc.formula": {
       "name": "Fórmula de CD",
-      "description": "\"activities[save].save.dc.calculation\" deve ser definido como \"Fórmula Personalizada\" se usar esta tecla."
+      "description": "\"activities[save].save.dc.calculation\" deve ser definido como \"Fórmula Personalizada\" se usar esta chave."
     },
     "activities[summon].bonuses.ac": {
       "name": "Bônus CA Fórmula",
@@ -2354,7 +2388,7 @@
       "description": ""
     },
     "activities[summon].match.saves": {
-      "name": "Mesma Salvaguarda",
+      "name": "Mesma CD de Salvaguarda",
       "description": ""
     },
     "activities[summon].summon.identifier": {
@@ -2436,7 +2470,7 @@
       "description": ""
     },
     "sort": {
-      "name": "Organizar",
+      "name": "Ordem de Exibição",
       "description": ""
     },
     "activation.type": {
@@ -2456,11 +2490,11 @@
       "description": "Não é relevante em um contexto de encantamento."
     },
     "consumption.scaling.allowed": {
-      "name": "Consumo de Escala Permitido",
+      "name": "Permitir Escala de Consumo",
       "description": ""
     },
     "consumption.scaling.max": {
-      "name": "Consumo de Escala Máximo",
+      "name": "Escala Máxima de Consumo",
       "description": ""
     },
     "consumption.spellSlot": {
@@ -2497,7 +2531,7 @@
     },
     "effects": {
       "name": "Efeitos",
-      "description": "Uma array de objetos com \"_id\" igual ao id de um efeito no item que deve ser aplicado quando a atividade for usada."
+      "description": "Um array de objetos com \"_id\" igual ao id de um efeito no item que deve ser aplicado quando a atividade for usada."
     },
     "range.value": {
       "name": "Alcance",
@@ -2520,7 +2554,7 @@
       "description": ""
     },
     "target.template.contiguous": {
-      "name": "Modelos Contínuos",
+      "name": "Modelos Contíguos",
       "description": "Verdadeiro (true) ou Falso (false)."
     },
     "target.template.type": {
@@ -2577,7 +2611,7 @@
     },
     "uses.recovery": {
       "name": "Recuperação de Usos",
-      "description": "Uma array de objetos que representam a recuperação."
+      "description": "Um array de objetos que representam a recuperação."
     },
     "damage.critical.bonus": {
       "name": "Bônus Dano Crítico",
@@ -2597,5 +2631,76 @@
   "dae.EnableAutoMigration.Hint": "Migra automaticamente dados de efeitos obsoletos do DAE quando o DAE for atualizado. Para mundos grandes, é recomendado executar manualmente pelo botão 'Migrar Agora'.",
   "dae.MigrateNow.Name": "Migrar Dados do DAE",
   "dae.MigrateNow.Label": "Migrar Agora",
-  "dae.MigrateNow.Hint": "Verifica todos os atores e itens do mundo em busca de dados de efeitos obsoletos do DAE e os atualiza. Faça um backup do seu mundo primeiro."
+  "dae.MigrateNow.Hint": "Verifica todos os atores e itens do mundo em busca de dados de efeitos obsoletos do DAE e os atualiza. Faça um backup do seu mundo primeiro.",
+  "dae.phase.Label": "Fase de Aplicação",
+  "dae.phase.initial": "Inicial",
+  "dae.phase.final": "Final",
+  "dae.ConditionBuilder.Open": "Construtor de Condições",
+  "dae.ConditionBuilder.Title": "Condições",
+  "dae.ConditionBuilder.Hint": "Verificadas com base nos dados do alvo quando o efeito é preparado.",
+  "dae.ConditionBuilder.Unsupported": "Esta condição utiliza recursos que o construtor não consegue exibir, como um filtro aninhado dentro de \"has\". Edite-a utilizando o botão de filtro.",
+  "dae.ConditionBuilder.AddCondition": "Condição",
+  "dae.ConditionBuilder.AddGroup": "Grupo",
+  "dae.ConditionBuilder.CommonFields": "Adicionar campo comum...",
+  "dae.ConditionBuilder.ListHint": "Separados por vírgulas",
+  "dae.ConditionBuilder.NoActor": "Nenhum ator disponível para teste.",
+  "dae.ConditionBuilder.Passes": "Em {actor}: Aprovado",
+  "dae.ConditionBuilder.Fails": "Em {actor}: Reprovado",
+  "dae.ConditionBuilder.Group.AND": "Todos",
+  "dae.ConditionBuilder.Group.OR": "Qualquer um",
+  "dae.ConditionBuilder.Group.NOR": "Nenhum",
+  "dae.ConditionBuilder.Group.NAND": "Nem todos",
+  "dae.ConditionBuilder.Group.XOR": "OU Exclusivo",
+  "dae.ConditionBuilder.Group.NOT": "Não",
+  "dae.ConditionBuilder.Op.exact": "=",
+  "dae.ConditionBuilder.Op.ne": "≠",
+  "dae.ConditionBuilder.Op.gt": ">",
+  "dae.ConditionBuilder.Op.gte": "≥",
+  "dae.ConditionBuilder.Op.lt": "<",
+  "dae.ConditionBuilder.Op.lte": "≤",
+  "dae.ConditionBuilder.Op.has": "possui",
+  "dae.ConditionBuilder.Op.hasany": "possui qualquer um de",
+  "dae.ConditionBuilder.Op.hasall": "possui todos",
+  "dae.ConditionBuilder.Op.in": "é um de",
+  "dae.ConditionBuilder.Op.subsetof": "contém apenas",
+  "dae.ConditionBuilder.Op.empty": "está vazio",
+  "dae.ConditionBuilder.Op.contains": "contém",
+  "dae.ConditionBuilder.Op.icontains": "contém (ignora maiúsculas e minúsculas)",
+  "dae.ConditionBuilder.Op.startswith": "começa com",
+  "dae.ConditionBuilder.Op.istartswith": "começa com (ignora maiúsculas e minúsculas)",
+  "dae.ConditionBuilder.Op.endswith": "termina com",
+  "dae.ConditionBuilder.Op.iendswith": "termina com (ignora maiúsculas e minúsculas)",
+  "dae.ConditionBuilder.FieldGroup.status": "Status",
+  "dae.ConditionBuilder.FieldGroup.creature": "Criatura",
+  "dae.ConditionBuilder.FieldGroup.health": "Vida",
+  "dae.ConditionBuilder.FieldGroup.defences": "Defesas",
+  "dae.ConditionBuilder.FieldGroup.progress": "Progressão",
+  "dae.ConditionBuilder.FieldGroup.item": "Item",
+  "dae.ConditionBuilder.Field.statuses": "Status",
+  "dae.ConditionBuilder.Field.conditionImmunities": "Imunidades a Condições",
+  "dae.ConditionBuilder.Field.creatureType": "Tipo de Criatura",
+  "dae.ConditionBuilder.Field.size": "Tamanho",
+  "dae.ConditionBuilder.Field.actorType": "Tipo de Ator",
+  "dae.ConditionBuilder.Field.hpPercent": "% de PV",
+  "dae.ConditionBuilder.Field.hp": "PV",
+  "dae.ConditionBuilder.Field.tempHp": "PV Temporário",
+  "dae.ConditionBuilder.Field.resistances": "Resistências a Dano",
+  "dae.ConditionBuilder.Field.immunities": "Imunidades a Dano",
+  "dae.ConditionBuilder.Field.vulnerabilities": "Vulnerabilidades a Dano",
+  "dae.ConditionBuilder.Field.level": "Nível",
+  "dae.ConditionBuilder.Field.cr": "Nível de Desafio",
+  "dae.ConditionBuilder.Field.spellLevel": "Nível de Magia",
+  "dae.ConditionBuilder.Field.spellSchool": "Escola de Magia",
+  "dae.ConditionBuilder.Field.itemProperties": "Propriedades do Item",
+  "dae.ConditionBuilder.FieldGroup.abilities": "Atributos",
+  "dae.ConditionBuilder.FieldGroup.attributes": "Estatísticas",
+  "dae.ConditionBuilder.Field.abilityScore": "Valor de {ability}",
+  "dae.ConditionBuilder.Field.abilityMod": "Modificador de {ability}",
+  "dae.ConditionBuilder.Field.ac": "Classe de Armadura",
+  "dae.ConditionBuilder.Field.speed": "Deslocamento de Caminhada",
+  "dae.ConditionBuilder.Field.proficiency": "Bônus de Proficiência",
+  "dae.ConditionBuilder.Field.spellDC": "CD de Salvaguarda de Magia",
+  "dae.ConditionBuilder.Field.initiative": "Iniciativa",
+  "dae.ConditionBuilder.Field.exhaustion": "Nível de Exaustão",
+  "dae.ConditionBuilder.Field.darkvision": "Alcance da Visão no Escuro"
 }
