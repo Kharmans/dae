@@ -118,16 +118,23 @@ Hooks.once('ready', () => {
     // @ts-expect-error v14 CONFIG.ActiveEffect.expiryAction not in fvtt-types yet
     CONFIG.ActiveEffect.expiryAction = coreExpiryAction === "none" ? null : coreExpiryAction;
 
-    // Per-effect expiry mode: wrap registry.refresh() to intercept via pre-hooks.
-    // modifyBatch fires preDelete/preUpdate hooks (via dryRun pass), so we set a flag
-    // during refresh and use pre-hooks to redirect effects whose flags.dae.expiryMode
-    // differs from the global CONFIG.ActiveEffect.expiryAction.
+    /*
+     * Per-effect expiry mode (flags.dae.expiryMode) over core's Effect Expiry Action. Core takes an expired effect out of
+     * the registry, then (on the active GM) marks it expired or deletes it in one batch. Each refresh keeps the effects
+     * registered when it started: one no longer registered is being expired by that refresh, and only those are
+     * redirected, so overlapping refreshes and unrelated deletes or updates pass untouched.
+     */
     // @ts-expect-error v14 ActiveEffect.registry not in fvtt-types yet
-    const registry: { refresh: Function } = foundry.documents.ActiveEffect.registry;
+    const registry: { refresh: Function, has(effect: ActiveEffect.Implementation): boolean } & Iterable<ActiveEffect.Implementation> = foundry.documents.ActiveEffect.registry;
     const origRefresh = registry.refresh;
-    const expiryRedirects: { effect: ActiveEffect.Implementation, targetAction: "delete" | "update" }[] = [];
-    let registryRefreshActive = false;
-    let registryRefreshEvent = "";
+    type Refresh = { event: string, before: Set<ActiveEffect.Implementation>, redirects: Map<ActiveEffect.Implementation, "delete" | "update"> };
+    const refreshes: Refresh[] = [];
+    const expiringIn = (effect: ActiveEffect.Implementation): Refresh | undefined =>
+      registry.has(effect) ? undefined : refreshes.find(r => r.before.has(effect));
+    const modeAction = (effect: ActiveEffect.Implementation): "delete" | "update" | undefined => {
+      const mode = effect.getFlag("dae", "expiryMode") as string | undefined;
+      return mode === "delete" ? "delete" : mode === "suppress" ? "update" : undefined;
+    };
 
     function expiryReason(event: string, effect: ActiveEffect.Implementation): string {
       const expiry = (effect.duration as any)?.expiry as string | undefined;
@@ -135,53 +142,57 @@ Hooks.once('ready', () => {
     }
 
     registry.refresh = async function(event, context) {
-      registryRefreshActive = true;
-      registryRefreshEvent = event;
-      expiryRedirects.length = 0;
+      const refresh: Refresh = { event, before: new Set(this), redirects: new Map() };
+      refreshes.push(refresh);
       try {
         await origRefresh.call(this, event, context);
       } catch (err) {
         console.error("dae | registry.refresh", err);
       } finally {
-        registryRefreshActive = false;
-        registryRefreshEvent = "";
+        refreshes.splice(refreshes.indexOf(refresh), 1);
       }
-      // Process any redirected operations (effects whose per-effect mode differs from global)
-      for (const { effect, targetAction } of expiryRedirects) {
+      // Do Nothing: core leaves an expired effect alone, so its own mode is the only action
+      // @ts-expect-error v14 CONFIG.ActiveEffect.expiryAction / game.users.activeGM not in fvtt-types yet
+      if (!CONFIG.ActiveEffect.expiryAction && game.users.activeGM?.isSelf) {
+        for (const effect of refresh.before) {
+          const action = !this.has(effect) && modeAction(effect);
+          if (action) refresh.redirects.set(effect, action);
+        }
+      }
+      for (const [effect, action] of refresh.redirects) {
+        // gone meanwhile (its actor or token too)
+        if (!fromUuidSync(effect.uuid, { strict: false }) || !effect.parent?.effects.has(effect.id!)) continue;
         const reason: any = { "expiry-reason": expiryReason(event, effect) };
-        if (targetAction === "delete") await effect.delete(reason);
+        if (action === "delete") await effect.delete(reason);
         // Suppress by disabling; see expireEffect for why duration.expired cannot mean "keep".
         // @ts-expect-error v14 duration.expired not in fvtt-types yet
         else await effect.update({ "disabled": true, "duration.expired": false }, reason);
       }
-      expiryRedirects.length = 0;
     };
 
-    // Intercept registry expiry: inject expiry-reason into options for core duration expiry,
-    // and redirect effects whose per-effect expiryMode differs from the global setting.
+    // Core deleting an expired effect (Delete): an effect set to Suppress is disabled instead
     Hooks.on("preDeleteActiveEffect", (effect: ActiveEffect.Implementation, options: any) => {
-      if (!registryRefreshActive) return true;
-      if (!options["expiry-reason"]) options["expiry-reason"] = expiryReason(registryRefreshEvent, effect);
-      const mode = effect.getFlag("dae", "expiryMode") as string | undefined;
-      if (mode === "suppress") {
-        expiryRedirects.push({ effect, targetAction: "update" });
-        return false;
-      }
-      return true;
+      const refresh = expiringIn(effect);
+      if (!refresh) return true;
+      if (!options["expiry-reason"]) options["expiry-reason"] = expiryReason(refresh.event, effect);
+      if (modeAction(effect) !== "update") return true;
+      // a dependent going with the effect it depends on (concentration ending) is deleted, not suppressed
+      const parentEffect = fromUuidSync(foundry.utils.getProperty(effect, "flags.dnd5e.dependentOn") as string ?? "", { strict: false });
+      if (parentEffect instanceof ActiveEffect && (!parentEffect.parent?.effects.has(parentEffect.id!) || expiringIn(parentEffect as ActiveEffect.Implementation))) return true;
+      refresh.redirects.set(effect, "update");
+      return false;
     });
 
-    // Intercept registry expiry: inject expiry-reason into options for core duration expiry,
-    // and redirect effects whose per-effect expiryMode differs from the global setting.
+    // Core marking an expired effect (Mark Expired): an effect set to Delete or Suppress gets that instead
     Hooks.on("preUpdateActiveEffect", (effect: ActiveEffect.Implementation, update: any, options: any) => {
-      if (!registryRefreshActive) return true;
-      if (!foundry.utils.hasProperty(update, "duration.expired")) return true;
-      if (!options["expiry-reason"]) options["expiry-reason"] = expiryReason(registryRefreshEvent, effect);
-      const mode = effect.getFlag("dae", "expiryMode") as string | undefined;
-      if (mode === "delete") {
-        expiryRedirects.push({ effect, targetAction: "delete" });
-        return false;
-      }
-      return true;
+      if (foundry.utils.getProperty(update, "duration.expired") !== true) return true;
+      const refresh = expiringIn(effect);
+      if (!refresh) return true;
+      if (!options["expiry-reason"]) options["expiry-reason"] = expiryReason(refresh.event, effect);
+      const action = modeAction(effect);
+      if (!action) return true;
+      refresh.redirects.set(effect, action);
+      return false;
     });
 
     daeReadyActions();

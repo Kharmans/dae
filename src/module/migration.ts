@@ -1,6 +1,6 @@
 import { MODULE_ID } from "../dae.js";
 import { deprecatedKeyPatterns } from "./dae.js";
-import { getDeprecatedSpecialDurMap } from "./specialDurations.js";
+import { getDeprecatedSpecialDurMap, migratedSpecialDurations } from "./specialDurations.js";
 import { rewriteAtlChanges, coerceOverrideOnlyChangeTypes } from "./atlMigration.js";
 
 interface MigrationResult {
@@ -51,28 +51,15 @@ export function migrateEffectData(
    * explicitly is never overwritten.
    */
   const specialDurs: string[] = effectData.flags?.dae?.specialDuration ?? [];
-  const deprecatedSpecialDurMap = getDeprecatedSpecialDurMap();
-  const deprecatedDurs = specialDurs.filter(sd => sd in deprecatedSpecialDurMap);
-  if (deprecatedDurs.length > 0) {
-    /*
-     * "Already set" cannot mean "non-empty": core's schema initialises duration.expiry to
-     * "turnStart" for any effect with a numeric duration.value, which is exactly the population
-     * being migrated. Only an expiry that differs from that default counts as authored.
-     */
-    const defaultExpiry = typeof effectData.duration?.value === "number" ? "turnStart" : null;
-    const authoredExpiry = !!effectData.duration?.expiry && effectData.duration.expiry !== defaultExpiry;
-    const remaining = [...specialDurs];
-    if (!authoredExpiry) {
-      const first = deprecatedDurs[0];
-      update["duration.expiry"] = deprecatedSpecialDurMap[first];
-      remaining.splice(remaining.indexOf(first), 1);
-    }
-    if (remaining.length !== specialDurs.length) update["flags.dae.specialDuration"] = remaining;
-    const stranded = remaining.filter(sd => sd in deprecatedSpecialDurMap);
-    if (stranded.length > 0) {
-      console.warn(`dae | migration | "${effectData.name}" keeps deprecated special duration(s) `
-        + `${stranded.join(", ")}: duration.expiry holds only one value. Split the effect to migrate them.`);
-    }
+  const migrated = migratedSpecialDurations(effectData.duration, specialDurs);
+  if (migrated) {
+    update["duration.expiry"] = migrated.expiry;
+    update["flags.dae.specialDuration"] = migrated.remaining;
+  }
+  const stranded = (migrated?.remaining ?? specialDurs).filter(sd => sd in getDeprecatedSpecialDurMap() && sd !== "combatEnd");
+  if (stranded.length > 0) {
+    console.warn(`dae | migration | "${effectData.name}" keeps deprecated special duration(s) `
+      + `${stranded.join(", ")}: duration.expiry holds only one value. Split the effect to migrate them.`);
   }
 
   // 3-5. Change key migrations

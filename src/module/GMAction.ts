@@ -372,10 +372,13 @@ export async function applyActiveEffects({
           }
           foundry.utils.setProperty(aeData, "flags.dae.itemMacro", macroCommand)
         }
-        // If effect has no duration, inherit from activity/item duration
+        // Inherit the activity/item duration only if the effect has neither a duration nor an expiry event (as dnd5e 6)
         // @ts-expect-error v14 duration.value
         const aeValue = aeData.duration.value;
-        if (!aeValue && effectDuration?.value && effectDuration?.units) {
+        // Elapsed Time ends the effect when its duration has passed: no event of its own
+        // @ts-expect-error v14 duration.expiry not in fvtt-types yet
+        const aeExpiry = aeData.duration.expiry === "updateWorldTime" ? null : aeData.duration.expiry;
+        if (!Number.isFinite(aeValue) && !aeExpiry && effectDuration?.value && effectDuration?.units) {
           // Map dnd5e singular units to Foundry v14 plural units
           const mappedUnits = dnd5eToFoundryUnits[effectDuration.units] ?? effectDuration.units;
           // @ts-expect-error v14 duration.value

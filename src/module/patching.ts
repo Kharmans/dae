@@ -53,8 +53,33 @@ export function registerActiveEffectPatches(): void {
   // 2. "updateWorldTime" expiry: expire whenever duration runs out, regardless of event
   // 3. Turn Start/End whose combatant has left the combat: core waits for that combatant's turn, which
   //    never comes, so expire at any turn edge after the creation round, as dnd5e does for source/target.
+  /*
+   * A new round advances world time with the combat update, and that refresh computes durations for the new round
+   * before core fires the old round's turnEnd/roundEnd, which don't recompute: a 1-round effect ending at Round End, or
+   * at a Turn End on the round's last turn, ended a round early (core's elapsed time counts the new round's seconds).
+   * A duration in rounds started in this combat still has time left while rounds remain at the round that is ending.
+   * Turns have no time equivalent, so they are counted right.
+   */
+  const remainsAtEnd = (effect: ActiveEffect, event: string, context: { combat?: Combat.Implementation, round?: number } | undefined): boolean => {
+    if (event !== "turnEnd" && event !== "roundEnd") return false;
+    // @ts-expect-error v14 duration.value/units not in fvtt-types yet
+    const { value, units } = effect._source.duration ?? {};
+    // @ts-expect-error v14 start schema not in fvtt-types yet
+    const start = effect.start;
+    const combat = context?.combat;
+    if (units !== "rounds" || !Number.isFinite(value) || context?.round == null || !combat || start?.round == null) return false;
+    if (start.combat !== combat && start.combat?.id !== combat.id) return false;
+    // core's extra time: world time since the effect started, in rounds, beyond the rounds this combat has counted (time
+    // advanced by hand). combat.round is already the new round, so the new round's seconds are covered and count nothing.
+    const roundTime = CONFIG.time.roundTime;
+    const extra = roundTime && start.time != null
+      ? Math.max(0, Math.floor((game.time.worldTime - start.time) / roundTime) - (combat.round - 1))
+      : 0;
+    return value - (context.round - start.round) - extra > 0;
+  };
   libWrapper.register(MODULE_ID, "CONFIG.ActiveEffect.documentClass.prototype.isExpiryEvent",
     function isExpiryEventWrapper(this: ActiveEffect, wrapped: Function, event: string, context: any) {
+      if (remainsAtEnd(this, event, context)) return false;
       // @ts-expect-error v14 duration.expiry not in fvtt-types yet
       const expiry: string | undefined = this.duration.expiry;
       if (daeManagesTurnExpiry && expiry && PSEUDO_EXPIRIES.has(expiry)) {
