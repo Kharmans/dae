@@ -35,19 +35,14 @@ export async function expireEffect(effect, options = {}) {
     }
   } else {
     if (game.system?.id === "dnd5e") {
-      // Don't expire effects whose concentration origin is still active
+      // An effect whose concentration has ended is left to the concentration's removal
       const origin: any = fromUuidSync(effect.origin);
       //@ts-expect-error
       if (origin instanceof ActiveEffect && origin.statuses?.has(CONFIG.specialStatusEffects.CONCENTRATING)) {
         const concentrationDuration = origin.updateDuration();
-        const hasRemaining =
-          // @ts-expect-error v14 duration.units
-          (effect.duration.units === concentrationDuration.units && concentrationDuration.remaining > 0) ||
-          // @ts-expect-error v14 duration.units
-          (["rounds", "turns"].includes(effect.duration.units) && concentrationDuration.units === "seconds" && concentrationDuration.remaining >= CONFIG.time.roundTime) ||
-          // @ts-expect-error v14 duration.units
-          (effect.duration.units === "seconds" && ["rounds", "turns"].includes(concentrationDuration.units) && concentrationDuration.remaining >= 1);
-        if (!hasRemaining) return; // concentration expired, let concentration removal handle dependents
+        // concentration expired: let its removal handle dependents
+        // @ts-expect-error v14 duration.secondsRemaining
+        if (!((concentrationDuration.secondsRemaining ?? concentrationDuration.remaining) > 0)) return;
       }
     }
     // Respect per-effect expiry mode, falling back to global setting
@@ -171,8 +166,8 @@ export function hasDuration(effect) {
 export function hasExpiry(effect) {
   const duration = effect?.duration ?? effect;
   const start = effect?.start;
-  return duration
-    && (duration.value != null && duration.units && duration.units !== "none")
+  return !!duration
+    && (Number.isFinite(duration.value) || !!duration.expiry)
     && (start?.round != null || start?.turn != null || start?.time != null);
 }
 
@@ -224,12 +219,16 @@ export function processMacroRepeats(combat, update, options) {
 }
 
 // ---- Expire round effects when combat ends ----
-async function expireRoundEffectsOnEnd(actor) {
+async function expireRoundEffectsOnEnd(actor, combat) {
   if (!expireRoundEffectsOnCombatEnd) return;
 
   const effectsToExpire: { effect: ActiveEffect, reason: string }[] = [];
   const expiringUuids = new Set<string>();
   for (let effect of getActorEffects(actor, { includeEnchantments: true })) {
+    // an expired effect is deleted as its combatant leaves (_onExit); an effect started in another combat stays
+    if (effect.duration?.expired) continue;
+    const started = effect.start?.combat;
+    if (started && (started.id ?? started) !== combat.id) continue;
     const expiry = effect.duration?.expiry;
     const turnExpiries = ["roundStart", "roundEnd", "turnStart", "turnEnd"];
     // A duration in time units outlasts the combat (dnd5e gives these Turn Start in combat). Read the source:
@@ -264,32 +263,40 @@ export function getDeprecatedSpecialDurMap(): Record<string, string> {
   };
 }
 
-function migrateDeprecatedSpecialDurations(effectData: any): void {
-  const update: Record<string, any> = {};
-
-  // Migrate old special duration flags to expiry events
-  const deprecatedSpecialDurMap = getDeprecatedSpecialDurMap();
-  let specialDurs: string[] = effectData.flags?.dae?.specialDuration;
-  if (specialDurs && Array.isArray(specialDurs)) {
-    const deprecated = specialDurs.filter(sd => sd in deprecatedSpecialDurMap);
-    if (deprecated.length > 0) {
-      // Only one can become duration.expiry; the rest stay on the flag rather than being dropped.
-      // duration.expiry defaults to "turnStart" for any numeric duration (core schema), so only an
-      // expiry differing from that default counts as authored — see migrateEffectData.
-      const defaultExpiry = typeof effectData.duration?.value === "number" ? "turnStart" : null;
-      const authoredExpiry = !!effectData.duration?.expiry && effectData.duration.expiry !== defaultExpiry;
-      const remaining = [...specialDurs];
-      if (!authoredExpiry) {
-        const first = deprecated[0];
-        update["duration.expiry"] = deprecatedSpecialDurMap[first];
-        remaining.splice(remaining.indexOf(first), 1);
-        if (debugEnabled > 0) warn("Migrating deprecated special duration on effect creation", effectData.name, first, "→", deprecatedSpecialDurMap[first]);
-      }
-      if (remaining.length !== specialDurs.length) update["flags.dae.specialDuration"] = remaining;
+/**
+ * The expiry event deprecated special durations become, and what stays on the flag. Only one can take
+ * duration.expiry. An authored expiry is kept (core's schema gives any numeric duration "turnStart", so only an expiry
+ * differing from that counts), and entries it already holds are dropped. combatEnd yields the slot, as it still works
+ * as a special duration and source/target entries left on the flag do nothing; on an effect with a duration it never
+ * takes it (as its expiry event the effect would end only at the first combat end after the duration).
+ * `duration` is source data.
+ */
+export function migratedSpecialDurations(duration: { value?: number | null, expiry?: string | null } | undefined, specialDurs: string[]): { expiry: string, remaining: string[] } | null {
+  const map = getDeprecatedSpecialDurMap();
+  const hasValue = typeof duration?.value === "number";
+  const authored: string | null = duration?.expiry && duration.expiry !== (hasValue ? "turnStart" : null) ? duration.expiry : null;
+  // (combatEnd on an effect with a duration is not the same as that expiry: it stays)
+  let remaining = specialDurs.filter(sd => !(authored && map[sd] === authored && !(hasValue && sd === "combatEnd")));
+  let expiry = authored;
+  if (!authored) {
+    const first = remaining.find(sd => sd in map && sd !== "combatEnd") ?? (hasValue ? undefined : remaining.find(sd => sd === "combatEnd"));
+    if (first) {
+      expiry = map[first];
+      remaining = remaining.filter(sd => sd !== first);
     }
   }
+  if (!expiry || (expiry === authored && remaining.length === specialDurs.length)) return null;
+  return { expiry, remaining };
+}
 
-  if (Object.keys(update).length > 0) effectData.updateSource(update);
+function migrateDeprecatedSpecialDurations(effectData: any): void {
+  const specialDurs = effectData.flags?.dae?.specialDuration;
+  if (!Array.isArray(specialDurs)) return;
+  // the pending document is prepared: an unset duration reads Infinity
+  const migrated = migratedSpecialDurations(effectData._source?.duration ?? effectData.duration, specialDurs);
+  if (!migrated) return;
+  if (debugEnabled > 0) warn("Migrating deprecated special duration on effect creation", effectData.name, "→", migrated.expiry);
+  effectData.updateSource({ "duration.expiry": migrated.expiry, "flags.dae.specialDuration": migrated.remaining });
 }
 
 // ---- Combat End expiry (special duration) ----
@@ -309,7 +316,7 @@ export function preDeleteCombatHook(combat: Combat.Implementation, options: Comb
       return !start || start === combat || start === combat.id || start?.id === combat.id;
     };
     const effects = getActorEffects(actor, { includeEnchantments: true })
-      .filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd") && !systemRemoves(ef));
+      .filter(ef => ef.flags?.dae?.specialDuration?.includes("combatEnd") && !ef.duration?.expired && !systemRemoves(ef));
     actionQueue.add(expireEffects, actor, effects, { "expiry-reason": "combat-end" });
   }
 }
@@ -358,47 +365,16 @@ export function setupSpecialDurationHooks() {
     }
   });
 
-  Hooks.on("preUpdateActiveEffect", (effect, update, options, user) => {
-    if (!isTransferEffect(effect)) return true;
-    const durationToUse = effect.updateDuration();
-    if (update.duration) {
-      // @ts-expect-error v14 duration.value
-      if (update.duration.value !== undefined) durationToUse.value = update.duration.value;
-      // @ts-expect-error v14 duration.units
-      if (update.duration.units !== undefined) durationToUse.units = update.duration.units;
-    }
-    if (!hasExpiry(effect)) return true;
-    if (debugEnabled > 1) debug("Update active effect", effect.uuid, update, effect.updateDuration(), isTransferEffect(effect));
-    //@ts-expect-error v14 duration.expired not in fvtt-types yet
-    const isExpired = effect.duration?.expired || effect.start?.time == null;
-    if (!isExpired) return true;
-    /*
-     * No unexpire branch: re-enabling must not stamp a `start` on a transfer effect.
-     *
-     * A transfer effect lives on the item, so it is the definition rather than an applied copy. Giving
-     * it a start makes it `isExpiryTrackable`, and core then expires it — deleting the definition off
-     * the item (dnd5e's `_onUpdate` resolves `this.parent` to the Item, so its combat guard can never
-     * hold). dnd5e's model is that a durationed effect is applied from an activity as a non-transfer
-     * copy on the actor, which is safe to delete; transfer effects stay passive.
-     */
-    if (update.disabled ?? effect.disabled === true) {
-      if (debugEnabled > 0) warn("expiring effect", effect.uuid, effect.updateDuration(), isTransferEffect(effect));
-      foundry.utils.mergeObject(update, getExpireTransferEffectUpdate(effect), { inplace: true });
-    }
-    if (debugEnabled > 0) warn("update effect", effect.uuid, update, effect.updateDuration(), isTransferEffect(effect));
-    return true;
-  });
-
   Hooks.on("deleteCombatant", async (combatant) => {
     if (!isResponsibleGM() || !combatant.actor) return;
-    await expireRoundEffectsOnEnd(combatant.actor);
+    await expireRoundEffectsOnEnd(combatant.actor, combatant.combat);
   });
 
   Hooks.on("deleteCombat", async (combat) => {
     if (!isResponsibleGM()) return;
     for (let combatant of combat.combatants) {
       if (!combatant.actor) continue;
-      await expireRoundEffectsOnEnd(combatant.actor);
+      await expireRoundEffectsOnEnd(combatant.actor, combat);
     }
   });
 }

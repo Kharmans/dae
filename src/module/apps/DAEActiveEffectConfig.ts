@@ -13,6 +13,7 @@ import { InputAutocomplete, checkChangeValue, referenceData, takesFormula, value
 import { addConditionBuilderButtons } from "./ConditionBuilder.js";
 import { cannotRollDice, wrapBareDice } from "../lib/diceValues.js";
 import { isMaxHpKey } from "../lib/currentHp.js";
+import { migrateEffectData } from "../migration.js";
 
 export { BooleanFormulaField } from "./BooleanFormulaField.js";
 
@@ -532,41 +533,15 @@ export class DAEActiveEffectConfig extends SheetBase {
     this.daeFieldBrowser?.hideBrowser();
   }
 
+  /** The world migration for this one effect: deprecated special durations, showIcon, change keys. */
   async #migrateDeprecatedData(document: ActiveEffect) {
-    // Migrate deprecated special durations to v14 duration.expiry. dnd5e 6.0+ understands the same
-    // source/target expiry names DAE uses (< 6.0), so one map serves both versions.
-    const deprecatedSpecialDurMap: Record<string, string> = {
-      "turnStart": "targetStart",
-      "turnEnd": "targetEnd",
-      "turnStartSource": "sourceStart",
-      "turnEndSource": "sourceEnd",
-      "combatEnd": "combatEnd"
-    };
-    const specialDurs: string[] = document.flags?.dae?.specialDuration ?? [];
-    const deprecatedDurs = specialDurs.filter(sd => sd in deprecatedSpecialDurMap);
-    const updateData: Record<string, any> = {};
-
-    if (deprecatedDurs.length > 0) {
-      const expiry = deprecatedSpecialDurMap[deprecatedDurs[0]];
-      const remaining = specialDurs.filter(sd => !(sd in deprecatedSpecialDurMap));
-      ui.notifications?.warn(`DAE | Effect "${document.name}": special duration "${deprecatedDurs.join(", ")}" is deprecated. Migrating to expiry: ${expiry}.`);
-      updateData["flags.dae.specialDuration"] = remaining;
-      updateData["duration.expiry"] = expiry;
-    }
-
-    // Migrate deprecated flags.dae.showIcon to native showIcon field
-    if (document.flags?.dae?.showIcon) {
-      foundry.utils.logCompatibilityWarning(
-        `dae | Effect "${document.name}": flags.dae.showIcon is deprecated, auto-migrated to ActiveEffect.showIcon.`,
-        { once: true, stack: false }
-      );
-      updateData["showIcon"] = 2;
-      updateData["flags.dae.showIcon"] = new foundry.data.operators.ForcedDeletion();
-    }
-
-    if (Object.keys(updateData).length > 0) {
-      await document.update(updateData);
-    }
+    // @ts-expect-error compendium not in fvtt-types
+    if (!document.isOwner || document.compendium?.locked) return;
+    // source data: a prepared duration reads Infinity where none is set
+    const updateData = migrateEffectData(document.toObject());
+    if (!updateData) return;
+    if (updateData["duration.expiry"]) ui.notifications?.warn(`DAE | Effect "${document.name}": a deprecated special duration was migrated to expiry: ${updateData["duration.expiry"]}.`);
+    await document.update(updateData);
   }
 }
 

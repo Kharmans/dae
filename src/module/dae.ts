@@ -8,7 +8,7 @@ import { DIMEditor } from "./apps/DIMEditor.js";
 import { isEnchantment, registerFieldEditor } from "./apps/DAEActiveEffectConfig.js";
 import { AnyMutableObject, AnyObject, InexactPartial } from "fvtt-types/utils";
 import { TokenOrDocument } from "../globals.js";
-import { setupSpecialDurationHooks, fetchDurationParams } from "./specialDurations.js";
+import { setupSpecialDurationHooks, getDeprecatedSpecialDurMap, fetchDurationParams } from "./specialDurations.js";
 import { resolveItemFromEffect, resolveMacro, createFunctionMacro, getItemMacroCommand as _getItemMacroCommand } from "./lib/macroResolution.js";
 import { registerChangeHandler, getChangeHandler, isRegisteredMacroKey, getChangeDestination, getAllMacroEffectKeys, type ChangeHandlerContext } from "./lib/changeHandlerRegistry.js";
 import { filterEffectsForTargeting } from "./lib/effectFiltering.js";
@@ -202,7 +202,7 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
   debug("daeApplyActiveEffects: phase", phase, this.name);
 
   // Deprecation checks (before core filters effects)
-  const deprecatedSpecialDurs = ["turnStart", "turnEnd", "turnStartSource", "turnEndSource", "combatEnd"];
+  const deprecatedSpecialDurs = Object.keys(getDeprecatedSpecialDurMap());
   for (let effect of this.allApplicableEffects()) {
     if (effect.flags?.dae?.showIcon) {
       foundry.utils.logCompatibilityWarning(
@@ -210,12 +210,13 @@ export function daeApplyActiveEffects(this: Actor.Implementation, wrapped: Funct
         { once: true, stack: false }
       );
     }
-    // combatEnd has to stay a special duration while another event holds the effect's one expiry slot.
+    // combatEnd stays a special duration while another event holds the effect's one expiry slot, or it has a duration.
     // @ts-expect-error v14 duration.expiry not in fvtt-types yet
     const expiry = effect._source.duration?.expiry;
-    // @ts-expect-error v14 duration.expiry not in fvtt-types yet
-    const slotTaken = !!expiry && expiry !== "combatEnd" && !(expiry === "turnStart" && typeof effect._source.duration?.value === "number");
-    const deprecated = (effect.flags?.dae?.specialDuration ?? []).filter(sd => deprecatedSpecialDurs.includes(sd) && !(sd === "combatEnd" && slotTaken));
+    // @ts-expect-error v14 duration.value not in fvtt-types yet
+    const hasValue = typeof effect._source.duration?.value === "number";
+    const slotTaken = !!expiry && expiry !== "combatEnd" && !(expiry === "turnStart" && hasValue);
+    const deprecated = (effect.flags?.dae?.specialDuration ?? []).filter(sd => deprecatedSpecialDurs.includes(sd) && !(sd === "combatEnd" && (slotTaken || hasValue)));
     if (deprecated.length) {
       foundry.utils.logCompatibilityWarning(
         `dae | Effect "${effect.name}" on actor "${this.name}" uses deprecated dae special duration (${deprecated.join(", ")}). Edit the effect to migrate to native duration.expiry.`,

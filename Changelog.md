@@ -1,7 +1,22 @@
-### 14.6.3 (unreleased)
+### 14.6.3
 
 **Applied and item effects**
 * Fixed: an effect applied from a temporary item (a CAT/CPR synthetic roll, a used-up consumable) lost its macro changes (`macro.actorUpdate`, `macro.itemMacro`, …).
+* Fixed: an applied effect with an expiry event but no duration took the activity's duration (a Turn End effect from a 1-minute spell lasted a minute); it now inherits only when it has neither.
+
+**Effect expiry**
+* Fixed: an effect whose own *Expiry Mode* is Suppress was flagged expired under *Mark Expired*, so dnd5e deleted it once out of combat; it is disabled instead.
+* Fixed: an effect's own *Expiry Mode* was missed or misapplied when expiry refreshes overlapped (a combat turn also advances world time), and a delete or update made during a refresh could be taken for an expiry; it now applies to just the effects that refresh expires, and also under *Do Nothing*; a dependent ending with its concentration is deleted, not suppressed.
+* Fixed: a duration in rounds or turns ending at Round End, or at a Turn End on the round's last turn, ended a round (or turn) early: the new round's world time advance counted first. A 1-round Round End effect ends at the end of the round after its duration has run out.
+* Fixed: migrating deprecated special durations gave the expiry to combatEnd over a source/target entry, which was then left doing nothing; and kept an entry the expiry already held (combatEnd on an effect with a duration stays).
+* Fixed: opening an effect in the editor replaced its expiry event with a deprecated special duration (Target Turn Start + combatEnd became Combat End).
+* Fixed: a deprecated combatEnd became the expiry event of an effect with a duration, so 1 minute + combatEnd lasted until the combat ended; it stays a special duration.
+* Fixed: a special duration didn't end an effect under concentration when the two durations were in different units (rounds and minutes).
+* Fixed: `hasExpiry`/`hasDuration` were false for an effect with only an expiry event and true for one with no duration.
+* Fixed: *Expire Round Effects on Combat End* could delete an effect dnd5e was already deleting, and ended round effects from another combat when a combatant left.
+* Fixed: an applied effect storing Elapsed Time and no duration never ended; it takes the activity's duration.
+* Fixed: a source/target expiry without a duration lost its label ("Your Turn Start") in effect lists and tooltips.
+* Fixed: an applied effect with no duration or expiry event didn't take the activity's expiry event, as dnd5e does.
 
 ### 14.6.2
 

@@ -339,17 +339,26 @@ export async function applyActiveEffects({
           const macroCommand = getItemMacroCommand(getEffectItem(aeData)) ?? getItemMacroCommand(aeData.flags?.dae?.itemData);
           foundry.utils.setProperty(aeData, "flags.dae.itemMacro", macroCommand)
         }
-        // If effect has no duration, inherit from activity/item duration
+        // Inherit the activity/item duration only if the effect has neither a duration nor an expiry event (as dnd5e 6)
         // @ts-expect-error v14 duration.value
         const aeValue = aeData.duration.value;
-        if (!aeValue && effectDuration?.value && effectDuration?.units) {
-          // Map dnd5e singular units to Foundry v14 plural units
-          const mappedUnits = dnd5eToFoundryUnits[effectDuration.units] ?? effectDuration.units;
-          // @ts-expect-error v14 duration.value
-          aeData.duration.value = effectDuration.value;
-          // @ts-expect-error v14 duration.units
-          aeData.duration.units = mappedUnits;
-          debug("inherited duration from activity/item", effectDuration, "→", mappedUnits);
+        // the retired Elapsed Time is no expiry event (as in _preCreate)
+        // @ts-expect-error v14 duration.expiry not in fvtt-types yet
+        if (aeData.duration.expiry === "updateWorldTime") aeData.duration.expiry = null;
+        // @ts-expect-error v14 duration.expiry not in fvtt-types yet
+        if (!Number.isFinite(aeValue) && !aeData.duration.expiry) {
+          if (effectDuration?.value && effectDuration?.units) {
+            // Map dnd5e singular units to Foundry v14 plural units
+            const mappedUnits = dnd5eToFoundryUnits[effectDuration.units] ?? effectDuration.units;
+            // @ts-expect-error v14 duration.value
+            aeData.duration.value = effectDuration.value;
+            // @ts-expect-error v14 duration.units
+            aeData.duration.units = mappedUnits;
+            debug("inherited duration from activity/item", effectDuration, "→", mappedUnits);
+          }
+          // the activity's own expiry event (e.g. the target's next turn end), as dnd5e's getAppliedEffectChanges
+          // @ts-expect-error v14 duration.expiry not in fvtt-types yet
+          if (effectDuration?.expiry) aeData.duration.expiry = effectDuration.expiry;
         }
         warn("Apply active effects ", aeData, itemCardUuid);
         let source = await fromUuid(aeData.origin);
@@ -482,7 +491,7 @@ interface ApplyActiveEffectsInput {
   activityUuid?: string;
   targetList: string[];
   activeEffects: ActiveEffect.Source[];
-  effectDuration: { units: string, value: number };
+  effectDuration: { units: string, value: number, expiry?: string | null };
   itemCardUuid?: string | null;
   removeMatchLabel: boolean;
   toggleEffect: boolean;
