@@ -1,4 +1,4 @@
-### 13.0.31 (unreleased)
+### 13.0.31
 * Macro changes (`macro.itemMacro`, `macro.execute`, ...) on an effect applied from a temporary item, such as a potion used up by drinking it, are kept; they were dropped, so the effect's on/off macro never ran (backport of 14.0.19).
 * `macro.itemMacro` and `macro.activityMacro` changes are no longer lost when another change on the effect is evaluated as it is created.
 
