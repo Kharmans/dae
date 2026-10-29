@@ -655,7 +655,9 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
      */
     const value = pendingValue ?? valueField.value;
     pendingValue = undefined;
-    const options: Record<string, string> | undefined =
+    // A creature size changed by steps (Add/Subtract a number) takes a number, not a size.
+    const stepping = key === "system.traits.size" && ["add", "subtract"].includes(typeSelect?.value ?? "");
+    const options: Record<string, string> | undefined = stepping ? undefined :
       (typeof sheet?.getOptionsForSpec === "function"
         ? sheet.getOptionsForSpec({ key } as ActiveEffect.ChangeData)
         : undefined)
@@ -805,6 +807,7 @@ Hooks.on("renderEffectChangeConfig", async (app: foundry.applications.api.Applic
   checkDice();
   checkValue();
   keyInput.addEventListener("change", () => { refreshForKey(); checkDice(); checkValue(); });
+  typeSelect?.addEventListener("change", () => { refreshForKey(); checkDice(); checkValue(); });
   element.addEventListener("change", event => {
     if ((event.target as HTMLElement | null)?.getAttribute("name") !== "value") return;
     checkDice();

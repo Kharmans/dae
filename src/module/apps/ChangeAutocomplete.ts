@@ -1,4 +1,4 @@
-import { APPLICATION_REF_NAMES } from "../dae.js";
+import { APPLICATION_REF_NAMES, WORKFLOW_REF_NAMES } from "../dae.js";
 import { ValidSpec } from "../Systems/DAESystem.js";
 
 export interface Suggestions {
@@ -101,7 +101,7 @@ export function referenceData(effect: ActiveEffect.Implementation): Record<strin
   else if (parent instanceof Item) {
     data = parent.actor ? parent.getRollData() : { ...sampleActorData(), ...parent.getRollData() };
   } else data = sampleActorData();
-  const application = Object.fromEntries(APPLICATION_REF_NAMES.map(name => [name, 0]));
+  const application = Object.fromEntries([...APPLICATION_REF_NAMES, ...WORKFLOW_REF_NAMES].map(name => [name, 0]));
   return { ...application, ...data, stackCount: 0 };
 }
 

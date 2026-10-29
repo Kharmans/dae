@@ -337,7 +337,8 @@ export class DAESystemDND5E extends DAESystem {
         baseValues[`system.tools.${key}.bonuses.check`] = [new StringField(), ""];
       }
       for (let vehicleKey of Object.keys(this.systemConfig.vehicleTypes)) {
-        baseValues[`system.tools.${vehicleKey}.value`] = [new NumberField(), "override"];
+        // a proficiency multiplier: Upgrade grants proficiency without lowering expertise
+        baseValues[`system.tools.${vehicleKey}.value`] = [baseValues[`system.tools.${vehicleKey}.value`]?.[0] ?? new NumberField(), ""];
       }
     }
     // move all the character flags to specials so that the can be custom effects only
@@ -409,7 +410,8 @@ export class DAESystemDND5E extends DAESystem {
     for (const kind of ["bonuses", "multipliers"]) for (const stage of ["encumbered", "heavilyEncumbered", "maximum", "overall"]) {
       baseValues[`system.attributes.encumbrance.${kind}.${stage}`] ??= [new StringField(), ""];
     }
-    baseValues["system.traits.size"] = [new StringField(), "override"];
+    // dnd5e 6's ActorSizeField takes Add/Subtract (size steps, a number), Upgrade/Downgrade and Override (a size).
+    baseValues["system.traits.size"] = [baseValues["system.traits.size"]?.[0] ?? new StringField(), ""];
     if (this.systemConfig.languages) {
       baseValues["system.traits.languages.all"] = [new BooleanField(), ""];
     }

@@ -431,10 +431,11 @@ export async function applyActiveEffects({
             }
           } else {
             if (typeof change.value === "string") {
-              const targetContext = { "targetUuid": targetTokenDoc?.uuid, "target": targetToken?.id, "tokenUuid": targetTokenDoc?.uuid, "token": targetToken?.id };
-              for (let key of Object.keys(targetContext)) {
-                change.value = change.value.replace(`@${key}`, targetContext[key])
-              }
+              // The target's references, every occurrence. @token/@tokenUuid are the caster's (filled when the effect was
+              // applied); a path such as @target.x is not one of these.
+              const targetContext: Record<string, string | undefined> = { targetActorUuid: targetActor?.uuid, targetUuid: targetTokenDoc?.uuid, target: targetToken?.id };
+              change.value = change.value.replace(/@(targetActorUuid|targetUuid|target)(?![\w.])/g,
+                (match: string, key: string) => targetContext[key] ?? match);
             }
             // dnd5e 6 application: a `target` change takes this target's values, as dnd5e's forApplication does.
             if (change.replacement === "target" && !usesLegacyApplication(aeData)) {

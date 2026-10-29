@@ -72,8 +72,12 @@ declare module "fvtt-types/configuration" {
       dae?: {
         activity?: string;
         activityMacro?: string;
+        /** Flags for the conditions this effect's statuses cause, keyed by status id (DAE's Dependent Conditions) */
+        conditionFlags?: Record<string, object>;
         /** Values of the moment a dnd5e-mode effect was applied, supplied to its references when its target is prepared */
         applicationData?: { spellLevel?: number; scaling?: number; damage?: number; critical?: boolean; fumble?: boolean; itemCardUuid?: string | null; actorUuid?: string | null; activityId?: string; activity?: object };
+        /** The effect's workflow references were filled when DAE applied it (fillWorkflowRefs) */
+        workflowRefs?: boolean;
         autoCreated?: boolean;
         disableIncapacitated?: boolean;
         dontApply?: boolean;

@@ -1,3 +1,24 @@
+### 14.6.4 (unreleased)
+
+* Added: an effect can give the conditions its statuses cause values: `flags.dae.conditionFlags.<statusId>` holds flags that *Dependent Conditions* creates the condition with (merged from every active effect carrying that status) and keeps a condition it created in step with, e.g. `{ hiding: { "my-module": { dc: 17 } } }`.
+* Fixed: DAE's API (`DAE`, `game.modules.get("dae").api`) was set in `setup`, after Foundry prepares world documents, so a module calling it during that first preparation got `DAE is not defined` (midi's `flags.midi-qol.optional.*` `ItemMacro`); it is now set in `init`.
+* Fixed: the description of `system.attributes.concentration.roll.min` said maximum instead of minimum.
+
+**Effect application**
+* Changed: the compendium menu's three effect application entries and the item *Effect application* dialog are replaced by *DAE: Convert changes to Origin replacement* (Item and Actor packs, item and actor sheets): every change with no Replacement in an item's applied effects (not transfer effects or enchantments) is set to Origin, so it is filled from the caster as Legacy DAE did, after a confirmation. API `DAE.convertToOriginReplacement(document, { dryRun })`.
+
+**Applied and item effects**
+* Fixed: a `system.traits.size` change could only be Override; dnd5e 6's Add and Subtract (size steps, e.g. Add `1` turns Medium into Large) and Upgrade/Downgrade are now offered, with a number field for Add/Subtract and the size list otherwise.
+* Fixed: a vehicle tool's proficiency (`system.tools.air/land/space/water.value`) could only be Override; Add, Upgrade and the other types are offered, as for other tools.
+* Fixed: in dnd5e application, a change with no Replacement left DAE's workflow references for the target: `@itemUuid`, `@itemId` and `@utilityRollTotal` stayed as text, and `@tokenUuid`, `@token` and `@actorUuid` were the target's. They are now filled from the caster and the workflow when the effect is applied, as with Origin or Legacy; `##tokenUuid` and `##actorUuid` are the target's, as written.
+* Fixed: a change using `@targetUuid` more than once had only the first replaced, and `@targetActorUuid` (or any reference starting `@target`) was corrupted into the target's token id; every target reference is now replaced and `@targetActorUuid` is the target actor's uuid.
+* The effect editor no longer reports DAE's workflow references (`@itemUuid`, `@utilityRollTotal`, ...) as unknown.
+* Fixed: an effect added to or duplicated on an item had its `##` references turned into `@` at once, so they were later filled from the caster (Legacy, Origin) instead of left for the target; `##` is now converted only on an effect being applied (to an actor, or an applied enchantment).
+* Fixed: an item change (an enchantment, e.g. `system.description.value`) turned `@UUID[...]` links into `##UUID[...]`; the links are now kept.
+* Fixed: an effect expired under *Mark Expired*/Suppress (disabled, kept) gave its macro's "off" call `expiry-reason` `effect-disabled`; the call now gets the expiry's own reason (a special duration, `duration-expired:<event>`), as a deleted effect's does.
+* Fixed: creating an effect on a creature whose token isn't drawn (another level, a scene not being viewed) logged `_preCreateActiveEffect Cannot read properties of null` and skipped preparing the effect's change values; DAE now prepares them without a drawn token.
+* Fixed: an effect whose duration ran out with time passing outside combat reported `expiry-reason` `duration-expired:turnStart` (the Turn Start expiry dnd5e gives every finite duration); the reason is now `duration-expired:updateWorldTime`.
+
 ### 14.6.3
 
 **Applied and item effects**

@@ -39,6 +39,9 @@ Hooks.once('init', () => {
   registerSettings();
   daeInitActions();
   fetchParams();
+  // The API before world documents are prepared (between init and setup): other modules' preparation calls it.
+  (game.modules.get("dae") as any).api = API;
+  globalThis.DAE = API;
 
   // Preload Handlebars templates - async but no use awaiting
   preloadTemplates();
@@ -98,7 +101,8 @@ Hooks.once('ready', () => {
 
     function expiryReason(event: string, effect: ActiveEffect.Implementation): string {
       const expiry = (effect.duration as any)?.expiry as string | undefined;
-      return `duration-expired:${expiry ?? event}`;
+      // Time passing ends an effect whatever its expiry (dnd5e gives finite durations Turn Start), so report the event
+      return `duration-expired:${event === "updateWorldTime" ? event : (expiry ?? event)}`;
     }
 
     registry.refresh = async function(event, context) {
@@ -170,10 +174,7 @@ Hooks.once('setup', () => {
     debug("setup actions")
     daeSetupActions();
 
-    // Set API
-    const data: any = game.modules.get("dae");
-    data.api = API;
-    globalThis.DAE = API;
+    // The API is set in init: world documents are prepared before setup, and other modules call it from there.
 
     Hooks.on("macro-autocomplete.ready", ({ tree, objectToCompletions, mergeCompletions, rebuildSignatureMap }) => {
       if (!tree.DAE) {

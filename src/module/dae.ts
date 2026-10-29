@@ -326,7 +326,18 @@ function scheduleSuppressionChange(
  */
 /** The references an effect applied the dnd5e 6 way resolves from its application rather than from its target. */
 export const APPLICATION_REF_NAMES = ["itemCardUuid", "itemLevel", "item", "activity", "spellLevel", "scaling", "damage", "critical", "fumble", "actorUuid"];
-const APPLICATION_REFS = new RegExp(`@(${APPLICATION_REF_NAMES.join("|")})\\b((?:\\.[\\w-]+)*)`, "g");
+const refsPattern = (names: string[]) => new RegExp(`@(${names.join("|")})\\b((?:\\.[\\w-]+)*)`, "g");
+const APPLICATION_REFS = refsPattern(APPLICATION_REF_NAMES);
+// An effect whose workflow references were filled when it was applied (fillWorkflowRefs) leaves @actorUuid, filled
+// then from the caster, alone at preparation: a restored ##actorUuid is the target's.
+const APPLICATION_REFS_AFTER_WORKFLOW = refsPattern(APPLICATION_REF_NAMES.filter(name => name !== "actorUuid"));
+/**
+ * The workflow facts a dnd5e-mode effect's changes take when DAE applies it, whatever their Replacement: they are
+ * values of that application (the caster, its token, the item, midi's rolls), not data the target could supply.
+ * `##` references are not touched, so `##tokenUuid` is still the target's.
+ */
+export const WORKFLOW_REF_NAMES = ["itemUuid", "itemId", "actorUuid", "tokenUuid", "token", "utilityRollTotal", "damageTotal", "damageApplied", "otherDamage", "bonusDamage"];
+const WORKFLOW_REFS = refsPattern(WORKFLOW_REF_NAMES);
 
 const reportedFieldMappings = new Set<string>();
 
@@ -343,8 +354,8 @@ export function mappedChange(key: string): { key: string, value?: string, type?:
 }
 
 /** Replace application-time references in `value` from `data` (see getReplacementData in DAEdnd5e), leaving the rest. */
-export function fillApplicationRefs(value: string, data: AnyObject): string {
-  return value.replace(APPLICATION_REFS, (match, root: string, path: string) => {
+export function fillApplicationRefs(value: string, data: AnyObject, pattern: RegExp = APPLICATION_REFS): string {
+  return value.replace(pattern, (match, root: string, path: string) => {
     const found = foundry.utils.getProperty(data, root + path);
     // An object only has a formula value if it says so (dnd5e's Scaling does); leave `@item` itself alone.
     const plainObject = typeof found === "object" && found?.toString === Object.prototype.toString;
@@ -363,13 +374,9 @@ export function daeApplyChange(
     return wrapped(targetDoc, change, options);
   }
 
-  // --- Item changes: UUID/uuid unmapping + actor rollData for @-expression resolution ---
+  // --- Item changes: actor rollData for @-expression resolution (core leaves @UUID[...] links alone) ---
   if (targetDoc instanceof CONFIG.Item.documentClass) {
     const item = targetDoc as Item.Implementation;
-    if (typeof change.value === "string") {
-      // Prevent Foundry's roll data replacement from treating @UUID/@uuid as data paths
-      change.value = change.value.replaceAll("@UUID", "##UUID").replaceAll("@uuid", "##uuid");
-    }
     // rollData so item enchantment effects can use @abilities.str.mod / @mod.
     if (item.actor && !options.replacementData) {
       const rollData = item.actor.getRollData() as AnyMutableObject;
@@ -403,7 +410,8 @@ export function daeApplyChange(
   // Filled here rather than left to replacement data, so formula fields - which dnd5e evaluates later from the
   // actor's own roll data, where @item and @spellLevel don't exist - get them too. Target data is left for dnd5e.
   if (typeof change.value === "string" && change.effect?.flags?.dae?.applicationData && options.replacementData) {
-    change.value = fillApplicationRefs(change.value, options.replacementData);
+    const pattern = change.effect.flags.dae.workflowRefs ? APPLICATION_REFS_AFTER_WORKFLOW : APPLICATION_REFS;
+    change.value = fillApplicationRefs(change.value, options.replacementData, pattern);
   }
 
   // --- bonusSelector expansion ---
@@ -965,9 +973,8 @@ export function updateActiveEffectHook(
       }
       if (changesToDisable.length > 0) {
         const disableContext: any = { ...options };
-        if (becameDisabled) disableContext["expiry-reason"] = "effect-disabled";
-        else if (becameSuppressed) disableContext["expiry-reason"] = "effect-suppressed";
-        else disableContext["expiry-reason"] = "change-deleted";
+        // an expiry that disabled or suppressed the effect keeps its own reason, as a deletion does
+        disableContext["expiry-reason"] ??= becameDisabled ? "effect-disabled" : becameSuppressed ? "effect-suppressed" : "change-deleted";
         await processEffectChanges("off", actor, tokens, effect, undefined, changesToDisable, disableContext);
       }
     }
@@ -1093,7 +1100,8 @@ export function deleteActiveEffectHook(effect: ActiveEffect.Implementation, opti
 }
 
 export function getSelfTarget(actor: Actor.Implementation | null): Token | TokenDocument {
-  if (actor?.token) return actor.token.object!;
+  // An undrawn token (another level, a scene not viewed) has no placeable: its document then.
+  if (actor?.token) return actor.token.object ?? actor.token;
   const speaker = ChatMessage.getSpeaker({ actor });
   if (speaker.token) {
     const token = canvas?.tokens?.get(speaker.token);
@@ -1303,6 +1311,13 @@ export async function daeMacro(action: string, actor: Actor.Implementation, effe
  * which never run DAE's own substitution. Must run *after* any replacement pass, or the restored
  * reference would be consumed by it.
  */
+/** Whether an effect being created is being applied (to an actor, or an enchantment applied to an item) rather than authored. */
+function isBeingApplied(effect: ActiveEffect.Implementation): boolean {
+  if (effect.parent instanceof CONFIG.Actor.documentClass) return true;
+  // @ts-expect-error no dnd5e-types
+  return !!effect.isAppliedEnchantment;
+}
+
 export function restoreDeferredRefs(value: string): string {
   return value.replaceAll("##", "@");
 }
@@ -1553,6 +1568,44 @@ export async function setApplicationMode(target: ApplicationTarget, mode: Applic
   return updateDocument(target);
 }
 
+type OriginTarget = Item.Implementation | Actor.Implementation | foundry.documents.collections.CompendiumCollection.Any;
+
+/**
+ * Migration to dnd5e 6's per-change replacement: every change with no Replacement in an applied effect gets Origin,
+ * so its `@` references are filled from the caster when the effect is applied, as Legacy DAE did (`##` still defers
+ * to the target). Transfer effects are never applied, and an enchantment's references were always resolved live on
+ * the enchanted item, so neither is changed; nor are an actor's own (already applied) effects. Converts an item, the
+ * items of an actor, or every document in an Item or Actor pack. `dryRun` only counts.
+ */
+export async function convertToOriginReplacement(target: OriginTarget, { dryRun = false } = {}): Promise<{ effects: number, changes: number }> {
+  const result = { effects: 0, changes: 0 };
+  const convertEffectsOf = async (item: Item.Implementation) => {
+    const updates: { _id: string, "system.changes": unknown[] }[] = [];
+    for (const effect of item.effects) {
+      if (effect.transfer || isEnchantment(effect)) continue;
+      const changes: { replacement?: string }[] = effect._source.system?.changes ?? [];
+      const blank = changes.filter(change => !change.replacement).length;
+      if (!blank) continue;
+      result.effects++;
+      result.changes += blank;
+      updates.push({ _id: effect.id!, "system.changes": changes.map(change => change.replacement ? change : { ...change, replacement: "origin" }) });
+    }
+    if (updates.length && !dryRun) await item.updateEmbeddedDocuments("ActiveEffect", updates);
+  };
+  const convertDocument = async (doc: Item.Implementation | Actor.Implementation) => {
+    if (doc instanceof Actor) for (const item of doc.items) await convertEffectsOf(item);
+    else await convertEffectsOf(doc);
+  };
+  if (target instanceof foundry.documents.collections.CompendiumCollection) {
+    if (!["Item", "Actor"].includes(target.documentName)) return result;
+    if (target.locked && !dryRun) throw new Error(`dae | convertToOriginReplacement: ${target.collection} is locked`);
+    for (const doc of await target.getDocuments()) await convertDocument(doc as Item.Implementation | Actor.Implementation);
+    return result;
+  }
+  await convertDocument(target);
+  return result;
+}
+
 /**
  * Record the effect an applied effect was copied from, as dnd5e 6 does (`EffectApplicationElement#_prepareEffectData`):
  * its own Apply button finds an effect it already applied this way, and DAE's stacking matches on it.
@@ -1598,6 +1651,26 @@ function fillItemRefsWithoutCard(data: ActiveEffect.Source, item: Item.Implement
   for (const change of data.system?.changes ?? []) {
     if (typeof change.value === "string" && /@item(Level)?\b/.test(change.value)) change.value = fillApplicationRefs(change.value, refs);
   }
+}
+
+/** Fill a dnd5e-mode effect's workflow references (WORKFLOW_REF_NAMES) from the caster and the workflow as it is applied. */
+function fillWorkflowRefs(data: ActiveEffect.Source, item: Item.Implementation, options: DoEffectsOptions) {
+  const actor = item.actor;
+  const token = actor ? (actor.token ?? getSelfTarget(actor)) : undefined;
+  const tokenDocument = token instanceof TokenDocument ? token : token?.document;
+  const context = (options.context ?? {}) as AnyObject;
+  const refs: AnyObject = {
+    itemUuid: item.uuid, itemId: item.id, actorUuid: actor?.uuid, tokenUuid: tokenDocument?.uuid, token: tokenDocument?.id,
+    utilityRollTotal: context.utilityRollTotal, damageTotal: context.damageTotal, damageApplied: context.damageApplied,
+    otherDamage: context.otherDamage, bonusDamage: context.bonusDamage
+  };
+  // @ts-expect-error v14 system.changes on toObject() data
+  for (const change of data.system?.changes ?? []) {
+    // A change DAE filled from the caster (Origin, macro arguments) has already had its ## restored to @: those are the target's.
+    if (evaluatedAtApplication(change, false)) continue;
+    if (typeof change.value === "string" && change.value.includes("@")) change.value = fillApplicationRefs(change.value, refs, WORKFLOW_REFS);
+  }
+  foundry.utils.setProperty(data, "flags.dae.workflowRefs", true);
 }
 
 export async function applyActivityEffects(
@@ -1664,6 +1737,7 @@ export async function applyActivityEffects(
     if (!legacy) {
       recordApplicationData(activeEffectData, activity.item, options);
       fillItemRefsWithoutCard(activeEffectData, activity.item, options);
+      fillWorkflowRefs(activeEffectData, activity.item, options);
     }
     daeSystemClass.addDAEMetaData(activeEffectData, activity.item, options)
     activityEffects[aeIndex] = activeEffectData;
@@ -1755,6 +1829,7 @@ export async function applyNonTransferEffects(
     if (!legacy) {
       recordApplicationData(activeEffectData, item, options);
       fillItemRefsWithoutCard(activeEffectData, item, options);
+      fillWorkflowRefs(activeEffectData, item, options);
     }
     daeSystemClass.addDAEMetaData(activeEffectData, item, options)
     appliedEffects[aeIndex] = activeEffectData;
@@ -2181,12 +2256,14 @@ export function daeInitActions() {
      * Deferred-reference backstop. DAE's own apply paths restore `##` before creating the effect;
      * effects the system applies itself (enchantments, chat-card apply, region behaviors) run
      * dnd5e's `forApplication` instead and never reach those. Restoring here catches every path and
-     * is necessarily after any replacement pass, since that runs before the create.
+     * is necessarily after any replacement pass, since that runs before the create. Only for an effect
+     * being applied (to an actor, or an applied enchantment): an effect added to or duplicated on an
+     * item is content, and its `##` must survive until it is applied.
      */
     {
       // @ts-expect-error v14 effect.system.changes
       const changes = this.system?.changes as DAEChangeData[] | undefined;
-      if (Array.isArray(changes) && changes.some(c => typeof c?.value === "string" && c.value.includes("##"))) {
+      if (isBeingApplied(this) && Array.isArray(changes) && changes.some(c => typeof c?.value === "string" && c.value.includes("##"))) {
         const restored = changes.map(c => typeof c?.value === "string" && c.value.includes("##")
           ? { ...c, value: restoreDeferredRefs(c.value) } : c);
         // @ts-expect-error v14 updateSource accepts system.changes
@@ -2414,6 +2491,10 @@ function queueStatusesReconciliation(effect: ActiveEffect.Implementation, userId
  * The dnd5e character sheet determines active conditions by checking for these
  * documents, not actor.statuses. So reconciliation must create/remove the
  * actual documents to keep the sheet in sync.
+ *
+ * An effect carrying a status can give the condition it causes values: `flags.dae.conditionFlags.<statusId>` holds
+ * flags, merged from every active effect carrying that status, that the condition is created with and that a
+ * condition DAE created is kept in step with (e.g. `{ hiding: { "my-module": { dc: 17 } } }`).
  */
 async function reconcileActorStatuses(actor: Actor.Implementation) {
   if (!dependentConditions) return;
@@ -2426,6 +2507,8 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
   let expectedStatuses = new Set<string>();
   const existingStaticStatusIds = new Set<string>(); // Track which static-_id status effect documents exist
   const autoCreatedStaticStatusIds = new Set<string>(); // Track which were created by DAE (vs manually by user)
+  const conditionFlags = new Map<string, object>(); // statusId -> flags the carrying effects give its condition
+  const autoCreatedConditions = new Map<string, ActiveEffect.Implementation>();
 
   for (let effect of actor.allApplicableEffects()) {
     if (effect.flags?.["dfreds-convenient-effects"]) continue;
@@ -2439,6 +2522,7 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
       existingStaticStatusIds.add(configStatusEffect.id);
       if (effect.flags?.dae?.autoCreated) {
         autoCreatedStaticStatusIds.add(configStatusEffect.id);
+        autoCreatedConditions.set(configStatusEffect.id, effect as ActiveEffect.Implementation);
       }
       // Only count sub-statuses from ACTIVE static-id effects as expected
       if (effect.active) {
@@ -2454,6 +2538,10 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
     if (!effect.active) continue;
 
     expectedStatuses = expectedStatuses.union(effect.statuses);
+    const given = effect.flags?.dae?.conditionFlags;
+    for (const status of effect.statuses) {
+      if (given?.[status]) conditionFlags.set(status, foundry.utils.mergeObject(conditionFlags.get(status) ?? {}, given[status], { inplace: false }));
+    }
   }
 
   // Filter out statuses we don't manage
@@ -2480,11 +2568,25 @@ async function reconcileActorStatuses(actor: Actor.Implementation) {
     if ((statusEffect.statuses as Array<string>)?.includes(status)) continue; // Self referential
 
     try {
-      await toggleActorStatusEffect(actor, status, { active: true, flags: { dae: { autoCreated: true } } });
+      const flags = foundry.utils.mergeObject(conditionFlags.get(status) ?? {}, { dae: { autoCreated: true } }, { inplace: false });
+      await toggleActorStatusEffect(actor, status, { active: true, flags });
     } catch (err) {
       if (!String(err).includes("does not exist") && !String(err).includes("already exists")) {
         console.warn("dae | Error adding status effect:", status, err);
       }
+    }
+  }
+
+  // Keep the conditions DAE created in step with the flags their carrying effects give them
+  for (const [status, condition] of autoCreatedConditions) {
+    const flags = conditionFlags.get(status);
+    if (!flags || !expectedStatuses.has(status)) continue;
+    const changed = foundry.utils.diffObject(condition.flags ?? {}, flags);
+    if (foundry.utils.isEmpty(changed)) continue;
+    try {
+      await condition.update({ flags: changed } as ActiveEffect.UpdateData);
+    } catch (err) {
+      if (!String(err).includes("does not exist")) console.warn("dae | Error updating status effect flags:", status, err);
     }
   }
 
@@ -2534,52 +2636,44 @@ Hooks.once("tidy5e-sheet.ready", api => {
 /** Whether dnd5e 6's per-change replacement exists, so an effect can be applied either way. */
 const hasDnd5eApplication = () => usesLegacyApplication({}) === false;
 
-/** Ask which way this item's effects should be applied, and mark them all. */
-async function chooseItemApplication(item: Item.Implementation) {
-  const choice = await foundry.applications.api.DialogV2.wait({
-    window: { title: i18nFormat("dae.LegacyApplication.DialogTitle", { name: item.name }) },
-    content: `<p>${i18n("dae.LegacyApplication.DialogContent")}</p>`,
-    buttons: [
-      { action: "default", label: i18n("dae.LegacyApplication.UseDefault"), default: true },
-      { action: "dnd5e", label: i18n("dae.LegacyApplication.UseDnd5e") },
-      { action: "legacy", label: i18n("dae.LegacyApplication.UseLegacy") }
-    ],
+/** Count, confirm and convert an item's, actor's or pack's changes to Origin replacement (convertToOriginReplacement). */
+async function confirmOriginReplacement(target: OriginTarget, name: string) {
+  if (target instanceof foundry.documents.collections.CompendiumCollection && target.locked)
+    return void ui.notifications?.warn(i18nFormat("dae.OriginReplacement.Locked", { name }));
+  const preview = await convertToOriginReplacement(target, { dryRun: true });
+  if (!preview.changes) return void ui.notifications?.info(i18nFormat("dae.OriginReplacement.Nothing", { name }));
+  const confirmed = await foundry.applications.api.DialogV2.confirm({
+    window: { title: i18nFormat("dae.OriginReplacement.Title", { name }) },
+    content: i18nFormat("dae.OriginReplacement.Content", { changes: preview.changes, effects: preview.effects }),
     rejectClose: false
   });
-  if (choice !== "default" && choice !== "dnd5e" && choice !== "legacy") return;
-  const count = await setApplicationMode(item, choice);
-  ui.notifications?.info(i18nFormat("dae.LegacyApplication.Updated", { count, name: item.name }));
+  if (!confirmed) return;
+  const done = await convertToOriginReplacement(target);
+  ui.notifications?.info(i18nFormat("dae.OriginReplacement.Done", { changes: done.changes, effects: done.effects, name }));
 }
 
-/** Compendium context menu: mark every effect in an Item or Actor pack. */
+/** Compendium context menu: convert an Item or Actor pack's changes to Origin replacement. */
 function appendCompendiumApplicationOptions(app, options) {
   if (!hasDnd5eApplication()) return;
   const packOf = (li: HTMLElement) => game.packs?.get(li.dataset.pack ?? "");
-  const visible = (li: HTMLElement) => !!game.user?.isGM && ["Item", "Actor"].includes(packOf(li)?.documentName ?? "");
-  const labels = { legacy: "dae.LegacyApplication.PackLegacy", dnd5e: "dae.LegacyApplication.PackDnd5e", default: "dae.LegacyApplication.PackDefault" };
-  for (const [mode, label] of Object.entries(labels) as [ApplicationMode | "default", string][]) {
-    options.push({
-      label,
-      icon: "fa-solid fa-wand-magic-sparkles",
-      visible,
-      onClick: async (event, li: HTMLElement) => {
-        const pack = packOf(li);
-        if (!pack) return;
-        if (pack.locked) return void ui.notifications?.warn(i18nFormat("dae.LegacyApplication.Locked", { name: pack.title }));
-        const count = await setApplicationMode(pack, mode);
-        ui.notifications?.info(i18nFormat("dae.LegacyApplication.Updated", { count, name: pack.title }));
-      }
-    });
-  }
+  options.push({
+    label: "dae.OriginReplacement.Menu",
+    icon: "fa-solid fa-wand-magic-sparkles",
+    visible: (li: HTMLElement) => !!game.user?.isGM && ["Item", "Actor"].includes(packOf(li)?.documentName ?? ""),
+    onClick: async (event, li: HTMLElement) => {
+      const pack = packOf(li);
+      if (pack) await confirmOriginReplacement(pack, pack.title);
+    }
+  });
 }
 
 function appendDocumentSheetHeaderControls(app, controls) {
-  if (hasDnd5eApplication() && app.document instanceof Item && app.document.isOwner) {
+  if (hasDnd5eApplication() && (app.document instanceof Item || app.document instanceof Actor) && app.document.isOwner) {
     controls.push({
-      label: i18n("dae.LegacyApplication.ItemControl"),
+      label: i18n("dae.OriginReplacement.Menu"),
       icon: "fa-solid fa-wand-magic-sparkles",
-      action: "dae-application",
-      onClick: () => chooseItemApplication(app.document)
+      action: "dae-origin-replacement",
+      onClick: () => confirmOriginReplacement(app.document, app.document.name)
     });
   }
   const daeTitle = i18n("dae.ActiveEffectName");

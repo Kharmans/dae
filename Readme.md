@@ -293,8 +293,8 @@ An effect whose changes rely on the caster's values with Replacement left at No 
 **Choosing the way.**
 - *Default effect application* (world setting): dnd5e or Legacy DAE.
 - *Effect application* (applied effect, DAE tab): World default, dnd5e or Legacy DAE; overrides the setting.
-- *DAE: Effect application* (item header menu) sets it for every effect on the item.
-- *DAE: Effects use legacy application*, *DAE: Effects use dnd5e application* and *DAE: Effects follow the world default application* (Item and Actor compendium context menu, GM only) set it for every effect in the pack. Unlock the pack first.
+
+**Migrating content to Origin.** *DAE: Convert changes to Origin replacement* (item and actor header menu; Item and Actor compendium context menu, GM only, unlock the pack first) sets Replacement **Origin** on every change with no Replacement in the effects an item applies, after a confirmation showing how many. Those changes are then filled from the caster when the effect is applied, as Legacy DAE did, in either mode; `##` references still resolve on the target. Changes with a Replacement already set, transfer effects (never applied) and enchantments (their references were always resolved on the enchanted item) are left alone, as are an actor's own effects. It cannot be undone.
 
 An effect already applied keeps the way it was applied.
 
@@ -727,6 +727,7 @@ The API is `DAE`, also available as `game.modules.get("dae").api`.
 - `DAE.doActivityEffects(activity, activate, targets, effectUuids, options)`: the same for an activity.
 - Pass the caster's concentration effect as `options.concentrationUuid`: the applied effects depend on it. An `options.origin` is recorded in the `system.origin` slot for its type.
 - `DAE.setApplicationMode(document, mode)`: set the effect application (`"default"`, `"dnd5e"` or `"legacy"`) for every effect in an item, actor, effect or pack; returns the count. `DAE.applicationModeOf(effectData)` and `DAE.usesLegacyApplication(effectData)` report it.
+- `DAE.convertToOriginReplacement(document, { dryRun })`: the Origin migration above for an item, an actor's items or an Item/Actor pack; returns `{ effects, changes }` (counted only with `dryRun: true`). Throws for a locked pack.
 
 **Effect source**
 - `DAE.getEffectSource(effect)`: `{ actorUuid, itemUuid, activityUuid, controllingEffectUuid, sourceEffectUuid, messageUuid }` (what macros get as `lastArg.source`).
