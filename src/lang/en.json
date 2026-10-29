@@ -699,7 +699,7 @@
     },
     "system.attributes.concentration.roll.min": {
       "name": "Concentration Min",
-      "description": "The maximum rollable on a d20 for Concentration saves."
+      "description": "The minimum rollable on a d20 for Concentration saves."
     },
     "system.attributes.concentration.roll.mode": {
       "name": "Concentration Roll Mode",

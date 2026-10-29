@@ -1,3 +1,16 @@
+### 14.0.20 (unreleased)
+
+* Fixed: DAE's API (`DAE`, `game.modules.get("dae").api`) was set in `setup`, after Foundry prepares world documents, so a module calling it during that first preparation got `DAE is not defined`; it is now set in `init`.
+* Fixed: the description of `system.attributes.concentration.roll.min` said maximum instead of minimum.
+
+**Applied and item effects**
+* Fixed: a change using `@targetUuid` more than once had only the first replaced, and `@targetActorUuid` (or any reference starting `@target`) was corrupted into the target's token id; every target reference is now replaced and `@targetActorUuid` is the target actor's uuid.
+* Fixed: an effect added to or duplicated on an item had its `##` references turned into `@` at once, so they were later filled from the caster (Legacy, Origin) instead of left for the target; `##` is now converted only on an effect being applied (to an actor, or an applied enchantment).
+* Fixed: an item change (an enchantment, e.g. `system.description.value`) turned `@UUID[...]` links into `##UUID[...]`; the links are now kept.
+* Fixed: an effect expired under *Mark Expired*/Suppress (disabled, kept) gave its macro's "off" call `expiry-reason` `effect-disabled`; the call now gets the expiry's own reason (a special duration, `duration-expired:<event>`), as a deleted effect's does.
+* Fixed: creating an effect on a creature whose token isn't drawn (another level, a scene not being viewed) logged `_preCreateActiveEffect Cannot read properties of null` and skipped preparing the effect's change values; DAE now prepares them without a drawn token.
+* Fixed: an effect whose duration ran out with time passing outside combat reported `expiry-reason` `duration-expired:turnStart` (the Turn Start expiry dnd5e gives every finite duration); the reason is now `duration-expired:updateWorldTime`.
+
 ### 14.0.19
 
 **Applied and item effects**

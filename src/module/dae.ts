@@ -402,13 +402,9 @@ export function daeApplyChange(
     return wrapped(targetDoc, change, options);
   }
 
-  // --- Item changes: UUID/uuid unmapping + actor rollData for @-expression resolution ---
+  // --- Item changes: actor rollData for @-expression resolution (core leaves @UUID[...] links alone) ---
   if (targetDoc instanceof CONFIG.Item.documentClass) {
     const item = targetDoc as Item.Implementation;
-    if (typeof change.value === "string") {
-      // Prevent Foundry's roll data replacement from treating @UUID/@uuid as data paths
-      change.value = change.value.replaceAll("@UUID", "##UUID").replaceAll("@uuid", "##uuid");
-    }
     // rollData so item enchantment effects can use @abilities.str.mod / @mod.
     if (item.actor && !options.replacementData) {
       const rollData = item.actor.getRollData() as AnyMutableObject;
@@ -1033,9 +1029,8 @@ export function updateActiveEffectHook(
       }
       if (changesToDisable.length > 0) {
         const disableContext: any = { ...options };
-        if (becameDisabled) disableContext["expiry-reason"] = "effect-disabled";
-        else if (becameSuppressed) disableContext["expiry-reason"] = "effect-suppressed";
-        else disableContext["expiry-reason"] = "change-deleted";
+        // an expiry that disabled or suppressed the effect keeps its own reason, as a deletion does
+        disableContext["expiry-reason"] ??= becameDisabled ? "effect-disabled" : becameSuppressed ? "effect-suppressed" : "change-deleted";
         await processEffectChanges("off", actor, tokens, effect, undefined, changesToDisable, disableContext);
       }
     }
@@ -1155,7 +1150,8 @@ export function deleteActiveEffectHook(effect: ActiveEffect.Implementation, opti
 }
 
 export function getSelfTarget(actor: Actor.Implementation | null): Token | TokenDocument {
-  if (actor?.token) return actor.token.object!;
+  // An undrawn token (another level, a scene not viewed) has no placeable: its document then.
+  if (actor?.token) return actor.token.object ?? actor.token;
   const speaker = ChatMessage.getSpeaker({ actor });
   if (speaker.token) {
     const token = canvas?.tokens?.get(speaker.token);
@@ -2000,12 +1996,17 @@ export function daeInitActions() {
     /*
      * Deferred-reference backstop. DAE's own apply path restores `##` before creating the effect;
      * effects that reach an actor another way (dnd5e's chat-card apply, enchantments, a dragged
-     * effect) never pass through it.
+     * effect) never pass through it. Only for an effect being applied (to an actor, or an applied
+     * enchantment): an effect added to or duplicated on an item is content, and its `##` must survive
+     * until it is applied.
      */
     {
       // @ts-expect-error v14 effect.system.changes
       const changes = this.system?.changes as DAEChangeData[] | undefined;
-      if (Array.isArray(changes) && changes.some(c => typeof c?.value === "string" && c.value.includes("##"))) {
+      const beingApplied = this.parent instanceof CONFIG.Actor.documentClass
+        // @ts-expect-error no dnd5e-types
+        || !!this.isAppliedEnchantment;
+      if (beingApplied && Array.isArray(changes) && changes.some(c => typeof c?.value === "string" && c.value.includes("##"))) {
         const restored = changes.map(c => typeof c?.value === "string" && c.value.includes("##")
           ? { ...c, value: c.value.replaceAll("##", "@") } : c);
         // @ts-expect-error v14 updateSource accepts system.changes
