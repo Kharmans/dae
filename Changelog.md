@@ -1,4 +1,4 @@
-### 14.0.20 (unreleased)
+### 14.0.20
 
 * Fixed: DAE's API (`DAE`, `game.modules.get("dae").api`) was set in `setup`, after Foundry prepares world documents, so a module calling it during that first preparation got `DAE is not defined`; it is now set in `init`.
 * Fixed: the description of `system.attributes.concentration.roll.min` said maximum instead of minimum.
