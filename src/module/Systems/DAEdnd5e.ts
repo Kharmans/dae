@@ -569,6 +569,8 @@ export class DAESystemDND5E extends DAESystem {
     libWrapper.register("dae", "CONFIG.ActiveEffect.documentClass.prototype.getReplacementData", getReplacementData, "WRAPPER");
     // Old bonus paths dnd5e 6 moved but does not alias (see movedBonusAliases)
     libWrapper.register("dae", "CONFIG.Actor.documentClass.prototype.prepareBaseData", prepareBaseDataBonusAliases, "WRAPPER");
+    // The advantage mode dnd5e gives passive skills, so DAE adds only what midi's flags change
+    libWrapper.register("dae", "dnd5e.dataModels.actor.CreatureTemplate.prototype.prepareSkill", prepareSkill, "WRAPPER");
     // This supplies DAE custom effects - the main game
     // @ts-expect-error our custom stuff in the changes makes types mad
     Hooks.on("applyActiveEffect", this.daeCustomEffect.bind(this));
@@ -1259,49 +1261,59 @@ function getRollData(this: Actor.Implementation, wrapped, ...args) {
   return data;
 }
 
-async function preparePassiveSkills(this: Actor.Implementation) {
+/** The advantage mode dnd5e gave each skill's passive score, by skill data */
+const passiveModes = new WeakMap<object, number>();
+
+const passiveModeFields = (abilityId: string, skillId: string) => [
+  `abilities.${abilityId}.check.roll.mode`, `skills.${skillId}.roll.mode`, "rolls.ability.check.mode", "rolls.ability.skill.mode"
+];
+
+type AdvantageCounts = { override: number | null, advantages: { count: number, suppressed: boolean }, disadvantages: { count: number, suppressed: boolean } };
+
+function passiveMode(actor: Actor.Implementation, abilityId: string, skillId: string, rollData: object, counts?: AdvantageCounts): number {
+  const rules = globalThis.dnd5e.documents.AppliedRules.collect("check:advantage", actor).filterWith(rollData).toAdvantageCounts(counts);
+  return globalThis.dnd5e.dataModels.fields.AdvantageModeField.combineFields(actor.system, passiveModeFields(abilityId, skillId), rules)?.mode ?? 0;
+}
+
+/** Records the mode dnd5e's passive score includes; its later changes (heavy armour, final phase effects) are not in it */
+function prepareSkill(this: { parent: Actor.Implementation }, wrapped, skillId: string, options: { rollData?: object } = {}) {
+  const skillData = wrapped(skillId, options);
+  if (options.rollData && skillData) passiveModes.set(skillData, passiveMode(this.parent, skillData.ability, skillId, options.rollData));
+  return skillData;
+}
+
+/**
+ * Passive skills take midi's advantage flags (a skill roll's flags, as midi reads them) and dnd5e's roll modes as they
+ * are after preparation, combined as dnd5e combines them: advantage from several sources counts once, and suppression
+ * and cancelling apply. A flag holding a condition is evaluated only when rolling, so only a plain true value counts here.
+ */
+function preparePassiveSkills(this: Actor.Implementation) {
   // @ts-expect-error no dnd5e-types
   const skills = this.system.skills;
   if (!skills) return;
-  for (let skillId of Object.keys(skills)) {
+  let rollData: object | undefined;
+  for (const [skillId, skill] of Object.entries(skills) as [string, { ability: string, passive: number }][]) {
+    const dnd5eMode = passiveModes.get(skill);
+    if (dnd5eMode === undefined) continue;
     // @ts-expect-error no dnd5e-types
-    const skill = this.system.skills[skillId];
-    const abilityId = skill.ability;
-    const advdisadv = procAdvantageSkill(this, abilityId, skillId);
-    skill.passive = skill.passive + 5 * advdisadv;
+    rollData ??= this.getRollData({ deterministic: true });
+    const mode = passiveMode(this, skill.ability, skillId, rollData, midiSkillCounts(this, skill.ability, skillId));
+    // @ts-expect-error no dnd5e-types
+    skill.passive += (mode - dnd5eMode) * CONFIG.DND5E.skillPassive.modifier;
   }
 }
 
-
-function procAdvantageSkill(actor: Actor.Implementation, abilityId: string, skillId: string): number {
+function midiSkillCounts(actor: Actor.Implementation, abilityId: string, skillId: string): AdvantageCounts {
   const midiFlags = actor.flags["midi-qol"] ?? {};
-  const advantage = midiFlags.advantage ?? {};
-  const disadvantage = midiFlags.disadvantage ?? {};
-  let withAdvantage = advantage.all ?? false;
-  let withDisadvantage = disadvantage.all ?? false;
-
-  if (advantage.ability) {
-    withAdvantage = withAdvantage || !!advantage.ability.all || !!advantage.ability.check?.all;
-  }
-  if (advantage.ability?.check) {
-    withAdvantage = withAdvantage || advantage.ability.check[abilityId];
-  }
-  if (advantage.skill) {
-    withAdvantage = withAdvantage || advantage.skill.all || advantage.skill[skillId];
-  }
-
-  if (disadvantage.ability) {
-    withDisadvantage = withDisadvantage || !!disadvantage.ability.all || !!disadvantage.ability.check?.all;
-  }
-  if (disadvantage.ability?.check) {
-    withDisadvantage = withDisadvantage || disadvantage.ability.check[abilityId];
-  }
-  if (disadvantage.skill) {
-    withDisadvantage = withDisadvantage || disadvantage.skill.all || disadvantage.skill[skillId];
-  }
-  if ((withAdvantage && withDisadvantage) || (!withAdvantage && !withDisadvantage)) return 0;
-  else if (withAdvantage) return 1;
-  else return -1;
+  const on = (value: unknown) => value === true || value === "true" || (Number.isNumeric(value) && Number(value) !== 0);
+  const holds = (kind: string, keys: string[]) => keys.some(key => on(foundry.utils.getProperty(midiFlags, `${kind}.${key}`)));
+  const own = ["all", "skill.all", `skill.${skillId}`, `skill.${abilityId}`, "check.all", `check.${abilityId}`];
+  const sides = ["all", "ability.all", ...own.slice(1)];
+  return {
+    override: null,
+    advantages: { count: Number(holds("advantage", sides)), suppressed: holds("noAdvantage", own) },
+    disadvantages: { count: Number(holds("disadvantage", sides)), suppressed: holds("noDisadvantage", own) }
+  };
 }
 
 

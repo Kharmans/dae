@@ -1,8 +1,9 @@
-### 14.6.4 (unreleased)
+### 14.6.4
 
 * Added: an effect can give the conditions its statuses cause values: `flags.dae.conditionFlags.<statusId>` holds flags that *Dependent Conditions* creates the condition with (merged from every active effect carrying that status) and keeps a condition it created in step with, e.g. `{ hiding: { "my-module": { dc: 17 } } }`.
 * Fixed: DAE's API (`DAE`, `game.modules.get("dae").api`) was set in `setup`, after Foundry prepares world documents, so a module calling it during that first preparation got `DAE is not defined` (midi's `flags.midi-qol.optional.*` `ItemMacro`); it is now set in `init`.
 * Fixed: the description of `system.attributes.concentration.roll.min` said maximum instead of minimum.
+* Fixed: passive skills counted advantage from midi's flags on top of dnd5e's, so advantage from both added 10; missed `advantage.check.<ability>`; read the retired `advantage.ability.check.*`; and counted a flag holding a condition as true. Passive scores now combine midi's flags with dnd5e's roll modes as a skill roll does (once each way, with suppression and cancelling), counting only plainly true flags.
 
 **Effect application**
 * Changed: the compendium menu's three effect application entries and the item *Effect application* dialog are replaced by *DAE: Convert changes to Origin replacement* (Item and Actor packs, item and actor sheets): every change with no Replacement in an item's applied effects (not transfer effects or enchantments) is set to Origin, so it is filled from the caster as Legacy DAE did, after a confirmation. API `DAE.convertToOriginReplacement(document, { dryRun })`.
