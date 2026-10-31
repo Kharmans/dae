@@ -102,7 +102,7 @@
   },
   "url": "https://gitlab.com/tposney/dae",
   "manifest": "https://tposney.gitlab.io/dae/v13/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/v13/package/dae-v13.0.32.zip",
+  "download": "https://tposney.gitlab.io/dae/versions/13.0.32/dae-v13.0.32.zip",
   "readme": "https://gitlab.com/tposney/dae/-/blob/v13/Readme.md",
   "changelog": "https://tposney.gitlab.io/dae/v13/changelog.html",
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
