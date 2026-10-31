@@ -1,6 +1,6 @@
 ### 14.6.5
 
-* Changed: updates are served from GitLab Pages (https://tposney.gitlab.io/dae/dnd6/module.json), so update checks no longer fail when GitLab rate-limits repository files. Changelog: https://tposney.gitlab.io/dae/dnd6/changelog.html.
+* Changed: updates are served from GitLab Pages, so update checks no longer fail when GitLab rate-limits repository files. Installed copies move over with this update. Manifest URL: https://tposney.gitlab.io/dae/dnd6/module.json. Changelog: https://tposney.gitlab.io/dae/dnd6/changelog.html.
 
 ### 14.6.4
 
