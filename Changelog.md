@@ -1,3 +1,7 @@
+### 14.0.21
+
+* Changed: updates are served from GitLab Pages (https://tposney.gitlab.io/dae/v14/module.json), so update checks no longer fail when GitLab rate-limits repository files. Changelog: https://tposney.gitlab.io/dae/v14/changelog.html.
+
 ### 14.0.20
 
 * Fixed: DAE's API (`DAE`, `game.modules.get("dae").api`) was set in `setup`, after Foundry prepares world documents, so a module calling it during that first preparation got `DAE is not defined`; it is now set in `init`.
@@ -35,8 +39,8 @@
 
 **Applied and item effects**
 * Fixed: with *ATL compatibility* set to migrate or full, `ATL.*` keys with no `token.*` equivalent (width, height, depth, shape, elevation, hidden, rotation) were deleted from effects; they are kept for the ATL module.
-* Added: `dae.eval(…)` in a dnd5e formula field (HP bonuses, attack and save bonuses and the like) is evaluated when dnd5e evaluates the field, with its full roll data, so it can use derived values such as `@abilities.dex.mod` (e.g. `dae.eval(@abilities.dex.mod > 2 ? 2 : 0)` in an attack bonus). In number fields and flags it is still evaluated when the change is applied. `dae.eval` works in any formula (midi-qol #1565).
-* Added: the effect editor flags a conditional (`? :`) in a number or formula field; on Foundry 14 a bare conditional is not a valid formula, wrap it in `dae.eval(…)` (midi-qol #1565).
+* Added: `dae.eval(…)` in a dnd5e formula field (HP bonuses, attack and save bonuses and the like) is evaluated when dnd5e evaluates the field, with its full roll data, so it can use derived values such as `@abilities.dex.mod` (e.g. `dae.eval(@abilities.dex.mod > 2 ? 2 : 0)` in an attack bonus). In number fields and flags it is still evaluated when the change is applied. `dae.eval` works in any formula (midi-qol [#1565](https://gitlab.com/tposney/midi-qol/-/issues/1565)).
+* Added: the effect editor flags a conditional (`? :`) in a number or formula field; on Foundry 14 a bare conditional is not a valid formula, wrap it in `dae.eval(…)` (midi-qol [#1565](https://gitlab.com/tposney/midi-qol/-/issues/1565)).
 * Fixed: `DAE.deleteActiveEffect` with an item's uuid missed the effects that item applied, whose origin is the item's effect (Slayer's Prey left the old target marked).
 * Fixed: a boolean `flags.dae.stackable` (DAE's original checkbox) was treated as stacking; `false` now means *none* and `true` *multi*, with a deprecation warning.
 
@@ -203,9 +207,9 @@
   - dae adds an additional expiry event timeElapsed which indicates an effect only requires a duration expiry for the effect to expire.
 
 ### 14.0.4
-* Fix TypeError when `customStats` is not iterable in `isSuppressed` for Group actors without `system.traits.ci.custom` (MR !157, thanks @thatlonelybugbear).
-* Correct descriptions for shimmed enchant keys — swap `system.damage.bonus`/`system.damageBonus` descriptions and replace "Should use … instead" with "Equivalent to …" for attack shim keys (MR !159, thanks @Michael Roth).
-* `@activity` is now available in AE change value formulas when effects are applied via an activity (inspired by MR !156, thanks @thatlonelybugbear).
+* Fix TypeError when `customStats` is not iterable in `isSuppressed` for Group actors without `system.traits.ci.custom` (MR [!157](https://gitlab.com/tposney/dae/-/merge_requests/157), thanks @thatlonelybugbear).
+* Correct descriptions for shimmed enchant keys — swap `system.damage.bonus`/`system.damageBonus` descriptions and replace "Should use … instead" with "Equivalent to …" for attack shim keys (MR [!159](https://gitlab.com/tposney/dae/-/merge_requests/159), thanks @Michael Roth).
+* `@activity` is now available in AE change value formulas when effects are applied via an activity (inspired by MR [!156](https://gitlab.com/tposney/dae/-/merge_requests/156), thanks @thatlonelybugbear).
 * Fix for token.xxxx effects not working.
 
 ### 14.0.0
