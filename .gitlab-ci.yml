@@ -10,6 +10,7 @@ stages:
   - prepare-release
   - release
   - publish
+  - foundry
 
 publish-artifacts:
   stage: prepare-release
@@ -41,7 +42,7 @@ release_job:
           filepath: '/$PACKAGE_TYPE.json'
 
 publish-foundry-manifest:
-  stage: publish
+  stage: foundry
   needs: [pages]
   when: manual
   image: node:latest
