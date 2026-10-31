@@ -1,3 +1,6 @@
+### 13.0.32
+* Changed: updates are served from GitLab Pages (https://tposney.gitlab.io/dae/v13/module.json), so update checks no longer fail when GitLab rate-limits repository files. Changelog: https://tposney.gitlab.io/dae/v13/changelog.html.
+
 ### 13.0.31
 * Macro changes (`macro.itemMacro`, `macro.execute`, ...) on an effect applied from a temporary item, such as a potion used up by drinking it, are kept; they were dropped, so the effect's on/off macro never ran (backport of 14.0.19).
 * `macro.itemMacro` and `macro.activityMacro` changes are no longer lost when another change on the effect is evaluated as it is created.
@@ -18,9 +21,9 @@
 * Fix for duplicate display of ac attribution
 
 ### 13.0.26
-* Fix TypeError when `customStats` is not iterable in `isSuppressed` for Group actors without `system.traits.ci.custom` (MR !157, thanks @thatlonelybugbear).
-* Correct descriptions for shimmed enchant keys — swap `system.damage.bonus`/`system.damageBonus` descriptions and replace "Should use … instead" with "Equivalent to …" for attack shim keys (MR !159, thanks @Michael Roth).
-* `@activity` is now available in AE change value formulas when effects are applied via an activity (inspired by MR !156, thanks @thatlonelybugbear).
+* Fix TypeError when `customStats` is not iterable in `isSuppressed` for Group actors without `system.traits.ci.custom` (MR [!157](https://gitlab.com/tposney/dae/-/merge_requests/157), thanks @thatlonelybugbear).
+* Correct descriptions for shimmed enchant keys — swap `system.damage.bonus`/`system.damageBonus` descriptions and replace "Should use … instead" with "Equivalent to …" for attack shim keys (MR [!159](https://gitlab.com/tposney/dae/-/merge_requests/159), thanks @Michael Roth).
+* `@activity` is now available in AE change value formulas when effects are applied via an activity (inspired by MR [!156](https://gitlab.com/tposney/dae/-/merge_requests/156), thanks @thatlonelybugbear).
 * Strip advancements from temporary effects created on actors, rather than rejecting effects with advancement effects.
 
 ### 13.0.25
