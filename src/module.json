@@ -102,7 +102,7 @@
   },
   "url": "https://gitlab.com/tposney/dae",
   "manifest": "https://tposney.gitlab.io/dae/dnd6/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/dnd6/package/dae-v14.6.5.zip",
+  "download": "https://tposney.gitlab.io/dae/versions/14.6.5/dae-v14.6.5.zip",
   "readme": "https://gitlab.com/tposney/dae/-/blob/dnd6/Readme.md",
   "changelog": "https://tposney.gitlab.io/dae/dnd6/changelog.html",
   "bugs": "https://gitlab.com/tposney/dae/-/issues",
