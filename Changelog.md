@@ -1,3 +1,7 @@
+### 14.6.5
+
+* Changed: updates are served from GitLab Pages (https://tposney.gitlab.io/dae/dnd6/module.json), so update checks no longer fail when GitLab rate-limits repository files. Changelog: https://tposney.gitlab.io/dae/dnd6/changelog.html.
+
 ### 14.6.4
 
 * Added: an effect can give the conditions its statuses cause values: `flags.dae.conditionFlags.<statusId>` holds flags that *Dependent Conditions* creates the condition with (merged from every active effect carrying that status) and keeps a condition it created in step with, e.g. `{ hiding: { "my-module": { dc: 17 } } }`.
@@ -52,8 +56,8 @@
 
 **Applied and item effects**
 * Fixed: `ATL.width`, `height`, `depth` and `shape` were deleted from effects; they become `token.*` size changes, which dnd5e 6 applies. `ATL.elevation`, `hidden` and `rotation`, which Foundry v14 can't apply, are kept instead of deleted.
-* Added: `dae.eval(…)` in a dnd5e formula field (HP bonuses, roll bonuses and the like) is evaluated when dnd5e evaluates the field, with its full roll data, so it can use derived values such as `@abilities.dex.mod` (e.g. `dae.eval(@abilities.dex.mod > 2 ? 2 : 0)` in an attack bonus). In number fields and flags it is still evaluated when the change is applied. `dae.eval` works in any formula (midi-qol #1565).
-* Added: the effect editor flags a conditional (`? :`) in a number or formula field, pointing to the change's conditions or `dae.eval(…)`; on Foundry 14 a bare conditional is not a valid formula (midi-qol #1565).
+* Added: `dae.eval(…)` in a dnd5e formula field (HP bonuses, roll bonuses and the like) is evaluated when dnd5e evaluates the field, with its full roll data, so it can use derived values such as `@abilities.dex.mod` (e.g. `dae.eval(@abilities.dex.mod > 2 ? 2 : 0)` in an attack bonus). In number fields and flags it is still evaluated when the change is applied. `dae.eval` works in any formula (midi-qol [#1565](https://gitlab.com/tposney/midi-qol/-/issues/1565)).
+* Added: the effect editor flags a conditional (`? :`) in a number or formula field, pointing to the change's conditions or `dae.eval(…)`; on Foundry 14 a bare conditional is not a valid formula (midi-qol [#1565](https://gitlab.com/tposney/midi-qol/-/issues/1565)).
 * Fixed: the effect editor offered dnd5e 5's `system.attributes.concentration.bonuses.save` for the concentration save bonus; it offers `system.attributes.concentration.roll.bonus`.
 * Fixed: an activity whose item is not on the actor applied none of its effects on dnd5e 6: a consumable used up by its last use (e.g. a potion), and cloned or temporary items (contested grapple, metamagic casts).
 * Fixed: effects with the pre-release `flags.dae.legacyApplication` (midi's sample items in 14.6.0–14.6.2) were applied in dnd5e mode; they are now applied in legacy mode, with a deprecation warning. Use `flags.dae.applicationMode`.
@@ -343,9 +347,9 @@ Unchanged in both modes: macro arguments (`macro.execute`, `macro.itemMacro`, ..
   - dae adds an additional expiry event timeElapsed which indicates an effect only requires a duration expiry for the effect to expire.
 
 ### 14.0.4
-* Fix TypeError when `customStats` is not iterable in `isSuppressed` for Group actors without `system.traits.ci.custom` (MR !157, thanks @thatlonelybugbear).
-* Correct descriptions for shimmed enchant keys — swap `system.damage.bonus`/`system.damageBonus` descriptions and replace "Should use … instead" with "Equivalent to …" for attack shim keys (MR !159, thanks @Michael Roth).
-* `@activity` is now available in AE change value formulas when effects are applied via an activity (inspired by MR !156, thanks @thatlonelybugbear).
+* Fix TypeError when `customStats` is not iterable in `isSuppressed` for Group actors without `system.traits.ci.custom` (MR [!157](https://gitlab.com/tposney/dae/-/merge_requests/157), thanks @thatlonelybugbear).
+* Correct descriptions for shimmed enchant keys — swap `system.damage.bonus`/`system.damageBonus` descriptions and replace "Should use … instead" with "Equivalent to …" for attack shim keys (MR [!159](https://gitlab.com/tposney/dae/-/merge_requests/159), thanks @Michael Roth).
+* `@activity` is now available in AE change value formulas when effects are applied via an activity (inspired by MR [!156](https://gitlab.com/tposney/dae/-/merge_requests/156), thanks @thatlonelybugbear).
 * Fix for token.xxxx effects not working.
 
 ### 14.0.0
