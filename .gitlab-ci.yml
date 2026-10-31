@@ -125,7 +125,8 @@ pages:
         git cat-file -e "$tag:package/$zip" 2>/dev/null || { echo "$tag: no package/$zip, skipped"; continue; }
         mkdir -p "public/versions/$version"
         git show "$tag:package/$zip" > "public/versions/$version/$zip"
-        jq --arg download "$CI_PAGES_URL/versions/$version/$zip" '.download = $download' tag-manifest.json > "public/versions/$version/$PACKAGE_TYPE.json"
+        jq --arg download "$CI_PAGES_URL/versions/$version/$zip" --arg changelog "${tag_manifest%/*}/changelog.html" \
+          '.download = $download | .changelog = $changelog' tag-manifest.json > "public/versions/$version/$PACKAGE_TYPE.json"
         versions_html="$versions_html<li><a href=\"versions/$version/$PACKAGE_TYPE.json\">$version</a></li>"
         echo "versions/$version: $zip"
       done
