@@ -1,3 +1,7 @@
+### 13.0.33
+
+* Changed: DAE has moved to GitHub (https://github.com/tposney/dae): updates and downloads come from its releases, and issues are reported there. Installed copies move over with this update.
+
 ### 13.0.32
 * Changed: updates are served from GitLab Pages (https://tposney.gitlab.io/dae/v13/module.json), so update checks no longer fail when GitLab rate-limits repository files. Changelog: https://tposney.gitlab.io/dae/v13/changelog.html.
 
