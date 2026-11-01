@@ -4,7 +4,6 @@ const gulp = require(`gulp`);
 const fs = require(`fs`);
 const path = require(`path`);
 const archiver = require(`archiver`);
-const stringify = require(`json-stringify-pretty-compact`);
 const sourcemaps = require(`gulp-sourcemaps`);
 const typescript = require(`typescript`);
 // const createLiteral = typescript.createLiteral;
@@ -23,7 +22,6 @@ const visitNode = typescript.visitNode;
 const less = require(`gulp-less`);
 const sass = require(`gulp-sass`)(require(`sass`));
 const ts = require(`gulp-typescript`);
-const git = require(`gulp-git`);
 const argv = require(`yargs`).argv;
 const minifyJs = require('gulp-uglify');
 const concat = require('gulp-concat');
@@ -78,10 +76,6 @@ const getManifest = () => {
 		return null;
 	}
 
-	// If we can pull our version from our package - saves us having to maintain the number in different places
-	if (process.env.npm_package_version) {
-		json.file[`version`] = process.env.npm_package_version;
-	}
 	return json;
 }
 
@@ -307,7 +301,7 @@ const recursiveFileSearch = (dir, callback) => {
 };
 
 const copyFiles = async () => {
-	const statics = [`lang`, `languages`, `fonts`, `assets`, `icons`, `templates`, `packs`, `module.json`, `system.json`, `template.json`, `data`];
+	const statics = [`lang`, `languages`, `fonts`, `assets`, `icons`, `templates`, `packs`, `system.json`, `template.json`, `data`];
 
 
 	console.log(`files:` + statics);
@@ -344,6 +338,14 @@ const copyFiles = async () => {
 		await Promise.reject(err);
 	}
 }
+
+/** dist/module.json from the src/module.json template, with package.json's version. */
+const buildManifest = async () => {
+	const version = loadJson(`package.json`).version;
+	const template = fs.readFileSync(path.join(`src`, `module.json`), `utf8`);
+	fs.mkdirSync(`dist`, { recursive: true });
+	fs.writeFileSync(path.join(`dist`, `module.json`), template.replaceAll(`{{version}}`, version));
+};
 
 const cleanDist = async () => {
 	if (argv.dbg || argv.debug) {
@@ -396,6 +398,9 @@ const buildWatch = () => {
 	gulp.watch([`src/fonts`, `src/lang`, `src/languages`, `src/templates`, `src/*.json`], {
 		ignoreInitial: false
 	}, copyFiles);
+	gulp.watch([`src/module.json`, `package.json`], {
+		ignoreInitial: false
+	}, buildManifest);
 }
 
 /********************/
@@ -490,194 +495,30 @@ const linkUserData = async () => {
 /**
  * Package build
  */
+/** package/<id>-v<version>.zip of dist, and package/module.json (the built manifest the release serves). */
 async function packageBuild() {
-	const manifest = getManifest();
-	if (manifest === null) {
-		console.error(`Manifest file could not be loaded.`);
-		throw Error();
-	}
-
-	return new Promise((resolve, reject) => {
-		try {
-			// Remove the package dir without doing anything else
-			if (argv.clean || argv.c) {
-				console.warn(`Removing all packaged files`);
-				fs.rmSync(`package`, {
-					force: true,
-					recursive: true
-				});
-				return;
-			}
-
-			// Ensure there is a directory to hold all the packaged versions
-			// fs.existsSync(`package`);
-			if (!fs.existsSync(`package`)) {
-				fs.mkdirSync(`package`, {
-					recursive: true
-				});
-			}
-
-			// Initialize the zip file
-			const moduleJson = JSON.parse(fs.readFileSync('./src/module.json'));
-
-			// Github
-			// const zipName = `module.zip`; // `${manifest.file.name}-v${manifest.file.version}.zip`;
-
-			// Gitlab
-			const zipName = `${moduleJson.id}-v${moduleJson.version}.zip`;
-
-			const zipFile = fs.createWriteStream(path.join(`package`, zipName));
-			//@ts-ignore
-			const zip = archiver(`zip`, {
-				zlib: {
-					level: 9
-				}
-			});
-
-			zipFile.on(`close`, () => {
-				console.log(zip.pointer() + ` total bytes`);
-				console.log(`Zip file ${zipName} has been written`);
-				return resolve(true);
-			});
-
-			zip.on(`error`, (err) => {
-				throw err;
-			});
-
-			zip.pipe(zipFile);
-
-			// Add the directory with the final code
-			zip.directory(`dist/`, moduleJson.id);
-			console.log(`Zip files`);
-
-			zip.finalize();
-			return resolve(`done`);
-		} catch (err) {
-			return reject(err);
-		}
+	const moduleJson = loadJson(path.join(`dist`, `module.json`));
+	if (moduleJson.version.includes(`{{`)) throw Error(`dist/module.json is not built`);
+	fs.mkdirSync(`package`, { recursive: true });
+	const zipName = `${moduleJson.id}-v${moduleJson.version}.zip`;
+	await new Promise((resolve, reject) => {
+		const zipFile = fs.createWriteStream(path.join(`package`, zipName));
+		const zip = archiver(`zip`, { zlib: { level: 9 } });
+		zipFile.on(`close`, resolve);
+		zip.on(`error`, reject);
+		zip.pipe(zipFile);
+		zip.directory(`dist/`, moduleJson.id);
+		zip.finalize();
 	});
+	fs.copyFileSync(path.join(`dist`, `module.json`), path.join(`package`, `module.json`));
+	console.log(`Wrote package/${zipName} and package/module.json`);
 }
 
 /*********************/
 /*		PACKAGE		 */
 /*********************/
 
-/**
- * Update version and URLs in the manifest JSON
- */
-const updateManifest = (cb) => {
-	const packageJson = loadJson(`package.json`);
-	const config = getConfig(),
-		manifest = getManifest(),
-		rawURL = config.rawURL,
-		repoURL = config.repository,
-		manifestRoot = manifest?.root;
-
-	if (!config) {
-		cb(Error(`foundryconfig.json not found`));
-	}
-	if (manifest === null) {
-		cb(Error(`Manifest JSON not found`));
-		return;
-	}
-	if (!rawURL || !repoURL) {
-		cb(Error(`Repository URLs not configured in foundryconfig.json`));
-	}
-	try {
-		const version = argv.update || argv.u;
-
-		/* Update version */
-
-		const versionMatch = /^(\d{1,}).(\d{1,}).(\d{1,})$/;
-		const currentVersion = manifest?.file.version;
-		let targetVersion = ``;
-
-		if (!version) {
-			cb(Error(`Missing version number`));
-		}
-
-		if (versionMatch.test(version)) {
-			targetVersion = version;
-		} else {
-			targetVersion = currentVersion.replace(versionMatch, (substring, major, minor, patch) => {
-				console.log(substring, Number(major) + 1, Number(minor) + 1, Number(patch) + 1);
-				if (version === `major`) {
-					return `${Number(major) + 1}.0.0`;
-				} else if (version === `minor`) {
-					return `${major}.${Number(minor) + 1}.0`;
-				} else if (version === `patch`) {
-					return `${major}.${minor}.${Number(patch) + 1}`;
-				} else {
-					return ``;
-				}
-			});
-		}
-
-		if (targetVersion === ``) {
-			return cb(Error(`Error: Incorrect version arguments.`));
-		}
-
-		if (targetVersion === currentVersion) {
-			return cb(Error(`Error: Target version is identical to current version.`));
-		}
-
-		console.log(`Updating version number to "${targetVersion}"`);
-
-		packageJson.version = targetVersion;
-		manifest.file.version = targetVersion;
-
-		/* Update URLs */
-		// Github
-		/*
-		const result = `${repoURL}/releases/download/${manifest.file.version}/module.zip`;
-		manifest.file.url = repoURL;
-		manifest.file.manifest = `${rawURL}/${manifest.file.version}/${manifestRoot}/${manifest.name}`;
-		manifest.file.download = result;
-		*/
-		// Gitlab
-		const result = `${rawURL}/v${manifest.file.version}/package/${manifest.file.name}-v${manifest.file.version}.zip`;
-		manifest.file.url = repoURL;
-		manifest.file.manifest = `${rawURL}/master/${manifestRoot}/${manifest.name}`;
-		manifest.file.download = result;
-
-		const prettyProjectJson = stringify(manifest.file, {
-			maxLength: 35,
-			indent: `\t`,
-		});
-
-		fs.writeFileSync(`package.json`, JSON.stringify(packageJson, null, `\t`));
-		fs.writeFileSync(path.join(manifest.root, manifest.name), prettyProjectJson, `utf8`);
-
-		return cb();
-	} catch (err) {
-		cb(err);
-	}
-}
-
-function gitAdd() {
-	return gulp.src('package').pipe(git.add({
-		args: '--no-all'
-	}));
-}
-
-function gitCommit() {
-	return gulp.src('./*').pipe(
-		git.commit(`v${getManifest().file.version}`, {
-			args: '-a',
-			disableAppendPaths: true,
-		}),
-	);
-}
-
-function gitTag() {
-	const manifest = getManifest();
-	return git.tag(`v${manifest.file.version}`, `Updated to ${manifest.file.version}`, (err) => {
-		if (err) throw err;
-	});
-}
-
-const execGit = gulp.series(gitAdd, gitCommit, gitTag);
-const execBuild = gulp.parallel(buildTS, buildJS, buildJSMap, buildMJS, buildCSS, buildCSSMap, buildLess, buildSASS, copyFiles);
+const execBuild = gulp.parallel(buildTS, buildJS, buildJSMap, buildMJS, buildCSS, buildCSSMap, buildLess, buildSASS, copyFiles, buildManifest);
 
 exports.build = gulp.series(clean, execBuild);
 exports.bundle = gulp.series(clean, execBuild, bundleModule, cleanDist);
@@ -685,5 +526,4 @@ exports.watch = buildWatch;
 exports.clean = clean;
 exports.link = linkUserData;
 exports.package = packageBuild;
-exports.update = updateManifest;
-exports.publish = gulp.series(clean, updateManifest, execBuild, bundleModule, cleanDist, packageBuild, execGit);
+exports.release = gulp.series(clean, execBuild, packageBuild);
