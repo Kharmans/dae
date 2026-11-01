@@ -23,7 +23,7 @@ To install this module manually:
 2.  Click "Install Module"
 3.  In the "Manifest URL" field, paste the following url:
 
-`https://gitlab.com/tposney/dae/-/raw/dndv4/src/module.json`
+`https://github.com/tposney/dae/releases/download/latest-v13/module.json`
 
 4.  Click 'Install' and wait for installation to complete
 5.  Don't forget to enable the module in game using the "Manage Module" button
