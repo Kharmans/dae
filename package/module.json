@@ -2,15 +2,15 @@
   "id": "dae",
   "title": "Dynamic effects using Active Effects (DAE)",
   "description": "Replacement for dynamic effects",
-  "version": "14.6.5",
+  "version": "14.6.6",
   "authors": [
     {
       "name": "tposney",
-      "url": "https://gitlab.com/tposney",
+      "url": "https://github.com/tposney",
       "discord": "tposney#1462",
       "twitter": "",
       "patreon": "",
-      "github": "",
+      "github": "tposney",
       "ko-fi": "tposney",
       "reddit": "",
       "email": ""
@@ -100,12 +100,12 @@
     "verified": "14.369",
     "maximum": "14.999"
   },
-  "url": "https://gitlab.com/tposney/dae",
-  "manifest": "https://tposney.gitlab.io/dae/dnd6/module.json",
-  "download": "https://gitlab.com/tposney/dae/raw/dnd6/package/dae-v14.6.5.zip",
-  "readme": "https://gitlab.com/tposney/dae/-/blob/dnd6/Readme.md",
-  "changelog": "https://tposney.gitlab.io/dae/dnd6/changelog.html",
-  "bugs": "https://gitlab.com/tposney/dae/-/issues",
+  "url": "https://github.com/tposney/dae",
+  "manifest": "https://github.com/tposney/dae/releases/download/latest-dnd6/module.json",
+  "download": "https://github.com/tposney/dae/releases/download/v14.6.6/dae-v14.6.6.zip",
+  "readme": "https://github.com/tposney/dae/blob/dnd6/Readme.md",
+  "changelog": "https://github.com/tposney/dae/blob/dnd6/Changelog.md",
+  "bugs": "https://github.com/tposney/dae/issues",
   "relationships": {
     "requires": [
       {

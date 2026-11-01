@@ -1,3 +1,8 @@
+### 14.6.6
+
+* Changed: DAE has moved to GitHub (https://github.com/tposney/dae): updates and downloads come from its releases, and issues are reported there. Installed copies move over with this update. Manifest URL: https://github.com/tposney/dae/releases/download/latest-dnd6/module.json.
+* Updated: Brazilian Portuguese translation (thanks Kharmans).
+
 ### 14.6.5
 
 * Changed: updates are served from GitLab Pages, so update checks no longer fail when GitLab rate-limits repository files. Installed copies move over with this update. Manifest URL: https://tposney.gitlab.io/dae/dnd6/module.json. Changelog: https://tposney.gitlab.io/dae/dnd6/changelog.html.
