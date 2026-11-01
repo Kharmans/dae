@@ -2,16 +2,17 @@
    "name": "dae",
    "title": "Dynamic effects using Active Effects (DAE)",
    "description": "Replacement for dynamic effects",
-   "version": "14.0.5",
+   "version": "14.0.21",
    "scripts": {
       "package": "gulp package",
+    "release": "gulp release",
       "build": "gulp build --dbg",
       "build:link": "gulp build --dbg && gulp link",
       "build:watch": "gulp watch",
       "build:bundle": "gulp bundle --dbg",
       "clean": "gulp clean && gulp link --clean",
       "prettier-format": "prettier --config .prettierrc --write \"./src/**/*.{ts,js,json,scss,css}\"",
-      "tag": "git tag -a v$(jq .version -r src/module.json) -m \"version $(jq .version -r src/module.json) release tag\" && git push origin --follow-tags"
+      "tag": "git tag -a v$(jq .version -r package.json) -m \"version $(jq .version -r package.json) release tag\" && git push origin --follow-tags"
    },
    "keywords": [
       "foundryvtt",
