@@ -12,7 +12,7 @@
       "build:bundle": "gulp bundle --dbg",
       "clean": "gulp clean && gulp link --clean",
       "prettier-format": "prettier --config .prettierrc --write \"./src/**/*.{ts,js,json,scss,css}\"",
-      "tag": "git tag -a v$(jq .version -r package.json) -m \"version $(jq .version -r package.json) release tag\" && git push origin --follow-tags"
+      "tag": "git remote get-url origin | grep -q github.com || { echo 'origin is not GitHub: tags must never reach GitLab'; exit 1; }; V=$(jq -r .version package.json) && git tag -a v$V -m \"version $V release tag\" && git push origin v$V"
    },
    "keywords": [
       "foundryvtt",
