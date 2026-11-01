@@ -35,14 +35,14 @@ If you have a problem, please read the [Issues](#issues) section before reportin
 
 Install DAE from the in-game add-on browser. To install it by hand, paste this manifest URL into *Install Module*:
 
-`https://gitlab.com/tposney/dae/raw/v14/package/module.json`
+`https://github.com/tposney/dae/releases/download/latest-v14/module.json`
 
 Requirements:
 - Foundry **14.368** or later (v14).
 - The **libWrapper** and **socketlib** modules. Foundry offers to install them with DAE.
 - The dnd5e system.
 
-There is also a release written only for dnd5e 6: `https://gitlab.com/tposney/dae/raw/dnd6/package/module.json`.
+There is also a release written only for dnd5e 6: `https://github.com/tposney/dae/releases/download/latest-dnd6/module.json`.
 
 DAE is written for dnd5e and other systems are not supported. The *Load DAE for untested game systems* setting lets it load in another system anyway, at your own risk; systems known to be incompatible (e.g. pf2e) never load it.
 
@@ -627,7 +627,7 @@ When filing an issue, include:
 - with midi-qol, your midi-qol settings, exported from its misc tab;
 - what you did, what you expected, and what happened.
 
-Report issues at https://gitlab.com/tposney/dae/-/issues, or ask on discord.
+Report issues at https://github.com/tposney/dae/issues, or ask on discord.
 
 ## Building
 
