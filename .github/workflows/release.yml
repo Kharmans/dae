@@ -75,6 +75,7 @@ jobs:
           FOUNDRY_API_TOKEN: ${{ secrets.FOUNDRY_API_TOKEN }}
         run: |
           set -euo pipefail
+          [ -n "$FOUNDRY_API_TOKEN" ] || { echo "::notice::no FOUNDRY_API_TOKEN secret in this repository: not publishing"; exit 0; }
           body=$(jq -n --arg id "${{ needs.release.outputs.id }}" --arg version "${{ needs.release.outputs.version }}" \
             --arg manifest "https://github.com/$GITHUB_REPOSITORY/releases/download/$GITHUB_REF_NAME/module.json" \
             --arg notes "${{ needs.release.outputs.changelog }}" --argjson compatibility '${{ needs.release.outputs.compatibility }}' \
