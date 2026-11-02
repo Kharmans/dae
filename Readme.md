@@ -710,7 +710,7 @@ Changes to initiative are challenging due to the way it is calculated and rolled
 
 DAE **requires** libwrapper and socketlib to be istalled.
 
-### [Midi-QOL](https://gitlab.com/tposney/midi-qol)
+### [Midi-QOL](https://github.com/tposney/midi-qol)
 
 When rolling an item (weapon, spell, feature, tool, consumable) using Midi-QOL, non-transfer active effects are applied to the targeted tokens. If the definition of the item indicates that it is self then effects are applied to self. So, a bless spell when cast will apply the active effects to the targeted tokens.
 
