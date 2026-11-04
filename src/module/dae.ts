@@ -341,9 +341,36 @@ const WORKFLOW_REFS = refsPattern(WORKFLOW_REF_NAMES);
 
 const reportedFieldMappings = new Set<string>();
 
+type FieldMapping = string | { key: string, value?: string, type?: string, mode?: number | string };
+let fieldMappingPatterns: { source: Record<string, FieldMapping>, size: number, patterns: [RegExp, FieldMapping][] } | undefined;
+
+/**
+ * The mapping of a deprecated key: an exact entry, else one whose key has `*` for a path segment
+ * (`flags.midi-qol.optional.*.ac`), matching exactly one segment, which the mapped key's `*` takes.
+ */
+export function fieldMapping(key: string): FieldMapping | undefined {
+  const mappings = daeSystemClass.fieldMappings;
+  const exact = mappings[key];
+  if (exact) return exact;
+  if (fieldMappingPatterns?.source !== mappings || fieldMappingPatterns.size !== Object.keys(mappings).length) {
+    const escape = (segment: string) => segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const patterns = Object.entries(mappings).filter(([pattern]) => pattern.split(".").includes("*"))
+      .map(([pattern, mapping]) => [new RegExp(`^${pattern.split(".").map(segment => segment === "*" ? "([^.]+)" : escape(segment)).join("\\.")}$`), mapping] as [RegExp, FieldMapping]);
+    fieldMappingPatterns = { source: mappings, size: Object.keys(mappings).length, patterns };
+  }
+  for (const [pattern, mapping] of fieldMappingPatterns.patterns) {
+    const match = pattern.exec(key);
+    if (!match) continue;
+    const captured = match.slice(1);
+    const fill = (target: string) => target.split(".").map(segment => segment === "*" ? captured.shift() ?? segment : segment).join(".");
+    return typeof mapping === "string" ? fill(mapping) : { ...mapping, key: fill(mapping.key) };
+  }
+  return undefined;
+}
+
 /** The change a deprecated key maps to (its key, and the value and type the mapping sets), or undefined if it isn't mapped. */
 export function mappedChange(key: string): { key: string, value?: string, type?: string } | undefined {
-  const mapping = daeSystemClass.fieldMappings[key];
+  const mapping = fieldMapping(key);
   if (!mapping) return undefined;
   if (typeof mapping === "string") return { key: mapping };
   // Legacy mappings give a numeric mode
@@ -442,8 +469,8 @@ export function daeApplyChange(
   }
 
   // --- Field mappings (deprecated key migration) ---
-  if (daeSystemClass.fieldMappings[change.key]) {
-    const mapping = daeSystemClass.fieldMappings[change.key];
+  const mapping = fieldMapping(change.key);
+  if (mapping) {
     const displayMapping = typeof mapping === "string" ? mapping : `${mapping.key}${mapping.value !== undefined ? ` ${mapping.value}` : ""}`;
     // Core's "once" is keyed by the call stack, which differs between preparations; report each key once.
     if (!reportedFieldMappings.has(change.key)) {

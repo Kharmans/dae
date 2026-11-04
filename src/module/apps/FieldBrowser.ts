@@ -1,5 +1,5 @@
 import { error, i18n } from "../../dae.js";
-import { daeSystemClass } from "../dae.js";
+import { daeSystemClass, fieldMapping } from "../dae.js";
 import { InputAutocomplete, Suggestions } from "./ChangeAutocomplete.js";
 
 const MAX_ENTRIES = 100;
@@ -86,8 +86,8 @@ export class DAEFieldBrowser {
             ? description
             : '';
 
-        if (daeSystemClass.fieldMappings[key]) {
-          const mapping = daeSystemClass.fieldMappings[key];
+        const mapping = fieldMapping(key);
+        if (mapping) {
           const displayMapping = typeof mapping === "string" ? mapping : `${mapping.key}${mapping.value !== undefined ? ` ${mapping.value}` : ""}`;
           finalDescription += ` deprecated: use ${displayMapping} instead`;
         }

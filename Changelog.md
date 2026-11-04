@@ -1,3 +1,7 @@
+### 14.6.7
+
+* Added: a field mapping key may have `*` for one path segment, which the new key takes (`flags.midi-qol.optional.*.ac` → `flags.midi-qol.optional.*.acOnAttack`).
+
 ### 14.6.6
 
 * Changed: DAE has moved to GitHub (https://github.com/tposney/dae): updates and downloads come from its releases, and issues are reported there. Installed copies move over with this update. Manifest URL: https://github.com/tposney/dae/releases/download/latest-dnd6/module.json.
