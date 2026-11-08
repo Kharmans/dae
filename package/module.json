@@ -2,7 +2,7 @@
   "id": "dae",
   "title": "Dynamic effects using Active Effects (DAE)",
   "description": "Replacement for dynamic effects",
-  "version": "14.6.6",
+  "version": "14.6.7",
   "authors": [
     {
       "name": "tposney",
@@ -102,7 +102,7 @@
   },
   "url": "https://github.com/tposney/dae",
   "manifest": "https://github.com/tposney/dae/releases/download/latest-dnd6/module.json",
-  "download": "https://github.com/tposney/dae/releases/download/v14.6.6/dae-v14.6.6.zip",
+  "download": "https://github.com/tposney/dae/releases/download/v14.6.7/dae-v14.6.7.zip",
   "readme": "https://github.com/tposney/dae/blob/dnd6/Readme.md",
   "changelog": "https://github.com/tposney/dae/blob/dnd6/Changelog.md",
   "bugs": "https://github.com/tposney/dae/issues",
