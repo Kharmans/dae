@@ -118,15 +118,6 @@ export class DAESystemDND5E extends DAESystem {
         theSpecs["flags.dae.macro.img"] = [new StringField({ label: "Macro Img" }), ""];
         theSpecs["flags.dae.macro.type"] = [new StringField({ label: "Macro Data" }), ""];
         theSpecs["flags.dae.macro.scope"] = [new StringField({ label: "Macro Scope" }), ""];
-        if (game.modules.get("midi-qol")?.active && ["union", "spell", "feat", "consumable", "equipment", "spell", "weapon"].includes(k)) {
-          for (let [s, label] of [
-            ["itemCondition", "midi-qol.ItemActivationCondition.Name"],
-            ["reactionCondition", "midi-qol.ReactionActivationCondition.Name"],
-            ["otherCondition", "midi-qol.OtherActivationCondition.Name"],
-            ["effectCondition", "midi-qol.EffectActivationCondition.Name"]]) {
-            theSpecs[`flags.midi-qol.${s}`] = [new StringField({ label: i18n(label) }), ""];
-          }
-        }
 
         // Add some not-in-datamodel keys
         theSpecs["system.damageBonus"] = [new StringField(), ""];
