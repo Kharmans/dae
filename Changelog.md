@@ -1,18 +1,18 @@
-### 14.6.7
+### 14.6.8
+* Fixed: with Dependent Conditions on, updating an existing monster or character in ddb-importer could stop with "ActiveEffect dnd5einvisible00 does not exist": DAE adds and removes the conditions within the change that causes them, so they are in place when it completes. An actor created with items carrying a status (imported, dragged from a compendium) now gets their conditions.
+* Fixed: a condition immunity set on the actor itself (not by an effect) didn't remove a condition DAE added; it does now.
 
+### 14.6.7
 * Added: a field mapping key may have `*` for one path segment, which the new key takes (`flags.midi-qol.optional.*.ac` → `flags.midi-qol.optional.*.acOnAttack`).
 
 ### 14.6.6
-
 * Changed: DAE has moved to GitHub (https://github.com/tposney/dae): updates and downloads come from its releases, and issues are reported there. Installed copies move over with this update. Manifest URL: https://github.com/tposney/dae/releases/download/latest-dnd6/module.json.
 * Updated: Brazilian Portuguese translation (thanks Kharmans).
 
 ### 14.6.5
-
 * Changed: updates are served from GitLab Pages, so update checks no longer fail when GitLab rate-limits repository files. Installed copies move over with this update. Manifest URL: https://tposney.gitlab.io/dae/dnd6/module.json. Changelog: https://tposney.gitlab.io/dae/dnd6/changelog.html.
 
 ### 14.6.4
-
 * Added: an effect can give the conditions its statuses cause values: `flags.dae.conditionFlags.<statusId>` holds flags that *Dependent Conditions* creates the condition with (merged from every active effect carrying that status) and keeps a condition it created in step with, e.g. `{ hiding: { "my-module": { dc: 17 } } }`.
 * Fixed: DAE's API (`DAE`, `game.modules.get("dae").api`) was set in `setup`, after Foundry prepares world documents, so a module calling it during that first preparation got `DAE is not defined` (midi's `flags.midi-qol.optional.*` `ItemMacro`); it is now set in `init`.
 * Fixed: the description of `system.attributes.concentration.roll.min` said maximum instead of minimum.
