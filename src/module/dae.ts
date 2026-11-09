@@ -91,8 +91,8 @@ export function resolveEffectExpiryAction(effect: ActiveEffect.Implementation): 
   return resolveSpecialDurationExpiryAction() === "delete" ? "delete" : "update";
 }
 
-// Track actors with pending status reconciliation to avoid duplicate reconciliations
-const reconciliationPending = new Set<string>();
+/** Actors whose conditions this client is reconciling; `again` asks for another pass once the current one ends */
+const reconciling = new Map<string, { again: boolean }>();
 // Track actors with pending conditional effects processing to coalesce rapid-fire hook calls
 const conditionalEffectsPending = new Set<string>();
 
@@ -2409,9 +2409,7 @@ export function daeInitActions() {
 
 
   Hooks.on("createActiveEffect", createActiveEffectHook);
-  Hooks.on("updateItem", (item, data, options, userId) => updateStatusEffects(item, options, userId));
-  Hooks.on("deleteItem", (item, options, userId) => updateStatusEffects(item, options, userId));
-  Hooks.on("createItem", (item, options, userId) => updateStatusEffects(item, options, userId));
+  registerDependentConditionWrappers();
 
   Hooks.on("preDeleteItem", (item: Item.Implementation, options: object, userId: string) => snapshotDeletedItems([item], userId));
   Hooks.on("preDeleteActor", (actor: Actor.Implementation, options: object, userId: string) => snapshotDeletedItems(actor.items, userId));
@@ -2419,16 +2417,6 @@ export function daeInitActions() {
   //  Hooks.on("preDeleteActiveEffect", preDeleteActiveEffectHook); - moved wrapper to avoid race conditions
   Hooks.on("preUpdateActiveEffect", recordDisabledSuppressedHook);
   Hooks.on("updateActiveEffect", updateActiveEffectHook);
-  // Queue status reconciliation after effect changes complete
-  Hooks.on("createActiveEffect", (effect: ActiveEffect.Implementation, options: object, userId: string) => {
-    queueStatusesReconciliation(effect, userId);
-  });
-  Hooks.on("deleteActiveEffect", (effect: ActiveEffect.Implementation, options: object, userId: string) => {
-    queueStatusesReconciliation(effect, userId);
-  });
-  Hooks.on("updateActiveEffect", (effect: ActiveEffect.Implementation, data: object, options: object, userId: string) => {
-    queueStatusesReconciliation(effect, userId);
-  });
 
   // Add the active effects title bar actions
   Hooks.on("getHeaderControlsItemSheet5e", appendDocumentSheetHeaderControls)
@@ -2465,19 +2453,6 @@ export function daeInitActions() {
   actionQueue = new foundry.utils.Semaphore();
 }
 
-function scheduleReconciliation(actor: Actor.Implementation) {
-  if (!dependentConditions || reconciliationPending.has(actor.uuid)) return;
-  reconciliationPending.add(actor.uuid);
-  actionQueue.add(async () => {
-    try {
-      reconciliationPending.delete(actor.uuid);
-      await reconcileActorStatuses(actor);
-    } catch (err) {
-      console.warn("dae | Error reconciling actor statuses:", err);
-    }
-  });
-}
-
 function scheduleConditionalEffects(actor: Actor.Implementation, updates: TokenDocument.UpdateData | Actor.UpdateData) {
   if (conditionalEffectsPending.has(actor.uuid)) return;
   conditionalEffectsPending.add(actor.uuid);
@@ -2491,22 +2466,88 @@ function scheduleConditionalEffects(actor: Actor.Implementation, updates: TokenD
   });
 }
 
-function updateStatusEffects(doc, options, userId) {
-  if (!dependentConditions || userId !== game.user?.id) return;
-  let actor = doc;
-  if (doc instanceof Item || doc instanceof ActiveEffect) actor = doc.parent;
-  if (actor instanceof Item) actor = actor.parent;
-  if (actor instanceof Actor) scheduleReconciliation(actor);
+/*
+ * Dependent Conditions run inside the operation that changed them: Foundry awaits a document class's
+ * _on{Create,Update,Delete}Operation before the initiating client's create/update/delete resolves, so the caller's
+ * next operation sees the conditions DAE added or removed (ddb-importer deleting an actor's items, then all its
+ * effects, failed on a condition DAE deleted meanwhile: "ActiveEffect dnd5einvisible00 does not exist").
+ * Never through DAE's actionQueue: its tasks (macros, expiry) change effects and would wait on themselves.
+ * A wait that outlasts RECONCILE_WAIT_MS (a cycle through another module's queue) is abandoned with a warning.
+ */
+
+/** The documents of an operation, with its per-document update data when it is an update */
+type OperationActors = (documents: readonly unknown[], updates: readonly object[] | undefined) => Iterable<unknown>;
+
+function registerDependentConditionWrappers() {
+  const after = (actorsOf: OperationActors) =>
+    function (wrapped, documents: readonly unknown[], operation: { updates?: object[] }, user: User.Implementation) {
+      const result: Promise<void> = wrapped(documents, operation, user);
+      if (!dependentConditions || user?.id !== game.user?.id) return result;
+      return result.then(async () => {
+        const actors = [...new Set(actorsOf(documents, operation.updates))].filter(actor => actor instanceof Actor);
+        await waitForReconciliations(Promise.all(actors.map(reconcileActor)), actors);
+      });
+    };
+  const itemActors: OperationActors = items => (items as Item.Implementation[])
+    .filter(item => item.effects.some(affectsConditions)).map(item => item.parent);
+  const effectActors: OperationActors = (effects, updates) => (effects as ActiveEffect.Implementation[])
+    .filter((effect, i) => affectsConditions(effect) || ["statuses", "system"].some(key => key in (updates?.[i] ?? {})))
+    .map(effect => effect.parent instanceof Item ? effect.parent.parent : effect.parent);
+  for (const op of ["_onCreateOperation", "_onUpdateOperation", "_onDeleteOperation"]) {
+    libWrapper.register("dae", `CONFIG.Item.documentClass.${op}`, after(itemActors), "WRAPPER");
+    libWrapper.register("dae", `CONFIG.ActiveEffect.documentClass.${op}`, after(effectActors), "WRAPPER");
+  }
+  // An actor created with its items (imported, dragged from a compendium) fires no item or effect operation
+  libWrapper.register("dae", "CONFIG.Actor.documentClass._onCreateOperation", after(actors => actors), "WRAPPER");
+  // Condition immunities set on the actor itself; an unlinked token's actor is updated through its delta
+  const immunityChanged = (updates: readonly object[] | undefined, i: number) => foundry.utils.hasProperty(updates?.[i] ?? {}, "system.traits.ci");
+  libWrapper.register("dae", "CONFIG.Actor.documentClass._onUpdateOperation",
+    after((actors, updates) => actors.filter((_, i) => immunityChanged(updates, i))), "WRAPPER");
+  libWrapper.register("dae", "CONFIG.ActorDelta.documentClass._onUpdateOperation",
+    after((deltas, updates) => (deltas as ActorDelta.Implementation[]).filter((_, i) => immunityChanged(updates, i)).map(delta => delta.parent?.actor)), "WRAPPER");
 }
 
-function queueStatusesReconciliation(effect: ActiveEffect.Implementation, userId: string) {
-  if (!dependentConditions || userId !== game.user?.id) return;
-  const hasStatuses = !!effect.statuses?.size;
+/** Whether an effect can add or remove a condition: it carries statuses or changes condition immunities */
+function affectsConditions(effect: ActiveEffect.Implementation): boolean {
   // @ts-expect-error v14 effect.system.changes
-  const hasCIChanges = effect.system?.changes?.some(c => c.key.startsWith("system.traits.ci"));
-  if (!hasStatuses && !hasCIChanges) return;
-  const actor = effect.parent instanceof Actor ? effect.parent : (effect.parent as Item)?.parent;
-  if (actor instanceof Actor) scheduleReconciliation(actor);
+  return !!effect.statuses?.size || !!effect.system?.changes?.some(c => c.key?.startsWith("system.traits.ci"));
+}
+
+/** How long an operation waits for its actors' conditions before giving up (a cycle through another module's queue) */
+const RECONCILE_WAIT_MS = 10000;
+
+/** Waits for the reconciliations, at most RECONCILE_WAIT_MS; they carry on if the wait is abandoned */
+async function waitForReconciliations(done: Promise<unknown>, actors: Actor.Implementation[]) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timedOut = new Promise<boolean>(resolve => timer = setTimeout(() => resolve(true), RECONCILE_WAIT_MS));
+  if (await Promise.race([done.then(() => false), timedOut]))
+    console.warn(`dae | Dependent Conditions: stopped waiting after ${RECONCILE_WAIT_MS / 1000}s for ${actors.map(actor => actor.name).join(", ")}`);
+  clearTimeout(timer);
+}
+
+/**
+ * Reconciles the actor's conditions, resolving when they are settled. If a reconciliation is already running for the
+ * actor (this operation is one of its own condition changes, or something they set off), it asks that one for another
+ * pass instead of waiting for it, which would deadlock.
+ */
+async function reconcileActor(actor: Actor.Implementation): Promise<void> {
+  const running = reconciling.get(actor.uuid);
+  if (running) {
+    running.again = true;
+    return;
+  }
+  const state = { again: false };
+  reconciling.set(actor.uuid, state);
+  try {
+    do {
+      state.again = false;
+      await reconcileActorStatuses(actor);
+    } while (state.again);
+  } catch (err) {
+    console.warn("dae | Error reconciling actor statuses:", err);
+  } finally {
+    reconciling.delete(actor.uuid);
+  }
 }
 
 /**
